@@ -1,13 +1,53 @@
 [workspace]
 members = [
-    "programs/*"
-]
+    "integration_tests"
+,
+    "lrt_core",
+    "lrt_program",
+    "lrt_sdk",
+    "restaking_core",
+    "restaking_program",
+    "restaking_sdk",
+    "sanitization"]
+
+resolver = "2"
 
 [profile.release]
 overflow-checks = true
 lto = "fat"
 codegen-units = 1
+
 [profile.release.build-override]
 opt-level = 3
 incremental = false
 codegen-units = 1
+
+[workspace.package]
+version = "0.0.1"
+authors = ["Jito Network Maintainers <support@jito.network>"]
+repository = "https://github.com/jito-labs/jsm"
+homepage = "https://jito.wtf/"
+license = "BSL"
+edition = "2021"
+readme = "README.md"
+
+[workspace.dependencies]
+assert_matches = "1.5.0"
+borsh = { version = "0.10.3" }
+jito-restaking-sanitization = { path = "sanitization", version = "=0.0.1" }
+jito-lrt-core = { path = "lrt_core", version = "=0.0.1" }
+jito-restaking-core = { path = "restaking_core", version = "=0.0.1" }
+jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.1" }
+jito-lrt-sdk = { path = "lrt_sdk", version = "=0.0.1" }
+jito-lrt-program = { path = "lrt_program", version = "=0.0.1" }
+jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
+shank = "0.4.2"
+solana-program = "~1.17"
+solana-program-test = "~1.17"
+solana-sdk = "~1.17"
+solana-security-txt = "1.1.1"
+spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"] }
+thiserror = "1.0.57"
+tokio = "1.36.0"
+matches = "0.1.10"

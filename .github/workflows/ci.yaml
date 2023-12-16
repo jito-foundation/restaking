@@ -1,0 +1,113 @@
+name: Rust Clippy CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security_audit:
+    name: security_audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install cargo-audit from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-audit
+      - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2023-0065 --ignore RUSTSEC-2024-0344
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+          toolchain: nightly-2023-10-05
+      - name: Install cargo-sort from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-sort
+      - run: cargo sort --workspace --check
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-features -- -D warnings -D clippy::all -D clippy::nursery -D clippy::integer_division -D clippy::arithmetic_side_effects -D clippy::style -D clippy::perf
+
+  # TODO: switch this over to verified build
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: install solana toolsuite
+        run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.12/install)"
+      - name: add to path
+        run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+      - name: cargo-build-sbf
+        run: cargo-build-sbf
+      - name: Upload restaking program
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/sbf-solana-solana/release/jito_restaking_program.so
+      - name: Upload LRT program
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_lrt_program.so
+          path: target/sbf-solana-solana/release/jito_lrt_program.so
+
+
+  # coverage runs tests as a native program
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+          toolchain: nightly-2023-10-05
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate code coverage
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: jito-labs/jsm
+          fail_ci_if_error: true
+
+  test_sbf:
+    name: cargo test
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Download restaking program
+        uses: actions/download-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/sbf-solana-solana/release/
+      - name: Download LRT program
+        uses: actions/download-artifact@v4
+        with:
+          name: jito_lrt_program.so
+          path: target/sbf-solana-solana/release/
+      - uses: taiki-e/install-action@nextest
+      - run: cargo nextest run --all-features
+        env:
+          SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
