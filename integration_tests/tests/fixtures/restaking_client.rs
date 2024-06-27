@@ -1,6 +1,8 @@
 use borsh::BorshDeserialize;
 use jito_restaking_core::{
-    avs::{Avs, AvsOperatorList, AvsVaultList},
+    avs::Avs,
+    avs_operator_list::AvsOperatorList,
+    avs_vault_list::AvsVaultList,
     config::Config,
     node_operator::{NodeOperator, NodeOperatorAvsList, OperatorVaultList},
 };
@@ -12,7 +14,9 @@ use solana_program::pubkey::Pubkey;
 use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{commitment_config::CommitmentLevel, signature::Signer, transaction::Transaction};
 
-use crate::fixtures::{lrt_test_config::LrtTestConfig, restaking_test_config::RestakingTestConfig};
+use crate::fixtures::{
+    restaking_test_config::RestakingTestConfig, vault_test_config::VaultTestConfig,
+};
 
 pub struct RestakingProgramClient {
     banks_client: BanksClient,
@@ -88,7 +92,7 @@ impl RestakingProgramClient {
                 &jito_restaking_program::id(),
                 &restaking_test_config.config,
                 &restaking_test_config.config_admin.pubkey(),
-                &jito_lrt_program::id(),
+                &jito_vault_program::id(),
             )],
             Some(&restaking_test_config.config_admin.pubkey()),
             &[&restaking_test_config.config_admin],
@@ -127,7 +131,7 @@ impl RestakingProgramClient {
     pub async fn avs_add_vault(
         &mut self,
         restaking_test_config: &RestakingTestConfig,
-        lrt_test_config: &LrtTestConfig,
+        vault_test_config: &VaultTestConfig,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -138,10 +142,10 @@ impl RestakingProgramClient {
                 &restaking_test_config.avs,
                 &restaking_test_config.avs_vault_list,
                 &restaking_test_config.avs_admin.pubkey(),
-                &jito_lrt_program::id(),
-                &lrt_test_config.vault,
-                &lrt_test_config.config,
-                &lrt_test_config.vault_avs_list,
+                &jito_vault_program::id(),
+                &vault_test_config.vault,
+                &vault_test_config.config,
+                &vault_test_config.vault_avs_list,
                 &restaking_test_config.avs_admin.pubkey(),
             )],
             Some(&restaking_test_config.avs_admin.pubkey()),
@@ -154,7 +158,7 @@ impl RestakingProgramClient {
     pub async fn avs_remove_vault(
         &mut self,
         restaking_test_config: &RestakingTestConfig,
-        lrt_test_config: &LrtTestConfig,
+        vault_test_config: &VaultTestConfig,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -165,10 +169,10 @@ impl RestakingProgramClient {
                 &restaking_test_config.avs,
                 &restaking_test_config.avs_vault_list,
                 &restaking_test_config.avs_admin.pubkey(),
-                &jito_lrt_program::id(),
-                &lrt_test_config.vault,
-                &lrt_test_config.config,
-                &lrt_test_config.vault_avs_list,
+                &jito_vault_program::id(),
+                &vault_test_config.vault,
+                &vault_test_config.config,
+                &vault_test_config.vault_avs_list,
                 &restaking_test_config.avs_admin.pubkey(),
             )],
             Some(&restaking_test_config.avs_admin.pubkey()),
@@ -207,7 +211,7 @@ impl RestakingProgramClient {
     pub async fn operator_add_vault(
         &mut self,
         restaking_test_config: &RestakingTestConfig,
-        lrt_test_config: &LrtTestConfig,
+        vault_test_config: &VaultTestConfig,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -218,10 +222,10 @@ impl RestakingProgramClient {
                 &restaking_test_config.operator,
                 &restaking_test_config.operator_vault_list,
                 &restaking_test_config.operator_admin.pubkey(),
-                &jito_lrt_program::id(),
-                &lrt_test_config.vault,
-                &lrt_test_config.config,
-                &lrt_test_config.vault_operator_list,
+                &jito_vault_program::id(),
+                &vault_test_config.vault,
+                &vault_test_config.config,
+                &vault_test_config.vault_operator_list,
                 &restaking_test_config.operator_admin.pubkey(),
             )],
             Some(&restaking_test_config.operator_admin.pubkey()),
@@ -234,7 +238,7 @@ impl RestakingProgramClient {
     pub async fn operator_remove_vault(
         &mut self,
         restaking_test_config: &RestakingTestConfig,
-        lrt_test_config: &LrtTestConfig,
+        vault_test_config: &VaultTestConfig,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -245,10 +249,10 @@ impl RestakingProgramClient {
                 &restaking_test_config.operator,
                 &restaking_test_config.operator_vault_list,
                 &restaking_test_config.avs_admin.pubkey(),
-                &jito_lrt_program::id(),
-                &lrt_test_config.vault,
-                &lrt_test_config.config,
-                &lrt_test_config.vault_operator_list,
+                &jito_vault_program::id(),
+                &vault_test_config.vault,
+                &vault_test_config.config,
+                &vault_test_config.vault_operator_list,
                 &restaking_test_config.operator_admin.pubkey(),
             )],
             Some(&restaking_test_config.operator_admin.pubkey()),

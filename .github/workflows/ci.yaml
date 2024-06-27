@@ -61,11 +61,11 @@ jobs:
         with:
           name: jito_restaking_program.so
           path: target/sbf-solana-solana/release/jito_restaking_program.so
-      - name: Upload LRT program
+      - name: Upload vault program
         uses: actions/upload-artifact@v4
         with:
-          name: jito_lrt_program.so
-          path: target/sbf-solana-solana/release/jito_lrt_program.so
+          name: jito_vault_program.so
+          path: target/sbf-solana-solana/release/jito_vault_program.so
 
 
   # coverage runs tests as a native program
@@ -102,10 +102,10 @@ jobs:
         with:
           name: jito_restaking_program.so
           path: target/sbf-solana-solana/release/
-      - name: Download LRT program
+      - name: Download vault program
         uses: actions/download-artifact@v4
         with:
-          name: jito_lrt_program.so
+          name: jito_vault_program.so
           path: target/sbf-solana-solana/release/
       - uses: taiki-e/install-action@nextest
       - run: cargo nextest run --all-features

@@ -1,5 +1,8 @@
 use jito_restaking_core::{
-    avs::{Avs, AvsOperatorList, AvsSlasherList, AvsVaultList},
+    avs::Avs,
+    avs_operator_list::AvsOperatorList,
+    avs_slasher_list::AvsSlasherList,
+    avs_vault_list::AvsVaultList,
     config::Config,
     node_operator::{NodeOperator, NodeOperatorAvsList, OperatorVaultList},
 };

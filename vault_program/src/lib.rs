@@ -1,0 +1,189 @@
+mod add_avs;
+mod add_delegation;
+mod add_operator;
+mod burn;
+mod create_token_metadata;
+mod enqueue_withdrawal;
+mod initialize_config;
+mod initialize_vault;
+mod initialize_vault_with_mint;
+mod mint_to;
+mod register_slasher;
+mod remove_avs;
+mod remove_delegation;
+mod remove_operator;
+mod set_admin;
+mod set_capacity;
+mod set_delegation_admin;
+mod slash;
+mod update_delegations;
+mod update_token_metadata;
+mod withdrawal_asset;
+
+use borsh::BorshDeserialize;
+use jito_vault_sdk::VaultInstruction;
+use solana_program::{
+    account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey,
+};
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+
+use crate::{
+    add_avs::process_vault_add_avs, add_delegation::process_add_delegation,
+    add_operator::process_vault_add_node_operator, burn::process_burn,
+    create_token_metadata::process_create_token_metadata,
+    enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
+    initialize_vault::process_initialize_vault,
+    initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
+    register_slasher::process_register_slasher, remove_avs::process_vault_remove_avs,
+    remove_delegation::process_remove_delegation,
+    remove_operator::process_vault_remove_node_operator, set_admin::process_set_admin,
+    set_capacity::process_set_capacity, set_delegation_admin::process_set_delegation_admin,
+    slash::process_slash, update_delegations::process_update_delegations,
+    update_token_metadata::process_update_token_metadata,
+    withdrawal_asset::process_withdrawal_asset,
+};
+
+declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
+
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    // Required fields
+    name: "Jito's Liquid Restaking Program",
+    project_url: "https://jito.wtf/",
+    contacts: "email:team@jito.wtf",
+    policy: "https://github.com/jito-labs/jsm",
+    // Optional Fields
+    preferred_languages: "en",
+    source_code: "https://github.com/jito-labs/jsm"
+}
+
+#[cfg(not(feature = "no-entrypoint"))]
+solana_program::entrypoint!(process_instruction);
+
+pub fn process_instruction(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    instruction_data: &[u8],
+) -> ProgramResult {
+    if *program_id != id() {
+        return Err(ProgramError::IncorrectProgramId);
+    }
+
+    let instruction = VaultInstruction::try_from_slice(instruction_data)?;
+
+    match instruction {
+        // ------------------------------------------
+        // Initialization
+        // ------------------------------------------
+        VaultInstruction::InitializeConfig => {
+            msg!("Instruction: InitializeConfig");
+            process_initialize_config(program_id, accounts)
+        }
+        VaultInstruction::InitializeVault {
+            deposit_fee_bps,
+            withdrawal_fee_bps,
+        } => {
+            msg!("Instruction: InitializeVault");
+            process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+        }
+        VaultInstruction::InitializeVaultWithMint => {
+            msg!("Instruction: InitializeVaultWithMint");
+            process_initialize_vault_with_mint(program_id, accounts)
+        }
+        // ------------------------------------------
+        // Vault administration
+        // ------------------------------------------
+        VaultInstruction::SetDelegationAdmin => {
+            msg!("Instruction: SetDelegationAdmin");
+            process_set_delegation_admin(program_id, accounts)
+        }
+        VaultInstruction::SetAdmin => {
+            msg!("Instruction: SetAdmin");
+            process_set_admin(program_id, accounts)
+        }
+        VaultInstruction::SetDepositCapacity { amount } => {
+            msg!("Instruction: SetCapacity");
+            process_set_capacity(program_id, accounts, amount)
+        }
+        VaultInstruction::WithdrawalAsset { amount } => {
+            msg!("Instruction: WithdrawalAsset");
+            process_withdrawal_asset(program_id, accounts, amount)
+        }
+        // ------------------------------------------
+        // Vault minting and burning
+        // ------------------------------------------
+        VaultInstruction::MintTo { amount } => {
+            msg!("Instruction: MintTo");
+            process_mint(program_id, accounts, amount)
+        }
+        VaultInstruction::Burn { amount } => {
+            msg!("Instruction: Burn");
+            process_burn(program_id, accounts, amount)
+        }
+        VaultInstruction::EnqueueWithdrawal { amount } => {
+            msg!("Instruction: EnqueueWithdrawal");
+            process_enqueue_withdrawal(program_id, accounts, amount)
+        }
+        // ------------------------------------------
+        // Vault-AVS operations
+        // ------------------------------------------
+        VaultInstruction::AddAvs => {
+            msg!("Instruction: AddAvs");
+            process_vault_add_avs(program_id, accounts)
+        }
+        VaultInstruction::RemoveAvs => {
+            msg!("Instruction: RemoveAvs");
+            process_vault_remove_avs(program_id, accounts)
+        }
+        // ------------------------------------------
+        // Vault-operator operations
+        // ------------------------------------------
+        VaultInstruction::AddOperator => {
+            msg!("Instruction: AddOperator");
+            process_vault_add_node_operator(program_id, accounts)
+        }
+        VaultInstruction::RemoveOperator => {
+            msg!("Instruction: RemoveOperator");
+            process_vault_remove_node_operator(program_id, accounts)
+        }
+        // ------------------------------------------
+        // Vault delegation
+        // ------------------------------------------
+        VaultInstruction::AddDelegation { amount } => {
+            msg!("Instruction: AddDelegation");
+            process_add_delegation(program_id, accounts, amount)
+        }
+        VaultInstruction::RemoveDelegation { amount } => {
+            msg!("Instruction: RemoveDelegation");
+            process_remove_delegation(program_id, accounts, amount)
+        }
+        VaultInstruction::UpdateDelegations => {
+            msg!("Instruction: UpdateDelegations");
+            process_update_delegations(program_id, accounts)
+        }
+        // ------------------------------------------
+        // Vault slashing
+        // ------------------------------------------
+        VaultInstruction::AddSlasher => {
+            msg!("Instruction: RegisterSlasher");
+            process_register_slasher(program_id, accounts)
+        }
+        VaultInstruction::Slash { amount } => {
+            msg!("Instruction: Slash");
+            process_slash(program_id, accounts, amount)
+        }
+        // ------------------------------------------
+        // LRT metadata
+        // ------------------------------------------
+        VaultInstruction::CreateTokenMetadata { name, symbol, uri } => {
+            msg!("Instruction: CreateTokenMetadata");
+            process_create_token_metadata(program_id, accounts, name, symbol, uri)
+        }
+        VaultInstruction::UpdateTokenMetadata { name, symbol, uri } => {
+            msg!("Instruction: UpdateTokenMetadata");
+            process_update_token_metadata(program_id, accounts, name, symbol, uri)
+        }
+    }
+}

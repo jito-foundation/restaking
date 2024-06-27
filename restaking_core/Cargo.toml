@@ -11,6 +11,7 @@ readme = { workspace = true }
 
 [dependencies]
 borsh = { workspace = true }
+jito-jsm-core = { workspace = true }
 jito-restaking-sanitization = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }

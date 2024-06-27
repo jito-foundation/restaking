@@ -1,4 +1,19 @@
-mod processor;
+mod avs_add_operator;
+mod avs_add_vault;
+mod avs_add_vault_slasher;
+mod avs_deprecate_vault_slasher;
+mod avs_remove_operator;
+mod avs_remove_vault;
+mod get_max_slashable_per_epoch;
+mod initialize_avs;
+mod initialize_config;
+mod initialize_operator;
+mod operator_add_avs;
+mod operator_add_vault;
+mod operator_remove_avs;
+mod operator_remove_vault;
+mod operator_set_admin;
+mod operator_set_voter;
 
 use borsh::BorshDeserialize;
 use jito_restaking_sdk::RestakingInstruction;
@@ -9,7 +24,21 @@ use solana_program::{
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
-use crate::processor::RestakingProcessor;
+use crate::{
+    avs_add_operator::process_avs_add_node_operator, avs_add_vault::process_avs_add_vault,
+    avs_add_vault_slasher::process_avs_add_vault_slasher,
+    avs_deprecate_vault_slasher::process_avs_deprecate_slasher,
+    avs_remove_operator::process_avs_remove_node_operator,
+    avs_remove_vault::process_avs_remove_vault,
+    get_max_slashable_per_epoch::process_get_max_slashable_per_epoch,
+    initialize_avs::process_initialize_avs, initialize_config::process_initialize_config,
+    initialize_operator::process_initialize_node_operator,
+    operator_add_avs::process_operator_add_avs, operator_add_vault::process_operator_add_vault,
+    operator_remove_avs::process_operator_remove_avs,
+    operator_remove_vault::process_node_operator_remove_vault,
+    operator_set_admin::process_set_node_operator_admin,
+    operator_set_voter::process_set_node_operator_voter,
+};
 
 declare_id!("E5YF9Um1mwQWHffqaUEUwtwnhQKsbMEt33qtvjto3NDZ");
 
@@ -42,63 +71,67 @@ pub fn process_instruction(
     match instruction {
         RestakingInstruction::InitializeConfig => {
             msg!("Instruction: InitializeConfig");
-            RestakingProcessor::initialize_config(program_id, accounts)
+            process_initialize_config(program_id, accounts)
         }
         RestakingInstruction::InitializeAvs => {
             msg!("Instruction: InitializeAvs");
-            RestakingProcessor::initialize_avs(program_id, accounts)
+            process_initialize_avs(program_id, accounts)
         }
         RestakingInstruction::AvsAddVault => {
             msg!("Instruction: AvsAddVault");
-            RestakingProcessor::avs_add_vault(program_id, accounts)
+            process_avs_add_vault(program_id, accounts)
         }
         RestakingInstruction::AvsRemoveVault => {
             msg!("Instruction: AvsRemoveVault");
-            RestakingProcessor::avs_remove_vault(program_id, accounts)
+            process_avs_remove_vault(program_id, accounts)
         }
-        RestakingInstruction::AvsAddNodeOperator => {
+        RestakingInstruction::AvsAddOperator => {
             msg!("Instruction: AvsAddNodeOperator");
-            RestakingProcessor::avs_add_node_operator(program_id, accounts)
+            process_avs_add_node_operator(program_id, accounts)
         }
-        RestakingInstruction::AvsRemoveNodeOperator => {
+        RestakingInstruction::AvsRemoveOperator => {
             msg!("Instruction: AvsRemoveNodeOperator");
-            RestakingProcessor::avs_remove_node_operator(program_id, accounts)
+            process_avs_remove_node_operator(program_id, accounts)
         }
         RestakingInstruction::AvsAddVaultSlasher(max_slashable_per_epoch) => {
             msg!("Instruction: AvsAddVaultSlasher");
-            RestakingProcessor::avs_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
+            process_avs_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
         }
         RestakingInstruction::AvsDeprecateVaultSlasher => {
             msg!("Instruction: AvsDeprecateVaultSlasher");
-            RestakingProcessor::avs_deprecate_slasher(program_id, accounts)
+            process_avs_deprecate_slasher(program_id, accounts)
         }
         RestakingInstruction::InitializeOperator => {
             msg!("Instruction: InitializeNodeOperator");
-            RestakingProcessor::initialize_node_operator(program_id, accounts)
+            process_initialize_node_operator(program_id, accounts)
         }
         RestakingInstruction::OperatorSetAdmin => {
             msg!("Instruction: OperatorSetAdmin");
-            RestakingProcessor::set_node_operator_admin(program_id, accounts)
+            process_set_node_operator_admin(program_id, accounts)
         }
         RestakingInstruction::OperatorSetVoter => {
             msg!("Instruction: OperatorSetVoter");
-            RestakingProcessor::set_node_operator_voter(program_id, accounts)
+            process_set_node_operator_voter(program_id, accounts)
         }
         RestakingInstruction::OperatorAddVault => {
             msg!("Instruction: NodeOperatorAddVault");
-            RestakingProcessor::node_operator_add_vault(program_id, accounts)
+            process_operator_add_vault(program_id, accounts)
         }
         RestakingInstruction::OperatorRemoveVault => {
             msg!("Instruction: NodeOperatorRemoveVault");
-            RestakingProcessor::node_operator_remove_vault(program_id, accounts)
+            process_node_operator_remove_vault(program_id, accounts)
         }
         RestakingInstruction::OperatorAddAvs => {
             msg!("Instruction: OperatorAddAvs");
-            RestakingProcessor::node_operator_add_avs(program_id, accounts)
+            process_operator_add_avs(program_id, accounts)
         }
         RestakingInstruction::OperatorRemoveAvs => {
             msg!("Instruction: OperatorRemoveAvs");
-            RestakingProcessor::node_operator_remove_avs(program_id, accounts)
+            process_operator_remove_avs(program_id, accounts)
+        }
+        RestakingInstruction::GetMaxSlashablePerEpoch(request) => {
+            msg!("Instruction: GetMaxSlashablePerEpoch");
+            process_get_max_slashable_per_epoch(program_id, accounts, request)
         }
     }
 }

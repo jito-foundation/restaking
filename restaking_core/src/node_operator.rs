@@ -1,4 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use jito_jsm_core::slot_toggled_field::SlotToggle;
 use jito_restaking_sanitization::{assert_with_msg, realloc};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
@@ -126,28 +127,18 @@ impl NodeOperator {
 pub struct NodeOperatorAvs {
     /// The AVS account
     avs: Pubkey,
-    /// The slot when the AVS was last added
-    slot_added: u64,
-    /// The slot when the AVS was last removed
-    slot_removed: u64,
+
+    state: SlotToggle,
+
     /// Reserved space
     reserved: [u8; 256],
-}
-
-#[derive(PartialEq, Eq)]
-pub enum NodeOperatorAvsState {
-    Inactive,
-    WarmingUp,
-    Active,
-    CoolingDown,
 }
 
 impl NodeOperatorAvs {
     pub const fn new(avs: Pubkey, slot_added: u64) -> Self {
         Self {
             avs,
-            slot_added,
-            slot_removed: 0,
+            state: SlotToggle::new(slot_added),
             reserved: [0; 256],
         }
     }
@@ -156,53 +147,8 @@ impl NodeOperatorAvs {
         self.avs
     }
 
-    pub const fn slot_added(&self) -> u64 {
-        self.slot_added
-    }
-
-    pub const fn slot_removed(&self) -> u64 {
-        self.slot_removed
-    }
-
-    pub fn set_slot_added(&mut self, slot: u64, num_slots_per_epoch: u64) -> bool {
-        match self.state(slot, num_slots_per_epoch) {
-            NodeOperatorAvsState::Inactive => {
-                self.slot_added = slot;
-                true
-            }
-            _ => false,
-        }
-    }
-
-    pub fn set_slot_removed(&mut self, slot: u64, num_slots_per_epoch: u64) -> bool {
-        match self.state(slot, num_slots_per_epoch) {
-            NodeOperatorAvsState::Active => {
-                self.slot_removed = slot;
-                true
-            }
-            _ => false,
-        }
-    }
-
-    pub fn state(&self, slot: u64, num_slots_per_epoch: u64) -> NodeOperatorAvsState {
-        if self.slot_removed > self.slot_added {
-            // either cooling down or inactive
-            let epoch = self.slot_removed.checked_div(num_slots_per_epoch).unwrap();
-            let inactive_epoch = epoch.checked_add(2).unwrap();
-            if slot < inactive_epoch.checked_mul(num_slots_per_epoch).unwrap() {
-                NodeOperatorAvsState::CoolingDown
-            } else {
-                NodeOperatorAvsState::Inactive
-            }
-        } else {
-            let epoch = self.slot_added.checked_div(num_slots_per_epoch).unwrap();
-            let active_epoch = epoch.checked_add(2).unwrap();
-            if slot < active_epoch.checked_mul(num_slots_per_epoch).unwrap() {
-                NodeOperatorAvsState::WarmingUp
-            } else {
-                NodeOperatorAvsState::Active
-            }
-        }
+    pub const fn state(&self) -> &SlotToggle {
+        &self.state
     }
 }
 
@@ -235,25 +181,25 @@ impl NodeOperatorAvsList {
         &self.avs
     }
 
-    pub fn add_avs(&mut self, avs: Pubkey, slot: u64, num_slots_per_epoch: u64) -> bool {
+    pub fn add_avs(&mut self, avs: Pubkey, slot: u64) -> bool {
         let maybe_avs = self.avs.iter_mut().find(|a| a.avs() == avs);
         if let Some(avs) = maybe_avs {
-            avs.set_slot_added(slot, num_slots_per_epoch)
+            avs.state.activate(slot)
         } else {
             self.avs.push(NodeOperatorAvs::new(avs, slot));
             true
         }
     }
 
-    pub fn remove_avs(&mut self, avs: Pubkey, slot: u64, num_slots_per_epoch: u64) -> bool {
+    pub fn remove_avs(&mut self, avs: Pubkey, slot: u64) -> bool {
         let maybe_avs = self.avs.iter_mut().find(|a| a.avs() == avs);
-        maybe_avs.map_or(false, |avs| avs.set_slot_removed(slot, num_slots_per_epoch))
+        maybe_avs.map_or(false, |avs| avs.state.deactivate(slot))
     }
 
-    pub fn contains_active_avs(&self, avs: &Pubkey, slot: u64, num_slots_per_epoch: u64) -> bool {
-        self.avs.iter().any(|a| {
-            a.avs() == *avs && a.state(slot, num_slots_per_epoch) == NodeOperatorAvsState::Active
-        })
+    pub fn contains_active_avs(&self, avs: &Pubkey, slot: u64) -> bool {
+        self.avs
+            .iter()
+            .any(|a| a.avs() == *avs && a.state.is_active(slot))
     }
 
     pub fn seeds(node_operator: &Pubkey) -> Vec<Vec<u8>> {
@@ -347,28 +293,19 @@ impl OperatorVaultList {
         &self.vaults
     }
 
-    pub fn add_vault(
-        &mut self,
-        vault: Pubkey,
-        slot: u64,
-        num_slots_per_epoch: u64,
-        max_delegation: u64,
-    ) -> bool {
+    pub fn add_vault(&mut self, vault: Pubkey, slot: u64) -> bool {
         let maybe_vault = self.vaults.iter_mut().find(|v| v.vault() == vault);
         if let Some(vault) = maybe_vault {
-            vault.set_slot_added(slot, num_slots_per_epoch, max_delegation)
+            vault.state_mut().activate(slot)
         } else {
-            self.vaults
-                .push(RestakingVault::new(vault, slot, max_delegation));
+            self.vaults.push(RestakingVault::new(vault, slot));
             true
         }
     }
 
-    pub fn remove_vault(&mut self, vault: Pubkey, slot: u64, num_slots_per_epoch: u64) -> bool {
+    pub fn remove_vault(&mut self, vault: Pubkey, slot: u64) -> bool {
         let maybe_vault = self.vaults.iter_mut().find(|v| v.vault() == vault);
-        maybe_vault.map_or(false, |vault| {
-            vault.set_slot_removed(slot, num_slots_per_epoch)
-        })
+        maybe_vault.map_or(false, |vault| vault.state_mut().deactivate(slot))
     }
 
     pub fn seeds(operator: &Pubkey) -> Vec<Vec<u8>> {
@@ -519,16 +456,20 @@ impl<'a, 'info> SanitizedNodeOperatorAvsList<'a, 'info> {
         &mut self.node_operator_avs_list
     }
 
-    pub fn save(
-        &self,
-        rent: &Rent,
-        payer: &'a AccountInfo<'info>,
-    ) -> solana_program::entrypoint_deprecated::ProgramResult {
+    pub fn save_with_realloc(&self, rent: &Rent, payer: &'a AccountInfo<'info>) -> ProgramResult {
         let serialized = self.node_operator_avs_list.try_to_vec()?;
 
         if serialized.len() > self.account.data.borrow().len() {
             realloc(self.account, serialized.len(), payer, rent)?;
         }
+
+        self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
+
+        Ok(())
+    }
+
+    pub fn save(&self) -> ProgramResult {
+        let serialized = self.node_operator_avs_list.try_to_vec()?;
 
         self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
 
@@ -577,11 +518,7 @@ impl<'a, 'info> SanitizedNodeOperatorVaultList<'a, 'info> {
         &mut self.node_operator_vault_list
     }
 
-    pub fn save(
-        &self,
-        rent: &Rent,
-        payer: &'a AccountInfo<'info>,
-    ) -> solana_program::entrypoint_deprecated::ProgramResult {
+    pub fn save(&self, rent: &Rent, payer: &'a AccountInfo<'info>) -> ProgramResult {
         let serialized = self.node_operator_vault_list.try_to_vec()?;
 
         if serialized.len() > self.account.data.borrow().len() {

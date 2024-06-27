@@ -23,7 +23,7 @@ use spl_token::{
     state::{Account, Mint},
 };
 
-use crate::fixtures::{lrt_client::LrtProgramClient, restaking_client::RestakingProgramClient};
+use crate::fixtures::{restaking_client::RestakingProgramClient, vault_client::VaultProgramClient};
 
 pub struct TestBuilder {
     context: ProgramTestContext,
@@ -39,9 +39,9 @@ impl TestBuilder {
     pub async fn new() -> Self {
         // $ cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run
         let mut program_test = ProgramTest::new(
-            "jito_lrt_program",
-            jito_lrt_program::id(),
-            processor!(jito_lrt_program::process_instruction),
+            "jito_vault_program",
+            jito_vault_program::id(),
+            processor!(jito_vault_program::process_instruction),
         );
         program_test.add_program(
             "jito_restaking_program",
@@ -213,8 +213,8 @@ impl TestBuilder {
         Ok(())
     }
 
-    pub fn lrt_program_client(&self) -> LrtProgramClient {
-        LrtProgramClient::new(self.context.banks_client.clone())
+    pub fn vault_program_client(&self) -> VaultProgramClient {
+        VaultProgramClient::new(self.context.banks_client.clone())
     }
 
     pub fn restaking_program_client(&self) -> RestakingProgramClient {

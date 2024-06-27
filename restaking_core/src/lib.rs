@@ -1,9 +1,12 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 pub mod avs;
+pub mod avs_operator_list;
+pub mod avs_slasher_list;
+pub mod avs_vault_list;
 pub mod config;
 pub mod node_operator;
-mod vault;
+pub mod vault;
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
 #[repr(u32)]

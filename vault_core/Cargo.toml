@@ -1,0 +1,23 @@
+[package]
+name = "jito-vault-core"
+description = "Vault core library"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+borsh = { workspace = true }
+jito-jsm-core = { workspace = true }
+jito-restaking-sanitization = { workspace = true }
+shank = { workspace = true }
+solana-program = { workspace = true }
+spl-associated-token-account = { workspace = true }
+spl-token = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+assert_matches = { workspace = true }

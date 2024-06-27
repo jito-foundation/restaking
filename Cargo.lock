@@ -1819,7 +1819,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
-name = "jito-lrt-core"
+name = "jito-jsm-core"
 version = "0.0.1"
 dependencies = [
  "assert_matches",
@@ -1830,43 +1830,6 @@ dependencies = [
  "spl-associated-token-account",
  "spl-token",
  "thiserror",
-]
-
-[[package]]
-name = "jito-lrt-program"
-version = "0.0.1"
-dependencies = [
- "borsh 0.10.3",
- "jito-lrt-core",
- "jito-lrt-sdk",
- "jito-restaking-sanitization",
- "shank",
- "solana-program",
- "solana-program-test",
- "solana-sdk",
- "solana-security-txt",
- "spl-associated-token-account",
- "spl-token",
- "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "jito-lrt-sdk"
-version = "0.0.1"
-dependencies = [
- "borsh 0.10.3",
- "jito-lrt-core",
- "jito-restaking-sanitization",
- "shank",
- "solana-program",
- "solana-program-test",
- "solana-sdk",
- "solana-security-txt",
- "spl-associated-token-account",
- "spl-token",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -1875,6 +1838,7 @@ version = "0.0.1"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
+ "jito-jsm-core",
  "jito-restaking-sanitization",
  "shank",
  "solana-program",
@@ -1888,13 +1852,13 @@ name = "jito-restaking-integration-tests"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-lrt-core",
- "jito-lrt-program",
- "jito-lrt-sdk",
  "jito-restaking-core",
  "jito-restaking-program",
  "jito-restaking-sanitization",
  "jito-restaking-sdk",
+ "jito-vault-core",
+ "jito-vault-program",
+ "jito-vault-sdk",
  "shank",
  "solana-program",
  "solana-program-test",
@@ -1911,10 +1875,10 @@ name = "jito-restaking-program"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-lrt-sdk",
  "jito-restaking-core",
  "jito-restaking-sanitization",
  "jito-restaking-sdk",
+ "jito-vault-sdk",
  "shank",
  "solana-program",
  "solana-program-test",
@@ -1944,8 +1908,61 @@ name = "jito-restaking-sdk"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-lrt-core",
  "jito-restaking-sanitization",
+ "jito-vault-core",
+ "shank",
+ "solana-program",
+ "solana-program-test",
+ "solana-sdk",
+ "solana-security-txt",
+ "spl-associated-token-account",
+ "spl-token",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "jito-vault-core"
+version = "0.0.1"
+dependencies = [
+ "assert_matches",
+ "borsh 0.10.3",
+ "jito-jsm-core",
+ "jito-restaking-sanitization",
+ "shank",
+ "solana-program",
+ "spl-associated-token-account",
+ "spl-token",
+ "thiserror",
+]
+
+[[package]]
+name = "jito-vault-program"
+version = "0.0.1"
+dependencies = [
+ "borsh 0.10.3",
+ "jito-restaking-sanitization",
+ "jito-restaking-sdk",
+ "jito-vault-core",
+ "jito-vault-sdk",
+ "shank",
+ "solana-program",
+ "solana-program-test",
+ "solana-sdk",
+ "solana-security-txt",
+ "spl-associated-token-account",
+ "spl-token",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "jito-vault-sdk"
+version = "0.0.1"
+dependencies = [
+ "borsh 0.10.3",
+ "jito-restaking-sanitization",
+ "jito-vault-core",
  "shank",
  "solana-program",
  "solana-program-test",

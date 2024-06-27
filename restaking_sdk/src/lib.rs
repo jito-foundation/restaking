@@ -52,6 +52,46 @@ pub enum RestakingInstruction {
     #[account(9, name = "system_program")]
     AvsRemoveVault,
 
+    #[account(0, name = "config")]
+    #[account(1, name = "avs")]
+    #[account(2, writable, name = "avs_operator_list")]
+    #[account(3, name = "node_operator")]
+    #[account(4, writable, name = "node_operator_avs_list")]
+    #[account(5, writable, signer, name = "admin")]
+    AvsAddOperator,
+
+    #[account(0, name = "config")]
+    #[account(1, name = "avs")]
+    #[account(2, writable, name = "avs_operator_list")]
+    #[account(3, name = "node_operator")]
+    #[account(4, writable, signer, name = "admin")]
+    AvsRemoveOperator,
+
+    /// The AVS adds support for a vault slasher
+    ///
+    /// # Arguments
+    /// * `u64` - The maximum amount that can be slashed from the vault per epoch
+    #[account(0, name = "config")]
+    #[account(1, name = "avs")]
+    #[account(2, name = "avs_vault_list")]
+    #[account(3, writable, name = "avs_slasher_list")]
+    #[account(4, name = "vault")]
+    #[account(5, name = "slasher")]
+    #[account(6, writable, signer, name = "admin")]
+    #[account(7, writable, signer, name = "payer")]
+    #[account(8, name = "system_program")]
+    AvsAddVaultSlasher(u64),
+
+    /// AVS removes support for a slasher
+    #[account(0, name = "config")]
+    #[account(1, name = "avs")]
+    #[account(2, name = "avs_vault_list")]
+    #[account(3, writable, name = "avs_slasher_list")]
+    #[account(4, name = "vault")]
+    #[account(5, name = "slasher")]
+    #[account(6, writable, signer, name = "admin")]
+    AvsDeprecateVaultSlasher,
+
     /// Initializes a operator
     #[account(0, writable, name = "config")]
     #[account(1, writable, name = "node_operator")]
@@ -116,45 +156,21 @@ pub enum RestakingInstruction {
     #[account(4, writable, signer, name = "admin")]
     OperatorRemoveAvs,
 
-    /// After the node operator has opted-in to the network, the AVS can choose to add it
-    #[account(0, name = "config")]
-    #[account(1, name = "avs")]
-    #[account(2, writable, name = "avs_operator_list")]
-    #[account(3, name = "node_operator")]
-    #[account(4, writable, name = "node_operator_avs_list")]
-    #[account(5, writable, signer, name = "admin")]
-    AvsAddNodeOperator,
+    /// Returns the max slashable for an epoch for the given slasher and vault
+    #[account(0, name = "avs")]
+    #[account(1, name = "avs_slasher_list")]
+    GetMaxSlashablePerEpoch(GetMaxSlashablePerEpochRequest),
+}
 
-    /// The node operator can remove itself from the network
-    #[account(0, name = "config")]
-    #[account(1, name = "avs")]
-    #[account(2, writable, name = "avs_operator_list")]
-    #[account(3, name = "node_operator")]
-    #[account(4, writable, signer, name = "admin")]
-    AvsRemoveNodeOperator,
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+pub struct GetMaxSlashablePerEpochRequest {
+    pub slasher: Pubkey,
+    pub vault: Pubkey,
+}
 
-    /// The AVS adds support for a vault slasher
-    #[account(0, name = "config")]
-    #[account(1, name = "avs")]
-    #[account(2, name = "avs_vault_list")]
-    #[account(3, writable, name = "avs_slasher_list")]
-    #[account(4, name = "vault")]
-    #[account(5, name = "slasher")]
-    #[account(6, writable, signer, name = "admin")]
-    #[account(7, writable, signer, name = "payer")]
-    #[account(8, name = "system_program")]
-    AvsAddVaultSlasher(u64),
-
-    /// AVS removes support for a slasher
-    #[account(0, name = "config")]
-    #[account(1, name = "avs")]
-    #[account(2, name = "avs_vault_list")]
-    #[account(3, writable, name = "avs_slasher_list")]
-    #[account(4, name = "vault")]
-    #[account(5, name = "slasher")]
-    #[account(6, writable, signer, name = "admin")]
-    #[account(7, writable, signer, name = "payer")]
-    AvsDeprecateVaultSlasher,
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+pub struct GetMaxSlashablePerEpochResponse {
+    pub max_slashable_per_epoch: u64,
 }
 
 pub fn initialize_config(
@@ -351,5 +367,27 @@ pub fn operator_remove_vault(
         data: RestakingInstruction::OperatorRemoveVault
             .try_to_vec()
             .unwrap(),
+    }
+}
+
+pub fn get_max_slashable_per_epoch(
+    program_id: &Pubkey,
+    avs: &Pubkey,
+    avs_slasher_list: &Pubkey,
+    slasher: &Pubkey,
+    vault: &Pubkey,
+) -> Instruction {
+    Instruction {
+        program_id: *program_id,
+        accounts: vec![
+            AccountMeta::new_readonly(*avs, false),
+            AccountMeta::new_readonly(*avs_slasher_list, false),
+        ],
+        data: RestakingInstruction::GetMaxSlashablePerEpoch(GetMaxSlashablePerEpochRequest {
+            slasher: *slasher,
+            vault: *vault,
+        })
+        .try_to_vec()
+        .unwrap(),
     }
 }

@@ -2,8 +2,8 @@ use jito_restaking_core::config::DEFAULT_RESTAKING_EPOCH_DURATION;
 use solana_sdk::signature::Signer;
 
 use crate::fixtures::{
-    fixture::TestBuilder, lrt_test_config::LrtTestConfig,
-    restaking_test_config::RestakingTestConfig,
+    fixture::TestBuilder, restaking_test_config::RestakingTestConfig,
+    vault_test_config::VaultTestConfig,
 };
 
 pub mod fixtures;
@@ -31,7 +31,7 @@ async fn test_initialize_config_ok() {
         .await
         .unwrap();
     assert_eq!(config.admin(), restaking_test_config.config_admin.pubkey());
-    assert_eq!(config.vault_program(), jito_lrt_program::id());
+    assert_eq!(config.vault_program(), jito_vault_program::id());
     assert_eq!(config.avs_count(), 0);
     assert_eq!(config.operators_count(), 0);
     assert_eq!(config.epoch_duration(), DEFAULT_RESTAKING_EPOCH_DURATION);
@@ -171,11 +171,11 @@ async fn test_operator_add_vault_ok() {
     let mut restaking_program_client = fixture.restaking_program_client();
     let restaking_test_config = RestakingTestConfig::new_random();
 
-    let mut lrt_program_client = fixture.lrt_program_client();
-    let lrt_test_config = LrtTestConfig::new_random(restaking_test_config.config);
+    let mut vault_program_client = fixture.vault_program_client();
+    let vault_test_config = VaultTestConfig::new_random(restaking_test_config.config);
 
     fixture
-        .create_token_mint(&lrt_test_config.token_mint)
+        .create_token_mint(&vault_test_config.token_mint)
         .await
         .unwrap();
 
@@ -189,11 +189,11 @@ async fn test_operator_add_vault_ok() {
         .unwrap();
 
     fixture
-        .transfer(&lrt_test_config.config_admin.pubkey(), 10.0)
+        .transfer(&vault_test_config.config_admin.pubkey(), 10.0)
         .await
         .unwrap();
     fixture
-        .transfer(&lrt_test_config.vault_admin.pubkey(), 10.0)
+        .transfer(&vault_test_config.vault_admin.pubkey(), 10.0)
         .await
         .unwrap();
 
@@ -207,27 +207,27 @@ async fn test_operator_add_vault_ok() {
         .await
         .unwrap();
 
-    lrt_program_client
-        .initialize_config(&lrt_test_config)
+    vault_program_client
+        .initialize_config(&vault_test_config)
         .await
         .unwrap();
 
-    lrt_program_client
-        .initialize_vault(&lrt_test_config)
+    vault_program_client
+        .initialize_vault(&vault_test_config)
         .await
         .unwrap();
 
     restaking_program_client
-        .operator_add_vault(&restaking_test_config, &lrt_test_config)
+        .operator_add_vault(&restaking_test_config, &vault_test_config)
         .await
         .unwrap();
 
-    let vault_operator_list = lrt_program_client
-        .get_vault_operator_list(&lrt_test_config.vault_operator_list)
+    let vault_operator_list = vault_program_client
+        .get_vault_operator_list(&vault_test_config.vault_operator_list)
         .await
         .unwrap();
 
-    assert_eq!(vault_operator_list.vault(), lrt_test_config.vault);
+    assert_eq!(vault_operator_list.vault(), vault_test_config.vault);
     assert_eq!(
         vault_operator_list.operator_list()[0].operator(),
         restaking_test_config.operator
