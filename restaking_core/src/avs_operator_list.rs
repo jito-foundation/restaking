@@ -37,7 +37,7 @@ impl AvsOperator {
     }
 }
 
-/// The AVS operator list stores a list of validators in the AVS validator set
+/// The AVS operator list stores a list of operators the AVS has accepted
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct AvsOperatorList {
     /// The account type
@@ -65,6 +65,12 @@ impl AvsOperatorList {
             operators: vec![],
             reserved: [0; 1024],
         }
+    }
+
+    pub fn get_active_operator(&self, operator: &Pubkey, slot: u64) -> Option<&AvsOperator> {
+        self.operators
+            .iter()
+            .find(|a| a.operator() == *operator && a.state.is_active(slot))
     }
 
     pub fn add_operator(&mut self, operator: Pubkey, slot: u64) -> bool {

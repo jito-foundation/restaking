@@ -1,6 +1,6 @@
 use jito_restaking_core::{
     config::{Config, SanitizedConfig},
-    node_operator::{NodeOperator, SanitizedNodeOperator, SanitizedNodeOperatorVaultList},
+    operator::{Operator, SanitizedOperator, SanitizedOperatorVaultList},
 };
 use jito_restaking_sanitization::{
     assert_with_msg, signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
@@ -28,9 +28,9 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
     let config = SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
 
     let node_operator =
-        SanitizedNodeOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
 
-    let mut node_operator_vault_list = SanitizedNodeOperatorVaultList::sanitize(
+    let mut node_operator_vault_list = SanitizedOperatorVaultList::sanitize(
         program_id,
         next_account_info(accounts_iter)?,
         true,
@@ -54,7 +54,7 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
     )?;
 
     assert_with_msg(
-        node_operator.node_operator().admin() == *admin.account().key,
+        node_operator.operator().admin() == *admin.account().key,
         ProgramError::InvalidAccountData,
         "Admin is not the node operator admin",
     )?;
@@ -66,8 +66,8 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
         .map(|seed| seed.as_slice())
         .collect::<Vec<&[u8]>>();
 
-    let mut node_operator_seeds = NodeOperator::seeds(&node_operator.node_operator().base());
-    node_operator_seeds.push(vec![node_operator.node_operator().bump()]);
+    let mut node_operator_seeds = Operator::seeds(&node_operator.operator().base());
+    node_operator_seeds.push(vec![node_operator.operator().bump()]);
     let node_operator_seeds_slice = node_operator_seeds
         .iter()
         .map(|seed| seed.as_slice())
@@ -102,7 +102,7 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
 
     assert_with_msg(
         node_operator_vault_list
-            .node_operator_vault_list_mut()
+            .operator_vault_list_mut()
             .add_vault(*vault.key, clock.slot),
         ProgramError::InvalidAccountData,
         "Vault already exists in operator vault list",

@@ -2,7 +2,7 @@ use jito_restaking_core::{
     avs::SanitizedAvs,
     avs_operator_list::SanitizedAvsOperatorList,
     config::SanitizedConfig,
-    node_operator::{SanitizedNodeOperator, SanitizedNodeOperatorAvsList},
+    operator::{SanitizedNodeOperatorAvsList, SanitizedOperator},
 };
 use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
 use solana_program::{
@@ -33,7 +33,7 @@ pub fn process_avs_add_node_operator(
         avs.account().key,
     )?;
     let node_operator =
-        SanitizedNodeOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
     let node_operator_avs_list = SanitizedNodeOperatorAvsList::sanitize(
         program_id,
         next_account_info(accounts_iter)?,
@@ -53,7 +53,7 @@ pub fn process_avs_add_node_operator(
 
     assert_with_msg(
         node_operator_avs_list
-            .node_operator_avs_list()
+            .operator_avs_list()
             .contains_active_avs(avs.account().key, clock.slot),
         ProgramError::InvalidAccountData,
         "Node operator does not have AVS in AVS list",

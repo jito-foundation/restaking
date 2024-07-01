@@ -4,7 +4,7 @@ mod avs_add_vault_slasher;
 mod avs_deprecate_vault_slasher;
 mod avs_remove_operator;
 mod avs_remove_vault;
-mod get_max_slashable_per_epoch;
+mod avs_withdrawal_asset;
 mod initialize_avs;
 mod initialize_config;
 mod initialize_operator;
@@ -14,6 +14,7 @@ mod operator_remove_avs;
 mod operator_remove_vault;
 mod operator_set_admin;
 mod operator_set_voter;
+mod operator_withdrawal_asset;
 
 use borsh::BorshDeserialize;
 use jito_restaking_sdk::RestakingInstruction;
@@ -29,8 +30,7 @@ use crate::{
     avs_add_vault_slasher::process_avs_add_vault_slasher,
     avs_deprecate_vault_slasher::process_avs_deprecate_slasher,
     avs_remove_operator::process_avs_remove_node_operator,
-    avs_remove_vault::process_avs_remove_vault,
-    get_max_slashable_per_epoch::process_get_max_slashable_per_epoch,
+    avs_remove_vault::process_avs_remove_vault, avs_withdrawal_asset::process_avs_withdrawal_asset,
     initialize_avs::process_initialize_avs, initialize_config::process_initialize_config,
     initialize_operator::process_initialize_node_operator,
     operator_add_avs::process_operator_add_avs, operator_add_vault::process_operator_add_vault,
@@ -38,6 +38,7 @@ use crate::{
     operator_remove_vault::process_node_operator_remove_vault,
     operator_set_admin::process_set_node_operator_admin,
     operator_set_voter::process_set_node_operator_voter,
+    operator_withdrawal_asset::process_operator_withdrawal_asset,
 };
 
 declare_id!("E5YF9Um1mwQWHffqaUEUwtwnhQKsbMEt33qtvjto3NDZ");
@@ -129,9 +130,13 @@ pub fn process_instruction(
             msg!("Instruction: OperatorRemoveAvs");
             process_operator_remove_avs(program_id, accounts)
         }
-        RestakingInstruction::GetMaxSlashablePerEpoch(request) => {
-            msg!("Instruction: GetMaxSlashablePerEpoch");
-            process_get_max_slashable_per_epoch(program_id, accounts, request)
+        RestakingInstruction::AvsWithdrawalAsset { token_mint, amount } => {
+            msg!("Instruction: AvsWithdrawalAsset");
+            process_avs_withdrawal_asset(program_id, accounts, token_mint, amount)
+        }
+        RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
+            msg!("Instruction: OperatorWithdrawalAsset");
+            process_operator_withdrawal_asset(program_id, accounts, token_mint, amount)
         }
     }
 }

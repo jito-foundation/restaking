@@ -156,21 +156,19 @@ pub enum RestakingInstruction {
     #[account(4, writable, signer, name = "admin")]
     OperatorRemoveAvs,
 
-    /// Returns the max slashable for an epoch for the given slasher and vault
     #[account(0, name = "avs")]
-    #[account(1, name = "avs_slasher_list")]
-    GetMaxSlashablePerEpoch(GetMaxSlashablePerEpochRequest),
-}
+    #[account(1, signer, name = "admin")]
+    #[account(2, writable, name = "avs_token_account")]
+    #[account(3, writable, name = "receiver_token_account")]
+    #[account(4, name = "token_program")]
+    AvsWithdrawalAsset { token_mint: Pubkey, amount: u64 },
 
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-pub struct GetMaxSlashablePerEpochRequest {
-    pub slasher: Pubkey,
-    pub vault: Pubkey,
-}
-
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-pub struct GetMaxSlashablePerEpochResponse {
-    pub max_slashable_per_epoch: u64,
+    #[account(0, name = "operator")]
+    #[account(1, signer, name = "admin")]
+    #[account(2, writable, name = "operator_token_account")]
+    #[account(3, writable, name = "receiver_token_account")]
+    #[account(4, name = "token_program")]
+    OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
 }
 
 pub fn initialize_config(
@@ -367,27 +365,5 @@ pub fn operator_remove_vault(
         data: RestakingInstruction::OperatorRemoveVault
             .try_to_vec()
             .unwrap(),
-    }
-}
-
-pub fn get_max_slashable_per_epoch(
-    program_id: &Pubkey,
-    avs: &Pubkey,
-    avs_slasher_list: &Pubkey,
-    slasher: &Pubkey,
-    vault: &Pubkey,
-) -> Instruction {
-    Instruction {
-        program_id: *program_id,
-        accounts: vec![
-            AccountMeta::new_readonly(*avs, false),
-            AccountMeta::new_readonly(*avs_slasher_list, false),
-        ],
-        data: RestakingInstruction::GetMaxSlashablePerEpoch(GetMaxSlashablePerEpochRequest {
-            slasher: *slasher,
-            vault: *vault,
-        })
-        .try_to_vec()
-        .unwrap(),
     }
 }

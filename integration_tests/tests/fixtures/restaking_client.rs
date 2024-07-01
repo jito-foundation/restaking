@@ -4,7 +4,7 @@ use jito_restaking_core::{
     avs_operator_list::AvsOperatorList,
     avs_vault_list::AvsVaultList,
     config::Config,
-    node_operator::{NodeOperator, NodeOperatorAvsList, OperatorVaultList},
+    operator::{NodeOperatorAvsList, Operator, OperatorVaultList},
 };
 use jito_restaking_sdk::{
     avs_add_vault, avs_remove_vault, initialize_avs, initialize_config, initialize_operator,
@@ -54,12 +54,9 @@ impl RestakingProgramClient {
         Ok(AvsOperatorList::deserialize(&mut account.data.as_slice())?)
     }
 
-    pub async fn get_operator(
-        &mut self,
-        account: &Pubkey,
-    ) -> Result<NodeOperator, BanksClientError> {
+    pub async fn get_operator(&mut self, account: &Pubkey) -> Result<Operator, BanksClientError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(NodeOperator::deserialize(&mut account.data.as_slice())?)
+        Ok(Operator::deserialize(&mut account.data.as_slice())?)
     }
 
     pub async fn get_operator_vault_list(

@@ -212,6 +212,20 @@ impl VaultOperatorList {
         Ok(())
     }
 
+    pub fn slash(&mut self, operator: &Pubkey, amount: u64) -> Option<u64> {
+        if let Some(operator) = self
+            .operator_list
+            .iter_mut()
+            .find(|x| x.operator == *operator)
+        {
+            let slash_amount = operator.active_amount.min(amount);
+            operator.active_amount = operator.active_amount.checked_sub(slash_amount)?;
+            Some(slash_amount)
+        } else {
+            None
+        }
+    }
+
     /// Returns the total active + cooling down delegations
     pub fn total_delegation(&self) -> Option<u64> {
         let mut total: u64 = 0;

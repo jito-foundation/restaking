@@ -1,4 +1,4 @@
-use jito_restaking_core::node_operator::SanitizedNodeOperator;
+use jito_restaking_core::operator::SanitizedOperator;
 use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -18,17 +18,17 @@ pub fn process_set_node_operator_voter(
     let accounts_iter = &mut accounts.iter();
 
     let mut node_operator =
-        SanitizedNodeOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
     let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
     let voter = next_account_info(accounts_iter)?;
 
     assert_with_msg(
-        node_operator.node_operator().admin() == *admin.account().key,
+        node_operator.operator().admin() == *admin.account().key,
         ProgramError::InvalidAccountData,
         "Admin is not the node operator admin",
     )?;
 
-    node_operator.node_operator_mut().set_voter(*voter.key);
+    node_operator.operator_mut().set_voter(*voter.key);
 
     node_operator.save()?;
 

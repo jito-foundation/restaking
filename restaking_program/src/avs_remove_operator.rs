@@ -1,6 +1,6 @@
 use jito_restaking_core::{
     avs::SanitizedAvs, avs_operator_list::SanitizedAvsOperatorList, config::SanitizedConfig,
-    node_operator::SanitizedNodeOperator,
+    operator::SanitizedOperator,
 };
 use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
 use solana_program::{
@@ -30,7 +30,7 @@ pub fn process_avs_remove_node_operator(
         avs.account().key,
     )?;
     let node_operator =
-        SanitizedNodeOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
 
     let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
 

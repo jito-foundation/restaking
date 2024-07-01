@@ -22,6 +22,7 @@ default = []
 
 [dependencies]
 borsh = { workspace = true }
+jito-restaking-core = { workspace = true }
 jito-restaking-sanitization = { workspace = true }
 jito-restaking-sdk = { workspace = true }
 jito-vault-core = { workspace = true }

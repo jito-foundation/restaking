@@ -163,19 +163,22 @@ pub enum VaultInstruction {
     #[account(3, name = "slasher")]
     #[account(4, signer, name = "admin")]
     #[account(5, signer, writable, name = "payer")]
-    #[account(6, name = "restaking_program")]
-    #[account(7, name = "avs")]
-    #[account(8, name = "avs_slasher_list")]
+    #[account(6, name = "avs")]
+    #[account(7, name = "avs_slasher_list")]
     AddSlasher,
 
     /// Slashes an amount of tokens from the vault
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, name = "vault_slasher_list")]
     #[account(3, writable, name = "vault_operator_list")]
-    #[account(4, name = "avs")]
-    #[account(5, name = "operator")]
-    #[account(6, name = "slasher")]
+    #[account(4, writable, name = "vault_token_account")]
+    #[account(5, name = "avs")]
+    #[account(6, name = "avs_operator_list")]
+    #[account(7, name = "operator")]
+    #[account(8, signer, name = "slasher")]
+    #[account(9, name = "slasher_token_account")]
+    #[account(10, name = "token_program")]
     Slash {
         amount: u64
     },

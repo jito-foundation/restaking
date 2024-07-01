@@ -1,7 +1,7 @@
 use jito_restaking_core::{
     avs::SanitizedAvs,
     config::SanitizedConfig,
-    node_operator::{SanitizedNodeOperator, SanitizedNodeOperatorAvsList},
+    operator::{SanitizedNodeOperatorAvsList, SanitizedOperator},
 };
 use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
 use solana_program::{
@@ -23,7 +23,7 @@ pub fn process_operator_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     let _config = SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
     let node_operator =
-        SanitizedNodeOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
     let mut node_operator_avs_list = SanitizedNodeOperatorAvsList::sanitize(
         program_id,
         next_account_info(accounts_iter)?,
@@ -35,7 +35,7 @@ pub fn process_operator_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
     assert_with_msg(
-        node_operator.node_operator().admin() == *admin.account().key,
+        node_operator.operator().admin() == *admin.account().key,
         ProgramError::InvalidAccountData,
         "Admin is not the node operator admin",
     )?;
@@ -44,7 +44,7 @@ pub fn process_operator_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     assert_with_msg(
         node_operator_avs_list
-            .node_operator_avs_list_mut()
+            .operator_avs_list_mut()
             .add_avs(*avs.account().key, clock.slot),
         ProgramError::InvalidAccountData,
         "AVS already exists in node operator AVS list",

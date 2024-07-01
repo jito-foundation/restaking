@@ -81,6 +81,17 @@ impl VaultSlasherList {
         self.vault
     }
 
+    pub fn get_active_slasher(
+        &self,
+        slasher: &Pubkey,
+        avs: &Pubkey,
+        slot: u64,
+    ) -> Option<&VaultSlasher> {
+        self.slashers
+            .iter()
+            .find(|v| v.slasher == *slasher && v.avs == *avs && v.state.is_active(slot))
+    }
+
     /// Add a slasher to the list for a given AVS.
     ///
     /// # Arguments

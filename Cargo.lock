@@ -1941,6 +1941,7 @@ name = "jito-vault-program"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "jito-restaking-core",
  "jito-restaking-sanitization",
  "jito-restaking-sdk",
  "jito-vault-core",

@@ -1,7 +1,7 @@
 use borsh::BorshSerialize;
 use jito_restaking_core::{
     config::SanitizedConfig,
-    node_operator::{NodeOperator, NodeOperatorAvsList, OperatorVaultList},
+    operator::{NodeOperatorAvsList, Operator, OperatorVaultList},
 };
 use jito_restaking_sanitization::{
     assert_with_msg, create_account, signer::SanitizedSignerAccount,
@@ -70,7 +70,7 @@ pub fn process_initialize_node_operator(
     let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
     let (expected_node_operator_pubkey, node_operator_bump, mut node_operator_seeds) =
-        NodeOperator::find_program_address(program_id, base.account().key);
+        Operator::find_program_address(program_id, base.account().key);
     node_operator_seeds.push(vec![node_operator_bump]);
     assert_with_msg(
         expected_node_operator_pubkey == *node_operator_account.key,
@@ -102,7 +102,7 @@ pub fn process_initialize_node_operator(
         "Node operator vault list account is not at the correct PDA",
     )?;
 
-    let node_operator = NodeOperator::new(
+    let node_operator = Operator::new(
         *base.account().key,
         *admin.account().key,
         *admin.account().key,
