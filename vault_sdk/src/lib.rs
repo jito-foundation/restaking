@@ -82,12 +82,13 @@ pub enum VaultInstruction {
     /// Mints LRT by depositing tokens into the vault
     #[account(0, writable, name = "vault")]
     #[account(1, writable, name = "lrt_mint")]
-    #[account(2, writable, signer, name = "source_owner")]
-    #[account(3, writable, name = "source_token_account")]
-    #[account(4, writable, name = "dest_token_account")]
-    #[account(5, writable, name = "lrt_receiver")]
-    #[account(6, name = "token_program")]
-    #[account(7, signer, optional, name = "mint_signer", description = "Signer for minting")]
+    #[account(2, writable, signer, name = "depositor")]
+    #[account(3, writable, name = "depositor_token_account")]
+    #[account(4, writable, name = "vault_token_account")]
+    #[account(5, writable, name = "depositor_lrt_token_account")]
+    #[account(6, writable, name = "vault_fee_token_account")]
+    #[account(7, name = "token_program")]
+    #[account(8, signer, optional, name = "mint_signer", description = "Signer for minting")]
     MintTo {
         amount: u64
     },
@@ -358,10 +359,11 @@ pub fn mint_to(
     program_id: &Pubkey,
     vault: &Pubkey,
     lrt_mint: &Pubkey,
-    source_owner: &Pubkey,
-    source_token_account: &Pubkey,
-    dest_token_account: &Pubkey,
-    lrt_receiver: &Pubkey,
+    depositor: &Pubkey,
+    depositor_token_account: &Pubkey,
+    vault_token_account: &Pubkey,
+    depositor_lrt_token_account: &Pubkey,
+    vault_fee_token_account: &Pubkey,
     amount: u64,
 ) -> Instruction {
     Instruction {
@@ -369,10 +371,11 @@ pub fn mint_to(
         accounts: vec![
             AccountMeta::new(*vault, false),
             AccountMeta::new(*lrt_mint, false),
-            AccountMeta::new(*source_owner, true),
-            AccountMeta::new(*source_token_account, false),
-            AccountMeta::new(*dest_token_account, false),
-            AccountMeta::new(*lrt_receiver, false),
+            AccountMeta::new(*depositor, true),
+            AccountMeta::new(*depositor_token_account, false),
+            AccountMeta::new(*vault_token_account, false),
+            AccountMeta::new(*depositor_lrt_token_account, false),
+            AccountMeta::new(*vault_fee_token_account, false),
             AccountMeta::new_readonly(spl_token::id(), false),
         ],
         data: VaultInstruction::MintTo { amount }.try_to_vec().unwrap(),

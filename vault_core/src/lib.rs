@@ -1,6 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 pub mod config;
+pub mod result;
 pub mod vault;
 pub mod vault_avs_list;
 pub mod vault_operator_list;

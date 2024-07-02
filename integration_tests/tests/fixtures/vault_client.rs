@@ -3,16 +3,10 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_avs_list::VaultAvsList,
     vault_operator_list::VaultOperatorList,
 };
-use jito_vault_sdk::{
-    add_delegation, initialize_config, initialize_vault, mint_to, remove_delegation,
-};
+use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault, remove_delegation};
 use solana_program::pubkey::Pubkey;
 use solana_program_test::{BanksClient, BanksClientError};
-use solana_sdk::{
-    commitment_config::CommitmentLevel,
-    signature::{Keypair, Signer},
-    transaction::Transaction,
-};
+use solana_sdk::{commitment_config::CommitmentLevel, signature::Signer, transaction::Transaction};
 use spl_associated_token_account::instruction::create_associated_token_account_idempotent;
 
 use crate::fixtures::{
@@ -113,36 +107,38 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn mint(
-        &mut self,
-        lrt: &Pubkey,
-        lrt_mint: &Pubkey,
-        source_owner: &Pubkey,
-        source_token_account: &Pubkey,
-        dest_token_account: &Pubkey,
-        lrt_receiver: &Pubkey,
-        amount: u64,
-        signer: &Keypair,
-    ) -> Result<(), BanksClientError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
-
-        self.process_transaction(&Transaction::new_signed_with_payer(
-            &[mint_to(
-                &jito_vault_program::id(),
-                lrt,
-                lrt_mint,
-                source_owner,
-                source_token_account,
-                dest_token_account,
-                lrt_receiver,
-                amount,
-            )],
-            Some(&signer.pubkey()),
-            &[&signer],
-            blockhash,
-        ))
-        .await
-    }
+    // pub async fn mint(
+    //     &mut self,
+    //     vault_config: VaultTestConfig
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[mint_to(
+    //             program_id: &Pubkey,
+    //             vault: &Pubkey,
+    //             lrt_mint: &Pubkey,
+    //             depositor: &Pubkey,
+    //             depositor_token_account: &Pubkey,
+    //             vault_token_account: &Pubkey,
+    //             depositor_lrt_token_account: &Pubkey,
+    //             vault_fee_token_account: &Pubkey,
+    //             amount: u64,
+    //             &jito_vault_program::id(),
+    //             lrt,
+    //             lrt_mint,
+    //             source_owner,
+    //             source_token_account,
+    //             dest_token_account,
+    //             lrt_receiver,
+    //             amount,
+    //         )],
+    //         Some(&signer.pubkey()),
+    //         &[&signer],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
 
     pub async fn add_delegation(
         &mut self,

@@ -13,7 +13,15 @@ impl<'a, 'info> SanitizedTokenMint<'a, 'info> {
     /// Sanitizes the TokenMint so it can be used in a safe context
     pub fn sanitize(
         account: &'a AccountInfo<'info>,
+        expect_writable: bool,
     ) -> Result<SanitizedTokenMint<'a, 'info>, ProgramError> {
+        if expect_writable {
+            assert_with_msg(
+                account.is_writable,
+                ProgramError::InvalidAccountData,
+                "Invalid writable flag for token mint",
+            )?;
+        }
         let mint = Mint::unpack(&account.data.borrow());
 
         assert_with_msg(
@@ -77,7 +85,7 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        let err = SanitizedTokenMint::sanitize(&account_info).unwrap_err();
+        let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
         assert_matches!(err, ProgramError::InvalidAccountData);
     }
 
@@ -107,7 +115,7 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        let err = SanitizedTokenMint::sanitize(&account_info).unwrap_err();
+        let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
 
         assert_matches!(err, ProgramError::InvalidAccountData);
     }
@@ -130,7 +138,7 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        let err = SanitizedTokenMint::sanitize(&account_info).unwrap_err();
+        let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
         assert_matches!(err, ProgramError::InvalidAccountData);
     }
 
@@ -160,7 +168,7 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        let err = SanitizedTokenMint::sanitize(&account_info).unwrap_err();
+        let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
         assert_matches!(err, ProgramError::InvalidAccountData);
     }
 
@@ -190,6 +198,6 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        SanitizedTokenMint::sanitize(&account_info).unwrap();
+        SanitizedTokenMint::sanitize(&account_info, false).unwrap();
     }
 }

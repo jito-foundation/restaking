@@ -1,5 +1,6 @@
 pub mod associated_token_account;
 pub mod associated_token_program;
+pub mod empty_account;
 pub mod signer;
 pub mod system_program;
 pub mod token_account;
