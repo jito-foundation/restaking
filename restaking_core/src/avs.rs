@@ -85,6 +85,10 @@ impl Avs {
         self.admin
     }
 
+    pub fn set_admin(&mut self, admin: Pubkey) {
+        self.admin = admin;
+    }
+
     /// Check if the provided pubkey is the admin of the AVS
     pub fn check_admin(&self, admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.admin != *admin {
@@ -95,6 +99,10 @@ impl Avs {
 
     pub const fn operator_admin(&self) -> Pubkey {
         self.operator_admin
+    }
+
+    pub fn set_operator_admin(&mut self, operator_admin: Pubkey) {
+        self.operator_admin = operator_admin;
     }
 
     /// Check if the provided pubkey is the operator admin of the AVS
@@ -109,6 +117,10 @@ impl Avs {
         self.vault_admin
     }
 
+    pub fn set_vault_admin(&mut self, vault_admin: Pubkey) {
+        self.vault_admin = vault_admin;
+    }
+
     /// Check if the provided pubkey is the vault admin of the AVS
     pub fn check_vault_admin(&self, vault_admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.vault_admin != *vault_admin {
@@ -121,6 +133,10 @@ impl Avs {
         self.slasher_admin
     }
 
+    pub fn set_slasher_admin(&mut self, slasher_admin: Pubkey) {
+        self.slasher_admin = slasher_admin;
+    }
+
     /// Check if the provided pubkey is the slasher admin of the AVS
     pub fn check_slasher_admin(&self, slasher_admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.slasher_admin != *slasher_admin {
@@ -131,6 +147,10 @@ impl Avs {
 
     pub const fn withdraw_admin(&self) -> Pubkey {
         self.withdraw_admin
+    }
+
+    pub fn set_withdraw_admin(&mut self, withdraw_admin: Pubkey) {
+        self.withdraw_admin = withdraw_admin;
     }
 
     /// Check if the provided pubkey is the withdraw admin of the AVS

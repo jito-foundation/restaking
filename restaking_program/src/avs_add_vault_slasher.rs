@@ -30,7 +30,7 @@ pub fn process_avs_add_vault_slasher(
         payer,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    avs.avs().check_vault_admin(admin.account().key)?;
+    avs.avs().check_slasher_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
     avs_vault_list

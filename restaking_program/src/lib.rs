@@ -4,6 +4,8 @@ mod avs_add_vault_slasher;
 mod avs_deprecate_vault_slasher;
 mod avs_remove_operator;
 mod avs_remove_vault;
+mod avs_set_admin;
+mod avs_set_secondary_admin;
 mod avs_withdrawal_asset;
 mod initialize_avs;
 mod initialize_config;
@@ -30,6 +32,7 @@ use crate::{
     avs_add_vault_slasher::process_avs_add_vault_slasher,
     avs_deprecate_vault_slasher::process_avs_deprecate_slasher,
     avs_remove_operator::process_avs_remove_operator, avs_remove_vault::process_avs_remove_vault,
+    avs_set_admin::process_avs_set_admin, avs_set_secondary_admin::process_avs_set_secondary_admin,
     avs_withdrawal_asset::process_avs_withdrawal_asset, initialize_avs::process_initialize_avs,
     initialize_config::process_initialize_config, initialize_operator::process_initialize_operator,
     operator_add_avs::process_operator_add_avs, operator_add_vault::process_operator_add_vault,
@@ -100,6 +103,14 @@ pub fn process_instruction(
         RestakingInstruction::AvsDeprecateVaultSlasher => {
             msg!("Instruction: AvsDeprecateVaultSlasher");
             process_avs_deprecate_slasher(program_id, accounts)
+        }
+        RestakingInstruction::AvsSetAdmin => {
+            msg!("Instruction: AvsSetAdmin");
+            process_avs_set_admin(program_id, accounts)
+        }
+        RestakingInstruction::AvsSetSecondaryAdmin(role) => {
+            msg!("Instruction: AvsSetSecondaryAdmin");
+            process_avs_set_secondary_admin(program_id, accounts, role)
         }
         RestakingInstruction::InitializeOperator => {
             msg!("Instruction: InitializeNodeOperator");

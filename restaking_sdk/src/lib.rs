@@ -87,6 +87,16 @@ pub enum RestakingInstruction {
     #[account(5, writable, signer, name = "admin")]
     AvsDeprecateVaultSlasher,
 
+    #[account(0, writable, name = "avs")]
+    #[account(1, signer, name = "old_admin")]
+    #[account(2, signer, name = "new_admin")]
+    AvsSetAdmin,
+
+    #[account(0, writable, name = "avs")]
+    #[account(1, signer, name = "admin")]
+    #[account(2, name = "new_admin")]
+    AvsSetSecondaryAdmin(AvsAdminRole),
+
     /// Initializes a operator
     #[account(0, writable, name = "config")]
     #[account(1, writable, name = "operator")]
@@ -158,6 +168,14 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "receiver_token_account")]
     #[account(4, name = "token_program")]
     OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+pub enum AvsAdminRole {
+    Operator,
+    Vault,
+    Slasher,
+    Withdraw,
 }
 
 pub fn initialize_config(
