@@ -28,43 +28,39 @@ pub enum RestakingInstruction {
 
     /// AVS adds support for receiving delegation from a vault
     #[account(0, name = "config")]
-    #[account(1, writable, name = "avs")]
+    #[account(1, name = "avs")]
     #[account(2, writable, name = "avs_vault_list")]
-    #[account(3, writable, signer, name = "admin")]
-    #[account(4, name = "vault_program")]
-    #[account(5, name = "vault")]
-    #[account(6, name = "vault_config")]
-    #[account(7, writable, name = "vault_avs_list")]
-    #[account(8, writable, signer, name = "payer")]
-    #[account(9, name = "system_program")]
+    #[account(3, signer, name = "admin")]
+    #[account(4, name = "vault")]
+    #[account(5, writable, signer, name = "payer")]
+    #[account(6, name = "system_program")]
     AvsAddVault,
 
     /// AVS removes support for receiving delegation from a vault
     #[account(0, name = "config")]
-    #[account(1, writable, name = "avs")]
+    #[account(1, name = "avs")]
     #[account(2, writable, name = "avs_vault_list")]
-    #[account(3, writable, signer, name = "admin")]
-    #[account(4, name = "vault_program")]
-    #[account(5, name = "vault")]
-    #[account(6, name = "vault_config")]
-    #[account(7, writable, name = "vault_avs_list")]
-    #[account(8, writable, signer, name = "payer")]
-    #[account(9, name = "system_program")]
+    #[account(3, signer, name = "admin")]
+    #[account(4, name = "vault")]
     AvsRemoveVault,
 
+    /// After the operator has signaled they are ready to join the network,
+    /// the AVS admin can add the operator to the AVS
     #[account(0, name = "config")]
     #[account(1, name = "avs")]
     #[account(2, writable, name = "avs_operator_list")]
-    #[account(3, name = "node_operator")]
-    #[account(4, writable, name = "node_operator_avs_list")]
-    #[account(5, writable, signer, name = "admin")]
+    #[account(3, name = "operator")]
+    #[account(4, name = "operator_avs_list")]
+    #[account(5, signer, name = "admin")]
+    #[account(6, writable, signer, name = "payer")]
+    #[account(7, name = "system_program")]
     AvsAddOperator,
 
     #[account(0, name = "config")]
     #[account(1, name = "avs")]
     #[account(2, writable, name = "avs_operator_list")]
-    #[account(3, name = "node_operator")]
-    #[account(4, writable, signer, name = "admin")]
+    #[account(3, name = "operator")]
+    #[account(4, signer, name = "admin")]
     AvsRemoveOperator,
 
     /// The AVS adds support for a vault slasher
@@ -85,18 +81,17 @@ pub enum RestakingInstruction {
     /// AVS removes support for a slasher
     #[account(0, name = "config")]
     #[account(1, name = "avs")]
-    #[account(2, name = "avs_vault_list")]
-    #[account(3, writable, name = "avs_slasher_list")]
-    #[account(4, name = "vault")]
-    #[account(5, name = "slasher")]
-    #[account(6, writable, signer, name = "admin")]
+    #[account(2, writable, name = "avs_slasher_list")]
+    #[account(3, name = "vault")]
+    #[account(4, name = "slasher")]
+    #[account(5, writable, signer, name = "admin")]
     AvsDeprecateVaultSlasher,
 
     /// Initializes a operator
     #[account(0, writable, name = "config")]
-    #[account(1, writable, name = "node_operator")]
-    #[account(2, writable, name = "node_operator_avs_list")]
-    #[account(3, writable, name = "node_operator_vault_list")]
+    #[account(1, writable, name = "operator")]
+    #[account(2, writable, name = "operator_avs_list")]
+    #[account(3, writable, name = "operator_vault_list")]
     #[account(4, writable, signer, name = "admin")]
     #[account(5, signer, name = "base")]
     #[account(6, name = "system_program")]
@@ -114,52 +109,46 @@ pub enum RestakingInstruction {
     #[account(2, name = "voter")]
     OperatorSetVoter,
 
-    /// Node operator adds support for receiving delegation from a vault
+    /// Operator adds support for receiving delegation from a vault
     #[account(0, name = "config")]
-    #[account(1, writable, name = "node_operator")]
-    #[account(2, writable, name = "node_operator_vault_list")]
-    #[account(3, writable, signer, name = "admin")]
-    #[account(4, name = "vault_program")]
-    #[account(5, name = "vault")]
-    #[account(6, name = "vault_config")]
-    #[account(7, writable, name = "vault_operator_list")]
-    #[account(8, writable, signer, name = "payer")]
-    #[account(9, name = "system_program")]
+    #[account(1, name = "operator")]
+    #[account(2, writable, name = "operator_vault_list")]
+    #[account(3, signer, name = "admin")]
+    #[account(4, name = "vault")]
+    #[account(5, writable, signer, name = "payer")]
+    #[account(6, name = "system_program")]
     OperatorAddVault,
 
     /// Node operator removes support for receiving delegation from a vault
     #[account(0, name = "config")]
-    #[account(1, writable, name = "node_operator")]
-    #[account(2, writable, name = "node_operator_vault_list")]
-    #[account(3, writable, signer, name = "admin")]
-    #[account(4, name = "vault_program")]
-    #[account(5, name = "vault")]
-    #[account(6, name = "vault_config")]
-    #[account(7, writable, name = "vault_operator_list")]
-    #[account(8, writable, signer, name = "payer")]
-    #[account(9, name = "system_program")]
+    #[account(1, name = "operator")]
+    #[account(2, writable, name = "operator_vault_list")]
+    #[account(3, signer, name = "admin")]
+    #[account(4, name = "vault")]
     OperatorRemoveVault,
 
     /// Node operator adds support for running an AVS
     #[account(0, name = "config")]
-    #[account(1, name = "node_operator")]
-    #[account(2, writable, name = "node_operator_avs_list")]
+    #[account(1, name = "operator")]
+    #[account(2, writable, name = "operator_avs_list")]
     #[account(3, name = "avs")]
-    #[account(4, writable, signer, name = "admin")]
+    #[account(4, signer, name = "admin")]
+    #[account(5, writable, signer, name = "payer")]
+    #[account(6, name = "system_program")]
     OperatorAddAvs,
 
     /// Node operator removes support for running an AVS
     #[account(0, name = "config")]
-    #[account(1, name = "node_operator")]
-    #[account(2, writable, name = "node_operator_avs_list")]
+    #[account(1, name = "operator")]
+    #[account(2, writable, name = "operator_avs_list")]
     #[account(3, name = "avs")]
     #[account(4, writable, signer, name = "admin")]
     OperatorRemoveAvs,
 
     #[account(0, name = "avs")]
-    #[account(1, signer, name = "admin")]
-    #[account(2, writable, name = "avs_token_account")]
-    #[account(3, writable, name = "receiver_token_account")]
+    #[account(1, writable, name = "avs_token_account")]
+    #[account(2, writable, name = "receiver_token_account")]
+    #[account(3, signer, name = "admin")]
     #[account(4, name = "token_program")]
     AvsWithdrawalAsset { token_mint: Pubkey, amount: u64 },
 
@@ -223,23 +212,17 @@ pub fn avs_add_vault(
     avs: &Pubkey,
     avs_vault_list: &Pubkey,
     admin: &Pubkey,
-    vault_program: &Pubkey,
     vault: &Pubkey,
-    vault_config: &Pubkey,
-    vault_avs_list: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     Instruction {
         program_id: *program_id,
         accounts: vec![
             AccountMeta::new(*config, false),
-            AccountMeta::new(*avs, false),
+            AccountMeta::new_readonly(*avs, false),
             AccountMeta::new(*avs_vault_list, false),
-            AccountMeta::new(*admin, true),
-            AccountMeta::new_readonly(*vault_program, false),
+            AccountMeta::new_readonly(*admin, true),
             AccountMeta::new_readonly(*vault, false),
-            AccountMeta::new_readonly(*vault_config, false),
-            AccountMeta::new(*vault_avs_list, false),
             AccountMeta::new(*payer, true),
             AccountMeta::new_readonly(system_program::id(), false),
         ],
@@ -254,11 +237,7 @@ pub fn avs_remove_vault(
     avs: &Pubkey,
     avs_vault_list: &Pubkey,
     admin: &Pubkey,
-    vault_program: &Pubkey,
     vault: &Pubkey,
-    vault_config: &Pubkey,
-    vault_avs_list: &Pubkey,
-    payer: &Pubkey,
 ) -> Instruction {
     Instruction {
         program_id: *program_id,
@@ -267,12 +246,7 @@ pub fn avs_remove_vault(
             AccountMeta::new(*avs, false),
             AccountMeta::new(*avs_vault_list, false),
             AccountMeta::new(*admin, true),
-            AccountMeta::new_readonly(*vault_program, false),
             AccountMeta::new_readonly(*vault, false),
-            AccountMeta::new_readonly(*vault_config, false),
-            AccountMeta::new(*vault_avs_list, false),
-            AccountMeta::new(*payer, true),
-            AccountMeta::new_readonly(system_program::id(), false),
         ],
         data: RestakingInstruction::AvsRemoveVault.try_to_vec().unwrap(),
     }
@@ -311,10 +285,7 @@ pub fn operator_add_vault(
     operator: &Pubkey,
     operator_vault_list: &Pubkey,
     admin: &Pubkey,
-    vault_program: &Pubkey,
     vault: &Pubkey,
-    vault_config: &Pubkey,
-    vault_operator_list: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     Instruction {
@@ -324,10 +295,7 @@ pub fn operator_add_vault(
             AccountMeta::new(*operator, false),
             AccountMeta::new(*operator_vault_list, false),
             AccountMeta::new(*admin, true),
-            AccountMeta::new_readonly(*vault_program, false),
             AccountMeta::new_readonly(*vault, false),
-            AccountMeta::new_readonly(*vault_config, false),
-            AccountMeta::new(*vault_operator_list, false),
             AccountMeta::new(*payer, true),
             AccountMeta::new_readonly(system_program::id(), false),
         ],

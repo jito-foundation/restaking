@@ -1,4 +1,4 @@
-use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
+use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use jito_vault_core::vault::SanitizedVault;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -12,21 +12,32 @@ pub fn process_set_capacity(
     accounts: &[AccountInfo],
     capacity: u64,
 ) -> ProgramResult {
-    let mut accounts_iter = accounts.iter();
+    let SanitizedAccounts { mut vault, admin } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let mut lrt_account =
-        SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-
-    let admin = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-
-    assert_with_msg(
-        *admin.account().key == lrt_account.vault().admin(),
-        ProgramError::InvalidAccountData,
-        "Admin account does not match LRT admin",
-    )?;
-
-    lrt_account.vault_mut().set_capacity(capacity);
-    lrt_account.save()?;
+    vault.vault().check_admin(admin.account().key)?;
+    vault.vault_mut().set_capacity(capacity);
+    vault.save()?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    vault: SanitizedVault<'a, 'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let mut accounts_iter = accounts.iter();
+
+        let vault =
+            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
+        let admin =
+            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+
+        Ok(SanitizedAccounts { vault, admin })
+    }
 }

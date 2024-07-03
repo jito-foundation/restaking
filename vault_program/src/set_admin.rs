@@ -1,4 +1,4 @@
-use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
+use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use jito_vault_core::vault::SanitizedVault;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -9,24 +9,43 @@ use solana_program::{
 
 /// Processes the set admin instruction: [`crate::VaultInstruction::SetAdmin`]
 pub fn process_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let mut accounts_iter = accounts.iter();
+    let SanitizedAccounts {
+        old_admin,
+        new_admin,
+        mut vault,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let mut vault =
-        SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-    let old_admin =
-        SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-    let new_admin =
-        SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-
-    assert_with_msg(
-        *old_admin.account().key == vault.vault().admin(),
-        ProgramError::InvalidAccountData,
-        "Old admin account does not match vault admin",
-    )?;
-
+    vault.vault().check_admin(old_admin.account().key)?;
     vault.vault_mut().set_admin(*new_admin.account().key);
-
     vault.save()?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    old_admin: SanitizedSignerAccount<'a, 'info>,
+    new_admin: SanitizedSignerAccount<'a, 'info>,
+    vault: SanitizedVault<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let mut accounts_iter = accounts.iter();
+
+        let vault =
+            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
+        let old_admin =
+            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+        let new_admin =
+            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+
+        Ok(SanitizedAccounts {
+            old_admin,
+            new_admin,
+            vault,
+        })
+    }
 }

@@ -1,6 +1,6 @@
-use solana_program::{account_info::AccountInfo, program_error::ProgramError};
+use solana_program::account_info::AccountInfo;
 
-use crate::assert_with_msg;
+use crate::result::{SanitizationError, SanitizationResult};
 
 #[derive(Debug)]
 pub struct SanitizedSignerAccount<'a, 'info> {
@@ -9,22 +9,16 @@ pub struct SanitizedSignerAccount<'a, 'info> {
 
 impl<'a, 'info> SanitizedSignerAccount<'a, 'info> {
     /// Sanitizes the SignerAccount so it can be used in a safe context
-    pub fn sanitize(
+    pub const fn sanitize(
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<SanitizedSignerAccount<'a, 'info>, ProgramError> {
-        assert_with_msg(
-            account.is_signer,
-            ProgramError::InvalidAccountData,
-            "Signer account is not a signer",
-        )?;
+    ) -> SanitizationResult<SanitizedSignerAccount<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(SanitizationError::SignerExpectedWritable);
+        }
 
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for signer",
-            )?;
+        if !account.is_signer {
+            return Err(SanitizationError::SignerNotSigner);
         }
 
         Ok(SanitizedSignerAccount { account })
@@ -38,11 +32,9 @@ impl<'a, 'info> SanitizedSignerAccount<'a, 'info> {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use solana_program::{
-        account_info::AccountInfo, clock::Epoch, program_error::ProgramError, pubkey::Pubkey,
-    };
+    use solana_program::{account_info::AccountInfo, clock::Epoch, pubkey::Pubkey};
 
-    use crate::signer::SanitizedSignerAccount;
+    use crate::{result::SanitizationError, signer::SanitizedSignerAccount};
 
     #[test]
     fn test_not_signer_fails() {
@@ -63,7 +55,7 @@ mod tests {
         );
         let err = SanitizedSignerAccount::sanitize(&account_info, false).unwrap_err();
 
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::SignerNotSigner);
     }
 
     #[test]
@@ -84,6 +76,6 @@ mod tests {
             Epoch::MAX,
         );
         let err = SanitizedSignerAccount::sanitize(&account_info, true).unwrap_err();
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::SignerExpectedWritable);
     }
 }

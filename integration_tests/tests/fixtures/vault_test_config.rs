@@ -8,7 +8,6 @@ use solana_sdk::signature::{Keypair, Signer};
 pub struct VaultTestConfig {
     pub config: Pubkey,
     pub config_admin: Keypair,
-    pub restaking_program_signer: Pubkey,
     pub vault_base: Keypair,
     pub vault: Pubkey,
     pub vault_avs_list: Pubkey,
@@ -26,7 +25,6 @@ impl Clone for VaultTestConfig {
         Self {
             config: self.config,
             config_admin: self.config_admin.insecure_clone(),
-            restaking_program_signer: self.restaking_program_signer,
             vault_base: self.vault_base.insecure_clone(),
             vault: self.vault,
             vault_avs_list: self.vault_avs_list,
@@ -42,7 +40,7 @@ impl Clone for VaultTestConfig {
 }
 
 impl VaultTestConfig {
-    pub fn new_random(restaking_program_signer: Pubkey) -> Self {
+    pub fn new_random() -> Self {
         let vault_base = Keypair::new();
         let vault = Vault::find_program_address(&jito_vault_program::id(), &vault_base.pubkey()).0;
         let vault_avs_list =
@@ -55,7 +53,6 @@ impl VaultTestConfig {
         Self {
             config: Config::find_program_address(&jito_vault_program::id()).0,
             config_admin: Keypair::new(),
-            restaking_program_signer,
             vault_base,
             vault,
             vault_avs_list,

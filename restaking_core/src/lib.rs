@@ -6,6 +6,7 @@ pub mod avs_slasher_list;
 pub mod avs_vault_list;
 pub mod config;
 pub mod operator;
+mod result;
 pub mod vault;
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
@@ -16,7 +17,7 @@ pub enum AccountType {
     AvsOperatorList = 2,
     AvsVaultList = 3,
     AvsSlasherList = 4,
-    NodeOperator = 5,
-    NodeOperatorAvsList = 6,
-    NodeOperatorVaultList = 7,
+    Operator = 5,
+    OperatorAvsList = 6,
+    OperatorVaultList = 7,
 }

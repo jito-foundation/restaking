@@ -6,7 +6,10 @@ use solana_program::{
     pubkey::Pubkey, rent::Rent,
 };
 
-use crate::AccountType;
+use crate::{
+    result::{RestakingCoreError, RestakingCoreResult},
+    AccountType,
+};
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct AvsOperator {
@@ -73,19 +76,33 @@ impl AvsOperatorList {
             .find(|a| a.operator() == *operator && a.state.is_active(slot))
     }
 
-    pub fn add_operator(&mut self, operator: Pubkey, slot: u64) -> bool {
+    pub fn add_operator(&mut self, operator: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_operator = self.operators.iter_mut().find(|a| a.operator() == operator);
         if let Some(operator) = maybe_operator {
-            operator.state.activate(slot)
+            let activated = operator.state.activate(slot);
+            if activated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::OperatorAlreadyAdded)
+            }
         } else {
             self.operators.push(AvsOperator::new(operator, slot));
-            true
+            Ok(())
         }
     }
 
-    pub fn remove_operator(&mut self, operator: Pubkey, slot: u64) -> bool {
+    pub fn remove_operator(&mut self, operator: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_operator = self.operators.iter_mut().find(|a| a.operator() == operator);
-        maybe_operator.map_or(false, |operator| operator.state.deactivate(slot))
+        if let Some(operator) = maybe_operator {
+            let deactivated = operator.state.deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::OperatorAlreadyRemoved)
+            }
+        } else {
+            Err(RestakingCoreError::OperatorNotFound)
+        }
     }
 
     pub const fn avs(&self) -> Pubkey {

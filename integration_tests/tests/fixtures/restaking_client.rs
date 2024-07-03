@@ -4,7 +4,7 @@ use jito_restaking_core::{
     avs_operator_list::AvsOperatorList,
     avs_vault_list::AvsVaultList,
     config::Config,
-    operator::{NodeOperatorAvsList, Operator, OperatorVaultList},
+    operator::{Operator, OperatorAvsList, OperatorVaultList},
 };
 use jito_restaking_sdk::{
     avs_add_vault, avs_remove_vault, initialize_avs, initialize_config, initialize_operator,
@@ -23,7 +23,7 @@ pub struct RestakingProgramClient {
 }
 
 impl RestakingProgramClient {
-    pub fn new(banks_client: BanksClient) -> Self {
+    pub const fn new(banks_client: BanksClient) -> Self {
         Self { banks_client }
     }
 
@@ -72,11 +72,9 @@ impl RestakingProgramClient {
     pub async fn get_operator_avs_list(
         &mut self,
         account: &Pubkey,
-    ) -> Result<NodeOperatorAvsList, BanksClientError> {
+    ) -> Result<OperatorAvsList, BanksClientError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(NodeOperatorAvsList::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(OperatorAvsList::deserialize(&mut account.data.as_slice())?)
     }
 
     pub async fn initialize_config(
@@ -139,10 +137,7 @@ impl RestakingProgramClient {
                 &restaking_test_config.avs,
                 &restaking_test_config.avs_vault_list,
                 &restaking_test_config.avs_admin.pubkey(),
-                &jito_vault_program::id(),
                 &vault_test_config.vault,
-                &vault_test_config.config,
-                &vault_test_config.vault_avs_list,
                 &restaking_test_config.avs_admin.pubkey(),
             )],
             Some(&restaking_test_config.avs_admin.pubkey()),
@@ -166,11 +161,7 @@ impl RestakingProgramClient {
                 &restaking_test_config.avs,
                 &restaking_test_config.avs_vault_list,
                 &restaking_test_config.avs_admin.pubkey(),
-                &jito_vault_program::id(),
                 &vault_test_config.vault,
-                &vault_test_config.config,
-                &vault_test_config.vault_avs_list,
-                &restaking_test_config.avs_admin.pubkey(),
             )],
             Some(&restaking_test_config.avs_admin.pubkey()),
             &[&restaking_test_config.avs_admin],
@@ -219,10 +210,7 @@ impl RestakingProgramClient {
                 &restaking_test_config.operator,
                 &restaking_test_config.operator_vault_list,
                 &restaking_test_config.operator_admin.pubkey(),
-                &jito_vault_program::id(),
                 &vault_test_config.vault,
-                &vault_test_config.config,
-                &vault_test_config.vault_operator_list,
                 &restaking_test_config.operator_admin.pubkey(),
             )],
             Some(&restaking_test_config.operator_admin.pubkey()),
@@ -260,12 +248,11 @@ impl RestakingProgramClient {
     }
 
     pub async fn process_transaction(&mut self, tx: &Transaction) -> Result<(), BanksClientError> {
-        Ok(self
-            .banks_client
+        self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),
                 CommitmentLevel::Processed,
             )
-            .await?)
+            .await
     }
 }

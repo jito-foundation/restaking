@@ -5,7 +5,10 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-use crate::AccountType;
+use crate::{
+    result::{RestakingCoreError, RestakingCoreResult},
+    AccountType,
+};
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct Avs {
@@ -18,6 +21,18 @@ pub struct Avs {
     /// The admin of the AVS
     admin: Pubkey,
 
+    /// The operator admin of the AVS
+    operator_admin: Pubkey,
+
+    /// The vault admin of the AVS
+    vault_admin: Pubkey,
+
+    /// The slasher admin of the AVS
+    slasher_admin: Pubkey,
+
+    /// The withdraw admin of the AVS
+    withdraw_admin: Pubkey,
+
     /// The index of the AVS
     avs_index: u64,
 
@@ -29,11 +44,25 @@ pub struct Avs {
 }
 
 impl Avs {
-    pub const fn new(base: Pubkey, admin: Pubkey, avs_index: u64, bump: u8) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub const fn new(
+        base: Pubkey,
+        admin: Pubkey,
+        operator_admin: Pubkey,
+        vault_admin: Pubkey,
+        slasher_admin: Pubkey,
+        withdraw_admin: Pubkey,
+        avs_index: u64,
+        bump: u8,
+    ) -> Self {
         Self {
             account_type: AccountType::Avs,
             base,
             admin,
+            operator_admin,
+            vault_admin,
+            slasher_admin,
+            withdraw_admin,
             avs_index,
             reserved: [0; 1024],
             bump,
@@ -44,16 +73,72 @@ impl Avs {
         self.base
     }
 
-    pub const fn admin(&self) -> Pubkey {
-        self.admin
-    }
-
     pub const fn avs_index(&self) -> u64 {
         self.avs_index
     }
 
     pub const fn bump(&self) -> u8 {
         self.bump
+    }
+
+    pub const fn admin(&self) -> Pubkey {
+        self.admin
+    }
+
+    /// Check if the provided pubkey is the admin of the AVS
+    pub fn check_admin(&self, admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.admin != *admin {
+            return Err(RestakingCoreError::AvsInvalidAdmin);
+        }
+        Ok(())
+    }
+
+    pub const fn operator_admin(&self) -> Pubkey {
+        self.operator_admin
+    }
+
+    /// Check if the provided pubkey is the operator admin of the AVS
+    pub fn check_operator_admin(&self, operator_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.operator_admin != *operator_admin {
+            return Err(RestakingCoreError::AvsInvalidOperatorAdmin);
+        }
+        Ok(())
+    }
+
+    pub const fn vault_admin(&self) -> Pubkey {
+        self.vault_admin
+    }
+
+    /// Check if the provided pubkey is the vault admin of the AVS
+    pub fn check_vault_admin(&self, vault_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.vault_admin != *vault_admin {
+            return Err(RestakingCoreError::AvsInvalidVaultAdmin);
+        }
+        Ok(())
+    }
+
+    pub const fn slasher_admin(&self) -> Pubkey {
+        self.slasher_admin
+    }
+
+    /// Check if the provided pubkey is the slasher admin of the AVS
+    pub fn check_slasher_admin(&self, slasher_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.slasher_admin != *slasher_admin {
+            return Err(RestakingCoreError::AvsInvalidSlasherAdmin);
+        }
+        Ok(())
+    }
+
+    pub const fn withdraw_admin(&self) -> Pubkey {
+        self.withdraw_admin
+    }
+
+    /// Check if the provided pubkey is the withdraw admin of the AVS
+    pub fn check_withdraw_admin(&self, withdraw_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.withdraw_admin != *withdraw_admin {
+            return Err(RestakingCoreError::AvsInvalidWithdrawAdmin);
+        }
+        Ok(())
     }
 
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {

@@ -4,7 +4,7 @@ use jito_restaking_core::{
     avs_slasher_list::AvsSlasherList,
     avs_vault_list::AvsVaultList,
     config::Config,
-    operator::{NodeOperatorAvsList, Operator, OperatorVaultList},
+    operator::{Operator, OperatorAvsList, OperatorVaultList},
 };
 use solana_program::pubkey::Pubkey;
 use solana_sdk::signature::{Keypair, Signer};
@@ -44,11 +44,8 @@ impl RestakingTestConfig {
             &node_operator_base.pubkey(),
         )
         .0;
-        let node_operator_avs_list = NodeOperatorAvsList::find_program_address(
-            &jito_restaking_program::id(),
-            &node_operator,
-        )
-        .0;
+        let node_operator_avs_list =
+            OperatorAvsList::find_program_address(&jito_restaking_program::id(), &node_operator).0;
         let node_operator_vault_list =
             OperatorVaultList::find_program_address(&jito_restaking_program::id(), &node_operator)
                 .0;

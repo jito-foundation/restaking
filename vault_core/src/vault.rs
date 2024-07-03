@@ -1,9 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_restaking_sanitization::assert_with_msg;
-use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
-    pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
@@ -137,24 +133,24 @@ impl Vault {
         } else {
             amount
                 .checked_mul(self.lrt_supply)
-                .ok_or(VaultCoreError::DepositOverflow)?
+                .ok_or(VaultCoreError::VaultDepositOverflow)?
                 .checked_div(self.tokens_deposited)
-                .ok_or(VaultCoreError::DepositOverflow)?
+                .ok_or(VaultCoreError::VaultDepositOverflow)?
         };
 
         // deposit tokens + check against capacity
         let total_post_deposit = self
             .tokens_deposited
             .checked_add(amount)
-            .ok_or(VaultCoreError::DepositOverflow)?;
+            .ok_or(VaultCoreError::VaultDepositOverflow)?;
         if total_post_deposit > self.capacity {
-            return Err(VaultCoreError::DepositExceedsCapacity);
+            return Err(VaultCoreError::VaultDepositExceedsCapacity);
         }
 
         let lrt_supply = self
             .lrt_supply
             .checked_add(num_tokens_to_mint)
-            .ok_or(VaultCoreError::DepositOverflow)?;
+            .ok_or(VaultCoreError::VaultDepositOverflow)?;
 
         self.lrt_supply = lrt_supply;
         self.tokens_deposited = total_post_deposit;
@@ -165,7 +161,7 @@ impl Vault {
     pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
         let fee = lrt_amount
             .checked_mul(self.deposit_fee_bps as u64)
-            .ok_or(VaultCoreError::FeeCalculationOverflow)?
+            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
             .checked_div(10_000)
             .unwrap();
         Ok(fee)
@@ -174,7 +170,7 @@ impl Vault {
     pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
         let fee = lrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
-            .ok_or(VaultCoreError::FeeCalculationOverflow)?
+            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
             .checked_div(10_000)
             .unwrap();
         Ok(fee)
@@ -225,12 +221,26 @@ impl Vault {
         self.admin = admin;
     }
 
+    pub fn check_admin(&self, admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.admin != *admin {
+            return Err(VaultCoreError::VaultInvalidAdmin);
+        }
+        Ok(())
+    }
+
     pub fn set_delegation_admin(&mut self, delegation_admin: Pubkey) {
         self.delegation_admin = delegation_admin;
     }
 
     pub const fn delegation_admin(&self) -> Pubkey {
         self.delegation_admin
+    }
+
+    pub fn check_delegation_admin(&self, delegation_admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.delegation_admin != *delegation_admin {
+            return Err(VaultCoreError::VaultInvalidDelegationAdmin);
+        }
+        Ok(())
     }
 
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
@@ -247,37 +257,32 @@ impl Vault {
     pub fn deserialize_checked(
         program_id: &Pubkey,
         account: &AccountInfo,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "LRT account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "LRT account not owned by the correct program",
-        )?;
+    ) -> VaultCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(VaultCoreError::VaultDataEmpty);
+        }
+        if account.owner != program_id {
+            return Err(VaultCoreError::VaultInvalidProgramOwner);
+        }
 
         // The AvsState shall be properly deserialized and valid struct
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            state.is_struct_valid(),
-            ProgramError::InvalidAccountData,
-            "LRT account is invalid",
-        )?;
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| VaultCoreError::VaultInvalidData(e.to_string()))?;
+        if !state.is_struct_valid() {
+            return Err(VaultCoreError::VaultInvalidData(
+                "Vault account header is invalid".to_string(),
+            ));
+        }
 
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(&state.base);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
-
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "Vault account is not at the correct PDA",
-        )?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| VaultCoreError::VaultInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(VaultCoreError::VaultInvalidPda);
+        }
 
         Ok(state)
     }
@@ -289,18 +294,13 @@ pub struct SanitizedVault<'a, 'info> {
 }
 
 impl<'a, 'info> SanitizedVault<'a, 'info> {
-    /// Sanitizes the AvsAccount so it can be used in a safe context
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<SanitizedVault<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for vault",
-            )?;
+    ) -> VaultCoreResult<SanitizedVault<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(VaultCoreError::VaultExpectedWritable);
         }
         let vault = Vault::deserialize_checked(program_id, account)?;
 
@@ -319,8 +319,9 @@ impl<'a, 'info> SanitizedVault<'a, 'info> {
         &mut self.vault
     }
 
-    pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.vault)?;
+    pub fn save(&self) -> VaultCoreResult<()> {
+        borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.vault)
+            .map_err(|e| VaultCoreError::VaultSerializationFailed(e.to_string()))?;
         Ok(())
     }
 }
@@ -388,7 +389,7 @@ mod tests {
 
         assert_eq!(
             vault.deposit_and_mint_with_capacity_check(101),
-            Err(VaultCoreError::DepositExceedsCapacity)
+            Err(VaultCoreError::VaultDepositExceedsCapacity)
         );
     }
 
@@ -410,7 +411,7 @@ mod tests {
         vault.deposit_and_mint_with_capacity_check(50).unwrap();
         assert_eq!(
             vault.deposit_and_mint_with_capacity_check(1),
-            Err(VaultCoreError::DepositExceedsCapacity)
+            Err(VaultCoreError::VaultDepositExceedsCapacity)
         );
     }
 }

@@ -1,12 +1,14 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use jito_restaking_sanitization::{assert_with_msg, realloc};
+use jito_restaking_sanitization::realloc;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
-    pubkey::Pubkey, rent::Rent,
+    account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey, rent::Rent,
 };
 
-use crate::AccountType;
+use crate::{
+    result::{VaultCoreError, VaultCoreResult},
+    AccountType,
+};
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct VaultAvsInfo {
@@ -67,20 +69,30 @@ impl VaultAvsList {
         &self.supported_avs
     }
 
-    pub fn add_avs(&mut self, avs: Pubkey, slot: u64) -> bool {
+    pub fn add_avs(&mut self, avs: Pubkey, slot: u64) -> VaultCoreResult<()> {
         if let Some(avs_info) = self.supported_avs.iter_mut().find(|x| *x.avs() == avs) {
-            avs_info.state.activate(slot)
+            let activated = avs_info.state.activate(slot);
+            if activated {
+                Ok(())
+            } else {
+                Err(VaultCoreError::VaultAvsAlreadyActive)
+            }
         } else {
             self.supported_avs.push(VaultAvsInfo::new(avs, slot));
-            true
+            Ok(())
         }
     }
 
-    pub fn remove_avs(&mut self, avs: Pubkey, slot: u64) -> bool {
+    pub fn remove_avs(&mut self, avs: Pubkey, slot: u64) -> VaultCoreResult<()> {
         if let Some(avs_info) = self.supported_avs.iter_mut().find(|x| *x.avs() == avs) {
-            avs_info.state.deactivate(slot)
+            let deactivated = avs_info.state.deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(VaultCoreError::VaultAvsAlreadyInactive)
+            }
         } else {
-            false
+            Err(VaultCoreError::VaultAvsNotSupported)
         }
     }
 
@@ -99,36 +111,28 @@ impl VaultAvsList {
         program_id: &Pubkey,
         account: &AccountInfo,
         vault: &Pubkey,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "VaultAvsList account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "VaultAvsList account not owned by the correct program",
-        )?;
+    ) -> VaultCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(VaultCoreError::VaultAvsListDataEmpty);
+        }
+        if account.owner != program_id {
+            return Err(VaultCoreError::VaultAvsListInvalidProgramOwner);
+        }
 
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            state.account_type == AccountType::VaultAvsList,
-            ProgramError::InvalidAccountData,
-            "VaultAvsList account is invalid",
-        )?;
-
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| VaultCoreError::VaultAvsListInvalidData(e.to_string()))?;
+        if state.account_type != AccountType::VaultAvsList {
+            return Err(VaultCoreError::VaultAvsListInvalidAccountType);
+        }
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(vault);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
-
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "VaultAvsList account is not at the correct PDA",
-        )?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| VaultCoreError::VaultAvsListInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(VaultCoreError::VaultAvsListInvalidPda);
+        }
 
         Ok(state)
     }
@@ -140,19 +144,14 @@ pub struct SanitizedVaultAvsList<'a, 'info> {
 }
 
 impl<'a, 'info> SanitizedVaultAvsList<'a, 'info> {
-    /// Sanitizes the AvsAccount so it can be used in a safe context
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-    ) -> Result<SanitizedVaultAvsList<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "VaultAvsList account is not writable",
-            )?;
+    ) -> VaultCoreResult<SanitizedVaultAvsList<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(VaultCoreError::VaultAvsListExpectedWritable);
         }
         let vault_avs_list = VaultAvsList::deserialize_checked(program_id, account, vault)?;
 

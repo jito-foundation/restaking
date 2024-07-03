@@ -1,6 +1,6 @@
-use solana_program::{account_info::AccountInfo, program_error::ProgramError};
+use solana_program::account_info::AccountInfo;
 
-use crate::assert_with_msg;
+use crate::result::{SanitizationError, SanitizationResult};
 
 #[derive(Debug)]
 pub struct SanitizedTokenProgram<'a, 'info> {
@@ -11,12 +11,10 @@ impl<'a, 'info> SanitizedTokenProgram<'a, 'info> {
     /// Sanitizes the TokenProgram so it can be used in a safe context
     pub fn sanitize(
         account: &'a AccountInfo<'info>,
-    ) -> Result<SanitizedTokenProgram<'a, 'info>, ProgramError> {
-        assert_with_msg(
-            account.key == &spl_token::id(),
-            ProgramError::InvalidAccountData,
-            "Invalid TokenProgram account",
-        )?;
+    ) -> SanitizationResult<SanitizedTokenProgram<'a, 'info>> {
+        if account.key != &spl_token::id() {
+            return Err(SanitizationError::TokenProgramInvalidAddress);
+        }
 
         Ok(SanitizedTokenProgram { account })
     }
@@ -29,12 +27,9 @@ impl<'a, 'info> SanitizedTokenProgram<'a, 'info> {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use solana_program::{
-        account_info::AccountInfo, clock::Epoch, program_error::ProgramError, pubkey::Pubkey,
-        system_program,
-    };
+    use solana_program::{account_info::AccountInfo, clock::Epoch, pubkey::Pubkey, system_program};
 
-    use crate::token_program::SanitizedTokenProgram;
+    use crate::{result::SanitizationError, token_program::SanitizedTokenProgram};
 
     #[test]
     fn test_wrong_address_fails() {
@@ -54,7 +49,7 @@ mod tests {
             Epoch::MAX,
         );
         let err = SanitizedTokenProgram::sanitize(&account_info).unwrap_err();
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::TokenProgramInvalidAddress);
     }
 
     #[test]

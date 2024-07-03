@@ -6,7 +6,10 @@ use solana_program::{
     pubkey::Pubkey, rent::Rent,
 };
 
-use crate::AccountType;
+use crate::{
+    result::{RestakingCoreError, RestakingCoreResult},
+    AccountType,
+};
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct AvsSlasher {
@@ -103,13 +106,13 @@ impl AvsSlasherList {
         slasher: Pubkey,
         slot: u64,
         max_slashable_per_epoch: u64,
-    ) -> bool {
+    ) -> RestakingCoreResult<()> {
         let maybe_slasher = self
             .slashers
             .iter_mut()
             .find(|s| s.vault == vault && s.slasher == slasher);
         if maybe_slasher.is_some() {
-            false
+            Err(RestakingCoreError::VaultSlasherAlreadyExists)
         } else {
             self.slashers.push(AvsSlasher {
                 vault,
@@ -118,16 +121,30 @@ impl AvsSlasherList {
                 state: SlotToggle::new(slot),
                 reserved: [0; 64],
             });
-            true
+            Ok(())
         }
     }
 
-    pub fn deprecate_slasher(&mut self, vault: Pubkey, slasher: Pubkey, slot: u64) -> bool {
+    pub fn deprecate_slasher(
+        &mut self,
+        vault: Pubkey,
+        slasher: Pubkey,
+        slot: u64,
+    ) -> RestakingCoreResult<()> {
         let maybe_slasher = self
             .slashers
             .iter_mut()
-            .find(|s| s.vault == vault && s.slasher == slasher && s.state.is_active(slot));
-        maybe_slasher.map_or(false, |slasher| slasher.state.deactivate(slot))
+            .find(|s| s.vault == vault && s.slasher == slasher);
+        if let Some(slasher) = maybe_slasher {
+            let deactivated = slasher.state.deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultSlasherNotActive)
+            }
+        } else {
+            Err(RestakingCoreError::VaultSlasherNotFound)
+        }
     }
 
     pub fn get_slasher_info(

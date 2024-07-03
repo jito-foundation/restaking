@@ -2,9 +2,11 @@ use jito_restaking_core::{
     avs::SanitizedAvs,
     avs_operator_list::SanitizedAvsOperatorList,
     config::SanitizedConfig,
-    operator::{SanitizedNodeOperatorAvsList, SanitizedOperator},
+    operator::{SanitizedOperator, SanitizedOperatorAvsList},
 };
-use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
+use jito_restaking_sanitization::{
+    signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
+};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     clock::Clock,
@@ -15,59 +17,83 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-/// The AVS admin can add a node operator to the AVS after the node operator has opted-in to the network.
-/// This method is permissioned to the AVS admin.
+/// After an operator opts-in to an AVS, the AVS operator admin can add the operator to the AVS.
+/// The operator must have opted-in to the AVS before the AVS opts-in to the operator.
+///
 /// [`crate::RestakingInstruction::AvsAddOperator`]
-pub fn process_avs_add_node_operator(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-) -> ProgramResult {
-    let accounts_iter = &mut accounts.iter();
+pub fn process_avs_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+    let SanitizedAccounts {
+        avs,
+        mut avs_operator_list,
+        operator,
+        operator_avs_list,
+        admin,
+        payer,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let _config = SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-    let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-    let mut avs_operator_list = SanitizedAvsOperatorList::sanitize(
-        program_id,
-        next_account_info(accounts_iter)?,
-        true,
-        avs.account().key,
-    )?;
-    let node_operator =
-        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-    let node_operator_avs_list = SanitizedNodeOperatorAvsList::sanitize(
-        program_id,
-        next_account_info(accounts_iter)?,
-        false,
-        node_operator.account().key,
-    )?;
-
-    let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-
-    assert_with_msg(
-        avs.avs().admin() == *admin.account().key,
-        ProgramError::InvalidAccountData,
-        "Admin is not the AVS admin",
-    )?;
+    avs.avs().check_operator_admin(admin.account().key)?;
 
     let clock = Clock::get()?;
 
-    assert_with_msg(
-        node_operator_avs_list
-            .operator_avs_list()
-            .contains_active_avs(avs.account().key, clock.slot),
-        ProgramError::InvalidAccountData,
-        "Node operator does not have AVS in AVS list",
-    )?;
+    operator_avs_list
+        .operator_avs_list()
+        .check_avs_active(avs.account().key, clock.slot)?;
 
-    assert_with_msg(
-        avs_operator_list
-            .avs_operator_list_mut()
-            .add_operator(*node_operator.account().key, clock.slot),
-        ProgramError::InvalidAccountData,
-        "Node operator already exists in AVS operator list",
-    )?;
+    avs_operator_list
+        .avs_operator_list_mut()
+        .add_operator(*operator.account().key, clock.slot)?;
 
-    avs_operator_list.save_with_realloc(&Rent::get()?, admin.account())?;
+    let rent = Rent::get()?;
+    avs_operator_list.save_with_realloc(&rent, payer.account())?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    avs: SanitizedAvs<'a, 'info>,
+    avs_operator_list: SanitizedAvsOperatorList<'a, 'info>,
+    operator: SanitizedOperator<'a, 'info>,
+    operator_avs_list: SanitizedOperatorAvsList<'a, 'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+    payer: SanitizedSignerAccount<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    /// [`crate::RestakingInstruction::AvsAddOperator`]
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let accounts_iter = &mut accounts.iter();
+
+        let _config =
+            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let avs_operator_list = SanitizedAvsOperatorList::sanitize(
+            program_id,
+            next_account_info(accounts_iter)?,
+            true,
+            avs.account().key,
+        )?;
+        let operator =
+            SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let operator_avs_list = SanitizedOperatorAvsList::sanitize(
+            program_id,
+            next_account_info(accounts_iter)?,
+            false,
+            operator.account().key,
+        )?;
+        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
+        let payer = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        let _system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
+
+        Ok(SanitizedAccounts {
+            avs,
+            avs_operator_list,
+            operator,
+            operator_avs_list,
+            admin,
+            payer,
+        })
+    }
 }

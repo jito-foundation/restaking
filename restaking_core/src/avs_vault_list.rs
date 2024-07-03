@@ -5,7 +5,11 @@ use solana_program::{
     pubkey::Pubkey, rent::Rent,
 };
 
-use crate::{vault::RestakingVault, AccountType};
+use crate::{
+    result::{RestakingCoreError, RestakingCoreResult},
+    vault::RestakingVault,
+    AccountType,
+};
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct AvsVaultList {
@@ -49,19 +53,42 @@ impl AvsVaultList {
         self.vault_list.iter().any(|v| v.vault() == vault)
     }
 
-    pub fn add_vault(&mut self, vault: Pubkey, slot: u64) -> bool {
+    pub fn check_active_vault(&self, vault: &Pubkey, slot: u64) -> RestakingCoreResult<()> {
+        let maybe_vault = self.vault_list.iter().find(|v| v.vault() == *vault);
+        maybe_vault.map_or(Err(RestakingCoreError::VaultNotFound), |vault| {
+            if vault.state().is_active(slot) {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultNotActive)
+            }
+        })
+    }
+
+    pub fn add_vault(&mut self, vault: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_vault = self.vault_list.iter_mut().find(|v| v.vault() == vault);
         if let Some(vault) = maybe_vault {
-            vault.state_mut().activate(slot)
+            let activated = vault.state_mut().activate(slot);
+            if activated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultFailedToActivate)
+            }
         } else {
             self.vault_list.push(RestakingVault::new(vault, slot));
-            true
+            Ok(())
         }
     }
 
-    pub fn remove_vault(&mut self, vault: Pubkey, slot: u64) -> bool {
+    pub fn remove_vault(&mut self, vault: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_vault = self.vault_list.iter_mut().find(|v| v.vault() == vault);
-        maybe_vault.map_or(false, |vault| vault.state_mut().deactivate(slot))
+        maybe_vault.map_or(Err(RestakingCoreError::VaultNotFound), |vault| {
+            let deactivated = vault.state_mut().deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultFailedToDeactivate)
+            }
+        })
     }
 
     pub fn seeds(avs: &Pubkey) -> Vec<Vec<u8>> {

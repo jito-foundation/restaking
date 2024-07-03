@@ -1,9 +1,7 @@
-use solana_program::{
-    account_info::AccountInfo, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Account;
 
-use crate::assert_with_msg;
+use crate::result::{SanitizationError, SanitizationResult};
 
 pub struct SanitizedTokenAccount<'a, 'info> {
     inner: &'a AccountInfo<'info>,
@@ -15,38 +13,21 @@ impl<'a, 'info> SanitizedTokenAccount<'a, 'info> {
         account: &'a AccountInfo<'info>,
         mint: &Pubkey,
         owner: &Pubkey,
-    ) -> Result<SanitizedTokenAccount<'a, 'info>, ProgramError> {
-        assert_with_msg(
-            account.data_len() == Account::LEN,
-            ProgramError::InvalidAccountData,
-            &format!(
-                "Invalid token account data length: {} expected: {}",
-                account.data_len(),
-                Account::LEN
-            ),
-        )?;
+    ) -> SanitizationResult<SanitizedTokenAccount<'a, 'info>> {
+        if *account.owner != spl_token::id() {
+            return Err(SanitizationError::TokenAccountInvalidProgramOwner);
+        }
 
-        assert_with_msg(
-            *account.owner == spl_token::id(),
-            ProgramError::IllegalOwner,
-            &format!(
-                "Invalid token account owner: {:?} pubkey: {:?}",
-                account.owner, account.key
-            ),
-        )?;
+        let token_account = Account::unpack(&account.data.borrow())
+            .map_err(|_| SanitizationError::TokenAccountInvalidAccountData)?;
 
-        let token_account = Account::unpack(&account.data.borrow())?;
+        if token_account.mint != *mint {
+            return Err(SanitizationError::TokenAccountInvalidMint);
+        }
 
-        assert_with_msg(
-            token_account.mint == *mint,
-            ProgramError::InvalidAccountData,
-            "Invalid token account mint",
-        )?;
-        assert_with_msg(
-            token_account.owner == *owner,
-            ProgramError::InvalidAccountData,
-            "Invalid token account owner",
-        )?;
+        if token_account.owner != *owner {
+            return Err(SanitizationError::TokenAccountInvalidOwner);
+        }
 
         Ok(SanitizedTokenAccount {
             inner: account,
@@ -63,8 +44,9 @@ impl<'a, 'info> SanitizedTokenAccount<'a, 'info> {
     }
 
     /// Reload needs to be called after CPIs to ensure the data is up-to-date
-    pub fn reload(&mut self) -> Result<(), ProgramError> {
-        self.token_account = Account::unpack(&self.inner.data.borrow())?;
+    pub fn reload(&mut self) -> SanitizationResult<()> {
+        self.token_account = Account::unpack(&self.inner.data.borrow())
+            .map_err(|_| SanitizationError::TokenAccountInvalidAccountData)?;
         Ok(())
     }
 }

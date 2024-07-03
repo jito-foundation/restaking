@@ -1,10 +1,8 @@
-use solana_program::{
-    account_info::AccountInfo, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, program_pack::Pack, pubkey::Pubkey};
 use spl_associated_token_account::get_associated_token_address;
 use spl_token::state::Account;
 
-use crate::assert_with_msg;
+use crate::result::{SanitizationError, SanitizationResult};
 
 pub struct SanitizedAssociatedTokenAccount<'a, 'info> {
     inner: &'a AccountInfo<'info>,
@@ -16,37 +14,21 @@ impl<'a, 'info> SanitizedAssociatedTokenAccount<'a, 'info> {
         account: &'a AccountInfo<'info>,
         mint: &Pubkey,
         owner: &Pubkey,
-    ) -> Result<SanitizedAssociatedTokenAccount<'a, 'info>, ProgramError> {
+    ) -> SanitizationResult<SanitizedAssociatedTokenAccount<'a, 'info>> {
         let expected_ata = get_associated_token_address(owner, mint);
-        assert_with_msg(
-            *account.key == expected_ata,
-            ProgramError::InvalidAccountData,
-            &format!(
-                "Invalid associated token account address: {:?} expected: {:?}",
-                account.key, expected_ata
-            ),
-        )?;
 
-        assert_with_msg(
-            account.data_len() == Account::LEN,
-            ProgramError::InvalidAccountData,
-            &format!(
-                "Invalid token account data length: {} expected: {}",
-                account.data_len(),
-                Account::LEN
-            ),
-        )?;
+        if *account.key != expected_ata {
+            return Err(SanitizationError::AssociatedTokenAccountInvalidAddress);
+        }
+        if account.owner != &spl_token::id() {
+            return Err(SanitizationError::AssociatedTokenAccountInvalidOwner);
+        }
+        if account.data_len() != Account::LEN {
+            return Err(SanitizationError::AssociatedTokenAccountInvalidAccountData);
+        }
 
-        assert_with_msg(
-            *account.owner == spl_token::id(),
-            ProgramError::IllegalOwner,
-            &format!(
-                "Invalid token account owner: {:?} pubkey: {:?}",
-                account.owner, account.key
-            ),
-        )?;
-
-        let token_account = Account::unpack(&account.data.borrow())?;
+        let token_account = Account::unpack(&account.data.borrow())
+            .map_err(|_| SanitizationError::AssociatedTokenAccountInvalidAccountData)?;
 
         Ok(SanitizedAssociatedTokenAccount {
             inner: account,
@@ -63,8 +45,9 @@ impl<'a, 'info> SanitizedAssociatedTokenAccount<'a, 'info> {
     }
 
     /// Reload needs to be called after CPIs to ensure the data is up-to-date
-    pub fn reload(&mut self) -> Result<(), ProgramError> {
-        self.token_account = Account::unpack(&self.inner.data.borrow())?;
+    pub fn reload(&mut self) -> SanitizationResult<()> {
+        self.token_account = Account::unpack(&self.inner.data.borrow())
+            .map_err(|_| SanitizationError::AssociatedTokenAccountFailedReload)?;
         Ok(())
     }
 }

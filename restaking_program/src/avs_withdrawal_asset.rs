@@ -18,24 +18,14 @@ pub fn process_avs_withdrawal_asset(
     token_mint: Pubkey,
     amount: u64,
 ) -> ProgramResult {
-    let accounts_iter = &mut accounts.iter();
+    let SanitizedAccounts {
+        avs,
+        avs_token_account,
+        receiver_token_account,
+        admin,
+    } = SanitizedAccounts::sanitize(program_id, accounts, &token_mint)?;
 
-    let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-    let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-    let avs_token_account = SanitizedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &token_mint,
-        avs.account().key,
-    )?;
-    // token program handles verification of receiver_token_account
-    let receiver_token_account = next_account_info(accounts_iter)?;
-    let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-    assert_with_msg(
-        avs.avs().admin() == *admin.account().key,
-        ProgramError::InvalidAccountData,
-        "Admin does not match AVS",
-    )?;
+    avs.avs().check_withdraw_admin(admin.account().key)?;
 
     assert_with_msg(
         avs_token_account.token_account().amount >= amount,
@@ -43,6 +33,17 @@ pub fn process_avs_withdrawal_asset(
         "Not enough funds in AVS token account",
     )?;
 
+    _withdraw_avs_asset(&avs, &avs_token_account, receiver_token_account, amount)?;
+
+    Ok(())
+}
+
+fn _withdraw_avs_asset<'a, 'info>(
+    avs: &SanitizedAvs<'a, 'info>,
+    avs_token_account: &SanitizedTokenAccount<'a, 'info>,
+    receiver_token_account: &'a AccountInfo<'info>,
+    amount: u64,
+) -> ProgramResult {
     let mut avs_seeds = Avs::seeds(&avs.avs().base());
     avs_seeds.push(vec![avs.avs().bump()]);
 
@@ -69,4 +70,39 @@ pub fn process_avs_withdrawal_asset(
     )?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    avs: SanitizedAvs<'a, 'info>,
+    avs_token_account: SanitizedTokenAccount<'a, 'info>,
+    receiver_token_account: &'a AccountInfo<'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    /// [`jito_restaking_sdk::RestakingInstruction::AvsWithdrawalAsset`]
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+        token_mint: &Pubkey,
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let accounts_iter = &mut accounts.iter();
+
+        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let avs_token_account = SanitizedTokenAccount::sanitize(
+            next_account_info(accounts_iter)?,
+            token_mint,
+            avs.account().key,
+        )?;
+        let receiver_token_account = next_account_info(accounts_iter)?; // let token program handle this
+        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
+        let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+
+        Ok(SanitizedAccounts {
+            avs,
+            avs_token_account,
+            receiver_token_account,
+            admin,
+        })
+    }
 }

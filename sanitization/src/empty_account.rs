@@ -1,6 +1,6 @@
-use solana_program::{account_info::AccountInfo, program_error::ProgramError};
+use solana_program::account_info::AccountInfo;
 
-use crate::assert_with_msg;
+use crate::result::{SanitizationError, SanitizationResult};
 
 pub struct EmptyAccount<'a, 'info> {
     account: &'a AccountInfo<'info>,
@@ -10,20 +10,13 @@ impl<'a, 'info> EmptyAccount<'a, 'info> {
     pub fn sanitize(
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<EmptyAccount<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for empty account",
-            )?;
+    ) -> SanitizationResult<EmptyAccount<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(SanitizationError::EmptyAccountNotWritable);
         }
-
-        assert_with_msg(
-            account.data_is_empty(),
-            ProgramError::InvalidAccountData,
-            "Invalid empty account data",
-        )?;
+        if !account.data_is_empty() {
+            return Err(SanitizationError::EmptyAccountNotEmpty);
+        }
 
         Ok(EmptyAccount { account })
     }

@@ -1,5 +1,5 @@
 use jito_restaking_core::operator::SanitizedOperator;
-use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
+use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
@@ -15,22 +15,41 @@ pub fn process_set_node_operator_voter(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let accounts_iter = &mut accounts.iter();
+    let SanitizedAccounts {
+        mut operator,
+        admin,
+        voter,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let mut node_operator =
-        SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-    let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-    let voter = next_account_info(accounts_iter)?;
-
-    assert_with_msg(
-        node_operator.operator().admin() == *admin.account().key,
-        ProgramError::InvalidAccountData,
-        "Admin is not the node operator admin",
-    )?;
-
-    node_operator.operator_mut().set_voter(*voter.key);
-
-    node_operator.save()?;
+    operator.operator().check_admin(admin.account().key)?;
+    operator.operator_mut().set_voter(*voter.key);
+    operator.save()?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    operator: SanitizedOperator<'a, 'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+    voter: &'a AccountInfo<'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let accounts_iter = &mut accounts.iter();
+
+        let operator =
+            SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        let voter = next_account_info(accounts_iter)?;
+
+        Ok(SanitizedAccounts {
+            operator,
+            admin,
+            voter,
+        })
+    }
 }

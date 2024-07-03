@@ -1,12 +1,14 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use jito_restaking_sanitization::{assert_with_msg, realloc};
+use jito_restaking_sanitization::realloc;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
-    pubkey::Pubkey, rent::Rent,
+    account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey, rent::Rent,
 };
 
-use crate::AccountType;
+use crate::{
+    result::{VaultCoreError, VaultCoreResult},
+    AccountType,
+};
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct VaultSlasher {
@@ -138,36 +140,28 @@ impl VaultSlasherList {
         program_id: &Pubkey,
         account: &AccountInfo,
         vault: &Pubkey,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "VaultSlasherList account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "VaultSlasherList account not owned by the correct program",
-        )?;
+    ) -> VaultCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(VaultCoreError::VaultSlasherListDataEmpty);
+        }
+        if account.owner != program_id {
+            return Err(VaultCoreError::VaultSlasherListInvalidProgramOwner);
+        }
 
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            state.account_type == AccountType::VaultSlasherList,
-            ProgramError::InvalidAccountData,
-            "VaultSlasherList account is invalid",
-        )?;
-
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| VaultCoreError::VaultSlasherListInvalidData(e.to_string()))?;
+        if state.account_type != AccountType::VaultSlasherList {
+            return Err(VaultCoreError::VaultSlasherListInvalidAccountType);
+        }
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(vault);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
-
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "VaultSlasherList account is not at the correct PDA",
-        )?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| VaultCoreError::VaultSlasherListInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(VaultCoreError::VaultSlasherListInvalidPda);
+        }
 
         Ok(state)
     }
@@ -179,19 +173,14 @@ pub struct SanitizedVaultSlasherList<'a, 'info> {
 }
 
 impl<'a, 'info> SanitizedVaultSlasherList<'a, 'info> {
-    /// Sanitizes the AvsAccount so it can be used in a safe context
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-    ) -> Result<SanitizedVaultSlasherList<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for vault slasher list",
-            )?;
+    ) -> VaultCoreResult<SanitizedVaultSlasherList<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(VaultCoreError::VaultSlasherListExpectedWritable);
         }
         let vault_slasher_list = VaultSlasherList::deserialize_checked(program_id, account, vault)?;
 

@@ -66,7 +66,7 @@ impl TestBuilder {
             account_data.len(),
             owner,
         );
-        data.set_data_from_slice(&account_data);
+        data.set_data_from_slice(account_data);
         self.context.set_account(pubkey, &data);
         Ok(())
     }
@@ -208,7 +208,7 @@ impl TestBuilder {
     pub async fn warp_to_next_slot(&mut self) -> Result<(), BanksClientError> {
         let clock: Clock = self.context.banks_client.get_sysvar().await?;
         self.context
-            .warp_to_slot(clock.slot + 1)
+            .warp_to_slot(clock.slot.checked_add(1).unwrap())
             .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
         Ok(())
     }

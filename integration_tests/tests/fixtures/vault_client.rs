@@ -18,7 +18,7 @@ pub struct VaultProgramClient {
 }
 
 impl VaultProgramClient {
-    pub fn new(banks_client: BanksClient) -> Self {
+    pub const fn new(banks_client: BanksClient) -> Self {
         Self { banks_client }
     }
 
@@ -60,7 +60,6 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 &vault_config.config,
                 &vault_config.config_admin.pubkey(),
-                &vault_config.restaking_program_signer,
                 &jito_restaking_program::id(),
             )],
             Some(&vault_config.config_admin.pubkey()),
@@ -193,12 +192,11 @@ impl VaultProgramClient {
     }
 
     pub async fn process_transaction(&mut self, tx: &Transaction) -> Result<(), BanksClientError> {
-        Ok(self
-            .banks_client
+        self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),
                 CommitmentLevel::Processed,
             )
-            .await?)
+            .await
     }
 }

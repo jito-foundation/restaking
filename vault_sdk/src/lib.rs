@@ -12,9 +12,8 @@ pub enum VaultInstruction {
     /// Initializes global configuration
     #[account(0, writable, name = "config")]
     #[account(1, writable, signer, name = "admin")]
-    #[account(2, name = "restaking_program_signer")]
-    #[account(3, name = "restaking_program")]
-    #[account(4, name = "system_program")]
+    #[account(2, name = "restaking_program")]
+    #[account(3, name = "system_program")]
     InitializeConfig,
 
     /// Initializes the vault
@@ -37,46 +36,42 @@ pub enum VaultInstruction {
     /// Initializes a vault with an already-created LRT mint
     InitializeVaultWithMint,
 
-    /// AVS can CPI into this program calling this instruction to add themselves to receive
-    /// delegation from a vault
-    #[account(0, signer, name = "restaking_program_signer")]
-    #[account(1, signer, name = "avs")]
-    #[account(2, name = "vault")]
-    #[account(3, name = "config")]
-    #[account(4, writable, name = "vault_avs_list")]
-    #[account(5, writable, signer, name = "payer")]
-    #[account(6, name = "system_program")]
+    /// Vault adds support for the AVS
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_avs_list")]
+    #[account(3, name = "avs")]
+    #[account(4, name = "avs_vault_list")]
+    #[account(5, signer, name = "admin")]
+    #[account(6, writable, signer, name = "payer")]
+    #[account(7, name = "system_program")]
     AddAvs,
 
-    /// AVS can CPI into this program calling this instruction to add themselves to remove
-    /// delegation support for a vault
-    #[account(0, signer, name = "restaking_program_signer")]
-    #[account(1, signer, name = "avs")]
-    #[account(2, name = "vault")]
-    #[account(3, name = "config")]
-    #[account(4, writable, name = "vault_avs_list")]
+    /// Vault removes support for an AVS
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_avs_list")]
+    #[account(3, name = "avs")]
+    #[account(4, signer, name = "admin")]
     RemoveAvs,
 
-    /// Node operator's can CPI into this program calling this instruction to add themselves to receive
-    /// delegation from a vault
-    #[account(0, signer, name = "restaking_program_signer")]
-    #[account(1, signer, name = "operator")]
-    #[account(2, name = "vault")]
-    #[account(3, name = "config")]
-    #[account(4, writable, name = "vault_operator_list")]
-    #[account(5, writable, signer, name = "payer")]
-    #[account(6, name = "system_program")]
+    /// Vault adds support for an operator
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_operator_list")]
+    #[account(3, name = "operator")]
+    #[account(4, name = "operator_vault_list")]
+    #[account(5, signer, name = "admin")]
+    #[account(6, writable, signer, name = "payer")]
+    #[account(7, name = "system_program")]
     AddOperator,
 
-    /// Node operator's can CPI into this program calling this instruction to add themselves to remove
-    /// delegation from a vault
-    #[account(0, signer, name = "restaking_program_signer")]
-    #[account(1, signer, name = "operator")]
-    #[account(2, name = "vault")]
-    #[account(3, name = "config")]
-    #[account(4, writable, name = "vault_operator_list")]
-    #[account(5, writable, signer, name = "payer")]
-    #[account(6, name = "system_program")]
+    /// Vault removes support for an operator
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_operator_list")]
+    #[account(3, name = "operator")]
+    #[account(4, signer, name = "admin")]
     RemoveOperator,
 
     /// Mints LRT by depositing tokens into the vault
@@ -135,6 +130,7 @@ pub enum VaultInstruction {
     #[account(3, name = "operator")]
     #[account(4, signer, name = "delegation_admin")]
     #[account(5, writable, signer, name = "payer")]
+    #[account(6, name = "system_program")]
     AddDelegation {
         amount: u64,
     },
@@ -145,7 +141,6 @@ pub enum VaultInstruction {
     #[account(2, writable, name = "vault_operator_list")]
     #[account(3, name = "operator")]
     #[account(4, signer, name = "admin")]
-    #[account(5, writable, signer, name = "payer")]
     RemoveDelegation {
         amount: u64,
     },
@@ -166,6 +161,7 @@ pub enum VaultInstruction {
     #[account(5, signer, writable, name = "payer")]
     #[account(6, name = "avs")]
     #[account(7, name = "avs_slasher_list")]
+    #[account(8, name = "system_program")]
     AddSlasher,
 
     /// Slashes an amount of tokens from the vault
@@ -203,7 +199,6 @@ pub fn initialize_config(
     program_id: &Pubkey,
     config: &Pubkey,
     admin: &Pubkey,
-    restaking_program_signer: &Pubkey,
     restaking_program: &Pubkey,
 ) -> Instruction {
     Instruction {
@@ -211,7 +206,6 @@ pub fn initialize_config(
         accounts: vec![
             AccountMeta::new(*config, false),
             AccountMeta::new(*admin, true),
-            AccountMeta::new(*restaking_program_signer, false),
             AccountMeta::new_readonly(*restaking_program, false),
             AccountMeta::new_readonly(system_program::id(), false),
         ],

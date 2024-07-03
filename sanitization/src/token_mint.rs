@@ -1,7 +1,7 @@
-use solana_program::{account_info::AccountInfo, program_error::ProgramError, program_pack::Pack};
+use solana_program::{account_info::AccountInfo, program_pack::Pack};
 use spl_token::state::Mint;
 
-use crate::assert_with_msg;
+use crate::result::{SanitizationError, SanitizationResult};
 
 #[derive(Debug)]
 pub struct SanitizedTokenMint<'a, 'info> {
@@ -14,32 +14,19 @@ impl<'a, 'info> SanitizedTokenMint<'a, 'info> {
     pub fn sanitize(
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<SanitizedTokenMint<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for token mint",
-            )?;
+    ) -> SanitizationResult<SanitizedTokenMint<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(SanitizationError::TokenMintExpectedWritable);
         }
-        let mint = Mint::unpack(&account.data.borrow());
 
-        assert_with_msg(
-            mint.is_ok(),
-            ProgramError::InvalidAccountData,
-            "Invalid token mint data",
-        )?;
+        let mint = Mint::unpack(&account.data.borrow())
+            .map_err(|_| SanitizationError::TokenMintInvalidAccountData)?;
 
-        assert_with_msg(
-            account.owner == &spl_token::id(),
-            ProgramError::InvalidAccountData,
-            "Invalid token mint owner",
-        )?;
+        if account.owner != &spl_token::id() {
+            return Err(SanitizationError::TokenMintInvalidProgramOwner);
+        }
 
-        Ok(SanitizedTokenMint {
-            account,
-            mint: mint.unwrap(),
-        })
+        Ok(SanitizedTokenMint { account, mint })
     }
 
     pub const fn account(&self) -> &AccountInfo<'info> {
@@ -51,8 +38,9 @@ impl<'a, 'info> SanitizedTokenMint<'a, 'info> {
     }
 
     /// Reload needs to be called after CPIs to ensure the data is up-to-date
-    pub fn reload(&mut self) -> Result<(), ProgramError> {
-        self.mint = Mint::unpack(&self.account.data.borrow())?;
+    pub fn reload(&mut self) -> SanitizationResult<()> {
+        self.mint = Mint::unpack(&self.account.data.borrow())
+            .map_err(|_| SanitizationError::TokenMintInvalidAccountData)?;
         Ok(())
     }
 }
@@ -61,12 +49,11 @@ impl<'a, 'info> SanitizedTokenMint<'a, 'info> {
 mod tests {
     use assert_matches::assert_matches;
     use solana_program::{
-        account_info::AccountInfo, clock::Epoch, program_error::ProgramError, program_pack::Pack,
-        pubkey::Pubkey,
+        account_info::AccountInfo, clock::Epoch, program_pack::Pack, pubkey::Pubkey,
     };
     use spl_token::state::Mint;
 
-    use crate::token_mint::SanitizedTokenMint;
+    use crate::{result::SanitizationError, token_mint::SanitizedTokenMint};
 
     #[test]
     fn test_incorrect_owner_fails() {
@@ -86,7 +73,7 @@ mod tests {
             Epoch::MAX,
         );
         let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::TokenMintInvalidAccountData);
     }
 
     #[test]
@@ -117,7 +104,7 @@ mod tests {
         );
         let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
 
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::TokenMintInvalidProgramOwner);
     }
 
     #[test]
@@ -139,7 +126,7 @@ mod tests {
             Epoch::MAX,
         );
         let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::TokenMintInvalidAccountData);
     }
 
     #[test]
@@ -169,7 +156,7 @@ mod tests {
             Epoch::MAX,
         );
         let err = SanitizedTokenMint::sanitize(&account_info, false).unwrap_err();
-        assert_matches!(err, ProgramError::InvalidAccountData);
+        assert_matches!(err, SanitizationError::TokenMintInvalidAccountData);
     }
 
     #[test]

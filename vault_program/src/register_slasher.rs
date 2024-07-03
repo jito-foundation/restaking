@@ -1,5 +1,7 @@
 use jito_restaking_core::{avs::SanitizedAvs, avs_slasher_list::SanitizedAvsSlasherList};
-use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
+use jito_restaking_sanitization::{
+    assert_with_msg, signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
+};
 use jito_vault_core::{
     config::SanitizedConfig, vault::SanitizedVault, vault_slasher_list::SanitizedVaultSlasherList,
 };
@@ -15,37 +17,17 @@ use solana_program::{
 
 /// Processes the register slasher instruction: [`crate::VaultInstruction::AddSlasher`]
 pub fn process_register_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let account_iter = &mut accounts.iter();
+    let SanitizedAccounts {
+        vault,
+        mut vault_slasher_list,
+        slasher,
+        admin,
+        payer,
+        avs,
+        avs_slasher_list,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let config = SanitizedConfig::sanitize(program_id, next_account_info(account_iter)?, false)?;
-    let vault = SanitizedVault::sanitize(program_id, next_account_info(account_iter)?, false)?;
-    let mut vault_slasher_list = SanitizedVaultSlasherList::sanitize(
-        program_id,
-        next_account_info(account_iter)?,
-        true,
-        vault.account().key,
-    )?;
-    let slasher = next_account_info(account_iter)?;
-    let admin = SanitizedSignerAccount::sanitize(next_account_info(account_iter)?, false)?;
-    let payer = SanitizedSignerAccount::sanitize(next_account_info(account_iter)?, true)?;
-
-    let avs = SanitizedAvs::sanitize(
-        &config.config().restaking_program(),
-        next_account_info(account_iter)?,
-        false,
-    )?;
-    let avs_slasher_list = SanitizedAvsSlasherList::sanitize(
-        &config.config().restaking_program(),
-        next_account_info(account_iter)?,
-        false,
-        avs.account().key,
-    )?;
-
-    assert_with_msg(
-        *admin.account().key == vault.vault().admin(),
-        ProgramError::InvalidArgument,
-        "Admin account does not match vault admin",
-    )?;
+    vault.vault().check_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
     let slasher_info = avs_slasher_list.avs_slasher_list().get_slasher_info(
@@ -74,4 +56,59 @@ pub fn process_register_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -
     vault_slasher_list.save(&Rent::get()?, payer.account())?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    vault: SanitizedVault<'a, 'info>,
+    vault_slasher_list: SanitizedVaultSlasherList<'a, 'info>,
+    slasher: &'a AccountInfo<'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+    payer: SanitizedSignerAccount<'a, 'info>,
+    avs: SanitizedAvs<'a, 'info>,
+    avs_slasher_list: SanitizedAvsSlasherList<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let account_iter = &mut accounts.iter();
+
+        let config =
+            SanitizedConfig::sanitize(program_id, next_account_info(account_iter)?, false)?;
+        let vault = SanitizedVault::sanitize(program_id, next_account_info(account_iter)?, false)?;
+        let vault_slasher_list = SanitizedVaultSlasherList::sanitize(
+            program_id,
+            next_account_info(account_iter)?,
+            true,
+            vault.account().key,
+        )?;
+        let slasher = next_account_info(account_iter)?;
+        let admin = SanitizedSignerAccount::sanitize(next_account_info(account_iter)?, false)?;
+        let payer = SanitizedSignerAccount::sanitize(next_account_info(account_iter)?, true)?;
+
+        let avs = SanitizedAvs::sanitize(
+            &config.config().restaking_program(),
+            next_account_info(account_iter)?,
+            false,
+        )?;
+        let avs_slasher_list = SanitizedAvsSlasherList::sanitize(
+            &config.config().restaking_program(),
+            next_account_info(account_iter)?,
+            false,
+            avs.account().key,
+        )?;
+        let _system_program = SanitizedSystemProgram::sanitize(next_account_info(account_iter)?)?;
+
+        Ok(SanitizedAccounts {
+            vault,
+            vault_slasher_list,
+            slasher,
+            admin,
+            payer,
+            avs,
+            avs_slasher_list,
+        })
+    }
 }

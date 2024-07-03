@@ -1,4 +1,4 @@
-use jito_restaking_sanitization::{assert_with_msg, signer::SanitizedSignerAccount};
+use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use jito_vault_core::{
     config::SanitizedConfig, vault::SanitizedVault, vault_operator_list::SanitizedVaultOperatorList,
 };
@@ -8,7 +8,6 @@ use solana_program::{
     entrypoint::ProgramResult,
     program_error::ProgramError,
     pubkey::Pubkey,
-    rent::Rent,
     sysvar::Sysvar,
 };
 
@@ -17,38 +16,64 @@ pub fn process_remove_delegation(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let mut accounts_iter = accounts.iter();
+    let SanitizedAccounts {
+        config,
+        vault,
+        mut vault_operator_list,
+        operator,
+        delegation_admin,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let config =
-        SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-    let vault =
-        SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-    let mut vault_operator_list = SanitizedVaultOperatorList::sanitize(
-        program_id,
-        next_account_info(&mut accounts_iter)?,
-        true,
-        vault.account().key,
-    )?;
-    let operator = next_account_info(&mut accounts_iter)?;
-    let delegation_admin =
-        SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-    let payer = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-
-    assert_with_msg(
-        vault.vault().delegation_admin() == *delegation_admin.account().key,
-        ProgramError::InvalidAccountData,
-        "Admin account does not match vault delegation admin",
-    )?;
-
+    vault
+        .vault()
+        .check_delegation_admin(delegation_admin.account().key)?;
     vault_operator_list
         .vault_operator_list_mut()
         .update_delegations(Clock::get()?.slot, config.config().epoch_length());
-
     vault_operator_list
         .vault_operator_list_mut()
         .undelegate(*operator.key, amount)?;
 
-    vault_operator_list.save_with_realloc(&Rent::get()?, payer.account())?;
+    vault_operator_list.save()?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
+    vault: SanitizedVault<'a, 'info>,
+    vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
+    operator: &'a AccountInfo<'info>,
+    delegation_admin: SanitizedSignerAccount<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let mut accounts_iter = accounts.iter();
+
+        let config =
+            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let vault =
+            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let vault_operator_list = SanitizedVaultOperatorList::sanitize(
+            program_id,
+            next_account_info(&mut accounts_iter)?,
+            true,
+            vault.account().key,
+        )?;
+        let operator = next_account_info(&mut accounts_iter)?;
+        let delegation_admin =
+            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+
+        Ok(SanitizedAccounts {
+            config,
+            vault,
+            vault_operator_list,
+            operator,
+            delegation_admin,
+        })
+    }
 }

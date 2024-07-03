@@ -6,7 +6,10 @@ use solana_program::{
     pubkey::Pubkey, rent::Rent,
 };
 
-use crate::AccountType;
+use crate::{
+    result::{VaultCoreError, VaultCoreResult},
+    AccountType,
+};
 
 /// Represents an operator that has opted-in to the vault and any associated stake on this operator
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
@@ -218,6 +221,7 @@ impl VaultOperatorList {
             .iter_mut()
             .find(|x| x.operator == *operator)
         {
+            // TODO (LB): need to slash pro-rata amount from cooling down + active amount
             let slash_amount = operator.active_amount.min(amount);
             operator.active_amount = operator.active_amount.checked_sub(slash_amount)?;
             Some(slash_amount)
@@ -237,29 +241,37 @@ impl VaultOperatorList {
         Some(total)
     }
 
-    pub fn add_operator(&mut self, operator: Pubkey, slot: u64) -> bool {
+    pub fn add_operator(&mut self, operator: Pubkey, slot: u64) -> VaultCoreResult<()> {
         if let Some(operator) = self
             .operator_list
             .iter_mut()
             .find(|x| x.operator == operator)
         {
-            operator.state.activate(slot)
+            if !operator.state.activate(slot) {
+                Err(VaultCoreError::VaultOperatorListOperatorAlreadyAdded)
+            } else {
+                Ok(())
+            }
         } else {
             self.operator_list.push(VaultOperator::new(operator, slot));
-            true
+            Ok(())
         }
     }
 
-    /// TODO (LB): should stake be deactivated when the operator is removed?
-    pub fn remove_operator(&mut self, operator: Pubkey, slot: u64) -> bool {
+    pub fn remove_operator(&mut self, operator: Pubkey, slot: u64) -> VaultCoreResult<()> {
         if let Some(operator) = self
             .operator_list
             .iter_mut()
             .find(|x| x.operator == operator)
         {
-            operator.state.deactivate(slot)
+            let deactivated = operator.state.deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(VaultCoreError::VaultOperatorListOperatorAlreadyRemoved)
+            }
         } else {
-            false
+            Err(VaultCoreError::VaultOperatorListOperatorNotAdded)
         }
     }
 
@@ -281,36 +293,28 @@ impl VaultOperatorList {
         program_id: &Pubkey,
         account: &AccountInfo,
         vault: &Pubkey,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "VaultOperatorList account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "VaultOperatorList account not owned by the correct program",
-        )?;
+    ) -> VaultCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(VaultCoreError::VaultOperatorListDataEmpty);
+        }
+        if account.owner != program_id {
+            return Err(VaultCoreError::VaultOperatorListInvalidProgramOwner);
+        }
 
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            state.account_type == AccountType::VaultOperatorList,
-            ProgramError::InvalidAccountData,
-            "VaultOperatorList account is invalid",
-        )?;
-
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| VaultCoreError::VaultOperatorListInvalidData(e.to_string()))?;
+        if state.account_type != AccountType::VaultOperatorList {
+            return Err(VaultCoreError::VaultOperatorListInvalidAccountType);
+        }
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(vault);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
-
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "VaultOperatorList account is not at the correct PDA",
-        )?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| VaultCoreError::VaultOperatorListInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(VaultCoreError::VaultOperatorListInvalidPda);
+        }
 
         Ok(state)
     }
@@ -322,19 +326,14 @@ pub struct SanitizedVaultOperatorList<'a, 'info> {
 }
 
 impl<'a, 'info> SanitizedVaultOperatorList<'a, 'info> {
-    /// Sanitizes the AvsAccount so it can be used in a safe context
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-    ) -> Result<SanitizedVaultOperatorList<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for vault operator list",
-            )?;
+    ) -> VaultCoreResult<SanitizedVaultOperatorList<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(VaultCoreError::VaultOperatorListExpectedWritable);
         }
         let vault_operator_list =
             VaultOperatorList::deserialize_checked(program_id, account, vault)?;

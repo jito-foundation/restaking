@@ -172,7 +172,7 @@ async fn test_operator_add_vault_ok() {
     let restaking_test_config = RestakingTestConfig::new_random();
 
     let mut vault_program_client = fixture.vault_program_client();
-    let vault_test_config = VaultTestConfig::new_random(restaking_test_config.config);
+    let vault_test_config = VaultTestConfig::new_random();
 
     fixture
         .create_token_mint(&vault_test_config.token_mint)
@@ -221,15 +221,4 @@ async fn test_operator_add_vault_ok() {
         .operator_add_vault(&restaking_test_config, &vault_test_config)
         .await
         .unwrap();
-
-    let vault_operator_list = vault_program_client
-        .get_vault_operator_list(&vault_test_config.vault_operator_list)
-        .await
-        .unwrap();
-
-    assert_eq!(vault_operator_list.vault(), vault_test_config.vault);
-    assert_eq!(
-        vault_operator_list.operator_list()[0].operator(),
-        restaking_test_config.operator
-    );
 }

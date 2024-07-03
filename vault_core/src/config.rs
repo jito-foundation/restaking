@@ -1,11 +1,16 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_restaking_sanitization::assert_with_msg;
 use solana_program::{
     account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH,
-    entrypoint_deprecated::ProgramResult, program_error::ProgramError, pubkey::Pubkey,
+    entrypoint_deprecated::ProgramResult, pubkey::Pubkey,
+};
+use VaultCoreError::ConfigInvalidPda;
+
+use crate::{
+    result::{VaultCoreError, VaultCoreResult},
+    AccountType,
 };
 
-use crate::AccountType;
+pub const MAX_RESTAKING_PROGRAMS: usize = 8;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 pub struct Config {
@@ -14,9 +19,6 @@ pub struct Config {
 
     /// The configuration admin
     admin: Pubkey,
-
-    /// The signer for restaking operations on a vault
-    restaking_program_signer: Pubkey,
 
     /// The approved restaking program for this vault
     restaking_program: Pubkey,
@@ -35,16 +37,10 @@ pub struct Config {
 }
 
 impl Config {
-    pub const fn new(
-        admin: Pubkey,
-        restaking_program_signer: Pubkey,
-        restaking_program: Pubkey,
-        bump: u8,
-    ) -> Self {
+    pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
             account_type: AccountType::Config,
             admin,
-            restaking_program_signer,
             restaking_program,
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
@@ -86,10 +82,6 @@ impl Config {
         vec![b"config".to_vec()]
     }
 
-    pub const fn restaking_program_signer(&self) -> Pubkey {
-        self.restaking_program_signer
-    }
-
     pub fn find_program_address(program_id: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
         let seeds = Self::seeds();
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
@@ -100,38 +92,30 @@ impl Config {
     pub fn deserialize_checked(
         program_id: &Pubkey,
         account: &AccountInfo,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "Config account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::InvalidAccountOwner,
-            "Invalid Config account owner",
-        )?;
+    ) -> VaultCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(VaultCoreError::ConfigDataEmpty);
+        }
+        if account.owner != program_id {
+            return Err(VaultCoreError::ConfigInvalidProgramOwner);
+        }
 
-        let config = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            config.is_struct_valid(),
-            ProgramError::InvalidAccountData,
-            "Invalid Config account data",
-        )?;
-
-        // double check derivation address
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| VaultCoreError::ConfigInvalidData(e.to_string()))?;
+        if state.account_type != AccountType::Config {
+            return Err(VaultCoreError::ConfigInvalidAccountType);
+        }
+        // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds();
-        seeds.push(vec![config.bump()]);
+        seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| ConfigInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(ConfigInvalidPda);
+        }
 
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "Invalid Config account address",
-        )?;
-
-        Ok(config)
+        Ok(state)
     }
 }
 
@@ -145,13 +129,9 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<SanitizedConfig<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for Config",
-            )?;
+    ) -> VaultCoreResult<SanitizedConfig<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(VaultCoreError::ConfigExpectedWritable);
         }
         let config = Config::deserialize_checked(program_id, account)?;
 

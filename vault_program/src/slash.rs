@@ -22,51 +22,19 @@ use solana_program::{
 };
 use spl_token::instruction::transfer;
 
+/// Processes the vault slash instruction: [`crate::VaultInstruction::Slash`]
 pub fn process_slash(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
-    let accounts_iter = &mut accounts.iter();
-
-    let config = SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-    let mut vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-    let vault_slasher_list = SanitizedVaultSlasherList::sanitize(
-        program_id,
-        next_account_info(accounts_iter)?,
-        false,
-        vault.account().key,
-    )?;
-    let mut vault_operator_list = SanitizedVaultOperatorList::sanitize(
-        program_id,
-        next_account_info(accounts_iter)?,
-        true,
-        vault.account().key,
-    )?;
-    let mut vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &vault.vault().supported_mint(),
-        vault.account().key,
-    )?;
-    let avs = SanitizedAvs::sanitize(
-        &config.config().restaking_program(),
-        next_account_info(accounts_iter)?,
-        false,
-    )?;
-    let avs_operator_list = SanitizedAvsOperatorList::sanitize(
-        &config.config().restaking_program(),
-        next_account_info(accounts_iter)?,
-        false,
-        avs.account().key,
-    )?;
-    let operator = SanitizedOperator::sanitize(
-        &config.config().restaking_program(),
-        next_account_info(accounts_iter)?,
-        false,
-    )?;
-    let slasher = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-    let slasher_token_account = SanitizedAssociatedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &vault.vault().supported_mint(),
-        slasher.account().key,
-    )?;
-    let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+    let SanitizedAccounts {
+        mut vault,
+        vault_slasher_list,
+        mut vault_operator_list,
+        mut vault_token_account,
+        avs,
+        avs_operator_list,
+        operator,
+        slasher,
+        slasher_token_account,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     let slot = Clock::get()?.slot;
 
@@ -168,4 +136,87 @@ fn slash_vault_operator<'a, 'info>(
         .set_tokens_deposited(vault_token_account.token_account().amount);
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    // config: SanitizedConfig<'a, 'info>,
+    vault: SanitizedVault<'a, 'info>,
+    vault_slasher_list: SanitizedVaultSlasherList<'a, 'info>,
+    vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
+    vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
+    avs: SanitizedAvs<'a, 'info>,
+    avs_operator_list: SanitizedAvsOperatorList<'a, 'info>,
+    operator: SanitizedOperator<'a, 'info>,
+    slasher: SanitizedSignerAccount<'a, 'info>,
+    slasher_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
+    // token_program: SanitizedTokenProgram<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<Self, ProgramError> {
+        let mut accounts_iter = accounts.iter();
+
+        let config =
+            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let vault =
+            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let vault_slasher_list = SanitizedVaultSlasherList::sanitize(
+            program_id,
+            next_account_info(&mut accounts_iter)?,
+            false,
+            vault.account().key,
+        )?;
+        let vault_operator_list = SanitizedVaultOperatorList::sanitize(
+            program_id,
+            next_account_info(&mut accounts_iter)?,
+            true,
+            vault.account().key,
+        )?;
+        let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(&mut accounts_iter)?,
+            &vault.vault().supported_mint(),
+            vault.account().key,
+        )?;
+        let avs = SanitizedAvs::sanitize(
+            &config.config().restaking_program(),
+            next_account_info(&mut accounts_iter)?,
+            false,
+        )?;
+        let avs_operator_list = SanitizedAvsOperatorList::sanitize(
+            &config.config().restaking_program(),
+            next_account_info(&mut accounts_iter)?,
+            false,
+            avs.account().key,
+        )?;
+        let operator = SanitizedOperator::sanitize(
+            &config.config().restaking_program(),
+            next_account_info(&mut accounts_iter)?,
+            false,
+        )?;
+        let slasher =
+            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+        let slasher_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(&mut accounts_iter)?,
+            &vault.vault().supported_mint(),
+            slasher.account().key,
+        )?;
+        let _token_program =
+            SanitizedTokenProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
+        Ok(Self {
+            // config,
+            vault,
+            vault_slasher_list,
+            vault_operator_list,
+            vault_token_account,
+            avs,
+            avs_operator_list,
+            operator,
+            slasher,
+            slasher_token_account,
+            // token_program,
+        })
+    }
 }

@@ -1,6 +1,5 @@
-use jito_restaking_sanitization::{
-    assert_with_msg, signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
-};
+use jito_restaking_core::operator::SanitizedOperator;
+use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use jito_vault_core::{
     config::SanitizedConfig, vault::SanitizedVault, vault_operator_list::SanitizedVaultOperatorList,
 };
@@ -8,60 +7,76 @@ use solana_program::{
     account_info::{next_account_info, AccountInfo},
     clock::Clock,
     entrypoint::ProgramResult,
-    msg,
     program_error::ProgramError,
     pubkey::Pubkey,
-    rent::Rent,
     sysvar::Sysvar,
 };
 
-/// Processes the vault remove NO instruction: [`crate::VaultInstruction::RemoveOperator`]
-pub fn process_vault_remove_node_operator(
+/// Processes the vault remove operator instruction: [`crate::VaultInstruction::RemoveOperator`]
+pub fn process_vault_remove_operator(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let mut accounts_iter = accounts.iter();
+    let SanitizedAccounts {
+        vault,
+        mut vault_operator_list,
+        operator,
+        admin,
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    let restaking_program_signer =
-        SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-    let operator = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-    let vault =
-        SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-    let config =
-        SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-    let mut vault_operator_list = SanitizedVaultOperatorList::sanitize(
-        program_id,
-        next_account_info(&mut accounts_iter)?,
-        true,
-        vault.account().key,
-    )?;
-    let payer = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-    let _system_program = SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
+    vault.vault().check_admin(admin.account().key)?;
 
-    assert_with_msg(
-        config.config().restaking_program_signer() == *restaking_program_signer.account().key,
-        ProgramError::InvalidAccountData,
-        "Restaking program signer does not match config",
-    )?;
+    let slot = Clock::get()?.slot;
+    vault_operator_list
+        .vault_operator_list_mut()
+        .remove_operator(*operator.account().key, slot)?;
 
-    let clock = Clock::get()?;
+    // TODO (LB): should one deactivate the stake here as well?
 
-    assert_with_msg(
-        vault_operator_list
-            .vault_operator_list_mut()
-            .remove_operator(*operator.account().key, clock.slot),
-        ProgramError::InvalidArgument,
-        "Operator not found in vault",
-    )?;
-
-    msg!(
-        "Operator @ {} removed from vault @ {} in slot {}",
-        operator.account().key,
-        vault.account().key,
-        clock.slot
-    );
-
-    vault_operator_list.save_with_realloc(&Rent::get()?, payer.account())?;
+    vault_operator_list.save()?;
 
     Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    // config: SanitizedConfig<'a, 'info>,
+    vault: SanitizedVault<'a, 'info>,
+    vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
+    operator: SanitizedOperator<'a, 'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let mut accounts_iter = accounts.iter();
+
+        let config =
+            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let vault =
+            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let vault_operator_list = SanitizedVaultOperatorList::sanitize(
+            program_id,
+            next_account_info(&mut accounts_iter)?,
+            true,
+            vault.account().key,
+        )?;
+        let operator = SanitizedOperator::sanitize(
+            &config.config().restaking_program(),
+            next_account_info(&mut accounts_iter)?,
+            false,
+        )?;
+        let admin =
+            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+
+        Ok(SanitizedAccounts {
+            // config,
+            vault,
+            vault_operator_list,
+            operator,
+            admin,
+        })
+    }
 }

@@ -1,5 +1,3 @@
-use std::slice::Iter;
-
 use jito_restaking_sanitization::{
     assert_with_msg, associated_token_account::SanitizedAssociatedTokenAccount,
     signer::SanitizedSignerAccount, token_mint::SanitizedTokenMint,
@@ -17,8 +15,6 @@ use spl_token::instruction::{mint_to, transfer};
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
-    let accounts_iter = &mut accounts.iter();
-
     let SanitizedAccounts {
         mut vault,
         lrt_mint,
@@ -29,7 +25,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         vault_fee_token_account,
         token_program,
         mint_signer,
-    } = _sanitize_accounts(program_id, accounts_iter)?;
+    } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     // The LRT mint provided shall be equal to the one the vault supports
     assert_with_msg(
@@ -100,57 +96,61 @@ struct SanitizedAccounts<'a, 'info> {
     mint_signer: Option<SanitizedSignerAccount<'a, 'info>>,
 }
 
-/// Loads accounts for [`crate::VaultInstruction::MintTo`]
-fn _sanitize_accounts<'a, 'info>(
-    program_id: &Pubkey,
-    accounts_iter: &'a mut Iter<AccountInfo<'info>>,
-) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-    let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-    let lrt_mint = SanitizedTokenMint::sanitize(next_account_info(accounts_iter)?, true)?;
-    let depositor = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-    let depositor_token_account = SanitizedAssociatedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &vault.vault().supported_mint(),
-        depositor.account().key,
-    )?;
-    let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &vault.vault().supported_mint(),
-        vault.account().key,
-    )?;
-    let depositor_lrt_token_account = SanitizedAssociatedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &vault.vault().lrt_mint(),
-        depositor.account().key,
-    )?;
-    let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
-        next_account_info(accounts_iter)?,
-        &vault.vault().lrt_mint(),
-        &vault.vault().fee_owner(),
-    )?;
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    /// Loads accounts for [`crate::VaultInstruction::MintTo`]
+    fn sanitize(
+        program_id: &Pubkey,
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let accounts_iter = &mut accounts.iter();
 
-    let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-    let mint_signer = if vault.vault().mint_burn_authority().is_some() {
-        Some(SanitizedSignerAccount::sanitize(
+        let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        let lrt_mint = SanitizedTokenMint::sanitize(next_account_info(accounts_iter)?, true)?;
+        let depositor = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        let depositor_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
-            false,
-        )?)
-    } else {
-        None
-    };
+            &vault.vault().supported_mint(),
+            depositor.account().key,
+        )?;
+        let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(accounts_iter)?,
+            &vault.vault().supported_mint(),
+            vault.account().key,
+        )?;
+        let depositor_lrt_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(accounts_iter)?,
+            &vault.vault().lrt_mint(),
+            depositor.account().key,
+        )?;
+        let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(accounts_iter)?,
+            &vault.vault().lrt_mint(),
+            &vault.vault().fee_owner(),
+        )?;
 
-    Ok(SanitizedAccounts {
-        vault,
-        lrt_mint,
-        depositor,
-        depositor_token_account,
-        vault_token_account,
-        depositor_lrt_token_account,
-        vault_fee_token_account,
-        token_program,
-        mint_signer,
-    })
+        let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+
+        let mint_signer = if vault.vault().mint_burn_authority().is_some() {
+            Some(SanitizedSignerAccount::sanitize(
+                next_account_info(accounts_iter)?,
+                false,
+            )?)
+        } else {
+            None
+        };
+
+        Ok(SanitizedAccounts {
+            vault,
+            lrt_mint,
+            depositor,
+            depositor_token_account,
+            vault_token_account,
+            depositor_lrt_token_account,
+            vault_fee_token_account,
+            token_program,
+            mint_signer,
+        })
+    }
 }
 
 /// Transfers tokens from the `depositor_token_account` owned by the `owner` to the `vault_token_account`

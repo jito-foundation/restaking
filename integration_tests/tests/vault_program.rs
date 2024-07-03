@@ -10,9 +10,7 @@ async fn test_initialize_config_ok() {
     let mut fixture = TestBuilder::new().await;
     let mut collateral_program_client = fixture.vault_program_client();
 
-    let restaking_program_signer = Keypair::new();
-
-    let test_config = VaultTestConfig::new_random(restaking_program_signer.pubkey());
+    let test_config = VaultTestConfig::new_random();
 
     fixture
         .transfer(&test_config.config_admin.pubkey(), 10.0)
@@ -29,10 +27,6 @@ async fn test_initialize_config_ok() {
         .await
         .unwrap();
     assert_eq!(config.admin(), test_config.config_admin.pubkey());
-    assert_eq!(
-        config.restaking_program_signer(),
-        test_config.restaking_program_signer
-    );
     assert_eq!(config.vaults_count(), 0);
 }
 
@@ -41,9 +35,7 @@ async fn test_initialize_config_bad_address_fails() {
     let mut fixture = TestBuilder::new().await;
     let mut collateral_program_client = fixture.vault_program_client();
 
-    let restaking_program_signer = Keypair::new();
-
-    let mut test_config = VaultTestConfig::new_random(restaking_program_signer.pubkey());
+    let mut test_config = VaultTestConfig::new_random();
     test_config.config = Pubkey::new_unique();
 
     fixture
@@ -62,9 +54,7 @@ async fn test_initialize_vault_ok() {
     let mut fixture = TestBuilder::new().await;
     let mut collateral_program_client = fixture.vault_program_client();
 
-    let restaking_program_signer = Keypair::new();
-
-    let test_config = VaultTestConfig::new_random(restaking_program_signer.pubkey());
+    let test_config = VaultTestConfig::new_random();
 
     fixture
         .transfer(&test_config.config_admin.pubkey(), 10.0)
@@ -128,9 +118,7 @@ async fn test_initialize_vault_bad_addresses_fails() {
     let mut fixture = TestBuilder::new().await;
     let mut collateral_program_client = fixture.vault_program_client();
 
-    let restaking_program_signer = Keypair::new();
-
-    let test_config = VaultTestConfig::new_random(restaking_program_signer.pubkey());
+    let test_config = VaultTestConfig::new_random();
 
     fixture
         .transfer(&test_config.config_admin.pubkey(), 10.0)

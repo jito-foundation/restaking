@@ -6,7 +6,11 @@ use solana_program::{
     pubkey::Pubkey, rent::Rent,
 };
 
-use crate::{vault::RestakingVault, AccountType};
+use crate::{
+    result::{RestakingCoreError, RestakingCoreResult},
+    vault::RestakingVault,
+    AccountType,
+};
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct Operator {
@@ -22,7 +26,7 @@ pub struct Operator {
     /// The voter pubkey
     voter: Pubkey,
 
-    /// The node operator index
+    /// The operator index
     index: u64,
 
     /// Reserved space
@@ -35,7 +39,7 @@ pub struct Operator {
 impl Operator {
     pub const fn new(base: Pubkey, admin: Pubkey, voter: Pubkey, index: u64, bump: u8) -> Self {
         Self {
-            account_type: AccountType::NodeOperator,
+            account_type: AccountType::Operator,
             base,
             admin,
             voter,
@@ -59,6 +63,13 @@ impl Operator {
 
     pub const fn admin(&self) -> Pubkey {
         self.admin
+    }
+
+    pub fn check_admin(&self, admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.admin != *admin {
+            return Err(RestakingCoreError::OperatorInvalidAdmin);
+        }
+        Ok(())
     }
 
     pub fn set_admin(&mut self, admin: Pubkey) {
@@ -91,20 +102,20 @@ impl Operator {
         assert_with_msg(
             !account.data_is_empty(),
             ProgramError::UninitializedAccount,
-            "Node Operator account is not initialized",
+            "Operator account is not initialized",
         )?;
         assert_with_msg(
             account.owner == program_id,
             ProgramError::IllegalOwner,
-            "Node Operator account is not owned by the program",
+            "Operator account is not owned by the program",
         )?;
 
         // The AvsState shall be properly deserialized and valid struct
         let operator = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
         assert_with_msg(
-            operator.account_type == AccountType::NodeOperator,
+            operator.account_type == AccountType::Operator,
             ProgramError::InvalidAccountData,
-            "Node Operator account is not valid",
+            "Operator account is not valid",
         )?;
 
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
@@ -116,7 +127,7 @@ impl Operator {
         assert_with_msg(
             expected_pubkey == *account.key,
             ProgramError::InvalidAccountData,
-            "Node Operator account is not at the correct PDA",
+            "Operator account is not at the correct PDA",
         )?;
 
         Ok(operator)
@@ -124,7 +135,7 @@ impl Operator {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct NodeOperatorAvs {
+pub struct OperatorAvs {
     /// The AVS account
     avs: Pubkey,
 
@@ -134,7 +145,7 @@ pub struct NodeOperatorAvs {
     reserved: [u8; 256],
 }
 
-impl NodeOperatorAvs {
+impl OperatorAvs {
     pub const fn new(avs: Pubkey, slot_added: u64) -> Self {
         Self {
             avs,
@@ -153,20 +164,20 @@ impl NodeOperatorAvs {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct NodeOperatorAvsList {
+pub struct OperatorAvsList {
     account_type: AccountType,
 
     operator: Pubkey,
 
     bump: u8,
 
-    avs: Vec<NodeOperatorAvs>,
+    avs: Vec<OperatorAvs>,
 }
 
-impl NodeOperatorAvsList {
+impl OperatorAvsList {
     pub const fn new(operator: Pubkey, bump: u8) -> Self {
         Self {
-            account_type: AccountType::NodeOperatorAvsList,
+            account_type: AccountType::OperatorAvsList,
             operator,
             bump,
             avs: vec![],
@@ -177,29 +188,48 @@ impl NodeOperatorAvsList {
         self.operator
     }
 
-    pub fn avs_list(&self) -> &[NodeOperatorAvs] {
+    pub fn avs_list(&self) -> &[OperatorAvs] {
         &self.avs
     }
 
-    pub fn add_avs(&mut self, avs: Pubkey, slot: u64) -> bool {
+    pub fn add_avs(&mut self, avs: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_avs = self.avs.iter_mut().find(|a| a.avs() == avs);
         if let Some(avs) = maybe_avs {
-            avs.state.activate(slot)
+            let activated = avs.state.activate(slot);
+            if activated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::AvsFailedToActivate)
+            }
         } else {
-            self.avs.push(NodeOperatorAvs::new(avs, slot));
-            true
+            self.avs.push(OperatorAvs::new(avs, slot));
+            Ok(())
         }
     }
 
-    pub fn remove_avs(&mut self, avs: Pubkey, slot: u64) -> bool {
+    pub fn remove_avs(&mut self, avs: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_avs = self.avs.iter_mut().find(|a| a.avs() == avs);
-        maybe_avs.map_or(false, |avs| avs.state.deactivate(slot))
+        if let Some(avs) = maybe_avs {
+            let deactivated = avs.state.deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::AvsFailedToDeactivate)
+            }
+        } else {
+            Err(RestakingCoreError::AvsNotFound)
+        }
     }
 
-    pub fn contains_active_avs(&self, avs: &Pubkey, slot: u64) -> bool {
-        self.avs
-            .iter()
-            .any(|a| a.avs() == *avs && a.state.is_active(slot))
+    pub fn check_avs_active(&self, avs: &Pubkey, slot: u64) -> RestakingCoreResult<()> {
+        let maybe_avs = self.avs.iter().find(|a| a.avs() == *avs);
+        maybe_avs.map_or(Err(RestakingCoreError::AvsNotFound), |avs| {
+            if avs.state.is_active(slot) {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::AvsNotActive)
+            }
+        })
     }
 
     pub fn seeds(operator: &Pubkey) -> Vec<Vec<u8>> {
@@ -224,25 +254,25 @@ impl NodeOperatorAvsList {
         assert_with_msg(
             !account.data_is_empty(),
             ProgramError::UninitializedAccount,
-            "Node Operator AVS List account is not initialized",
+            "Operator AVS List account is not initialized",
         )?;
         assert_with_msg(
             account.owner == program_id,
             ProgramError::IllegalOwner,
-            "Node Operator AVS List account is not owned by the program",
+            "Operator AVS List account is not owned by the program",
         )?;
 
         // The AvsState shall be properly deserialized and valid struct
         let operator_avs_list = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
         assert_with_msg(
-            operator_avs_list.account_type == AccountType::NodeOperatorAvsList,
+            operator_avs_list.account_type == AccountType::OperatorAvsList,
             ProgramError::InvalidAccountData,
-            "Node Operator AVS List account is not valid",
+            "Operator AVS List account is not valid",
         )?;
         assert_with_msg(
             operator_avs_list.operator == *operator,
             ProgramError::InvalidAccountData,
-            "Node Operator AVS List account is not for the correct node operator",
+            "Operator AVS List account is not for the correct operator",
         )?;
 
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
@@ -254,7 +284,7 @@ impl NodeOperatorAvsList {
         assert_with_msg(
             expected_pubkey == *account.key,
             ProgramError::InvalidAccountData,
-            "Node Operator AVS List account is not at the correct PDA",
+            "Operator AVS List account is not at the correct PDA",
         )?;
 
         Ok(operator_avs_list)
@@ -275,7 +305,7 @@ pub struct OperatorVaultList {
 impl OperatorVaultList {
     pub const fn new(operator: Pubkey, bump: u8) -> Self {
         Self {
-            account_type: AccountType::NodeOperatorVaultList,
+            account_type: AccountType::OperatorVaultList,
             operator,
             bump,
             vaults: vec![],
@@ -290,19 +320,42 @@ impl OperatorVaultList {
         &self.vaults
     }
 
-    pub fn add_vault(&mut self, vault: Pubkey, slot: u64) -> bool {
+    pub fn check_active_vault(&self, vault: Pubkey, slot: u64) -> RestakingCoreResult<()> {
+        let maybe_vault = self.vaults.iter().find(|v| v.vault() == vault);
+        maybe_vault.map_or(Err(RestakingCoreError::VaultNotFound), |vault| {
+            if vault.state().is_active(slot) {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultNotActive)
+            }
+        })
+    }
+
+    pub fn add_vault(&mut self, vault: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_vault = self.vaults.iter_mut().find(|v| v.vault() == vault);
         if let Some(vault) = maybe_vault {
-            vault.state_mut().activate(slot)
+            let activated = vault.state_mut().activate(slot);
+            if activated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultFailedToActivate)
+            }
         } else {
             self.vaults.push(RestakingVault::new(vault, slot));
-            true
+            Ok(())
         }
     }
 
-    pub fn remove_vault(&mut self, vault: Pubkey, slot: u64) -> bool {
+    pub fn remove_vault(&mut self, vault: Pubkey, slot: u64) -> RestakingCoreResult<()> {
         let maybe_vault = self.vaults.iter_mut().find(|v| v.vault() == vault);
-        maybe_vault.map_or(false, |vault| vault.state_mut().deactivate(slot))
+        maybe_vault.map_or(Err(RestakingCoreError::VaultNotFound), |vault| {
+            let deactivated = vault.state_mut().deactivate(slot);
+            if deactivated {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::VaultFailedToDeactivate)
+            }
+        })
     }
 
     pub fn seeds(operator: &Pubkey) -> Vec<Vec<u8>> {
@@ -330,25 +383,25 @@ impl OperatorVaultList {
         assert_with_msg(
             !account.data_is_empty(),
             ProgramError::UninitializedAccount,
-            "Node Operator Vault List account is not initialized",
+            "Operator Vault List account is not initialized",
         )?;
         assert_with_msg(
             account.owner == program_id,
             ProgramError::IllegalOwner,
-            "Node Operator Vault List account is not owned by the program",
+            "Operator Vault List account is not owned by the program",
         )?;
 
         // The AvsState shall be properly deserialized and valid struct
         let operator_vault_list = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
         assert_with_msg(
-            operator_vault_list.account_type == AccountType::NodeOperatorVaultList,
+            operator_vault_list.account_type == AccountType::OperatorVaultList,
             ProgramError::InvalidAccountData,
-            "Node Operator Vault List account is not valid",
+            "Operator Vault List account is not valid",
         )?;
         assert_with_msg(
             operator_vault_list.operator == *operator,
             ProgramError::InvalidAccountData,
-            "Node Operator Vault List account is not for the correct node operator",
+            "Operator Vault List account is not for the correct operator",
         )?;
 
         // The AvsState shall be at the correct PDA as defined by the seeds and bump
@@ -360,7 +413,7 @@ impl OperatorVaultList {
         assert_with_msg(
             expected_pubkey == *account.key,
             ProgramError::InvalidAccountData,
-            "Node Operator Vault List account is not at the correct PDA",
+            "Operator Vault List account is not at the correct PDA",
         )?;
 
         Ok(operator_vault_list)
@@ -382,7 +435,7 @@ impl<'a, 'info> SanitizedOperator<'a, 'info> {
             assert_with_msg(
                 account.is_writable,
                 ProgramError::InvalidAccountData,
-                "Node Operator account is not writable",
+                "Operator account is not writable",
             )?;
         }
 
@@ -409,12 +462,12 @@ impl<'a, 'info> SanitizedOperator<'a, 'info> {
     }
 }
 
-pub struct SanitizedNodeOperatorAvsList<'a, 'info> {
+pub struct SanitizedOperatorAvsList<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    operator_avs_list: NodeOperatorAvsList,
+    operator_avs_list: OperatorAvsList,
 }
 
-impl<'a, 'info> SanitizedNodeOperatorAvsList<'a, 'info> {
+impl<'a, 'info> SanitizedOperatorAvsList<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
@@ -425,12 +478,12 @@ impl<'a, 'info> SanitizedNodeOperatorAvsList<'a, 'info> {
             assert_with_msg(
                 account.is_writable,
                 ProgramError::InvalidAccountData,
-                "Node Operator AVS List account is not writable",
+                "Operator AVS List account is not writable",
             )?;
         }
 
         let operator_avs_list =
-            NodeOperatorAvsList::deserialize_checked(program_id, account, operator)?;
+            OperatorAvsList::deserialize_checked(program_id, account, operator)?;
 
         Ok(Self {
             account,
@@ -442,11 +495,11 @@ impl<'a, 'info> SanitizedNodeOperatorAvsList<'a, 'info> {
         self.account
     }
 
-    pub const fn operator_avs_list(&self) -> &NodeOperatorAvsList {
+    pub const fn operator_avs_list(&self) -> &OperatorAvsList {
         &self.operator_avs_list
     }
 
-    pub fn operator_avs_list_mut(&mut self) -> &mut NodeOperatorAvsList {
+    pub fn operator_avs_list_mut(&mut self) -> &mut OperatorAvsList {
         &mut self.operator_avs_list
     }
 
@@ -487,7 +540,7 @@ impl<'a, 'info> SanitizedOperatorVaultList<'a, 'info> {
             assert_with_msg(
                 account.is_writable,
                 ProgramError::InvalidAccountData,
-                "Node Operator Vault List account is not writable",
+                "Operator Vault List account is not writable",
             )?;
         }
 
@@ -512,12 +565,20 @@ impl<'a, 'info> SanitizedOperatorVaultList<'a, 'info> {
         &mut self.operator_vault_list
     }
 
-    pub fn save(&self, rent: &Rent, payer: &'a AccountInfo<'info>) -> ProgramResult {
+    pub fn save_with_realloc(&self, rent: &Rent, payer: &'a AccountInfo<'info>) -> ProgramResult {
         let serialized = self.operator_vault_list.try_to_vec()?;
 
         if serialized.len() > self.account.data.borrow().len() {
             realloc(self.account, serialized.len(), payer, rent)?;
         }
+
+        self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
+
+        Ok(())
+    }
+
+    pub fn save(&self) -> ProgramResult {
+        let serialized = self.operator_vault_list.try_to_vec()?;
 
         self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
 
