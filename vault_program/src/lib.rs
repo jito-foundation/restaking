@@ -14,7 +14,7 @@ mod remove_delegation;
 mod remove_operator;
 mod set_admin;
 mod set_capacity;
-mod set_delegation_admin;
+mod set_secondary_admin;
 mod slash;
 mod update_delegations;
 mod update_token_metadata;
@@ -39,7 +39,7 @@ use crate::{
     register_slasher::process_register_slasher, remove_avs::process_vault_remove_avs,
     remove_delegation::process_remove_delegation, remove_operator::process_vault_remove_operator,
     set_admin::process_set_admin, set_capacity::process_set_capacity,
-    set_delegation_admin::process_set_delegation_admin, slash::process_slash,
+    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
     update_delegations::process_update_delegations,
     update_token_metadata::process_update_token_metadata,
     withdrawal_asset::process_withdrawal_asset,
@@ -95,9 +95,9 @@ pub fn process_instruction(
         // ------------------------------------------
         // Vault administration
         // ------------------------------------------
-        VaultInstruction::SetDelegationAdmin => {
+        VaultInstruction::SetSecondaryAdmin(role) => {
             msg!("Instruction: SetDelegationAdmin");
-            process_set_delegation_admin(program_id, accounts)
+            process_set_secondary_admin(program_id, accounts, role)
         }
         VaultInstruction::SetAdmin => {
             msg!("Instruction: SetAdmin");

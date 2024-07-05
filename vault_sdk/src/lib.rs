@@ -111,17 +111,17 @@ pub enum VaultInstruction {
         amount: u64
     },
 
-    /// Changes the signer for vault delegation
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "admin", description = "Admin or delegation admin of the LRT")]
-    #[account(2, signer, name = "new_admin", description = "Admin or delegation admin of the LRT")]
-    SetDelegationAdmin,
-
     /// Changes the signer for vault admin
     #[account(0, writable, name = "vault")]
     #[account(1, signer, name = "old_admin")]
-    #[account(2, signer, name = "old_admin")]
+    #[account(2, signer, name = "new_admin")]
     SetAdmin,
+
+    /// Changes the signer for vault delegation
+    #[account(0, writable, name = "vault")]
+    #[account(1, signer, name = "admin")]
+    #[account(2, name = "new_admin")]
+    SetSecondaryAdmin(VaultAdminRole),
 
     /// Delegates a token amount to a specific node operator
     #[account(0, name = "config")]
@@ -193,6 +193,13 @@ pub enum VaultInstruction {
         symbol: String,
         uri: String,
     },
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+pub enum VaultAdminRole {
+    Delegataion,
+    FeeOwner,
+    MintBurnAuthority,
 }
 
 pub fn initialize_config(

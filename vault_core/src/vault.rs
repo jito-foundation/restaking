@@ -105,6 +105,10 @@ impl Vault {
         self.fee_owner
     }
 
+    pub fn set_fee_owner(&mut self, fee_owner: Pubkey) {
+        self.fee_owner = fee_owner;
+    }
+
     pub const fn deposit_fee_bps(&self) -> u16 {
         self.deposit_fee_bps
     }
@@ -119,6 +123,10 @@ impl Vault {
         } else {
             None
         }
+    }
+
+    pub fn set_mint_burn_authority(&mut self, mint_burn_authority: Pubkey) {
+        self.mint_burn_authority = mint_burn_authority;
     }
 
     pub fn set_tokens_deposited(&mut self, tokens_deposited: u64) {
