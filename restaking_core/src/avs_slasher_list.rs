@@ -147,7 +147,21 @@ impl AvsSlasherList {
         }
     }
 
-    pub fn get_slasher_info(
+    pub fn check_slasher_active(
+        &self,
+        vault: &Pubkey,
+        slasher: &Pubkey,
+        slot: u64,
+    ) -> RestakingCoreResult<()> {
+        let slasher_info = self.get_active_vault_slasher(*vault, *slasher, slot);
+        if slasher_info.is_none() {
+            Err(RestakingCoreError::SlasherNotActive)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn get_active_vault_slasher(
         &self,
         vault: Pubkey,
         slasher: Pubkey,

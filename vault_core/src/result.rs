@@ -46,6 +46,13 @@ pub enum VaultCoreError {
     VaultOperatorListOperatorAlreadyRemoved,
     VaultOperatorListOperatorNotAdded,
     VaultInvalidDelegationAdmin,
+    VaultSlasherNotFound,
+    VaultSlasherNotActive,
+    VaultAvsNotActive,
+    VaultOperatorNotFound,
+    VaultOperatorNotActive,
+    VaultSlashingOverflow,
+    VaultSlashingUnderflow,
 }
 
 impl From<VaultCoreError> for ProgramError {

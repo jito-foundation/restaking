@@ -114,6 +114,17 @@ impl VaultOperatorList {
             < slot.checked_div(epoch_length).unwrap()
     }
 
+    pub fn check_operator_active(&self, operator: &Pubkey, slot: u64) -> VaultCoreResult<()> {
+        let maybe_operator = self.operator_list.iter().find(|o| o.operator == *operator);
+        maybe_operator.map_or(Err(VaultCoreError::VaultOperatorNotFound), |operator| {
+            if operator.state().is_active(slot) {
+                Ok(())
+            } else {
+                Err(VaultCoreError::VaultOperatorNotActive)
+            }
+        })
+    }
+
     pub fn update_delegations(&mut self, slot: u64, epoch_length: u64) -> bool {
         let last_epoch_update = self.last_slot_updated.checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
@@ -215,18 +226,38 @@ impl VaultOperatorList {
         Ok(())
     }
 
-    pub fn slash(&mut self, operator: &Pubkey, amount: u64) -> Option<u64> {
+    pub fn slash(&mut self, operator: &Pubkey, amount: u64) -> VaultCoreResult<()> {
         if let Some(operator) = self
             .operator_list
             .iter_mut()
             .find(|x| x.operator == *operator)
         {
-            // TODO (LB): need to slash pro-rata amount from cooling down + active amount
-            let slash_amount = operator.active_amount.min(amount);
-            operator.active_amount = operator.active_amount.checked_sub(slash_amount)?;
-            Some(slash_amount)
+            let total_staked_amount = operator
+                .active_amount
+                .checked_add(operator.cooling_down_amount)
+                .ok_or(VaultCoreError::VaultSlashingOverflow)?;
+
+            // TODO (LB): floating point?
+            let active_slash_amount = operator
+                .active_amount
+                .checked_div(total_staked_amount)
+                .unwrap_or(0);
+            let cooling_down_slash_amount = amount
+                .checked_sub(active_slash_amount)
+                .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
+
+            operator.active_amount = operator
+                .active_amount
+                .checked_sub(active_slash_amount)
+                .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
+            operator.cooling_down_amount = operator
+                .cooling_down_amount
+                .checked_sub(cooling_down_slash_amount)
+                .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
+
+            Ok(())
         } else {
-            None
+            Err(VaultCoreError::VaultOperatorNotFound)
         }
     }
 

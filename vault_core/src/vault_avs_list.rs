@@ -96,6 +96,17 @@ impl VaultAvsList {
         }
     }
 
+    pub fn check_avs_active(&self, avs: &Pubkey, slot: u64) -> VaultCoreResult<()> {
+        let maybe_avs = self.supported_avs.iter().find(|x| *x.avs() == *avs);
+        maybe_avs.map_or(Err(VaultCoreError::VaultAvsNotSupported), |avs_info| {
+            if avs_info.state.is_active(slot) {
+                Ok(())
+            } else {
+                Err(VaultCoreError::VaultAvsNotActive)
+            }
+        })
+    }
+
     pub fn seeds(vault: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault_supported_avs".to_vec(), vault.to_bytes().to_vec()]
     }

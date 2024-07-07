@@ -1,10 +1,7 @@
 use borsh::BorshDeserialize;
 use jito_restaking_core::{
-    avs::Avs,
-    avs_operator_list::AvsOperatorList,
-    avs_vault_list::AvsVaultList,
-    config::Config,
-    operator::{Operator, OperatorAvsList, OperatorVaultList},
+    avs::Avs, avs_operator_list::AvsOperatorList, avs_vault_list::AvsVaultList, config::Config,
+    operator::Operator, operator_avs_list::OperatorAvsList, operator_vault_list::OperatorVaultList,
 };
 use jito_restaking_sdk::{
     avs_add_vault, avs_remove_vault, initialize_avs, initialize_config, initialize_operator,

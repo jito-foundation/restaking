@@ -35,7 +35,7 @@ pub fn process_avs_add_vault_slasher(
     let slot = Clock::get()?.slot;
     avs_vault_list
         .avs_vault_list()
-        .check_active_vault(vault.key, slot)?;
+        .check_vault_active(vault.key, slot)?;
     avs_slasher_list.avs_slasher_list_mut().add_slasher(
         *vault.key,
         *slasher.key,

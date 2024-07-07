@@ -6,7 +6,9 @@ pub mod avs_slasher_list;
 pub mod avs_vault_list;
 pub mod config;
 pub mod operator;
-mod result;
+pub mod operator_avs_list;
+pub mod operator_vault_list;
+pub mod result;
 pub mod vault;
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]

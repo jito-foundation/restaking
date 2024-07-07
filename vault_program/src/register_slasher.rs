@@ -30,11 +30,10 @@ pub fn process_register_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -
     vault.vault().check_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    let slasher_info = avs_slasher_list.avs_slasher_list().get_slasher_info(
-        *vault.account().key,
-        *slasher.key,
-        slot,
-    );
+    // TODO (LB): fix
+    let slasher_info = avs_slasher_list
+        .avs_slasher_list()
+        .get_active_vault_slasher(*vault.account().key, *slasher.key, slot);
     assert_with_msg(
         slasher_info.is_some(),
         ProgramError::InvalidArgument,

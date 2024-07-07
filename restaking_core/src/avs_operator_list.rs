@@ -70,6 +70,17 @@ impl AvsOperatorList {
         }
     }
 
+    pub fn check_operator_active(&self, operator: &Pubkey, slot: u64) -> RestakingCoreResult<()> {
+        let maybe_operator = self.operators.iter().find(|a| a.operator() == *operator);
+        maybe_operator.map_or(Err(RestakingCoreError::OperatorNotFound), |operator| {
+            if operator.state.is_active(slot) {
+                Ok(())
+            } else {
+                Err(RestakingCoreError::OperatorNotActive)
+            }
+        })
+    }
+
     pub fn get_active_operator(&self, operator: &Pubkey, slot: u64) -> Option<&AvsOperator> {
         self.operators
             .iter()

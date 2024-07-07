@@ -1,7 +1,7 @@
 use borsh::BorshSerialize;
 use jito_restaking_core::{
-    config::SanitizedConfig,
-    operator::{Operator, OperatorAvsList, OperatorVaultList},
+    config::SanitizedConfig, operator::Operator, operator_avs_list::OperatorAvsList,
+    operator_vault_list::OperatorVaultList,
 };
 use jito_restaking_sanitization::{
     assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,

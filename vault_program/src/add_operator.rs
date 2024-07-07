@@ -1,4 +1,6 @@
-use jito_restaking_core::operator::{SanitizedOperator, SanitizedOperatorVaultList};
+use jito_restaking_core::{
+    operator::SanitizedOperator, operator_vault_list::SanitizedOperatorVaultList,
+};
 use jito_restaking_sanitization::{
     signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
 };
@@ -38,7 +40,7 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
     // The operator shall support the vault for it to be added
     operator_vault_list
         .operator_vault_list()
-        .check_active_vault(*vault.account().key, slot)?;
+        .check_vault_active(vault.account().key, slot)?;
     vault_operator_list
         .vault_operator_list_mut()
         .add_operator(*operator.account().key, slot)?;
@@ -49,14 +51,12 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
 }
 
 struct SanitizedAccounts<'a, 'info> {
-    // config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
     operator_vault_list: SanitizedOperatorVaultList<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
     payer: SanitizedSignerAccount<'a, 'info>,
-    // system_program: SanitizedSystemProgram<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {

@@ -1,7 +1,6 @@
 use jito_restaking_core::{
-    avs::SanitizedAvs,
-    config::SanitizedConfig,
-    operator::{SanitizedOperator, SanitizedOperatorAvsList},
+    avs::SanitizedAvs, config::SanitizedConfig, operator::SanitizedOperator,
+    operator_avs_list::SanitizedOperatorAvsList,
 };
 use jito_restaking_sanitization::{
     signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,

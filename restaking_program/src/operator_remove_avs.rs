@@ -1,7 +1,6 @@
 use jito_restaking_core::{
-    avs::SanitizedAvs,
-    config::SanitizedConfig,
-    operator::{SanitizedOperator, SanitizedOperatorAvsList},
+    avs::SanitizedAvs, config::SanitizedConfig, operator::SanitizedOperator,
+    operator_avs_list::SanitizedOperatorAvsList,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
@@ -23,6 +22,8 @@ pub fn process_operator_remove_avs(program_id: &Pubkey, accounts: &[AccountInfo]
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     operator.operator().check_admin(admin.account().key)?;
+
+    // TODO (LB): should it get removed from the AVS?
 
     let slot = Clock::get()?.slot;
     operator_avs_list

@@ -164,22 +164,6 @@ pub enum VaultInstruction {
     #[account(8, name = "system_program")]
     AddSlasher,
 
-    /// Slashes an amount of tokens from the vault
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, name = "vault_slasher_list")]
-    #[account(3, writable, name = "vault_operator_list")]
-    #[account(4, writable, name = "vault_token_account")]
-    #[account(5, name = "avs")]
-    #[account(6, name = "avs_operator_list")]
-    #[account(7, name = "operator")]
-    #[account(8, signer, name = "slasher")]
-    #[account(9, name = "slasher_token_account")]
-    #[account(10, name = "token_program")]
-    Slash {
-        amount: u64
-    },
-
     /// Creates token metadata for the vault LRT
     CreateTokenMetadata {
         name: String,
@@ -192,6 +176,27 @@ pub enum VaultInstruction {
         name: String,
         symbol: String,
         uri: String,
+    },
+
+    /// Slashes an amount of tokens from the vault
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, name = "vault_slasher_list")]
+    #[account(3, name = "vault_avs_list")]
+    #[account(4, writable, name = "vault_operator_list")]
+    #[account(5, writable, name = "vault_token_account")]
+    #[account(6, name = "avs")]
+    #[account(7, name = "avs_vault_list")]
+    #[account(8, name = "avs_operator_list")]
+    #[account(9, name = "avs_slasher_list")]
+    #[account(10, name = "operator")]
+    #[account(11, name = "operator_vault_list")]
+    #[account(12, name = "operator_avs_list")]
+    #[account(13, signer, name = "slasher")]
+    #[account(14, name = "slasher_token_account")]
+    #[account(15, name = "token_program")]
+    Slash {
+        amount: u64
     },
 }
 

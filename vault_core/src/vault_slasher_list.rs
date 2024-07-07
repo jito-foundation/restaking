@@ -83,15 +83,24 @@ impl VaultSlasherList {
         self.vault
     }
 
-    pub fn get_active_slasher(
+    pub fn check_slasher_active(
         &self,
         slasher: &Pubkey,
         avs: &Pubkey,
         slot: u64,
-    ) -> Option<&VaultSlasher> {
-        self.slashers
+    ) -> VaultCoreResult<()> {
+        let maybe_slasher = self
+            .slashers
             .iter()
-            .find(|v| v.slasher == *slasher && v.avs == *avs && v.state.is_active(slot))
+            .find(|v| v.slasher == *slasher && v.avs == *avs);
+
+        maybe_slasher.map_or(Err(VaultCoreError::VaultSlasherNotFound), |slasher| {
+            if slasher.state.is_active(slot) {
+                Ok(())
+            } else {
+                Err(VaultCoreError::VaultSlasherNotActive)
+            }
+        })
     }
 
     /// Add a slasher to the list for a given AVS.

@@ -39,7 +39,7 @@ pub fn process_vault_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
     // The AVS must support the vault for it to be added
     avs_vault_list
         .avs_vault_list()
-        .check_active_vault(vault.account().key, slot)?;
+        .check_vault_active(vault.account().key, slot)?;
     vault_avs_list
         .vault_avs_list_mut()
         .add_avs(*avs.account().key, slot)?;

@@ -25,6 +25,8 @@ pub enum RestakingCoreError {
     AvsInvalidWithdrawAdmin,
     AvsFailedToActivate,
     AvsFailedToDeactivate,
+    SlasherNotActive,
+    OperatorNotActive,
 }
 
 impl From<RestakingCoreError> for ProgramError {

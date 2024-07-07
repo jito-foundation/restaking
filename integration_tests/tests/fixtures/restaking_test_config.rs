@@ -1,10 +1,7 @@
 use jito_restaking_core::{
-    avs::Avs,
-    avs_operator_list::AvsOperatorList,
-    avs_slasher_list::AvsSlasherList,
-    avs_vault_list::AvsVaultList,
-    config::Config,
-    operator::{Operator, OperatorAvsList, OperatorVaultList},
+    avs::Avs, avs_operator_list::AvsOperatorList, avs_slasher_list::AvsSlasherList,
+    avs_vault_list::AvsVaultList, config::Config, operator::Operator,
+    operator_avs_list::OperatorAvsList, operator_vault_list::OperatorVaultList,
 };
 use solana_program::pubkey::Pubkey;
 use solana_sdk::signature::{Keypair, Signer};
