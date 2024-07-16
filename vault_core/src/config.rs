@@ -1,8 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{
-    account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH,
-    entrypoint_deprecated::ProgramResult, pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 use VaultCoreError::ConfigInvalidPda;
 
 use crate::{
@@ -30,7 +27,7 @@ pub struct Config {
     num_vaults: u64,
 
     /// Reserved space
-    reserved: [u8; 1024],
+    reserved: [u8; 128],
 
     /// The bump seed for the PDA
     bump: u8,
@@ -42,9 +39,9 @@ impl Config {
             account_type: AccountType::Config,
             admin,
             restaking_program,
-            epoch_length: DEFAULT_SLOTS_PER_EPOCH,
+            epoch_length: 864_000, // DEFAULT_RESTAKING_EPOCH_DURATION
             num_vaults: 0,
-            reserved: [0; 1024],
+            reserved: [0; 128],
             bump,
         }
     }
@@ -105,7 +102,7 @@ impl Config {
         if state.account_type != AccountType::Config {
             return Err(VaultCoreError::ConfigInvalidAccountType);
         }
-        // The AvsState shall be at the correct PDA as defined by the seeds and bump
+
         let mut seeds = Self::seeds();
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
@@ -121,7 +118,7 @@ impl Config {
 
 pub struct SanitizedConfig<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    config: Config,
+    config: Box<Config>,
 }
 
 impl<'a, 'info> SanitizedConfig<'a, 'info> {
@@ -133,7 +130,7 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::ConfigExpectedWritable);
         }
-        let config = Config::deserialize_checked(program_id, account)?;
+        let config = Box::new(Config::deserialize_checked(program_id, account)?);
 
         Ok(SanitizedConfig { account, config })
     }

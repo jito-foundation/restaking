@@ -1,5 +1,6 @@
 use jito_restaking_core::{
-    avs::SanitizedAvs, avs_slasher_list::SanitizedAvsSlasherList, config::SanitizedConfig,
+    avs::SanitizedAvs, avs_vault_slasher_ticket::SanitizedAvsVaultSlasherTicket,
+    config::SanitizedConfig,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
@@ -11,41 +12,34 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-pub fn process_avs_deprecate_slasher(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-) -> ProgramResult {
+pub fn process_avs_remove_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
         avs,
-        mut avs_slasher_list,
-        vault,
-        slasher,
+        mut avs_vault_slasher_ticket,
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     avs.avs().check_slasher_admin(admin.account().key)?;
 
     let clock = Clock::get()?;
-    avs_slasher_list.avs_slasher_list_mut().deprecate_slasher(
-        *vault.key,
-        *slasher.key,
-        clock.slot,
-    )?;
 
-    avs_slasher_list.save()?;
+    avs_vault_slasher_ticket
+        .avs_vault_slasher_ticket_mut()
+        .deactivate(clock.slot)?;
+
+    avs_vault_slasher_ticket.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
     avs: SanitizedAvs<'a, 'info>,
-    avs_slasher_list: SanitizedAvsSlasherList<'a, 'info>,
-    vault: &'a AccountInfo<'info>,
-    slasher: &'a AccountInfo<'info>,
+    avs_vault_slasher_ticket: SanitizedAvsVaultSlasherTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::AvsRemoveVaultSlasher`]
     fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
@@ -55,21 +49,21 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let _config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-
-        let avs_slasher_list = SanitizedAvsSlasherList::sanitize(
+        let vault = next_account_info(accounts_iter)?;
+        let slasher = next_account_info(accounts_iter)?;
+        let avs_vault_slasher_ticket = SanitizedAvsVaultSlasherTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
             avs.account().key,
+            vault.key,
+            slasher.key,
         )?;
-        let vault = next_account_info(accounts_iter)?;
-        let slasher = next_account_info(accounts_iter)?;
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
+
         Ok(SanitizedAccounts {
             avs,
-            avs_slasher_list,
-            vault,
-            slasher,
+            avs_vault_slasher_ticket,
             admin,
         })
     }

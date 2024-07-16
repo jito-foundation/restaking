@@ -1,6 +1,6 @@
 use jito_restaking_core::{
     config::SanitizedConfig, operator::SanitizedOperator,
-    operator_vault_list::SanitizedOperatorVaultList,
+    operator_vault_ticket::SanitizedOperatorVaultTicket,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
@@ -19,29 +19,26 @@ pub fn process_operator_remove_vault(
 ) -> ProgramResult {
     let SanitizedAccounts {
         operator,
-        mut operator_vault_list,
+        mut operator_vault_ticket,
         admin,
-        vault,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_admin(admin.account().key)?;
+    operator.operator().check_vault_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    operator_vault_list
-        .operator_vault_list_mut()
-        .remove_vault(*vault.key, slot)?;
+    operator_vault_ticket
+        .operator_vault_ticket_mut()
+        .deactivate(slot)?;
 
-    operator_vault_list.save()?;
+    operator_vault_ticket.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
-    // config: SanitizedConfig<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
-    operator_vault_list: SanitizedOperatorVaultList<'a, 'info>,
+    operator_vault_ticket: SanitizedOperatorVaultTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
-    vault: &'a AccountInfo<'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -56,23 +53,20 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let operator =
             SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let operator_vault_list = SanitizedOperatorVaultList::sanitize(
+        let vault = next_account_info(accounts_iter)?;
+        let operator_vault_ticket = SanitizedOperatorVaultTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
             operator.account().key,
+            vault.key,
         )?;
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        // TODO (LB): should run more verification on the vault here?
-        //  program owner? deserialize it/check header?
-        let vault = next_account_info(accounts_iter)?;
 
         Ok(SanitizedAccounts {
-            // config,
             operator,
-            operator_vault_list,
+            operator_vault_ticket,
             admin,
-            vault,
         })
     }
 }

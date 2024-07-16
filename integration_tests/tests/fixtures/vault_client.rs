@@ -1,16 +1,16 @@
 use borsh::BorshDeserialize;
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_avs_list::VaultAvsList,
-    vault_operator_list::VaultOperatorList,
+    config::Config, vault::Vault, vault_avs_ticket::VaultAvsTicket,
+    vault_delegation_list::VaultDelegationList, vault_operator_ticket::VaultOperatorTicket,
+    vault_slasher_ticket::VaultAvsSlasherTicket,
 };
-use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault, remove_delegation};
+use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
 use solana_program::pubkey::Pubkey;
 use solana_program_test::{BanksClient, BanksClientError};
-use solana_sdk::{commitment_config::CommitmentLevel, signature::Signer, transaction::Transaction};
-use spl_associated_token_account::instruction::create_associated_token_account_idempotent;
-
-use crate::fixtures::{
-    restaking_test_config::RestakingTestConfig, vault_test_config::VaultTestConfig,
+use solana_sdk::{
+    commitment_config::CommitmentLevel,
+    signature::{Keypair, Signer},
+    transaction::Transaction,
 };
 
 pub struct VaultProgramClient {
@@ -32,38 +32,73 @@ impl VaultProgramClient {
         Ok(Vault::deserialize(&mut account.data.as_slice())?)
     }
 
-    pub async fn get_vault_avs_list(
+    pub async fn get_vault_avs_ticket(
         &mut self,
-        account: &Pubkey,
-    ) -> Result<VaultAvsList, BanksClientError> {
-        let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(VaultAvsList::deserialize(&mut account.data.as_slice())?)
+        vault: &Pubkey,
+        avs: &Pubkey,
+    ) -> Result<VaultAvsTicket, BanksClientError> {
+        let account = VaultAvsTicket::find_program_address(&jito_vault_program::id(), vault, avs).0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
+        Ok(VaultAvsTicket::deserialize(&mut account.data.as_slice())?)
     }
 
-    pub async fn get_vault_operator_list(
+    pub async fn get_vault_operator_ticket(
+        &mut self,
+        vault: &Pubkey,
+        operator: &Pubkey,
+    ) -> Result<VaultOperatorTicket, BanksClientError> {
+        let account =
+            VaultOperatorTicket::find_program_address(&jito_vault_program::id(), vault, operator).0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
+        Ok(VaultOperatorTicket::deserialize(
+            &mut account.data.as_slice(),
+        )?)
+    }
+
+    pub async fn get_vault_delegation_list(
         &mut self,
         account: &Pubkey,
-    ) -> Result<VaultOperatorList, BanksClientError> {
+    ) -> Result<VaultDelegationList, BanksClientError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(VaultOperatorList::deserialize(
+        Ok(VaultDelegationList::deserialize(
+            &mut account.data.as_slice(),
+        )?)
+    }
+
+    pub async fn get_vault_avs_slasher_ticket(
+        &mut self,
+        vault: &Pubkey,
+        avs: &Pubkey,
+        slasher: &Pubkey,
+    ) -> Result<VaultAvsSlasherTicket, BanksClientError> {
+        let account = VaultAvsSlasherTicket::find_program_address(
+            &jito_vault_program::id(),
+            vault,
+            avs,
+            slasher,
+        )
+        .0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
+        Ok(VaultAvsSlasherTicket::deserialize(
             &mut account.data.as_slice(),
         )?)
     }
 
     pub async fn initialize_config(
         &mut self,
-        vault_config: &VaultTestConfig,
+        config: &Pubkey,
+        config_admin: &Keypair,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.process_transaction(&Transaction::new_signed_with_payer(
             &[initialize_config(
                 &jito_vault_program::id(),
-                &vault_config.config,
-                &vault_config.config_admin.pubkey(),
+                &config,
+                &config_admin.pubkey(),
                 &jito_restaking_program::id(),
             )],
-            Some(&vault_config.config_admin.pubkey()),
-            &[&vault_config.config_admin],
+            Some(&config_admin.pubkey()),
+            &[config_admin],
             blockhash,
         ))
         .await
@@ -71,69 +106,141 @@ impl VaultProgramClient {
 
     pub async fn initialize_vault(
         &mut self,
-        config: &VaultTestConfig,
+        config: &Pubkey,
+        vault: &Pubkey,
+        vault_delegation_list: &Pubkey,
+        lrt_mint: &Keypair,
+        token_mint: &Keypair,
+        vault_admin: &Keypair,
+        vault_base: &Keypair,
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
-            &[
-                initialize_vault(
-                    &jito_vault_program::id(),
-                    &config.config,
-                    &config.vault,
-                    &config.vault_avs_list,
-                    &config.vault_operator_list,
-                    &config.vault_slasher_list,
-                    &config.lrt_mint.pubkey(),
-                    &config.token_mint.pubkey(),
-                    &config.vault_admin.pubkey(),
-                    &config.vault_base.pubkey(),
-                    config.deposit_fee_bps,
-                    config.withdrawal_fee_bps,
-                ),
-                // crate an ATA for the collateral backing tokens
-                create_associated_token_account_idempotent(
-                    &config.vault_admin.pubkey(),
-                    &config.vault,
-                    &config.token_mint.pubkey(),
-                    &spl_token::id(),
-                ),
-            ],
-            Some(&config.vault_admin.pubkey()),
-            &[&config.vault_admin, &config.lrt_mint, &config.vault_base],
+            &[initialize_vault(
+                &jito_vault_program::id(),
+                &config,
+                &vault,
+                &vault_delegation_list,
+                &lrt_mint.pubkey(),
+                &token_mint.pubkey(),
+                &vault_admin.pubkey(),
+                &vault_base.pubkey(),
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+            )],
+            Some(&vault_admin.pubkey()),
+            &[&vault_admin, &lrt_mint, &vault_base],
             blockhash,
         ))
         .await
     }
 
-    // pub async fn mint(
+    pub async fn add_avs(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        avs: &Pubkey,
+        avs_vault_ticket: &Pubkey,
+        vault_avs_ticket: &Pubkey,
+        admin: &Keypair,
+        payer: &Keypair,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::add_avs(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                avs,
+                avs_vault_ticket,
+                vault_avs_ticket,
+                &admin.pubkey(),
+                &payer.pubkey(),
+            )],
+            Some(&payer.pubkey()),
+            &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    // pub async fn remove_avs(
     //     &mut self,
-    //     vault_config: VaultTestConfig
+    //     config: &Pubkey,
+    //     vault: &Pubkey,
+    //     avs: &Pubkey,
+    //     vault_avs_ticket: &Pubkey,
+    //     admin: &Keypair,
     // ) -> Result<(), BanksClientError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
-    //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[mint_to(
-    //             program_id: &Pubkey,
-    //             vault: &Pubkey,
-    //             lrt_mint: &Pubkey,
-    //             depositor: &Pubkey,
-    //             depositor_token_account: &Pubkey,
-    //             vault_token_account: &Pubkey,
-    //             depositor_lrt_token_account: &Pubkey,
-    //             vault_fee_token_account: &Pubkey,
-    //             amount: u64,
+    //         &[jito_vault_sdk::remove_avs(
     //             &jito_vault_program::id(),
-    //             lrt,
-    //             lrt_mint,
-    //             source_owner,
-    //             source_token_account,
-    //             dest_token_account,
-    //             lrt_receiver,
-    //             amount,
+    //             config,
+    //             vault,
+    //             avs,
+    //             vault_avs_ticket,
+    //             &admin.pubkey(),
     //         )],
-    //         Some(&signer.pubkey()),
-    //         &[&signer],
+    //         Some(&admin.pubkey()),
+    //         &[admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    pub async fn add_operator(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        operator: &Pubkey,
+        operator_vault_ticket: &Pubkey,
+        vault_operator_ticket: &Pubkey,
+        admin: &Keypair,
+        payer: &Keypair,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::add_operator(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                operator,
+                operator_vault_ticket,
+                vault_operator_ticket,
+                &admin.pubkey(),
+                &payer.pubkey(),
+            )],
+            Some(&payer.pubkey()),
+            &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    // pub async fn remove_operator(
+    //     &mut self,
+    //     config: &Pubkey,
+    //     vault: &Pubkey,
+    //     operator: &Pubkey,
+    //     vault_operator_ticket: &Pubkey,
+    //     admin: &Keypair,
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[jito_vault_sdk::remove_operator(
+    //             &jito_vault_program::id(),
+    //             config,
+    //             vault,
+    //             operator,
+    //             vault_operator_ticket,
+    //             &admin.pubkey(),
+    //         )],
+    //         Some(&admin.pubkey()),
+    //         &[admin],
     //         blockhash,
     //     ))
     //     .await
@@ -141,51 +248,262 @@ impl VaultProgramClient {
 
     pub async fn add_delegation(
         &mut self,
-        vault_test_config: &VaultTestConfig,
-        restaking_test_config: &RestakingTestConfig,
+        config: &Pubkey,
+        vault: &Pubkey,
+        operator: &Pubkey,
+        vault_operator_ticket: &Pubkey,
+        vault_delegation_list: &Pubkey,
+        admin: &Keypair,
+        payer: &Keypair,
         amount: u64,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
-
         self.process_transaction(&Transaction::new_signed_with_payer(
             &[add_delegation(
                 &jito_vault_program::id(),
-                &vault_test_config.config,
-                &vault_test_config.vault,
-                &vault_test_config.vault_operator_list,
-                &restaking_test_config.operator,
-                &vault_test_config.vault_admin.pubkey(),
-                &vault_test_config.vault_admin.pubkey(),
+                config,
+                vault,
+                operator,
+                vault_operator_ticket,
+                vault_delegation_list,
+                &admin.pubkey(),
+                &payer.pubkey(),
                 amount,
             )],
-            Some(&vault_test_config.vault_admin.pubkey()),
-            &[&vault_test_config.vault_admin],
+            Some(&payer.pubkey()),
+            &[admin, payer],
             blockhash,
         ))
         .await
     }
 
-    pub async fn remove_delegation(
+    // pub async fn remove_delegation(
+    //     &mut self,
+    //     config: &Pubkey,
+    //     vault: &Pubkey,
+    //     operator: &Pubkey,
+    //     vault_delegation_list: &Pubkey,
+    //     admin: &Keypair,
+    //     amount: u64,
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[remove_delegation(
+    //             &jito_vault_program::id(),
+    //             config,
+    //             vault,
+    //             operator,
+    //             vault_delegation_list,
+    //             &admin.pubkey(),
+    //             amount,
+    //         )],
+    //         Some(&admin.pubkey()),
+    //         &[admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    pub async fn mint_to(
         &mut self,
-        vault_test_config: &VaultTestConfig,
-        restaking_test_config: &RestakingTestConfig,
+        vault: &Pubkey,
+        lrt_mint: &Pubkey,
+        depositor: &Keypair,
+        depositor_token_account: &Pubkey,
+        vault_token_account: &Pubkey,
+        depositor_lrt_token_account: &Pubkey,
+        vault_fee_token_account: &Pubkey,
+        mint_signer: Option<&Keypair>,
         amount: u64,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
-
+        let mut signers = vec![depositor];
+        if let Some(signer) = mint_signer {
+            signers.push(signer);
+        }
         self.process_transaction(&Transaction::new_signed_with_payer(
-            &[remove_delegation(
+            &[jito_vault_sdk::mint_to(
                 &jito_vault_program::id(),
-                &vault_test_config.config,
-                &vault_test_config.vault,
-                &vault_test_config.vault_operator_list,
-                &restaking_test_config.operator,
-                &vault_test_config.vault_admin.pubkey(),
-                &vault_test_config.vault_admin.pubkey(),
+                vault,
+                lrt_mint,
+                &depositor.pubkey(),
+                depositor_token_account,
+                vault_token_account,
+                depositor_lrt_token_account,
+                vault_fee_token_account,
+                mint_signer.map(|s| s.pubkey()).as_ref(),
                 amount,
             )],
-            Some(&vault_test_config.vault_admin.pubkey()),
-            &[&vault_test_config.vault_admin],
+            Some(&depositor.pubkey()),
+            &signers,
+            blockhash,
+        ))
+        .await
+    }
+
+    // pub async fn set_deposit_capacity(
+    //     &mut self,
+    //     vault: &Pubkey,
+    //     admin: &Keypair,
+    //     amount: u64,
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[jito_vault_sdk::set_deposit_capacity(
+    //             &jito_vault_program::id(),
+    //             vault,
+    //             &admin.pubkey(),
+    //             amount,
+    //         )],
+    //         Some(&admin.pubkey()),
+    //         &[admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    // pub async fn set_admin(
+    //     &mut self,
+    //     vault: &Pubkey,
+    //     old_admin: &Keypair,
+    //     new_admin: &Pubkey,
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[jito_vault_sdk::set_admin(
+    //             &jito_vault_program::id(),
+    //             vault,
+    //             &old_admin.pubkey(),
+    //             new_admin,
+    //         )],
+    //         Some(&old_admin.pubkey()),
+    //         &[old_admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    // pub async fn set_secondary_admin(
+    //     &mut self,
+    //     vault: &Pubkey,
+    //     admin: &Keypair,
+    //     new_admin: &Pubkey,
+    //     role: VaultAdminRole,
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[jito_vault_sdk::set_secondary_admin(
+    //             &jito_vault_program::id(),
+    //             vault,
+    //             &admin.pubkey(),
+    //             new_admin,
+    //             role,
+    //         )],
+    //         Some(&admin.pubkey()),
+    //         &[admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    // pub async fn update_delegations(
+    //     &mut self,
+    //     config: &Pubkey,
+    //     vault: &Pubkey,
+    //     vault_delegation_list: &Pubkey,
+    //     payer: &Keypair,
+    // ) -> Result<(), BanksClientError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[jito_vault_sdk::update_delegations(
+    //             &jito_vault_program::id(),
+    //             config,
+    //             vault,
+    //             vault_delegation_list,
+    //             &payer.pubkey(),
+    //         )],
+    //         Some(&payer.pubkey()),
+    //         &[payer],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    pub async fn add_slasher(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        avs: &Pubkey,
+        slasher: &Pubkey,
+        avs_slasher_ticket: &Pubkey,
+        vault_slasher_ticket: &Pubkey,
+        admin: &Keypair,
+        payer: &Keypair,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::add_slasher(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                avs,
+                slasher,
+                avs_slasher_ticket,
+                vault_slasher_ticket,
+                &admin.pubkey(),
+                &payer.pubkey(),
+            )],
+            Some(&payer.pubkey()),
+            &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn slash(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        avs: &Pubkey,
+        operator: &Pubkey,
+        slasher: &Keypair,
+        avs_operator_ticket: &Pubkey,
+        operator_avs_ticket: &Pubkey,
+        avs_vault_ticket: &Pubkey,
+        operator_vault_ticket: &Pubkey,
+        vault_avs_ticket: &Pubkey,
+        vault_operator_ticket: &Pubkey,
+        avs_vault_slasher_ticket: &Pubkey,
+        vault_avs_slasher_ticket: &Pubkey,
+        vault_delegation_list: &Pubkey,
+        vault_token_account: &Pubkey,
+        slasher_token_account: &Pubkey,
+        amount: u64,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::slash(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                avs,
+                operator,
+                &slasher.pubkey(),
+                avs_operator_ticket,
+                operator_avs_ticket,
+                avs_vault_ticket,
+                operator_vault_ticket,
+                vault_avs_ticket,
+                vault_operator_ticket,
+                avs_vault_slasher_ticket,
+                vault_avs_slasher_ticket,
+                vault_delegation_list,
+                vault_token_account,
+                slasher_token_account,
+                amount,
+            )],
+            Some(&slasher.pubkey()),
+            &[slasher],
             blockhash,
         ))
         .await

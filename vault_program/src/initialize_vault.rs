@@ -5,8 +5,7 @@ use jito_restaking_sanitization::{
     token_program::SanitizedTokenProgram,
 };
 use jito_vault_core::{
-    config::SanitizedConfig, vault::Vault, vault_avs_list::VaultAvsList,
-    vault_operator_list::VaultOperatorList, vault_slasher_list::VaultSlasherList,
+    config::SanitizedConfig, vault::Vault, vault_delegation_list::VaultDelegationList,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -32,9 +31,7 @@ pub fn process_initialize_vault(
     let SanitizedAccounts {
         mut config,
         vault_account,
-        vault_avs_list_account,
-        vault_operator_list_account,
-        vault_slasher_list_account,
+        vault_delegation_list_account,
         lrt_mint,
         mint,
         admin,
@@ -73,27 +70,11 @@ pub fn process_initialize_vault(
         withdrawal_fee_bps,
         &rent,
     )?;
-    _create_vault_avs_list(
-        program_id,
-        &vault_account,
-        &vault_avs_list_account,
-        &admin,
-        &system_program,
-        &rent,
-    )?;
 
-    _create_vault_operator_list(
+    _create_vault_delegation_list(
         program_id,
         &vault_account,
-        &vault_operator_list_account,
-        &admin,
-        &system_program,
-        &rent,
-    )?;
-    _create_vault_slasher_list(
-        program_id,
-        &vault_account,
-        &vault_slasher_list_account,
+        &vault_delegation_list_account,
         &admin,
         &system_program,
         &rent,
@@ -110,116 +91,41 @@ pub fn process_initialize_vault(
     Ok(())
 }
 
-fn _create_vault_slasher_list<'a, 'info>(
+fn _create_vault_delegation_list<'a, 'info>(
     program_id: &Pubkey,
     vault_account: &EmptyAccount<'a, 'info>,
-    vault_slasher_list_account: &EmptyAccount<'a, 'info>,
+    vault_delegation_list_account: &EmptyAccount<'a, 'info>,
     admin: &SanitizedSignerAccount<'a, 'info>,
     system_program: &SanitizedSystemProgram<'a, 'info>,
     rent: &Rent,
 ) -> ProgramResult {
-    let (vault_slasher_list_address, bump, mut vault_slasher_list_seeds) =
-        VaultSlasherList::find_program_address(program_id, vault_account.account().key);
-    vault_slasher_list_seeds.push(vec![bump]);
+    let (vault_delegation_list_address, bump, mut vault_delegation_list_seeds) =
+        VaultDelegationList::find_program_address(program_id, vault_account.account().key);
+    vault_delegation_list_seeds.push(vec![bump]);
     assert_with_msg(
-        vault_slasher_list_address == *vault_slasher_list_account.account().key,
+        vault_delegation_list_address == *vault_delegation_list_account.account().key,
         ProgramError::InvalidAccountData,
-        "Vault slasher list account is not at the correct PDA",
+        "Vault delegation list account is not at the correct PDA",
     )?;
-    let vault_slasher_list = VaultSlasherList::new(*vault_account.account().key, bump);
+    let vault_delegation_list = VaultDelegationList::new(*vault_account.account().key, bump);
 
     msg!(
-        "Initializing vault slasher list @ address {}",
-        vault_slasher_list_account.account().key
+        "Initializing vault delegation list @ address {}",
+        vault_delegation_list_account.account().key
     );
-    let vault_slasher_list_serialized = vault_slasher_list.try_to_vec()?;
+    let vault_delegation_list_serialized = vault_delegation_list.try_to_vec()?;
     create_account(
         admin.account(),
-        vault_slasher_list_account.account(),
+        vault_delegation_list_account.account(),
         system_program.account(),
         program_id,
         rent,
-        vault_slasher_list_serialized.len() as u64,
-        &vault_slasher_list_seeds,
+        vault_delegation_list_serialized.len() as u64,
+        &vault_delegation_list_seeds,
     )?;
-    vault_slasher_list_account.account().data.borrow_mut()[..vault_slasher_list_serialized.len()]
-        .copy_from_slice(&vault_slasher_list_serialized);
-
-    Ok(())
-}
-
-fn _create_vault_operator_list<'a, 'info>(
-    program_id: &Pubkey,
-    vault_account: &EmptyAccount<'a, 'info>,
-    vault_operator_list_account: &EmptyAccount<'a, 'info>,
-    admin: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-) -> ProgramResult {
-    let (vault_operator_list_address, bump, mut vault_operator_list_seeds) =
-        VaultOperatorList::find_program_address(program_id, vault_account.account().key);
-    vault_operator_list_seeds.push(vec![bump]);
-    assert_with_msg(
-        vault_operator_list_address == *vault_operator_list_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Vault operator list account is not at the correct PDA",
-    )?;
-    let vault_operator_list = VaultOperatorList::new(*vault_account.account().key, bump);
-
-    msg!(
-        "Initializing vault operator list @ address {}",
-        vault_operator_list_account.account().key
-    );
-    let vault_operator_list_serialized = vault_operator_list.try_to_vec()?;
-    create_account(
-        admin.account(),
-        vault_operator_list_account.account(),
-        system_program.account(),
-        program_id,
-        rent,
-        vault_operator_list_serialized.len() as u64,
-        &vault_operator_list_seeds,
-    )?;
-    vault_operator_list_account.account().data.borrow_mut()[..vault_operator_list_serialized.len()]
-        .copy_from_slice(&vault_operator_list_serialized);
-
-    Ok(())
-}
-
-fn _create_vault_avs_list<'a, 'info>(
-    program_id: &Pubkey,
-    vault_account: &EmptyAccount<'a, 'info>,
-    vault_avs_list_account: &EmptyAccount<'a, 'info>,
-    admin: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-) -> ProgramResult {
-    let (vault_avs_list_address, bump, mut vault_avs_list_seeds) =
-        VaultAvsList::find_program_address(program_id, vault_account.account().key);
-    vault_avs_list_seeds.push(vec![bump]);
-    assert_with_msg(
-        vault_avs_list_address == *vault_avs_list_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Vault AVS list account is not at the correct PDA",
-    )?;
-    let vault_avs_list = VaultAvsList::new(*vault_account.account().key, bump);
-
-    msg!(
-        "Initializing vault AVS list @ address {}",
-        vault_avs_list_account.account().key
-    );
-    let vault_avs_list_serialized = vault_avs_list.try_to_vec()?;
-    create_account(
-        admin.account(),
-        vault_avs_list_account.account(),
-        system_program.account(),
-        program_id,
-        rent,
-        vault_avs_list_serialized.len() as u64,
-        &vault_avs_list_seeds,
-    )?;
-    vault_avs_list_account.account().data.borrow_mut()[..vault_avs_list_serialized.len()]
-        .copy_from_slice(&vault_avs_list_serialized);
+    vault_delegation_list_account.account().data.borrow_mut()
+        [..vault_delegation_list_serialized.len()]
+        .copy_from_slice(&vault_delegation_list_serialized);
 
     Ok(())
 }
@@ -317,9 +223,7 @@ fn _create_lrt_mint<'a, 'info>(
 struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
     vault_account: EmptyAccount<'a, 'info>,
-    vault_avs_list_account: EmptyAccount<'a, 'info>,
-    vault_operator_list_account: EmptyAccount<'a, 'info>,
-    vault_slasher_list_account: EmptyAccount<'a, 'info>,
+    vault_delegation_list_account: EmptyAccount<'a, 'info>,
     lrt_mint: EmptyAccount<'a, 'info>,
     mint: SanitizedTokenMint<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
@@ -338,11 +242,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
         let vault_account = EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let vault_avs_list_account =
-            EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let vault_operator_list_account =
-            EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let vault_slasher_list_account =
+        let vault_delegation_list_account =
             EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
         let lrt_mint = EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
         let mint = SanitizedTokenMint::sanitize(next_account_info(&mut accounts_iter)?, false)?;
@@ -356,9 +256,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         Ok(SanitizedAccounts {
             config,
             vault_account,
-            vault_avs_list_account,
-            vault_operator_list_account,
-            vault_slasher_list_account,
+            vault_delegation_list_account,
             lrt_mint,
             mint,
             admin,

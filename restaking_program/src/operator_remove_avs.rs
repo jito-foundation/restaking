@@ -1,6 +1,6 @@
 use jito_restaking_core::{
     avs::SanitizedAvs, config::SanitizedConfig, operator::SanitizedOperator,
-    operator_avs_list::SanitizedOperatorAvsList,
+    operator_avs_ticket::SanitizedOperatorAvsTicket,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
@@ -16,33 +16,32 @@ use solana_program::{
 pub fn process_operator_remove_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
         operator,
-        mut operator_avs_list,
-        avs,
+        mut operator_avs_ticket,
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_admin(admin.account().key)?;
+    operator.operator().check_avs_admin(admin.account().key)?;
 
     // TODO (LB): should it get removed from the AVS?
 
     let slot = Clock::get()?.slot;
-    operator_avs_list
-        .operator_avs_list_mut()
-        .remove_avs(*avs.account().key, slot)?;
+    operator_avs_ticket
+        .operator_avs_ticket_mut()
+        .deactivate(slot)?;
 
-    operator_avs_list.save()?;
+    operator_avs_ticket.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
     operator: SanitizedOperator<'a, 'info>,
-    operator_avs_list: SanitizedOperatorAvsList<'a, 'info>,
-    avs: SanitizedAvs<'a, 'info>,
+    operator_avs_ticket: SanitizedOperatorAvsTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::OperatorRemoveAvs`]
     fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
@@ -53,21 +52,21 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
         let operator =
             SanitizedOperator::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let operator_avs_list = SanitizedOperatorAvsList::sanitize(
+        let avs =
+            SanitizedAvs::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        let operator_avs_ticket = SanitizedOperatorAvsTicket::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
             true,
             operator.account().key,
+            avs.account().key,
         )?;
-        let avs =
-            SanitizedAvs::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
         let admin =
             SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
             operator,
-            operator_avs_list,
-            avs,
+            operator_avs_ticket,
             admin,
         })
     }

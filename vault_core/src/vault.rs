@@ -26,6 +26,12 @@ pub struct Vault {
     /// Delegation admin
     delegation_admin: Pubkey,
 
+    operator_admin: Pubkey,
+
+    avs_admin: Pubkey,
+
+    slasher_admin: Pubkey,
+
     /// Fee account owner
     fee_owner: Pubkey,
 
@@ -50,8 +56,14 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     withdrawal_fee_bps: u16,
 
+    avs_count: u64,
+
+    operator_count: u64,
+
+    slasher_count: u64,
+
     /// Reserved space
-    reserved: [u8; 1024],
+    reserved: [u8; 128],
 
     /// The bump seed for the PDA
     bump: u8,
@@ -76,6 +88,9 @@ impl Vault {
             supported_mint,
             admin,
             delegation_admin: admin,
+            operator_admin: admin,
+            avs_admin: admin,
+            slasher_admin: admin,
             fee_owner: admin,
             mint_burn_authority: Pubkey::default(),
             capacity: u64::MAX,
@@ -84,9 +99,48 @@ impl Vault {
             tokens_deposited: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            reserved: [0; 1024],
+            avs_count: 0,
+            operator_count: 0,
+            slasher_count: 0,
+            reserved: [0; 128],
             bump,
         }
+    }
+
+    pub const fn avs_count(&self) -> u64 {
+        self.avs_count
+    }
+
+    pub fn increment_avs_count(&mut self) -> VaultCoreResult<()> {
+        self.avs_count = self
+            .avs_count
+            .checked_add(1)
+            .ok_or(VaultCoreError::VaultAvsOverflow)?;
+        Ok(())
+    }
+
+    pub const fn operator_count(&self) -> u64 {
+        self.operator_count
+    }
+
+    pub fn increment_operator_count(&mut self) -> VaultCoreResult<()> {
+        self.operator_count = self
+            .operator_count
+            .checked_add(1)
+            .ok_or(VaultCoreError::VaultOperatorOverflow)?;
+        Ok(())
+    }
+
+    pub const fn slasher_count(&self) -> u64 {
+        self.slasher_count
+    }
+
+    pub fn increment_slasher_count(&mut self) -> VaultCoreResult<()> {
+        self.slasher_count = self
+            .slasher_count
+            .checked_add(1)
+            .ok_or(VaultCoreError::VaultSlasherOverflow)?;
+        Ok(())
     }
 
     pub const fn lrt_mint(&self) -> Pubkey {
@@ -251,6 +305,51 @@ impl Vault {
         Ok(())
     }
 
+    pub fn set_avs_admin(&mut self, avs_admin: Pubkey) {
+        self.avs_admin = avs_admin;
+    }
+
+    pub const fn avs_admin(&self) -> Pubkey {
+        self.avs_admin
+    }
+
+    pub fn check_avs_admin(&self, avs_admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.avs_admin != *avs_admin {
+            return Err(VaultCoreError::VaultInvalidAvsAdmin);
+        }
+        Ok(())
+    }
+
+    pub fn set_operator_admin(&mut self, operator_admin: Pubkey) {
+        self.operator_admin = operator_admin;
+    }
+
+    pub const fn operator_admin(&self) -> Pubkey {
+        self.operator_admin
+    }
+
+    pub fn check_operator_admin(&self, operator_admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.operator_admin != *operator_admin {
+            return Err(VaultCoreError::VaultInvalidOperatorAdmin);
+        }
+        Ok(())
+    }
+
+    pub fn set_slasher_admin(&mut self, slasher_admin: Pubkey) {
+        self.slasher_admin = slasher_admin;
+    }
+
+    pub const fn slasher_admin(&self) -> Pubkey {
+        self.slasher_admin
+    }
+
+    pub fn check_slasher_admin(&self, slasher_admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.slasher_admin != *slasher_admin {
+            return Err(VaultCoreError::VaultInvalidSlasherAdmin);
+        }
+        Ok(())
+    }
+
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
     }
@@ -282,7 +381,6 @@ impl Vault {
             ));
         }
 
-        // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(&state.base);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
@@ -298,7 +396,7 @@ impl Vault {
 
 pub struct SanitizedVault<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    vault: Vault,
+    vault: Box<Vault>,
 }
 
 impl<'a, 'info> SanitizedVault<'a, 'info> {
@@ -310,7 +408,7 @@ impl<'a, 'info> SanitizedVault<'a, 'info> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::VaultExpectedWritable);
         }
-        let vault = Vault::deserialize_checked(program_id, account)?;
+        let vault = Box::new(Vault::deserialize_checked(program_id, account)?);
 
         Ok(SanitizedVault { account, vault })
     }

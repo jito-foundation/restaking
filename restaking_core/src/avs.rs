@@ -1,9 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_restaking_sanitization::assert_with_msg;
-use solana_program::{
-    account_info::AccountInfo, entrypoint_deprecated::ProgramResult, program_error::ProgramError,
-    pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 
 use crate::{
     result::{RestakingCoreError, RestakingCoreResult},
@@ -11,6 +7,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[repr(C)]
 pub struct Avs {
     /// The account type
     account_type: AccountType,
@@ -34,10 +31,19 @@ pub struct Avs {
     withdraw_admin: Pubkey,
 
     /// The index of the AVS
-    avs_index: u64,
+    index: u64,
+
+    /// Number of operator accounts associated with the AVS
+    operator_count: u64,
+
+    /// Number of vault accounts associated with the AVS
+    vault_count: u64,
+
+    /// Number of slasher accounts associated with the AVS
+    slasher_count: u64,
 
     /// Reserved space
-    reserved: [u8; 1024],
+    reserved: [u8; 128],
 
     /// The bump seed for the PDA
     bump: u8,
@@ -63,8 +69,11 @@ impl Avs {
             vault_admin,
             slasher_admin,
             withdraw_admin,
-            avs_index,
-            reserved: [0; 1024],
+            index: avs_index,
+            operator_count: 0,
+            vault_count: 0,
+            slasher_count: 0,
+            reserved: [0; 128],
             bump,
         }
     }
@@ -73,16 +82,68 @@ impl Avs {
         self.base
     }
 
-    pub const fn avs_index(&self) -> u64 {
-        self.avs_index
+    pub const fn admin(&self) -> Pubkey {
+        self.admin
+    }
+
+    pub const fn operator_admin(&self) -> Pubkey {
+        self.operator_admin
+    }
+
+    pub const fn vault_admin(&self) -> Pubkey {
+        self.vault_admin
+    }
+
+    pub const fn slasher_admin(&self) -> Pubkey {
+        self.slasher_admin
+    }
+
+    pub const fn withdraw_admin(&self) -> Pubkey {
+        self.withdraw_admin
+    }
+
+    pub const fn index(&self) -> u64 {
+        self.index
     }
 
     pub const fn bump(&self) -> u8 {
         self.bump
     }
 
-    pub const fn admin(&self) -> Pubkey {
-        self.admin
+    pub const fn operator_count(&self) -> u64 {
+        self.operator_count
+    }
+
+    pub fn increment_operator_count(&mut self) -> RestakingCoreResult<()> {
+        self.operator_count = self
+            .operator_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::AvsOperatorCountOverflow)?;
+        Ok(())
+    }
+
+    pub const fn vault_count(&self) -> u64 {
+        self.vault_count
+    }
+
+    pub fn increment_vault_count(&mut self) -> RestakingCoreResult<()> {
+        self.vault_count = self
+            .vault_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::AvsVaultCountOverflow)?;
+        Ok(())
+    }
+
+    pub const fn slasher_count(&self) -> u64 {
+        self.slasher_count
+    }
+
+    pub fn increment_slasher_count(&mut self) -> RestakingCoreResult<()> {
+        self.slasher_count = self
+            .slasher_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::AvsSlasherCountOverflow)?;
+        Ok(())
     }
 
     pub fn set_admin(&mut self, admin: Pubkey) {
@@ -97,10 +158,6 @@ impl Avs {
         Ok(())
     }
 
-    pub const fn operator_admin(&self) -> Pubkey {
-        self.operator_admin
-    }
-
     pub fn set_operator_admin(&mut self, operator_admin: Pubkey) {
         self.operator_admin = operator_admin;
     }
@@ -111,10 +168,6 @@ impl Avs {
             return Err(RestakingCoreError::AvsInvalidOperatorAdmin);
         }
         Ok(())
-    }
-
-    pub const fn vault_admin(&self) -> Pubkey {
-        self.vault_admin
     }
 
     pub fn set_vault_admin(&mut self, vault_admin: Pubkey) {
@@ -129,10 +182,6 @@ impl Avs {
         Ok(())
     }
 
-    pub const fn slasher_admin(&self) -> Pubkey {
-        self.slasher_admin
-    }
-
     pub fn set_slasher_admin(&mut self, slasher_admin: Pubkey) {
         self.slasher_admin = slasher_admin;
     }
@@ -143,10 +192,6 @@ impl Avs {
             return Err(RestakingCoreError::AvsInvalidSlasherAdmin);
         }
         Ok(())
-    }
-
-    pub const fn withdraw_admin(&self) -> Pubkey {
-        self.withdraw_admin
     }
 
     pub fn set_withdraw_admin(&mut self, withdraw_admin: Pubkey) {
@@ -175,45 +220,35 @@ impl Avs {
     pub fn deserialize_checked(
         program_id: &Pubkey,
         account: &AccountInfo,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "AVS account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "AVS account not owned by the correct program",
-        )?;
+    ) -> RestakingCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(RestakingCoreError::AvsEmpty);
+        }
+        if account.owner != program_id {
+            return Err(RestakingCoreError::AvsInvalidOwner);
+        }
 
-        // The AvsState shall be properly deserialized and valid struct
-        let avs_state = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            avs_state.account_type == AccountType::Avs,
-            ProgramError::InvalidAccountData,
-            "AVS account is invalid",
-        )?;
+        let avs_state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| RestakingCoreError::AvsInvalidData(e.to_string()))?;
+        if avs_state.account_type != AccountType::Avs {
+            return Err(RestakingCoreError::AvsInvalidAccountType);
+        }
 
-        // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(&avs_state.base());
         seeds.push(vec![avs_state.bump()]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
-
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "AVS account is not at the correct PDA",
-        )?;
-
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| RestakingCoreError::AvsInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(RestakingCoreError::AvsInvalidPda);
+        }
         Ok(avs_state)
     }
 }
 
 pub struct SanitizedAvs<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    avs: Avs,
+    avs: Box<Avs>,
 }
 
 impl<'a, 'info> SanitizedAvs<'a, 'info> {
@@ -221,15 +256,11 @@ impl<'a, 'info> SanitizedAvs<'a, 'info> {
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<SanitizedAvs<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for AVS",
-            )?;
+    ) -> RestakingCoreResult<SanitizedAvs<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(RestakingCoreError::AvsNotWritable);
         }
-        let avs = Avs::deserialize_checked(program_id, account)?;
+        let avs = Box::new(Avs::deserialize_checked(program_id, account)?);
 
         Ok(SanitizedAvs { account, avs })
     }

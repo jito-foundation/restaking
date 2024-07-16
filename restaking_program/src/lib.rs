@@ -1,12 +1,12 @@
 mod avs_add_operator;
 mod avs_add_vault;
 mod avs_add_vault_slasher;
-mod avs_deprecate_vault_slasher;
 mod avs_remove_operator;
 mod avs_remove_vault;
+mod avs_remove_vault_slasher;
 mod avs_set_admin;
 mod avs_set_secondary_admin;
-mod avs_withdrawal_asset;
+mod avs_withdraw_asset;
 mod initialize_avs;
 mod initialize_config;
 mod initialize_operator;
@@ -30,10 +30,10 @@ use solana_security_txt::security_txt;
 use crate::{
     avs_add_operator::process_avs_add_operator, avs_add_vault::process_avs_add_vault,
     avs_add_vault_slasher::process_avs_add_vault_slasher,
-    avs_deprecate_vault_slasher::process_avs_deprecate_slasher,
     avs_remove_operator::process_avs_remove_operator, avs_remove_vault::process_avs_remove_vault,
-    avs_set_admin::process_avs_set_admin, avs_set_secondary_admin::process_avs_set_secondary_admin,
-    avs_withdrawal_asset::process_avs_withdrawal_asset, initialize_avs::process_initialize_avs,
+    avs_remove_vault_slasher::process_avs_remove_slasher, avs_set_admin::process_avs_set_admin,
+    avs_set_secondary_admin::process_avs_set_secondary_admin,
+    avs_withdraw_asset::process_avs_withdraw_asset, initialize_avs::process_initialize_avs,
     initialize_config::process_initialize_config, initialize_operator::process_initialize_operator,
     operator_add_avs::process_operator_add_avs, operator_add_vault::process_operator_add_vault,
     operator_remove_avs::process_operator_remove_avs,
@@ -100,9 +100,9 @@ pub fn process_instruction(
             msg!("Instruction: AvsAddVaultSlasher");
             process_avs_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
         }
-        RestakingInstruction::AvsDeprecateVaultSlasher => {
-            msg!("Instruction: AvsDeprecateVaultSlasher");
-            process_avs_deprecate_slasher(program_id, accounts)
+        RestakingInstruction::AvsRemoveVaultSlasher => {
+            msg!("Instruction: AvsRemoveVaultSlasher");
+            process_avs_remove_slasher(program_id, accounts)
         }
         RestakingInstruction::AvsSetAdmin => {
             msg!("Instruction: AvsSetAdmin");
@@ -142,7 +142,7 @@ pub fn process_instruction(
         }
         RestakingInstruction::AvsWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: AvsWithdrawalAsset");
-            process_avs_withdrawal_asset(program_id, accounts, token_mint, amount)
+            process_avs_withdraw_asset(program_id, accounts, token_mint, amount)
         }
         RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: OperatorWithdrawalAsset");

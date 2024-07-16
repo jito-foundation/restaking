@@ -2,7 +2,9 @@ use jito_restaking_sanitization::{
     signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
 };
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault, vault_operator_list::SanitizedVaultOperatorList,
+    config::SanitizedConfig, vault::SanitizedVault,
+    vault_delegation_list::SanitizedVaultDelegationList,
+    vault_operator_ticket::SanitizedVaultOperatorTicket,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -22,7 +24,8 @@ pub fn process_add_delegation(
     let SanitizedAccounts {
         config,
         vault,
-        mut vault_operator_list,
+        vault_operator_ticket,
+        mut vault_delegation_list,
         operator,
         delegation_admin,
         payer,
@@ -32,16 +35,22 @@ pub fn process_add_delegation(
         .vault()
         .check_delegation_admin(delegation_admin.account().key)?;
 
-    vault_operator_list
-        .vault_operator_list_mut()
-        .update_delegations(Clock::get()?.slot, config.config().epoch_length());
-    vault_operator_list.vault_operator_list_mut().delegate(
+    let slot = Clock::get()?.slot;
+
+    vault_operator_ticket
+        .vault_operator_ticket()
+        .check_active(slot)?;
+
+    vault_delegation_list
+        .vault_delegation_list_mut()
+        .update_delegations(slot, config.config().epoch_length());
+    vault_delegation_list.vault_delegation_list_mut().delegate(
         *operator.key,
         amount,
         vault.vault().tokens_deposited(),
     )?;
 
-    vault_operator_list.save_with_realloc(&Rent::get()?, payer.account())?;
+    vault_delegation_list.save_with_realloc(&Rent::get()?, payer.account())?;
 
     Ok(())
 }
@@ -49,8 +58,9 @@ pub fn process_add_delegation(
 struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
-    vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
     operator: &'a AccountInfo<'info>,
+    vault_operator_ticket: SanitizedVaultOperatorTicket<'a, 'info>,
+    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
     delegation_admin: SanitizedSignerAccount<'a, 'info>,
     payer: SanitizedSignerAccount<'a, 'info>,
 }
@@ -66,13 +76,20 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
         let vault =
             SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let vault_operator_list = SanitizedVaultOperatorList::sanitize(
+        let operator = next_account_info(&mut accounts_iter)?;
+        let vault_operator_ticket = SanitizedVaultOperatorTicket::sanitize(
+            program_id,
+            next_account_info(&mut accounts_iter)?,
+            false,
+            vault.account().key,
+            operator.key,
+        )?;
+        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
             true,
             vault.account().key,
         )?;
-        let operator = next_account_info(&mut accounts_iter)?;
         let delegation_admin =
             SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
         let payer = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
@@ -82,8 +99,9 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         Ok(SanitizedAccounts {
             config,
             vault,
-            vault_operator_list,
             operator,
+            vault_operator_ticket,
+            vault_delegation_list,
             delegation_admin,
             payer,
         })

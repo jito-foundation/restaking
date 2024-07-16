@@ -102,7 +102,6 @@ pub fn realloc<'a, 'info>(
     Ok(())
 }
 
-#[track_caller]
 #[inline(always)]
 pub fn assert_with_msg(v: bool, err: impl Into<ProgramError>, msg: &str) -> ProgramResult {
     if v {

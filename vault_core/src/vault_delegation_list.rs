@@ -1,5 +1,4 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
 use jito_restaking_sanitization::{assert_with_msg, realloc};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -13,12 +12,9 @@ use crate::{
 
 /// Represents an operator that has opted-in to the vault and any associated stake on this operator
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct VaultOperator {
+pub struct OperatorDelegation {
     /// The operator pubkey that has opted-in to the vault
     operator: Pubkey,
-
-    /// The state of the operator being opted-in to the vault
-    state: SlotToggle,
 
     /// The amount of stake that is currently active on the operator
     active_amount: u64,
@@ -27,11 +23,10 @@ pub struct VaultOperator {
     cooling_down_amount: u64,
 }
 
-impl VaultOperator {
-    pub const fn new(operator: Pubkey, slot_added: u64) -> Self {
+impl OperatorDelegation {
+    pub const fn new(operator: Pubkey) -> Self {
         Self {
             operator,
-            state: SlotToggle::new(slot_added),
             active_amount: 0,
             cooling_down_amount: 0,
         }
@@ -41,12 +36,6 @@ impl VaultOperator {
     /// The operator pubkey
     pub const fn operator(&self) -> Pubkey {
         self.operator
-    }
-
-    /// # Returns
-    /// The state of the operator
-    pub const fn state(&self) -> &SlotToggle {
-        &self.state
     }
 
     /// # Returns
@@ -64,35 +53,35 @@ impl VaultOperator {
 
 /// Represents the operators which have opted-in to this vault
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct VaultOperatorList {
+pub struct VaultDelegationList {
     /// The account type
     account_type: AccountType,
 
     /// The vault this operator list is associated with
     vault: Pubkey,
 
-    /// The list of operators that have opted-in to this vault
-    operator_list: Vec<VaultOperator>,
+    /// the list of delegations
+    delegations: Vec<OperatorDelegation>,
 
     /// The last slot the operator list was updated.
     /// Delegation information here is out of date if the last update epoch < current epoch
     last_slot_updated: u64,
 
     /// Reserved space
-    reserved: [u8; 256],
+    reserved: [u8; 128],
 
     /// The bump seed for the PDA
     bump: u8,
 }
 
-impl VaultOperatorList {
+impl VaultDelegationList {
     pub const fn new(vault: Pubkey, bump: u8) -> Self {
         Self {
-            account_type: AccountType::VaultOperatorList,
+            account_type: AccountType::VaultDelegationList,
             vault,
-            operator_list: vec![],
+            delegations: vec![],
             last_slot_updated: 0,
-            reserved: [0; 256],
+            reserved: [0; 128],
             bump,
         }
     }
@@ -105,8 +94,8 @@ impl VaultOperatorList {
 
     /// # Returns
     /// The list of operators that have opted-in to this vault
-    pub fn operator_list(&self) -> &[VaultOperator] {
-        &self.operator_list
+    pub fn delegations(&self) -> &[OperatorDelegation] {
+        &self.delegations
     }
 
     pub fn needs_update(&self, slot: u64, epoch_length: u64) -> bool {
@@ -114,23 +103,12 @@ impl VaultOperatorList {
             < slot.checked_div(epoch_length).unwrap()
     }
 
-    pub fn check_operator_active(&self, operator: &Pubkey, slot: u64) -> VaultCoreResult<()> {
-        let maybe_operator = self.operator_list.iter().find(|o| o.operator == *operator);
-        maybe_operator.map_or(Err(VaultCoreError::VaultOperatorNotFound), |operator| {
-            if operator.state().is_active(slot) {
-                Ok(())
-            } else {
-                Err(VaultCoreError::VaultOperatorNotActive)
-            }
-        })
-    }
-
     pub fn update_delegations(&mut self, slot: u64, epoch_length: u64) -> bool {
         let last_epoch_update = self.last_slot_updated.checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
 
         if last_epoch_update < current_epoch {
-            for operator in self.operator_list.iter_mut() {
+            for operator in self.delegations.iter_mut() {
                 operator.cooling_down_amount = 0;
             }
             self.last_slot_updated = slot;
@@ -176,21 +154,17 @@ impl VaultOperatorList {
             "overdelegated amount",
         )?;
 
-        let operator = self
-            .operator_list
-            .iter_mut()
-            .find(|d| d.operator == operator);
-        assert_with_msg(
-            operator.is_some(),
-            ProgramError::InvalidArgument,
-            "Operator not found",
-        )?;
-        let operator = operator.unwrap();
-
-        operator.active_amount = operator.active_amount.checked_add(amount).ok_or_else(|| {
-            msg!("Delegation overflow");
-            ProgramError::InvalidArgument
-        })?;
+        if let Some(operator) = self.delegations.iter_mut().find(|d| d.operator == operator) {
+            operator.active_amount =
+                operator.active_amount.checked_add(amount).ok_or_else(|| {
+                    msg!("Delegation overflow");
+                    ProgramError::InvalidArgument
+                })?;
+        } else {
+            let mut operator = OperatorDelegation::new(operator);
+            operator.active_amount = amount;
+            self.delegations.push(operator);
+        }
 
         Ok(())
     }
@@ -201,11 +175,7 @@ impl VaultOperatorList {
     /// * `operator` - The operator pubkey to undelegate from
     /// * `amount` - The amount of stake to undelegate
     pub fn undelegate(&mut self, operator: Pubkey, amount: u64) -> Result<(), ProgramError> {
-        if let Some(operator) = self
-            .operator_list
-            .iter_mut()
-            .find(|d| d.operator == operator)
-        {
+        if let Some(operator) = self.delegations.iter_mut().find(|d| d.operator == operator) {
             operator.active_amount =
                 operator.active_amount.checked_sub(amount).ok_or_else(|| {
                     msg!("Delegation underflow");
@@ -226,9 +196,9 @@ impl VaultOperatorList {
         Ok(())
     }
 
-    pub fn slash(&mut self, operator: &Pubkey, amount: u64) -> VaultCoreResult<()> {
+    pub fn slash(&mut self, operator: &Pubkey, slash_amount: u64) -> VaultCoreResult<()> {
         if let Some(operator) = self
-            .operator_list
+            .delegations
             .iter_mut()
             .find(|x| x.operator == *operator)
         {
@@ -237,12 +207,21 @@ impl VaultOperatorList {
                 .checked_add(operator.cooling_down_amount)
                 .ok_or(VaultCoreError::VaultSlashingOverflow)?;
 
-            // TODO (LB): floating point?
             let active_slash_amount = operator
                 .active_amount
+                .checked_mul(slash_amount)
+                .ok_or(VaultCoreError::VaultSlashingOverflow)?
                 .checked_div(total_staked_amount)
                 .unwrap_or(0);
-            let cooling_down_slash_amount = amount
+
+            msg!(
+                "slashing {} from active, {} from cooling down",
+                active_slash_amount,
+                slash_amount
+                    .checked_sub(active_slash_amount)
+                    .unwrap_or(99999999999999)
+            );
+            let cooling_down_slash_amount = slash_amount
                 .checked_sub(active_slash_amount)
                 .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
 
@@ -264,46 +243,12 @@ impl VaultOperatorList {
     /// Returns the total active + cooling down delegations
     pub fn total_delegation(&self) -> Option<u64> {
         let mut total: u64 = 0;
-        for operator in self.operator_list.iter() {
+        for operator in self.delegations.iter() {
             total = total
                 .checked_add(operator.active_amount)?
                 .checked_add(operator.cooling_down_amount)?;
         }
         Some(total)
-    }
-
-    pub fn add_operator(&mut self, operator: Pubkey, slot: u64) -> VaultCoreResult<()> {
-        if let Some(operator) = self
-            .operator_list
-            .iter_mut()
-            .find(|x| x.operator == operator)
-        {
-            if !operator.state.activate(slot) {
-                Err(VaultCoreError::VaultOperatorListOperatorAlreadyAdded)
-            } else {
-                Ok(())
-            }
-        } else {
-            self.operator_list.push(VaultOperator::new(operator, slot));
-            Ok(())
-        }
-    }
-
-    pub fn remove_operator(&mut self, operator: Pubkey, slot: u64) -> VaultCoreResult<()> {
-        if let Some(operator) = self
-            .operator_list
-            .iter_mut()
-            .find(|x| x.operator == operator)
-        {
-            let deactivated = operator.state.deactivate(slot);
-            if deactivated {
-                Ok(())
-            } else {
-                Err(VaultCoreError::VaultOperatorListOperatorAlreadyRemoved)
-            }
-        } else {
-            Err(VaultCoreError::VaultOperatorListOperatorNotAdded)
-        }
     }
 
     pub fn seeds(vault: &Pubkey) -> Vec<Vec<u8>> {
@@ -326,52 +271,53 @@ impl VaultOperatorList {
         vault: &Pubkey,
     ) -> VaultCoreResult<Self> {
         if account.data_is_empty() {
-            return Err(VaultCoreError::VaultOperatorListDataEmpty);
+            return Err(VaultCoreError::VaultDelegationListDataEmpty);
         }
         if account.owner != program_id {
-            return Err(VaultCoreError::VaultOperatorListInvalidProgramOwner);
+            return Err(VaultCoreError::VaultDelegationListInvalidProgramOwner);
         }
 
         let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::VaultOperatorListInvalidData(e.to_string()))?;
-        if state.account_type != AccountType::VaultOperatorList {
-            return Err(VaultCoreError::VaultOperatorListInvalidAccountType);
+            .map_err(|e| VaultCoreError::VaultDelegationListInvalidData(e.to_string()))?;
+        if state.account_type != AccountType::VaultDelegationList {
+            return Err(VaultCoreError::VaultDelegationListInvalidAccountType);
         }
-        // The AvsState shall be at the correct PDA as defined by the seeds and bump
+
         let mut seeds = Self::seeds(vault);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultOperatorListInvalidPda)?;
+            .map_err(|_| VaultCoreError::VaultDelegationListInvalidPda)?;
         if expected_pubkey != *account.key {
-            return Err(VaultCoreError::VaultOperatorListInvalidPda);
+            return Err(VaultCoreError::VaultDelegationListInvalidPda);
         }
 
         Ok(state)
     }
 }
 
-pub struct SanitizedVaultOperatorList<'a, 'info> {
+pub struct SanitizedVaultDelegationList<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    vault_operator_list: VaultOperatorList,
+    vault_delegation_list: Box<VaultDelegationList>,
 }
 
-impl<'a, 'info> SanitizedVaultOperatorList<'a, 'info> {
+impl<'a, 'info> SanitizedVaultDelegationList<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-    ) -> VaultCoreResult<SanitizedVaultOperatorList<'a, 'info>> {
+    ) -> VaultCoreResult<SanitizedVaultDelegationList<'a, 'info>> {
         if expect_writable && !account.is_writable {
-            return Err(VaultCoreError::VaultOperatorListExpectedWritable);
+            return Err(VaultCoreError::VaultDelegationListExpectedWritable);
         }
-        let vault_operator_list =
-            VaultOperatorList::deserialize_checked(program_id, account, vault)?;
+        let vault_delegation_list = Box::new(VaultDelegationList::deserialize_checked(
+            program_id, account, vault,
+        )?);
 
-        Ok(SanitizedVaultOperatorList {
+        Ok(SanitizedVaultDelegationList {
             account,
-            vault_operator_list,
+            vault_delegation_list,
         })
     }
 
@@ -379,16 +325,16 @@ impl<'a, 'info> SanitizedVaultOperatorList<'a, 'info> {
         self.account
     }
 
-    pub const fn vault_operator_list(&self) -> &VaultOperatorList {
-        &self.vault_operator_list
+    pub const fn vault_delegation_list(&self) -> &VaultDelegationList {
+        &self.vault_delegation_list
     }
 
-    pub fn vault_operator_list_mut(&mut self) -> &mut VaultOperatorList {
-        &mut self.vault_operator_list
+    pub fn vault_delegation_list_mut(&mut self) -> &mut VaultDelegationList {
+        &mut self.vault_delegation_list
     }
 
     pub fn save_with_realloc(&self, rent: &Rent, payer: &'a AccountInfo<'info>) -> ProgramResult {
-        let serialized = self.vault_operator_list.try_to_vec()?;
+        let serialized = self.vault_delegation_list.try_to_vec()?;
 
         if serialized.len() > self.account.data.borrow().len() {
             realloc(self.account, serialized.len(), payer, rent)?;
@@ -400,7 +346,7 @@ impl<'a, 'info> SanitizedVaultOperatorList<'a, 'info> {
     }
 
     pub fn save(&self) -> ProgramResult {
-        let serialized = self.vault_operator_list.try_to_vec()?;
+        let serialized = self.vault_delegation_list.try_to_vec()?;
 
         self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
 

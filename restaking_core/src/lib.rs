@@ -1,25 +1,28 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use bytemuck::{Pod, Zeroable};
 
 pub mod avs;
-pub mod avs_operator_list;
-pub mod avs_slasher_list;
-pub mod avs_vault_list;
+pub mod avs_operator_ticket;
+pub mod avs_vault_slasher_ticket;
+pub mod avs_vault_ticket;
 pub mod config;
 pub mod operator;
-pub mod operator_avs_list;
-pub mod operator_vault_list;
+pub mod operator_avs_ticket;
+pub mod operator_vault_ticket;
 pub mod result;
-pub mod vault;
 
-#[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize, Copy)]
 #[repr(u32)]
 pub enum AccountType {
-    Config = 0,
-    Avs = 1,
-    AvsOperatorList = 2,
-    AvsVaultList = 3,
-    AvsSlasherList = 4,
-    Operator = 5,
-    OperatorAvsList = 6,
-    OperatorVaultList = 7,
+    Config,
+    Avs,
+    AvsOperatorTicket,
+    AvsVaultSlasherTicket,
+    AvsVaultTicket,
+    Operator,
+    OperatorAvsTicket,
+    OperatorVaultTicket,
 }
+
+unsafe impl Pod for AccountType {}
+unsafe impl Zeroable for AccountType {}

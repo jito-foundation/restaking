@@ -1,6 +1,7 @@
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault, vault_operator_list::SanitizedVaultOperatorList,
+    config::SanitizedConfig, vault::SanitizedVault,
+    vault_delegation_list::SanitizedVaultDelegationList,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -19,7 +20,7 @@ pub fn process_remove_delegation(
     let SanitizedAccounts {
         config,
         vault,
-        mut vault_operator_list,
+        mut vault_delegation_list,
         operator,
         delegation_admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
@@ -27,14 +28,14 @@ pub fn process_remove_delegation(
     vault
         .vault()
         .check_delegation_admin(delegation_admin.account().key)?;
-    vault_operator_list
-        .vault_operator_list_mut()
+    vault_delegation_list
+        .vault_delegation_list_mut()
         .update_delegations(Clock::get()?.slot, config.config().epoch_length());
-    vault_operator_list
-        .vault_operator_list_mut()
+    vault_delegation_list
+        .vault_delegation_list_mut()
         .undelegate(*operator.key, amount)?;
 
-    vault_operator_list.save()?;
+    vault_delegation_list.save()?;
 
     Ok(())
 }
@@ -42,7 +43,7 @@ pub fn process_remove_delegation(
 struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
-    vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
+    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
     operator: &'a AccountInfo<'info>,
     delegation_admin: SanitizedSignerAccount<'a, 'info>,
 }
@@ -58,7 +59,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
         let vault =
             SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let vault_operator_list = SanitizedVaultOperatorList::sanitize(
+        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
             true,
@@ -71,7 +72,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         Ok(SanitizedAccounts {
             config,
             vault,
-            vault_operator_list,
+            vault_delegation_list,
             operator,
             delegation_admin,
         })

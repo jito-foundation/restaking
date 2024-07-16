@@ -1,14 +1,17 @@
+use borsh::BorshSerialize;
 use jito_restaking_core::{
-    avs::SanitizedAvs, avs_operator_list::SanitizedAvsOperatorList, config::SanitizedConfig,
-    operator::SanitizedOperator, operator_avs_list::SanitizedOperatorAvsList,
+    avs::SanitizedAvs, avs_operator_ticket::AvsOperatorTicket, config::SanitizedConfig,
+    operator::SanitizedOperator, operator_avs_ticket::SanitizedOperatorAvsTicket,
 };
 use jito_restaking_sanitization::{
-    signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
+    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
+    system_program::SanitizedSystemProgram,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     clock::Clock,
     entrypoint::ProgramResult,
+    msg,
     program_error::ProgramError,
     pubkey::Pubkey,
     rent::Rent,
@@ -21,39 +24,100 @@ use solana_program::{
 /// [`crate::RestakingInstruction::AvsAddOperator`]
 pub fn process_avs_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
-        avs,
-        mut avs_operator_list,
+        mut avs,
         operator,
-        operator_avs_list,
+        avs_operator_ticket_account,
+        operator_avs_ticket,
         admin,
         payer,
+        system_program,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     avs.avs().check_operator_admin(admin.account().key)?;
 
-    let clock = Clock::get()?;
+    let slot = Clock::get()?.slot;
 
-    operator_avs_list
-        .operator_avs_list()
-        .check_avs_active(avs.account().key, clock.slot)?;
+    operator_avs_ticket
+        .operator_avs_ticket()
+        .check_active(slot)?;
 
-    avs_operator_list
-        .avs_operator_list_mut()
-        .add_operator(*operator.account().key, clock.slot)?;
+    _create_avs_operator_ticket(
+        program_id,
+        &avs,
+        &operator,
+        &avs_operator_ticket_account,
+        &payer,
+        &system_program,
+        &Rent::get()?,
+        slot,
+    )?;
 
-    let rent = Rent::get()?;
-    avs_operator_list.save_with_realloc(&rent, payer.account())?;
+    avs.avs_mut().increment_operator_count()?;
 
+    avs.save()?;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn _create_avs_operator_ticket<'a, 'info>(
+    program_id: &Pubkey,
+    avs: &SanitizedAvs<'a, 'info>,
+    operator: &SanitizedOperator<'a, 'info>,
+    avs_operator_ticket_account: &EmptyAccount<'a, 'info>,
+    payer: &SanitizedSignerAccount<'a, 'info>,
+    system_program: &SanitizedSystemProgram<'a, 'info>,
+    rent: &Rent,
+    slot: u64,
+) -> ProgramResult {
+    let (address, bump, mut seeds) = AvsOperatorTicket::find_program_address(
+        program_id,
+        avs.account().key,
+        operator.account().key,
+    );
+    seeds.push(vec![bump]);
+
+    assert_with_msg(
+        address == *avs_operator_ticket_account.account().key,
+        ProgramError::InvalidAccountData,
+        "AVS operator ticket is not at the correct PDA",
+    )?;
+
+    let avs_operator_ticket = AvsOperatorTicket::new(
+        *avs.account().key,
+        *operator.account().key,
+        avs.avs().operator_count(),
+        slot,
+        bump,
+    );
+
+    msg!(
+        "Creating AVS operator ticket: {:?}",
+        avs_operator_ticket_account.account().key
+    );
+    let serialized = avs_operator_ticket.try_to_vec()?;
+    create_account(
+        payer.account(),
+        avs_operator_ticket_account.account(),
+        system_program.account(),
+        program_id,
+        rent,
+        serialized.len() as u64,
+        &seeds,
+    )?;
+    avs_operator_ticket_account.account().data.borrow_mut()[..serialized.len()]
+        .copy_from_slice(&serialized);
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
     avs: SanitizedAvs<'a, 'info>,
-    avs_operator_list: SanitizedAvsOperatorList<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
-    operator_avs_list: SanitizedOperatorAvsList<'a, 'info>,
+    avs_operator_ticket_account: EmptyAccount<'a, 'info>,
+    operator_avs_ticket: SanitizedOperatorAvsTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
     payer: SanitizedSignerAccount<'a, 'info>,
+    system_program: SanitizedSystemProgram<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -66,32 +130,30 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 
         let _config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let avs_operator_list = SanitizedAvsOperatorList::sanitize(
-            program_id,
-            next_account_info(accounts_iter)?,
-            true,
-            avs.account().key,
-        )?;
+        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
         let operator =
             SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let operator_avs_list = SanitizedOperatorAvsList::sanitize(
+        let avs_operator_ticket_account =
+            EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        let operator_avs_ticket = SanitizedOperatorAvsTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             false,
             operator.account().key,
+            avs.account().key,
         )?;
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
         let payer = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let _system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
+        let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
             avs,
-            avs_operator_list,
             operator,
-            operator_avs_list,
+            avs_operator_ticket_account,
+            operator_avs_ticket,
             admin,
             payer,
+            system_program,
         })
     }
 }

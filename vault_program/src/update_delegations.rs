@@ -1,5 +1,6 @@
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault, vault_operator_list::SanitizedVaultOperatorList,
+    config::SanitizedConfig, vault::SanitizedVault,
+    vault_delegation_list::SanitizedVaultDelegationList,
 };
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult,
@@ -9,22 +10,22 @@ use solana_program::{
 pub fn process_update_delegations(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
         config,
-        mut vault_operator_list,
+        mut vault_delegation_list,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     let slot = Clock::get()?.slot;
-    vault_operator_list
-        .vault_operator_list_mut()
+    vault_delegation_list
+        .vault_delegation_list_mut()
         .update_delegations(slot, config.config().epoch_length());
 
-    vault_operator_list.save()?;
+    vault_delegation_list.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
-    vault_operator_list: SanitizedVaultOperatorList<'a, 'info>,
+    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -37,7 +38,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let config = SanitizedConfig::sanitize(program_id, accounts_iter.next().unwrap(), false)?;
         let vault = SanitizedVault::sanitize(program_id, accounts_iter.next().unwrap(), false)?;
 
-        let vault_operator_list = SanitizedVaultOperatorList::sanitize(
+        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             accounts_iter.next().unwrap(),
             true,
@@ -45,7 +46,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         )?;
         Ok(SanitizedAccounts {
             config,
-            vault_operator_list,
+            vault_delegation_list,
         })
     }
 }

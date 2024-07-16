@@ -1,9 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_restaking_sanitization::assert_with_msg;
-use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
-    pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 
 use crate::{
     result::{RestakingCoreError, RestakingCoreResult},
@@ -11,6 +7,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[repr(C)]
 pub struct Operator {
     /// The account type
     account_type: AccountType,
@@ -21,11 +18,19 @@ pub struct Operator {
     /// The admin pubkey
     admin: Pubkey,
 
+    avs_admin: Pubkey,
+
+    vault_admin: Pubkey,
+
     /// The voter pubkey
     voter: Pubkey,
 
     /// The operator index
     index: u64,
+
+    avs_count: u64,
+
+    vault_count: u64,
 
     /// Reserved space
     reserved_space: [u8; 1024],
@@ -40,8 +45,12 @@ impl Operator {
             account_type: AccountType::Operator,
             base,
             admin,
+            avs_admin: admin,
+            vault_admin: admin,
             voter,
             index,
+            avs_count: 0,
+            vault_count: 0,
             reserved_space: [0; 1024],
             bump,
         }
@@ -49,6 +58,30 @@ impl Operator {
 
     pub const fn index(&self) -> u64 {
         self.index
+    }
+
+    pub const fn avs_count(&self) -> u64 {
+        self.avs_count
+    }
+
+    pub fn increment_avs_count(&mut self) -> RestakingCoreResult<()> {
+        self.avs_count = self
+            .avs_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::OperatorAvsCountOverflow)?;
+        Ok(())
+    }
+
+    pub const fn vault_count(&self) -> u64 {
+        self.vault_count
+    }
+
+    pub fn increment_vault_count(&mut self) -> RestakingCoreResult<()> {
+        self.vault_count = self
+            .vault_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::OperatorVaultCountOverflow)?;
+        Ok(())
     }
 
     pub const fn base(&self) -> Pubkey {
@@ -74,6 +107,36 @@ impl Operator {
         self.admin = admin;
     }
 
+    pub const fn avs_admin(&self) -> Pubkey {
+        self.avs_admin
+    }
+
+    pub fn check_avs_admin(&self, avs_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.avs_admin != *avs_admin {
+            return Err(RestakingCoreError::OperatorInvalidAvsAdmin);
+        }
+        Ok(())
+    }
+
+    pub fn set_avs_admin(&mut self, avs_admin: Pubkey) {
+        self.avs_admin = avs_admin;
+    }
+
+    pub const fn vault_admin(&self) -> Pubkey {
+        self.vault_admin
+    }
+
+    pub fn check_vault_admin(&self, vault_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.vault_admin != *vault_admin {
+            return Err(RestakingCoreError::OperatorInvalidVaultAdmin);
+        }
+        Ok(())
+    }
+
+    pub fn set_vault_admin(&mut self, vault_admin: Pubkey) {
+        self.vault_admin = vault_admin;
+    }
+
     pub const fn voter(&self) -> Pubkey {
         self.voter
     }
@@ -96,37 +159,29 @@ impl Operator {
     pub fn deserialize_checked(
         program_id: &Pubkey,
         account: &AccountInfo,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "Operator account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "Operator account is not owned by the program",
-        )?;
+    ) -> RestakingCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(RestakingCoreError::OperatorDataEmpty);
+        }
+        if account.owner != program_id {
+            return Err(RestakingCoreError::OperatorInvalidOwner);
+        }
 
         // The AvsState shall be properly deserialized and valid struct
-        let operator = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            operator.account_type == AccountType::Operator,
-            ProgramError::InvalidAccountData,
-            "Operator account is not valid",
-        )?;
+        let operator = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| RestakingCoreError::OperatorInvalidData(e.to_string()))?;
+        if operator.account_type != AccountType::Operator {
+            return Err(RestakingCoreError::OperatorInvalidAccountType);
+        }
 
-        // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds(&operator.base);
         seeds.push(vec![operator.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
-
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "Operator account is not at the correct PDA",
-        )?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| RestakingCoreError::OperatorInvalidPda)?;
+        if expected_pubkey != *account.key {
+            return Err(RestakingCoreError::OperatorInvalidPda);
+        }
 
         Ok(operator)
     }
@@ -134,7 +189,7 @@ impl Operator {
 
 pub struct SanitizedOperator<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    operator: Operator,
+    operator: Box<Operator>,
 }
 
 impl<'a, 'info> SanitizedOperator<'a, 'info> {
@@ -142,16 +197,12 @@ impl<'a, 'info> SanitizedOperator<'a, 'info> {
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<Self, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Operator account is not writable",
-            )?;
+    ) -> RestakingCoreResult<Self> {
+        if expect_writable && !account.is_writable {
+            return Err(RestakingCoreError::OperatorNotWritable);
         }
 
-        let operator = Operator::deserialize_checked(program_id, account)?;
+        let operator = Box::new(Operator::deserialize_checked(program_id, account)?);
 
         Ok(Self { account, operator })
     }

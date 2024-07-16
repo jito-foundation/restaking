@@ -1,6 +1,7 @@
 mod add_avs;
 mod add_delegation;
 mod add_operator;
+mod add_slasher;
 mod burn;
 mod create_token_metadata;
 mod enqueue_withdrawal;
@@ -8,7 +9,6 @@ mod initialize_config;
 mod initialize_vault;
 mod initialize_vault_with_mint;
 mod mint_to;
-mod register_slasher;
 mod remove_avs;
 mod remove_delegation;
 mod remove_operator;
@@ -31,16 +31,15 @@ use solana_security_txt::security_txt;
 
 use crate::{
     add_avs::process_vault_add_avs, add_delegation::process_add_delegation,
-    add_operator::process_vault_add_operator, burn::process_burn,
+    add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
-    register_slasher::process_register_slasher, remove_avs::process_vault_remove_avs,
-    remove_delegation::process_remove_delegation, remove_operator::process_vault_remove_operator,
-    set_admin::process_set_admin, set_capacity::process_set_capacity,
-    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
-    update_delegations::process_update_delegations,
+    remove_avs::process_vault_remove_avs, remove_delegation::process_remove_delegation,
+    remove_operator::process_vault_remove_operator, set_admin::process_set_admin,
+    set_capacity::process_set_capacity, set_secondary_admin::process_set_secondary_admin,
+    slash::process_slash, update_delegations::process_update_delegations,
     update_token_metadata::process_update_token_metadata,
     withdrawal_asset::process_withdrawal_asset,
 };
@@ -168,7 +167,7 @@ pub fn process_instruction(
         // ------------------------------------------
         VaultInstruction::AddSlasher => {
             msg!("Instruction: RegisterSlasher");
-            process_register_slasher(program_id, accounts)
+            process_add_slasher(program_id, accounts)
         }
         VaultInstruction::Slash { amount } => {
             msg!("Instruction: Slash");

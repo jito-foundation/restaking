@@ -1,15 +1,15 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_restaking_sanitization::assert_with_msg;
-use solana_program::{
-    account_info::AccountInfo, entrypoint_deprecated::ProgramResult, program_error::ProgramError,
-    pubkey::Pubkey,
-};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 
-use crate::AccountType;
+use crate::{
+    result::{RestakingCoreError, RestakingCoreResult},
+    AccountType,
+};
 
 pub const DEFAULT_RESTAKING_EPOCH_DURATION: u64 = 864_000;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
+#[repr(C)]
 pub struct Config {
     /// The account type
     account_type: AccountType,
@@ -21,16 +21,16 @@ pub struct Config {
     vault_program: Pubkey,
 
     /// The number of AVS managed by the program
-    num_avs: u64,
+    avs_count: u64,
 
     /// The number of operators managed by the program
-    num_operators: u64,
+    operator_count: u64,
 
     /// The duration of an epoch in slots
     epoch_duration: u64,
 
     /// Reserved space
-    reserved: [u8; 1024],
+    reserved: [u8; 128],
 
     /// The bump seed for the PDA
     bump: u8,
@@ -42,30 +42,36 @@ impl Config {
             account_type: AccountType::Config,
             admin,
             vault_program,
-            num_avs: 0,
-            num_operators: 0,
+            avs_count: 0,
+            operator_count: 0,
             epoch_duration: DEFAULT_RESTAKING_EPOCH_DURATION,
-            reserved: [0; 1024],
+            reserved: [0; 128],
             bump,
         }
     }
 
-    pub fn increment_avs(&mut self) -> Option<u64> {
-        self.num_avs = self.num_avs.checked_add(1)?;
-        Some(self.num_avs)
+    pub fn increment_avs(&mut self) -> RestakingCoreResult<()> {
+        self.avs_count = self
+            .avs_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::AvsOverflow)?;
+        Ok(())
     }
 
     pub const fn avs_count(&self) -> u64 {
-        self.num_avs
+        self.avs_count
     }
 
-    pub fn increment_operators(&mut self) -> Option<u64> {
-        self.num_operators = self.num_operators.checked_add(1)?;
-        Some(self.num_operators)
+    pub fn increment_operators(&mut self) -> RestakingCoreResult<()> {
+        self.operator_count = self
+            .operator_count
+            .checked_add(1)
+            .ok_or(RestakingCoreError::OperatorOverflow)?;
+        Ok(())
     }
 
     pub const fn operators_count(&self) -> u64 {
-        self.num_operators
+        self.operator_count
     }
 
     pub const fn epoch_duration(&self) -> u64 {
@@ -98,37 +104,30 @@ impl Config {
     pub fn deserialize_checked(
         program_id: &Pubkey,
         account: &AccountInfo,
-    ) -> Result<Self, ProgramError> {
-        assert_with_msg(
-            !account.data_is_empty(),
-            ProgramError::UninitializedAccount,
-            "Config account is not initialized",
-        )?;
-        assert_with_msg(
-            account.owner == program_id,
-            ProgramError::IllegalOwner,
-            "Config account not owned by the correct program",
-        )?;
+    ) -> RestakingCoreResult<Self> {
+        if account.data_is_empty() {
+            return Err(RestakingCoreError::ConfigEmpty);
+        }
+        if account.owner != program_id {
+            return Err(RestakingCoreError::ConfigInvalidOwner);
+        }
 
         // The AvsState shall be properly deserialized and valid struct
-        let config = Self::deserialize(&mut account.data.borrow_mut().as_ref())?;
-        assert_with_msg(
-            config.account_type == AccountType::Config,
-            ProgramError::InvalidAccountData,
-            "AVS account is invalid",
-        )?;
+        let config = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| RestakingCoreError::ConfigInvalidData(e.to_string()))?;
+        if config.account_type != AccountType::Config {
+            return Err(RestakingCoreError::ConfigInvalidAccountType);
+        }
 
-        // The AvsState shall be at the correct PDA as defined by the seeds and bump
         let mut seeds = Self::seeds();
         seeds.push(vec![config.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| RestakingCoreError::ConfigInvalidPda)?;
 
-        assert_with_msg(
-            expected_pubkey == *account.key,
-            ProgramError::InvalidAccountData,
-            "Config account is not at the correct PDA",
-        )?;
+        if expected_pubkey != *account.key {
+            return Err(RestakingCoreError::ConfigInvalidPda);
+        }
 
         Ok(config)
     }
@@ -136,7 +135,7 @@ impl Config {
 
 pub struct SanitizedConfig<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    config: Config,
+    config: Box<Config>,
 }
 
 impl<'a, 'info> SanitizedConfig<'a, 'info> {
@@ -144,15 +143,11 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> Result<SanitizedConfig<'a, 'info>, ProgramError> {
-        if expect_writable {
-            assert_with_msg(
-                account.is_writable,
-                ProgramError::InvalidAccountData,
-                "Invalid writable flag for Config",
-            )?;
+    ) -> RestakingCoreResult<SanitizedConfig<'a, 'info>> {
+        if expect_writable && !account.is_writable {
+            return Err(RestakingCoreError::ConfigNotWritable);
         }
-        let config = Config::deserialize_checked(program_id, account)?;
+        let config = Box::new(Config::deserialize_checked(program_id, account)?);
 
         Ok(SanitizedConfig { account, config })
     }

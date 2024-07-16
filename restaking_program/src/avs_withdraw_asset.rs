@@ -12,7 +12,7 @@ use solana_program::{
 };
 use spl_token::instruction::transfer;
 
-pub fn process_avs_withdrawal_asset(
+pub fn process_avs_withdraw_asset(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     token_mint: Pubkey,
