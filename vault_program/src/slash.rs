@@ -12,10 +12,11 @@ use jito_restaking_sanitization::{
 use jito_vault_core::{
     config::SanitizedConfig,
     vault::{SanitizedVault, Vault},
+    vault_avs_slasher_operator_ticket::SanitizedVaultAvsSlasherOperatorTicket,
+    vault_avs_slasher_ticket::SanitizedVaultAvsSlasherTicket,
     vault_avs_ticket::SanitizedVaultAvsTicket,
     vault_delegation_list::SanitizedVaultDelegationList,
     vault_operator_ticket::SanitizedVaultOperatorTicket,
-    vault_slasher_ticket::SanitizedVaultAvsSlasherTicket,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -29,7 +30,12 @@ use solana_program::{
 use spl_token::instruction::transfer;
 
 /// Processes the vault slash instruction: [`crate::VaultInstruction::Slash`]
-pub fn process_slash(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
+pub fn process_slash(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    slash_amount: u64,
+) -> ProgramResult {
+    let slot = Clock::get()?.slot;
     let SanitizedAccounts {
         mut vault,
         operator,
@@ -42,11 +48,11 @@ pub fn process_slash(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64)
         avs_vault_slasher_ticket,
         vault_avs_slasher_ticket,
         mut vault_delegation_list,
+        mut vault_avs_slasher_operator_ticket,
         mut vault_token_account,
         slasher_token_account,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    } = SanitizedAccounts::sanitize(program_id, accounts, slot)?;
 
-    let slot = Clock::get()?.slot;
     // The vault shall be opted-in to the AVS and the AVS shall be opted-in to the vault
     vault_avs_ticket.vault_avs_ticket().check_active(slot)?;
     avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
@@ -71,16 +77,30 @@ pub fn process_slash(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64)
         .avs_vault_slasher_ticket()
         .check_active(slot)?;
     vault_avs_slasher_ticket
-        .vault_slasher_ticket()
+        .vault_avs_slasher_ticket()
         .check_active(slot)?;
 
-    // TODO (LB): check to make sure didn't exceed max slashable for the epoch for the given node operator
+    let max_slashable_per_epoch = vault_avs_slasher_ticket
+        .vault_avs_slasher_ticket()
+        .max_slashable_per_epoch();
+    vault_avs_slasher_operator_ticket
+        .vault_avs_slasher_operator_ticket()
+        .check_max_slashable_not_exceeded(slash_amount, max_slashable_per_epoch)?;
 
     vault_delegation_list
         .vault_delegation_list_mut()
-        .slash(operator.account().key, amount)?;
+        .slash(operator.account().key, slash_amount)?;
 
-    _transfer_slashed_funds(&vault, &vault_token_account, &slasher_token_account, amount)?;
+    vault_avs_slasher_operator_ticket
+        .vault_avs_slasher_operator_ticket_mut()
+        .increment_slashed_amount(slash_amount)?;
+
+    _transfer_slashed_funds(
+        &vault,
+        &vault_token_account,
+        &slasher_token_account,
+        slash_amount,
+    )?;
 
     vault_token_account.reload()?;
     vault
@@ -89,6 +109,7 @@ pub fn process_slash(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64)
 
     vault.save()?;
     vault_delegation_list.save()?;
+    vault_avs_slasher_operator_ticket.save()?;
 
     Ok(())
 }
@@ -139,14 +160,17 @@ struct SanitizedAccounts<'a, 'info> {
     avs_vault_slasher_ticket: SanitizedAvsVaultSlasherTicket<'a, 'info>,
     vault_avs_slasher_ticket: SanitizedVaultAvsSlasherTicket<'a, 'info>,
     vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
+    vault_avs_slasher_operator_ticket: SanitizedVaultAvsSlasherOperatorTicket<'a, 'info>,
     vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     slasher_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    /// Sanitizes the accounts for the slash instruction: [`crate::VaultInstruction::Slash`]
     fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
+        slot: u64,
     ) -> Result<Self, ProgramError> {
         let mut accounts_iter = accounts.iter();
 
@@ -230,6 +254,19 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             true,
             vault.account().key,
         )?;
+
+        let epoch = slot.checked_div(config.config().epoch_length()).unwrap();
+        let vault_avs_slasher_operator_ticket = SanitizedVaultAvsSlasherOperatorTicket::sanitize(
+            program_id,
+            next_account_info(&mut accounts_iter)?,
+            true,
+            vault.account().key,
+            avs.account().key,
+            slasher.account().key,
+            operator.account().key,
+            epoch,
+        )?;
+
         let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(&mut accounts_iter)?,
             &vault.vault().supported_mint(),
@@ -254,6 +291,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             avs_vault_slasher_ticket,
             vault_avs_slasher_ticket,
             vault_delegation_list,
+            vault_avs_slasher_operator_ticket,
             vault_token_account,
             slasher_token_account,
         })

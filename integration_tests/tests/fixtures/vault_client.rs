@@ -1,8 +1,8 @@
 use borsh::BorshDeserialize;
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_avs_ticket::VaultAvsTicket,
+    config::Config, vault::Vault, vault_avs_slasher_operator_ticket::VaultAvsSlasherOperatorTicket,
+    vault_avs_slasher_ticket::VaultAvsSlasherTicket, vault_avs_ticket::VaultAvsTicket,
     vault_delegation_list::VaultDelegationList, vault_operator_ticket::VaultOperatorTicket,
-    vault_slasher_ticket::VaultAvsSlasherTicket,
 };
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
 use solana_program::pubkey::Pubkey;
@@ -80,6 +80,29 @@ impl VaultProgramClient {
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(VaultAvsSlasherTicket::deserialize(
+            &mut account.data.as_slice(),
+        )?)
+    }
+
+    pub async fn get_vault_avs_slasher_operator_ticket(
+        &mut self,
+        vault: &Pubkey,
+        avs: &Pubkey,
+        slasher: &Pubkey,
+        operator: &Pubkey,
+        epoch: u64,
+    ) -> Result<VaultAvsSlasherOperatorTicket, BanksClientError> {
+        let account = VaultAvsSlasherOperatorTicket::find_program_address(
+            &jito_vault_program::id(),
+            vault,
+            avs,
+            slasher,
+            operator,
+            epoch,
+        )
+        .0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
+        Ok(VaultAvsSlasherOperatorTicket::deserialize(
             &mut account.data.as_slice(),
         )?)
     }
@@ -460,6 +483,39 @@ impl VaultProgramClient {
         .await
     }
 
+    pub async fn initialize_vault_avs_slasher_operator_ticket(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        avs: &Pubkey,
+        slasher: &Pubkey,
+        operator: &Pubkey,
+        vault_avs_slasher_ticket: &Pubkey,
+        vault_avs_slasher_operator_ticket: &Pubkey,
+        payer: &Keypair,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[
+                jito_vault_sdk::initialize_vault_avs_slasher_operator_ticket(
+                    &jito_vault_program::id(),
+                    config,
+                    vault,
+                    avs,
+                    slasher,
+                    operator,
+                    vault_avs_slasher_ticket,
+                    vault_avs_slasher_operator_ticket,
+                    &payer.pubkey(),
+                ),
+            ],
+            Some(&payer.pubkey()),
+            &[payer],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn slash(
         &mut self,
         config: &Pubkey,
@@ -476,6 +532,7 @@ impl VaultProgramClient {
         avs_vault_slasher_ticket: &Pubkey,
         vault_avs_slasher_ticket: &Pubkey,
         vault_delegation_list: &Pubkey,
+        vault_avs_slasher_operator_ticket: &Pubkey,
         vault_token_account: &Pubkey,
         slasher_token_account: &Pubkey,
         amount: u64,
@@ -498,6 +555,7 @@ impl VaultProgramClient {
                 avs_vault_slasher_ticket,
                 vault_avs_slasher_ticket,
                 vault_delegation_list,
+                vault_avs_slasher_operator_ticket,
                 vault_token_account,
                 slasher_token_account,
                 amount,

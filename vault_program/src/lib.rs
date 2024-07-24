@@ -7,6 +7,7 @@ mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
+mod initialize_vault_avs_slasher_operator_ticket;
 mod initialize_vault_with_mint;
 mod mint_to;
 mod remove_avs;
@@ -35,6 +36,7 @@ use crate::{
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
+    initialize_vault_avs_slasher_operator_ticket::process_initialize_vault_avs_slasher_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     remove_avs::process_vault_remove_avs, remove_delegation::process_remove_delegation,
     remove_operator::process_vault_remove_operator, set_admin::process_set_admin,
@@ -168,6 +170,10 @@ pub fn process_instruction(
         VaultInstruction::AddSlasher => {
             msg!("Instruction: RegisterSlasher");
             process_add_slasher(program_id, accounts)
+        }
+        VaultInstruction::InitializeVaultAvsSlasherOperatorTicket => {
+            msg!("Instruction: InitializeVaultAvsSlasherOperatorTicket");
+            process_initialize_vault_avs_slasher_operator_ticket(program_id, accounts)
         }
         VaultInstruction::Slash { amount } => {
             msg!("Instruction: Slash");

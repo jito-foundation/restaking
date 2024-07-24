@@ -176,6 +176,19 @@ pub enum VaultInstruction {
         uri: String,
     },
 
+    /// Initializes the account which keeps track of how much an operator has been slashed
+    /// by a slasher for a given AVS and vault for a given epoch.
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "avs")]
+    #[account(3, name = "slasher")]
+    #[account(4, name = "operator")]
+    #[account(5, name = "vault_avs_slasher_ticket")]
+    #[account(6, writable, name = "vault_avs_slasher_operator_ticket")]
+    #[account(7, writable, signer, name = "payer")]
+    #[account(8, name = "system_program")]
+    InitializeVaultAvsSlasherOperatorTicket,
+
     /// Slashes an amount of tokens from the vault
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
@@ -191,9 +204,10 @@ pub enum VaultInstruction {
     #[account(11, name = "avs_vault_slasher_ticket")]
     #[account(12, name = "vault_avs_slasher_ticket")]
     #[account(13, writable, name = "vault_delegation_list")]
-    #[account(14, writable, name = "vault_token_account")]
-    #[account(15, name = "slasher_token_account")]
-    #[account(16, name = "token_program")]
+    #[account(14, writable, name = "vault_avs_slasher_operator_ticket")]
+    #[account(15, writable, name = "vault_token_account")]
+    #[account(16, name = "slasher_token_account")]
+    #[account(17, name = "token_program")]
     Slash {
         amount: u64
     },
@@ -618,6 +632,38 @@ pub fn update_token_metadata(
 }
 
 #[allow(clippy::too_many_arguments)]
+pub fn initialize_vault_avs_slasher_operator_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    avs: &Pubkey,
+    slasher: &Pubkey,
+    operator: &Pubkey,
+    vault_avs_slasher_ticket: &Pubkey,
+    vault_avs_slasher_operator_ticket: &Pubkey,
+    payer: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new_readonly(*vault_avs_slasher_ticket, false),
+        AccountMeta::new(*vault_avs_slasher_operator_ticket, false),
+        AccountMeta::new(*payer, true),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::InitializeVaultAvsSlasherOperatorTicket
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 pub fn slash(
     program_id: &Pubkey,
     config: &Pubkey,
@@ -634,6 +680,7 @@ pub fn slash(
     avs_vault_slasher_ticket: &Pubkey,
     vault_avs_slasher_ticket: &Pubkey,
     vault_delegation_list: &Pubkey,
+    vault_avs_slasher_operator_ticket: &Pubkey,
     vault_token_account: &Pubkey,
     slasher_token_account: &Pubkey,
     amount: u64,
@@ -653,6 +700,7 @@ pub fn slash(
         AccountMeta::new_readonly(*avs_vault_slasher_ticket, false),
         AccountMeta::new_readonly(*vault_avs_slasher_ticket, false),
         AccountMeta::new(*vault_delegation_list, false),
+        AccountMeta::new(*vault_avs_slasher_operator_ticket, false),
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*slasher_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),

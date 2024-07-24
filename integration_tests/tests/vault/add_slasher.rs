@@ -3,8 +3,8 @@ use jito_restaking_core::{
     config::Config as RestakingConfig,
 };
 use jito_vault_core::{
-    config::Config as VaultConfig, vault::Vault, vault_avs_ticket::VaultAvsTicket,
-    vault_delegation_list::VaultDelegationList, vault_slasher_ticket::VaultAvsSlasherTicket,
+    config::Config as VaultConfig, vault::Vault, vault_avs_slasher_ticket::VaultAvsSlasherTicket,
+    vault_avs_ticket::VaultAvsTicket, vault_delegation_list::VaultDelegationList,
 };
 use solana_sdk::signature::{Keypair, Signer};
 

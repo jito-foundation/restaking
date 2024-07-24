@@ -81,6 +81,14 @@ pub enum VaultCoreError {
     VaultAvsOverflow,
     VaultSlasherOverflow,
     VaultOperatorOverflow,
+    VaultAvsSlasherOperatorDataEmpty,
+    VaultAvsSlasherOperatorInvalidOwner,
+    VaultAvsSlasherOperatorInvalidData(String),
+    VaultAvsSlasherOperatorInvalidAccountType,
+    VaultAvsSlasherOperatorInvalidPda,
+    VaultAvsSlasherOperatorNotWritable,
+    VaultAvsSlasherOperatorOverflow,
+    VaultAvsSlasherOperatorMaxSlashableExceeded,
 }
 
 impl From<VaultCoreError> for ProgramError {

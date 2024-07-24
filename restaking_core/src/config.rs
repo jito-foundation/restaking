@@ -6,8 +6,6 @@ use crate::{
     AccountType,
 };
 
-pub const DEFAULT_RESTAKING_EPOCH_DURATION: u64 = 864_000;
-
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 #[repr(C)]
 pub struct Config {
@@ -26,9 +24,6 @@ pub struct Config {
     /// The number of operators managed by the program
     operator_count: u64,
 
-    /// The duration of an epoch in slots
-    epoch_duration: u64,
-
     /// Reserved space
     reserved: [u8; 128],
 
@@ -44,7 +39,6 @@ impl Config {
             vault_program,
             avs_count: 0,
             operator_count: 0,
-            epoch_duration: DEFAULT_RESTAKING_EPOCH_DURATION,
             reserved: [0; 128],
             bump,
         }
@@ -72,10 +66,6 @@ impl Config {
 
     pub const fn operators_count(&self) -> u64 {
         self.operator_count
-    }
-
-    pub const fn epoch_duration(&self) -> u64 {
-        self.epoch_duration
     }
 
     pub const fn vault_program(&self) -> Pubkey {

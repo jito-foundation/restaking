@@ -7,7 +7,6 @@ use jito_vault_core::vault::{SanitizedVault, Vault};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
-    msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
@@ -105,39 +104,30 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        msg!("0");
         let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-        msg!("1");
         let lrt_mint = SanitizedTokenMint::sanitize(next_account_info(accounts_iter)?, true)?;
-        msg!("2");
         let depositor = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        msg!("3");
         let depositor_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().supported_mint(),
             depositor.account().key,
         )?;
-        msg!("4");
         let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().supported_mint(),
             vault.account().key,
         )?;
-        msg!("5");
         let depositor_lrt_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             depositor.account().key,
         )?;
-        msg!("6");
         let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             &vault.vault().fee_owner(),
         )?;
-        msg!("7");
         let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-        msg!("8");
         let mint_signer = if vault.vault().mint_burn_authority().is_some() {
             Some(SanitizedSignerAccount::sanitize(
                 next_account_info(accounts_iter)?,
@@ -146,7 +136,6 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         } else {
             None
         };
-        msg!("9");
 
         Ok(SanitizedAccounts {
             vault,

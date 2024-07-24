@@ -5,9 +5,10 @@ use jito_restaking_core::{
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
-    config::Config as VaultConfig, vault::Vault, vault_avs_ticket::VaultAvsTicket,
+    config::Config as VaultConfig, vault::Vault,
+    vault_avs_slasher_operator_ticket::VaultAvsSlasherOperatorTicket,
+    vault_avs_slasher_ticket::VaultAvsSlasherTicket, vault_avs_ticket::VaultAvsTicket,
     vault_delegation_list::VaultDelegationList, vault_operator_ticket::VaultOperatorTicket,
-    vault_slasher_ticket::VaultAvsSlasherTicket,
 };
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
@@ -15,7 +16,7 @@ use spl_associated_token_account::get_associated_token_address;
 use crate::fixtures::fixture::TestBuilder;
 
 #[tokio::test]
-async fn test_add_slasher_ok() {
+async fn test_slash_ok() {
     let mut fixture = TestBuilder::new().await;
     let mut restaking_program_client = fixture.restaking_program_client();
     let mut vault_program_client = fixture.vault_program_client();
@@ -357,6 +358,38 @@ async fn test_add_slasher_ok() {
         .await
         .unwrap();
 
+    let vault_avs_slasher_ticket = VaultAvsSlasherTicket::find_program_address(
+        &jito_vault_program::id(),
+        &vault_pubkey,
+        &avs_pubkey,
+        &slasher.pubkey(),
+    )
+    .0;
+
+    let vault_avs_slasher_operator_ticket = VaultAvsSlasherOperatorTicket::find_program_address(
+        &jito_vault_program::id(),
+        &vault_pubkey,
+        &avs_pubkey,
+        &slasher.pubkey(),
+        &operator_pubkey,
+        0,
+    )
+    .0;
+
+    vault_program_client
+        .initialize_vault_avs_slasher_operator_ticket(
+            &vault_config_pubkey,
+            &vault_pubkey,
+            &avs_pubkey,
+            &slasher.pubkey(),
+            &operator_pubkey,
+            &vault_avs_slasher_ticket,
+            &vault_avs_slasher_operator_ticket,
+            &vault_admin,
+        )
+        .await
+        .unwrap();
+
     vault_program_client
         .slash(
             &vault_config_pubkey,
@@ -373,6 +406,7 @@ async fn test_add_slasher_ok() {
             &avs_slasher_ticket_pubkey,
             &vault_slasher_ticket_pubkey,
             &vault_delegate_list_pubkey,
+            &vault_avs_slasher_operator_ticket,
             &vault_token_account,
             &slasher_token_account,
             100,
@@ -391,4 +425,27 @@ async fn test_add_slasher_ok() {
     assert_eq!(delegations.len(), 1);
     assert_eq!(delegations[0].operator(), operator_pubkey);
     assert_eq!(delegations[0].active_amount(), 9_900);
+
+    let vault_avs_slasher_operator_ticket = vault_program_client
+        .get_vault_avs_slasher_operator_ticket(
+            &vault_pubkey,
+            &avs_pubkey,
+            &slasher.pubkey(),
+            &operator_pubkey,
+            0,
+        )
+        .await
+        .unwrap();
+    assert_eq!(vault_avs_slasher_operator_ticket.slashed(), 100);
+    assert_eq!(vault_avs_slasher_operator_ticket.epoch(), 0);
+    assert_eq!(vault_avs_slasher_operator_ticket.vault(), vault_pubkey);
+    assert_eq!(vault_avs_slasher_operator_ticket.avs(), avs_pubkey);
+    assert_eq!(
+        vault_avs_slasher_operator_ticket.slasher(),
+        slasher.pubkey()
+    );
+    assert_eq!(
+        vault_avs_slasher_operator_ticket.operator(),
+        operator_pubkey
+    );
 }

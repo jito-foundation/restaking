@@ -7,7 +7,7 @@ use jito_restaking_sanitization::{
     system_program::SanitizedSystemProgram,
 };
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault, vault_slasher_ticket::VaultAvsSlasherTicket,
+    config::SanitizedConfig, vault::SanitizedVault, vault_avs_slasher_ticket::VaultAvsSlasherTicket,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},

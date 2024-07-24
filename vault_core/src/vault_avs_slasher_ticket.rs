@@ -171,7 +171,7 @@ impl<'a, 'info> SanitizedVaultAvsSlasherTicket<'a, 'info> {
         self.account
     }
 
-    pub const fn vault_slasher_ticket(&self) -> &VaultAvsSlasherTicket {
+    pub const fn vault_avs_slasher_ticket(&self) -> &VaultAvsSlasherTicket {
         &self.vault_slasher_ticket
     }
 

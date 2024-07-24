@@ -1,4 +1,4 @@
-use jito_restaking_core::config::{Config, DEFAULT_RESTAKING_EPOCH_DURATION};
+use jito_restaking_core::config::Config;
 use solana_program::pubkey::Pubkey;
 use solana_sdk::signature::{Keypair, Signer};
 
@@ -28,7 +28,6 @@ async fn test_initialize_config_ok() {
     assert_eq!(config.vault_program(), jito_vault_program::id());
     assert_eq!(config.avs_count(), 0);
     assert_eq!(config.operators_count(), 0);
-    assert_eq!(config.epoch_duration(), DEFAULT_RESTAKING_EPOCH_DURATION);
 }
 
 #[tokio::test]

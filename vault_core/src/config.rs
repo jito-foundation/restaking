@@ -39,7 +39,7 @@ impl Config {
             account_type: AccountType::Config,
             admin,
             restaking_program,
-            epoch_length: 864_000, // DEFAULT_RESTAKING_EPOCH_DURATION
+            epoch_length: 864_000,
             num_vaults: 0,
             reserved: [0; 128],
             bump,
