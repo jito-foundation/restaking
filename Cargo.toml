@@ -25,7 +25,7 @@ codegen-units = 1
 [workspace.package]
 version = "0.0.1"
 authors = ["Jito Network Maintainers <support@jito.network>"]
-repository = "https://github.com/jito-labs/jsm"
+repository = "https://github.com/jito-foundation/restaking"
 homepage = "https://jito.wtf/"
 license = "BSL"
 edition = "2021"

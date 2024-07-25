@@ -1,8 +1,8 @@
 # Jito Staking Manager (JSM)
 
-[![Build Status](https://github.com/jito-labs/jsm/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/jito-labs/jsm/actions)
+[![Build Status](https://github.com/jito-foundation/restaking/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/jito-foundation/restaking/actions)
 [![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
-[![codecov](https://codecov.io/gh/jito-labs/jsm/branch/master/graph/badge.svg?token=Q28COAGZ89)](https://codecov.io/gh/jito-labs/jsm)
+[![codecov](https://codecov.io/gh/jito-foundation/jsm/branch/master/graph/badge.svg?token=Q28COAGZ89)](https://codecov.io/gh/jito-labs/jsm)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 Jito Staking Manager (JSM) is a next-generation restaking platform for Solana and SVM environments.
@@ -29,7 +29,7 @@ Expect breaking changes.**
 ## Installation
 
 ```bash
-$ git clone https://github.com/jito-labs/jsm.git
+$ git clone https://github.com/jito-foundation/restaking.git
 $ cd jsm
 $ cargo-build-sbf
 ```
