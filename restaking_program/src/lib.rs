@@ -49,12 +49,12 @@ declare_id!("E5YF9Um1mwQWHffqaUEUwtwnhQKsbMEt33qtvjto3NDZ");
 security_txt! {
     // Required fields
     name: "Jito's Restaking Program",
-    project_url: "https://jito.wtf/",
-    contacts: "email:team@jito.wtf",
-    policy: "https://github.com/jito-labs/jsm",
+    project_url: "https://jito.network/",
+    contacts: "email:team@jito.network",
+    policy: "https://github.com/jito-foundation/restaking",
     // Optional Fields
     preferred_languages: "en",
-    source_code: "https://github.com/jito-labs/jsm"
+    source_code: "https://github.com/jito-foundation/restaking"
 }
 
 #[cfg(not(feature = "no-entrypoint"))]

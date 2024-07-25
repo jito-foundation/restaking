@@ -1,11 +1,11 @@
 # Jito Staking Manager (JSM)
 
-[![Build Status](https://github.com/jito-labs/jsm/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/jito-labs/jsm/actions)
+[![Build Status](https://github.com/jito-foundation/restaking/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/jito-foundation/restaking/actions)
 [![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
-[![codecov](https://codecov.io/gh/jito-labs/jsm/branch/master/graph/badge.svg?token=Q28COAGZ89)](https://codecov.io/gh/jito-labs/jsm)
+[![codecov](https://codecov.io/gh/jito-foundation/restaking/branch/master/graph/badge.svg?token=Q28COAGZ89)](https://codecov.io/gh/jito-foundation/restaking)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-Jito Staking Manager (JSM) is a next-generation restaking platform for Solana and SVM environments.
+Jito Restaking is a next-generation restaking platform for Solana and SVM environments.
 
 **This project is currently under development and is not yet ready for production use.
 Expect breaking changes.**
@@ -28,9 +28,9 @@ Expect breaking changes.**
 
 ## Installation
 
-```bash
-$ git clone https://github.com/jito-labs/jsm.git
-$ cd jsm
+```console
+$ git clone https://github.com/jito-foundation/restaking.git
+$ cd restaking
 $ cargo-build-sbf
 ```
 
@@ -38,7 +38,7 @@ $ cargo-build-sbf
 
 ### Building the software
 
-```bash
+```console
 $ cargo-build-sbf
 ```
 
@@ -46,13 +46,13 @@ $ cargo-build-sbf
 
 ### Outside of SVM
 
-```bash
+```console
 $ cargo nextest run
 ```
 
 ### Testing using the SVM environment
 
-```bash
+```console
 $ cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run
 ```
 
@@ -68,4 +68,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the Business Source License 1.1 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Business Source License 1.1 - see the [LICENSE.md](LICENSE) file for details.
