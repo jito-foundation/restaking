@@ -93,9 +93,34 @@ pub enum VaultInstruction {
 
     /// Enqueues a withdrawal of LRT tokens
     /// Used when there aren't enough idle assets in the vault to cover a withdrawal
-    EnqueueWithdrawal {
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vault_delegation_list")]
+    #[account(3, writable, name = "vault_staker_withdraw_ticket")]
+    #[account(4, writable, name = "vault_staker_withdraw_ticket_token_account")]
+    #[account(5, writable, signer, name = "staker")]
+    #[account(6, writable, name = "staker_lrt_token_account")]
+    #[account(7, signer, name = "base")]
+    #[account(8, name = "token_program")]
+    #[account(9, name = "system_program")]
+    EnqueueWithdraw {
         amount: u64
     },
+
+    /// Burns the withdraw ticket, returning funds to the staker. Withdraw tickets can be burned
+    /// after one full epoch of being enqueued.
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vault_delegation_list")]
+    #[account(3, writable, name = "vault_token_account")]
+    #[account(4, writable, name = "lrt_mint")]
+    #[account(5, writable, signer, name = "staker")]
+    #[account(6, writable, name = "staker_token_account")]
+    #[account(7, writable, name = "vault_staker_withdraw_ticket")]
+    #[account(8, writable, name = "vault_staker_withdraw_ticket_token_account")]
+    #[account(9, name = "token_program")]
+    #[account(10, name = "system_program")]
+    BurnWithdrawTicket,
 
     /// Sets the max tokens that can be deposited into the LRT
     #[account(0, writable, name = "vault")]
@@ -105,7 +130,7 @@ pub enum VaultInstruction {
     },
 
     /// Withdraws any non-backing tokens from the vault
-    WithdrawalAsset {
+    AdminWithdraw {
         amount: u64
     },
 
@@ -143,12 +168,12 @@ pub enum VaultInstruction {
         amount: u64,
     },
 
-    /// Updates delegations at epoch boundaries
+    /// Updates the vault
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, signer, name = "payer")]
-    UpdateDelegations,
+    #[account(3, writable, name = "vault_token_account")]
+    UpdateVault,
 
     /// Registers a slasher with the vault
     #[account(0, name = "config")]
@@ -420,7 +445,7 @@ pub fn enqueue_withdrawal(program_id: &Pubkey, amount: u64) -> Instruction {
     Instruction {
         program_id: *program_id,
         accounts: vec![],
-        data: VaultInstruction::EnqueueWithdrawal { amount }
+        data: VaultInstruction::EnqueueWithdraw { amount }
             .try_to_vec()
             .unwrap(),
     }
@@ -449,7 +474,7 @@ pub fn withdrawal_asset(program_id: &Pubkey, amount: u64) -> Instruction {
     Instruction {
         program_id: *program_id,
         accounts: vec![],
-        data: VaultInstruction::WithdrawalAsset { amount }
+        data: VaultInstruction::AdminWithdraw { amount }
             .try_to_vec()
             .unwrap(),
     }
@@ -567,7 +592,7 @@ pub fn update_delegations(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::UpdateDelegations.try_to_vec().unwrap(),
+        data: VaultInstruction::UpdateVault.try_to_vec().unwrap(),
     }
 }
 

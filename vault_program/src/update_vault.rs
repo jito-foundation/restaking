@@ -1,4 +1,4 @@
-use jito_restaking_sanitization::signer::SanitizedSignerAccount;
+use jito_restaking_sanitization::associated_token_account::SanitizedAssociatedTokenAccount;
 use jito_vault_core::{
     config::SanitizedConfig, vault::SanitizedVault,
     vault_delegation_list::SanitizedVaultDelegationList,
@@ -12,32 +12,24 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-pub fn process_remove_delegation(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    amount: u64,
-) -> ProgramResult {
+pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
         config,
-        vault,
+        mut vault,
         mut vault_delegation_list,
-        operator,
-        delegation_admin,
+        vault_token_account,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    vault
-        .vault()
-        .check_delegation_admin(delegation_admin.account().key)?;
-
     let slot = Clock::get()?.slot;
-    let epoch_length = config.config().epoch_length();
     vault_delegation_list
         .vault_delegation_list_mut()
-        .check_update_needed(slot, epoch_length)?;
-    vault_delegation_list
-        .vault_delegation_list_mut()
-        .undelegate(*operator.key, amount)?;
+        .update(slot, config.config().epoch_length())?;
 
+    vault
+        .vault_mut()
+        .set_tokens_deposited(vault_token_account.token_account().amount);
+
+    vault.save()?;
     vault_delegation_list.save()?;
 
     Ok(())
@@ -47,8 +39,7 @@ struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-    operator: &'a AccountInfo<'info>,
-    delegation_admin: SanitizedSignerAccount<'a, 'info>,
+    vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -56,28 +47,29 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
+        let accounts_iter = &mut accounts.iter();
 
         let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+
         let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
-            next_account_info(&mut accounts_iter)?,
+            next_account_info(accounts_iter)?,
             true,
             vault.account().key,
         )?;
-        let operator = next_account_info(&mut accounts_iter)?;
-        let delegation_admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+        let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(accounts_iter)?,
+            &vault.vault().supported_mint(),
+            vault.account().key,
+        )?;
 
         Ok(SanitizedAccounts {
             config,
             vault,
             vault_delegation_list,
-            operator,
-            delegation_admin,
+            vault_token_account,
         })
     }
 }

@@ -187,18 +187,36 @@ impl Vault {
         self.tokens_deposited = tokens_deposited;
     }
 
+    pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+        if self.lrt_supply == 0 {
+            return Err(VaultCoreError::VaultEmpty);
+        } else if lrt_amount > self.lrt_supply {
+            return Err(VaultCoreError::VaultInsufficientFunds);
+        }
+
+        lrt_amount
+            .checked_mul(self.tokens_deposited)
+            .ok_or(VaultCoreError::VaultWithdrawOverflow)?
+            .checked_div(self.lrt_supply)
+            .ok_or(VaultCoreError::VaultWithdrawOverflow)
+    }
+
+    pub fn calculate_lrt_mint_amount(&self, amount: u64) -> VaultCoreResult<u64> {
+        if self.tokens_deposited == 0 {
+            return Ok(amount);
+        }
+
+        amount
+            .checked_mul(self.lrt_supply)
+            .ok_or(VaultCoreError::VaultDepositOverflow)?
+            .checked_div(self.tokens_deposited)
+            .ok_or(VaultCoreError::VaultDepositOverflow)
+    }
+
     /// Deposit tokens into the vault
     pub fn deposit_and_mint_with_capacity_check(&mut self, amount: u64) -> VaultCoreResult<u64> {
         // the number of tokens to mint is the pro-rata amount of the total tokens deposited and the LRT supply
-        let num_tokens_to_mint = if self.tokens_deposited == 0 {
-            amount
-        } else {
-            amount
-                .checked_mul(self.lrt_supply)
-                .ok_or(VaultCoreError::VaultDepositOverflow)?
-                .checked_div(self.tokens_deposited)
-                .ok_or(VaultCoreError::VaultDepositOverflow)?
-        };
+        let num_tokens_to_mint = self.calculate_lrt_mint_amount(amount)?;
 
         // deposit tokens + check against capacity
         let total_post_deposit = self
@@ -244,11 +262,6 @@ impl Vault {
 
     pub fn set_lrt_supply(&mut self, lrt_supply: u64) {
         self.lrt_supply = lrt_supply;
-    }
-
-    pub fn increment_lrt_supply(&mut self, amount: u64) -> Option<u64> {
-        self.lrt_supply = self.lrt_supply.checked_add(amount)?;
-        Some(self.lrt_supply)
     }
 
     pub const fn lrt_supply(&self) -> u64 {
@@ -372,7 +385,6 @@ impl Vault {
             return Err(VaultCoreError::VaultInvalidProgramOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| VaultCoreError::VaultInvalidData(e.to_string()))?;
         if !state.is_struct_valid() {
@@ -519,5 +531,58 @@ mod tests {
             vault.deposit_and_mint_with_capacity_check(1),
             Err(VaultCoreError::VaultDepositExceedsCapacity)
         );
+    }
+
+    #[test]
+    fn test_calculate_assets_returned_amount_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+
+        vault.set_lrt_supply(100_000);
+        vault.set_tokens_deposited(100_000);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            50_000
+        );
+
+        vault.set_tokens_deposited(90_000);
+        vault.set_lrt_supply(100_000);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            45_000
+        );
+
+        vault.set_tokens_deposited(110_000);
+        vault.set_lrt_supply(100_000);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            55_000
+        );
+
+        vault.set_tokens_deposited(100);
+        vault.set_lrt_supply(0);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(100),
+            Err(VaultCoreError::VaultEmpty)
+        );
+
+        vault.set_tokens_deposited(100);
+        vault.set_lrt_supply(1);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(100),
+            Err(VaultCoreError::VaultInsufficientFunds)
+        );
+
+        vault.set_tokens_deposited(100);
+        vault.set_lrt_supply(13);
+        assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);
     }
 }

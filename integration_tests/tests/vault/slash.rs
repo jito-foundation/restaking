@@ -349,7 +349,7 @@ async fn test_slash_ok() {
     let delegations = vault_delegation_list.delegations();
     assert_eq!(delegations.len(), 1);
     assert_eq!(delegations[0].operator(), operator_pubkey);
-    assert_eq!(delegations[0].active_amount(), 10_000);
+    assert_eq!(delegations[0].staked_amount(), 10_000);
 
     let slasher_token_account =
         get_associated_token_address(&slasher.pubkey(), &token_mint.pubkey());
@@ -424,7 +424,7 @@ async fn test_slash_ok() {
     let delegations = delegation_list.delegations();
     assert_eq!(delegations.len(), 1);
     assert_eq!(delegations[0].operator(), operator_pubkey);
-    assert_eq!(delegations[0].active_amount(), 9_900);
+    assert_eq!(delegations[0].staked_amount(), 9_900);
 
     let vault_avs_slasher_operator_ticket = vault_program_client
         .get_vault_avs_slasher_operator_ticket(

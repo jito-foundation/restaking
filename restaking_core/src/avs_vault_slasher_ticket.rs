@@ -139,7 +139,6 @@ impl AvsVaultSlasherTicket {
             return Err(RestakingCoreError::AvsSlasherTicketInvalidOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let avs_slasher_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| RestakingCoreError::AvsSlasherTicketInvalidData(e.to_string()))?;
         if avs_slasher_ticket.account_type != AccountType::AvsVaultSlasherTicket {

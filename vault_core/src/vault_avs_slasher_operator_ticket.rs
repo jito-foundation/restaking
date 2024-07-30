@@ -159,7 +159,6 @@ impl VaultAvsSlasherOperatorTicket {
             return Err(VaultCoreError::VaultAvsSlasherOperatorInvalidOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let vault_avs_slasher_operator_ticket =
             Self::deserialize(&mut account.data.borrow_mut().as_ref())
                 .map_err(|e| VaultCoreError::VaultAvsSlasherOperatorInvalidData(e.to_string()))?;

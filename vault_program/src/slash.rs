@@ -37,6 +37,7 @@ pub fn process_slash(
 ) -> ProgramResult {
     let slot = Clock::get()?.slot;
     let SanitizedAccounts {
+        config,
         mut vault,
         operator,
         avs_operator_ticket,
@@ -89,12 +90,14 @@ pub fn process_slash(
 
     vault_delegation_list
         .vault_delegation_list_mut()
-        .slash(operator.account().key, slash_amount)?;
+        .check_update_needed(slot, config.config().epoch_length())?;
 
+    vault_delegation_list
+        .vault_delegation_list_mut()
+        .slash(operator.account().key, slash_amount)?;
     vault_avs_slasher_operator_ticket
         .vault_avs_slasher_operator_ticket_mut()
         .increment_slashed_amount(slash_amount)?;
-
     _transfer_slashed_funds(
         &vault,
         &vault_token_account,
@@ -149,6 +152,7 @@ fn _transfer_slashed_funds<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
     avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
@@ -280,6 +284,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let _token_program =
             SanitizedTokenProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
         Ok(Self {
+            config,
             vault,
             operator,
             avs_operator_ticket,
