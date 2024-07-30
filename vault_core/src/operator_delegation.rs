@@ -115,7 +115,9 @@ impl OperatorDelegation {
             if *amount == 0 || remaining_slash == 0 {
                 return Ok(());
             }
-            let pro_rata_slash = ((*amount as u128) * (slash_amount as u128))
+            let pro_rata_slash = (*amount as u128)
+                .checked_mul(slash_amount as u128)
+                .ok_or(VaultCoreError::VaultSlashingOverflow)?
                 .checked_div(total_security_amount as u128)
                 .ok_or(VaultCoreError::VaultSlashingDivisionByZero)?;
             let actual_slash = std::cmp::min(

@@ -35,8 +35,6 @@ pub fn process_burn_withdraw_ticket(
         staker_lrt_token_account,
         vault_staker_withdraw_ticket,
         mut vault_staker_withdraw_ticket_token_account,
-        token_program: _,
-        system_program: _,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     let slot = Clock::get()?.slot;
@@ -92,10 +90,9 @@ pub fn process_burn_withdraw_ticket(
             .ok_or(ProgramError::ArithmeticOverflow)?;
 
         // Determine the actual amount to withdraw
-        let actual_withdrawal_amount = original_redemption_amount
+        original_redemption_amount
             .checked_add(extra_amount.min(available_unstaked_assets))
-            .ok_or(ProgramError::ArithmeticOverflow)?;
-        actual_withdrawal_amount
+            .ok_or(ProgramError::ArithmeticOverflow)?
     } else {
         redemption_amount
     };
@@ -175,8 +172,8 @@ fn _close_token_account<'a, 'info>(
     // TODO: combine with burn lrt method
     let (_, bump, mut seeds) = VaultStakerWithdrawTicket::find_program_address(
         program_id,
-        &vault.account().key,
-        &staker.account().key,
+        vault.account().key,
+        staker.account().key,
         &vault_staker_withdraw_ticket
             .vault_staker_withdraw_ticket()
             .base(),
@@ -187,9 +184,9 @@ fn _close_token_account<'a, 'info>(
     invoke_signed(
         &transfer(
             &spl_token::id(),
-            &vault_staker_withdraw_ticket_token_account.account().key,
-            &staker_lrt_token_account.account().key,
-            &vault.account().key,
+            vault_staker_withdraw_ticket_token_account.account().key,
+            staker_lrt_token_account.account().key,
+            vault.account().key,
             &[],
             vault_staker_withdraw_ticket_token_account
                 .token_account()
@@ -262,8 +259,8 @@ fn _burn_lrt<'a, 'info>(
 ) -> ProgramResult {
     let (_, bump, mut seeds) = VaultStakerWithdrawTicket::find_program_address(
         program_id,
-        &vault.account().key,
-        &staker.account().key,
+        vault.account().key,
+        staker.account().key,
         &vault_staker_withdraw_ticket
             .vault_staker_withdraw_ticket()
             .base(),
@@ -275,7 +272,7 @@ fn _burn_lrt<'a, 'info>(
         &burn(
             &spl_token::id(),
             vault_staker_withdraw_ticket_token_account.account().key,
-            &token_mint.account().key,
+            token_mint.account().key,
             vault.account().key,
             &[],
             burn_amount,
@@ -300,8 +297,6 @@ pub struct SanitizedAccounts<'a, 'info> {
     staker_lrt_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     vault_staker_withdraw_ticket: SanitizedVaultStakerWithdrawTicket<'a, 'info>,
     vault_staker_withdraw_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    token_program: SanitizedTokenProgram<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -349,8 +344,8 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             &vault.vault().supported_mint(),
             vault_staker_withdraw_ticket.account().key,
         )?;
-        let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-        let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
+        let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+        let _system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
             config,
@@ -363,8 +358,6 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             staker_lrt_token_account,
             vault_staker_withdraw_ticket,
             vault_staker_withdraw_ticket_token_account,
-            token_program,
-            system_program,
         })
     }
 }

@@ -128,6 +128,7 @@ fn _transfer_to_vault_staker_withdraw_ticket<'a, 'info>(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn _create_vault_staker_withdraw_ticket<'a, 'info>(
     program_id: &Pubkey,
     vault: &SanitizedVault<'a, 'info>,
