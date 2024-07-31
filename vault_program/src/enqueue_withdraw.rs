@@ -33,7 +33,7 @@ use spl_token::instruction::transfer;
 /// ratio increases due to rewards. However, if the vault has excess collateral that isn't staked, the vault
 /// can withdraw that excess and return it to the staker. If there's no excess, they can withdraw the
 /// amount that was set aside for withdraw.
-pub fn process_enqueue_withdrawal(
+pub fn process_enqueue_withdraw(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     amount: u64,
@@ -210,29 +210,39 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        msg!("a");
         let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        msg!("b");
         let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
             vault.account().key,
         )?;
+        msg!("c");
         let vault_staker_withdraw_ticket =
             EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        msg!("d");
         let vault_staker_withdraw_ticket_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             vault_staker_withdraw_ticket.account().key,
         )?;
+        msg!("e");
         let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        msg!("f");
         let staker_lrt_token_account = SanitizedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             staker.account().key,
         )?;
+        msg!("g");
         let base = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
+        msg!("h");
         let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+        msg!("i");
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
+        msg!("j");
 
         Ok(SanitizedAccounts {
             config,

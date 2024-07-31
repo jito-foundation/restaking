@@ -441,16 +441,6 @@ pub fn burn(program_id: &Pubkey, amount: u64) -> Instruction {
     }
 }
 
-pub fn enqueue_withdrawal(program_id: &Pubkey, amount: u64) -> Instruction {
-    Instruction {
-        program_id: *program_id,
-        accounts: vec![],
-        data: VaultInstruction::EnqueueWithdraw { amount }
-            .try_to_vec()
-            .unwrap(),
-    }
-}
-
 pub fn set_deposit_capacity(
     program_id: &Pubkey,
     vault: &Pubkey,
@@ -734,5 +724,39 @@ pub fn slash(
         program_id: *program_id,
         accounts,
         data: VaultInstruction::Slash { amount }.try_to_vec().unwrap(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn enqueue_withdraw(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_delegation_list: &Pubkey,
+    vault_staker_withdraw_ticket: &Pubkey,
+    vault_staker_withdraw_ticket_token_account: &Pubkey,
+    staker: &Pubkey,
+    staker_lrt_token_account: &Pubkey,
+    base: &Pubkey,
+    amount: u64,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_delegation_list, false),
+        AccountMeta::new(*vault_staker_withdraw_ticket, false),
+        AccountMeta::new(*vault_staker_withdraw_ticket_token_account, false),
+        AccountMeta::new(*staker, true),
+        AccountMeta::new(*staker_lrt_token_account, false),
+        AccountMeta::new_readonly(*base, true),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::EnqueueWithdraw { amount }
+            .try_to_vec()
+            .unwrap(),
     }
 }

@@ -5,21 +5,13 @@ use crate::fixtures::fixture::TestBuilder;
 
 #[tokio::test]
 async fn test_initialize_config_ok() {
-    let mut fixture = TestBuilder::new().await;
+    let fixture = TestBuilder::new().await;
     let mut vault_program_client = fixture.vault_program_client();
 
-    let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
-    let config_admin = Keypair::new();
-
-    fixture.transfer(&config_admin.pubkey(), 1.0).await.unwrap();
-
-    vault_program_client
-        .initialize_config(&config_pubkey, &config_admin)
-        .await
-        .unwrap();
+    let config_admin = vault_program_client.setup_config().await.unwrap();
 
     let config = vault_program_client
-        .get_config(&config_pubkey)
+        .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
         .await
         .unwrap();
 

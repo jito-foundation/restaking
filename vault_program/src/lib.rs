@@ -5,7 +5,7 @@ mod add_slasher;
 mod burn;
 mod burn_withdraw_ticket;
 mod create_token_metadata;
-mod enqueue_withdrawal;
+mod enqueue_withdraw;
 mod initialize_config;
 mod initialize_vault;
 mod initialize_vault_avs_slasher_operator_ticket;
@@ -36,7 +36,7 @@ use crate::{
     add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
     burn_withdraw_ticket::process_burn_withdraw_ticket,
     create_token_metadata::process_create_token_metadata,
-    enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
+    enqueue_withdraw::process_enqueue_withdraw, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_avs_slasher_operator_ticket::process_initialize_vault_avs_slasher_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
@@ -125,8 +125,8 @@ pub fn process_instruction(
             process_burn(program_id, accounts, amount)
         }
         VaultInstruction::EnqueueWithdraw { amount } => {
-            msg!("Instruction: EnqueueWithdrawal");
-            process_enqueue_withdrawal(program_id, accounts, amount)
+            msg!("Instruction: EnqueueWithdraw");
+            process_enqueue_withdraw(program_id, accounts, amount)
         }
         VaultInstruction::BurnWithdrawTicket => {
             msg!("Instruction: BurnWithdrawTicket");
