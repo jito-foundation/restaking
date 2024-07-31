@@ -1,8 +1,9 @@
 ---
 title: Restaking Program
+mermaid: true
 ---
 
-# Restaking Program
+# Restaking Programfasjdflkasdf
 
 ### Relationships
 
@@ -14,7 +15,7 @@ on-chain. This allows for an extremely flexible opt-in and opt-out system.
 This ticket represents the relationship from the Operator's perspective. It is created by the Operator when it opts in
 to work with an AVS.
 
-```mermaid!
+```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
@@ -30,7 +31,7 @@ graph TD
 This ticket represents the relationship from the AVS's perspective. It is created by the AVS when it opts in to work
 with an Operator.
 
-```mermaid!
+```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
@@ -46,7 +47,7 @@ graph TD
 This ticket represents the relationship between an AVS and a Vault. It is created by both the AVS and the Vault when
 they opt in to work with each other.
 
-```mermaid!
+```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
@@ -62,7 +63,7 @@ graph TD
 This ticket represents the relationship between an Operator and a Vault. It is created by both the Operator and the
 Vault when they opt in to work with each other.
 
-```mermaid!
+```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
@@ -78,7 +79,7 @@ graph TD
 This ticket represents the slashing relationship between an AVS and a Vault. It is created by the AVS, allowing the AVS
 to potentially slash the Vault under certain conditions.
 
-```mermaid!
+```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
