@@ -1,5 +1,4 @@
 ---
-layout: defuault
 title: Restaking Program
 mermaid: true
 ---
