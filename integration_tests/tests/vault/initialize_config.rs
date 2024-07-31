@@ -1,5 +1,5 @@
 use jito_vault_core::config::Config;
-use solana_sdk::signature::{Keypair, Signer};
+use solana_sdk::signature::Signer;
 
 use crate::fixtures::fixture::TestBuilder;
 

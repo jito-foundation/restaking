@@ -7,9 +7,7 @@ use solana_program::{
     rent::Rent,
     system_instruction::{create_account, transfer},
 };
-use solana_program_test::{
-    processor, BanksClient, BanksClientError, ProgramTest, ProgramTestContext,
-};
+use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
     account::AccountSharedData,
     commitment_config::CommitmentLevel,
@@ -24,7 +22,6 @@ use spl_token::{
     state::{Account, Mint},
 };
 use std::fmt::{Debug, Formatter};
-use std::sync::Arc;
 
 use crate::fixtures::{restaking_client::RestakingProgramClient, vault_client::VaultProgramClient};
 
@@ -73,19 +70,6 @@ impl TestBuilder {
         data.set_data_from_slice(serialized.as_slice());
         self.context.set_account(pubkey, &data);
         Ok(())
-    }
-
-    pub async fn get_account(
-        &mut self,
-        pubkey: &Pubkey,
-    ) -> Result<solana_sdk::account::Account, BanksClientError> {
-        let account = self
-            .context
-            .banks_client
-            .get_account_with_commitment(*pubkey, CommitmentLevel::Processed)
-            .await?
-            .unwrap();
-        Ok(account)
     }
 
     pub async fn store_account(

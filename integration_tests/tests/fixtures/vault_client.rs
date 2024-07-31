@@ -1,5 +1,9 @@
 use borsh::BorshDeserialize;
+use jito_restaking_core::avs_operator_ticket::AvsOperatorTicket;
+use jito_restaking_core::avs_vault_slasher_ticket::AvsVaultSlasherTicket;
 use jito_restaking_core::avs_vault_ticket::AvsVaultTicket;
+use jito_restaking_core::operator_avs_ticket::OperatorAvsTicket;
+use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_avs_slasher_operator_ticket::VaultAvsSlasherOperatorTicket,
     vault_avs_slasher_ticket::VaultAvsSlasherTicket, vault_avs_ticket::VaultAvsTicket,
@@ -227,18 +231,6 @@ impl VaultProgramClient {
         }
     }
 
-    pub async fn get_account(
-        &mut self,
-        pubkey: &Pubkey,
-    ) -> Result<solana_sdk::account::Account, BanksClientError> {
-        let account = self
-            .banks_client
-            .get_account_with_commitment(*pubkey, CommitmentLevel::Processed)
-            .await?
-            .unwrap();
-        Ok(account)
-    }
-
     pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, BanksClientError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
         Ok(Config::deserialize(&mut account.data.as_slice())?)
@@ -390,6 +382,12 @@ impl VaultProgramClient {
         )
         .await?;
 
+        // for holding the backed asset in the vault
+        self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
+        // for holding fees
+        self.create_ata(&lrt_mint.pubkey(), &vault_admin.pubkey())
+            .await?;
+
         Ok((
             config_admin,
             VaultRoot {
@@ -424,6 +422,250 @@ impl VaultProgramClient {
             &vault_avs_ticket,
             &vault_root.vault_admin,
             &self.payer.insecure_clone(),
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn setup_vault_avs_slasher_operator_ticket(
+        &mut self,
+        vault_root: &VaultRoot,
+        avs_pubkey: &Pubkey,
+        slasher: &Pubkey,
+        operator_pubkey: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let vault_avs_slasher_ticket = VaultAvsSlasherTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            avs_pubkey,
+            slasher,
+        )
+        .0;
+        let vault_avs_slasher_operator_ticket =
+            VaultAvsSlasherOperatorTicket::find_program_address(
+                &jito_vault_program::id(),
+                &vault_root.vault_pubkey,
+                avs_pubkey,
+                slasher,
+                operator_pubkey,
+                0, // TODO (LB): fix this
+            )
+            .0;
+        self.initialize_vault_avs_slasher_operator_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &avs_pubkey,
+            &slasher,
+            &operator_pubkey,
+            &vault_avs_slasher_ticket,
+            &vault_avs_slasher_operator_ticket,
+            &self.payer.insecure_clone(),
+        )
+        .await
+        .unwrap();
+
+        Ok(())
+    }
+
+    pub async fn do_slash(
+        &mut self,
+        vault_root: &VaultRoot,
+        avs_pubkey: &Pubkey,
+        slasher: &Keypair,
+        operator_pubkey: &Pubkey,
+        amount: u64,
+    ) -> Result<(), BanksClientError> {
+        let avs_operator_ticket_pubkey = AvsOperatorTicket::find_program_address(
+            &jito_restaking_program::id(),
+            avs_pubkey,
+            operator_pubkey,
+        )
+        .0;
+        let operator_avs_ticket_pubkey = OperatorAvsTicket::find_program_address(
+            &jito_restaking_program::id(),
+            operator_pubkey,
+            &avs_pubkey,
+        )
+        .0;
+        let avs_vault_ticket_pubkey = AvsVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            avs_pubkey,
+            &vault_root.vault_pubkey,
+        )
+        .0;
+        let operator_vault_ticket_pubkey = OperatorVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            operator_pubkey,
+            &vault_root.vault_pubkey,
+        )
+        .0;
+        let vault_avs_ticket_pubkey = VaultAvsTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            avs_pubkey,
+        )
+        .0;
+        let vault_operator_ticket = VaultOperatorTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            operator_pubkey,
+        )
+        .0;
+        let avs_slasher_ticket_pubkey = AvsVaultSlasherTicket::find_program_address(
+            &jito_restaking_program::id(),
+            avs_pubkey,
+            &vault_root.vault_pubkey,
+            &slasher.pubkey(),
+        )
+        .0;
+        let vault_slasher_ticket_pubkey = VaultAvsSlasherTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            avs_pubkey,
+            &slasher.pubkey(),
+        )
+        .0;
+        let vault_delegate_list_pubkey = VaultDelegationList::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+        )
+        .0;
+        let vault_avs_slasher_operator_ticket =
+            VaultAvsSlasherOperatorTicket::find_program_address(
+                &jito_vault_program::id(),
+                &vault_root.vault_pubkey,
+                avs_pubkey,
+                &slasher.pubkey(),
+                operator_pubkey,
+                0, // TODO (LB): fix this
+            )
+            .0;
+
+        let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
+        let vault_token_account =
+            get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint());
+        let slasher_token_account =
+            get_associated_token_address(&slasher.pubkey(), &vault.supported_mint());
+
+        self.slash(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &avs_pubkey,
+            &operator_pubkey,
+            slasher,
+            &avs_operator_ticket_pubkey,
+            &operator_avs_ticket_pubkey,
+            &avs_vault_ticket_pubkey,
+            &operator_vault_ticket_pubkey,
+            &vault_avs_ticket_pubkey,
+            &vault_operator_ticket,
+            &avs_slasher_ticket_pubkey,
+            &vault_slasher_ticket_pubkey,
+            &vault_delegate_list_pubkey,
+            &vault_avs_slasher_operator_ticket,
+            &vault_token_account,
+            &slasher_token_account,
+            amount,
+        )
+        .await
+        .unwrap();
+
+        Ok(())
+    }
+
+    pub async fn vault_operator_opt_in(
+        &mut self,
+        vault_root: &VaultRoot,
+        operator_pubkey: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let vault_operator_ticket = VaultOperatorTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &operator_pubkey,
+        )
+        .0;
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_pubkey,
+            &vault_root.vault_pubkey,
+        )
+        .0;
+        self.add_operator(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &operator_pubkey,
+            &operator_vault_ticket,
+            &vault_operator_ticket,
+            &vault_root.vault_admin,
+            &vault_root.vault_admin,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn vault_avs_vault_slasher_opt_in(
+        &mut self,
+        vault_root: &VaultRoot,
+        avs_pubkey: &Pubkey,
+        slasher: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let vault_slasher_ticket_pubkey = VaultAvsSlasherTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &avs_pubkey,
+            slasher,
+        )
+        .0;
+        let avs_slasher_ticket_pubkey = AvsVaultSlasherTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &avs_pubkey,
+            &vault_root.vault_pubkey,
+            slasher,
+        )
+        .0;
+
+        self.add_slasher(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &avs_pubkey,
+            slasher,
+            &avs_slasher_ticket_pubkey,
+            &vault_slasher_ticket_pubkey,
+            &vault_root.vault_admin,
+            &vault_root.vault_admin,
+        )
+        .await
+        .unwrap();
+
+        Ok(())
+    }
+
+    pub async fn delegate(
+        &mut self,
+        vault_root: &VaultRoot,
+        operator: &Pubkey,
+        amount: u64,
+    ) -> Result<(), BanksClientError> {
+        self.add_delegation(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            operator,
+            &VaultOperatorTicket::find_program_address(
+                &jito_vault_program::id(),
+                &vault_root.vault_pubkey,
+                operator,
+            )
+            .0,
+            &VaultDelegationList::find_program_address(
+                &jito_vault_program::id(),
+                &vault_root.vault_pubkey,
+            )
+            .0,
+            &vault_root.vault_admin,
+            &vault_root.vault_admin,
+            amount,
         )
         .await?;
 
