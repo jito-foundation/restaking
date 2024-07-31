@@ -1,3 +1,8 @@
+---
+layout: mermaid
+title: Restaking Program
+---
+
 # Restaking Program
 
 ### Relationships
