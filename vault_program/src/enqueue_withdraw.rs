@@ -64,8 +64,6 @@ pub fn process_enqueue_withdraw(
         .checked_sub(fee_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
 
-    msg!("a");
-
     // Find the redemption ratio at this point in time.
     // It may change in between this point in time and when the withdraw ticket is processed.
     // Stakers may get back less than redemption if there were accrued rewards accrued in between
@@ -74,13 +72,9 @@ pub fn process_enqueue_withdraw(
         .vault()
         .calculate_assets_returned_amount(amount_to_vault_staker_withdraw_ticket)?;
 
-    msg!("b");
-
     vault_delegation_list
         .vault_delegation_list_mut()
         .undelegate_for_withdraw(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
-
-    msg!("c");
 
     _create_vault_staker_withdraw_ticket(
         program_id,
@@ -94,8 +88,6 @@ pub fn process_enqueue_withdraw(
         amount_to_withdraw,
         amount_to_vault_staker_withdraw_ticket,
     )?;
-
-    msg!("d");
 
     // Transfers the LRT tokens from the staker to their withdraw account and the vault's fee account
     _transfer_to_vault_staker_withdraw_ticket(
@@ -218,39 +210,29 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        msg!("a");
         let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-        msg!("b");
         let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
             vault.account().key,
         )?;
-        msg!("c");
         let vault_staker_withdraw_ticket =
             EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        msg!("d");
         let vault_staker_withdraw_ticket_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             vault_staker_withdraw_ticket.account().key,
         )?;
-        msg!("e");
         let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        msg!("f");
         let staker_lrt_token_account = SanitizedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             staker.account().key,
         )?;
-        msg!("g");
         let base = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        msg!("h");
         let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-        msg!("i");
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-        msg!("j");
 
         Ok(SanitizedAccounts {
             config,
