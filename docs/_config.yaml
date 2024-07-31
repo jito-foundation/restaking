@@ -1,0 +1,8 @@
+title: Jito Restaking Documentation
+description: Your site description
+baseurl: "/restaking"  # replace with your repository name
+url: "https://jito-foundation.github.io"  # replace with your GitHub username
+
+# Build settings
+markdown: kramdown
+theme: jekyll-theme-primer
