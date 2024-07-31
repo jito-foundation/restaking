@@ -1,27 +1,14 @@
-use borsh::BorshSerialize;
+use std::fmt::{Debug, Formatter};
+
 use solana_program::{
-    clock::Clock,
-    native_token::sol_to_lamports,
-    program_pack::Pack,
-    pubkey::Pubkey,
-    rent::Rent,
-    system_instruction::{create_account, transfer},
+    native_token::sol_to_lamports, program_pack::Pack, pubkey::Pubkey, system_instruction::transfer,
 };
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
-use solana_sdk::{
-    account::AccountSharedData,
-    commitment_config::CommitmentLevel,
-    signature::{Keypair, Signer},
-    transaction::Transaction,
-};
+use solana_sdk::{commitment_config::CommitmentLevel, signature::Signer, transaction::Transaction};
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{
-    instruction::initialize_mint2,
-    state::{Account, Mint},
-};
-use std::fmt::{Debug, Formatter};
+use spl_token::state::Account;
 
 use crate::fixtures::{restaking_client::RestakingProgramClient, vault_client::VaultProgramClient};
 
@@ -51,44 +38,6 @@ impl TestBuilder {
 
         let context = program_test.start_with_context().await;
         Self { context }
-    }
-
-    pub async fn store_borsh_account<T: BorshSerialize>(
-        &mut self,
-        pubkey: &Pubkey,
-        owner: &Pubkey,
-        data: &T,
-    ) -> Result<(), BanksClientError> {
-        let rent: Rent = self.context.banks_client.get_sysvar().await?;
-
-        let serialized = data.try_to_vec().unwrap();
-        let mut data = AccountSharedData::new(
-            rent.minimum_balance(serialized.len()),
-            serialized.len(),
-            owner,
-        );
-        data.set_data_from_slice(serialized.as_slice());
-        self.context.set_account(pubkey, &data);
-        Ok(())
-    }
-
-    pub async fn store_account(
-        &mut self,
-        pubkey: &Pubkey,
-        owner: &Pubkey,
-        data: &[u8],
-    ) -> Result<(), BanksClientError> {
-        let rent: Rent = self.context.banks_client.get_sysvar().await?;
-
-        let serialized = data.to_vec();
-        let mut data = AccountSharedData::new(
-            rent.minimum_balance(serialized.len()),
-            serialized.len(),
-            owner,
-        );
-        data.set_data_from_slice(serialized.as_slice());
-        self.context.set_account(pubkey, &data);
-        Ok(())
     }
 
     pub async fn transfer(&mut self, to: &Pubkey, sol: f64) -> Result<(), BanksClientError> {
@@ -162,39 +111,6 @@ impl TestBuilder {
             .await
     }
 
-    pub async fn create_token_mint(&mut self, mint: &Keypair) -> Result<(), BanksClientError> {
-        let blockhash = self.context.banks_client.get_latest_blockhash().await?;
-        let rent: Rent = self.context.banks_client.get_sysvar().await?;
-        self.context
-            .banks_client
-            .process_transaction_with_preflight_and_commitment(
-                Transaction::new_signed_with_payer(
-                    &[
-                        create_account(
-                            &self.context.payer.pubkey(),
-                            &mint.pubkey(),
-                            rent.minimum_balance(Mint::LEN),
-                            Mint::LEN as u64,
-                            &spl_token::id(),
-                        ),
-                        initialize_mint2(
-                            &spl_token::id(),
-                            &mint.pubkey(),
-                            &self.context.payer.pubkey(),
-                            None,
-                            9,
-                        )
-                        .unwrap(),
-                    ],
-                    Some(&self.context.payer.pubkey()),
-                    &[&self.context.payer, mint],
-                    blockhash,
-                ),
-                CommitmentLevel::Processed,
-            )
-            .await
-    }
-
     pub async fn create_ata(
         &mut self,
         mint: &Pubkey,
@@ -220,13 +136,13 @@ impl TestBuilder {
             .await
     }
 
-    pub async fn warp_to_next_slot(&mut self) -> Result<(), BanksClientError> {
-        let clock: Clock = self.context.banks_client.get_sysvar().await?;
-        self.context
-            .warp_to_slot(clock.slot.checked_add(1).unwrap())
-            .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
-        Ok(())
-    }
+    // pub async fn warp_to_next_slot(&mut self) -> Result<(), BanksClientError> {
+    //     let clock: Clock = self.context.banks_client.get_sysvar().await?;
+    //     self.context
+    //         .warp_to_slot(clock.slot.checked_add(1).unwrap())
+    //         .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
+    //     Ok(())
+    // }
 
     pub fn vault_program_client(&self) -> VaultProgramClient {
         VaultProgramClient::new(

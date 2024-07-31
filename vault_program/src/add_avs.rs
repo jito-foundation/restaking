@@ -129,16 +129,13 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        msg!("a");
         let vault =
             SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        msg!("b");
         let avs = SanitizedAvs::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
             false,
         )?;
-        msg!("c");
         let avs_vault_ticket = SanitizedAvsVaultTicket::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
@@ -146,18 +143,13 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             avs.account().key,
             vault.account().key,
         )?;
-        msg!("d");
         let vault_avs_ticket =
             EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        msg!("e");
         let admin =
             SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        msg!("f");
         let payer = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        msg!("g");
         let system_program =
             SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
-        msg!("h");
 
         Ok(SanitizedAccounts {
             vault,

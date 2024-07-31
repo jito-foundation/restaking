@@ -9,7 +9,7 @@ use jito_restaking_sdk::{
     avs_add_operator, avs_add_vault, avs_add_vault_slasher, initialize_avs, initialize_config,
     initialize_operator, operator_add_avs, operator_add_vault,
 };
-use log::info;
+
 use solana_program::{native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer};
 use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{
@@ -355,12 +355,6 @@ impl RestakingProgramClient {
         avs_base: &Keypair,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
-
-        let admin_account = self
-            .banks_client
-            .get_account_with_commitment(avs_admin.pubkey(), CommitmentLevel::Processed)
-            .await
-            .unwrap();
 
         self.process_transaction(&Transaction::new_signed_with_payer(
             &[initialize_avs(

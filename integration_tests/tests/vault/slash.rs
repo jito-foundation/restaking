@@ -1,7 +1,8 @@
-use crate::fixtures::fixture::TestBuilder;
 use jito_vault_core::vault_delegation_list::VaultDelegationList;
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
+
+use crate::fixtures::fixture::TestBuilder;
 
 #[tokio::test]
 async fn test_slash_ok() {

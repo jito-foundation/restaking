@@ -1,6 +1,7 @@
-use crate::fixtures::fixture::TestBuilder;
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
+
+use crate::fixtures::fixture::TestBuilder;
 
 #[tokio::test]
 async fn test_enqueue_withdrawal_success() {
@@ -8,7 +9,7 @@ async fn test_enqueue_withdrawal_success() {
 
     let mut vault_program_client = fixture.vault_program_client();
 
-    let (vault_config_admin, vault_root) =
+    let (_vault_config_admin, vault_root) =
         vault_program_client.setup_vault(100, 100).await.unwrap();
 
     let vault = vault_program_client
@@ -50,4 +51,14 @@ async fn test_enqueue_withdrawal_success() {
         .await
         .unwrap();
     assert_eq!(depositor_ata.amount, 99_000);
+
+    vault_program_client
+        .do_enqueue_withdraw(&vault_root, &depositor, 49_500)
+        .await
+        .unwrap();
+
+    // let withdrawal = vault_program_client
+    //     .enqueue_withdraw(&vault_root, &depositor, &depositor_lrt_token_account, 1000)
+    //     .await
+    //     .unwrap();
 }
