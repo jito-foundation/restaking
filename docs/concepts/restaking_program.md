@@ -1,6 +1,5 @@
 ---
 title: Restaking Program
-mermaid: true
 ---
 
 # Restaking Programfasjdflkasdf
