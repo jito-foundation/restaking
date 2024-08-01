@@ -27,7 +27,14 @@
 <script>anchors.add();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
 <script>
-    let config = { startOnLoad: true, flowchart: { useMaxWidth: false, htmlLabels: true } };
+    var config = {
+        startOnReady: true,
+        theme: 'forest',
+        flowchart: {
+            useMaxWidth: false,
+            htmlLabels: true
+        }
+    };
     mermaid.initialize(config);
     mermaid.init(undefined, '.language-mermaid');
 </script>
