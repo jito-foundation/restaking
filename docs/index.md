@@ -12,7 +12,7 @@ Understanding these core concepts will help you navigate the Jito Restaking ecos
 - [(Re)staking Explained](restaking.md)
 - [Restaking Program](concepts/restaking_program.md)
 - [Vault Program](concepts/vault_program.md)
-- [API](api/)
+- [API](api/jito_jsm_core/index.html)
 
 ## Advanced Topics
 
