@@ -37,7 +37,7 @@
         border: none !important;
     }
 
-    .mermaid {
+    .mermaid-wrapper {
         display: flex;
         justify-content: center;
         margin: 20px 0;
@@ -54,7 +54,6 @@
         }
     };
     mermaid.initialize(config);
-    mermaid.init(undefined, '.language-mermaid');
 
     // Find all Mermaid code blocks and wrap them in a div
     document.querySelectorAll('pre code.language-mermaid').forEach(function(el) {
@@ -63,6 +62,8 @@
         el.parentNode.insertBefore(wrapper, el);
         wrapper.appendChild(el.parentNode);
     });
+
+    mermaid.init(undefined, '.language-mermaid');
 </script>
 </body>
 </html>
