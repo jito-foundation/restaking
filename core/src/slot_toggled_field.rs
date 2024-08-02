@@ -8,7 +8,7 @@ pub struct SlotToggle {
     slot_removed: u64,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum SlotToggleState {
     Inactive,
     WarmUp,
