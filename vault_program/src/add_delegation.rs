@@ -39,7 +39,7 @@ pub fn process_add_delegation(
 
     vault_operator_ticket
         .vault_operator_ticket()
-        .check_active(slot)?;
+        .check_active(slot, config.config().epoch_length())?;
 
     vault_delegation_list
         .vault_delegation_list_mut()

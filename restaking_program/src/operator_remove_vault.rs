@@ -18,6 +18,7 @@ pub fn process_operator_remove_vault(
     accounts: &[AccountInfo],
 ) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         operator,
         mut operator_vault_ticket,
         admin,
@@ -28,7 +29,7 @@ pub fn process_operator_remove_vault(
     let slot = Clock::get()?.slot;
     operator_vault_ticket
         .operator_vault_ticket_mut()
-        .deactivate(slot)?;
+        .deactivate(slot, config.config().epoch_length())?;
 
     operator_vault_ticket.save()?;
 
@@ -36,6 +37,7 @@ pub fn process_operator_remove_vault(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
     operator_vault_ticket: SanitizedOperatorVaultTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
@@ -49,7 +51,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let _config =
+        let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let operator =
             SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
@@ -64,6 +66,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
+            config,
             operator,
             operator_vault_ticket,
             admin,

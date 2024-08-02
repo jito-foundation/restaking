@@ -65,16 +65,16 @@ impl VaultOperatorTicket {
         &self.state
     }
 
-    pub const fn check_active(&self, slot: u64) -> VaultCoreResult<()> {
-        if self.state.is_active(slot) {
+    pub const fn check_active(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
+        if self.state.is_active(slot, epoch_length) {
             Ok(())
         } else {
             Err(VaultCoreError::VaultOperatorTicketInactive)
         }
     }
 
-    pub fn deactivate(&mut self, slot: u64) -> VaultCoreResult<()> {
-        if self.state.deactivate(slot) {
+    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
+        if self.state.deactivate(slot, epoch_length) {
             Ok(())
         } else {
             Err(VaultCoreError::VaultOperatorTicketAlreadyDeactivated)
