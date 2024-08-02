@@ -20,6 +20,10 @@ use solana_program::{
 };
 use spl_token::instruction::{burn, close_account, transfer};
 
+/// Burns the withdraw ticket, transferring the assets to the staker and closing the withdraw ticket.
+///
+/// One should call the [`crate::VaultInstruction::UpdateVault`] instruction before running this instruction
+/// to ensure that any rewards that were accrued are accounted for.
 pub fn process_burn_withdraw_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -48,9 +52,6 @@ pub fn process_burn_withdraw_ticket(
     vault_staker_withdraw_ticket
         .vault_staker_withdraw_ticket()
         .check_withdrawable(slot, epoch_length)?;
-    vault_delegation_list
-        .vault_delegation_list_mut()
-        .check_update_needed(slot, epoch_length)?;
 
     // find the current redemption amount and the original redemption amount in the withdraw ticket
     let redemption_amount = vault.vault().calculate_assets_returned_amount(

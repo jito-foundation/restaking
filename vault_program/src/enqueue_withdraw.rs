@@ -33,10 +33,13 @@ use spl_token::instruction::transfer;
 /// ratio increases due to rewards. However, if the vault has excess collateral that isn't staked, the vault
 /// can withdraw that excess and return it to the staker. If there's no excess, they can withdraw the
 /// amount that was set aside for withdraw.
+///
+/// One should call the [`crate::VaultInstruction::UpdateVault`] instruction before running this instruction
+/// to ensure that any rewards that were accrued are accounted for.
 pub fn process_enqueue_withdraw(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
-    amount: u64,
+    lrt_amount: u64,
 ) -> ProgramResult {
     let SanitizedAccounts {
         config,
@@ -59,18 +62,23 @@ pub fn process_enqueue_withdraw(
         .vault_delegation_list_mut()
         .check_update_needed(slot, epoch_length)?;
 
-    let fee_amount = vault.vault().calculate_withdraw_fee(amount)?;
-    let amount_to_vault_staker_withdraw_ticket = amount
-        .checked_sub(fee_amount)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    // // TODO (LB): subtract fee!
+    // let fee_amount = vault.vault().calculate_withdraw_fee(lrt_amount)?;
+    // let amount_to_vault_staker_withdraw_ticket = lrt_amount
+    //     .checked_sub(fee_amount)
+    //     .ok_or(ProgramError::ArithmeticOverflow)?;
 
     // Find the redemption ratio at this point in time.
     // It may change in between this point in time and when the withdraw ticket is processed.
     // Stakers may get back less than redemption if there were accrued rewards accrued in between
     // this point and the redemption.
-    let amount_to_withdraw = vault
-        .vault()
-        .calculate_assets_returned_amount(amount_to_vault_staker_withdraw_ticket)?;
+    let amount_to_withdraw = vault.vault().calculate_assets_returned_amount(lrt_amount)?;
+    msg!(
+        "lrt_supply: {} lrt_amount: {}, amount_to_withdraw: {}",
+        vault.vault().lrt_supply(),
+        lrt_amount,
+        amount_to_withdraw
+    );
 
     vault_delegation_list
         .vault_delegation_list_mut()
@@ -86,7 +94,7 @@ pub fn process_enqueue_withdraw(
         &rent,
         slot,
         amount_to_withdraw,
-        amount_to_vault_staker_withdraw_ticket,
+        lrt_amount,
     )?;
 
     // Transfers the LRT tokens from the staker to their withdraw account and the vault's fee account
@@ -95,9 +103,8 @@ pub fn process_enqueue_withdraw(
         &staker_lrt_token_account,
         &vault_staker_withdraw_ticket_token_account,
         &staker,
-        amount_to_vault_staker_withdraw_ticket,
+        lrt_amount,
     )?;
-    // TODO (LB): transfer fee_amount of the LRT from the staker to the fee account
 
     vault_delegation_list.save()?;
 

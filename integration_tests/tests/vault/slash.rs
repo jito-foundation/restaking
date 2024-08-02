@@ -1,4 +1,3 @@
-use jito_vault_core::vault_delegation_list::VaultDelegationList;
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
 
@@ -108,13 +107,7 @@ async fn test_slash_ok() {
         .unwrap();
 
     let vault_delegation_list = vault_program_client
-        .get_vault_delegation_list(
-            &VaultDelegationList::find_program_address(
-                &jito_vault_program::id(),
-                &vault_root.vault_pubkey,
-            )
-            .0,
-        )
+        .get_vault_delegation_list(&vault_root.vault_pubkey)
         .await
         .unwrap();
 
@@ -158,13 +151,7 @@ async fn test_slash_ok() {
     assert_eq!(vault.tokens_deposited(), 99_900);
 
     let delegation_list = vault_program_client
-        .get_vault_delegation_list(
-            &VaultDelegationList::find_program_address(
-                &jito_vault_program::id(),
-                &vault_root.vault_pubkey,
-            )
-            .0,
-        )
+        .get_vault_delegation_list(&vault_root.vault_pubkey)
         .await
         .unwrap();
     let delegations = delegation_list.delegations();

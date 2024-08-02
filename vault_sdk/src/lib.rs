@@ -566,18 +566,18 @@ pub fn remove_delegation(
     }
 }
 
-pub fn update_delegations(
+pub fn update_vault(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
     vault_delegation_list: &Pubkey,
-    payer: &Pubkey,
+    vault_token_account: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*vault, false),
         AccountMeta::new(*vault_delegation_list, false),
-        AccountMeta::new(*payer, true),
+        AccountMeta::new(*vault_token_account, false),
     ];
     Instruction {
         program_id: *program_id,

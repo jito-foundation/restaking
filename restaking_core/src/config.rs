@@ -1,10 +1,10 @@
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
-
 use crate::{
     result::{RestakingCoreError, RestakingCoreResult},
     AccountType,
 };
+use borsh::{BorshDeserialize, BorshSerialize};
+use solana_program::clock::DEFAULT_SLOTS_PER_EPOCH;
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 #[repr(C)]

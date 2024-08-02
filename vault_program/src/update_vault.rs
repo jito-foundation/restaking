@@ -21,10 +21,10 @@ pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pr
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     let slot = Clock::get()?.slot;
+
     vault_delegation_list
         .vault_delegation_list_mut()
         .update(slot, config.config().epoch_length())?;
-
     vault
         .vault_mut()
         .set_tokens_deposited(vault_token_account.token_account().amount);

@@ -37,6 +37,7 @@ pub struct VaultRoot {
     pub vault_admin: Keypair,
 }
 
+#[derive(Debug)]
 pub struct VaultStakerWithdrawTicketRoot {
     pub base: Pubkey,
 }
@@ -89,10 +90,31 @@ impl VaultProgramClient {
 
     pub async fn get_vault_delegation_list(
         &mut self,
-        account: &Pubkey,
+        vault_pubkey: &Pubkey,
     ) -> Result<VaultDelegationList, BanksClientError> {
-        let account = self.banks_client.get_account(*account).await?.unwrap();
+        let account =
+            VaultDelegationList::find_program_address(&jito_vault_program::id(), &vault_pubkey).0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(VaultDelegationList::deserialize(
+            &mut account.data.as_slice(),
+        )?)
+    }
+
+    pub async fn get_vault_staker_withdraw_ticket(
+        &mut self,
+        vault: &Pubkey,
+        staker: &Pubkey,
+        base: &Pubkey,
+    ) -> Result<VaultStakerWithdrawTicket, BanksClientError> {
+        let account = VaultStakerWithdrawTicket::find_program_address(
+            &jito_vault_program::id(),
+            vault,
+            staker,
+            base,
+        )
+        .0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
+        Ok(VaultStakerWithdrawTicket::deserialize(
             &mut account.data.as_slice(),
         )?)
     }
@@ -632,6 +654,27 @@ impl VaultProgramClient {
         Ok(VaultStakerWithdrawTicketRoot {
             base: base.pubkey(),
         })
+    }
+
+    pub async fn do_update_vault(&mut self, vault_pubkey: &Pubkey) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        let vault = self.get_vault(vault_pubkey).await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::update_vault(
+                &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                vault_pubkey,
+                &VaultDelegationList::find_program_address(&jito_vault_program::id(), vault_pubkey)
+                    .0,
+                &get_associated_token_address(vault_pubkey, &vault.supported_mint()),
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
+            blockhash,
+        ))
+        .await
     }
 
     pub async fn enqueue_withdraw(

@@ -7,8 +7,6 @@ use crate::{
     AccountType,
 };
 
-pub const MAX_RESTAKING_PROGRAMS: usize = 8;
-
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 pub struct Config {
     /// The account type
