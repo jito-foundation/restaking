@@ -8,6 +8,7 @@ pub struct SlotToggle {
     slot_removed: u64,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum SlotToggleState {
     Inactive,
     WarmUp,
@@ -52,9 +53,10 @@ impl SlotToggle {
     }
 
     pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
+        //TODO CK Check with LB about active state
         matches!(
             self.state(slot, epoch_length),
-            SlotToggleState::Active | SlotToggleState::Cooldown
+            SlotToggleState::WarmUp | SlotToggleState::Active | SlotToggleState::Cooldown
         )
     }
 

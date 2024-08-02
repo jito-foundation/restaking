@@ -1923,6 +1923,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-restaking-unit-tests"
+version = "0.0.1"
+dependencies = [
+ "borsh 0.10.3",
+ "jito-jsm-core",
+ "jito-restaking-core",
+ "jito-restaking-program",
+ "jito-restaking-sanitization",
+ "jito-restaking-sdk",
+ "jito-vault-core",
+ "jito-vault-program",
+ "jito-vault-sdk",
+ "shank",
+ "solana-program",
+ "solana-program-test",
+ "solana-sdk",
+ "solana-security-txt",
+ "spl-associated-token-account",
+ "spl-token",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "jito-vault-core"
 version = "0.0.1"
 dependencies = [

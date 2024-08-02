@@ -6,6 +6,7 @@ members = [
     "restaking_program",
     "restaking_sdk",
     "sanitization",
+    "unit_tests",
     "vault_core",
     "vault_program",
     "vault_sdk"]
