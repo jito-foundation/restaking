@@ -4,45 +4,45 @@ title: Restaking Program
 
 ### About the program
 
-The restaking program acts as a registry for AVS, operators, and relationships between AVS, operators, and vaults.
+The restaking program acts as a registry for NCNs, operators, and relationships between NCNs, operators, and vaults.
 
 It allows users to do the following:
 
-- Registers AVS, operators, and their configurations.
-- Stores relationships between AVS, operators, and vaults.
+- Registers NCN, operators, and their configurations.
+- Stores relationships between NCN, operators, and vaults.
 
 The restaking program does not store any funds; it is purely used as a registry and relationship manager between
 entities in the system.
 
-### AVS
+### Node Consensus Network (NCN)
 
-AVS are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
+NCN are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
 other services that require a staking mechanism for security.
 
-Actively Validated Services (AVS) can be registered through the restaking program.
+NCN can be registered through the restaking program.
 
-There are several things one can do after registering an AVS:
+There are several things one can do after registering an NCN:
 
-- Add and remove support for operators participating in the AVS validator set.
+- Add and remove support for operators participating in the NCN operator set.
 - Add and remove support for vaults
 - Add and remove support for slashers
-- Withdraw funds sent to the AVS from rewards, airdrops, and other sources.
+- Withdraw funds sent to the NCN from rewards, airdrops, and other sources.
 
 ### Operator
 
-Operators are entities responsible for running AVS software.
+Operators are entities responsible for running NCN software.
 
 Operators can register through the restaking program and configure several variables:
 
 - Add and remove support for vaults
-- Add and remove support for AVS
+- Add and remove support for NCN
 - Change voter keys
 - Withdraw funds sent to the operator from rewards, airdrops, and other sources.
 
 ### Relationships
 
 The Jito Restaking protocol requires mutual opt-in from all parties entering stake agreements: vaults, operators, and
-AVS.
+NCNs.
 
 It leverages the concept of entity tickets, which are PDAs representing opt-in from one party to another. These tickets
 are created on-chain and can be used to track relationships between AVS, operators, and vaults. In addition to entity
