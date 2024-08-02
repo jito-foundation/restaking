@@ -51,22 +51,29 @@ impl SlotToggle {
         }
     }
 
-    pub const fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
-        match self.state(slot, epoch_length) {
-            SlotToggleState::Active | SlotToggleState::Cooldown => true,
-            _ => false,
-        }
+    pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
+        matches!(
+            self.state(slot, epoch_length),
+            SlotToggleState::Active | SlotToggleState::Cooldown
+        )
     }
 
-    pub const fn warmup_slots(&self, slot: u64, epoch_length: u64) -> u64 {
-        self.slot_added + epoch_length + slot % epoch_length
+    pub fn warmup_slots(&self, slot: u64, epoch_length: u64) -> u64 {
+        let remaining_slots = slot.checked_rem(epoch_length).unwrap_or(0);
+        self.slot_added
+            .saturating_add(epoch_length)
+            .saturating_add(remaining_slots)
     }
 
-    pub const fn cooldown_slots(&self, slot: u64, epoch_length: u64) -> u64 {
-        self.slot_removed + epoch_length + slot % epoch_length
+    pub fn cooldown_slots(&self, slot: u64, epoch_length: u64) -> u64 {
+        let remaining_slots = slot.checked_rem(epoch_length).unwrap_or(0);
+        self.slot_removed
+            .saturating_add(epoch_length)
+            .saturating_add(remaining_slots)
     }
 
-    pub const fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
+    #[allow(clippy::collapsible_else_if)]
+    pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
         if self.slot_added >= self.slot_removed {
             if slot <= self.warmup_slots(slot, epoch_length) {
                 SlotToggleState::WarmUp
