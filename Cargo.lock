@@ -1897,6 +1897,7 @@ version = "0.0.1"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
+ "mpl-token-metadata",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -1947,6 +1948,7 @@ dependencies = [
  "jito-restaking-sdk",
  "jito-vault-core",
  "jito-vault-sdk",
+ "mpl-token-metadata",
  "shank",
  "solana-program",
  "solana-program-test",
@@ -2237,6 +2239,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "mpl-token-metadata"
+version = "4.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caf0f61b553e424a6234af1268456972ee66c2222e1da89079242251fa7479e5"
+dependencies = [
+ "borsh 0.10.3",
+ "num-derive 0.3.3",
+ "num-traits",
+ "solana-program",
+ "thiserror",
 ]
 
 [[package]]
