@@ -3,7 +3,7 @@ use shank::ShankInstruction;
 use solana_program::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
-    system_program,
+    system_program, sysvar,
 };
 
 #[rustfmt::skip]
@@ -163,6 +163,12 @@ pub enum VaultInstruction {
     AddSlasher,
 
     /// Creates token metadata for the vault LRT
+    #[account(0, name = "vault")]
+    #[account(1, name = "lrt_mint")]
+    #[account(2, writable, name = "metadata")]
+    #[account(3, signer, name = "admin")]
+    #[account(4, name = "system_program")]
+    #[account(5, name = "metadata_program")]
     CreateTokenMetadata {
         name: String,
         symbol: String,
@@ -601,15 +607,29 @@ pub fn add_slasher(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_token_metadata(
     program_id: &Pubkey,
+    vault: &Pubkey,
+    lrt_mint: &Pubkey,
+    metadata: &Pubkey,
+    admin: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*lrt_mint, false),
+        AccountMeta::new(*metadata, false),
+        AccountMeta::new(*admin, true),
+        AccountMeta::new_readonly(system_program::id(), false),
+        AccountMeta::new_readonly(mpl_token_metadata::ID, false),
+        AccountMeta::new_readonly(sysvar::ID, false),
+    ];
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
+        accounts,
         data: VaultInstruction::CreateTokenMetadata { name, symbol, uri }
             .try_to_vec()
             .unwrap(),

@@ -4,6 +4,7 @@ pub mod metadata_program;
 pub mod result;
 pub mod signer;
 pub mod system_program;
+pub mod sysvar;
 pub mod token_account;
 pub mod token_mint;
 pub mod token_program;

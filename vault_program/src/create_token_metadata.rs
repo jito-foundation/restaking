@@ -1,8 +1,9 @@
 use jito_restaking_sanitization::{
-    empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram, token_mint::SanitizedTokenMint,
+    empty_account::EmptyAccount, metadata_program::SanitizedMetadataProgram,
+    signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
+    sysvar::SanitizedSysvar, token_mint::SanitizedTokenMint,
 };
-use jito_vault_core::vault::SanitizedVault;
+use jito_vault_core::vault::{SanitizedVault, Vault};
 use mpl_token_metadata::{instructions::CreateV1CpiBuilder, types::TokenStandard};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -25,24 +26,31 @@ pub fn process_create_token_metadata(
         admin,
         system_program,
         metadata_program,
+        sysvar,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     let mut builder = CreateV1CpiBuilder::new(metadata_program.account());
     let cpi_create = builder
         .metadata(metadata.account())
-        .mint(lrt_mint.account(), true)
+        .mint(lrt_mint.account(), false)
         .authority(vault.account())
         .payer(admin.account())
-        .update_authority(vault.account(), true)
+        .update_authority(vault.account(), false)
         .is_mutable(true)
         .primary_sale_happened(false)
+        .seller_fee_basis_points(0)
         .name(name)
         .uri(uri)
         .symbol(symbol)
         .token_standard(TokenStandard::Fungible)
-        .system_program(system_program.account());
+        .system_program(system_program.account())
+        .sysvar_instructions(sysvar.account());
 
-    cpi_create.invoke()?;
+    let (_, bump, mut seeds) = Vault::find_program_address(program_id, &vault.vault().base());
+    seeds.push(vec![bump]);
+    let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
+
+    cpi_create.invoke_signed(&[&seed_slices])?;
 
     Ok(())
 }
@@ -53,7 +61,8 @@ struct SanitizedAccounts<'a, 'info> {
     metadata: EmptyAccount<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
     system_program: SanitizedSystemProgram<'a, 'info>,
-    metadata_program: EmptyAccount<'a, 'info>,
+    metadata_program: SanitizedMetadataProgram<'a, 'info>,
+    sysvar: SanitizedSysvar<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -71,7 +80,8 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let system_program =
             SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
         let metadata_program =
-            EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
+            SanitizedMetadataProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
+        let sysvar = SanitizedSysvar::sanitize(next_account_info(&mut accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
             vault,
@@ -80,6 +90,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             admin,
             system_program,
             metadata_program,
+            sysvar,
         })
     }
 }

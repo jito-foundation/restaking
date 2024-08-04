@@ -13,7 +13,7 @@ impl<'a, 'info> SanitizedMetadataProgram<'a, 'info> {
         account: &'a AccountInfo<'info>,
     ) -> SanitizationResult<SanitizedMetadataProgram<'a, 'info>> {
         if account.key != &mpl_token_metadata::ID {
-            return Err(SanitizationError::TokenProgramInvalidAddress);
+            return Err(SanitizationError::MetadataProgramInvalidAddress);
         }
 
         Ok(SanitizedMetadataProgram { account })
@@ -29,7 +29,7 @@ mod tests {
     use assert_matches::assert_matches;
     use solana_program::{account_info::AccountInfo, clock::Epoch, pubkey::Pubkey, system_program};
 
-    use crate::{result::SanitizationError, token_program::SanitizedTokenProgram};
+    use crate::{metadata_program::SanitizedMetadataProgram, result::SanitizationError};
 
     #[test]
     fn test_wrong_address_fails() {
@@ -48,8 +48,8 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        let err = SanitizedTokenProgram::sanitize(&account_info).unwrap_err();
-        assert_matches!(err, SanitizationError::TokenProgramInvalidAddress);
+        let err = SanitizedMetadataProgram::sanitize(&account_info).unwrap_err();
+        assert_matches!(err, SanitizationError::MetadataProgramInvalidAddress);
     }
 
     #[test]
@@ -69,6 +69,6 @@ mod tests {
             false,
             Epoch::MAX,
         );
-        SanitizedTokenProgram::sanitize(&account_info).unwrap();
+        assert!(SanitizedMetadataProgram::sanitize(&account_info).is_ok());
     }
 }

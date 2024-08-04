@@ -46,6 +46,7 @@ impl TestBuilder {
             jito_restaking_program::id(),
             processor!(jito_restaking_program::process_instruction),
         );
+        program_test.add_program("token_metadata", mpl_token_metadata::ID, None);
 
         let context = program_test.start_with_context().await;
         Self { context }

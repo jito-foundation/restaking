@@ -13,6 +13,7 @@ readme = { workspace = true }
 borsh = { workspace = true }
 jito-restaking-sanitization = { workspace = true }
 jito-vault-core = { workspace = true }
+mpl-token-metadata = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 solana-security-txt = { workspace = true }

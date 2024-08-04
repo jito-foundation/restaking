@@ -5,6 +5,7 @@ use jito_vault_core::{
     vault_delegation_list::VaultDelegationList, vault_operator_ticket::VaultOperatorTicket,
 };
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
+use mpl_token_metadata::accounts::Metadata;
 use solana_program::pubkey::Pubkey;
 use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{
@@ -105,6 +106,14 @@ impl VaultProgramClient {
         Ok(VaultAvsSlasherOperatorTicket::deserialize(
             &mut account.data.as_slice(),
         )?)
+    }
+
+    pub async fn get_token_metadata(
+        &mut self,
+        account: &Pubkey,
+    ) -> Result<Metadata, BanksClientError> {
+        let account = self.banks_client.get_account(*account).await?.unwrap();
+        Ok(Metadata::deserialize(&mut account.data.as_slice())?)
     }
 
     pub async fn initialize_config(
@@ -562,6 +571,35 @@ impl VaultProgramClient {
             )],
             Some(&slasher.pubkey()),
             &[slasher],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn create_token_metadata(
+        &mut self,
+        vault: &Pubkey,
+        lrt_mint: &Pubkey,
+        metadata: &Pubkey,
+        admin: &Keypair,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::create_token_metadata(
+                &jito_vault_program::id(),
+                vault,
+                lrt_mint,
+                metadata,
+                &admin.pubkey(),
+                name,
+                symbol,
+                uri,
+            )],
+            Some(&admin.pubkey()),
+            &[admin],
             blockhash,
         ))
         .await
