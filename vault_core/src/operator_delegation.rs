@@ -1,5 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
+use std::cmp::min;
 
 use crate::result::{VaultCoreError, VaultCoreResult};
 
@@ -82,12 +83,18 @@ impl OperatorDelegation {
     pub fn delegated_security(&self) -> VaultCoreResult<u64> {
         self.staked_amount
             .checked_add(self.enqueued_for_cooldown_amount)
-            .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)?
-            .checked_add(self.cooling_down_amount)
-            .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)?
-            .checked_add(self.enqueued_for_withdraw_amount)
-            .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)?
-            .checked_add(self.cooling_down_for_withdraw_amount)
+            .and_then(|x| x.checked_add(self.cooling_down_amount))
+            .and_then(|x| x.checked_add(self.enqueued_for_withdraw_amount))
+            .and_then(|x| x.checked_add(self.cooling_down_for_withdraw_amount))
+            .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)
+    }
+
+    /// Returns the amount of withdrawable security, which is the sum of the amount actively staked,
+    /// the amount enqueued for cooldown, and the cooling down amount.
+    pub fn amount_available_to_withdraw(&self) -> VaultCoreResult<u64> {
+        self.staked_amount
+            .checked_add(self.enqueued_for_cooldown_amount)
+            .and_then(|x| x.checked_add(self.cooling_down_amount))
             .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)
     }
 
@@ -120,10 +127,7 @@ impl OperatorDelegation {
                 .ok_or(VaultCoreError::VaultSlashingOverflow)?
                 .checked_div(total_security_amount as u128)
                 .ok_or(VaultCoreError::VaultSlashingDivisionByZero)?;
-            let actual_slash = std::cmp::min(
-                pro_rata_slash as u64,
-                std::cmp::min(*amount, remaining_slash),
-            );
+            let actual_slash = min(pro_rata_slash as u64, min(*amount, remaining_slash));
             *amount = amount
                 .checked_sub(actual_slash)
                 .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
@@ -161,11 +165,41 @@ impl OperatorDelegation {
         Ok(())
     }
 
+    /// Un-delegates assets for withdraw from the operator. If the total amount to withdraw is greater
+    /// than the staked amount, it pulls from the enqueued_for_cooldown_amount. If there is still excess,
+    /// it pulls from the cooling_down_amount.
     pub fn undelegate_for_withdraw(&mut self, amount: u64) -> VaultCoreResult<()> {
+        if amount > self.amount_available_to_withdraw()? {
+            return Err(VaultCoreError::VaultDelegationListInsufficientSecurity);
+        }
+
+        let mut amount_left = amount;
+
+        let staked_amount_withdraw = min(self.staked_amount, amount_left);
         self.staked_amount = self
             .staked_amount
-            .checked_sub(amount)
+            .checked_sub(staked_amount_withdraw)
+            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+        amount_left = amount_left
+            .checked_sub(staked_amount_withdraw)
+            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+
+        let enqueued_for_cooldown_amount_withdraw =
+            min(self.enqueued_for_cooldown_amount, amount_left);
+        self.enqueued_for_cooldown_amount = self
+            .enqueued_for_cooldown_amount
+            .checked_sub(enqueued_for_cooldown_amount_withdraw)
+            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+        amount_left = amount_left
+            .checked_sub(enqueued_for_cooldown_amount_withdraw)
+            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+
+        let cooldown_amount_withdraw = min(self.cooling_down_amount, amount_left);
+        self.cooling_down_amount = self
+            .cooling_down_amount
+            .checked_sub(cooldown_amount_withdraw)
             .ok_or(VaultCoreError::VaultDelegationUnderflow)?;
+
         self.enqueued_for_withdraw_amount = self
             .enqueued_for_withdraw_amount
             .checked_add(amount)
@@ -257,6 +291,39 @@ mod tests {
         operator_delegation.slash(5_000).unwrap();
 
         assert_eq!(operator_delegation.delegated_security().unwrap(), 95_000);
-        // assert_eq!(operator_delegation.staked_amount(), 85_000);
+        assert_eq!(operator_delegation.staked_amount(), 85_500);
+    }
+
+    #[test]
+    fn test_undelegate_for_withdraw_with_cooling_down() {
+        let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
+        operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(operator_delegation.staked_amount(), 100_000);
+
+        operator_delegation.undelegate(10_000).unwrap();
+        assert_eq!(operator_delegation.staked_amount(), 90_000);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 10_000);
+
+        operator_delegation.undelegate_for_withdraw(95_000).unwrap();
+        assert_eq!(operator_delegation.staked_amount(), 0);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 5_000);
+        assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 95_000);
+    }
+
+    #[test]
+    fn test_undelegate_for_withdraw_not_enough_security() {
+        let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
+        operator_delegation.delegate(100_000).unwrap();
+
+        operator_delegation
+            .undelegate_for_withdraw(100_001)
+            .unwrap_err();
+
+        let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
+        operator_delegation.delegate(100_000).unwrap();
+        operator_delegation.undelegate_for_withdraw(50_000).unwrap();
+        operator_delegation
+            .undelegate_for_withdraw(50_001)
+            .unwrap_err();
     }
 }

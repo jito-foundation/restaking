@@ -98,12 +98,13 @@ pub enum VaultInstruction {
     #[account(2, writable, name = "vault_delegation_list")]
     #[account(3, writable, name = "vault_staker_withdraw_ticket")]
     #[account(4, writable, name = "vault_staker_withdraw_ticket_token_account")]
-    #[account(5, writable, signer, name = "staker")]
-    #[account(6, writable, name = "staker_lrt_token_account")]
-    #[account(7, signer, name = "base")]
-    #[account(8, name = "token_program")]
-    #[account(9, name = "system_program")]
-    EnqueueWithdraw {
+    #[account(5, writable, name = "vault_fee_token_account")]
+    #[account(6, writable, signer, name = "staker")]
+    #[account(7, writable, name = "staker_lrt_token_account")]
+    #[account(8, signer, name = "base")]
+    #[account(9, name = "token_program")]
+    #[account(10, name = "system_program")]
+    EnqueueWithdrawal {
         amount: u64
     },
 
@@ -735,6 +736,7 @@ pub fn enqueue_withdraw(
     vault_delegation_list: &Pubkey,
     vault_staker_withdraw_ticket: &Pubkey,
     vault_staker_withdraw_ticket_token_account: &Pubkey,
+    vault_fee_token_account: &Pubkey,
     staker: &Pubkey,
     staker_lrt_token_account: &Pubkey,
     base: &Pubkey,
@@ -746,6 +748,7 @@ pub fn enqueue_withdraw(
         AccountMeta::new(*vault_delegation_list, false),
         AccountMeta::new(*vault_staker_withdraw_ticket, false),
         AccountMeta::new(*vault_staker_withdraw_ticket_token_account, false),
+        AccountMeta::new(*vault_fee_token_account, false),
         AccountMeta::new(*staker, true),
         AccountMeta::new(*staker_lrt_token_account, false),
         AccountMeta::new_readonly(*base, true),
@@ -755,7 +758,7 @@ pub fn enqueue_withdraw(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::EnqueueWithdraw { amount }
+        data: VaultInstruction::EnqueueWithdrawal { amount }
             .try_to_vec()
             .unwrap(),
     }

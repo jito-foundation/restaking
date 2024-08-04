@@ -4,7 +4,7 @@ use jito_restaking_core::{
     avs_vault_ticket::AvsVaultTicket, operator_avs_ticket::OperatorAvsTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
-use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawTicket;
+use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_avs_slasher_operator_ticket::VaultAvsSlasherOperatorTicket,
     vault_avs_slasher_ticket::VaultAvsSlasherTicket, vault_avs_ticket::VaultAvsTicket,
@@ -105,8 +105,8 @@ impl VaultProgramClient {
         vault: &Pubkey,
         staker: &Pubkey,
         base: &Pubkey,
-    ) -> Result<VaultStakerWithdrawTicket, BanksClientError> {
-        let account = VaultStakerWithdrawTicket::find_program_address(
+    ) -> Result<VaultStakerWithdrawalTicket, BanksClientError> {
+        let account = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             vault,
             staker,
@@ -114,7 +114,7 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultStakerWithdrawTicket::deserialize(
+        Ok(VaultStakerWithdrawalTicket::deserialize(
             &mut account.data.as_slice(),
         )?)
     }
@@ -621,7 +621,7 @@ impl VaultProgramClient {
             get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint());
 
         let base = Keypair::new();
-        let vault_staker_withdraw_ticket = VaultStakerWithdrawTicket::find_program_address(
+        let vault_staker_withdraw_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
             &depositor.pubkey(),
@@ -634,6 +634,9 @@ impl VaultProgramClient {
         self.create_ata(&vault.lrt_mint(), &vault_staker_withdraw_ticket)
             .await?;
 
+        let vault_staker_fee_token_account =
+            get_associated_token_address(&vault.fee_owner(), &vault.lrt_mint());
+
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
@@ -644,6 +647,7 @@ impl VaultProgramClient {
             .0,
             &vault_staker_withdraw_ticket,
             &vault_staker_withdraw_ticket_token_account,
+            &vault_staker_fee_token_account,
             depositor,
             &depositor_lrt_token_account,
             &base,
@@ -684,6 +688,7 @@ impl VaultProgramClient {
         vault_delegation_list: &Pubkey,
         vault_staker_withdraw_ticket: &Pubkey,
         vault_staker_withdraw_ticket_token_account: &Pubkey,
+        vault_fee_token_account: &Pubkey,
         staker: &Keypair,
         staker_lrt_token_account: &Pubkey,
         base: &Keypair,
@@ -698,6 +703,7 @@ impl VaultProgramClient {
                 vault_delegation_list,
                 vault_staker_withdraw_ticket,
                 vault_staker_withdraw_ticket_token_account,
+                vault_fee_token_account,
                 &staker.pubkey(),
                 staker_lrt_token_account,
                 &base.pubkey(),

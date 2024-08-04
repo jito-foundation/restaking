@@ -11,7 +11,7 @@ use crate::{
 /// with the staker's LRT.
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 #[repr(C)]
-pub struct VaultStakerWithdrawTicket {
+pub struct VaultStakerWithdrawalTicket {
     /// The account type
     account_type: AccountType,
 
@@ -39,7 +39,7 @@ pub struct VaultStakerWithdrawTicket {
     bump: u8,
 }
 
-impl VaultStakerWithdrawTicket {
+impl VaultStakerWithdrawalTicket {
     pub const fn new(
         vault: Pubkey,
         staker: Pubkey,
@@ -50,7 +50,7 @@ impl VaultStakerWithdrawTicket {
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::VaultStakerWithdrawTicket,
+            account_type: AccountType::VaultStakerWithdrawalTicket,
             vault,
             staker,
             base,
@@ -159,7 +159,7 @@ impl VaultStakerWithdrawTicket {
 
 pub struct SanitizedVaultStakerWithdrawTicket<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    vault_staker_withdraw_ticket: VaultStakerWithdrawTicket,
+    vault_staker_withdraw_ticket: VaultStakerWithdrawalTicket,
 }
 
 impl<'a, 'info> SanitizedVaultStakerWithdrawTicket<'a, 'info> {
@@ -175,7 +175,7 @@ impl<'a, 'info> SanitizedVaultStakerWithdrawTicket<'a, 'info> {
         }
 
         let vault_staker_withdraw_ticket =
-            VaultStakerWithdrawTicket::deserialize_checked(program_id, account, vault, staker)?;
+            VaultStakerWithdrawalTicket::deserialize_checked(program_id, account, vault, staker)?;
 
         Ok(SanitizedVaultStakerWithdrawTicket {
             account,
@@ -183,11 +183,11 @@ impl<'a, 'info> SanitizedVaultStakerWithdrawTicket<'a, 'info> {
         })
     }
 
-    pub const fn vault_staker_withdraw_ticket(&self) -> &VaultStakerWithdrawTicket {
+    pub const fn vault_staker_withdraw_ticket(&self) -> &VaultStakerWithdrawalTicket {
         &self.vault_staker_withdraw_ticket
     }
 
-    pub fn vault_staker_withdraw_ticket_mut(&mut self) -> &mut VaultStakerWithdrawTicket {
+    pub fn vault_staker_withdraw_ticket_mut(&mut self) -> &mut VaultStakerWithdrawalTicket {
         &mut self.vault_staker_withdraw_ticket
     }
 

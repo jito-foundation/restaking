@@ -9,7 +9,7 @@ use jito_vault_core::{
     config::SanitizedConfig,
     vault::SanitizedVault,
     vault_delegation_list::{SanitizedVaultDelegationList, UndelegateForWithdrawMethod},
-    vault_staker_withdraw_ticket::VaultStakerWithdrawTicket,
+    vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -36,7 +36,7 @@ use spl_token::instruction::transfer;
 ///
 /// One should call the [`crate::VaultInstruction::UpdateVault`] instruction before running this instruction
 /// to ensure that any rewards that were accrued are accounted for.
-pub fn process_enqueue_withdraw(
+pub fn process_enqueue_withdrawal(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     lrt_amount: u64,
@@ -47,10 +47,10 @@ pub fn process_enqueue_withdraw(
         mut vault_delegation_list,
         vault_staker_withdraw_ticket,
         vault_staker_withdraw_ticket_token_account,
+        vault_fee_token_account,
         staker,
         staker_lrt_token_account,
         base,
-        token_program,
         system_program,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
@@ -62,21 +62,24 @@ pub fn process_enqueue_withdraw(
         .vault_delegation_list_mut()
         .check_update_needed(slot, epoch_length)?;
 
-    // // TODO (LB): subtract fee!
-    // let fee_amount = vault.vault().calculate_withdraw_fee(lrt_amount)?;
-    // let amount_to_vault_staker_withdraw_ticket = lrt_amount
-    //     .checked_sub(fee_amount)
-    //     .ok_or(ProgramError::ArithmeticOverflow)?;
+    // The withdraw fee is subtracted here as opposed to when the withdraw ticket is processed
+    // so the amount representing the fee isn't unstaked.
+    let fee_amount = vault.vault().calculate_withdraw_fee(lrt_amount)?;
+    let amount_to_vault_staker_withdraw_ticket = lrt_amount
+        .checked_sub(fee_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     // Find the redemption ratio at this point in time.
     // It may change in between this point in time and when the withdraw ticket is processed.
     // Stakers may get back less than redemption if there were accrued rewards accrued in between
     // this point and the redemption.
-    let amount_to_withdraw = vault.vault().calculate_assets_returned_amount(lrt_amount)?;
+    let amount_to_withdraw = vault
+        .vault()
+        .calculate_assets_returned_amount(amount_to_vault_staker_withdraw_ticket)?;
     msg!(
         "lrt_supply: {} lrt_amount: {}, amount_to_withdraw: {}",
         vault.vault().lrt_supply(),
-        lrt_amount,
+        amount_to_vault_staker_withdraw_ticket,
         amount_to_withdraw
     );
 
@@ -94,16 +97,21 @@ pub fn process_enqueue_withdraw(
         &rent,
         slot,
         amount_to_withdraw,
-        lrt_amount,
+        amount_to_vault_staker_withdraw_ticket,
     )?;
 
     // Transfers the LRT tokens from the staker to their withdraw account and the vault's fee account
-    _transfer_to_vault_staker_withdraw_ticket(
-        &token_program,
+    _transfer_to(
         &staker_lrt_token_account,
         &vault_staker_withdraw_ticket_token_account,
         &staker,
-        lrt_amount,
+        amount_to_vault_staker_withdraw_ticket,
+    )?;
+    _transfer_to(
+        &staker_lrt_token_account,
+        &vault_fee_token_account,
+        &staker,
+        fee_amount,
     )?;
 
     vault_delegation_list.save()?;
@@ -111,25 +119,24 @@ pub fn process_enqueue_withdraw(
     Ok(())
 }
 
-fn _transfer_to_vault_staker_withdraw_ticket<'a, 'info>(
-    token_program: &SanitizedTokenProgram,
-    staker_lrt_token_account: &SanitizedTokenAccount<'a, 'info>,
-    vault_staker_withdraw_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
+fn _transfer_to<'a, 'info>(
+    from: &SanitizedTokenAccount<'a, 'info>,
+    to: &SanitizedAssociatedTokenAccount<'a, 'info>,
     staker: &SanitizedSignerAccount<'a, 'info>,
     amount: u64,
 ) -> ProgramResult {
     invoke(
         &transfer(
-            token_program.account().key,
-            staker_lrt_token_account.account().key,
-            vault_staker_withdraw_ticket_token_account.account().key,
+            &spl_token::id(),
+            from.account().key,
+            to.account().key,
             staker.account().key,
             &[],
             amount,
         )?,
         &[
-            staker_lrt_token_account.account().clone(),
-            vault_staker_withdraw_ticket_token_account.account().clone(),
+            from.account().clone(),
+            to.account().clone(),
             staker.account().clone(),
         ],
     )
@@ -148,7 +155,7 @@ fn _create_vault_staker_withdraw_ticket<'a, 'info>(
     amount_to_withdraw: u64,
     amount_to_vault_staker_withdraw_ticket: u64,
 ) -> ProgramResult {
-    let (address, bump, mut seeds) = VaultStakerWithdrawTicket::find_program_address(
+    let (address, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
         program_id,
         vault.account().key,
         staker.account().key,
@@ -162,7 +169,7 @@ fn _create_vault_staker_withdraw_ticket<'a, 'info>(
         "Vault staker withdraw ticket is not at the correct PDA",
     )?;
 
-    let vault_staker_withdraw_ticket = VaultStakerWithdrawTicket::new(
+    let vault_staker_withdraw_ticket = VaultStakerWithdrawalTicket::new(
         *vault.account().key,
         *staker.account().key,
         *base.account().key,
@@ -200,15 +207,15 @@ struct SanitizedAccounts<'a, 'info> {
     vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
     vault_staker_withdraw_ticket: EmptyAccount<'a, 'info>,
     vault_staker_withdraw_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
+    vault_fee_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     staker: SanitizedSignerAccount<'a, 'info>,
     staker_lrt_token_account: SanitizedTokenAccount<'a, 'info>,
     base: SanitizedSignerAccount<'a, 'info>,
-    token_program: SanitizedTokenProgram<'a, 'info>,
     system_program: SanitizedSystemProgram<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Loads accounts for [`crate::VaultInstruction::EnqueueWithdraw`]
+    /// Loads accounts for [`crate::VaultInstruction::EnqueueWithdrawal`]
     fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
@@ -231,6 +238,11 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             &vault.vault().lrt_mint(),
             vault_staker_withdraw_ticket.account().key,
         )?;
+        let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
+            next_account_info(accounts_iter)?,
+            &vault.vault().lrt_mint(),
+            &vault.vault().fee_owner(),
+        )?;
         let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
         let staker_lrt_token_account = SanitizedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
@@ -238,7 +250,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             staker.account().key,
         )?;
         let base = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+        let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
@@ -247,10 +259,10 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             vault_delegation_list,
             vault_staker_withdraw_ticket,
             vault_staker_withdraw_ticket_token_account,
+            vault_fee_token_account,
             staker,
             staker_lrt_token_account,
             base,
-            token_program,
             system_program,
         })
     }

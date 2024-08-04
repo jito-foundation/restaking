@@ -7,7 +7,9 @@ use jito_vault_core::{
     config::SanitizedConfig,
     vault::{SanitizedVault, Vault},
     vault_delegation_list::SanitizedVaultDelegationList,
-    vault_staker_withdraw_ticket::{SanitizedVaultStakerWithdrawTicket, VaultStakerWithdrawTicket},
+    vault_staker_withdraw_ticket::{
+        SanitizedVaultStakerWithdrawTicket, VaultStakerWithdrawalTicket,
+    },
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -171,7 +173,7 @@ fn _close_token_account<'a, 'info>(
     staker_lrt_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
 ) -> ProgramResult {
     // TODO: combine with burn lrt method
-    let (_, bump, mut seeds) = VaultStakerWithdrawTicket::find_program_address(
+    let (_, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
         program_id,
         vault.account().key,
         staker.account().key,
@@ -258,7 +260,7 @@ fn _burn_lrt<'a, 'info>(
     token_mint: &SanitizedTokenMint<'a, 'info>,
     burn_amount: u64,
 ) -> ProgramResult {
-    let (_, bump, mut seeds) = VaultStakerWithdrawTicket::find_program_address(
+    let (_, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
         program_id,
         vault.account().key,
         staker.account().key,

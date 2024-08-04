@@ -21,6 +21,6 @@ enum AccountType {
     VaultAvsTicket,
     VaultDelegationList,
     VaultAvsSlasherOperatorTicket,
-    VaultStakerWithdrawTicket,
+    VaultStakerWithdrawalTicket,
     VaultStakerWithdrawTicketEmpty,
 }

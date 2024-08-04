@@ -1,6 +1,6 @@
 use crate::fixtures::fixture::TestBuilder;
 use crate::fixtures::vault_client::VaultStakerWithdrawTicketRoot;
-use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawTicket;
+use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket;
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
 
@@ -60,7 +60,7 @@ async fn test_enqueue_withdraw_more_than_staked_fails() {
 }
 
 #[tokio::test]
-async fn test_enqueue_withdraw_one_to_one_success() {
+async fn test_enqueue_withdraw_with_fee_success() {
     let mut fixture = TestBuilder::new().await;
 
     let mut vault_program_client = fixture.vault_program_client();
@@ -142,6 +142,15 @@ async fn test_enqueue_withdraw_one_to_one_success() {
         .unwrap();
     assert_eq!(vault_lrt_account.amount, 99_000);
 
+    let vault_fee_account = fixture
+        .get_token_account(&get_associated_token_address(
+            &vault.fee_owner(),
+            &vault.lrt_mint(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(vault_fee_account.amount, 1_000);
+
     vault_program_client
         .delegate(&vault_root, &operator_root.operator_pubkey, 100_000)
         .await
@@ -156,6 +165,8 @@ async fn test_enqueue_withdraw_one_to_one_success() {
     assert_eq!(delegation.staked_amount(), 100_000);
     assert_eq!(delegation.delegated_security().unwrap(), 100_000);
 
+    // the user is withdrawing 99,000 LRT tokens, there is a 1% fee on withdraws, so
+    // 98010 tokens will be undeleged for withdraw
     let VaultStakerWithdrawTicketRoot { base } = vault_program_client
         .do_enqueue_withdraw(&vault_root, &depositor, 99_000)
         .await
@@ -169,23 +180,23 @@ async fn test_enqueue_withdraw_one_to_one_success() {
     let delegation = vault_delegation_list.delegations().get(0).unwrap();
     // this is 1,000 because 1% of the fee went to the vault fee account, the assets still staked
     // are for the LRT in the fee account to unstake later
-    assert_eq!(delegation.staked_amount(), 1_000);
-    assert_eq!(delegation.enqueued_for_withdraw_amount(), 99_000);
+    assert_eq!(delegation.staked_amount(), 1_990);
+    assert_eq!(delegation.enqueued_for_withdraw_amount(), 98_010);
     assert_eq!(delegation.delegated_security().unwrap(), 100_000);
 
     let vault_staker_withdraw_ticket = vault_program_client
         .get_vault_staker_withdraw_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
         .await
         .unwrap();
-    assert_eq!(vault_staker_withdraw_ticket.lrt_amount(), 99_000);
+    assert_eq!(vault_staker_withdraw_ticket.lrt_amount(), 98_010);
     assert_eq!(
         vault_staker_withdraw_ticket.withdraw_allocation_amount(),
-        99_000
+        98_010
     );
 }
 
 #[tokio::test]
-async fn test_enqueue_withdraw_with_reward_not_delegated_ok() {
+async fn test_enqueue_withdraw_with_reward_ok() {
     let mut fixture = TestBuilder::new().await;
     let mut vault_program_client = fixture.vault_program_client();
     let mut restaking_program_client = fixture.restaking_program_client();
@@ -329,3 +340,9 @@ async fn test_enqueue_multiple_same_ticket() {}
 
 #[tokio::test]
 async fn test_enqueue_delegation_list_update_needed() {}
+
+#[tokio::test]
+async fn test_enqueue_withdraw_with_all_assets_cooling_down() {}
+
+#[tokio::test]
+async fn test_enqueue_withdraw_with_partially_cooling_down_assets() {}

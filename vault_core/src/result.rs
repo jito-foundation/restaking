@@ -115,6 +115,7 @@ pub enum VaultCoreError {
     VaultDelegationListUpdateRequired,
     VaultStakerWithdrawTicketOverflow,
     VaultStakerWithdrawTicketNotWithdrawable,
+    VaultUndelegationUnderflow,
 }
 
 impl From<VaultCoreError> for ProgramError {

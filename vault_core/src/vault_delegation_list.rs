@@ -207,8 +207,6 @@ impl VaultDelegationList {
     fn undelegate_for_withdraw_pro_rata(&mut self, amount: u64) -> VaultCoreResult<()> {
         let total_delegated = self.delegated_security()?;
 
-        // TODO (LB): what if want to withdraw > than the total delegated amount?
-        //  one could set aside undelegated assets into the withdraw bucket?
         if amount > total_delegated || total_delegated == 0 {
             return Err(VaultCoreError::WithdrawAmountExceedsDelegatedFunds);
         }
