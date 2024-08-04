@@ -76,10 +76,10 @@ pub fn process_burn_withdraw_ticket(
         let tokens_deposited_in_vault = vault.vault().tokens_deposited();
         let delegated_security_in_vault = vault_delegation_list
             .vault_delegation_list()
-            .delegated_security()?;
+            .all_security()?;
         let assets_reserved_for_withdraw_tickets = vault_delegation_list
             .vault_delegation_list()
-            .amount_withdrawable_by_tickets();
+            .withdrawable_reserve_amount();
 
         let available_unstaked_assets = tokens_deposited_in_vault
             .checked_sub(delegated_security_in_vault)
@@ -135,7 +135,7 @@ pub fn process_burn_withdraw_ticket(
     // Decrement the amount reserved for withdraw tickets because it's been claimed now
     vault_delegation_list
         .vault_delegation_list_mut()
-        .decrement_amount_withdrawable_by_tickets(original_redemption_amount)?;
+        .decrement_withdrawable_reserve_amount(original_redemption_amount)?;
 
     // refresh after burn
     vault

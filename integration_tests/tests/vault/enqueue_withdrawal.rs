@@ -1,8 +1,8 @@
-use crate::fixtures::fixture::TestBuilder;
-use crate::fixtures::vault_client::VaultStakerWithdrawTicketRoot;
 use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket;
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
+
+use crate::fixtures::{fixture::TestBuilder, vault_client::VaultStakerWithdrawTicketRoot};
 
 #[tokio::test]
 async fn test_enqueue_withdraw_more_than_staked_fails() {
@@ -163,7 +163,7 @@ async fn test_enqueue_withdraw_with_fee_success() {
 
     let delegation = vault_delegation_list.delegations().get(0).unwrap();
     assert_eq!(delegation.staked_amount(), 100_000);
-    assert_eq!(delegation.delegated_security().unwrap(), 100_000);
+    assert_eq!(delegation.total_security().unwrap(), 100_000);
 
     // the user is withdrawing 99,000 LRT tokens, there is a 1% fee on withdraws, so
     // 98010 tokens will be undeleged for withdraw
@@ -182,7 +182,7 @@ async fn test_enqueue_withdraw_with_fee_success() {
     // are for the LRT in the fee account to unstake later
     assert_eq!(delegation.staked_amount(), 1_990);
     assert_eq!(delegation.enqueued_for_withdraw_amount(), 98_010);
-    assert_eq!(delegation.delegated_security().unwrap(), 100_000);
+    assert_eq!(delegation.total_security().unwrap(), 100_000);
 
     let vault_staker_withdraw_ticket = vault_program_client
         .get_vault_staker_withdraw_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
@@ -311,7 +311,7 @@ async fn test_enqueue_withdraw_with_reward_ok() {
     let delegation = vault_delegation_list.delegations().get(0).unwrap();
     assert_eq!(delegation.staked_amount(), 45_000);
     assert_eq!(delegation.enqueued_for_withdraw_amount(), 55_000);
-    assert_eq!(delegation.delegated_security().unwrap(), 100_000);
+    assert_eq!(delegation.total_security().unwrap(), 100_000);
 }
 
 #[tokio::test]

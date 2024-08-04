@@ -4,11 +4,11 @@ use jito_restaking_core::{
     avs_vault_ticket::AvsVaultTicket, operator_avs_ticket::OperatorAvsTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
-use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_avs_slasher_operator_ticket::VaultAvsSlasherOperatorTicket,
     vault_avs_slasher_ticket::VaultAvsSlasherTicket, vault_avs_ticket::VaultAvsTicket,
     vault_delegation_list::VaultDelegationList, vault_operator_ticket::VaultOperatorTicket,
+    vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
 use solana_program::{

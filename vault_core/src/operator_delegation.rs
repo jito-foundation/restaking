@@ -1,6 +1,7 @@
+use std::cmp::min;
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
-use std::cmp::min;
 
 use crate::result::{VaultCoreError, VaultCoreResult};
 
@@ -80,7 +81,7 @@ impl OperatorDelegation {
     /// # Returns
     /// The total amount of stake on the operator that can be applied for security, which includes
     /// the active and any cooling down stake for re-delegation or withdrawal
-    pub fn delegated_security(&self) -> VaultCoreResult<u64> {
+    pub fn total_security(&self) -> VaultCoreResult<u64> {
         self.staked_amount
             .checked_add(self.enqueued_for_cooldown_amount)
             .and_then(|x| x.checked_add(self.cooling_down_amount))
@@ -91,7 +92,7 @@ impl OperatorDelegation {
 
     /// Returns the amount of withdrawable security, which is the sum of the amount actively staked,
     /// the amount enqueued for cooldown, and the cooling down amount.
-    pub fn amount_available_to_withdraw(&self) -> VaultCoreResult<u64> {
+    pub fn withdrawable_security(&self) -> VaultCoreResult<u64> {
         self.staked_amount
             .checked_add(self.enqueued_for_cooldown_amount)
             .and_then(|x| x.checked_add(self.cooling_down_amount))
@@ -110,7 +111,7 @@ impl OperatorDelegation {
     }
 
     pub fn slash(&mut self, slash_amount: u64) -> VaultCoreResult<()> {
-        let total_security_amount = self.delegated_security()?;
+        let total_security_amount = self.total_security()?;
         if slash_amount > total_security_amount {
             return Err(VaultCoreError::VaultSlashingUnderflow);
         }
@@ -152,6 +153,7 @@ impl OperatorDelegation {
         Ok(())
     }
 
+    /// Undelegates assets from the operator, pulling from the staked assets.
     pub fn undelegate(&mut self, amount: u64) -> VaultCoreResult<()> {
         self.staked_amount = self
             .staked_amount
@@ -165,11 +167,15 @@ impl OperatorDelegation {
         Ok(())
     }
 
-    /// Un-delegates assets for withdraw from the operator. If the total amount to withdraw is greater
-    /// than the staked amount, it pulls from the enqueued_for_cooldown_amount. If there is still excess,
-    /// it pulls from the cooling_down_amount.
+    /// Un-delegates assets for withdraw from the operator. If the total amount to withdraw is
+    /// greater than the staked amount, it pulls from the enqueued_for_cooldown_amount.
+    /// If there is still excess, it pulls from the cooling_down_amount.
+    ///
+    /// Funds that are cooling down are likely meant to be re-delegated by the delegation manager.
+    /// The function first withdraws from staked assets, falling back to cooling down assets
+    /// to avoid blocking the delegation manager from redelegating.
     pub fn undelegate_for_withdraw(&mut self, amount: u64) -> VaultCoreResult<()> {
-        if amount > self.amount_available_to_withdraw()? {
+        if amount > self.withdrawable_security()? {
             return Err(VaultCoreError::VaultDelegationListInsufficientSecurity);
         }
 
@@ -228,7 +234,7 @@ mod tests {
         let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
         operator_delegation.delegate(100).unwrap();
         assert_eq!(operator_delegation.staked_amount(), 100);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 100);
+        assert_eq!(operator_delegation.total_security().unwrap(), 100);
     }
 
     #[test]
@@ -240,21 +246,21 @@ mod tests {
         assert_eq!(operator_delegation.staked_amount(), 50);
         assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 50);
         assert_eq!(operator_delegation.cooling_down_amount(), 0);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 100);
+        assert_eq!(operator_delegation.total_security().unwrap(), 100);
 
         assert_eq!(operator_delegation.update(), 0);
 
         assert_eq!(operator_delegation.staked_amount(), 50);
         assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 0);
         assert_eq!(operator_delegation.cooling_down_amount(), 50);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 100);
+        assert_eq!(operator_delegation.total_security().unwrap(), 100);
 
         assert_eq!(operator_delegation.update(), 0);
 
         assert_eq!(operator_delegation.staked_amount(), 50);
         assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 0);
         assert_eq!(operator_delegation.cooling_down_amount(), 0);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 50);
+        assert_eq!(operator_delegation.total_security().unwrap(), 50);
     }
 
     #[test]
@@ -266,21 +272,21 @@ mod tests {
         assert_eq!(operator_delegation.staked_amount(), 50);
         assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 50);
         assert_eq!(operator_delegation.cooling_down_for_withdraw_amount(), 0);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 100);
+        assert_eq!(operator_delegation.total_security().unwrap(), 100);
 
         assert_eq!(operator_delegation.update(), 0);
 
         assert_eq!(operator_delegation.staked_amount(), 50);
         assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 0);
         assert_eq!(operator_delegation.cooling_down_for_withdraw_amount(), 50);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 100);
+        assert_eq!(operator_delegation.total_security().unwrap(), 100);
 
         assert_eq!(operator_delegation.update(), 50);
 
         assert_eq!(operator_delegation.staked_amount(), 50);
         assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 0);
         assert_eq!(operator_delegation.cooling_down_for_withdraw_amount(), 0);
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 50);
+        assert_eq!(operator_delegation.total_security().unwrap(), 50);
     }
 
     #[test]
@@ -290,7 +296,7 @@ mod tests {
         operator_delegation.undelegate(10_000).unwrap();
         operator_delegation.slash(5_000).unwrap();
 
-        assert_eq!(operator_delegation.delegated_security().unwrap(), 95_000);
+        assert_eq!(operator_delegation.total_security().unwrap(), 95_000);
         assert_eq!(operator_delegation.staked_amount(), 85_500);
     }
 

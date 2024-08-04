@@ -9,7 +9,6 @@ use jito_restaking_sdk::{
     avs_add_operator, avs_add_vault, avs_add_vault_slasher, initialize_avs, initialize_config,
     initialize_operator, operator_add_avs, operator_add_vault,
 };
-
 use solana_program::{native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer};
 use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{

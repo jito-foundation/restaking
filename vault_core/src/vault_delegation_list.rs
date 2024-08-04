@@ -28,9 +28,8 @@ pub struct VaultDelegationList {
     /// the list of delegations
     delegations: Vec<OperatorDelegation>,
 
-    /// The amount withdrawable by valid tickets at any given point in time. This amount is set aside
-    /// and can't be delegated because there's a withdraw ticket with a claim on it.
-    amount_withdrawable_by_tickets: u64,
+    /// The reserve for withdrawable tokens
+    withdrawable_reserve_amount: u64,
 
     /// The last slot the operator list was updated.
     /// Delegation information here is out of date if the last update epoch < current epoch
@@ -49,7 +48,7 @@ impl VaultDelegationList {
             account_type: AccountType::VaultDelegationList,
             vault,
             delegations: vec![],
-            amount_withdrawable_by_tickets: 0,
+            withdrawable_reserve_amount: 0,
             last_slot_updated: 0,
             reserved: [0; 128],
             bump,
@@ -68,29 +67,46 @@ impl VaultDelegationList {
         &self.delegations
     }
 
-    pub const fn amount_withdrawable_by_tickets(&self) -> u64 {
-        self.amount_withdrawable_by_tickets
+    pub const fn withdrawable_reserve_amount(&self) -> u64 {
+        self.withdrawable_reserve_amount
     }
 
-    pub fn decrement_amount_withdrawable_by_tickets(&mut self, amount: u64) -> VaultCoreResult<()> {
-        self.amount_withdrawable_by_tickets = self
-            .amount_withdrawable_by_tickets
+    pub fn decrement_withdrawable_reserve_amount(&mut self, amount: u64) -> VaultCoreResult<()> {
+        self.withdrawable_reserve_amount = self
+            .withdrawable_reserve_amount
             .checked_sub(amount)
             .ok_or(VaultCoreError::VaultDelegationListAmountWithdrawableUnderflow)?;
         Ok(())
     }
 
-    /// Returns the total active + cooling down delegations
-    pub fn delegated_security(&self) -> VaultCoreResult<u64> {
+    /// Returns the total security in the delegation list
+    pub fn all_security(&self) -> VaultCoreResult<u64> {
         let mut total: u64 = 0;
         for operator in self.delegations.iter() {
             total = total
-                .checked_add(operator.delegated_security()?)
+                .checked_add(operator.total_security()?)
                 .ok_or(VaultCoreError::VaultDelegationListTotalDelegationOverflow)?;
         }
         Ok(total)
     }
 
+    /// The amount of security available for withdrawal from the delegation list. Includes
+    /// staked and assets cooling down that aren't set aside for the withdrawal reserve
+    pub fn withdrawable_security(&self) -> VaultCoreResult<u64> {
+        let mut total: u64 = 0;
+        for operator in self.delegations.iter() {
+            total = total
+                .checked_add(operator.withdrawable_security()?)
+                .ok_or(VaultCoreError::VaultDelegationListTotalDelegationOverflow)?;
+        }
+        Ok(total)
+    }
+
+    /// Checks to see if the vault needs updating, which is defined as the epoch of the last update
+    /// slot being less than the current epoch.
+    ///
+    /// # Returns
+    /// true if the vault delegation list needs updating, false if not.
     #[inline(always)]
     pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
         let last_updated_epoch = self.last_slot_updated.checked_div(epoch_length).unwrap();
@@ -120,8 +136,8 @@ impl VaultDelegationList {
             1 => {
                 // enqueued -> cooling down, enqueued wiped
                 for operator in self.delegations.iter_mut() {
-                    self.amount_withdrawable_by_tickets = self
-                        .amount_withdrawable_by_tickets
+                    self.withdrawable_reserve_amount = self
+                        .withdrawable_reserve_amount
                         .checked_add(operator.update())
                         .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?;
                 }
@@ -133,11 +149,10 @@ impl VaultDelegationList {
                     let amount_withdrawal_1 = operator.update();
                     let amount_withdrawal_2 = operator.update();
 
-                    self.amount_withdrawable_by_tickets = self
-                        .amount_withdrawable_by_tickets
+                    self.withdrawable_reserve_amount = self
+                        .withdrawable_reserve_amount
                         .checked_add(amount_withdrawal_1)
-                        .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?
-                        .checked_add(amount_withdrawal_2)
+                        .and_then(|x| x.checked_add(amount_withdrawal_2))
                         .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?;
                 }
             }
@@ -161,14 +176,12 @@ impl VaultDelegationList {
         amount: u64,
         total_deposited: u64,
     ) -> VaultCoreResult<()> {
-        let delegated_security = self.delegated_security()?;
+        let delegated_security = self.all_security()?;
 
         // Ensure the amount delegated doesn't exceed the total deposited
         let security_available_for_delegation = total_deposited
             .checked_sub(delegated_security)
-            .and_then(|assets_available_to_delegate| {
-                assets_available_to_delegate.checked_sub(self.amount_withdrawable_by_tickets)
-            })
+            .and_then(|x| x.checked_sub(self.withdrawable_reserve_amount))
             .ok_or(VaultCoreError::VaultDelegationListInsufficientSecurity)?;
 
         if amount > security_available_for_delegation {
@@ -202,22 +215,21 @@ impl VaultDelegationList {
         }
     }
 
-    /// TODO (LB): what happens if try to undelegate more than total delegated? Must mean some are set
-    /// aside that haven't been delegated yet?
     fn undelegate_for_withdraw_pro_rata(&mut self, amount: u64) -> VaultCoreResult<()> {
-        let total_delegated = self.delegated_security()?;
+        let withdrawable_assets = self.withdrawable_security()?;
 
-        if amount > total_delegated || total_delegated == 0 {
+        if amount > withdrawable_assets || withdrawable_assets == 0 {
             return Err(VaultCoreError::WithdrawAmountExceedsDelegatedFunds);
         }
 
         let mut remaining_to_undelegate = amount;
 
         for delegation in self.delegations.iter_mut() {
-            let delegated_security = delegation.delegated_security()?;
+            // TODO (LB): instead of pro-rata for all stake, should be pro-rata for withdrawable stake
+            let delegated_security = delegation.withdrawable_security()?;
             let undelegate_amount = (delegated_security as u128)
                 .checked_mul(amount as u128)
-                .and_then(|product| product.checked_div(total_delegated as u128))
+                .and_then(|product| product.checked_div(withdrawable_assets as u128))
                 .and_then(|result| result.try_into().ok())
                 .ok_or(VaultCoreError::ArithmeticOverflow)?;
 
@@ -391,13 +403,13 @@ mod tests {
         let operator = Pubkey::new_unique();
 
         assert!(list.delegate(operator, 100, 1_000).is_ok());
-        assert_eq!(list.delegated_security().unwrap(), 100);
+        assert_eq!(list.all_security().unwrap(), 100);
 
         assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.operator(), operator);
         assert_eq!(delegation.staked_amount(), 100);
-        assert_eq!(delegation.delegated_security().unwrap(), 100);
+        assert_eq!(delegation.total_security().unwrap(), 100);
     }
 
     #[test]
@@ -406,7 +418,7 @@ mod tests {
         let operator = Pubkey::new_unique();
         list.delegate(operator, 100, 1_000).unwrap();
         list.delegate(operator, 50, 1_000).unwrap();
-        assert_eq!(list.delegated_security().unwrap(), 150);
+        assert_eq!(list.all_security().unwrap(), 150);
 
         assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
@@ -426,7 +438,7 @@ mod tests {
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.staked_amount(), 70);
         assert_eq!(delegation.enqueued_for_cooldown_amount(), 30);
-        assert_eq!(delegation.delegated_security().unwrap(), 100);
+        assert_eq!(delegation.total_security().unwrap(), 100);
     }
 
     #[test]
@@ -439,7 +451,7 @@ mod tests {
 
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.staked_amount(), 80);
-        assert_eq!(delegation.delegated_security().unwrap(), 80);
+        assert_eq!(delegation.total_security().unwrap(), 80);
     }
 
     #[test]
@@ -467,7 +479,7 @@ mod tests {
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.staked_amount(), 70);
         assert_eq!(delegation.cooling_down_amount(), 0);
-        assert_eq!(list.amount_withdrawable_by_tickets(), 0);
+        assert_eq!(list.withdrawable_reserve_amount(), 0);
     }
 
     #[test]
@@ -491,13 +503,13 @@ mod tests {
             initial_delegation - undelegate_amount
         );
         assert_eq!(delegation.enqueued_for_withdraw_amount(), undelegate_amount);
-        assert_eq!(list.amount_withdrawable_by_tickets(), 0);
+        assert_eq!(list.withdrawable_reserve_amount(), 0);
 
         assert!(list.update(100, 100).unwrap());
         assert!(list.update(200, 100).unwrap());
-        assert_eq!(list.amount_withdrawable_by_tickets(), undelegate_amount);
+        assert_eq!(list.withdrawable_reserve_amount(), undelegate_amount);
         assert_eq!(
-            list.delegated_security().unwrap(),
+            list.all_security().unwrap(),
             initial_delegation - undelegate_amount
         );
 
@@ -534,14 +546,14 @@ mod tests {
         list.delegate(operator2, 1500, 3000).unwrap();
         list.delegate(operator3, 500, 3000).unwrap();
 
-        let total_delegated_before_undelegation = list.delegated_security().unwrap();
+        let total_delegated_before_undelegation = list.all_security().unwrap();
 
         list.undelegate_for_withdraw(600, UndelegateForWithdrawMethod::ProRata)
             .unwrap();
 
         assert_eq!(
             total_delegated_before_undelegation,
-            list.delegated_security().unwrap()
+            list.all_security().unwrap()
         );
 
         // 3000 total staked, 600 withdrawn
