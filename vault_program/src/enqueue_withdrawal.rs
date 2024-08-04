@@ -85,7 +85,7 @@ pub fn process_enqueue_withdrawal(
 
     vault_delegation_list
         .vault_delegation_list_mut()
-        .undelegate_for_withdraw(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
+        .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
 
     _create_vault_staker_withdraw_ticket(
         program_id,

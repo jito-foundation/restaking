@@ -120,8 +120,6 @@ async fn test_slash_ok() {
         .create_ata(&vault.supported_mint(), &slasher.pubkey())
         .await
         .unwrap();
-    let slasher_token_account =
-        get_associated_token_address(&slasher.pubkey(), &vault.supported_mint());
 
     vault_program_client
         .setup_vault_avs_slasher_operator_ticket(

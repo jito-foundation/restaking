@@ -1,4 +1,3 @@
-use jito_vault_core::vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket;
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
 

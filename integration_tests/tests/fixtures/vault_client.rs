@@ -27,10 +27,7 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{
-    instruction::initialize_mint2,
-    state::{Account, Mint},
-};
+use spl_token::{instruction::initialize_mint2, state::Mint};
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
@@ -914,55 +911,6 @@ impl VaultProgramClient {
             .process_transaction_with_preflight_and_commitment(
                 Transaction::new_signed_with_payer(
                     &[transfer(&self.payer.pubkey(), to, sol_to_lamports(sol))],
-                    Some(&self.payer.pubkey()),
-                    &[&self.payer],
-                    blockhash,
-                ),
-                CommitmentLevel::Processed,
-            )
-            .await
-    }
-
-    pub async fn get_token_account(
-        &mut self,
-        token_account: &Pubkey,
-    ) -> Result<Account, BanksClientError> {
-        let account = self
-            .banks_client
-            .get_account(*token_account)
-            .await?
-            .unwrap();
-        Ok(Account::unpack(&account.data).unwrap())
-    }
-
-    /// Mints tokens to an ATA owned by the `to` address
-    pub async fn mint_spl_to(
-        &mut self,
-        mint: &Pubkey,
-        to: &Pubkey,
-        amount: u64,
-    ) -> Result<(), BanksClientError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
-        self.banks_client
-            .process_transaction_with_preflight_and_commitment(
-                Transaction::new_signed_with_payer(
-                    &[
-                        create_associated_token_account_idempotent(
-                            &self.payer.pubkey(),
-                            to,
-                            mint,
-                            &spl_token::id(),
-                        ),
-                        spl_token::instruction::mint_to(
-                            &spl_token::id(),
-                            mint,
-                            &get_associated_token_address(to, mint),
-                            &self.payer.pubkey(),
-                            &[],
-                            amount,
-                        )
-                        .unwrap(),
-                    ],
                     Some(&self.payer.pubkey()),
                     &[&self.payer],
                     blockhash,

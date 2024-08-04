@@ -332,4 +332,78 @@ mod tests {
             .undelegate_for_withdraw(50_001)
             .unwrap_err();
     }
+
+    /// Test pulling assets from enqueued for cooling down after staked assets are exhausted
+    #[test]
+    fn test_undelegate_for_withdraw_pull_from_enqueued_for_cooling_down() {
+        let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
+
+        operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+
+        operator_delegation.undelegate(50_000).unwrap();
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(operator_delegation.staked_amount(), 50_000);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 50_000);
+
+        // shall pull 50,000 from the staked and 10,000 from the undelegated
+        operator_delegation.undelegate_for_withdraw(60_000).unwrap();
+
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(operator_delegation.staked_amount(), 0);
+        assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 60_000);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 40_000);
+    }
+
+    /// Test pulling assets from cooling down after staked assets are exhausted
+    #[test]
+    fn test_undelegate_for_withdraw_pull_from_cooling_down() {
+        let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
+
+        operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+
+        operator_delegation.undelegate(50_000).unwrap();
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(operator_delegation.staked_amount(), 50_000);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 50_000);
+
+        assert_eq!(operator_delegation.update(), 0);
+
+        // shall pull 50,000 from the staked and 10,000 from the undelegated
+        operator_delegation.undelegate_for_withdraw(60_000).unwrap();
+
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(operator_delegation.staked_amount(), 0);
+        assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 60_000);
+        assert_eq!(operator_delegation.cooling_down_amount(), 40_000);
+    }
+
+    #[test]
+    fn test_undelegate_for_withdraw_pull_from_enqueued_for_cooling_down_and_cooling_down() {
+        let mut operator_delegation = OperatorDelegation::new(Pubkey::new_unique());
+
+        operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+
+        operator_delegation.undelegate(50_000).unwrap();
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(operator_delegation.staked_amount(), 50_000);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 50_000);
+
+        assert_eq!(operator_delegation.update(), 0);
+
+        operator_delegation.undelegate(10_000).unwrap();
+
+        // 100k total security, 40k staked, 10k in enqueued for cooling down, 50k in cooling down
+
+        operator_delegation.undelegate_for_withdraw(60_000).unwrap();
+        // shall pull 40,000 from the staked, 10k from the enqueued for cooling down, and 10k from cooling down
+
+        assert_eq!(operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(operator_delegation.staked_amount(), 0);
+        assert_eq!(operator_delegation.enqueued_for_cooldown_amount(), 0);
+        assert_eq!(operator_delegation.cooling_down_amount(), 40_000);
+        assert_eq!(operator_delegation.enqueued_for_withdraw_amount(), 60_000);
+    }
 }
