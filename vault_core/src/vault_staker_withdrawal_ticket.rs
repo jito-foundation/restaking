@@ -27,7 +27,7 @@ pub struct VaultStakerWithdrawalTicket {
     /// The amount of assets allocated for this staker's withdraw
     withdraw_allocation_amount: u64,
 
-    /// The amount of LRT held in the VaultStakerWithdrawTicket token account at the time of creation
+    /// The amount of LRT held in the VaultStakerWithdrawalTicket token account at the time of creation
     /// At first glance, this seems redundant, but it's necessary to prevent someone from depositing
     /// more LRT into the token account and skipping the withdraw queue.
     lrt_amount: u64,
@@ -93,17 +93,17 @@ impl VaultStakerWithdrawalTicket {
         let epoch_unstaked = self.slot_unstaked.checked_div(epoch_length).unwrap();
         if epoch_unstaked
             .checked_add(1)
-            .ok_or(VaultCoreError::VaultStakerWithdrawTicketOverflow)?
+            .ok_or(VaultCoreError::VaultStakerWithdrawalTicketOverflow)?
             < current_epoch
         {
-            return Err(VaultCoreError::VaultStakerWithdrawTicketNotWithdrawable);
+            return Err(VaultCoreError::VaultStakerWithdrawalTicketNotWithdrawable);
         }
         Ok(())
     }
 
     pub fn seeds(vault: &Pubkey, staker: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"vault_staker_withdraw_ticket".to_vec(),
+            b"vault_staker_withdrawal_ticket".to_vec(),
             vault.to_bytes().to_vec(),
             staker.to_bytes().to_vec(),
             base.to_bytes().to_vec(),
@@ -129,40 +129,41 @@ impl VaultStakerWithdrawalTicket {
         staker: &Pubkey,
     ) -> VaultCoreResult<Self> {
         if account.data_is_empty() {
-            return Err(VaultCoreError::VaultStakerWithdrawTicketEmpty);
+            return Err(VaultCoreError::VaultStakerWithdrawalTicketEmpty);
         }
         if account.owner != program_id {
-            return Err(VaultCoreError::VaultStakerWithdrawTicketEmptyInvalidOwner);
+            return Err(VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidOwner);
         }
 
-        let vault_staker_withdraw_ticket =
+        let vault_staker_withdrawal_ticket =
             Self::deserialize(&mut account.data.borrow_mut().as_ref()).map_err(|e| {
-                VaultCoreError::VaultStakerWithdrawTicketEmptyInvalidData(e.to_string())
+                VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidData(e.to_string())
             })?;
-        if vault_staker_withdraw_ticket.account_type != AccountType::VaultStakerWithdrawTicketEmpty
+        if vault_staker_withdrawal_ticket.account_type
+            != AccountType::VaultStakerWithdrawalTicketEmpty
         {
-            return Err(VaultCoreError::VaultStakerWithdrawTicketEmptyInvalidAccountType);
+            return Err(VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidAccountType);
         }
 
-        let mut seeds = Self::seeds(vault, staker, &vault_staker_withdraw_ticket.base());
-        seeds.push(vec![vault_staker_withdraw_ticket.bump]);
+        let mut seeds = Self::seeds(vault, staker, &vault_staker_withdrawal_ticket.base());
+        seeds.push(vec![vault_staker_withdrawal_ticket.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultStakerWithdrawTicketEmptyInvalidPda)?;
+            .map_err(|_| VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidPda)?;
         if expected_pubkey != *account.key {
-            return Err(VaultCoreError::VaultStakerWithdrawTicketEmptyInvalidPda);
+            return Err(VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidPda);
         }
 
-        Ok(vault_staker_withdraw_ticket)
+        Ok(vault_staker_withdrawal_ticket)
     }
 }
 
-pub struct SanitizedVaultStakerWithdrawTicket<'a, 'info> {
+pub struct SanitizedVaultStakerWithdrawalTicket<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    vault_staker_withdraw_ticket: VaultStakerWithdrawalTicket,
+    vault_staker_withdrawal_ticket: VaultStakerWithdrawalTicket,
 }
 
-impl<'a, 'info> SanitizedVaultStakerWithdrawTicket<'a, 'info> {
+impl<'a, 'info> SanitizedVaultStakerWithdrawalTicket<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
@@ -171,24 +172,24 @@ impl<'a, 'info> SanitizedVaultStakerWithdrawTicket<'a, 'info> {
         expected_writable: bool,
     ) -> VaultCoreResult<Self> {
         if expected_writable && !account.is_writable {
-            return Err(VaultCoreError::VaultStakerWithdrawTicketNotWritable);
+            return Err(VaultCoreError::VaultStakerWithdrawalTicketNotWritable);
         }
 
-        let vault_staker_withdraw_ticket =
+        let vault_staker_withdrawal_ticket =
             VaultStakerWithdrawalTicket::deserialize_checked(program_id, account, vault, staker)?;
 
-        Ok(SanitizedVaultStakerWithdrawTicket {
+        Ok(SanitizedVaultStakerWithdrawalTicket {
             account,
-            vault_staker_withdraw_ticket,
+            vault_staker_withdrawal_ticket,
         })
     }
 
-    pub const fn vault_staker_withdraw_ticket(&self) -> &VaultStakerWithdrawalTicket {
-        &self.vault_staker_withdraw_ticket
+    pub const fn vault_staker_withdrawal_ticket(&self) -> &VaultStakerWithdrawalTicket {
+        &self.vault_staker_withdrawal_ticket
     }
 
-    pub fn vault_staker_withdraw_ticket_mut(&mut self) -> &mut VaultStakerWithdrawalTicket {
-        &mut self.vault_staker_withdraw_ticket
+    pub fn vault_staker_withdrawal_ticket_mut(&mut self) -> &mut VaultStakerWithdrawalTicket {
+        &mut self.vault_staker_withdrawal_ticket
     }
 
     pub const fn account(&self) -> &AccountInfo<'info> {

@@ -7,8 +7,8 @@ use jito_vault_core::{
     config::SanitizedConfig,
     vault::{SanitizedVault, Vault},
     vault_delegation_list::SanitizedVaultDelegationList,
-    vault_staker_withdraw_ticket::{
-        SanitizedVaultStakerWithdrawTicket, VaultStakerWithdrawalTicket,
+    vault_staker_withdrawal_ticket::{
+        SanitizedVaultStakerWithdrawalTicket, VaultStakerWithdrawalTicket,
     },
 };
 use solana_program::{
@@ -39,8 +39,8 @@ pub fn process_burn_withdraw_ticket(
         staker,
         mut staker_token_account,
         staker_lrt_token_account,
-        vault_staker_withdraw_ticket,
-        mut vault_staker_withdraw_ticket_token_account,
+        vault_staker_withdrawal_ticket,
+        mut vault_staker_withdrawal_ticket_token_account,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
     let slot = Clock::get()?.slot;
@@ -51,18 +51,18 @@ pub fn process_burn_withdraw_ticket(
         ProgramError::InvalidArgument,
         "LRT mint mismatch",
     )?;
-    vault_staker_withdraw_ticket
-        .vault_staker_withdraw_ticket()
+    vault_staker_withdrawal_ticket
+        .vault_staker_withdrawal_ticket()
         .check_withdrawable(slot, epoch_length)?;
 
     // find the current redemption amount and the original redemption amount in the withdraw ticket
     let redemption_amount = vault.vault().calculate_assets_returned_amount(
-        vault_staker_withdraw_ticket
-            .vault_staker_withdraw_ticket()
+        vault_staker_withdrawal_ticket
+            .vault_staker_withdrawal_ticket()
             .lrt_amount(),
     )?;
-    let original_redemption_amount = vault_staker_withdraw_ticket
-        .vault_staker_withdraw_ticket()
+    let original_redemption_amount = vault_staker_withdrawal_ticket
+        .vault_staker_withdrawal_ticket()
         .withdraw_allocation_amount();
 
     let actual_withdraw_amount = if redemption_amount > original_redemption_amount {
@@ -105,8 +105,8 @@ pub fn process_burn_withdraw_ticket(
         .calculate_lrt_mint_amount(actual_withdraw_amount)?;
     let lrt_amount_to_burn = std::cmp::min(
         lrt_to_burn,
-        vault_staker_withdraw_ticket
-            .vault_staker_withdraw_ticket()
+        vault_staker_withdrawal_ticket
+            .vault_staker_withdrawal_ticket()
             .lrt_amount(),
     );
 
@@ -114,13 +114,13 @@ pub fn process_burn_withdraw_ticket(
         program_id,
         &vault,
         &staker,
-        &vault_staker_withdraw_ticket,
-        &vault_staker_withdraw_ticket_token_account,
+        &vault_staker_withdrawal_ticket,
+        &vault_staker_withdrawal_ticket_token_account,
         &lrt_mint,
         lrt_amount_to_burn,
     )?;
     lrt_mint.reload()?;
-    vault_staker_withdraw_ticket_token_account.reload()?;
+    vault_staker_withdrawal_ticket_token_account.reload()?;
 
     _transfer_vault_tokens_to_staker(
         program_id,
@@ -148,15 +148,15 @@ pub fn process_burn_withdraw_ticket(
 
     close_program_account(
         program_id,
-        vault_staker_withdraw_ticket.account(),
+        vault_staker_withdrawal_ticket.account(),
         staker.account(),
     )?;
     _close_token_account(
         program_id,
         &vault,
         &staker,
-        &vault_staker_withdraw_ticket,
-        &vault_staker_withdraw_ticket_token_account,
+        &vault_staker_withdrawal_ticket,
+        &vault_staker_withdrawal_ticket_token_account,
         &staker_lrt_token_account,
     )?;
 
@@ -168,8 +168,8 @@ fn _close_token_account<'a, 'info>(
     program_id: &Pubkey,
     vault: &SanitizedVault<'a, 'info>,
     staker: &SanitizedSignerAccount<'a, 'info>,
-    vault_staker_withdraw_ticket: &SanitizedVaultStakerWithdrawTicket<'a, 'info>,
-    vault_staker_withdraw_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
+    vault_staker_withdrawal_ticket: &SanitizedVaultStakerWithdrawalTicket<'a, 'info>,
+    vault_staker_withdrawal_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
     staker_lrt_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
 ) -> ProgramResult {
     // TODO: combine with burn lrt method
@@ -177,8 +177,8 @@ fn _close_token_account<'a, 'info>(
         program_id,
         vault.account().key,
         staker.account().key,
-        &vault_staker_withdraw_ticket
-            .vault_staker_withdraw_ticket()
+        &vault_staker_withdrawal_ticket
+            .vault_staker_withdrawal_ticket()
             .base(),
     );
     seeds.push(vec![bump]);
@@ -187,18 +187,20 @@ fn _close_token_account<'a, 'info>(
     invoke_signed(
         &transfer(
             &spl_token::id(),
-            vault_staker_withdraw_ticket_token_account.account().key,
+            vault_staker_withdrawal_ticket_token_account.account().key,
             staker_lrt_token_account.account().key,
             vault.account().key,
             &[],
-            vault_staker_withdraw_ticket_token_account
+            vault_staker_withdrawal_ticket_token_account
                 .token_account()
                 .amount,
         )?,
         &[
-            vault_staker_withdraw_ticket_token_account.account().clone(),
+            vault_staker_withdrawal_ticket_token_account
+                .account()
+                .clone(),
             staker_lrt_token_account.account().clone(),
-            vault_staker_withdraw_ticket.account().clone(),
+            vault_staker_withdrawal_ticket.account().clone(),
         ],
         &[&seed_slices],
     )?;
@@ -206,13 +208,15 @@ fn _close_token_account<'a, 'info>(
     invoke_signed(
         &close_account(
             &spl_token::id(),
-            vault_staker_withdraw_ticket_token_account.account().key,
+            vault_staker_withdrawal_ticket_token_account.account().key,
             staker.account().key,
             staker.account().key,
             &[],
         )?,
         &[
-            vault_staker_withdraw_ticket_token_account.account().clone(),
+            vault_staker_withdrawal_ticket_token_account
+                .account()
+                .clone(),
             staker.account().clone(),
             staker.account().clone(),
         ],
@@ -255,8 +259,8 @@ fn _burn_lrt<'a, 'info>(
     program_id: &Pubkey,
     vault: &SanitizedVault<'a, 'info>,
     staker: &SanitizedSignerAccount<'a, 'info>,
-    vault_staker_withdraw_ticket: &SanitizedVaultStakerWithdrawTicket<'a, 'info>,
-    vault_staker_withdraw_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
+    vault_staker_withdrawal_ticket: &SanitizedVaultStakerWithdrawalTicket<'a, 'info>,
+    vault_staker_withdrawal_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
     token_mint: &SanitizedTokenMint<'a, 'info>,
     burn_amount: u64,
 ) -> ProgramResult {
@@ -264,8 +268,8 @@ fn _burn_lrt<'a, 'info>(
         program_id,
         vault.account().key,
         staker.account().key,
-        &vault_staker_withdraw_ticket
-            .vault_staker_withdraw_ticket()
+        &vault_staker_withdrawal_ticket
+            .vault_staker_withdrawal_ticket()
             .base(),
     );
     seeds.push(vec![bump]);
@@ -274,16 +278,18 @@ fn _burn_lrt<'a, 'info>(
     invoke_signed(
         &burn(
             &spl_token::id(),
-            vault_staker_withdraw_ticket_token_account.account().key,
+            vault_staker_withdrawal_ticket_token_account.account().key,
             token_mint.account().key,
             vault.account().key,
             &[],
             burn_amount,
         )?,
         &[
-            vault_staker_withdraw_ticket_token_account.account().clone(),
+            vault_staker_withdrawal_ticket_token_account
+                .account()
+                .clone(),
             token_mint.account().clone(),
-            vault_staker_withdraw_ticket.account().clone(),
+            vault_staker_withdrawal_ticket.account().clone(),
         ],
         &[&seed_slices],
     )
@@ -298,8 +304,8 @@ pub struct SanitizedAccounts<'a, 'info> {
     staker: SanitizedSignerAccount<'a, 'info>,
     staker_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     staker_lrt_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    vault_staker_withdraw_ticket: SanitizedVaultStakerWithdrawTicket<'a, 'info>,
-    vault_staker_withdraw_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
+    vault_staker_withdrawal_ticket: SanitizedVaultStakerWithdrawalTicket<'a, 'info>,
+    vault_staker_withdrawal_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -335,18 +341,19 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             &vault.vault().lrt_mint(),
             staker.account().key,
         )?;
-        let vault_staker_withdraw_ticket = SanitizedVaultStakerWithdrawTicket::sanitize(
+        let vault_staker_withdrawal_ticket = SanitizedVaultStakerWithdrawalTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             vault.account().key,
             staker.account().key,
             true,
         )?;
-        let vault_staker_withdraw_ticket_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            &vault.vault().supported_mint(),
-            vault_staker_withdraw_ticket.account().key,
-        )?;
+        let vault_staker_withdrawal_ticket_token_account =
+            SanitizedAssociatedTokenAccount::sanitize(
+                next_account_info(accounts_iter)?,
+                &vault.vault().supported_mint(),
+                vault_staker_withdrawal_ticket.account().key,
+            )?;
         let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
         let _system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
@@ -359,8 +366,8 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             staker,
             staker_token_account,
             staker_lrt_token_account,
-            vault_staker_withdraw_ticket,
-            vault_staker_withdraw_ticket_token_account,
+            vault_staker_withdrawal_ticket,
+            vault_staker_withdrawal_ticket_token_account,
         })
     }
 }

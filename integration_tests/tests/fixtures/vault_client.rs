@@ -8,7 +8,7 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_avs_slasher_operator_ticket::VaultAvsSlasherOperatorTicket,
     vault_avs_slasher_ticket::VaultAvsSlasherTicket, vault_avs_ticket::VaultAvsTicket,
     vault_delegation_list::VaultDelegationList, vault_operator_ticket::VaultOperatorTicket,
-    vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket,
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
 use solana_program::{
@@ -35,7 +35,7 @@ pub struct VaultRoot {
 }
 
 #[derive(Debug)]
-pub struct VaultStakerWithdrawTicketRoot {
+pub struct VaultStakerWithdrawalTicketRoot {
     pub base: Pubkey,
 }
 
@@ -97,7 +97,7 @@ impl VaultProgramClient {
         )?)
     }
 
-    pub async fn get_vault_staker_withdraw_ticket(
+    pub async fn get_vault_staker_withdrawal_ticket(
         &mut self,
         vault: &Pubkey,
         staker: &Pubkey,
@@ -612,23 +612,23 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         depositor: &Keypair,
         amount: u64,
-    ) -> Result<VaultStakerWithdrawTicketRoot, BanksClientError> {
+    ) -> Result<VaultStakerWithdrawalTicketRoot, BanksClientError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let depositor_lrt_token_account =
             get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint());
 
         let base = Keypair::new();
-        let vault_staker_withdraw_ticket = VaultStakerWithdrawalTicket::find_program_address(
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
             &depositor.pubkey(),
             &base.pubkey(),
         )
         .0;
-        let vault_staker_withdraw_ticket_token_account =
-            get_associated_token_address(&vault_staker_withdraw_ticket, &vault.lrt_mint());
+        let vault_staker_withdrawal_ticket_token_account =
+            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint());
 
-        self.create_ata(&vault.lrt_mint(), &vault_staker_withdraw_ticket)
+        self.create_ata(&vault.lrt_mint(), &vault_staker_withdrawal_ticket)
             .await?;
 
         let vault_staker_fee_token_account =
@@ -642,8 +642,8 @@ impl VaultProgramClient {
                 &vault_root.vault_pubkey,
             )
             .0,
-            &vault_staker_withdraw_ticket,
-            &vault_staker_withdraw_ticket_token_account,
+            &vault_staker_withdrawal_ticket,
+            &vault_staker_withdrawal_ticket_token_account,
             &vault_staker_fee_token_account,
             depositor,
             &depositor_lrt_token_account,
@@ -652,7 +652,7 @@ impl VaultProgramClient {
         )
         .await?;
 
-        Ok(VaultStakerWithdrawTicketRoot {
+        Ok(VaultStakerWithdrawalTicketRoot {
             base: base.pubkey(),
         })
     }
@@ -683,8 +683,8 @@ impl VaultProgramClient {
         config: &Pubkey,
         vault: &Pubkey,
         vault_delegation_list: &Pubkey,
-        vault_staker_withdraw_ticket: &Pubkey,
-        vault_staker_withdraw_ticket_token_account: &Pubkey,
+        vault_staker_withdrawal_ticket: &Pubkey,
+        vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         staker: &Keypair,
         staker_lrt_token_account: &Pubkey,
@@ -698,8 +698,8 @@ impl VaultProgramClient {
                 config,
                 vault,
                 vault_delegation_list,
-                vault_staker_withdraw_ticket,
-                vault_staker_withdraw_ticket_token_account,
+                vault_staker_withdrawal_ticket,
+                vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
                 &staker.pubkey(),
                 staker_lrt_token_account,

@@ -96,8 +96,8 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, name = "vault_staker_withdraw_ticket")]
-    #[account(4, writable, name = "vault_staker_withdraw_ticket_token_account")]
+    #[account(3, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(4, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(5, writable, name = "vault_fee_token_account")]
     #[account(6, writable, signer, name = "staker")]
     #[account(7, writable, name = "staker_lrt_token_account")]
@@ -117,8 +117,8 @@ pub enum VaultInstruction {
     #[account(4, writable, name = "lrt_mint")]
     #[account(5, writable, signer, name = "staker")]
     #[account(6, writable, name = "staker_token_account")]
-    #[account(7, writable, name = "vault_staker_withdraw_ticket")]
-    #[account(8, writable, name = "vault_staker_withdraw_ticket_token_account")]
+    #[account(7, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(8, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
     BurnWithdrawTicket,
@@ -734,8 +734,8 @@ pub fn enqueue_withdraw(
     config: &Pubkey,
     vault: &Pubkey,
     vault_delegation_list: &Pubkey,
-    vault_staker_withdraw_ticket: &Pubkey,
-    vault_staker_withdraw_ticket_token_account: &Pubkey,
+    vault_staker_withdrawal_ticket: &Pubkey,
+    vault_staker_withdrawal_ticket_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
     staker: &Pubkey,
     staker_lrt_token_account: &Pubkey,
@@ -746,8 +746,8 @@ pub fn enqueue_withdraw(
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new(*vault_delegation_list, false),
-        AccountMeta::new(*vault_staker_withdraw_ticket, false),
-        AccountMeta::new(*vault_staker_withdraw_ticket_token_account, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
         AccountMeta::new(*staker, true),
         AccountMeta::new(*staker_lrt_token_account, false),

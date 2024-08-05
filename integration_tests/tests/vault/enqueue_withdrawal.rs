@@ -1,7 +1,7 @@
 use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address;
 
-use crate::fixtures::{fixture::TestBuilder, vault_client::VaultStakerWithdrawTicketRoot};
+use crate::fixtures::{fixture::TestBuilder, vault_client::VaultStakerWithdrawalTicketRoot};
 
 #[tokio::test]
 async fn test_enqueue_withdraw_more_than_staked_fails() {
@@ -166,7 +166,7 @@ async fn test_enqueue_withdraw_with_fee_success() {
 
     // the user is withdrawing 99,000 LRT tokens, there is a 1% fee on withdraws, so
     // 98010 tokens will be undeleged for withdraw
-    let VaultStakerWithdrawTicketRoot { base } = vault_program_client
+    let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
         .do_enqueue_withdraw(&vault_root, &depositor, 99_000)
         .await
         .unwrap();
@@ -183,13 +183,13 @@ async fn test_enqueue_withdraw_with_fee_success() {
     assert_eq!(delegation.enqueued_for_withdraw_amount(), 98_010);
     assert_eq!(delegation.total_security().unwrap(), 100_000);
 
-    let vault_staker_withdraw_ticket = vault_program_client
-        .get_vault_staker_withdraw_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
+    let vault_staker_withdrawal_ticket = vault_program_client
+        .get_vault_staker_withdrawal_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
         .await
         .unwrap();
-    assert_eq!(vault_staker_withdraw_ticket.lrt_amount(), 98_010);
+    assert_eq!(vault_staker_withdrawal_ticket.lrt_amount(), 98_010);
     assert_eq!(
-        vault_staker_withdraw_ticket.withdraw_allocation_amount(),
+        vault_staker_withdrawal_ticket.withdraw_allocation_amount(),
         98_010
     );
 }
@@ -285,14 +285,14 @@ async fn test_enqueue_withdraw_with_reward_ok() {
 
     // Enqueue withdrawal for half of the original deposit
     let withdraw_amount = 50_000;
-    let VaultStakerWithdrawTicketRoot { base } = vault_program_client
+    let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
         .do_enqueue_withdraw(&vault_root, &depositor, withdraw_amount)
         .await
         .unwrap();
 
     // Verify the withdraw ticket
     let withdraw_ticket = vault_program_client
-        .get_vault_staker_withdraw_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
+        .get_vault_staker_withdrawal_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
         .await
         .unwrap();
 

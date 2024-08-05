@@ -9,7 +9,7 @@ use jito_vault_core::{
     config::SanitizedConfig,
     vault::SanitizedVault,
     vault_delegation_list::{SanitizedVaultDelegationList, UndelegateForWithdrawMethod},
-    vault_staker_withdraw_ticket::VaultStakerWithdrawalTicket,
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -24,8 +24,8 @@ use solana_program::{
 };
 use spl_token::instruction::transfer;
 
-/// Enqueues a withdraw into the VaultStakerWithdrawTicket account, transferring the amount from the
-/// staker's LRT token account to the VaultStakerWithdrawTicket LRT token account. It also queues
+/// Enqueues a withdraw into the VaultStakerWithdrawalTicket account, transferring the amount from the
+/// staker's LRT token account to the VaultStakerWithdrawalTicket LRT token account. It also queues
 /// the withdrawal in the vault's delegation list.
 ///
 /// The most obvious options for withdrawing are calculating the redemption ratio and withdrawing
@@ -45,8 +45,8 @@ pub fn process_enqueue_withdrawal(
         config,
         vault,
         mut vault_delegation_list,
-        vault_staker_withdraw_ticket,
-        vault_staker_withdraw_ticket_token_account,
+        vault_staker_withdrawal_ticket,
+        vault_staker_withdrawal_ticket_token_account,
         vault_fee_token_account,
         staker,
         staker_lrt_token_account,
@@ -65,7 +65,7 @@ pub fn process_enqueue_withdrawal(
     // The withdraw fee is subtracted here as opposed to when the withdraw ticket is processed
     // so the amount representing the fee isn't unstaked.
     let fee_amount = vault.vault().calculate_withdraw_fee(lrt_amount)?;
-    let amount_to_vault_staker_withdraw_ticket = lrt_amount
+    let amount_to_vault_staker_withdrawal_ticket = lrt_amount
         .checked_sub(fee_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
 
@@ -75,11 +75,11 @@ pub fn process_enqueue_withdrawal(
     // this point and the redemption.
     let amount_to_withdraw = vault
         .vault()
-        .calculate_assets_returned_amount(amount_to_vault_staker_withdraw_ticket)?;
+        .calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
     msg!(
         "lrt_supply: {} lrt_amount: {}, amount_to_withdraw: {}",
         vault.vault().lrt_supply(),
-        amount_to_vault_staker_withdraw_ticket,
+        amount_to_vault_staker_withdrawal_ticket,
         amount_to_withdraw
     );
 
@@ -87,25 +87,25 @@ pub fn process_enqueue_withdrawal(
         .vault_delegation_list_mut()
         .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
 
-    _create_vault_staker_withdraw_ticket(
+    _create_vault_staker_withdrawal_ticket(
         program_id,
         &vault,
         &staker,
         &base,
-        &vault_staker_withdraw_ticket,
+        &vault_staker_withdrawal_ticket,
         &system_program,
         &rent,
         slot,
         amount_to_withdraw,
-        amount_to_vault_staker_withdraw_ticket,
+        amount_to_vault_staker_withdrawal_ticket,
     )?;
 
-    // Transfers the LRT tokens from the staker to their withdraw account and the vault's fee account
+    // Transfers the LRT tokens from the staker to their withdrawal account and the vault's fee account
     _transfer_to(
         &staker_lrt_token_account,
-        &vault_staker_withdraw_ticket_token_account,
+        &vault_staker_withdrawal_ticket_token_account,
         &staker,
-        amount_to_vault_staker_withdraw_ticket,
+        amount_to_vault_staker_withdrawal_ticket,
     )?;
     _transfer_to(
         &staker_lrt_token_account,
@@ -143,17 +143,17 @@ fn _transfer_to<'a, 'info>(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn _create_vault_staker_withdraw_ticket<'a, 'info>(
+fn _create_vault_staker_withdrawal_ticket<'a, 'info>(
     program_id: &Pubkey,
     vault: &SanitizedVault<'a, 'info>,
     staker: &SanitizedSignerAccount<'a, 'info>,
     base: &SanitizedSignerAccount<'a, 'info>,
-    vault_staker_withdraw_ticket_account: &EmptyAccount<'a, 'info>,
+    vault_staker_withdrawal_ticket_account: &EmptyAccount<'a, 'info>,
     system_program: &SanitizedSystemProgram<'a, 'info>,
     rent: &Rent,
     slot: Slot,
     amount_to_withdraw: u64,
-    amount_to_vault_staker_withdraw_ticket: u64,
+    amount_to_vault_staker_withdrawal_ticket: u64,
 ) -> ProgramResult {
     let (address, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
         program_id,
@@ -164,36 +164,36 @@ fn _create_vault_staker_withdraw_ticket<'a, 'info>(
     seeds.push(vec![bump]);
 
     assert_with_msg(
-        address == *vault_staker_withdraw_ticket_account.account().key,
+        address == *vault_staker_withdrawal_ticket_account.account().key,
         ProgramError::InvalidAccountData,
         "Vault staker withdraw ticket is not at the correct PDA",
     )?;
 
-    let vault_staker_withdraw_ticket = VaultStakerWithdrawalTicket::new(
+    let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::new(
         *vault.account().key,
         *staker.account().key,
         *base.account().key,
         amount_to_withdraw,
-        amount_to_vault_staker_withdraw_ticket,
+        amount_to_vault_staker_withdrawal_ticket,
         slot,
         bump,
     );
 
     msg!(
         "Creating vault staker withdraw ticket: {:?}",
-        vault_staker_withdraw_ticket_account.account().key
+        vault_staker_withdrawal_ticket_account.account().key
     );
-    let serialized = vault_staker_withdraw_ticket.try_to_vec()?;
+    let serialized = vault_staker_withdrawal_ticket.try_to_vec()?;
     create_account(
         staker.account(),
-        vault_staker_withdraw_ticket_account.account(),
+        vault_staker_withdrawal_ticket_account.account(),
         system_program.account(),
         program_id,
         rent,
         serialized.len() as u64,
         &seeds,
     )?;
-    vault_staker_withdraw_ticket_account
+    vault_staker_withdrawal_ticket_account
         .account()
         .data
         .borrow_mut()[..serialized.len()]
@@ -205,8 +205,8 @@ struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-    vault_staker_withdraw_ticket: EmptyAccount<'a, 'info>,
-    vault_staker_withdraw_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
+    vault_staker_withdrawal_ticket: EmptyAccount<'a, 'info>,
+    vault_staker_withdrawal_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     vault_fee_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     staker: SanitizedSignerAccount<'a, 'info>,
     staker_lrt_token_account: SanitizedTokenAccount<'a, 'info>,
@@ -231,13 +231,14 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             true,
             vault.account().key,
         )?;
-        let vault_staker_withdraw_ticket =
+        let vault_staker_withdrawal_ticket =
             EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let vault_staker_withdraw_ticket_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            &vault.vault().lrt_mint(),
-            vault_staker_withdraw_ticket.account().key,
-        )?;
+        let vault_staker_withdrawal_ticket_token_account =
+            SanitizedAssociatedTokenAccount::sanitize(
+                next_account_info(accounts_iter)?,
+                &vault.vault().lrt_mint(),
+                vault_staker_withdrawal_ticket.account().key,
+            )?;
         let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
@@ -257,8 +258,8 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             config,
             vault,
             vault_delegation_list,
-            vault_staker_withdraw_ticket,
-            vault_staker_withdraw_ticket_token_account,
+            vault_staker_withdrawal_ticket,
+            vault_staker_withdrawal_ticket_token_account,
             vault_fee_token_account,
             staker,
             staker_lrt_token_account,

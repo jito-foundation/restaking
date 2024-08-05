@@ -9,7 +9,7 @@ pub mod vault_avs_slasher_ticket;
 pub mod vault_avs_ticket;
 pub mod vault_delegation_list;
 pub mod vault_operator_ticket;
-pub mod vault_staker_withdraw_ticket;
+pub mod vault_staker_withdrawal_ticket;
 
 #[derive(Debug, Clone, Copy, PartialEq, BorshDeserialize, BorshSerialize)]
 #[repr(u32)]
@@ -22,5 +22,5 @@ enum AccountType {
     VaultDelegationList,
     VaultAvsSlasherOperatorTicket,
     VaultStakerWithdrawalTicket,
-    VaultStakerWithdrawTicketEmpty,
+    VaultStakerWithdrawalTicketEmpty,
 }
