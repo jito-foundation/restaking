@@ -229,13 +229,14 @@ impl VaultDelegationList {
         for delegation in self.delegations.iter_mut() {
             let delegated_security = delegation.withdrawable_security()?;
 
-            // Calculate undelegate amount using div_ceil
+            // Calculate un-delegate amount, rounding up
             let undelegate_amount = delegated_security
                 .checked_mul(amount)
                 .ok_or(VaultCoreError::ArithmeticOverflow)?
                 .div_ceil(withdrawable_assets);
 
             if undelegate_amount > 0 {
+                //  don't un-delegate too much
                 let actual_undelegate =
                     std::cmp::min(undelegate_amount, amount.saturating_sub(total_undelegated));
 
@@ -729,5 +730,27 @@ mod tests {
         // undelegated
         let delegation_3 = list.delegations.get(2).unwrap();
         assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 14209);
+    }
+
+    #[test]
+    fn test_undelegate_for_withdraw_ceiling_ok() {
+        let mut list = setup_vault_delegation_list();
+        let total_deposited = 100_000;
+
+        let operator_1 = Pubkey::new_unique();
+        list.delegate(operator_1, 1, total_deposited).unwrap();
+
+        let operator_2 = Pubkey::new_unique();
+        list.delegate(operator_2, 99_999, total_deposited).unwrap();
+
+        list.undelegate_for_withdrawal(99_999, UndelegateForWithdrawMethod::ProRata)
+            .unwrap();
+
+        // 1 * 99999 / 100000
+        let delegation_1 = list.delegations().get(0).unwrap();
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 1);
+
+        let delegation_2 = list.delegations().get(1).unwrap();
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 99_998);
     }
 }
