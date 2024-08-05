@@ -73,7 +73,7 @@ impl SlotToggle {
         if self.slot_added >= self.slot_removed {
             let slot_added_epoch = self.slot_added().checked_div(epoch_length).unwrap();
 
-            if current_epoch > slot_added_epoch + 1 {
+            if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
                 SlotToggleState::Active
             } else {
                 SlotToggleState::WarmUp
@@ -81,7 +81,7 @@ impl SlotToggle {
         } else {
             let slot_removed_epoch = self.slot_removed().checked_div(epoch_length).unwrap();
 
-            if current_epoch > slot_removed_epoch + 1 {
+            if current_epoch > slot_removed_epoch.checked_add(1).unwrap() {
                 SlotToggleState::Inactive
             } else {
                 SlotToggleState::Cooldown
