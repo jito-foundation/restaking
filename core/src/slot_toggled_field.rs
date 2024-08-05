@@ -110,7 +110,7 @@ mod tests {
         let creation_slot = 100;
         let epoch_length = 150;
 
-        let mut elapsed_slots = 0;
+        let mut elapsed_slots = creation_slot;
         let mut toggle = SlotToggle::new(creation_slot);
 
         // Assert Warming Up
@@ -119,7 +119,7 @@ mod tests {
         assert!(!toggle.deactivate(elapsed_slots, epoch_length));
 
         // Assert Activated
-        elapsed_slots += epoch_length;
+        elapsed_slots += epoch_length + epoch_length % creation_slot;
         assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::Active);
         assert!(!toggle.activate(elapsed_slots, epoch_length));
 
@@ -128,7 +128,7 @@ mod tests {
         assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::Cooldown);
         assert!(!toggle.activate(elapsed_slots, epoch_length));
 
-        elapsed_slots += epoch_length;
+        elapsed_slots += epoch_length * 2;
         assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::Inactive);
         assert!(!toggle.deactivate(elapsed_slots, epoch_length));
 
