@@ -1,0 +1,7 @@
+title: Jito Restaking Documentation
+description: Jito Restaking Documentation
+baseurl: "/restaking"
+url: "https://jito-foundation.github.io"
+
+markdown: kramdown
+theme: jekyll-theme-primer
