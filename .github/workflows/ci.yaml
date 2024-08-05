@@ -97,6 +97,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Clone mpl-token-metadata repository
+        run: git clone https://github.com/metaplex-foundation/mpl-token-metadata
+      - name: Build BPF program
+        run: |
+          cd mpl-token-metadata/programs/token-metadata/program/
+          cargo build-bpf
+      - name: Copy built token_metadata.so
+        run: cp mpl-token-metadata/programs/token-metadata/target/sbf-solana-solana/release/token_metadata.so ${{ github.workspace }}/target/sbf-solana-solana/release/
       - name: Download restaking program
         uses: actions/download-artifact@v4
         with:
