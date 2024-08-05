@@ -52,6 +52,13 @@ impl SlotToggle {
         }
     }
 
+    pub fn is_staked_or_slashable(&self, slot: u64, epoch_length: u64) -> bool {
+        matches!(
+            self.state(slot, epoch_length),
+            SlotToggleState::Active | SlotToggleState::Cooldown
+        )
+    }
+
     pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
         //TODO CK Check with LB about active state
         matches!(
