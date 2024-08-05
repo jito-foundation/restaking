@@ -44,11 +44,8 @@ cargo-build-sbf
 
 ## Running Tests
 
-Run tests with `nextest`, install with:
-
-```bash
-cargo install cargo-nextest
-```
+If you haven't installed `cargo-nextest` yet, it's recommended to install it.
+You find the installation instructions [here](https://nexte.st/docs/installation/from-source/).
 
 ### Outside of SVM
 
@@ -59,7 +56,7 @@ cargo nextest run
 ### Testing using the SVM environment
 
 ```bash
-cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run
+cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run --all-features
 ```
 
 ## Contributing
