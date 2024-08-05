@@ -3,7 +3,7 @@ mod add_delegation;
 mod add_operator;
 mod add_slasher;
 mod burn;
-mod burn_withdraw_ticket;
+mod burn_withdrawal_ticket;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
@@ -34,7 +34,7 @@ use solana_security_txt::security_txt;
 use crate::{
     add_avs::process_vault_add_avs, add_delegation::process_add_delegation,
     add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
-    burn_withdraw_ticket::process_burn_withdraw_ticket,
+    burn_withdrawal_ticket::process_burn_withdrawal_ticket,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
@@ -130,7 +130,7 @@ pub fn process_instruction(
         }
         VaultInstruction::BurnWithdrawTicket => {
             msg!("Instruction: BurnWithdrawTicket");
-            process_burn_withdraw_ticket(program_id, accounts)
+            process_burn_withdrawal_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-AVS operations

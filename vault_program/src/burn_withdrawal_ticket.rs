@@ -22,11 +22,11 @@ use solana_program::{
 };
 use spl_token::instruction::{burn, close_account, transfer};
 
-/// Burns the withdraw ticket, transferring the assets to the staker and closing the withdraw ticket.
+/// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdraw ticket.
 ///
 /// One should call the [`crate::VaultInstruction::UpdateVault`] instruction before running this instruction
 /// to ensure that any rewards that were accrued are accounted for.
-pub fn process_burn_withdraw_ticket(
+pub fn process_burn_withdrawal_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
@@ -77,14 +77,14 @@ pub fn process_burn_withdraw_ticket(
         let delegated_security_in_vault = vault_delegation_list
             .vault_delegation_list()
             .all_security()?;
-        let assets_reserved_for_withdraw_tickets = vault_delegation_list
+        let assets_reserved_for_withdrawal_tickets = vault_delegation_list
             .vault_delegation_list()
             .withdrawable_reserve_amount();
 
         let available_unstaked_assets = tokens_deposited_in_vault
             .checked_sub(delegated_security_in_vault)
             .ok_or(ProgramError::InsufficientFunds)?
-            .checked_sub(assets_reserved_for_withdraw_tickets)
+            .checked_sub(assets_reserved_for_withdrawal_tickets)
             .ok_or(ProgramError::InsufficientFunds)?;
 
         // Calculate the extra amount that can be withdrawn
@@ -172,7 +172,6 @@ fn _close_token_account<'a, 'info>(
     vault_staker_withdrawal_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
     staker_lrt_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
 ) -> ProgramResult {
-    // TODO: combine with burn lrt method
     let (_, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
         program_id,
         vault.account().key,

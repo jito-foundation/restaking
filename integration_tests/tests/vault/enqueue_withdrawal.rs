@@ -291,15 +291,15 @@ async fn test_enqueue_withdraw_with_reward_ok() {
         .unwrap();
 
     // Verify the withdraw ticket
-    let withdraw_ticket = vault_program_client
+    let withdrawal_ticket = vault_program_client
         .get_vault_staker_withdrawal_ticket(&vault_root.vault_pubkey, &depositor.pubkey(), &base)
         .await
         .unwrap();
 
-    assert_eq!(withdraw_ticket.lrt_amount(), withdraw_amount);
+    assert_eq!(withdrawal_ticket.lrt_amount(), withdraw_amount);
 
     // The actual assets to be withdrawn should be more than the LRT amount due to rewards
-    assert_eq!(withdraw_ticket.withdraw_allocation_amount(), 55_000);
+    assert_eq!(withdrawal_ticket.withdraw_allocation_amount(), 55_000);
 
     // Verify the vault delegation list
     let vault_delegation_list = vault_program_client
@@ -312,36 +312,3 @@ async fn test_enqueue_withdraw_with_reward_ok() {
     assert_eq!(delegation.enqueued_for_withdraw_amount(), 55_000);
     assert_eq!(delegation.total_security().unwrap(), 100_000);
 }
-
-#[tokio::test]
-async fn test_enqueue_withdraw_with_slash_ok() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_with_multiple_operators_pro_rata_ok() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_at_epoch_boundary() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_with_existing_cooldowns() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_with_zero_amount() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_insufficient_balance() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_concurrent_requests() {}
-
-#[tokio::test]
-async fn test_enqueue_multiple_same_ticket() {}
-
-#[tokio::test]
-async fn test_enqueue_delegation_list_update_needed() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_with_all_assets_cooling_down() {}
-
-#[tokio::test]
-async fn test_enqueue_withdraw_with_partially_cooling_down_assets() {}
