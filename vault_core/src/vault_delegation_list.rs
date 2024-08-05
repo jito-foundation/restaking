@@ -224,37 +224,34 @@ impl VaultDelegationList {
             return Err(VaultCoreError::WithdrawAmountExceedsDelegatedFunds);
         }
 
-        let mut remaining_to_undelegate = amount;
+        let mut total_undelegated: u64 = 0;
 
         for delegation in self.delegations.iter_mut() {
-            // TODO (LB): instead of pro-rata for all stake, should be pro-rata for withdrawable stake
             let delegated_security = delegation.withdrawable_security()?;
-            let undelegate_amount = (delegated_security as u128)
-                .checked_mul(amount as u128)
-                .and_then(|product| product.checked_div(withdrawable_assets as u128))
-                .and_then(|result| result.try_into().ok())
-                .ok_or(VaultCoreError::ArithmeticOverflow)?;
+
+            // Calculate undelegate amount using div_ceil
+            let undelegate_amount = delegated_security
+                .checked_mul(amount)
+                .ok_or(VaultCoreError::ArithmeticOverflow)?
+                .div_ceil(withdrawable_assets);
 
             if undelegate_amount > 0 {
-                delegation.undelegate_for_withdraw(undelegate_amount)?;
-                remaining_to_undelegate = remaining_to_undelegate
-                    .checked_sub(undelegate_amount)
-                    .ok_or(VaultCoreError::ArithmeticUnderflow)?;
-            }
-        }
+                let actual_undelegate =
+                    std::cmp::min(undelegate_amount, amount.saturating_sub(total_undelegated));
 
-        // Handle any remaining dust due to rounding
-        if remaining_to_undelegate > 0 {
-            for delegation in self.delegations.iter_mut() {
-                if delegation.staked_amount() >= remaining_to_undelegate {
-                    delegation.undelegate_for_withdraw(remaining_to_undelegate)?;
-                    remaining_to_undelegate = 0;
+                delegation.undelegate_for_withdraw(actual_undelegate)?;
+
+                total_undelegated = total_undelegated
+                    .checked_add(actual_undelegate)
+                    .ok_or(VaultCoreError::ArithmeticOverflow)?;
+
+                if total_undelegated == amount {
                     break;
                 }
             }
         }
 
-        if remaining_to_undelegate > 0 {
+        if total_undelegated != amount {
             return Err(VaultCoreError::UndelegationIncomplete);
         }
 
@@ -584,8 +581,8 @@ mod tests {
 
         let delegations = list.delegations();
         assert_eq!(delegations[0].enqueued_for_withdraw_amount(), 34);
-        assert_eq!(delegations[1].enqueued_for_withdraw_amount(), 33);
-        assert_eq!(delegations[2].enqueued_for_withdraw_amount(), 33);
+        assert_eq!(delegations[1].enqueued_for_withdraw_amount(), 34);
+        assert_eq!(delegations[2].enqueued_for_withdraw_amount(), 32);
     }
 
     #[test]
@@ -628,7 +625,7 @@ mod tests {
 
     // ensures cooling down assets are handled correctly when undelegating
     #[test]
-    fn test_undelegate_for_withdraw_with_cooling_down_assets() {
+    fn test_undelegate_for_withdraw_with_enqueued_for_cooling_down_assets() {
         let mut list = setup_vault_delegation_list();
         let total_deposited = 100_000;
 
@@ -684,10 +681,53 @@ mod tests {
         assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 15_000);
     }
 
-    #[test]
-    fn test_undelegate_for_withdraw_pull_from_enqueued_for_cooling_down() {}
-
     /// ensures that assets cooling down for withdraw are handled correctly when undelegating
     #[test]
-    fn test_undelegate_for_withdraw_with_cooling_down_for_withdrawal_assets() {}
+    fn test_undelegate_for_withdraw_with_cooling_down_for_withdrawal_assets() {
+        let mut list = setup_vault_delegation_list();
+        let total_deposited = 100_000;
+
+        let operator_1 = Pubkey::new_unique();
+        list.delegate(operator_1, 10_000, total_deposited).unwrap();
+
+        let operator_2 = Pubkey::new_unique();
+        list.delegate(operator_2, 60_000, total_deposited).unwrap();
+
+        let operator_3 = Pubkey::new_unique();
+        list.delegate(operator_3, 25_000, total_deposited).unwrap();
+
+        list.undelegate_for_withdrawal(30_000, UndelegateForWithdrawMethod::ProRata)
+            .unwrap();
+
+        // 10000 * 30000 /_ceil 95000
+        let delegation_1 = list.delegations.get(0).unwrap();
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 3_158);
+
+        // 60000 * 30000 /_ceil 95000
+        let delegation_2 = list.delegations.get(1).unwrap();
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 18_948);
+
+        // min(25000 * 30000 /_ceil 95000, 30000 - 18948 - 3158)
+        let delegation_3 = list.delegations.get(2).unwrap();
+        assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 7_894);
+
+        // send 5k more to operator 3
+        list.delegate(operator_3, 5_000, total_deposited).unwrap();
+
+        list.undelegate_for_withdrawal(20_000, UndelegateForWithdrawMethod::ProRata)
+            .unwrap();
+
+        // 3158 + ((10000 - 3158) * 20000 /_ceil 70000)
+        let delegation_1 = list.delegations.get(0).unwrap();
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 5113);
+
+        // 18948 + ((60000 - 18948) * 20000 /_ceil 70000)
+        let delegation_2 = list.delegations.get(1).unwrap();
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 30678);
+
+        // minimum of 7894 + ((30000 -  7894) * 20000 /_ceil 70000) and whatever is left to get to 50000 total
+        // undelegated
+        let delegation_3 = list.delegations.get(2).unwrap();
+        assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 14209);
+    }
 }
