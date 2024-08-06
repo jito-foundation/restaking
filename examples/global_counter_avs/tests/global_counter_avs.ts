@@ -8,9 +8,20 @@ describe("global_counter_avs", () => {
 
   const program = anchor.workspace.GlobalCounterAvs as Program<GlobalCounterAvs>;
 
-  it("Is initialized!", async () => {
+  it("Count", async () => {
+
+    const globalCounterAddress = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("global_counter")], program.programId)[0];
+
     // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
+    {
+      const tx = await program.methods.count().rpc();
+    }
+    {
+      const tx = await program.methods.count().rpc();
+    }
+
+    const globalCounterAccount = await program.account.globalCounter.fetch(globalCounterAddress);
+
+    console.log("Global counter is", globalCounterAccount.count.toString());
   });
 });
