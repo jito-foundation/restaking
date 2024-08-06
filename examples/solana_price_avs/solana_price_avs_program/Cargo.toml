@@ -1,0 +1,38 @@
+[package]
+name = "jito-example-solana-price-avs"
+description = "Example Solana Price AVS"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "jito_example_solana_price_avs"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+borsh = { workspace = true }
+jito-restaking-core = { workspace = true }
+jito-restaking-sanitization = { workspace = true }
+jito-vault-sdk = { workspace = true }
+shank = { workspace = true }
+solana-program = { workspace = true }
+solana-security-txt = { workspace = true }
+spl-associated-token-account = { workspace = true }
+spl-token = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+solana-program-test = { workspace = true }
+solana-sdk = { workspace = true }
+tokio = { workspace = true }
