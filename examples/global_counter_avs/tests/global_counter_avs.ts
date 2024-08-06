@@ -10,18 +10,32 @@ describe("global_counter_avs", () => {
 
   it("Count", async () => {
 
-    const globalCounterAddress = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("global_counter")], program.programId)[0];
+    const globalCounterAddress = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("COUNTER")], program.programId)[0];
+    const userRewardAddress = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("REWARD"), program.provider.publicKey.toBuffer()], program.programId)[0];
 
     // Add your test here.
     {
-      const tx = await program.methods.count().rpc();
+      const tx = await program.methods.count().accounts([
+        {
+          address: globalCounterAddress,
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          address: userRewardAddress,
+          isMut: true,
+          isSigner: false,
+        },
+      ]).rpc();
     }
-    {
-      const tx = await program.methods.count().rpc();
-    }
+    // {
+    //   const tx = await program.methods.count().rpc();
+    // }
 
     const globalCounterAccount = await program.account.globalCounter.fetch(globalCounterAddress);
+    const userRewardAccount = await program.account.globalCounter.fetch(userRewardAddress);
 
     console.log("Global counter is", globalCounterAccount.count.toString());
+    console.log("User reward is", userRewardAccount.count.toString());
   });
 });
