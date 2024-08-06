@@ -1,34 +1,47 @@
-pub const TEST: u64 = 1;
-// use jito_restaking_core::{avs::Avs, config::Config};
-// use solana_program::{
-//     account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, pubkey::Pubkey,
-// };
+use borsh::BorshDeserialize;
+use initialize_config::process_initialize_config;
+use jito_example_solana_price_avs_sdk::SolanaPriceAvsInstruction;
+use solana_program::{
+    account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey,
+};
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
 
-// // Define your AVS-specific structs and logic here
+mod initialize_config;
 
-// entrypoint!(process_instruction);
+declare_id!("7V3HKHNgxwxiMLjcgvwPCBey7yy4WJrHUH4JVFmewu1P");
 
-// pub fn process_instruction(
-//     program_id: &Pubkey,
-//     accounts: &[AccountInfo],
-//     instruction_data: &[u8],
-// ) -> ProgramResult {
-//     // Deserialize instruction data and route to appropriate handler
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    // Required fields
+    name: "Jito's Example Solana Price AVS",
+    project_url: "https://jito.network/",
+    contacts: "email:team@jito.network",
+    policy: "https://github.com/jito-foundation/restaking",
+    // Optional Fields
+    preferred_languages: "en",
+    source_code: "https://github.com/jito-foundation/restaking/examples/solana_price_avs"
+}
 
-//     Ok(())
-// }
+#[cfg(not(feature = "no-entrypoint"))]
+solana_program::entrypoint!(process_instruction);
 
-// fn initialize_avs(accounts: &[AccountInfo], params: InitializeParams) -> ProgramResult {
-//     // Initialize your AVS using Jito's components
-//     // This would include setting up the AVS account, configuring operators, etc.
-//     Ok(())
-// }
+pub fn process_instruction(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    instruction_data: &[u8],
+) -> ProgramResult {
+    if *program_id != id() {
+        return Err(ProgramError::IncorrectProgramId);
+    }
 
-// fn update_price(accounts: &[AccountInfo], new_price: u64) -> ProgramResult {
-//     // Validate the update request
-//     // Update the on-chain price
-//     // Handle any rewards or slashing as necessary
-//     Ok(())
-// }
+    let instruction = SolanaPriceAvsInstruction::try_from_slice(instruction_data)?;
 
-// // Implement other necessary functions for your AVS
+    match instruction {
+        SolanaPriceAvsInstruction::InitializeConfig => {
+            msg!("Instruction: InitializeConfig");
+            process_initialize_config(program_id, accounts)
+        }
+    }
+}

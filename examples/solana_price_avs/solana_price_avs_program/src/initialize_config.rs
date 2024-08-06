@@ -1,0 +1,83 @@
+use borsh::BorshSerialize;
+use jito_restaking_core::config::Config;
+use jito_restaking_sanitization::{
+    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
+    system_program::SanitizedSystemProgram,
+};
+use solana_program::{
+    account_info::{next_account_info, AccountInfo},
+    entrypoint::ProgramResult,
+    msg,
+    program_error::ProgramError,
+    pubkey::Pubkey,
+    rent::Rent,
+    sysvar::Sysvar,
+};
+
+/// Initializes the global configuration for the restaking program
+/// [`crate::RestakingInstruction::InitializeConfig`]
+pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+    let SanitizedAccounts {
+        config_account,
+        admin,
+        vault_program,
+        system_program,
+    } = SanitizedAccounts::sanitize(accounts)?;
+
+    let (expected_config_key, bump, mut config_seeds) = Config::find_program_address(program_id);
+    config_seeds.push(vec![bump]);
+    assert_with_msg(
+        expected_config_key == *config_account.account().key,
+        ProgramError::InvalidAccountData,
+        "Config account is not at the correct PDA",
+    )?;
+
+    let config = Config::new(*admin.account().key, *vault_program.key, bump);
+
+    msg!(
+        "Initializing config @ address {}",
+        config_account.account().key
+    );
+    let config_serialized = config.try_to_vec()?;
+    create_account(
+        admin.account(),
+        config_account.account(),
+        system_program.account(),
+        program_id,
+        &Rent::get()?,
+        config_serialized.len() as u64,
+        &config_seeds,
+    )?;
+    config_account.account().data.borrow_mut()[..config_serialized.len()]
+        .copy_from_slice(&config_serialized);
+
+    Ok(())
+}
+
+struct SanitizedAccounts<'a, 'info> {
+    config_account: EmptyAccount<'a, 'info>,
+    admin: SanitizedSignerAccount<'a, 'info>,
+    vault_program: &'a AccountInfo<'info>,
+    system_program: SanitizedSystemProgram<'a, 'info>,
+}
+
+impl<'a, 'info> SanitizedAccounts<'a, 'info> {
+    fn sanitize(
+        accounts: &'a [AccountInfo<'info>],
+    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
+        let mut accounts_iter = accounts.iter();
+
+        let config_account = EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
+        let admin = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
+        let vault_program = next_account_info(&mut accounts_iter)?;
+        let system_program =
+            SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
+
+        Ok(SanitizedAccounts {
+            config_account,
+            admin,
+            vault_program,
+            system_program,
+        })
+    }
+}

@@ -1823,6 +1823,7 @@ name = "jito-example-solana-price-avs"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "jito-example-solana-price-avs-sdk",
  "jito-restaking-core",
  "jito-restaking-sanitization",
  "jito-vault-sdk",

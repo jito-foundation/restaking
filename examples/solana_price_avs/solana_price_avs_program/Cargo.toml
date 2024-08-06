@@ -22,6 +22,7 @@ default = []
 
 [dependencies]
 borsh = { workspace = true }
+jito-example-solana-price-avs-sdk = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-restaking-sanitization = { workspace = true }
 jito-vault-sdk = { workspace = true }
