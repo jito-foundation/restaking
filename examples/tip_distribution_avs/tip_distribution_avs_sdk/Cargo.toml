@@ -1,5 +1,5 @@
 [package]
-name = "jito-example-solana-price-avs-sdk"
+name = "jito-tip-distribution-avs-sdk"
 description = "Example Solana Price AVS SDK"
 version = { workspace = true }
 authors = { workspace = true }

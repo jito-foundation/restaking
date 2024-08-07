@@ -8,7 +8,7 @@ use solana_program::{
 
 #[rustfmt::skip]
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
-pub enum SolanaPriceAvsInstruction {
+pub enum TipDistributionAvsInstruction {
     /// Initializes global configuration
     #[account(0, writable, name = "config")]
     #[account(1, writable, signer, name = "admin")]
@@ -32,7 +32,7 @@ pub fn initialize_config(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: SolanaPriceAvsInstruction::InitializeConfig
+        data: TipDistributionAvsInstruction::InitializeConfig
             .try_to_vec()
             .unwrap(),
     }

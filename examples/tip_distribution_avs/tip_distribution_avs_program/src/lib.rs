@@ -1,6 +1,6 @@
 use borsh::BorshDeserialize;
 use initialize_config::process_initialize_config;
-use jito_example_solana_price_avs_sdk::SolanaPriceAvsInstruction;
+use jito_tip_distribution_avs_sdk::TipDistributionAvsInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -15,7 +15,7 @@ declare_id!("7V3HKHNgxwxiMLjcgvwPCBey7yy4WJrHUH4JVFmewu1P");
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     // Required fields
-    name: "Jito's Example Solana Price AVS",
+    name: "Jito's Tip Distribution AVS",
     project_url: "https://jito.network/",
     contacts: "email:team@jito.network",
     policy: "https://github.com/jito-foundation/restaking",
@@ -36,10 +36,10 @@ pub fn process_instruction(
         return Err(ProgramError::IncorrectProgramId);
     }
 
-    let instruction = SolanaPriceAvsInstruction::try_from_slice(instruction_data)?;
+    let instruction = TipDistributionAvsInstruction::try_from_slice(instruction_data)?;
 
     match instruction {
-        SolanaPriceAvsInstruction::InitializeConfig => {
+        TipDistributionAvsInstruction::InitializeConfig => {
             msg!("Instruction: InitializeConfig");
             process_initialize_config(program_id, accounts)
         }

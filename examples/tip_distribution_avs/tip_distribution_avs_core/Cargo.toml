@@ -1,6 +1,6 @@
 [package]
-name = "jito-example-solana-price-avs-core"
-description = "Example Solana Price AVS Core"
+name = "jito-tip-distribution-avs-core"
+description = "Tip Distribution AVS Core"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }

@@ -1,6 +1,6 @@
 [package]
-name = "jito-example-solana-price-avs"
-description = "Example Solana Price AVS"
+name = "jito-tip-distribution-avs-program"
+description = "Tip Distribution AVS"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
@@ -11,7 +11,7 @@ readme = { workspace = true }
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "jito_example_solana_price_avs"
+name = "jito_tip_distribution_avs"
 
 [features]
 no-entrypoint = []
@@ -22,7 +22,7 @@ default = []
 
 [dependencies]
 borsh = { workspace = true }
-jito-example-solana-price-avs-sdk = { workspace = true }
+jito-tip-distribution-avs-sdk = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-restaking-sanitization = { workspace = true }
 jito-vault-sdk = { workspace = true }

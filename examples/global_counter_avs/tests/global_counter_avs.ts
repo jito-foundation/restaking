@@ -15,27 +15,13 @@ describe("global_counter_avs", () => {
 
     // Add your test here.
     {
-      const tx = await program.methods.count().accounts([
-        {
-          address: globalCounterAddress,
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          address: userRewardAddress,
-          isMut: true,
-          isSigner: false,
-        },
-      ]).rpc();
+      const tx = await program.methods.count().rpc();
     }
-    // {
-    //   const tx = await program.methods.count().rpc();
-    // }
 
     const globalCounterAccount = await program.account.globalCounter.fetch(globalCounterAddress);
-    const userRewardAccount = await program.account.globalCounter.fetch(userRewardAddress);
+    const userRewardAccount = await program.account.operator.fetch(userRewardAddress);
 
     console.log("Global counter is", globalCounterAccount.count.toString());
-    console.log("User reward is", userRewardAccount.count.toString());
+    console.log("User reward is", userRewardAccount.rewards.toString());
   });
 });
