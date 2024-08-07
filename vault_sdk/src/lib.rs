@@ -117,10 +117,11 @@ pub enum VaultInstruction {
     #[account(4, writable, name = "lrt_mint")]
     #[account(5, writable, signer, name = "staker")]
     #[account(6, writable, name = "staker_token_account")]
-    #[account(7, writable, name = "vault_staker_withdrawal_ticket")]
-    #[account(8, writable, name = "vault_staker_withdrawal_ticket_token_account")]
-    #[account(9, name = "token_program")]
-    #[account(10, name = "system_program")]
+    #[account(7, writable, name = "staker_lrt_token_account")]
+    #[account(8, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(9, writable, name = "vault_staker_withdrawal_ticket_token_account")]
+    #[account(10, name = "token_program")]
+    #[account(11, name = "system_program")]
     BurnWithdrawTicket,
 
     /// Sets the max tokens that can be deposited into the LRT
@@ -761,5 +762,40 @@ pub fn enqueue_withdraw(
         data: VaultInstruction::EnqueueWithdrawal { amount }
             .try_to_vec()
             .unwrap(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn burn_withdrawal_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_delegation_list: &Pubkey,
+    vault_token_account: &Pubkey,
+    lrt_mint: &Pubkey,
+    staker: &Pubkey,
+    staker_token_account: &Pubkey,
+    staker_lrt_token_account: &Pubkey,
+    vault_staker_withdrawal_ticket: &Pubkey,
+    vault_staker_withdrawal_ticket_token_account: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_delegation_list, false),
+        AccountMeta::new(*vault_token_account, false),
+        AccountMeta::new(*lrt_mint, false),
+        AccountMeta::new(*staker, true),
+        AccountMeta::new(*staker_token_account, false),
+        AccountMeta::new(*staker_lrt_token_account, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::BurnWithdrawTicket.try_to_vec().unwrap(),
     }
 }

@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Formatter};
 
 use solana_program::{
-    native_token::sol_to_lamports, program_pack::Pack, pubkey::Pubkey, system_instruction::transfer,
+    clock::Clock, native_token::sol_to_lamports, program_pack::Pack, pubkey::Pubkey,
+    system_instruction::transfer,
 };
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{commitment_config::CommitmentLevel, signature::Signer, transaction::Transaction};
@@ -136,13 +137,16 @@ impl TestBuilder {
             .await
     }
 
-    // pub async fn warp_to_next_slot(&mut self) -> Result<(), BanksClientError> {
-    //     let clock: Clock = self.context.banks_client.get_sysvar().await?;
-    //     self.context
-    //         .warp_to_slot(clock.slot.checked_add(1).unwrap())
-    //         .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
-    //     Ok(())
-    // }
+    pub async fn warp_slot_incremental(
+        &mut self,
+        incremental_slots: u64,
+    ) -> Result<(), BanksClientError> {
+        let clock: Clock = self.context.banks_client.get_sysvar().await?;
+        self.context
+            .warp_to_slot(clock.slot.checked_add(incremental_slots).unwrap())
+            .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
+        Ok(())
+    }
 
     pub fn vault_program_client(&self) -> VaultProgramClient {
         VaultProgramClient::new(

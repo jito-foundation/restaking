@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey};
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
@@ -91,11 +91,16 @@ impl VaultStakerWithdrawalTicket {
     pub fn check_withdrawable(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
         let current_epoch = slot.checked_div(epoch_length).unwrap(); // epoch_length is always > 0
         let epoch_unstaked = self.slot_unstaked.checked_div(epoch_length).unwrap();
-        if epoch_unstaked
-            .checked_add(1)
-            .ok_or(VaultCoreError::VaultStakerWithdrawalTicketOverflow)?
-            < current_epoch
+        if current_epoch
+            <= epoch_unstaked
+                .checked_add(1)
+                .ok_or(VaultCoreError::VaultStakerWithdrawalTicketOverflow)?
         {
+            msg!(
+                "current_epoch: {:?}, epoch_unstaked: {:?}",
+                current_epoch,
+                epoch_unstaked
+            );
             return Err(VaultCoreError::VaultStakerWithdrawalTicketNotWithdrawable);
         }
         Ok(())
@@ -139,9 +144,7 @@ impl VaultStakerWithdrawalTicket {
             Self::deserialize(&mut account.data.borrow_mut().as_ref()).map_err(|e| {
                 VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidData(e.to_string())
             })?;
-        if vault_staker_withdrawal_ticket.account_type
-            != AccountType::VaultStakerWithdrawalTicketEmpty
-        {
+        if vault_staker_withdrawal_ticket.account_type != AccountType::VaultStakerWithdrawalTicket {
             return Err(VaultCoreError::VaultStakerWithdrawalTicketEmptyInvalidAccountType);
         }
 

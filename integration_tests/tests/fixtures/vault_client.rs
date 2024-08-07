@@ -11,6 +11,7 @@ use jito_vault_core::{
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
+use log::info;
 use solana_program::{
     native_token::sol_to_lamports,
     program_pack::Pack,
@@ -625,6 +626,10 @@ impl VaultProgramClient {
             &base.pubkey(),
         )
         .0;
+        info!(
+            "vault_staker_withdrawal_ticket: {:?}",
+            vault_staker_withdrawal_ticket
+        );
         let vault_staker_withdrawal_ticket_token_account =
             get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint());
 
@@ -708,6 +713,77 @@ impl VaultProgramClient {
             )],
             Some(&staker.pubkey()),
             &[staker, base],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn do_burn_withdrawal_ticket(
+        &mut self,
+        vault_root: &VaultRoot,
+        staker: &Keypair,
+        vault_staker_withdrawal_ticket_base: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &staker.pubkey(),
+            vault_staker_withdrawal_ticket_base,
+        )
+        .0;
+
+        self.burn_withdrawal_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &VaultDelegationList::find_program_address(
+                &jito_vault_program::id(),
+                &vault_root.vault_pubkey,
+            )
+            .0,
+            &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint()),
+            &vault.lrt_mint(),
+            staker,
+            &get_associated_token_address(&staker.pubkey(), &vault.supported_mint()),
+            &get_associated_token_address(&staker.pubkey(), &vault.lrt_mint()),
+            &vault_staker_withdrawal_ticket,
+            &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint()),
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn burn_withdrawal_ticket(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        vault_delegation_list: &Pubkey,
+        vault_token_account: &Pubkey,
+        lrt_mint: &Pubkey,
+        staker: &Keypair,
+        staker_token_account: &Pubkey,
+        staker_lrt_token_account: &Pubkey,
+        vault_staker_withdrawal_ticket: &Pubkey,
+        vault_staker_withdrawal_ticket_token_account: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::burn_withdrawal_ticket(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                vault_delegation_list,
+                vault_token_account,
+                lrt_mint,
+                &staker.pubkey(),
+                staker_token_account,
+                staker_lrt_token_account,
+                vault_staker_withdrawal_ticket,
+                vault_staker_withdrawal_ticket_token_account,
+            )],
+            Some(&staker.pubkey()),
+            &[staker],
             blockhash,
         ))
         .await
