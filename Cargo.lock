@@ -1928,6 +1928,7 @@ version = "0.0.1"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
+ "bytemuck",
  "jito-jsm-core",
  "jito-restaking-sanitization",
  "shank",

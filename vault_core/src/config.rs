@@ -1,4 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use bytemuck::{Pod, Zeroable};
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 use VaultCoreError::ConfigInvalidPda;
 
@@ -9,7 +10,7 @@ use crate::{
 
 pub const MAX_RESTAKING_PROGRAMS: usize = 8;
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
+#[derive(Debug, Copy, BorshSerialize, BorshDeserialize, Clone)]
 pub struct Config {
     /// The account type
     account_type: AccountType,
@@ -32,6 +33,9 @@ pub struct Config {
     /// The bump seed for the PDA
     bump: u8,
 }
+
+unsafe impl Pod for Config {}
+unsafe impl Zeroable for Config {}
 
 impl Config {
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
