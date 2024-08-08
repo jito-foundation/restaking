@@ -27,6 +27,10 @@ pub enum SanitizationError {
     TokenMintInvalidProgramOwner,
 
     TokenProgramInvalidAddress,
+
+    MetadataProgramInvalidAddress,
+
+    SysvarInvalidAddress,
 }
 
 impl From<SanitizationError> for ProgramError {
@@ -55,6 +59,10 @@ impl From<SanitizationError> for ProgramError {
             SanitizationError::TokenMintInvalidProgramOwner => Self::Custom(502),
 
             SanitizationError::TokenProgramInvalidAddress => Self::Custom(600),
+
+            SanitizationError::MetadataProgramInvalidAddress => Self::Custom(700),
+
+            SanitizationError::SysvarInvalidAddress => Self::Custom(800),
         }
     }
 }

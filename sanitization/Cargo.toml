@@ -11,6 +11,7 @@ readme = { workspace = true }
 
 [dependencies]
 borsh = { workspace = true }
+mpl-token-metadata = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
