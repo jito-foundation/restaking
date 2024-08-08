@@ -19,6 +19,7 @@ pub fn process_vault_remove_operator(
     accounts: &[AccountInfo],
 ) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         vault,
         mut vault_operator_ticket,
         admin,
@@ -29,7 +30,7 @@ pub fn process_vault_remove_operator(
     let slot = Clock::get()?.slot;
     vault_operator_ticket
         .vault_operator_ticket_mut()
-        .deactivate(slot)?;
+        .deactivate(slot, config.config().epoch_length())?;
 
     // TODO (LB): should one deactivate the stake here as well?
 
@@ -39,6 +40,7 @@ pub fn process_vault_remove_operator(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     vault_operator_ticket: SanitizedVaultOperatorTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
@@ -72,6 +74,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
+            config,
             vault,
             vault_operator_ticket,
             admin,

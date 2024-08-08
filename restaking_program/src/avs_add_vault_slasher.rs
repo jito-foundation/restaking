@@ -24,6 +24,7 @@ pub fn process_avs_add_vault_slasher(
     max_slashable_per_epoch: u64,
 ) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         mut avs,
         vault,
         slasher,
@@ -37,7 +38,9 @@ pub fn process_avs_add_vault_slasher(
     avs.avs().check_slasher_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
+    avs_vault_ticket
+        .avs_vault_ticket()
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_avs_vault_slasher_ticket(
         program_id,
@@ -116,6 +119,7 @@ fn _create_avs_vault_slasher_ticket<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     avs: SanitizedAvs<'a, 'info>,
     vault: &'a AccountInfo<'info>,
     slasher: &'a AccountInfo<'info>,
@@ -134,7 +138,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let _config =
+        let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let vault = next_account_info(accounts_iter)?;
@@ -153,6 +157,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
+            config,
             avs,
             vault,
             slasher,

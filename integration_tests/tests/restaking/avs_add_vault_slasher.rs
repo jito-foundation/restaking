@@ -24,6 +24,8 @@ async fn test_avs_add_vault_slasher_ok() {
         .await
         .unwrap();
 
+    let config_account = restaking_program_client.get_config(&config).await.unwrap();
+
     // Initialize AVS
     let avs_admin = Keypair::new();
     let avs_base = Keypair::new();
@@ -55,6 +57,11 @@ async fn test_avs_add_vault_slasher_ok() {
             &avs_admin,
             &avs_admin,
         )
+        .await
+        .unwrap();
+
+    fixture
+        .warp_slot_incremental(config_account.epoch_length() * 2)
         .await
         .unwrap();
 
@@ -97,5 +104,8 @@ async fn test_avs_add_vault_slasher_ok() {
     assert_eq!(ticket.slasher(), slasher.pubkey());
     assert_eq!(ticket.max_slashable_per_epoch(), max_slashable_per_epoch);
     assert_eq!(ticket.index(), 0);
-    assert_eq!(ticket.state().slot_added(), 1);
+    assert_eq!(
+        ticket.state().slot_added(),
+        fixture.get_current_slot().await.unwrap()
+    );
 }

@@ -37,6 +37,7 @@ pub fn process_slash(
 ) -> ProgramResult {
     let slot = Clock::get()?.slot;
     let SanitizedAccounts {
+        config,
         mut vault,
         operator,
         avs_operator_ticket,
@@ -54,31 +55,35 @@ pub fn process_slash(
     } = SanitizedAccounts::sanitize(program_id, accounts, slot)?;
 
     // The vault shall be opted-in to the AVS and the AVS shall be opted-in to the vault
-    vault_avs_ticket.vault_avs_ticket().check_active(slot)?;
-    avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
+    vault_avs_ticket
+        .vault_avs_ticket()
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
+    avs_vault_ticket
+        .avs_vault_ticket()
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     // The operator shall be opted-in to vault and the vault shall be staked to the operator
     operator_vault_ticket
         .operator_vault_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     vault_operator_ticket
         .vault_operator_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     // The operator shall be opted-in to the AVS and the AVS shall be opted-in to the operator
     avs_operator_ticket
         .avs_operator_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     operator_avs_ticket
         .operator_avs_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     // The slasher shall be active for the AVS and the vault
     avs_vault_slasher_ticket
         .avs_vault_slasher_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     vault_avs_slasher_ticket
         .vault_avs_slasher_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     let max_slashable_per_epoch = vault_avs_slasher_ticket
         .vault_avs_slasher_ticket()
@@ -149,6 +154,7 @@ fn _transfer_slashed_funds<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
     avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
@@ -280,6 +286,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let _token_program =
             SanitizedTokenProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
         Ok(Self {
+            config,
             vault,
             operator,
             avs_operator_ticket,

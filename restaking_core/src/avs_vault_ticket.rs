@@ -54,16 +54,20 @@ impl AvsVaultTicket {
         &self.state
     }
 
-    pub const fn check_active(&self, slot: u64) -> RestakingCoreResult<()> {
-        if self.state().is_active(slot) {
+    pub fn check_active_or_cooldown(
+        &self,
+        slot: u64,
+        epoch_length: u64,
+    ) -> RestakingCoreResult<()> {
+        if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
             Err(RestakingCoreError::AvsVaultTicketInactive)
         }
     }
 
-    pub fn deactivate(&mut self, slot: u64) -> RestakingCoreResult<()> {
-        if self.state.deactivate(slot) {
+    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> RestakingCoreResult<()> {
+        if self.state.deactivate(slot, epoch_length) {
             Ok(())
         } else {
             Err(RestakingCoreError::AvsVaultTicketInactive)

@@ -8,6 +8,14 @@ pub struct SlotToggle {
     slot_removed: u64,
 }
 
+#[derive(PartialEq, Eq)]
+pub enum SlotToggleState {
+    Inactive,
+    WarmUp,
+    Active,
+    Cooldown,
+}
+
 impl SlotToggle {
     pub const fn new(slot: u64) -> Self {
         Self {
@@ -24,25 +32,101 @@ impl SlotToggle {
         self.slot_removed
     }
 
-    pub fn activate(&mut self, slot: u64) -> bool {
+    pub fn activate(&mut self, slot: u64, epoch_length: u64) -> bool {
+        match self.state(slot, epoch_length) {
+            SlotToggleState::Inactive => {
+                self.slot_added = slot;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> bool {
+        match self.state(slot, epoch_length) {
+            SlotToggleState::Active => {
+                self.slot_removed = slot;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn is_active_or_cooldown(&self, slot: u64, epoch_length: u64) -> bool {
+        matches!(
+            self.state(slot, epoch_length),
+            SlotToggleState::Active | SlotToggleState::Cooldown
+        )
+    }
+
+    pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+
         if self.slot_added >= self.slot_removed {
-            false
+            let slot_added_epoch = self.slot_added().checked_div(epoch_length).unwrap();
+
+            if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
+                SlotToggleState::Active
+            } else {
+                SlotToggleState::WarmUp
+            }
         } else {
-            self.slot_added = slot;
-            true
+            let slot_removed_epoch = self.slot_removed().checked_div(epoch_length).unwrap();
+
+            if current_epoch > slot_removed_epoch.checked_add(1).unwrap() {
+                SlotToggleState::Inactive
+            } else {
+                SlotToggleState::Cooldown
+            }
         }
     }
+}
 
-    pub fn deactivate(&mut self, slot: u64) -> bool {
-        if self.slot_added < self.slot_removed {
-            false
-        } else {
-            self.slot_removed = slot;
-            true
-        }
+#[cfg(test)]
+mod tests {
+    use crate::slot_toggled_field::{SlotToggle, SlotToggleState};
+
+    #[test]
+    fn test_new() {
+        let creation_slot = 100;
+        let epoch_length = 150;
+
+        let toggle = SlotToggle::new(creation_slot);
+        assert!(toggle.state(creation_slot, epoch_length) == SlotToggleState::WarmUp);
+        assert_eq!(toggle.slot_added(), creation_slot);
+        assert_eq!(toggle.slot_removed(), 0);
     }
 
-    pub const fn is_active(&self, slot: u64) -> bool {
-        self.slot_added >= self.slot_removed && slot >= self.slot_added
+    #[test]
+    fn test_activate_deactivate_cycle() {
+        let creation_slot = 100;
+        let epoch_length = 150;
+
+        let mut elapsed_slots = creation_slot;
+        let mut toggle = SlotToggle::new(creation_slot);
+
+        // Assert Warming Up
+        assert!(toggle.state(creation_slot, epoch_length) == SlotToggleState::WarmUp);
+        assert!(!toggle.activate(elapsed_slots, epoch_length));
+        assert!(!toggle.deactivate(elapsed_slots, epoch_length));
+
+        // Assert Activated
+        elapsed_slots += epoch_length + epoch_length % creation_slot;
+        assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::Active);
+        assert!(!toggle.activate(elapsed_slots, epoch_length));
+
+        // Assert Deactivate
+        assert!(toggle.deactivate(elapsed_slots, epoch_length));
+        assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::Cooldown);
+        assert!(!toggle.activate(elapsed_slots, epoch_length));
+
+        elapsed_slots += epoch_length * 2;
+        assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::Inactive);
+        assert!(!toggle.deactivate(elapsed_slots, epoch_length));
+
+        // Assert Activate
+        assert!(toggle.activate(elapsed_slots, epoch_length));
+        assert!(toggle.state(elapsed_slots, epoch_length) == SlotToggleState::WarmUp);
+        assert!(!toggle.deactivate(elapsed_slots, epoch_length));
     }
 }

@@ -14,6 +14,7 @@ use solana_program::{
 /// [`crate::RestakingInstruction::AvsRemoveVault`]
 pub fn process_avs_remove_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         avs,
         mut avs_vault_ticket,
         admin,
@@ -22,7 +23,9 @@ pub fn process_avs_remove_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -
     avs.avs().check_vault_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    avs_vault_ticket.avs_vault_ticket_mut().deactivate(slot)?;
+    avs_vault_ticket
+        .avs_vault_ticket_mut()
+        .deactivate(slot, config.config().epoch_length())?;
 
     avs_vault_ticket.save()?;
 
@@ -30,6 +33,7 @@ pub fn process_avs_remove_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     avs: SanitizedAvs<'a, 'info>,
     avs_vault_ticket: SanitizedAvsVaultTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
@@ -43,7 +47,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let _config =
+        let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let vault = next_account_info(accounts_iter)?;
@@ -57,6 +61,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
+            config,
             avs,
             avs_vault_ticket,
             admin,

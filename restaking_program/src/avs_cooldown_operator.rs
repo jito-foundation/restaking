@@ -1,6 +1,6 @@
 use jito_restaking_core::{
-    config::SanitizedConfig, operator::SanitizedOperator,
-    operator_vault_ticket::SanitizedOperatorVaultTicket,
+    avs::SanitizedAvs, avs_operator_ticket::SanitizedAvsOperatorTicket, config::SanitizedConfig,
+    operator::SanitizedOperator,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
@@ -12,63 +12,63 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-/// [`crate::RestakingInstruction::OperatorRemoveVault`]
-pub fn process_operator_remove_vault(
+/// The AVS admin can remove a node operator from the AVS.
+/// This method is permissioned to the AVS admin.
+/// [`crate::RestakingInstruction::AvsRemoveOperator`]
+pub fn process_avs_cooldown_operator(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
     let SanitizedAccounts {
-        config,
-        operator,
-        mut operator_vault_ticket,
+        avs,
+        mut avs_operator_ticket,
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_vault_admin(admin.account().key)?;
+    avs.avs().check_operator_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    operator_vault_ticket
-        .operator_vault_ticket_mut()
-        .deactivate(slot, config.config().epoch_length())?;
 
-    operator_vault_ticket.save()?;
+    avs_operator_ticket
+        .avs_operator_ticket_mut()
+        .cooldown(slot)?;
+
+    avs_operator_ticket.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    operator: SanitizedOperator<'a, 'info>,
-    operator_vault_ticket: SanitizedOperatorVaultTicket<'a, 'info>,
+    avs: SanitizedAvs<'a, 'info>,
+    avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::OperatorRemoveVault`]
-    pub fn sanitize(
+    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::AvsCooldownOperator`]
+    fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let config =
+        let _config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let operator =
             SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let vault = next_account_info(accounts_iter)?;
-        let operator_vault_ticket = SanitizedOperatorVaultTicket::sanitize(
+        let avs_operator_ticket = SanitizedAvsOperatorTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
+            avs.account().key,
             operator.account().key,
-            vault.key,
         )?;
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
-            config,
-            operator,
-            operator_vault_ticket,
+            avs,
+            avs_operator_ticket,
             admin,
         })
     }

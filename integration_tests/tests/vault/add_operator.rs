@@ -23,6 +23,7 @@ async fn test_add_operator_ok() {
         .await
         .unwrap();
 
+    // create vault config
     let vault_config_pubkey = VaultConfig::find_program_address(&jito_vault_program::id()).0;
     let vault_config_admin = Keypair::new();
 
@@ -33,6 +34,11 @@ async fn test_add_operator_ok() {
 
     vault_program_client
         .initialize_config(&vault_config_pubkey, &vault_config_admin)
+        .await
+        .unwrap();
+
+    let config_account = vault_program_client
+        .get_config(&vault_config_pubkey)
         .await
         .unwrap();
 
@@ -112,6 +118,11 @@ async fn test_add_operator_ok() {
         .await
         .unwrap();
 
+    fixture
+        .warp_slot_incremental(config_account.epoch_length() * 2)
+        .await
+        .unwrap();
+
     let vault_operator_ticket = VaultOperatorTicket::find_program_address(
         &jito_vault_program::id(),
         &vault_pubkey,
@@ -138,5 +149,8 @@ async fn test_add_operator_ok() {
     assert_eq!(vault_operator_ticket.vault(), vault_pubkey);
     assert_eq!(vault_operator_ticket.operator(), operator_pubkey);
     assert_eq!(vault_operator_ticket.index(), 0);
-    assert_eq!(vault_operator_ticket.state().slot_added(), 1);
+    assert_eq!(
+        vault_operator_ticket.state().slot_added(),
+        fixture.get_current_slot().await.unwrap()
+    );
 }
