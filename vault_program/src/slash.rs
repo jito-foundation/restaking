@@ -22,6 +22,7 @@ use solana_program::{
     account_info::{next_account_info, AccountInfo},
     clock::Clock,
     entrypoint::ProgramResult,
+    msg,
     program::invoke_signed,
     program_error::ProgramError,
     pubkey::Pubkey,
@@ -54,11 +55,18 @@ pub fn process_slash(
         slasher_token_account,
     } = SanitizedAccounts::sanitize(program_id, accounts, slot)?;
 
+    msg!("checking update needed");
+    vault_delegation_list
+        .vault_delegation_list_mut()
+        .check_update_needed(slot, config.config().epoch_length())?;
+
     // The vault shall be opted-in to the AVS and the AVS shall be opted-in to the vault
+    msg!("vault <> avs check");
     vault_avs_ticket.vault_avs_ticket().check_active(slot)?;
     avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
 
     // The operator shall be opted-in to vault and the vault shall be staked to the operator
+    msg!("operator <> vault check");
     operator_vault_ticket
         .operator_vault_ticket()
         .check_active(slot)?;
@@ -67,6 +75,7 @@ pub fn process_slash(
         .check_active(slot)?;
 
     // The operator shall be opted-in to the AVS and the AVS shall be opted-in to the operator
+    msg!("avs <> operator check");
     avs_operator_ticket
         .avs_operator_ticket()
         .check_active(slot)?;
@@ -74,6 +83,7 @@ pub fn process_slash(
         .operator_avs_ticket()
         .check_active(slot)?;
     // The slasher shall be active for the AVS and the vault
+    msg!("avs <> vault check");
     avs_vault_slasher_ticket
         .avs_vault_slasher_ticket()
         .check_active(slot)?;
@@ -81,6 +91,7 @@ pub fn process_slash(
         .vault_avs_slasher_ticket()
         .check_active(slot)?;
 
+    msg!("max exceeded check");
     let max_slashable_per_epoch = vault_avs_slasher_ticket
         .vault_avs_slasher_ticket()
         .max_slashable_per_epoch();
@@ -88,16 +99,14 @@ pub fn process_slash(
         .vault_avs_slasher_operator_ticket()
         .check_max_slashable_not_exceeded(slash_amount, max_slashable_per_epoch)?;
 
-    vault_delegation_list
-        .vault_delegation_list_mut()
-        .check_update_needed(slot, config.config().epoch_length())?;
-
+    msg!("slashing");
     vault_delegation_list
         .vault_delegation_list_mut()
         .slash(operator.account().key, slash_amount)?;
     vault_avs_slasher_operator_ticket
         .vault_avs_slasher_operator_ticket_mut()
         .increment_slashed_amount(slash_amount)?;
+    msg!("sending slashed funds");
     _transfer_slashed_funds(
         &vault,
         &vault_token_account,
@@ -180,20 +189,25 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
+        msg!("a");
         let vault =
             SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
+        msg!("b");
         let avs = SanitizedAvs::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
             false,
         )?;
+        msg!("c");
         let operator = SanitizedOperator::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
             false,
         )?;
+        msg!("d");
         let slasher =
             SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
+        msg!("e");
         let avs_operator_ticket = SanitizedAvsOperatorTicket::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
@@ -201,6 +215,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             avs.account().key,
             operator.account().key,
         )?;
+        msg!("f");
         let operator_avs_ticket = SanitizedOperatorAvsTicket::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
@@ -208,6 +223,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             operator.account().key,
             avs.account().key,
         )?;
+        msg!("g");
         let avs_vault_ticket = SanitizedAvsVaultTicket::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
@@ -215,6 +231,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             avs.account().key,
             vault.account().key,
         )?;
+        msg!("h");
         let operator_vault_ticket = SanitizedOperatorVaultTicket::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
@@ -222,6 +239,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             operator.account().key,
             vault.account().key,
         )?;
+        msg!("i");
         let vault_avs_ticket = SanitizedVaultAvsTicket::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
@@ -229,6 +247,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             vault.account().key,
             avs.account().key,
         )?;
+        msg!("j");
         let vault_operator_ticket = SanitizedVaultOperatorTicket::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
@@ -236,6 +255,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             vault.account().key,
             operator.account().key,
         )?;
+        msg!("k");
         let avs_vault_slasher_ticket = SanitizedAvsVaultSlasherTicket::sanitize(
             &config.config().restaking_program(),
             next_account_info(&mut accounts_iter)?,
@@ -244,6 +264,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             vault.account().key,
             slasher.account().key,
         )?;
+        msg!("l");
         let vault_avs_slasher_ticket = SanitizedVaultAvsSlasherTicket::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
@@ -252,12 +273,14 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             avs.account().key,
             slasher.account().key,
         )?;
+        msg!("m");
         let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             next_account_info(&mut accounts_iter)?,
             true,
             vault.account().key,
         )?;
+        msg!("n");
         let epoch = slot.checked_div(config.config().epoch_length()).unwrap();
         let vault_avs_slasher_operator_ticket = SanitizedVaultAvsSlasherOperatorTicket::sanitize(
             program_id,
@@ -270,11 +293,13 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             epoch,
         )?;
 
+        msg!("o");
         let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(&mut accounts_iter)?,
             &vault.vault().supported_mint(),
             vault.account().key,
         )?;
+        msg!("p");
         let slasher_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(&mut accounts_iter)?,
             &vault.vault().supported_mint(),

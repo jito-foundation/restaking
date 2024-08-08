@@ -13,6 +13,7 @@ use jito_vault_core::{
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
 use log::info;
 use solana_program::{
+    clock::Clock,
     native_token::sol_to_lamports,
     program_pack::Pack,
     pubkey::Pubkey,
@@ -278,6 +279,12 @@ impl VaultProgramClient {
         slasher: &Pubkey,
         operator_pubkey: &Pubkey,
     ) -> Result<(), BanksClientError> {
+        let config = self
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        let clock: Clock = self.banks_client.get_sysvar().await?;
+
         let vault_avs_slasher_ticket = VaultAvsSlasherTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
@@ -292,7 +299,7 @@ impl VaultProgramClient {
                 avs_pubkey,
                 slasher,
                 operator_pubkey,
-                0, // TODO (LB): fix this
+                clock.slot / config.epoch_length(),
             )
             .0;
         self.initialize_vault_avs_slasher_operator_ticket(
@@ -374,6 +381,12 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
+        let config = self
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        let clock: Clock = self.banks_client.get_sysvar().await?;
+
         let vault_avs_slasher_operator_ticket =
             VaultAvsSlasherOperatorTicket::find_program_address(
                 &jito_vault_program::id(),
@@ -381,7 +394,7 @@ impl VaultProgramClient {
                 avs_pubkey,
                 &slasher.pubkey(),
                 operator_pubkey,
-                0, // TODO (LB): fix this
+                clock.slot / config.epoch_length(),
             )
             .0;
 
@@ -411,8 +424,7 @@ impl VaultProgramClient {
             &slasher_token_account,
             amount,
         )
-        .await
-        .unwrap();
+        .await?;
 
         Ok(())
     }

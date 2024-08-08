@@ -117,6 +117,7 @@ impl VaultDelegationList {
     #[inline(always)]
     pub fn check_update_needed(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
         if self.is_update_needed(slot, epoch_length) {
+            msg!("update needed bro");
             Err(VaultCoreError::VaultDelegationListUpdateRequired)
         } else {
             Ok(())
@@ -157,6 +158,9 @@ impl VaultDelegationList {
                 }
             }
         }
+
+        self.last_slot_updated = slot;
+
         Ok(true)
     }
 

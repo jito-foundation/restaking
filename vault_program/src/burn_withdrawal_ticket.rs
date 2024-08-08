@@ -15,6 +15,7 @@ use solana_program::{
     account_info::{next_account_info, AccountInfo},
     clock::Clock,
     entrypoint::ProgramResult,
+    msg,
     program::invoke_signed,
     program_error::ProgramError,
     pubkey::Pubkey,
@@ -46,15 +47,21 @@ pub fn process_burn_withdrawal_ticket(
     let slot = Clock::get()?.slot;
     let epoch_length = config.config().epoch_length();
 
+    vault_delegation_list
+        .vault_delegation_list()
+        .check_update_needed(slot, epoch_length)?;
+
     assert_with_msg(
         vault.vault().lrt_mint() == *lrt_mint.account().key,
         ProgramError::InvalidArgument,
         "LRT mint mismatch",
     )?;
 
+    msg!("1");
     vault_staker_withdrawal_ticket
         .vault_staker_withdrawal_ticket()
         .check_withdrawable(slot, epoch_length)?;
+    msg!("2");
 
     // find the current redemption amount and the original redemption amount in the withdraw ticket
     let redemption_amount = vault.vault().calculate_assets_returned_amount(
@@ -62,10 +69,12 @@ pub fn process_burn_withdrawal_ticket(
             .vault_staker_withdrawal_ticket()
             .lrt_amount(),
     )?;
+    msg!("3");
 
     let original_redemption_amount = vault_staker_withdrawal_ticket
         .vault_staker_withdrawal_ticket()
         .withdraw_allocation_amount();
+    msg!("4");
 
     let actual_withdraw_amount = if redemption_amount > original_redemption_amount {
         // The program can guarantee the original redemption amount, but if the redemption amount
@@ -100,16 +109,19 @@ pub fn process_burn_withdrawal_ticket(
     } else {
         redemption_amount
     };
+    msg!("5");
 
     let lrt_to_burn = vault
         .vault()
         .calculate_lrt_mint_amount(actual_withdraw_amount)?;
+    msg!("6");
     let lrt_amount_to_burn = std::cmp::min(
         lrt_to_burn,
         vault_staker_withdrawal_ticket
             .vault_staker_withdrawal_ticket()
             .lrt_amount(),
     );
+    msg!("7");
 
     _burn_lrt(
         program_id,
@@ -120,9 +132,11 @@ pub fn process_burn_withdrawal_ticket(
         &lrt_mint,
         lrt_amount_to_burn,
     )?;
+    msg!("8");
     lrt_mint.reload()?;
     vault_staker_withdrawal_ticket_token_account.reload()?;
 
+    msg!("9");
     _transfer_vault_tokens_to_staker(
         program_id,
         &vault,
@@ -133,11 +147,20 @@ pub fn process_burn_withdrawal_ticket(
     vault_token_account.reload()?;
     staker_token_account.reload()?;
 
+    msg!(
+        "decrementing reserve amount: {:?}, amount available: {:?}",
+        original_redemption_amount,
+        vault_delegation_list
+            .vault_delegation_list()
+            .withdrawable_reserve_amount()
+    );
     // Decrement the amount reserved for withdraw tickets because it's been claimed now
+    // TODO (LB): how to handle slashing? look at change in ratio?
     vault_delegation_list
         .vault_delegation_list_mut()
         .decrement_withdrawable_reserve_amount(original_redemption_amount)?;
 
+    msg!("set tokens deposited");
     // refresh after burn
     vault
         .vault_mut()
@@ -147,12 +170,7 @@ pub fn process_burn_withdrawal_ticket(
     vault.save()?;
     vault_delegation_list.save()?;
 
-    close_program_account(
-        program_id,
-        vault_staker_withdrawal_ticket.account(),
-        staker.account(),
-    )?;
-
+    msg!("close token account");
     _close_token_account(
         program_id,
         &vault,
@@ -160,6 +178,13 @@ pub fn process_burn_withdrawal_ticket(
         &vault_staker_withdrawal_ticket,
         &vault_staker_withdrawal_ticket_token_account,
         &staker_lrt_token_account,
+    )?;
+
+    msg!("close program account");
+    close_program_account(
+        program_id,
+        vault_staker_withdrawal_ticket.account(),
+        staker.account(),
     )?;
 
     Ok(())
@@ -325,30 +350,38 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
 
+        msg!("a");
         let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
+        msg!("b");
         let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
             vault.account().key,
         )?;
+        msg!("c");
         let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().supported_mint(),
             vault.account().key,
         )?;
+        msg!("d");
         let lrt_mint = SanitizedTokenMint::sanitize(next_account_info(accounts_iter)?, true)?;
+        msg!("e");
         let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
+        msg!("f");
         let staker_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().supported_mint(),
             staker.account().key,
         )?;
+        msg!("g");
         let staker_lrt_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
             staker.account().key,
         )?;
+        msg!("h");
         let vault_staker_withdrawal_ticket = SanitizedVaultStakerWithdrawalTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
@@ -356,12 +389,14 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             staker.account().key,
             true,
         )?;
+        msg!("i");
         let vault_staker_withdrawal_ticket_token_account =
             SanitizedAssociatedTokenAccount::sanitize(
                 next_account_info(accounts_iter)?,
                 &vault.vault().lrt_mint(),
                 vault_staker_withdrawal_ticket.account().key,
             )?;
+        msg!("j");
         let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
         let _system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 

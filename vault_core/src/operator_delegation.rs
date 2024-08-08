@@ -1,7 +1,7 @@
 use std::cmp::min;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
+use solana_program::{msg, pubkey::Pubkey};
 
 use crate::result::{VaultCoreError, VaultCoreResult};
 
@@ -113,6 +113,7 @@ impl OperatorDelegation {
     pub fn slash(&mut self, slash_amount: u64) -> VaultCoreResult<()> {
         let total_security_amount = self.total_security()?;
         if slash_amount > total_security_amount {
+            msg!("slashing too much");
             return Err(VaultCoreError::VaultSlashingUnderflow);
         }
 
@@ -147,6 +148,7 @@ impl OperatorDelegation {
 
         // Ensure we've slashed the exact amount requested
         if remaining_slash > 0 {
+            msg!("slashing incomplete");
             return Err(VaultCoreError::VaultSlashingIncomplete);
         }
 
