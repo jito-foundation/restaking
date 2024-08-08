@@ -40,7 +40,7 @@ pub fn process_avs_add_vault_slasher(
     let slot = Clock::get()?.slot;
     avs_vault_ticket
         .avs_vault_ticket()
-        .check_active(slot, config.config().epoch_length())?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_avs_vault_slasher_ticket(
         program_id,

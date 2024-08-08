@@ -88,8 +88,12 @@ impl AvsVaultSlasherTicket {
         self.bump
     }
 
-    pub fn check_active(&self, slot: u64, epoch_length: u64) -> RestakingCoreResult<()> {
-        if self.state.is_active(slot, epoch_length) {
+    pub fn check_active_or_cooldown(
+        &self,
+        slot: u64,
+        epoch_length: u64,
+    ) -> RestakingCoreResult<()> {
+        if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
             Err(RestakingCoreError::AvsVaultSlasherTicketInactive)

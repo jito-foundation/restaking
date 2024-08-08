@@ -39,7 +39,7 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
 
     avs_slasher_ticket
         .avs_vault_slasher_ticket()
-        .check_active(slot, config.config().epoch_length())?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     let max_slashable_per_epoch = avs_slasher_ticket
         .avs_vault_slasher_ticket()

@@ -52,10 +52,7 @@ impl SlotToggle {
         }
     }
 
-    // is_active_or_cooldown
-    // check_active_or_cooldown
-    pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
-        //TODO CK Check with LB about active state
+    pub fn is_active_or_cooldown(&self, slot: u64, epoch_length: u64) -> bool {
         matches!(
             self.state(slot, epoch_length),
             SlotToggleState::Active | SlotToggleState::Cooldown

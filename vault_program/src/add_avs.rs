@@ -43,7 +43,7 @@ pub fn process_vault_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
     let slot = Clock::get()?.slot;
     avs_vault_ticket
         .avs_vault_ticket()
-        .check_active(slot, config.config().epoch_length())?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_vault_avs_ticket(
         program_id,

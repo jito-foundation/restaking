@@ -40,7 +40,7 @@ pub fn process_avs_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     operator_avs_ticket
         .operator_avs_ticket()
-        .check_active(slot, config.config().epoch_length())?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_avs_operator_ticket(
         program_id,

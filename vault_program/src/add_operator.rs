@@ -39,7 +39,7 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
     // The operator shall support the vault for it to be added
     operator_vault_ticket
         .operator_vault_ticket()
-        .check_active(slot, config.config().epoch_length())?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_vault_operator_ticket(
         program_id,
