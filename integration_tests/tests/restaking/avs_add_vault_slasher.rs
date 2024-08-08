@@ -61,6 +61,12 @@ mod tests {
             .await
             .unwrap();
 
+        let config_account = restaking_program_client.get_config(&config).await.unwrap();
+        fixture
+            .warp_slot_incremental(2 * config_account.epoch_length())
+            .await
+            .unwrap();
+
         // AVS adds vault slasher
         let slasher = Keypair::new();
         let avs_vault_slasher_ticket = AvsVaultSlasherTicket::find_program_address(
@@ -100,6 +106,9 @@ mod tests {
         assert_eq!(ticket.slasher(), slasher.pubkey());
         assert_eq!(ticket.max_slashable_per_epoch(), max_slashable_per_epoch);
         assert_eq!(ticket.index(), 0);
-        assert_eq!(ticket.state().slot_added(), 1);
+        assert_eq!(
+            ticket.state().slot_added(),
+            fixture.get_current_slot().await.unwrap()
+        );
     }
 }

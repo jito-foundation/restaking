@@ -62,34 +62,38 @@ pub fn process_slash(
 
     // The vault shall be opted-in to the AVS and the AVS shall be opted-in to the vault
     msg!("vault <> avs check");
-    vault_avs_ticket.vault_avs_ticket().check_active(slot)?;
-    avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
+    vault_avs_ticket
+        .vault_avs_ticket()
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
+    avs_vault_ticket
+        .avs_vault_ticket()
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     // The operator shall be opted-in to vault and the vault shall be staked to the operator
     msg!("operator <> vault check");
     operator_vault_ticket
         .operator_vault_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     vault_operator_ticket
         .vault_operator_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     // The operator shall be opted-in to the AVS and the AVS shall be opted-in to the operator
     msg!("avs <> operator check");
     avs_operator_ticket
         .avs_operator_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     operator_avs_ticket
         .operator_avs_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     // The slasher shall be active for the AVS and the vault
     msg!("avs <> vault check");
     avs_vault_slasher_ticket
         .avs_vault_slasher_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
     vault_avs_slasher_ticket
         .vault_avs_slasher_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     msg!("max exceeded check");
     let max_slashable_per_epoch = vault_avs_slasher_ticket

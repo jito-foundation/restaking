@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
+    use solana_program::clock::DEFAULT_SLOTS_PER_EPOCH;
     use solana_sdk::signature::Signer;
 
     use crate::fixtures::fixture::TestBuilder;
@@ -19,7 +20,7 @@ mod tests {
 
         assert_eq!(config.admin(), config_admin.pubkey());
         assert_eq!(config.restaking_program(), jito_restaking_program::id());
-        assert_eq!(config.epoch_length(), 864_000);
+        assert_eq!(config.epoch_length(), DEFAULT_SLOTS_PER_EPOCH);
         assert_eq!(config.vaults_count(), 0);
     }
 }

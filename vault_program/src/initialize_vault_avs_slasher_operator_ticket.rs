@@ -40,7 +40,7 @@ pub fn process_initialize_vault_avs_slasher_operator_ticket(
     let slot = Clock::get()?.slot;
     vault_avs_slasher_ticket
         .vault_avs_slasher_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     let epoch = slot.checked_div(config.config().epoch_length()).unwrap();
 

@@ -1,10 +1,12 @@
 #[cfg(test)]
 mod tests {
+    use jito_restaking_core::config::Config;
+
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_add_operator_ok() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
@@ -17,6 +19,15 @@ mod tests {
 
         restaking_program_client
             .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let config_account = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config_account.epoch_length())
             .await
             .unwrap();
 
@@ -35,6 +46,9 @@ mod tests {
             operator_root.operator_pubkey
         );
         assert_eq!(vault_operator_ticket.index(), 0);
-        assert_eq!(vault_operator_ticket.state().slot_added(), 1);
+        assert_eq!(
+            vault_operator_ticket.state().slot_added(),
+            fixture.get_current_slot().await.unwrap()
+        );
     }
 }

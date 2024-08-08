@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_restaking_core::config::Config;
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
 
@@ -19,11 +20,28 @@ mod tests {
         let avs_root = restaking_program_client.setup_avs().await.unwrap();
         let operator_root = restaking_program_client.setup_operator().await.unwrap();
 
-        // AVS <-> Vault
+        let restaking_config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+
+        let slasher = Keypair::new();
+        fixture.transfer(&slasher.pubkey(), 1.0).await.unwrap();
+
         restaking_program_client
             .avs_vault_opt_in(&avs_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
+        restaking_program_client
+            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .await
+            .unwrap();
+
         vault_program_client
             .vault_avs_opt_in(&vault_root, &avs_root.avs_pubkey)
             .await
@@ -35,6 +53,10 @@ mod tests {
             .operator_avs_opt_in(&operator_root, &avs_root.avs_pubkey)
             .await
             .unwrap();
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .await
+            .unwrap();
         restaking_program_client
             .avs_operator_opt_in(&avs_root, &operator_root.operator_pubkey)
             .await
@@ -42,25 +64,33 @@ mod tests {
 
         // Vault <-> Operator
         // operator needs to opt-in first
-        restaking_program_client
-            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
         vault_program_client
             .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
-        // AVS + vault configures slasher
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 1.0).await.unwrap();
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .await
+            .unwrap();
 
         restaking_program_client
             .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
             .await
             .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .await
+            .unwrap();
+
         vault_program_client
             .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
             .await
             .unwrap();
 
@@ -103,6 +133,10 @@ mod tests {
 
         // user has 99_000 because 100 bips deposit fee
 
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
         vault_program_client
             .delegate(&vault_root, &operator_root.operator_pubkey, 10_000)
             .await
@@ -159,18 +193,19 @@ mod tests {
         assert_eq!(delegations[0].operator(), operator_root.operator_pubkey);
         assert_eq!(delegations[0].staked_amount(), 9_900);
 
+        let epoch = fixture.get_current_slot().await.unwrap() / restaking_config.epoch_length();
         let vault_avs_slasher_operator_ticket = vault_program_client
             .get_vault_avs_slasher_operator_ticket(
                 &vault_root.vault_pubkey,
                 &avs_root.avs_pubkey,
                 &slasher.pubkey(),
                 &operator_root.operator_pubkey,
-                0,
+                epoch,
             )
             .await
             .unwrap();
         assert_eq!(vault_avs_slasher_operator_ticket.slashed(), 100);
-        assert_eq!(vault_avs_slasher_operator_ticket.epoch(), 0);
+        assert_eq!(vault_avs_slasher_operator_ticket.epoch(), epoch);
         assert_eq!(
             vault_avs_slasher_operator_ticket.vault(),
             vault_root.vault_pubkey

@@ -148,6 +148,11 @@ impl TestBuilder {
         Ok(())
     }
 
+    pub async fn get_current_slot(&mut self) -> Result<u64, BanksClientError> {
+        let clock: Clock = self.context.banks_client.get_sysvar().await?;
+        Ok(clock.slot)
+    }
+
     pub fn vault_program_client(&self) -> VaultProgramClient {
         VaultProgramClient::new(
             self.context.banks_client.clone(),

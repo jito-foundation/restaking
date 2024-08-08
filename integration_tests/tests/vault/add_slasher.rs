@@ -1,12 +1,13 @@
 #[cfg(test)]
 mod tests {
+    use jito_restaking_core::config::Config;
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_add_slasher_ok() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
@@ -22,6 +23,16 @@ mod tests {
             .await
             .unwrap();
 
+        let config_account = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * config_account.epoch_length())
+            .await
+            .unwrap();
+
         vault_program_client
             .vault_avs_opt_in(&vault_root, &avs_root.avs_pubkey)
             .await
@@ -30,6 +41,11 @@ mod tests {
         let slasher = Keypair::new();
         restaking_program_client
             .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * config_account.epoch_length())
             .await
             .unwrap();
 
@@ -51,6 +67,9 @@ mod tests {
         assert_eq!(vault_avs_slasher.slasher(), slasher.pubkey());
         assert_eq!(vault_avs_slasher.index(), 0);
         assert_eq!(vault_avs_slasher.max_slashable_per_epoch(), 100);
-        assert_eq!(vault_avs_slasher.state().slot_added(), 1);
+        assert_eq!(
+            vault_avs_slasher.state().slot_added(),
+            fixture.get_current_slot().await.unwrap()
+        );
     }
 }

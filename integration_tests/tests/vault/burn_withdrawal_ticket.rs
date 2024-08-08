@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_restaking_core::config::Config as RestakingConfig;
     use jito_vault_core::config::Config;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::{Keypair, Signer};
@@ -41,29 +42,53 @@ mod tests {
         let operator_root = restaking_program_client.setup_operator().await.unwrap();
         let avs_root = restaking_program_client.setup_avs().await.unwrap();
 
+        let restaking_config = restaking_program_client
+            .get_config(&RestakingConfig::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+
         // Setup necessary relationships
         restaking_program_client
             .operator_avs_opt_in(&operator_root, &avs_root.avs_pubkey)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
             .await
             .unwrap();
         restaking_program_client
             .avs_operator_opt_in(&avs_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
+
         restaking_program_client
             .avs_vault_opt_in(&avs_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-        restaking_program_client
-            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
             .await
             .unwrap();
         vault_program_client
             .vault_avs_opt_in(&vault_root, &avs_root.avs_pubkey)
             .await
             .unwrap();
+
+        restaking_program_client
+            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .await
+            .unwrap();
         vault_program_client
             .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
             .await
             .unwrap();
 
@@ -97,6 +122,11 @@ mod tests {
                 None,
                 deposit_amount,
             )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -588,6 +618,15 @@ mod tests {
             .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
             .await
             .unwrap();
+        let restaking_config = restaking_program_client
+            .get_config(&RestakingConfig::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .await
+            .unwrap();
+
         vault_program_client
             .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
             .await

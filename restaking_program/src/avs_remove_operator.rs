@@ -17,6 +17,7 @@ use solana_program::{
 /// [`crate::RestakingInstruction::AvsRemoveOperator`]
 pub fn process_avs_remove_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         avs,
         mut avs_operator_ticket,
         admin,
@@ -28,7 +29,7 @@ pub fn process_avs_remove_operator(program_id: &Pubkey, accounts: &[AccountInfo]
 
     avs_operator_ticket
         .avs_operator_ticket_mut()
-        .deactivate(slot)?;
+        .deactivate(slot, config.config().epoch_length())?;
 
     avs_operator_ticket.save()?;
 
@@ -36,6 +37,7 @@ pub fn process_avs_remove_operator(program_id: &Pubkey, accounts: &[AccountInfo]
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     avs: SanitizedAvs<'a, 'info>,
     avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
@@ -49,7 +51,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let _config =
+        let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let operator =
@@ -64,6 +66,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
+            config,
             avs,
             avs_operator_ticket,
             admin,

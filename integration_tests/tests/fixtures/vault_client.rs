@@ -491,8 +491,7 @@ impl VaultProgramClient {
             &vault_root.vault_admin,
             &vault_root.vault_admin,
         )
-        .await
-        .unwrap();
+        .await?;
 
         Ok(())
     }

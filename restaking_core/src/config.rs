@@ -1,5 +1,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, entrypoint::ProgramResult,
+    pubkey::Pubkey,
+};
 
 use crate::{
     result::{RestakingCoreError, RestakingCoreResult},
@@ -24,6 +27,9 @@ pub struct Config {
     /// The number of operators managed by the program
     operator_count: u64,
 
+    /// The length of an epoch in slots
+    epoch_length: u64,
+
     /// Reserved space
     reserved: [u8; 128],
 
@@ -37,6 +43,7 @@ impl Config {
             account_type: AccountType::Config,
             admin,
             vault_program,
+            epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             avs_count: 0,
             operator_count: 0,
             reserved: [0; 128],
@@ -62,6 +69,10 @@ impl Config {
             .checked_add(1)
             .ok_or(RestakingCoreError::OperatorOverflow)?;
         Ok(())
+    }
+
+    pub const fn epoch_length(&self) -> u64 {
+        self.epoch_length
     }
 
     pub const fn operators_count(&self) -> u64 {

@@ -23,6 +23,7 @@ use solana_program::{
 /// Instruction: [`crate::VaultInstruction::AddOperator`]
 pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         mut vault,
         operator,
         operator_vault_ticket,
@@ -38,7 +39,7 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
     // The operator shall support the vault for it to be added
     operator_vault_ticket
         .operator_vault_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_vault_operator_ticket(
         program_id,
@@ -110,6 +111,7 @@ fn _create_vault_operator_ticket<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
     operator_vault_ticket: SanitizedOperatorVaultTicket<'a, 'info>,
@@ -153,6 +155,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
+            config,
             vault,
             operator,
             operator_vault_ticket,
