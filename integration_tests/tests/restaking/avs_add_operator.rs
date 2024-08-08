@@ -23,6 +23,8 @@ async fn test_avs_add_operator_ok() {
         .await
         .unwrap();
 
+    let config_account = restaking_program_client.get_config(&config).await.unwrap();
+
     // Initialize operator
     let operator_admin = Keypair::new();
     let operator_base = Keypair::new();
@@ -69,6 +71,11 @@ async fn test_avs_add_operator_ok() {
         .await
         .unwrap();
 
+    fixture
+        .warp_slot_incremental(config_account.epoch_length() * 2)
+        .await
+        .unwrap();
+
     // AVS adds operator
     let avs_operator_ticket = AvsOperatorTicket::find_program_address(
         &jito_restaking_program::id(),
@@ -101,7 +108,10 @@ async fn test_avs_add_operator_ok() {
     assert_eq!(ticket.avs(), avs_pubkey);
     assert_eq!(ticket.operator(), operator_pubkey);
     assert_eq!(ticket.index(), 0);
-    assert_eq!(ticket.state().slot_added(), 1);
+    assert_eq!(
+        ticket.state().slot_added(),
+        fixture.get_current_slot().await.unwrap()
+    );
 }
 
 #[tokio::test]
@@ -283,6 +293,8 @@ async fn test_avs_add_operator_duplicate_fails() {
         .await
         .unwrap();
 
+    let config_account = restaking_program_client.get_config(&config).await.unwrap();
+
     // Initialize operator
     let operator_admin = Keypair::new();
     let operator_base = Keypair::new();
@@ -326,6 +338,11 @@ async fn test_avs_add_operator_duplicate_fails() {
             &operator_admin,
             &payer,
         )
+        .await
+        .unwrap();
+
+    fixture
+        .warp_slot_incremental(config_account.epoch_length() * 2)
         .await
         .unwrap();
 

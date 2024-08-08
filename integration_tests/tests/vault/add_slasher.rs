@@ -28,6 +28,11 @@ async fn test_add_slasher_ok() {
         .await
         .unwrap();
 
+    let restaking_config_account = restaking_program_client
+        .get_config(&restaking_config)
+        .await
+        .unwrap();
+
     // Initialize AVS
     let avs_admin = Keypair::new();
     let avs_base = Keypair::new();
@@ -49,6 +54,15 @@ async fn test_add_slasher_ok() {
         .initialize_config(&vault_config_pubkey, &vault_config_admin)
         .await
         .unwrap();
+
+    let vault_config_account = vault_program_client
+        .get_config(&vault_config_pubkey)
+        .await
+        .unwrap();
+
+    let max_epoch_length = restaking_config_account
+        .epoch_length()
+        .max(vault_config_account.epoch_length());
 
     // Initialize Vault
     let vault_base = Keypair::new();
@@ -98,6 +112,11 @@ async fn test_add_slasher_ok() {
         .await
         .unwrap();
 
+    fixture
+        .warp_slot_incremental(max_epoch_length * 2)
+        .await
+        .unwrap();
+
     // vault adds avs
     let vault_avs_ticket_pubkey =
         VaultAvsTicket::find_program_address(&jito_vault_program::id(), &vault_pubkey, &avs_pubkey)
@@ -125,6 +144,11 @@ async fn test_add_slasher_ok() {
     )
     .0;
 
+    fixture
+        .warp_slot_incremental(max_epoch_length * 2)
+        .await
+        .unwrap();
+
     restaking_program_client
         .avs_add_vault_slasher(
             &restaking_config,
@@ -149,6 +173,11 @@ async fn test_add_slasher_ok() {
     )
     .0;
 
+    fixture
+        .warp_slot_incremental(max_epoch_length * 2)
+        .await
+        .unwrap();
+
     vault_program_client
         .add_slasher(
             &vault_config_pubkey,
@@ -172,5 +201,8 @@ async fn test_add_slasher_ok() {
     assert_eq!(vault_avs_slasher.slasher(), slasher.pubkey());
     assert_eq!(vault_avs_slasher.index(), 0);
     assert_eq!(vault_avs_slasher.max_slashable_per_epoch(), 100);
-    assert_eq!(vault_avs_slasher.state().slot_added(), 1);
+    assert_eq!(
+        vault_avs_slasher.state().slot_added(),
+        fixture.get_current_slot().await.unwrap()
+    );
 }
