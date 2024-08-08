@@ -127,8 +127,7 @@ impl OperatorDelegation {
             let pro_rata_slash = (*amount as u128)
                 .checked_mul(slash_amount as u128)
                 .ok_or(VaultCoreError::VaultSlashingOverflow)?
-                .checked_div(total_security_amount as u128)
-                .ok_or(VaultCoreError::VaultSlashingDivisionByZero)?;
+                .div_ceil(total_security_amount as u128);
             let actual_slash = min(pro_rata_slash as u64, min(*amount, remaining_slash));
             *amount = amount
                 .checked_sub(actual_slash)

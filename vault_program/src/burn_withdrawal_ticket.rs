@@ -87,7 +87,7 @@ pub fn process_burn_withdrawal_ticket(
         let tokens_deposited_in_vault = vault.vault().tokens_deposited();
         let delegated_security_in_vault = vault_delegation_list
             .vault_delegation_list()
-            .all_security()?;
+            .total_security()?;
         let assets_reserved_for_withdrawal_tickets = vault_delegation_list
             .vault_delegation_list()
             .withdrawable_reserve_amount();
@@ -154,8 +154,13 @@ pub fn process_burn_withdrawal_ticket(
             .vault_delegation_list()
             .withdrawable_reserve_amount()
     );
-    // Decrement the amount reserved for withdraw tickets because it's been claimed now
-    // TODO (LB): how to handle slashing? look at change in ratio?
+
+    // Decrement the amount reserved for withdraw tickets because it's been claimed now.
+    // This part is tricky in the event the ratio
+    // TODO (LB): this is tricky... if there's a withdraw ticket and there's a slashing event in the epoch
+    // where withdrawal funds are cooling down, the slashing event will be applied to the withdraw reserve on the operator
+    // which propagates to this. if there's a slashing after the withdrawed funds are fully cooled down and ready, it won't
+    // show up in this. how do we reconcile this?
     vault_delegation_list
         .vault_delegation_list_mut()
         .decrement_withdrawable_reserve_amount(original_redemption_amount)?;
@@ -167,10 +172,6 @@ pub fn process_burn_withdrawal_ticket(
         .set_tokens_deposited(vault_token_account.token_account().amount);
     vault.vault_mut().set_lrt_supply(lrt_mint.mint().supply);
 
-    vault.save()?;
-    vault_delegation_list.save()?;
-
-    msg!("close token account");
     _close_token_account(
         program_id,
         &vault,
@@ -180,12 +181,14 @@ pub fn process_burn_withdrawal_ticket(
         &staker_lrt_token_account,
     )?;
 
-    msg!("close program account");
     close_program_account(
         program_id,
         vault_staker_withdrawal_ticket.account(),
         staker.account(),
     )?;
+
+    vault.save()?;
+    vault_delegation_list.save()?;
 
     Ok(())
 }

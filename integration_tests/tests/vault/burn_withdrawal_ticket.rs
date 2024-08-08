@@ -120,6 +120,7 @@ mod tests {
         }
     }
 
+    /// One can't burn the withdraw ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         let mut fixture = TestBuilder::new().await;
@@ -152,6 +153,7 @@ mod tests {
             .unwrap_err();
     }
 
+    /// One can't burn the withdraw ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_next_epoch_fails() {
         let mut fixture = TestBuilder::new().await;
@@ -198,6 +200,7 @@ mod tests {
             .unwrap_err();
     }
 
+    /// Tests basic withdraw ticket with no rewards or slashing incidents
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_basic_success() {
         let mut fixture = TestBuilder::new().await;
@@ -264,6 +267,9 @@ mod tests {
         assert_eq!(depositor_token_account.amount, 1000);
     }
 
+    /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
+    /// assets the user gets back shall be larger than the amount set aside for withdrawal.
+    /// The rewards were not staked, so they can be fully withdrawn from the vault.
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_with_unstaked_rewards() {
         let mut fixture = TestBuilder::new().await;
@@ -336,6 +342,10 @@ mod tests {
         assert_eq!(depositor_token_account.amount, 1100);
     }
 
+    /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
+    /// assets the user gets back shall be larger than the amount set aside for withdrawal. However,
+    /// those rewards were staked, so the user can't receive them. In this case, they shall receive
+    /// back the amount set aside for withdraw and the excess LRT tokens.
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_with_staked_rewards() {
         let mut fixture = TestBuilder::new().await;
@@ -436,6 +446,14 @@ mod tests {
         assert_eq!(vault_token_account.amount, 100);
     }
 
+    // /// This test is complicated... TODO (LB): need to figure out this logic guh
+    // ///
+    // /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
+    // /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
+    // /// set aside is reduced to 0.
+    // ///
+    // /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
+    // /// won't match the withdrawal amount reserved in the withdrawal ticket.
     // #[tokio::test]
     // async fn test_burn_withdrawal_ticket_with_slashing_before_update() {
     //     let mut fixture = TestBuilder::new().await;
@@ -443,7 +461,6 @@ mod tests {
     //     let mut restaking_program_client = fixture.restaking_program_client();
     //
     //     let PreparedWithdrawalTicket {
-    //         vault_config_admin,
     //         vault_root,
     //         avs_root,
     //         operator_root,
@@ -525,6 +542,9 @@ mod tests {
     //         .unwrap();
     // }
 
+    /// The user withdrew at some ratio of the vault, but a slashing took place after the withdrawal ticket
+    /// had matured. The user gets back less than they originally anticipated and the amount of withdrawal
+    /// set aside is reduced to 0.
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_with_slashing_after_update() {
         let mut fixture = TestBuilder::new().await;
