@@ -9,6 +9,7 @@ use solana_program::{
 };
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
+    clock::Clock,
     commitment_config::CommitmentLevel,
     signature::{Keypair, Signer},
     transaction::Transaction,
@@ -202,6 +203,27 @@ impl TestBuilder {
                 CommitmentLevel::Processed,
             )
             .await
+    }
+
+    pub async fn warp_slot_incremental(
+        &mut self,
+        incremental_slots: u64,
+    ) -> Result<(), BanksClientError> {
+        let clock: Clock = self.context.banks_client.get_sysvar().await?;
+        self.context
+            .warp_to_slot(clock.slot.checked_add(incremental_slots).unwrap())
+            .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
+        Ok(())
+    }
+
+    pub async fn get_current_slot(&mut self) -> Result<u64, BanksClientError> {
+        let clock: Clock = self.context.banks_client.get_sysvar().await?;
+        Ok(clock.slot)
+    }
+
+    pub async fn get_current_epoch(&mut self, epoch_length: u64) -> Result<u64, BanksClientError> {
+        let current_slot = self.get_current_slot().await?;
+        Ok(current_slot / epoch_length)
     }
 
     // pub async fn warp_to_next_slot(&mut self) -> Result<(), BanksClientError> {

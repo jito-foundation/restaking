@@ -12,7 +12,6 @@ use crate::fixtures::fixture::TestBuilder;
 #[tokio::test]
 async fn test_add_avs_ok() {
     let mut fixture = TestBuilder::new().await;
-
     let mut restaking_program_client = fixture.restaking_program_client();
     let mut vault_program_client = fixture.vault_program_client();
 
@@ -22,6 +21,7 @@ async fn test_add_avs_ok() {
         .await
         .unwrap();
 
+    // create vault config
     let vault_config_pubkey = VaultConfig::find_program_address(&jito_vault_program::id()).0;
     let vault_config_admin = Keypair::new();
 
@@ -32,6 +32,11 @@ async fn test_add_avs_ok() {
 
     vault_program_client
         .initialize_config(&vault_config_pubkey, &vault_config_admin)
+        .await
+        .unwrap();
+
+    let config_account = vault_program_client
+        .get_config(&vault_config_pubkey)
         .await
         .unwrap();
 
@@ -101,6 +106,11 @@ async fn test_add_avs_ok() {
         .await
         .unwrap();
 
+    fixture
+        .warp_slot_incremental(config_account.epoch_length() * 2)
+        .await
+        .unwrap();
+
     let vault_avs_ticket =
         VaultAvsTicket::find_program_address(&jito_vault_program::id(), &vault_pubkey, &avs_pubkey)
             .0;
@@ -124,5 +134,8 @@ async fn test_add_avs_ok() {
     assert_eq!(vault_avs_ticket_account.vault(), vault_pubkey);
     assert_eq!(vault_avs_ticket_account.avs(), avs_pubkey);
     assert_eq!(vault_avs_ticket_account.index(), 0);
-    assert_eq!(vault_avs_ticket_account.state().slot_added(), 1);
+    assert_eq!(
+        vault_avs_ticket_account.state().slot_added(),
+        fixture.get_current_slot().await.unwrap()
+    );
 }

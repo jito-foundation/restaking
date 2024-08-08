@@ -23,6 +23,7 @@ use solana_program::{
 /// Processes the register slasher instruction: [`crate::VaultInstruction::AddSlasher`]
 pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         mut vault,
         avs,
         slasher,
@@ -38,7 +39,7 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
 
     avs_slasher_ticket
         .avs_vault_slasher_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     let max_slashable_per_epoch = avs_slasher_ticket
         .avs_vault_slasher_ticket()
@@ -121,6 +122,7 @@ fn _create_vault_avs_slasher_ticket<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     avs: SanitizedAvs<'a, 'info>,
     slasher: &'a AccountInfo<'info>,
@@ -162,6 +164,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(account_iter)?)?;
 
         Ok(SanitizedAccounts {
+            config,
             vault,
             avs,
             slasher,

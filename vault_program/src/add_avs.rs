@@ -28,6 +28,7 @@ use solana_program::{
 /// Instruction: [`crate::VaultInstruction::AddAvs`]
 pub fn process_vault_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         mut vault,
         avs,
         avs_vault_ticket,
@@ -40,7 +41,9 @@ pub fn process_vault_add_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
     vault.vault().check_avs_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
+    avs_vault_ticket
+        .avs_vault_ticket()
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_vault_avs_ticket(
         program_id,
@@ -110,6 +113,7 @@ fn _create_vault_avs_ticket<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     avs: SanitizedAvs<'a, 'info>,
     avs_vault_ticket: SanitizedAvsVaultTicket<'a, 'info>,
@@ -152,6 +156,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
+            config,
             vault,
             avs,
             avs_vault_ticket,

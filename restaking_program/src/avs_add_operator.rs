@@ -24,6 +24,7 @@ use solana_program::{
 /// [`crate::RestakingInstruction::AvsAddOperator`]
 pub fn process_avs_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         mut avs,
         operator,
         avs_operator_ticket_account,
@@ -39,7 +40,7 @@ pub fn process_avs_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     operator_avs_ticket
         .operator_avs_ticket()
-        .check_active(slot)?;
+        .check_active_or_cooldown(slot, config.config().epoch_length())?;
 
     _create_avs_operator_ticket(
         program_id,
@@ -111,6 +112,7 @@ fn _create_avs_operator_ticket<'a, 'info>(
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     avs: SanitizedAvs<'a, 'info>,
     operator: SanitizedOperator<'a, 'info>,
     avs_operator_ticket_account: EmptyAccount<'a, 'info>,
@@ -128,7 +130,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let _config =
+        let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
         let operator =
@@ -147,6 +149,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
 
         Ok(SanitizedAccounts {
+            config,
             avs,
             operator,
             avs_operator_ticket_account,

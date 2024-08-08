@@ -33,6 +33,11 @@ async fn test_slash_ok() {
         .await
         .unwrap();
 
+    let restaking_config_account = restaking_program_client
+        .get_config(&restaking_config)
+        .await
+        .unwrap();
+
     // Initialize AVS
     let avs_admin = Keypair::new();
     let avs_base = Keypair::new();
@@ -73,6 +78,15 @@ async fn test_slash_ok() {
         .initialize_config(&vault_config_pubkey, &vault_config_admin)
         .await
         .unwrap();
+
+    let vault_config_account = vault_program_client
+        .get_config(&vault_config_pubkey)
+        .await
+        .unwrap();
+
+    let max_epoch_length = restaking_config_account
+        .epoch_length()
+        .max(vault_config_account.epoch_length());
 
     // Initialize Vault
     let vault_base = Keypair::new();
@@ -160,6 +174,11 @@ async fn test_slash_ok() {
         .await
         .unwrap();
 
+    fixture
+        .warp_slot_incremental(max_epoch_length * 2)
+        .await
+        .unwrap();
+
     // avs adds operator
     let avs_operator_ticket_pubkey = AvsOperatorTicket::find_program_address(
         &jito_restaking_program::id(),
@@ -240,6 +259,11 @@ async fn test_slash_ok() {
             &avs_admin,
             100,
         )
+        .await
+        .unwrap();
+
+    fixture
+        .warp_slot_incremental(max_epoch_length * 2)
         .await
         .unwrap();
 
@@ -342,6 +366,11 @@ async fn test_slash_ok() {
         .await
         .unwrap();
 
+    fixture
+        .warp_slot_incremental(max_epoch_length * 2)
+        .await
+        .unwrap();
+
     let vault_delegation_list = vault_program_client
         .get_vault_delegation_list(&vault_delegate_list_pubkey)
         .await
@@ -366,13 +395,15 @@ async fn test_slash_ok() {
     )
     .0;
 
+    let current_epoch = fixture.get_current_epoch(max_epoch_length).await.unwrap();
+
     let vault_avs_slasher_operator_ticket = VaultAvsSlasherOperatorTicket::find_program_address(
         &jito_vault_program::id(),
         &vault_pubkey,
         &avs_pubkey,
         &slasher.pubkey(),
         &operator_pubkey,
-        0,
+        current_epoch,
     )
     .0;
 
@@ -432,12 +463,12 @@ async fn test_slash_ok() {
             &avs_pubkey,
             &slasher.pubkey(),
             &operator_pubkey,
-            0,
+            current_epoch,
         )
         .await
         .unwrap();
     assert_eq!(vault_avs_slasher_operator_ticket.slashed(), 100);
-    assert_eq!(vault_avs_slasher_operator_ticket.epoch(), 0);
+    assert_eq!(vault_avs_slasher_operator_ticket.epoch(), current_epoch);
     assert_eq!(vault_avs_slasher_operator_ticket.vault(), vault_pubkey);
     assert_eq!(vault_avs_slasher_operator_ticket.avs(), avs_pubkey);
     assert_eq!(

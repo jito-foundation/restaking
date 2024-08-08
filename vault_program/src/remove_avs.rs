@@ -21,6 +21,7 @@ use solana_program::{
 /// Instruction: [`crate::VaultInstruction::RemoveAvs`]
 pub fn process_vault_remove_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
+        config,
         vault,
         mut vault_avs_ticket,
         admin,
@@ -29,7 +30,9 @@ pub fn process_vault_remove_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -
     vault.vault().check_avs_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-    vault_avs_ticket.vault_avs_ticket_mut().deactivate(slot)?;
+    vault_avs_ticket
+        .vault_avs_ticket_mut()
+        .deactivate(slot, config.config().epoch_length())?;
 
     vault_avs_ticket.save()?;
 
@@ -37,6 +40,7 @@ pub fn process_vault_remove_avs(program_id: &Pubkey, accounts: &[AccountInfo]) -
 }
 
 struct SanitizedAccounts<'a, 'info> {
+    config: SanitizedConfig<'a, 'info>,
     vault: SanitizedVault<'a, 'info>,
     vault_avs_ticket: SanitizedVaultAvsTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
@@ -70,6 +74,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
+            config,
             vault,
             vault_avs_ticket,
             admin,
