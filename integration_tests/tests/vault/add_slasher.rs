@@ -16,10 +16,10 @@ mod tests {
 
         let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
 
-        let avs_root = restaking_program_client.setup_avs().await.unwrap();
+        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
 
         restaking_program_client
-            .avs_vault_opt_in(&avs_root, &vault_root.vault_pubkey)
+            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -34,13 +34,13 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_avs_opt_in(&vault_root, &avs_root.avs_pubkey)
+            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
         let slasher = Keypair::new();
         restaking_program_client
-            .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
+            .ncn_vault_slasher_opt_in(&ncn_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
             .await
             .unwrap();
 
@@ -50,25 +50,25 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
+            .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
             .await
             .unwrap();
 
-        let vault_avs_slasher = vault_program_client
-            .get_vault_avs_slasher_ticket(
+        let vault_ncn_slasher = vault_program_client
+            .get_vault_ncn_slasher_ticket(
                 &vault_root.vault_pubkey,
-                &avs_root.avs_pubkey,
+                &ncn_root.ncn_pubkey,
                 &slasher.pubkey(),
             )
             .await
             .unwrap();
-        assert_eq!(vault_avs_slasher.vault(), vault_root.vault_pubkey);
-        assert_eq!(vault_avs_slasher.avs(), avs_root.avs_pubkey);
-        assert_eq!(vault_avs_slasher.slasher(), slasher.pubkey());
-        assert_eq!(vault_avs_slasher.index(), 0);
-        assert_eq!(vault_avs_slasher.max_slashable_per_epoch(), 100);
+        assert_eq!(vault_ncn_slasher.vault(), vault_root.vault_pubkey);
+        assert_eq!(vault_ncn_slasher.ncn(), ncn_root.ncn_pubkey);
+        assert_eq!(vault_ncn_slasher.slasher(), slasher.pubkey());
+        assert_eq!(vault_ncn_slasher.index(), 0);
+        assert_eq!(vault_ncn_slasher.max_slashable_per_epoch(), 100);
         assert_eq!(
-            vault_avs_slasher.state().slot_added(),
+            vault_ncn_slasher.state().slot_added(),
             fixture.get_current_slot().await.unwrap()
         );
     }

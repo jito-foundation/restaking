@@ -34,24 +34,24 @@ pub enum VaultInstruction {
     /// Initializes a vault with an already-created LRT mint
     InitializeVaultWithMint,
 
-    /// Vault adds support for the AVS
+    /// Vault adds support for the NCN
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, name = "avs")]
-    #[account(3, name = "avs_vault_ticket")]
-    #[account(4, writable, name = "vault_avs_ticket")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "ncn_vault_ticket")]
+    #[account(4, writable, name = "vault_ncn_ticket")]
     #[account(5, signer, name = "admin")]
     #[account(6, writable, signer, name = "payer")]
     #[account(7, name = "system_program")]
-    AddAvs,
+    AddNcn,
 
-    /// Vault removes support for an AVS
+    /// Vault removes support for an NCN
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
-    #[account(2, name = "avs")]
-    #[account(3, writable, name = "vault_avs_ticket")]
+    #[account(2, name = "ncn")]
+    #[account(3, writable, name = "vault_ncn_ticket")]
     #[account(4, signer, name = "admin")]
-    RemoveAvs,
+    RemoveNcn,
 
     /// Vault adds support for an operator
     #[account(0, name = "config")]
@@ -180,9 +180,9 @@ pub enum VaultInstruction {
     /// Registers a slasher with the vault
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
-    #[account(2, name = "avs")]
+    #[account(2, name = "ncn")]
     #[account(3, name = "slasher")]
-    #[account(4, name = "avs_slasher_ticket")]
+    #[account(4, name = "ncn_slasher_ticket")]
     #[account(5, writable, name = "vault_slasher_ticket")]
     #[account(6, signer, name = "admin")]
     #[account(7, signer, writable, name = "payer")]
@@ -204,34 +204,34 @@ pub enum VaultInstruction {
     },
 
     /// Initializes the account which keeps track of how much an operator has been slashed
-    /// by a slasher for a given AVS and vault for a given epoch.
+    /// by a slasher for a given NCN and vault for a given epoch.
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
-    #[account(2, name = "avs")]
+    #[account(2, name = "ncn")]
     #[account(3, name = "slasher")]
     #[account(4, name = "operator")]
-    #[account(5, name = "vault_avs_slasher_ticket")]
-    #[account(6, writable, name = "vault_avs_slasher_operator_ticket")]
+    #[account(5, name = "vault_ncn_slasher_ticket")]
+    #[account(6, writable, name = "vault_ncn_slasher_operator_ticket")]
     #[account(7, writable, signer, name = "payer")]
     #[account(8, name = "system_program")]
-    InitializeVaultAvsSlasherOperatorTicket,
+    InitializeVaultNcnSlasherOperatorTicket,
 
     /// Slashes an amount of tokens from the vault
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, name = "avs")]
+    #[account(2, name = "ncn")]
     #[account(3, name = "operator")]
     #[account(4, name = "slasher")]
-    #[account(5, name = "avs_operator_ticket")]
-    #[account(6, name = "operator_avs_ticket")]
-    #[account(7, name = "avs_vault_ticket")]
+    #[account(5, name = "ncn_operator_ticket")]
+    #[account(6, name = "operator_ncn_ticket")]
+    #[account(7, name = "ncn_vault_ticket")]
     #[account(8, name = "operator_vault_ticket")]
-    #[account(9, name = "vault_avs_ticket")]
+    #[account(9, name = "vault_ncn_ticket")]
     #[account(10, name = "vault_operator_ticket")]
-    #[account(11, name = "avs_vault_slasher_ticket")]
-    #[account(12, name = "vault_avs_slasher_ticket")]
+    #[account(11, name = "ncn_vault_slasher_ticket")]
+    #[account(12, name = "vault_ncn_slasher_ticket")]
     #[account(13, writable, name = "vault_delegation_list")]
-    #[account(14, writable, name = "vault_avs_slasher_operator_ticket")]
+    #[account(14, writable, name = "vault_ncn_slasher_operator_ticket")]
     #[account(15, writable, name = "vault_token_account")]
     #[account(16, name = "slasher_token_account")]
     #[account(17, name = "token_program")]
@@ -303,22 +303,22 @@ pub fn initialize_vault(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn add_avs(
+pub fn add_ncn(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    avs: &Pubkey,
-    avs_vault_ticket: &Pubkey,
-    vault_avs_ticket: &Pubkey,
+    ncn: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
+    vault_ncn_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new_readonly(*avs, false),
-        AccountMeta::new_readonly(*avs_vault_ticket, false),
-        AccountMeta::new(*vault_avs_ticket, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*ncn_vault_ticket, false),
+        AccountMeta::new(*vault_ncn_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -326,29 +326,29 @@ pub fn add_avs(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::AddAvs.try_to_vec().unwrap(),
+        data: VaultInstruction::AddNcn.try_to_vec().unwrap(),
     }
 }
 
-pub fn remove_avs(
+pub fn remove_ncn(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    avs: &Pubkey,
-    vault_avs_ticket: &Pubkey,
+    ncn: &Pubkey,
+    vault_ncn_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new_readonly(*avs, false),
-        AccountMeta::new(*vault_avs_ticket, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new(*vault_ncn_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveAvs.try_to_vec().unwrap(),
+        data: VaultInstruction::RemoveNcn.try_to_vec().unwrap(),
     }
 }
 
@@ -593,9 +593,9 @@ pub fn add_slasher(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     slasher: &Pubkey,
-    avs_slasher_ticket: &Pubkey,
+    ncn_slasher_ticket: &Pubkey,
     vault_slasher_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
@@ -603,9 +603,9 @@ pub fn add_slasher(
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*slasher, false),
-        AccountMeta::new_readonly(*avs_slasher_ticket, false),
+        AccountMeta::new_readonly(*ncn_slasher_ticket, false),
         AccountMeta::new(*vault_slasher_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
@@ -649,32 +649,32 @@ pub fn update_token_metadata(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn initialize_vault_avs_slasher_operator_ticket(
+pub fn initialize_vault_ncn_slasher_operator_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     slasher: &Pubkey,
     operator: &Pubkey,
-    vault_avs_slasher_ticket: &Pubkey,
-    vault_avs_slasher_operator_ticket: &Pubkey,
+    vault_ncn_slasher_ticket: &Pubkey,
+    vault_ncn_slasher_operator_ticket: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*slasher, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*vault_avs_slasher_ticket, false),
-        AccountMeta::new(*vault_avs_slasher_operator_ticket, false),
+        AccountMeta::new_readonly(*vault_ncn_slasher_ticket, false),
+        AccountMeta::new(*vault_ncn_slasher_operator_ticket, false),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultAvsSlasherOperatorTicket
+        data: VaultInstruction::InitializeVaultNcnSlasherOperatorTicket
             .try_to_vec()
             .unwrap(),
     }
@@ -685,19 +685,19 @@ pub fn slash(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     operator: &Pubkey,
     slasher: &Pubkey,
-    avs_operator_ticket: &Pubkey,
-    operator_avs_ticket: &Pubkey,
-    avs_vault_ticket: &Pubkey,
+    ncn_operator_ticket: &Pubkey,
+    operator_ncn_ticket: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
     operator_vault_ticket: &Pubkey,
-    vault_avs_ticket: &Pubkey,
+    vault_ncn_ticket: &Pubkey,
     vault_operator_ticket: &Pubkey,
-    avs_vault_slasher_ticket: &Pubkey,
-    vault_avs_slasher_ticket: &Pubkey,
+    ncn_vault_slasher_ticket: &Pubkey,
+    vault_ncn_slasher_ticket: &Pubkey,
     vault_delegation_list: &Pubkey,
-    vault_avs_slasher_operator_ticket: &Pubkey,
+    vault_ncn_slasher_operator_ticket: &Pubkey,
     vault_token_account: &Pubkey,
     slasher_token_account: &Pubkey,
     amount: u64,
@@ -705,19 +705,19 @@ pub fn slash(
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new_readonly(*slasher, false),
-        AccountMeta::new_readonly(*avs_operator_ticket, false),
-        AccountMeta::new_readonly(*operator_avs_ticket, false),
-        AccountMeta::new_readonly(*avs_vault_ticket, false),
+        AccountMeta::new_readonly(*ncn_operator_ticket, false),
+        AccountMeta::new_readonly(*operator_ncn_ticket, false),
+        AccountMeta::new_readonly(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
-        AccountMeta::new_readonly(*vault_avs_ticket, false),
+        AccountMeta::new_readonly(*vault_ncn_ticket, false),
         AccountMeta::new_readonly(*vault_operator_ticket, false),
-        AccountMeta::new_readonly(*avs_vault_slasher_ticket, false),
-        AccountMeta::new_readonly(*vault_avs_slasher_ticket, false),
+        AccountMeta::new_readonly(*ncn_vault_slasher_ticket, false),
+        AccountMeta::new_readonly(*vault_ncn_slasher_ticket, false),
         AccountMeta::new(*vault_delegation_list, false),
-        AccountMeta::new(*vault_avs_slasher_operator_ticket, false),
+        AccountMeta::new(*vault_ncn_slasher_operator_ticket, false),
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*slasher_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),

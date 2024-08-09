@@ -9,11 +9,11 @@ use crate::{
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 #[repr(C)]
-pub struct AvsVaultSlasherTicket {
+pub struct NcnVaultSlasherTicket {
     account_type: AccountType,
 
-    /// The AVS
-    avs: Pubkey,
+    /// The NCN
+    ncn: Pubkey,
 
     /// The vault account this slasher can slash
     vault: Pubkey,
@@ -27,7 +27,7 @@ pub struct AvsVaultSlasherTicket {
     /// The index
     index: u64,
 
-    /// State of the AVS slasher
+    /// State of the NCN slasher
     state: SlotToggle,
 
     /// Reserved space
@@ -37,9 +37,9 @@ pub struct AvsVaultSlasherTicket {
     bump: u8,
 }
 
-impl AvsVaultSlasherTicket {
+impl NcnVaultSlasherTicket {
     pub const fn new(
-        avs: Pubkey,
+        ncn: Pubkey,
         vault: Pubkey,
         slasher: Pubkey,
         max_slashable_per_epoch: u64,
@@ -48,8 +48,8 @@ impl AvsVaultSlasherTicket {
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::AvsVaultSlasherTicket,
-            avs,
+            account_type: AccountType::NcnVaultSlasherTicket,
+            ncn,
             vault,
             slasher,
             max_slashable_per_epoch,
@@ -60,8 +60,8 @@ impl AvsVaultSlasherTicket {
         }
     }
 
-    pub const fn avs(&self) -> Pubkey {
-        self.avs
+    pub const fn ncn(&self) -> Pubkey {
+        self.ncn
     }
 
     pub const fn vault(&self) -> Pubkey {
@@ -96,8 +96,8 @@ impl AvsVaultSlasherTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
-            msg!("AvsVaultSlasherTicket is not active or in cooldown");
-            Err(RestakingCoreError::AvsVaultSlasherTicketInactive)
+            msg!("NcnVaultSlasherTicket is not active or in cooldown");
+            Err(RestakingCoreError::NcnVaultSlasherTicketInactive)
         }
     }
 
@@ -105,14 +105,14 @@ impl AvsVaultSlasherTicket {
         if self.state.deactivate(slot, epoch_length) {
             Ok(())
         } else {
-            Err(RestakingCoreError::AvsVaultSlasherTicketInactive)
+            Err(RestakingCoreError::NcnVaultSlasherTicketInactive)
         }
     }
 
-    pub fn seeds(avs: &Pubkey, vault: &Pubkey, slasher: &Pubkey) -> Vec<Vec<u8>> {
+    pub fn seeds(ncn: &Pubkey, vault: &Pubkey, slasher: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"avs_slasher_ticket".to_vec(),
-            avs.as_ref().to_vec(),
+            b"ncn_slasher_ticket".to_vec(),
+            ncn.as_ref().to_vec(),
             vault.as_ref().to_vec(),
             slasher.as_ref().to_vec(),
         ])
@@ -120,11 +120,11 @@ impl AvsVaultSlasherTicket {
 
     pub fn find_program_address(
         program_id: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         vault: &Pubkey,
         slasher: &Pubkey,
     ) -> (Pubkey, u8, Vec<Vec<u8>>) {
-        let seeds = Self::seeds(avs, vault, slasher);
+        let seeds = Self::seeds(ncn, vault, slasher);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
@@ -133,61 +133,61 @@ impl AvsVaultSlasherTicket {
     pub fn deserialize_checked(
         program_id: &Pubkey,
         account: &AccountInfo,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         vault: &Pubkey,
         slasher: &Pubkey,
     ) -> RestakingCoreResult<Self> {
         if account.data_is_empty() {
-            return Err(RestakingCoreError::AvsSlasherTicketEmpty);
+            return Err(RestakingCoreError::NcnSlasherTicketEmpty);
         }
         if account.owner != program_id {
-            return Err(RestakingCoreError::AvsSlasherTicketInvalidOwner);
+            return Err(RestakingCoreError::NcnSlasherTicketInvalidOwner);
         }
 
-        let avs_slasher_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| RestakingCoreError::AvsSlasherTicketInvalidData(e.to_string()))?;
-        if avs_slasher_ticket.account_type != AccountType::AvsVaultSlasherTicket {
-            return Err(RestakingCoreError::AvsSlasherTicketInvalidAccountType);
+        let ncn_slasher_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| RestakingCoreError::NcnSlasherTicketInvalidData(e.to_string()))?;
+        if ncn_slasher_ticket.account_type != AccountType::NcnVaultSlasherTicket {
+            return Err(RestakingCoreError::NcnSlasherTicketInvalidAccountType);
         }
 
-        let mut seeds = Self::seeds(avs, vault, slasher);
-        seeds.push(vec![avs_slasher_ticket.bump]);
+        let mut seeds = Self::seeds(ncn, vault, slasher);
+        seeds.push(vec![ncn_slasher_ticket.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| RestakingCoreError::AvsSlasherTicketInvalidPda)?;
+            .map_err(|_| RestakingCoreError::NcnSlasherTicketInvalidPda)?;
         if expected_pubkey != *account.key {
-            return Err(RestakingCoreError::AvsSlasherTicketInvalidPda);
+            return Err(RestakingCoreError::NcnSlasherTicketInvalidPda);
         }
 
-        Ok(avs_slasher_ticket)
+        Ok(ncn_slasher_ticket)
     }
 }
 
-pub struct SanitizedAvsVaultSlasherTicket<'a, 'info> {
+pub struct SanitizedNcnVaultSlasherTicket<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    avs_slasher_ticket: Box<AvsVaultSlasherTicket>,
+    ncn_slasher_ticket: Box<NcnVaultSlasherTicket>,
 }
 
-impl<'a, 'info> SanitizedAvsVaultSlasherTicket<'a, 'info> {
+impl<'a, 'info> SanitizedNcnVaultSlasherTicket<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         vault: &Pubkey,
         slasher: &Pubkey,
     ) -> RestakingCoreResult<Self> {
         if expect_writable && !account.is_writable {
-            return Err(RestakingCoreError::AvsSlasherTicketNotWritable);
+            return Err(RestakingCoreError::NcnSlasherTicketNotWritable);
         }
 
-        let avs_slasher_ticket = Box::new(AvsVaultSlasherTicket::deserialize_checked(
-            program_id, account, avs, vault, slasher,
+        let ncn_slasher_ticket = Box::new(NcnVaultSlasherTicket::deserialize_checked(
+            program_id, account, ncn, vault, slasher,
         )?);
 
         Ok(Self {
             account,
-            avs_slasher_ticket,
+            ncn_slasher_ticket,
         })
     }
 
@@ -195,18 +195,18 @@ impl<'a, 'info> SanitizedAvsVaultSlasherTicket<'a, 'info> {
         self.account
     }
 
-    pub const fn avs_vault_slasher_ticket(&self) -> &AvsVaultSlasherTicket {
-        &self.avs_slasher_ticket
+    pub const fn ncn_vault_slasher_ticket(&self) -> &NcnVaultSlasherTicket {
+        &self.ncn_slasher_ticket
     }
 
-    pub fn avs_vault_slasher_ticket_mut(&mut self) -> &mut AvsVaultSlasherTicket {
-        &mut self.avs_slasher_ticket
+    pub fn ncn_vault_slasher_ticket_mut(&mut self) -> &mut NcnVaultSlasherTicket {
+        &mut self.ncn_slasher_ticket
     }
 
     pub fn save(&self) -> ProgramResult {
         borsh::to_writer(
             &mut self.account.data.borrow_mut()[..],
-            &self.avs_slasher_ticket,
+            &self.ncn_slasher_ticket,
         )?;
         Ok(())
     }

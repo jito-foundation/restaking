@@ -30,7 +30,7 @@ pub fn process_operator_withdrawal_asset(
     assert_with_msg(
         operator_token_account.token_account().amount >= amount,
         ProgramError::InsufficientFunds,
-        "Not enough funds in AVS token account",
+        "Not enough funds in NCN token account",
     )?;
 
     _withdraw_operator_asset(

@@ -8,13 +8,13 @@ use crate::{
 };
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
-pub struct VaultAvsSlasherTicket {
+pub struct VaultNcnSlasherTicket {
     /// The account type
     account_type: AccountType,
 
     vault: Pubkey,
 
-    avs: Pubkey,
+    ncn: Pubkey,
 
     slasher: Pubkey,
 
@@ -32,10 +32,10 @@ pub struct VaultAvsSlasherTicket {
     bump: u8,
 }
 
-impl VaultAvsSlasherTicket {
+impl VaultNcnSlasherTicket {
     pub const fn new(
         vault: Pubkey,
-        avs: Pubkey,
+        ncn: Pubkey,
         slasher: Pubkey,
         max_slashable_per_epoch: u64,
         index: u64,
@@ -43,9 +43,9 @@ impl VaultAvsSlasherTicket {
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::VaultAvsSlasherTicket,
+            account_type: AccountType::VaultNcnSlasherTicket,
             vault,
-            avs,
+            ncn,
             slasher,
             max_slashable_per_epoch,
             index,
@@ -59,8 +59,8 @@ impl VaultAvsSlasherTicket {
         self.vault
     }
 
-    pub const fn avs(&self) -> Pubkey {
-        self.avs
+    pub const fn ncn(&self) -> Pubkey {
+        self.ncn
     }
 
     pub const fn slasher(&self) -> Pubkey {
@@ -83,16 +83,16 @@ impl VaultAvsSlasherTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
-            msg!("VaultAvsSlasherTicket is not active or in cooldown");
-            Err(VaultCoreError::VaultAvsSlasherTicketInactive)
+            msg!("VaultNcnSlasherTicket is not active or in cooldown");
+            Err(VaultCoreError::VaultNcnSlasherTicketInactive)
         }
     }
 
-    pub fn seeds(vault: &Pubkey, avs: &Pubkey, slasher: &Pubkey) -> Vec<Vec<u8>> {
+    pub fn seeds(vault: &Pubkey, ncn: &Pubkey, slasher: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"vault_slasher_ticket".to_vec(),
             vault.as_ref().to_vec(),
-            avs.as_ref().to_vec(),
+            ncn.as_ref().to_vec(),
             slasher.as_ref().to_vec(),
         ])
     }
@@ -100,10 +100,10 @@ impl VaultAvsSlasherTicket {
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         slasher: &Pubkey,
     ) -> (Pubkey, u8, Vec<Vec<u8>>) {
-        let seeds = Self::seeds(vault, avs, slasher);
+        let seeds = Self::seeds(vault, ncn, slasher);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
@@ -113,7 +113,7 @@ impl VaultAvsSlasherTicket {
         program_id: &Pubkey,
         account: &AccountInfo,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         slasher: &Pubkey,
     ) -> VaultCoreResult<Self> {
         if account.data_is_empty() {
@@ -125,11 +125,11 @@ impl VaultAvsSlasherTicket {
 
         let ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| VaultCoreError::VaultSlasherTicketInvalidData(e.to_string()))?;
-        if ticket.account_type != AccountType::VaultAvsSlasherTicket {
+        if ticket.account_type != AccountType::VaultNcnSlasherTicket {
             return Err(VaultCoreError::VaultSlasherTicketInvalidAccountType);
         }
 
-        let mut seeds = Self::seeds(vault, avs, slasher);
+        let mut seeds = Self::seeds(vault, ncn, slasher);
         seeds.push(vec![ticket.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
@@ -141,28 +141,28 @@ impl VaultAvsSlasherTicket {
     }
 }
 
-pub struct SanitizedVaultAvsSlasherTicket<'a, 'info> {
+pub struct SanitizedVaultNcnSlasherTicket<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    vault_slasher_ticket: Box<VaultAvsSlasherTicket>,
+    vault_slasher_ticket: Box<VaultNcnSlasherTicket>,
 }
 
-impl<'a, 'info> SanitizedVaultAvsSlasherTicket<'a, 'info> {
+impl<'a, 'info> SanitizedVaultNcnSlasherTicket<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         slasher: &Pubkey,
-    ) -> VaultCoreResult<SanitizedVaultAvsSlasherTicket<'a, 'info>> {
+    ) -> VaultCoreResult<SanitizedVaultNcnSlasherTicket<'a, 'info>> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::VaultSlasherTicketNotWritable);
         }
-        let vault_slasher_ticket = Box::new(VaultAvsSlasherTicket::deserialize_checked(
-            program_id, account, vault, avs, slasher,
+        let vault_slasher_ticket = Box::new(VaultNcnSlasherTicket::deserialize_checked(
+            program_id, account, vault, ncn, slasher,
         )?);
 
-        Ok(SanitizedVaultAvsSlasherTicket {
+        Ok(SanitizedVaultNcnSlasherTicket {
             account,
             vault_slasher_ticket,
         })
@@ -172,11 +172,11 @@ impl<'a, 'info> SanitizedVaultAvsSlasherTicket<'a, 'info> {
         self.account
     }
 
-    pub const fn vault_avs_slasher_ticket(&self) -> &VaultAvsSlasherTicket {
+    pub const fn vault_ncn_slasher_ticket(&self) -> &VaultNcnSlasherTicket {
         &self.vault_slasher_ticket
     }
 
-    pub fn vault_slasher_ticket_mut(&mut self) -> &mut VaultAvsSlasherTicket {
+    pub fn vault_slasher_ticket_mut(&mut self) -> &mut VaultNcnSlasherTicket {
         &mut self.vault_slasher_ticket
     }
 

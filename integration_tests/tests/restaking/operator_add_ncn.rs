@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::{
-        avs::Avs, config::Config, operator::Operator, operator_avs_ticket::OperatorAvsTicket,
+        config::Config, ncn::Ncn, operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
     };
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
-    async fn test_operator_add_avs_ok() {
+    async fn test_operator_add_ncn_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -39,33 +39,33 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
-        // Operator adds AVS
+        // Operator adds NCN
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
-        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
-            &avs_pubkey,
+            &ncn_pubkey,
         )
         .0;
 
         restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &avs_pubkey,
-                &operator_avs_ticket,
+                &ncn_pubkey,
+                &operator_ncn_ticket,
                 &operator_admin,
                 &payer,
             )
@@ -77,21 +77,21 @@ mod tests {
             .get_operator(&operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.avs_count(), 1);
+        assert_eq!(operator.ncn_count(), 1);
 
-        // Verify operator AVS ticket
+        // Verify operator NCN ticket
         let ticket = restaking_program_client
-            .get_operator_avs_ticket(&operator_pubkey, &avs_pubkey)
+            .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey)
             .await
             .unwrap();
         assert_eq!(ticket.operator(), operator_pubkey);
-        assert_eq!(ticket.avs(), avs_pubkey);
+        assert_eq!(ticket.ncn(), ncn_pubkey);
         assert_eq!(ticket.index(), 0);
         assert_eq!(ticket.state().slot_added(), 1);
     }
 
     #[tokio::test]
-    async fn test_operator_add_multiple_avs_ok() {
+    async fn test_operator_add_multiple_ncn_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -122,64 +122,64 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize two AVSs
-        let avs_admin1 = Keypair::new();
-        let avs_base1 = Keypair::new();
-        fixture.transfer(&avs_admin1.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey1 =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base1.pubkey()).0;
+        // Initialize two NCNs
+        let ncn_admin1 = Keypair::new();
+        let ncn_base1 = Keypair::new();
+        fixture.transfer(&ncn_admin1.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey1 =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base1.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey1, &avs_admin1, &avs_base1)
+            .initialize_ncn(&config, &ncn_pubkey1, &ncn_admin1, &ncn_base1)
             .await
             .unwrap();
 
-        let avs_admin2 = Keypair::new();
-        let avs_base2 = Keypair::new();
-        fixture.transfer(&avs_admin2.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey2 =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base2.pubkey()).0;
+        let ncn_admin2 = Keypair::new();
+        let ncn_base2 = Keypair::new();
+        fixture.transfer(&ncn_admin2.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey2 =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base2.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey2, &avs_admin2, &avs_base2)
+            .initialize_ncn(&config, &ncn_pubkey2, &ncn_admin2, &ncn_base2)
             .await
             .unwrap();
 
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
-        // Operator adds first AVS
-        let operator_avs_ticket1 = OperatorAvsTicket::find_program_address(
+        // Operator adds first NCN
+        let operator_ncn_ticket1 = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
-            &avs_pubkey1,
+            &ncn_pubkey1,
         )
         .0;
 
         restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &avs_pubkey1,
-                &operator_avs_ticket1,
+                &ncn_pubkey1,
+                &operator_ncn_ticket1,
                 &operator_admin,
                 &payer,
             )
             .await
             .unwrap();
 
-        // Operator adds second AVS
-        let operator_avs_ticket2 = OperatorAvsTicket::find_program_address(
+        // Operator adds second NCN
+        let operator_ncn_ticket2 = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
-            &avs_pubkey2,
+            &ncn_pubkey2,
         )
         .0;
 
         restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &avs_pubkey2,
-                &operator_avs_ticket2,
+                &ncn_pubkey2,
+                &operator_ncn_ticket2,
                 &operator_admin,
                 &payer,
             )
@@ -191,28 +191,28 @@ mod tests {
             .get_operator(&operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.avs_count(), 2);
+        assert_eq!(operator.ncn_count(), 2);
 
-        // Verify operator AVS tickets
+        // Verify operator NCN tickets
         let ticket1 = restaking_program_client
-            .get_operator_avs_ticket(&operator_pubkey, &avs_pubkey1)
+            .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey1)
             .await
             .unwrap();
         assert_eq!(ticket1.operator(), operator_pubkey);
-        assert_eq!(ticket1.avs(), avs_pubkey1);
+        assert_eq!(ticket1.ncn(), ncn_pubkey1);
         assert_eq!(ticket1.index(), 0);
 
         let ticket2 = restaking_program_client
-            .get_operator_avs_ticket(&operator_pubkey, &avs_pubkey2)
+            .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey2)
             .await
             .unwrap();
         assert_eq!(ticket2.operator(), operator_pubkey);
-        assert_eq!(ticket2.avs(), avs_pubkey2);
+        assert_eq!(ticket2.ncn(), ncn_pubkey2);
         assert_eq!(ticket2.index(), 1);
     }
 
     #[tokio::test]
-    async fn test_operator_add_avs_duplicate_fails() {
+    async fn test_operator_add_ncn_duplicate_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -243,47 +243,47 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
-        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
-            &avs_pubkey,
+            &ncn_pubkey,
         )
         .0;
 
-        // Operator adds AVS for the first time
+        // Operator adds NCN for the first time
         restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &avs_pubkey,
-                &operator_avs_ticket,
+                &ncn_pubkey,
+                &operator_ncn_ticket,
                 &operator_admin,
                 &payer,
             )
             .await
             .unwrap();
 
-        // Attempt to add the same AVS again
+        // Attempt to add the same NCN again
         let result = restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &avs_pubkey,
-                &operator_avs_ticket,
+                &ncn_pubkey,
+                &operator_ncn_ticket,
                 &operator_admin,
                 &payer,
             )
@@ -294,7 +294,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_operator_add_avs_non_admin_fails() {
+    async fn test_operator_add_ncn_non_admin_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -325,37 +325,37 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
-        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
-            &avs_pubkey,
+            &ncn_pubkey,
         )
         .0;
 
-        // Attempt to add AVS with non-admin signer
+        // Attempt to add NCN with non-admin signer
         let non_admin = Keypair::new();
         fixture.transfer(&non_admin.pubkey(), 10.0).await.unwrap();
 
         let result = restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &avs_pubkey,
-                &operator_avs_ticket,
+                &ncn_pubkey,
+                &operator_ncn_ticket,
                 &non_admin,
                 &payer,
             )
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_operator_add_avs_uninitialized_operator_fails() {
+    async fn test_operator_add_ncn_uninitialized_operator_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -382,14 +382,14 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
@@ -404,19 +404,19 @@ mod tests {
         )
         .0;
 
-        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &uninitialized_operator_pubkey,
-            &avs_pubkey,
+            &ncn_pubkey,
         )
         .0;
 
         let result = restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &uninitialized_operator_pubkey,
-                &avs_pubkey,
-                &operator_avs_ticket,
+                &ncn_pubkey,
+                &operator_ncn_ticket,
                 &uninitialized_operator,
                 &payer,
             )
@@ -427,7 +427,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_operator_add_avs_uninitialized_avs_fails() {
+    async fn test_operator_add_ncn_uninitialized_ncn_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -461,24 +461,24 @@ mod tests {
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
-        // Use uninitialized AVS
-        let uninitialized_avs = Keypair::new();
-        let uninitialized_avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &uninitialized_avs.pubkey()).0;
+        // Use uninitialized NCN
+        let uninitialized_ncn = Keypair::new();
+        let uninitialized_ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &uninitialized_ncn.pubkey()).0;
 
-        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
-            &uninitialized_avs_pubkey,
+            &uninitialized_ncn_pubkey,
         )
         .0;
 
         let result = restaking_program_client
-            .operator_add_avs(
+            .operator_add_ncn(
                 &config,
                 &operator_pubkey,
-                &uninitialized_avs_pubkey,
-                &operator_avs_ticket,
+                &uninitialized_ncn_pubkey,
+                &operator_ncn_ticket,
                 &operator_admin,
                 &payer,
             )

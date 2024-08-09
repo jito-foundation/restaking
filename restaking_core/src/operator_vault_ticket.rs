@@ -123,14 +123,14 @@ impl OperatorVaultTicket {
             return Err(RestakingCoreError::OperatorVaultTicketInvalidOwner);
         }
 
-        let avs_vault_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+        let ncn_vault_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| RestakingCoreError::OperatorVaultTicketInvalidData(e.to_string()))?;
-        if avs_vault_ticket.account_type != AccountType::OperatorVaultTicket {
+        if ncn_vault_ticket.account_type != AccountType::OperatorVaultTicket {
             return Err(RestakingCoreError::OperatorVaultTicketInvalidAccountType);
         }
 
         let mut seeds = Self::seeds(operator, vault);
-        seeds.push(vec![avs_vault_ticket.bump]);
+        seeds.push(vec![ncn_vault_ticket.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
             .map_err(|_| RestakingCoreError::OperatorVaultTicketInvalidPda)?;
@@ -138,7 +138,7 @@ impl OperatorVaultTicket {
             return Err(RestakingCoreError::OperatorVaultTicketInvalidPda);
         }
 
-        Ok(avs_vault_ticket)
+        Ok(ncn_vault_ticket)
     }
 }
 
@@ -153,14 +153,14 @@ impl<'a, 'info> SanitizedOperatorVaultTicket<'a, 'info> {
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         operator: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> RestakingCoreResult<Self> {
         if expect_writable && !account.is_writable {
             return Err(RestakingCoreError::OperatorVaultTicketNotWritable);
         }
 
         let operator_vault_ticket = Box::new(OperatorVaultTicket::deserialize_checked(
-            program_id, account, operator, avs,
+            program_id, account, operator, ncn,
         )?);
 
         Ok(Self {

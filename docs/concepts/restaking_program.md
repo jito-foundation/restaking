@@ -45,57 +45,57 @@ The Jito Restaking protocol requires mutual opt-in from all parties entering sta
 NCNs.
 
 It leverages the concept of entity tickets, which are PDAs representing opt-in from one party to another. These tickets
-are created on-chain and can be used to track relationships between AVS, operators, and vaults. In addition to entity
+are created on-chain and can be used to track relationships between NCN, operators, and vaults. In addition to entity
 information, these tickets can store additional data like slot activated/deactivated, slashing conditions, and more.
 
 The tickets are detailed below:
 
-#### Operator AVS Ticket
+#### Operator NCN Ticket
 
 This ticket represents the relationship from the Operator's perspective. It is created by the Operator when it opts in
-to work with an AVS.
+to work with an NCN.
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
-    AVS[AVS]:::main
+    NCN[NCN]:::main
     Operator[Operator]:::main
-    OperatorAvsTicket[OperatorAVSTicket]:::ticket
-    Operator -->|Creates| OperatorAvsTicket
-    Operator -.->|Opts in| AVS
+    OperatorNcnTicket[OperatorNcnTicket]:::ticket
+    Operator -->|Creates| OperatorNcnTicket
+    Operator -.->|Opts in| NCN
 ```
 
-#### Avs Operator Ticket
+#### Ncn Operator Ticket
 
-This ticket represents the relationship from the AVS's perspective. It is created by the AVS when it opts in to work
+This ticket represents the relationship from the NCN's perspective. It is created by the NCN when it opts in to work
 with an Operator.
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
-    AVS[AVS]:::main
+    NCN[NCN]:::main
     Operator[Operator]:::main
-    AvsOperatorTicket[AVSOperatorTicket]:::ticket
-    AVS -->|Creates| AvsOperatorTicket
-    AVS -.->|Opts in| Operator
+    NcnOperatorTicket[NcnOperatorTicket]:::ticket
+    NCN -->|Creates| NcnOperatorTicket
+    NCN -.->|Opts in| Operator
 ```
 
-#### AVS Vault Ticket
+#### NCN Vault Ticket
 
-This ticket represents the relationship between an AVS and a Vault. It is created by both the AVS and the Vault when
+This ticket represents the relationship between an NCN and a Vault. It is created by both the NCN and the Vault when
 they opt in to work with each other.
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
-    AVS[AVS]:::main
+    NCN[NCN]:::main
     Vault[Vault]:::main
-    AvsVaultTicket[AVSVaultTicket]:::ticket
-    AVS -->|Creates| AvsVaultTicket
-    AVS -.->|Opts in| Vault
+    NcnVaultTicket[NcnVaultTicket]:::ticket
+    NCN -->|Creates| NcnVaultTicket
+    NCN -.->|Opts in| Vault
 ```
 
 #### Operator Vault Ticket
@@ -114,19 +114,19 @@ graph TD
     Operator -.->|Opts in| Vault
 ```
 
-#### AVS Vault Slasher Ticket
+#### NCN Vault Slasher Ticket
 
-This ticket represents the slashing relationship between an AVS and a Vault.
+This ticket represents the slashing relationship between an NCN and a Vault.
 
-AVS register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
+NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
-    AVS[AVS]:::main
+    Ncn[Ncn]:::main
     Vault[Vault]:::main
-    AvsVaultSlasherTicket[AVSVaultSlasherTicket]:::ticket
-    AVS -->|Creates| AvsVaultSlasherTicket
-    AVS -.->|Opts in| Vault
+    NcnVaultSlasherTicket[NcnVaultSlasherTicket]:::ticket
+    Ncn -->|Creates| NcnVaultSlasherTicket
+    Ncn -.->|Opts in| Vault
 ```

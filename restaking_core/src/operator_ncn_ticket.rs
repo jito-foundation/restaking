@@ -9,14 +9,14 @@ use crate::{
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 #[repr(C)]
-pub struct OperatorAvsTicket {
+pub struct OperatorNcnTicket {
     account_type: AccountType,
 
     /// The operator account
     operator: Pubkey,
 
-    /// The AVS account
-    avs: Pubkey,
+    /// The NCN account
+    ncn: Pubkey,
 
     index: u64,
 
@@ -28,12 +28,12 @@ pub struct OperatorAvsTicket {
     bump: u8,
 }
 
-impl OperatorAvsTicket {
-    pub const fn new(operator: Pubkey, avs: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
+impl OperatorNcnTicket {
+    pub const fn new(operator: Pubkey, ncn: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
         Self {
-            account_type: AccountType::OperatorAvsTicket,
+            account_type: AccountType::OperatorNcnTicket,
             operator,
-            avs,
+            ncn,
             index,
             state: SlotToggle::new(slot_added),
             reserved: [0; 128],
@@ -45,8 +45,8 @@ impl OperatorAvsTicket {
         self.operator
     }
 
-    pub const fn avs(&self) -> Pubkey {
-        self.avs
+    pub const fn ncn(&self) -> Pubkey {
+        self.ncn
     }
 
     pub const fn state(&self) -> &SlotToggle {
@@ -57,7 +57,7 @@ impl OperatorAvsTicket {
         if self.state.deactivate(slot, epoch_length) {
             Ok(())
         } else {
-            Err(RestakingCoreError::OperatorAvsTicketAlreadyInactive)
+            Err(RestakingCoreError::OperatorNcnTicketAlreadyInactive)
         }
     }
 
@@ -77,25 +77,25 @@ impl OperatorAvsTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
-            msg!("OperatorAvsTicket is not active or in cooldown");
-            Err(RestakingCoreError::OperatorAvsTicketNotActive)
+            msg!("OperatorNcnTicket is not active or in cooldown");
+            Err(RestakingCoreError::OperatorNcnTicketNotActive)
         }
     }
 
-    pub fn seeds(operator: &Pubkey, avs: &Pubkey) -> Vec<Vec<u8>> {
+    pub fn seeds(operator: &Pubkey, ncn: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"operator_avs_ticket".to_vec(),
+            b"operator_ncn_ticket".to_vec(),
             operator.to_bytes().to_vec(),
-            avs.to_bytes().to_vec(),
+            ncn.to_bytes().to_vec(),
         ])
     }
 
     pub fn find_program_address(
         program_id: &Pubkey,
         operator: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> (Pubkey, u8, Vec<Vec<u8>>) {
-        let seeds = Self::seeds(operator, avs);
+        let seeds = Self::seeds(operator, ncn);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
@@ -105,58 +105,58 @@ impl OperatorAvsTicket {
         program_id: &Pubkey,
         account: &AccountInfo,
         operator: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> RestakingCoreResult<Self> {
         if account.data_is_empty() {
-            return Err(RestakingCoreError::OperatorAvsTicketEmpty);
+            return Err(RestakingCoreError::OperatorNcnTicketEmpty);
         }
         if account.owner != program_id {
-            return Err(RestakingCoreError::OperatorAvsTicketInvalidOwner);
+            return Err(RestakingCoreError::OperatorNcnTicketInvalidOwner);
         }
 
-        let avs_vault_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| RestakingCoreError::OperatorAvsTicketInvalidData(e.to_string()))?;
-        if avs_vault_ticket.account_type != AccountType::OperatorAvsTicket {
-            return Err(RestakingCoreError::OperatorAvsTicketInvalidAccountType);
+        let ncn_vault_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| RestakingCoreError::OperatorNcnTicketInvalidData(e.to_string()))?;
+        if ncn_vault_ticket.account_type != AccountType::OperatorNcnTicket {
+            return Err(RestakingCoreError::OperatorNcnTicketInvalidAccountType);
         }
 
-        let mut seeds = Self::seeds(operator, avs);
-        seeds.push(vec![avs_vault_ticket.bump]);
+        let mut seeds = Self::seeds(operator, ncn);
+        seeds.push(vec![ncn_vault_ticket.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| RestakingCoreError::OperatorAvsTicketInvalidPda)?;
+            .map_err(|_| RestakingCoreError::OperatorNcnTicketInvalidPda)?;
         if expected_pubkey != *account.key {
-            return Err(RestakingCoreError::OperatorAvsTicketInvalidPda);
+            return Err(RestakingCoreError::OperatorNcnTicketInvalidPda);
         }
 
-        Ok(avs_vault_ticket)
+        Ok(ncn_vault_ticket)
     }
 }
 
-pub struct SanitizedOperatorAvsTicket<'a, 'info> {
+pub struct SanitizedOperatorNcnTicket<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    operator_avs_ticket: Box<OperatorAvsTicket>,
+    operator_ncn_ticket: Box<OperatorNcnTicket>,
 }
 
-impl<'a, 'info> SanitizedOperatorAvsTicket<'a, 'info> {
+impl<'a, 'info> SanitizedOperatorNcnTicket<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         operator: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> RestakingCoreResult<Self> {
         if expect_writable && !account.is_writable {
-            return Err(RestakingCoreError::OperatorAvsTicketNotWritable);
+            return Err(RestakingCoreError::OperatorNcnTicketNotWritable);
         }
 
-        let operator_avs_ticket = Box::new(OperatorAvsTicket::deserialize_checked(
-            program_id, account, operator, avs,
+        let operator_ncn_ticket = Box::new(OperatorNcnTicket::deserialize_checked(
+            program_id, account, operator, ncn,
         )?);
 
         Ok(Self {
             account,
-            operator_avs_ticket,
+            operator_ncn_ticket,
         })
     }
 
@@ -164,18 +164,18 @@ impl<'a, 'info> SanitizedOperatorAvsTicket<'a, 'info> {
         self.account
     }
 
-    pub const fn operator_avs_ticket(&self) -> &OperatorAvsTicket {
-        &self.operator_avs_ticket
+    pub const fn operator_ncn_ticket(&self) -> &OperatorNcnTicket {
+        &self.operator_ncn_ticket
     }
 
-    pub fn operator_avs_ticket_mut(&mut self) -> &mut OperatorAvsTicket {
-        &mut self.operator_avs_ticket
+    pub fn operator_ncn_ticket_mut(&mut self) -> &mut OperatorNcnTicket {
+        &mut self.operator_ncn_ticket
     }
 
     pub fn save(&self) -> ProgramResult {
         borsh::to_writer(
             &mut self.account.data.borrow_mut()[..],
-            &self.operator_avs_ticket,
+            &self.operator_ncn_ticket,
         )?;
         Ok(())
     }

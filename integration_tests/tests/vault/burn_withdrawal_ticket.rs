@@ -8,13 +8,13 @@ mod tests {
 
     use crate::fixtures::{
         fixture::TestBuilder,
-        restaking_client::{AvsRoot, OperatorRoot, RestakingProgramClient},
+        restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
         vault_client::{VaultProgramClient, VaultRoot, VaultStakerWithdrawalTicketRoot},
     };
 
     struct PreparedWithdrawalTicket {
         vault_root: VaultRoot,
-        avs_root: AvsRoot,
+        ncn_root: NcnRoot,
         operator_root: OperatorRoot,
         depositor: Keypair,
         withdrawal_ticket_base: Pubkey,
@@ -40,9 +40,9 @@ mod tests {
             .unwrap();
         let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
 
-        // Setup operator and AVS
+        // Setup operator and NCN
         let operator_root = restaking_program_client.setup_operator().await.unwrap();
-        let avs_root = restaking_program_client.setup_avs().await.unwrap();
+        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&RestakingConfig::find_program_address(&jito_restaking_program::id()).0)
@@ -51,7 +51,7 @@ mod tests {
 
         // Setup necessary relationships
         restaking_program_client
-            .operator_avs_opt_in(&operator_root, &avs_root.avs_pubkey)
+            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
         fixture
@@ -59,12 +59,12 @@ mod tests {
             .await
             .unwrap();
         restaking_program_client
-            .avs_operator_opt_in(&avs_root, &operator_root.operator_pubkey)
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
         restaking_program_client
-            .avs_vault_opt_in(&avs_root, &vault_root.vault_pubkey)
+            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
         fixture
@@ -72,7 +72,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .vault_avs_opt_in(&vault_root, &avs_root.avs_pubkey)
+            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -153,8 +153,8 @@ mod tests {
 
         // do all the opt-in stuff for the slasher
         restaking_program_client
-            .avs_vault_slasher_opt_in(
-                &avs_root,
+            .ncn_vault_slasher_opt_in(
+                &ncn_root,
                 &vault_root.vault_pubkey,
                 &slasher.pubkey(),
                 max_slash_amount,
@@ -168,7 +168,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
+            .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
             .await
             .unwrap();
 
@@ -189,7 +189,7 @@ mod tests {
 
         PreparedWithdrawalTicket {
             vault_root,
-            avs_root,
+            ncn_root,
             operator_root,
             depositor,
             withdrawal_ticket_base: base,
@@ -206,7 +206,7 @@ mod tests {
 
         let PreparedWithdrawalTicket {
             vault_root,
-            avs_root: _,
+            ncn_root: _,
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
@@ -241,7 +241,7 @@ mod tests {
 
         let PreparedWithdrawalTicket {
             vault_root,
-            avs_root: _,
+            ncn_root: _,
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
@@ -290,7 +290,7 @@ mod tests {
 
         let PreparedWithdrawalTicket {
             vault_root,
-            avs_root: _,
+            ncn_root: _,
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
@@ -355,7 +355,7 @@ mod tests {
 
         let PreparedWithdrawalTicket {
             vault_root,
-            avs_root: _,
+            ncn_root: _,
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
@@ -427,7 +427,7 @@ mod tests {
 
         let PreparedWithdrawalTicket {
             vault_root,
-            avs_root: _,
+            ncn_root: _,
             operator_root,
             depositor,
             withdrawal_ticket_base,
@@ -529,7 +529,7 @@ mod tests {
     //
     //     let PreparedWithdrawalTicket {
     //         vault_root,
-    //         avs_root,
+    //         ncn_root,
     //         operator_root,
     //         depositor,
     //         withdrawal_ticket_base,
@@ -559,9 +559,9 @@ mod tests {
     //         .unwrap();
     //
     //     vault_program_client
-    //         .setup_vault_avs_slasher_operator_ticket(
+    //         .setup_vault_ncn_slasher_operator_ticket(
     //             &vault_root,
-    //             &avs_root.avs_pubkey,
+    //             &ncn_root.ncn_pubkey,
     //             &slasher.pubkey(),
     //             &operator_root.operator_pubkey,
     //         )
@@ -576,7 +576,7 @@ mod tests {
     //     vault_program_client
     //         .do_slash(
     //             &vault_root,
-    //             &avs_root.avs_pubkey,
+    //             &ncn_root.ncn_pubkey,
     //             &slasher,
     //             &operator_root.operator_pubkey,
     //             100,
@@ -615,7 +615,7 @@ mod tests {
 
         let PreparedWithdrawalTicket {
             vault_root,
-            avs_root,
+            ncn_root,
             operator_root,
             depositor,
             withdrawal_ticket_base,
@@ -654,9 +654,9 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .setup_vault_avs_slasher_operator_ticket(
+            .setup_vault_ncn_slasher_operator_ticket(
                 &vault_root,
-                &avs_root.avs_pubkey,
+                &ncn_root.ncn_pubkey,
                 &slasher.pubkey(),
                 &operator_root.operator_pubkey,
             )
@@ -665,7 +665,7 @@ mod tests {
         vault_program_client
             .do_slash(
                 &vault_root,
-                &avs_root.avs_pubkey,
+                &ncn_root.ncn_pubkey,
                 &slasher,
                 &operator_root.operator_pubkey,
                 100,
