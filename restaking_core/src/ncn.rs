@@ -8,38 +8,38 @@ use crate::{
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 #[repr(C)]
-pub struct Avs {
+pub struct Ncn {
     /// The account type
     account_type: AccountType,
 
     /// The base account used as a PDA seed
     base: Pubkey,
 
-    /// The admin of the AVS
+    /// The admin of the NCN
     admin: Pubkey,
 
-    /// The operator admin of the AVS
+    /// The operator admin of the NCN
     operator_admin: Pubkey,
 
-    /// The vault admin of the AVS
+    /// The vault admin of the NCN
     vault_admin: Pubkey,
 
-    /// The slasher admin of the AVS
+    /// The slasher admin of the NCN
     slasher_admin: Pubkey,
 
-    /// The withdraw admin of the AVS
+    /// The withdraw admin of the NCN
     withdraw_admin: Pubkey,
 
-    /// The index of the AVS
+    /// The index of the NCN
     index: u64,
 
-    /// Number of operator accounts associated with the AVS
+    /// Number of operator accounts associated with the NCN
     operator_count: u64,
 
-    /// Number of vault accounts associated with the AVS
+    /// Number of vault accounts associated with the NCN
     vault_count: u64,
 
-    /// Number of slasher accounts associated with the AVS
+    /// Number of slasher accounts associated with the NCN
     slasher_count: u64,
 
     /// Reserved space
@@ -49,7 +49,7 @@ pub struct Avs {
     bump: u8,
 }
 
-impl Avs {
+impl Ncn {
     #[allow(clippy::too_many_arguments)]
     pub const fn new(
         base: Pubkey,
@@ -58,18 +58,18 @@ impl Avs {
         vault_admin: Pubkey,
         slasher_admin: Pubkey,
         withdraw_admin: Pubkey,
-        avs_index: u64,
+        ncn_index: u64,
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::Avs,
+            account_type: AccountType::Ncn,
             base,
             admin,
             operator_admin,
             vault_admin,
             slasher_admin,
             withdraw_admin,
-            index: avs_index,
+            index: ncn_index,
             operator_count: 0,
             vault_count: 0,
             slasher_count: 0,
@@ -118,7 +118,7 @@ impl Avs {
         self.operator_count = self
             .operator_count
             .checked_add(1)
-            .ok_or(RestakingCoreError::AvsOperatorCountOverflow)?;
+            .ok_or(RestakingCoreError::NcnOperatorCountOverflow)?;
         Ok(())
     }
 
@@ -130,7 +130,7 @@ impl Avs {
         self.vault_count = self
             .vault_count
             .checked_add(1)
-            .ok_or(RestakingCoreError::AvsVaultCountOverflow)?;
+            .ok_or(RestakingCoreError::NcnVaultCountOverflow)?;
         Ok(())
     }
 
@@ -142,7 +142,7 @@ impl Avs {
         self.slasher_count = self
             .slasher_count
             .checked_add(1)
-            .ok_or(RestakingCoreError::AvsSlasherCountOverflow)?;
+            .ok_or(RestakingCoreError::NcnSlasherCountOverflow)?;
         Ok(())
     }
 
@@ -150,10 +150,10 @@ impl Avs {
         self.admin = admin;
     }
 
-    /// Check if the provided pubkey is the admin of the AVS
+    /// Check if the provided pubkey is the admin of the NCN
     pub fn check_admin(&self, admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.admin != *admin {
-            return Err(RestakingCoreError::AvsInvalidAdmin);
+            return Err(RestakingCoreError::NcnInvalidAdmin);
         }
         Ok(())
     }
@@ -162,10 +162,10 @@ impl Avs {
         self.operator_admin = operator_admin;
     }
 
-    /// Check if the provided pubkey is the operator admin of the AVS
+    /// Check if the provided pubkey is the operator admin of the NCN
     pub fn check_operator_admin(&self, operator_admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.operator_admin != *operator_admin {
-            return Err(RestakingCoreError::AvsInvalidOperatorAdmin);
+            return Err(RestakingCoreError::NcnInvalidOperatorAdmin);
         }
         Ok(())
     }
@@ -174,10 +174,10 @@ impl Avs {
         self.vault_admin = vault_admin;
     }
 
-    /// Check if the provided pubkey is the vault admin of the AVS
+    /// Check if the provided pubkey is the vault admin of the NCN
     pub fn check_vault_admin(&self, vault_admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.vault_admin != *vault_admin {
-            return Err(RestakingCoreError::AvsInvalidVaultAdmin);
+            return Err(RestakingCoreError::NcnInvalidVaultAdmin);
         }
         Ok(())
     }
@@ -186,10 +186,10 @@ impl Avs {
         self.slasher_admin = slasher_admin;
     }
 
-    /// Check if the provided pubkey is the slasher admin of the AVS
+    /// Check if the provided pubkey is the slasher admin of the NCN
     pub fn check_slasher_admin(&self, slasher_admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.slasher_admin != *slasher_admin {
-            return Err(RestakingCoreError::AvsInvalidSlasherAdmin);
+            return Err(RestakingCoreError::NcnInvalidSlasherAdmin);
         }
         Ok(())
     }
@@ -198,16 +198,16 @@ impl Avs {
         self.withdraw_admin = withdraw_admin;
     }
 
-    /// Check if the provided pubkey is the withdraw admin of the AVS
+    /// Check if the provided pubkey is the withdraw admin of the NCN
     pub fn check_withdraw_admin(&self, withdraw_admin: &Pubkey) -> RestakingCoreResult<()> {
         if self.withdraw_admin != *withdraw_admin {
-            return Err(RestakingCoreError::AvsInvalidWithdrawAdmin);
+            return Err(RestakingCoreError::NcnInvalidWithdrawAdmin);
         }
         Ok(())
     }
 
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
-        Vec::from_iter([b"avs".to_vec(), base.as_ref().to_vec()])
+        Vec::from_iter([b"ncn".to_vec(), base.as_ref().to_vec()])
     }
 
     pub fn find_program_address(program_id: &Pubkey, base: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
@@ -222,63 +222,63 @@ impl Avs {
         account: &AccountInfo,
     ) -> RestakingCoreResult<Self> {
         if account.data_is_empty() {
-            return Err(RestakingCoreError::AvsEmpty);
+            return Err(RestakingCoreError::NcnEmpty);
         }
         if account.owner != program_id {
-            return Err(RestakingCoreError::AvsInvalidOwner);
+            return Err(RestakingCoreError::NcnInvalidOwner);
         }
 
-        let avs_state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| RestakingCoreError::AvsInvalidData(e.to_string()))?;
-        if avs_state.account_type != AccountType::Avs {
-            return Err(RestakingCoreError::AvsInvalidAccountType);
+        let ncn_state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
+            .map_err(|e| RestakingCoreError::NcnInvalidData(e.to_string()))?;
+        if ncn_state.account_type != AccountType::Ncn {
+            return Err(RestakingCoreError::NcnInvalidAccountType);
         }
 
-        let mut seeds = Self::seeds(&avs_state.base());
-        seeds.push(vec![avs_state.bump()]);
+        let mut seeds = Self::seeds(&ncn_state.base());
+        seeds.push(vec![ncn_state.bump()]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| RestakingCoreError::AvsInvalidPda)?;
+            .map_err(|_| RestakingCoreError::NcnInvalidPda)?;
         if expected_pubkey != *account.key {
-            return Err(RestakingCoreError::AvsInvalidPda);
+            return Err(RestakingCoreError::NcnInvalidPda);
         }
-        Ok(avs_state)
+        Ok(ncn_state)
     }
 }
 
-pub struct SanitizedAvs<'a, 'info> {
+pub struct SanitizedNcn<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    avs: Box<Avs>,
+    ncn: Box<Ncn>,
 }
 
-impl<'a, 'info> SanitizedAvs<'a, 'info> {
+impl<'a, 'info> SanitizedNcn<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
-    ) -> RestakingCoreResult<SanitizedAvs<'a, 'info>> {
+    ) -> RestakingCoreResult<SanitizedNcn<'a, 'info>> {
         if expect_writable && !account.is_writable {
-            return Err(RestakingCoreError::AvsNotWritable);
+            return Err(RestakingCoreError::NcnNotWritable);
         }
-        let avs = Box::new(Avs::deserialize_checked(program_id, account)?);
+        let ncn = Box::new(Ncn::deserialize_checked(program_id, account)?);
 
-        Ok(SanitizedAvs { account, avs })
+        Ok(SanitizedNcn { account, ncn })
     }
 
     pub const fn account(&self) -> &AccountInfo<'info> {
         self.account
     }
 
-    pub const fn avs(&self) -> &Avs {
-        &self.avs
+    pub const fn ncn(&self) -> &Ncn {
+        &self.ncn
     }
 
-    pub fn avs_mut(&mut self) -> &mut Avs {
-        &mut self.avs
+    pub fn ncn_mut(&mut self) -> &mut Ncn {
+        &mut self.ncn
     }
 
     pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.avs)?;
+        borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.ncn)?;
         Ok(())
     }
 }

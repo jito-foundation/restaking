@@ -1,5 +1,5 @@
 use jito_restaking_core::{
-    avs::SanitizedAvs, avs_operator_ticket::SanitizedAvsOperatorTicket, config::SanitizedConfig,
+    config::SanitizedConfig, ncn::SanitizedNcn, ncn_operator_ticket::SanitizedNcnOperatorTicket,
     operator::SanitizedOperator,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
@@ -12,63 +12,63 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-/// The AVS admin can remove a node operator from the AVS.
-/// This method is permissioned to the AVS admin.
-/// [`crate::RestakingInstruction::AvsRemoveOperator`]
-pub fn process_avs_cooldown_operator(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-) -> ProgramResult {
+/// The NCN admin can remove a node operator from the NCN.
+/// This method is permissioned to the NCN admin.
+/// [`crate::RestakingInstruction::NcnRemoveOperator`]
+pub fn process_ncn_remove_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
-        avs,
-        mut avs_operator_ticket,
+        config,
+        ncn,
+        mut ncn_operator_ticket,
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    avs.avs().check_operator_admin(admin.account().key)?;
+    ncn.ncn().check_operator_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
 
-    avs_operator_ticket
-        .avs_operator_ticket_mut()
-        .cooldown(slot)?;
+    ncn_operator_ticket
+        .ncn_operator_ticket_mut()
+        .deactivate(slot, config.config().epoch_length())?;
 
-    avs_operator_ticket.save()?;
+    ncn_operator_ticket.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
-    avs: SanitizedAvs<'a, 'info>,
-    avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
+    config: SanitizedConfig<'a, 'info>,
+    ncn: SanitizedNcn<'a, 'info>,
+    ncn_operator_ticket: SanitizedNcnOperatorTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::AvsCooldownOperator`]
+    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::NcnRemoveOperator`]
     fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
         let accounts_iter = &mut accounts.iter();
 
-        let _config =
+        let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let ncn = SanitizedNcn::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
         let operator =
             SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let avs_operator_ticket = SanitizedAvsOperatorTicket::sanitize(
+        let ncn_operator_ticket = SanitizedNcnOperatorTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
-            avs.account().key,
+            ncn.account().key,
             operator.account().key,
         )?;
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
-            avs,
-            avs_operator_ticket,
+            config,
+            ncn,
+            ncn_operator_ticket,
             admin,
         })
     }

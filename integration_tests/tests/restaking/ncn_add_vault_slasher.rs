@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::{
-        avs::Avs, avs_vault_slasher_ticket::AvsVaultSlasherTicket,
-        avs_vault_ticket::AvsVaultTicket, config::Config,
+        config::Config, ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+        ncn_vault_ticket::NcnVaultTicket,
     };
     use jito_vault_core::vault::Vault;
     use solana_sdk::signature::{Keypair, Signer};
@@ -10,7 +10,7 @@ mod tests {
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
-    async fn test_avs_add_vault_slasher_ok() {
+    async fn test_ncn_add_vault_slasher_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -26,14 +26,14 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
@@ -42,21 +42,21 @@ mod tests {
         let vault_pubkey =
             Vault::find_program_address(&jito_vault_program::id(), &vault_base.pubkey()).0;
 
-        // AVS adds vault
-        let avs_vault_ticket = AvsVaultTicket::find_program_address(
+        // NCN adds vault
+        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
             &jito_restaking_program::id(),
-            &avs_pubkey,
+            &ncn_pubkey,
             &vault_pubkey,
         )
         .0;
         restaking_program_client
-            .avs_add_vault(
+            .ncn_add_vault(
                 &config,
-                &avs_pubkey,
+                &ncn_pubkey,
                 &vault_pubkey,
-                &avs_vault_ticket,
-                &avs_admin,
-                &avs_admin,
+                &ncn_vault_ticket,
+                &ncn_admin,
+                &ncn_admin,
             )
             .await
             .unwrap();
@@ -67,41 +67,41 @@ mod tests {
             .await
             .unwrap();
 
-        // AVS adds vault slasher
+        // NCN adds vault slasher
         let slasher = Keypair::new();
-        let avs_vault_slasher_ticket = AvsVaultSlasherTicket::find_program_address(
+        let ncn_vault_slasher_ticket = NcnVaultSlasherTicket::find_program_address(
             &jito_restaking_program::id(),
-            &avs_pubkey,
+            &ncn_pubkey,
             &vault_pubkey,
             &slasher.pubkey(),
         )
         .0;
         let max_slashable_per_epoch = 1000;
         restaking_program_client
-            .avs_add_vault_slasher(
+            .ncn_add_vault_slasher(
                 &config,
-                &avs_pubkey,
+                &ncn_pubkey,
                 &vault_pubkey,
                 &slasher.pubkey(),
-                &avs_vault_ticket,
-                &avs_vault_slasher_ticket,
-                &avs_admin,
-                &avs_admin,
+                &ncn_vault_ticket,
+                &ncn_vault_slasher_ticket,
+                &ncn_admin,
+                &ncn_admin,
                 max_slashable_per_epoch,
             )
             .await
             .unwrap();
 
-        // Verify AVS state
-        let avs = restaking_program_client.get_avs(&avs_pubkey).await.unwrap();
-        assert_eq!(avs.slasher_count(), 1);
+        // Verify NCN state
+        let ncn = restaking_program_client.get_ncn(&ncn_pubkey).await.unwrap();
+        assert_eq!(ncn.slasher_count(), 1);
 
-        // Verify AVS vault slasher ticket
+        // Verify NCN vault slasher ticket
         let ticket = restaking_program_client
-            .get_avs_vault_slasher_ticket(&avs_pubkey, &vault_pubkey, &slasher.pubkey())
+            .get_ncn_vault_slasher_ticket(&ncn_pubkey, &vault_pubkey, &slasher.pubkey())
             .await
             .unwrap();
-        assert_eq!(ticket.avs(), avs_pubkey);
+        assert_eq!(ticket.ncn(), ncn_pubkey);
         assert_eq!(ticket.vault(), vault_pubkey);
         assert_eq!(ticket.slasher(), slasher.pubkey());
         assert_eq!(ticket.max_slashable_per_epoch(), max_slashable_per_epoch);

@@ -47,7 +47,7 @@ mod tests {
         assert_eq!(operator.base(), operator_base.pubkey());
         assert_eq!(operator.admin(), operator_admin.pubkey());
         assert_eq!(operator.voter(), operator_admin.pubkey());
-        assert_eq!(operator.avs_admin(), operator_admin.pubkey());
+        assert_eq!(operator.ncn_admin(), operator_admin.pubkey());
         assert_eq!(operator.vault_admin(), operator_admin.pubkey());
         assert_eq!(operator.index(), 0);
 

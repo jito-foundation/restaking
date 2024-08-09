@@ -1,6 +1,5 @@
 use jito_restaking_core::{
-    avs::SanitizedAvs, avs_operator_ticket::SanitizedAvsOperatorTicket, config::SanitizedConfig,
-    operator::SanitizedOperator,
+    config::SanitizedConfig, ncn::SanitizedNcn, ncn_vault_ticket::SanitizedNcnVaultTicket,
 };
 use jito_restaking_sanitization::signer::SanitizedSignerAccount;
 use solana_program::{
@@ -12,40 +11,37 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-/// The AVS admin can remove a node operator from the AVS.
-/// This method is permissioned to the AVS admin.
-/// [`crate::RestakingInstruction::AvsRemoveOperator`]
-pub fn process_avs_remove_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::NcnRemoveVault`]
+pub fn process_ncn_remove_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let SanitizedAccounts {
         config,
-        avs,
-        mut avs_operator_ticket,
+        ncn,
+        mut ncn_vault_ticket,
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    avs.avs().check_operator_admin(admin.account().key)?;
+    ncn.ncn().check_vault_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
-
-    avs_operator_ticket
-        .avs_operator_ticket_mut()
+    ncn_vault_ticket
+        .ncn_vault_ticket_mut()
         .deactivate(slot, config.config().epoch_length())?;
 
-    avs_operator_ticket.save()?;
+    ncn_vault_ticket.save()?;
 
     Ok(())
 }
 
 struct SanitizedAccounts<'a, 'info> {
     config: SanitizedConfig<'a, 'info>,
-    avs: SanitizedAvs<'a, 'info>,
-    avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
+    ncn: SanitizedNcn<'a, 'info>,
+    ncn_vault_ticket: SanitizedNcnVaultTicket<'a, 'info>,
     admin: SanitizedSignerAccount<'a, 'info>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::AvsRemoveOperator`]
-    fn sanitize(
+    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::ncnRemoveVault`]
+    pub fn sanitize(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'info>],
     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
@@ -53,22 +49,21 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 
         let config =
             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let avs = SanitizedAvs::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let operator =
-            SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let avs_operator_ticket = SanitizedAvsOperatorTicket::sanitize(
+        let ncn = SanitizedNcn::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
+        let vault = next_account_info(accounts_iter)?;
+        let ncn_vault_ticket = SanitizedNcnVaultTicket::sanitize(
             program_id,
             next_account_info(accounts_iter)?,
             true,
-            avs.account().key,
-            operator.account().key,
+            ncn.account().key,
+            vault.key,
         )?;
         let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
 
         Ok(SanitizedAccounts {
             config,
-            avs,
-            avs_operator_ticket,
+            ncn,
+            ncn_vault_ticket,
             admin,
         })
     }

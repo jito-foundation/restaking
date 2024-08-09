@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::{avs::Avs, config::Config};
+    use jito_restaking_core::{config::Config, ncn::Ncn};
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
-    async fn test_initialize_avs_ok() {
+    async fn test_initialize_ncn_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -23,38 +23,38 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
 
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
 
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
-        // Verify AVS account
-        let avs = restaking_program_client.get_avs(&avs_pubkey).await.unwrap();
-        assert_eq!(avs.base(), avs_base.pubkey());
-        assert_eq!(avs.admin(), avs_admin.pubkey());
-        assert_eq!(avs.operator_admin(), avs_admin.pubkey());
-        assert_eq!(avs.vault_admin(), avs_admin.pubkey());
-        assert_eq!(avs.slasher_admin(), avs_admin.pubkey());
-        assert_eq!(avs.withdraw_admin(), avs_admin.pubkey());
-        assert_eq!(avs.index(), 0);
-        assert_eq!(avs.operator_count(), 0);
-        assert_eq!(avs.slasher_count(), 0);
-        assert_eq!(avs.vault_count(), 0);
+        // Verify NCN account
+        let ncn = restaking_program_client.get_ncn(&ncn_pubkey).await.unwrap();
+        assert_eq!(ncn.base(), ncn_base.pubkey());
+        assert_eq!(ncn.admin(), ncn_admin.pubkey());
+        assert_eq!(ncn.operator_admin(), ncn_admin.pubkey());
+        assert_eq!(ncn.vault_admin(), ncn_admin.pubkey());
+        assert_eq!(ncn.slasher_admin(), ncn_admin.pubkey());
+        assert_eq!(ncn.withdraw_admin(), ncn_admin.pubkey());
+        assert_eq!(ncn.index(), 0);
+        assert_eq!(ncn.operator_count(), 0);
+        assert_eq!(ncn.slasher_count(), 0);
+        assert_eq!(ncn.vault_count(), 0);
 
         let updated_config = restaking_program_client.get_config(&config).await.unwrap();
-        assert_eq!(updated_config.avs_count(), 1);
+        assert_eq!(updated_config.ncn_count(), 1);
     }
 
     #[tokio::test]
-    async fn test_initialize_avs_bad_derivation_fails() {
+    async fn test_initialize_ncn_bad_derivation_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -70,15 +70,15 @@ mod tests {
             .await
             .unwrap();
 
-        // Try to initialize AVS with incorrect derivation
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
+        // Try to initialize NCN with incorrect derivation
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
 
-        let incorrect_avs_pubkey = Pubkey::new_unique(); // This is not derived correctly
+        let incorrect_ncn_pubkey = Pubkey::new_unique(); // This is not derived correctly
 
         let result = restaking_program_client
-            .initialize_avs(&config, &incorrect_avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &incorrect_ncn_pubkey, &ncn_admin, &ncn_base)
             .await;
 
         // TODO (LB): check for specific error
@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_initialize_avs_already_initialized_fails() {
+    async fn test_initialize_ncn_already_initialized_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -102,21 +102,21 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
 
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
 
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
         let result = restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await;
 
         // TODO (LB): check for specific error
@@ -124,21 +124,21 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_initialize_avs_with_uninitialized_config_fails() {
+    async fn test_initialize_ncn_with_uninitialized_config_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Try to initialize AVS without initializing config first
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
+        // Try to initialize NCN without initializing config first
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
 
         let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
 
         let result = restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await;
 
         // TODO (LB): check for specific error
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_initialize_multiple_avs_ok() {
+    async fn test_initialize_multiple_ncn_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -162,45 +162,45 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize first AVS
-        let avs_admin1 = Keypair::new();
-        let avs_base1 = Keypair::new();
-        fixture.transfer(&avs_admin1.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey1 =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base1.pubkey()).0;
+        // Initialize first NCN
+        let ncn_admin1 = Keypair::new();
+        let ncn_base1 = Keypair::new();
+        fixture.transfer(&ncn_admin1.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey1 =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base1.pubkey()).0;
 
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey1, &avs_admin1, &avs_base1)
+            .initialize_ncn(&config, &ncn_pubkey1, &ncn_admin1, &ncn_base1)
             .await
             .unwrap();
 
-        // Initialize second AVS
-        let avs_admin2 = Keypair::new();
-        let avs_base2 = Keypair::new();
-        fixture.transfer(&avs_admin2.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey2 =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base2.pubkey()).0;
+        // Initialize second NCN
+        let ncn_admin2 = Keypair::new();
+        let ncn_base2 = Keypair::new();
+        fixture.transfer(&ncn_admin2.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey2 =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base2.pubkey()).0;
 
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey2, &avs_admin2, &avs_base2)
+            .initialize_ncn(&config, &ncn_pubkey2, &ncn_admin2, &ncn_base2)
             .await
             .unwrap();
 
-        // Verify AVS accounts
-        let avs1 = restaking_program_client
-            .get_avs(&avs_pubkey1)
+        // Verify NCN accounts
+        let ncn1 = restaking_program_client
+            .get_ncn(&ncn_pubkey1)
             .await
             .unwrap();
-        let avs2 = restaking_program_client
-            .get_avs(&avs_pubkey2)
+        let ncn2 = restaking_program_client
+            .get_ncn(&ncn_pubkey2)
             .await
             .unwrap();
 
-        assert_eq!(avs1.index(), 0);
-        assert_eq!(avs2.index(), 1);
+        assert_eq!(ncn1.index(), 0);
+        assert_eq!(ncn2.index(), 1);
 
         // Verify config update
         let updated_config = restaking_program_client.get_config(&config).await.unwrap();
-        assert_eq!(updated_config.avs_count(), 2);
+        assert_eq!(updated_config.ncn_count(), 2);
     }
 }

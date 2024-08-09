@@ -1,4 +1,4 @@
-mod add_avs;
+mod add_ncn;
 mod add_operator;
 mod add_slasher;
 mod burn_withdrawal_ticket;

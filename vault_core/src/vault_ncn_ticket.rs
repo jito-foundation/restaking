@@ -8,15 +8,15 @@ use crate::{
 };
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct VaultAvsTicket {
+pub struct VaultNcnTicket {
     /// The account type
     account_type: AccountType,
 
     /// The vault account
     vault: Pubkey,
 
-    /// The avs account
-    avs: Pubkey,
+    /// The ncn account
+    ncn: Pubkey,
 
     /// The index
     index: u64,
@@ -30,12 +30,12 @@ pub struct VaultAvsTicket {
     bump: u8,
 }
 
-impl VaultAvsTicket {
-    pub const fn new(vault: Pubkey, avs: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
+impl VaultNcnTicket {
+    pub const fn new(vault: Pubkey, ncn: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
         Self {
-            account_type: AccountType::VaultAvsTicket,
+            account_type: AccountType::VaultNcnTicket,
             vault,
-            avs,
+            ncn,
             index,
             state: SlotToggle::new(slot_added),
             reserved: [0; 128],
@@ -47,8 +47,8 @@ impl VaultAvsTicket {
         self.vault
     }
 
-    pub const fn avs(&self) -> Pubkey {
-        self.avs
+    pub const fn ncn(&self) -> Pubkey {
+        self.ncn
     }
 
     pub const fn index(&self) -> u64 {
@@ -63,7 +63,7 @@ impl VaultAvsTicket {
         if self.state.deactivate(slot, epoch_length) {
             Ok(())
         } else {
-            Err(VaultCoreError::VaultAvsTicketInactive)
+            Err(VaultCoreError::VaultNcnTicketInactive)
         }
     }
 
@@ -71,25 +71,25 @@ impl VaultAvsTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
-            msg!("VaultAvsTicket is not active or in cooldown");
-            Err(VaultCoreError::VaultAvsTicketInactive)
+            msg!("VaultNcnTicket is not active or in cooldown");
+            Err(VaultCoreError::VaultNcnTicketInactive)
         }
     }
 
-    pub fn seeds(vault: &Pubkey, avs: &Pubkey) -> Vec<Vec<u8>> {
+    pub fn seeds(vault: &Pubkey, ncn: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"vault_avs_ticket".to_vec(),
+            b"vault_ncn_ticket".to_vec(),
             vault.as_ref().to_vec(),
-            avs.as_ref().to_vec(),
+            ncn.as_ref().to_vec(),
         ])
     }
 
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> (Pubkey, u8, Vec<Vec<u8>>) {
-        let seeds = Self::seeds(vault, avs);
+        let seeds = Self::seeds(vault, ncn);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
@@ -99,56 +99,56 @@ impl VaultAvsTicket {
         program_id: &Pubkey,
         account: &AccountInfo,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> VaultCoreResult<Self> {
         if account.data_is_empty() {
-            return Err(VaultCoreError::VaultAvsTicketEmpty);
+            return Err(VaultCoreError::VaultNcnTicketEmpty);
         }
         if account.owner != program_id {
-            return Err(VaultCoreError::VaultAvsTicketInvalidOwner);
+            return Err(VaultCoreError::VaultNcnTicketInvalidOwner);
         }
 
         let ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::VaultAvsTicketInvalidData(e.to_string()))?;
-        if ticket.account_type != AccountType::VaultAvsTicket {
-            return Err(VaultCoreError::VaultAvsTicketInvalidAccountType);
+            .map_err(|e| VaultCoreError::VaultNcnTicketInvalidData(e.to_string()))?;
+        if ticket.account_type != AccountType::VaultNcnTicket {
+            return Err(VaultCoreError::VaultNcnTicketInvalidAccountType);
         }
 
-        let mut seeds = Self::seeds(vault, avs);
+        let mut seeds = Self::seeds(vault, ncn);
         seeds.push(vec![ticket.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultAvsTicketInvalidPda)?;
+            .map_err(|_| VaultCoreError::VaultNcnTicketInvalidPda)?;
         if expected_pubkey != *account.key {
-            return Err(VaultCoreError::VaultAvsTicketInvalidPda);
+            return Err(VaultCoreError::VaultNcnTicketInvalidPda);
         }
         Ok(ticket)
     }
 }
 
-pub struct SanitizedVaultAvsTicket<'a, 'info> {
+pub struct SanitizedVaultNcnTicket<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    vault_avs_ticket: Box<VaultAvsTicket>,
+    vault_ncn_ticket: Box<VaultNcnTicket>,
 }
 
-impl<'a, 'info> SanitizedVaultAvsTicket<'a, 'info> {
+impl<'a, 'info> SanitizedVaultNcnTicket<'a, 'info> {
     pub fn sanitize(
         program_id: &Pubkey,
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-        avs: &Pubkey,
-    ) -> VaultCoreResult<SanitizedVaultAvsTicket<'a, 'info>> {
+        ncn: &Pubkey,
+    ) -> VaultCoreResult<SanitizedVaultNcnTicket<'a, 'info>> {
         if expect_writable && !account.is_writable {
-            return Err(VaultCoreError::VaultAvsTicektNotWritable);
+            return Err(VaultCoreError::VaultNcnTicektNotWritable);
         }
-        let vault_avs_ticket = Box::new(VaultAvsTicket::deserialize_checked(
-            program_id, account, vault, avs,
+        let vault_ncn_ticket = Box::new(VaultNcnTicket::deserialize_checked(
+            program_id, account, vault, ncn,
         )?);
 
-        Ok(SanitizedVaultAvsTicket {
+        Ok(SanitizedVaultNcnTicket {
             account,
-            vault_avs_ticket,
+            vault_ncn_ticket,
         })
     }
 
@@ -156,18 +156,18 @@ impl<'a, 'info> SanitizedVaultAvsTicket<'a, 'info> {
         self.account
     }
 
-    pub const fn vault_avs_ticket(&self) -> &VaultAvsTicket {
-        &self.vault_avs_ticket
+    pub const fn vault_ncn_ticket(&self) -> &VaultNcnTicket {
+        &self.vault_ncn_ticket
     }
 
-    pub fn vault_avs_ticket_mut(&mut self) -> &mut VaultAvsTicket {
-        &mut self.vault_avs_ticket
+    pub fn vault_ncn_ticket_mut(&mut self) -> &mut VaultNcnTicket {
+        &mut self.vault_ncn_ticket
     }
 
     pub fn save(&self) -> ProgramResult {
         borsh::to_writer(
             &mut self.account.data.borrow_mut()[..],
-            &self.vault_avs_ticket,
+            &self.vault_ncn_ticket,
         )?;
         Ok(())
     }

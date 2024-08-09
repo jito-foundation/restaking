@@ -21,8 +21,8 @@ pub struct Config {
     /// The vault program
     vault_program: Pubkey,
 
-    /// The number of AVS managed by the program
-    avs_count: u64,
+    /// The number of NCN managed by the program
+    ncn_count: u64,
 
     /// The number of operators managed by the program
     operator_count: u64,
@@ -44,23 +44,23 @@ impl Config {
             admin,
             vault_program,
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
-            avs_count: 0,
+            ncn_count: 0,
             operator_count: 0,
             reserved: [0; 128],
             bump,
         }
     }
 
-    pub fn increment_avs(&mut self) -> RestakingCoreResult<()> {
-        self.avs_count = self
-            .avs_count
+    pub fn increment_ncn(&mut self) -> RestakingCoreResult<()> {
+        self.ncn_count = self
+            .ncn_count
             .checked_add(1)
-            .ok_or(RestakingCoreError::AvsOverflow)?;
+            .ok_or(RestakingCoreError::NcnOverflow)?;
         Ok(())
     }
 
-    pub const fn avs_count(&self) -> u64 {
-        self.avs_count
+    pub const fn ncn_count(&self) -> u64 {
+        self.ncn_count
     }
 
     pub fn increment_operators(&mut self) -> RestakingCoreResult<()> {

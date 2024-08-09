@@ -28,7 +28,7 @@ pub struct Vault {
 
     operator_admin: Pubkey,
 
-    avs_admin: Pubkey,
+    ncn_admin: Pubkey,
 
     slasher_admin: Pubkey,
 
@@ -59,7 +59,7 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     withdrawal_fee_bps: u16,
 
-    avs_count: u64,
+    ncn_count: u64,
 
     operator_count: u64,
 
@@ -92,7 +92,7 @@ impl Vault {
             admin,
             delegation_admin: admin,
             operator_admin: admin,
-            avs_admin: admin,
+            ncn_admin: admin,
             slasher_admin: admin,
             fee_owner: admin,
             mint_burn_authority: Pubkey::default(),
@@ -103,7 +103,7 @@ impl Vault {
             withdrawable_reserve_amount: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            avs_count: 0,
+            ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
             reserved: [0; 128],
@@ -111,15 +111,15 @@ impl Vault {
         }
     }
 
-    pub const fn avs_count(&self) -> u64 {
-        self.avs_count
+    pub const fn ncn_count(&self) -> u64 {
+        self.ncn_count
     }
 
-    pub fn increment_avs_count(&mut self) -> VaultCoreResult<()> {
-        self.avs_count = self
-            .avs_count
+    pub fn increment_ncn_count(&mut self) -> VaultCoreResult<()> {
+        self.ncn_count = self
+            .ncn_count
             .checked_add(1)
-            .ok_or(VaultCoreError::VaultAvsOverflow)?;
+            .ok_or(VaultCoreError::VaultNcnOverflow)?;
         Ok(())
     }
 
@@ -348,17 +348,17 @@ impl Vault {
         Ok(())
     }
 
-    pub fn set_avs_admin(&mut self, avs_admin: Pubkey) {
-        self.avs_admin = avs_admin;
+    pub fn set_ncn_admin(&mut self, ncn_admin: Pubkey) {
+        self.ncn_admin = ncn_admin;
     }
 
-    pub const fn avs_admin(&self) -> Pubkey {
-        self.avs_admin
+    pub const fn ncn_admin(&self) -> Pubkey {
+        self.ncn_admin
     }
 
-    pub fn check_avs_admin(&self, avs_admin: &Pubkey) -> VaultCoreResult<()> {
-        if self.avs_admin != *avs_admin {
-            return Err(VaultCoreError::VaultInvalidAvsAdmin);
+    pub fn check_ncn_admin(&self, ncn_admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.ncn_admin != *ncn_admin {
+            return Err(VaultCoreError::VaultInvalidNcnAdmin);
         }
         Ok(())
     }

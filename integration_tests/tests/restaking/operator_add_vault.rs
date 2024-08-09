@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::{
-        avs::Avs, config::Config, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
+        config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
     };
     use jito_vault_core::vault::Vault;
     use solana_program::pubkey::Pubkey;
@@ -26,14 +26,14 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize AVS
-        let avs_admin = Keypair::new();
-        let avs_base = Keypair::new();
-        fixture.transfer(&avs_admin.pubkey(), 10.0).await.unwrap();
-        let avs_pubkey =
-            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        // Initialize NCN
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
+        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_avs(&config, &avs_pubkey, &avs_admin, &avs_base)
+            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 

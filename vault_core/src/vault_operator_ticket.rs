@@ -143,13 +143,13 @@ impl<'a, 'info> SanitizedVaultOperatorTicket<'a, 'info> {
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> VaultCoreResult<SanitizedVaultOperatorTicket<'a, 'info>> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::VaultOperatorTicketNotWritable);
         }
         let vault_operator_ticket = Box::new(VaultOperatorTicket::deserialize_checked(
-            program_id, account, vault, avs,
+            program_id, account, vault, ncn,
         )?);
 
         Ok(SanitizedVaultOperatorTicket {
