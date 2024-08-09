@@ -61,7 +61,7 @@ graph TD
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     NCN[NCN]:::main
     Operator[Operator]:::main
-    OperatorNcnTicket[OperatorNCNTicket]:::ticket
+    OperatorNcnTicket[OperatorNcnTicket]:::ticket
     Operator -->|Creates| OperatorNcnTicket
     Operator -.->|Opts in| NCN
 ```
@@ -77,7 +77,7 @@ graph TD
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     NCN[NCN]:::main
     Operator[Operator]:::main
-    NcnOperatorTicket[NCNOperatorTicket]:::ticket
+    NcnOperatorTicket[NcnOperatorTicket]:::ticket
     NCN -->|Creates| NcnOperatorTicket
     NCN -.->|Opts in| Operator
 ```
@@ -93,7 +93,7 @@ graph TD
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     NCN[NCN]:::main
     Vault[Vault]:::main
-    NcnVaultTicket[NCNVaultTicket]:::ticket
+    NcnVaultTicket[NcnVaultTicket]:::ticket
     NCN -->|Creates| NcnVaultTicket
     NCN -.->|Opts in| Vault
 ```
@@ -124,9 +124,9 @@ NCN register slashers, which allows the slasher to potentially slash the Vault u
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
-    NCN[NCN]:::main
+    Ncn[Ncn]:::main
     Vault[Vault]:::main
-    NcnVaultSlasherTicket[NCNVaultSlasherTicket]:::ticket
-    NCN -->|Creates| NcnVaultSlasherTicket
-    NCN -.->|Opts in| Vault
+    NcnVaultSlasherTicket[NcnVaultSlasherTicket]:::ticket
+    Ncn -->|Creates| NcnVaultSlasherTicket
+    Ncn -.->|Opts in| Vault
 ```

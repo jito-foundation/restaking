@@ -54,10 +54,10 @@ graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
-    NCN[NCN]:::main
-    VaultNcnTicket[VaultNCNTicket]:::ticket
+    Ncn[Ncn]:::main
+    VaultNcnTicket[VaultNcnTicket]:::ticket
     Vault -->|Creates| VaultNcnTicket
-    Vault -.->|Opts in| NCN
+    Vault -.->|Opts in| Ncn
 ```
 
 #### Vault Operator Ticket
@@ -80,7 +80,7 @@ graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
-    NcnVaultSlasherTicket[NCNVaultSlasherTicket]:::ticket
+    NcnVaultSlasherTicket[NcnVaultSlasherTicket]:::ticket
     Vault -->|Creates| VaultNcnSlasherTicket
     Vault -.->|Recognizes and copies from| NcnVaultSlasherTicket
 ```
@@ -92,12 +92,12 @@ graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
-    NCN[NCN]:::main
+    Ncn[Ncn]:::main
     Slasher[Slasher]:::main
     Operator[Operator]:::main
-    VaultNcnSlasherOperatorTicket[VaultNCNSlasherOperatorTicket]:::ticket
+    VaultNcnSlasherOperatorTicket[VaultNcnSlasherOperatorTicket]:::ticket
     Vault -->|Creates| VaultNcnSlasherOperatorTicket
-    Vault -.->|Tracks slashing for| NCN
+    Vault -.->|Tracks slashing for| Ncn
     Vault -.->|Tracks slashing by| Slasher
     Vault -.->|Tracks slashing of| Operator
 ```
