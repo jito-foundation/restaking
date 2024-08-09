@@ -24,7 +24,7 @@ mod tests {
         assert_eq!(vault.operator_admin(), vault_admin.pubkey());
         assert_eq!(vault.ncn_admin(), vault_admin.pubkey());
         assert_eq!(vault.slasher_admin(), vault_admin.pubkey());
-        assert_eq!(vault.fee_owner(), vault_admin.pubkey());
+        assert_eq!(vault.fee_wallet(), vault_admin.pubkey());
         assert_eq!(vault.mint_burn_authority(), None);
         assert_eq!(vault.capacity(), u64::MAX);
         assert_eq!(vault.vault_index(), 0);

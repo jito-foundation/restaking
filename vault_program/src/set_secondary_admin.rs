@@ -27,7 +27,7 @@ pub fn process_set_secondary_admin(
             vault.vault_mut().set_delegation_admin(*new_admin.key);
         }
         VaultAdminRole::FeeOwner => {
-            vault.vault_mut().set_fee_owner(*new_admin.key);
+            vault.vault_mut().set_fee_wallet(*new_admin.key);
         }
         VaultAdminRole::MintBurnAuthority => {
             vault.vault_mut().set_mint_burn_authority(*new_admin.key);
