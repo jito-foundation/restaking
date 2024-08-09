@@ -1,13 +1,14 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
+    pubkey::Pubkey,
+};
 use VaultCoreError::ConfigInvalidPda;
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
     AccountType,
 };
-
-pub const MAX_RESTAKING_PROGRAMS: usize = 8;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 pub struct Config {
@@ -39,7 +40,7 @@ impl Config {
             account_type: AccountType::Config,
             admin,
             restaking_program,
-            epoch_length: 864_000,
+            epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
             reserved: [0; 128],
             bump,

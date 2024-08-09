@@ -27,3 +27,5 @@ spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+[dependencies]
+log = "0.4.21"

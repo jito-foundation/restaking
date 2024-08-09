@@ -3,6 +3,7 @@ mod add_delegation;
 mod add_operator;
 mod add_slasher;
 mod burn;
+mod burn_withdrawal_ticket;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
@@ -17,8 +18,8 @@ mod set_admin;
 mod set_capacity;
 mod set_secondary_admin;
 mod slash;
-mod update_delegations;
 mod update_token_metadata;
+mod update_vault;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
@@ -33,6 +34,7 @@ use solana_security_txt::security_txt;
 use crate::{
     add_avs::process_vault_add_avs, add_delegation::process_add_delegation,
     add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
+    burn_withdrawal_ticket::process_burn_withdrawal_ticket,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
@@ -41,9 +43,8 @@ use crate::{
     remove_avs::process_vault_remove_avs, remove_delegation::process_remove_delegation,
     remove_operator::process_vault_remove_operator, set_admin::process_set_admin,
     set_capacity::process_set_capacity, set_secondary_admin::process_set_secondary_admin,
-    slash::process_slash, update_delegations::process_update_delegations,
-    update_token_metadata::process_update_token_metadata,
-    withdrawal_asset::process_withdrawal_asset,
+    slash::process_slash, update_token_metadata::process_update_token_metadata,
+    update_vault::process_update_vault, withdrawal_asset::process_withdrawal_asset,
 };
 
 declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
@@ -108,7 +109,7 @@ pub fn process_instruction(
             msg!("Instruction: SetCapacity");
             process_set_capacity(program_id, accounts, amount)
         }
-        VaultInstruction::WithdrawalAsset { amount } => {
+        VaultInstruction::AdminWithdraw { amount } => {
             msg!("Instruction: WithdrawalAsset");
             process_withdrawal_asset(program_id, accounts, amount)
         }
@@ -126,6 +127,10 @@ pub fn process_instruction(
         VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
+        }
+        VaultInstruction::BurnWithdrawTicket => {
+            msg!("Instruction: BurnWithdrawTicket");
+            process_burn_withdrawal_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-AVS operations
@@ -160,9 +165,9 @@ pub fn process_instruction(
             msg!("Instruction: RemoveDelegation");
             process_remove_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::UpdateDelegations => {
+        VaultInstruction::UpdateVault => {
             msg!("Instruction: UpdateDelegations");
-            process_update_delegations(program_id, accounts)
+            process_update_vault(program_id, accounts)
         }
         // ------------------------------------------
         // Vault slashing

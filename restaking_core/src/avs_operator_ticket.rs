@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
 
 use crate::{
     result::{RestakingCoreError, RestakingCoreResult},
@@ -69,6 +69,7 @@ impl AvsOperatorTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
+            msg!("AvsOperatorTicket is not active or in cooldown");
             Err(RestakingCoreError::AvsOperatorTicketInactive)
         }
     }
@@ -117,7 +118,6 @@ impl AvsOperatorTicket {
             return Err(RestakingCoreError::AvsOperatorTicketInvalidOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let avs_operator_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| RestakingCoreError::AvsOperatorTicketInvalidData(e.to_string()))?;
         if avs_operator_ticket.account_type != AccountType::AvsOperatorTicket {

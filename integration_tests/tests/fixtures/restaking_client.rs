@@ -9,7 +9,7 @@ use jito_restaking_sdk::{
     avs_add_operator, avs_add_vault, avs_add_vault_slasher, initialize_avs, initialize_config,
     initialize_operator, operator_add_avs, operator_add_vault,
 };
-use solana_program::pubkey::Pubkey;
+use solana_program::{native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer};
 use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{
     commitment_config::CommitmentLevel,
@@ -17,17 +17,35 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
+pub struct AvsRoot {
+    pub avs_pubkey: Pubkey,
+    pub avs_admin: Keypair,
+}
+
+pub struct OperatorRoot {
+    pub operator_pubkey: Pubkey,
+    pub operator_admin: Keypair,
+}
+
 pub struct RestakingProgramClient {
     banks_client: BanksClient,
+    payer: Keypair,
 }
 
 impl RestakingProgramClient {
-    pub const fn new(banks_client: BanksClient) -> Self {
-        Self { banks_client }
+    pub const fn new(banks_client: BanksClient, payer: Keypair) -> Self {
+        Self {
+            banks_client,
+            payer,
+        }
     }
 
     pub async fn get_avs(&mut self, avs: &Pubkey) -> Result<Avs, BanksClientError> {
-        let account = self.banks_client.get_account(*avs).await?.unwrap();
+        let account = self
+            .banks_client
+            .get_account_with_commitment(*avs, CommitmentLevel::Processed)
+            .await?
+            .unwrap();
 
         Ok(Avs::deserialize(&mut account.data.as_slice())?)
     }
@@ -117,6 +135,63 @@ impl RestakingProgramClient {
         )?)
     }
 
+    pub async fn setup_config(&mut self) -> Result<Keypair, BanksClientError> {
+        let restaking_config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
+        let restaking_config_admin = Keypair::new();
+
+        self._airdrop(&restaking_config_admin.pubkey(), 1.0).await?;
+        self.initialize_config(&restaking_config_pubkey, &restaking_config_admin)
+            .await?;
+
+        Ok(restaking_config_admin)
+    }
+
+    pub async fn setup_operator(&mut self) -> Result<OperatorRoot, BanksClientError> {
+        // create operator + add operator vault
+        let operator_base = Keypair::new();
+        let operator_pubkey =
+            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
+                .0;
+        let operator_admin = Keypair::new();
+        self._airdrop(&operator_admin.pubkey(), 1.0).await?;
+        self.initialize_operator(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_pubkey,
+            &operator_admin,
+            &operator_base,
+        )
+        .await
+        .unwrap();
+        Ok(OperatorRoot {
+            operator_pubkey,
+            operator_admin,
+        })
+    }
+
+    pub async fn operator_vault_opt_in(
+        &mut self,
+        operator_root: &OperatorRoot,
+        vault_pubkey: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_root.operator_pubkey,
+            &vault_pubkey,
+        )
+        .0;
+        self.operator_add_vault(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_root.operator_pubkey,
+            &vault_pubkey,
+            &operator_vault_ticket,
+            &operator_root.operator_admin,
+            &operator_root.operator_admin,
+        )
+        .await?;
+
+        Ok(())
+    }
+
     pub async fn initialize_config(
         &mut self,
         config: &Pubkey,
@@ -134,6 +209,140 @@ impl RestakingProgramClient {
             &[config_admin],
             blockhash,
         ))
+        .await
+    }
+
+    pub async fn setup_avs(&mut self) -> Result<AvsRoot, BanksClientError> {
+        let avs_admin = Keypair::new();
+        let avs_base = Keypair::new();
+
+        self._airdrop(&avs_admin.pubkey(), 1.0).await?;
+
+        let avs_pubkey =
+            Avs::find_program_address(&jito_restaking_program::id(), &avs_base.pubkey()).0;
+        self.initialize_avs(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &avs_pubkey,
+            &avs_admin,
+            &avs_base,
+        )
+        .await
+        .unwrap();
+
+        Ok(AvsRoot {
+            avs_pubkey,
+            avs_admin,
+        })
+    }
+
+    pub async fn avs_vault_opt_in(
+        &mut self,
+        avs_root: &AvsRoot,
+        vault: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let avs_vault_ticket = AvsVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &avs_root.avs_pubkey,
+            vault,
+        )
+        .0;
+
+        self.avs_add_vault(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &avs_root.avs_pubkey,
+            vault,
+            &avs_vault_ticket,
+            &avs_root.avs_admin,
+            &self.payer.insecure_clone(),
+        )
+        .await
+    }
+
+    pub async fn avs_operator_opt_in(
+        &mut self,
+        avs_root: &AvsRoot,
+        operator: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let avs_operator_ticket = AvsOperatorTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &avs_root.avs_pubkey,
+            operator,
+        )
+        .0;
+        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+            &jito_restaking_program::id(),
+            operator,
+            &avs_root.avs_pubkey,
+        )
+        .0;
+
+        self.avs_add_operator(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &avs_root.avs_pubkey,
+            operator,
+            &avs_operator_ticket,
+            &operator_avs_ticket,
+            &avs_root.avs_admin,
+            &self.payer.insecure_clone(),
+        )
+        .await
+    }
+
+    pub async fn operator_avs_opt_in(
+        &mut self,
+        operator_root: &OperatorRoot,
+        avs: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let operator_avs_ticket = OperatorAvsTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_root.operator_pubkey,
+            avs,
+        )
+        .0;
+
+        self.operator_add_avs(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_root.operator_pubkey,
+            avs,
+            &operator_avs_ticket,
+            &operator_root.operator_admin,
+            &operator_root.operator_admin,
+        )
+        .await
+    }
+
+    pub async fn avs_vault_slasher_opt_in(
+        &mut self,
+        avs_root: &AvsRoot,
+        vault: &Pubkey,
+        slasher: &Pubkey,
+        max_slash_amount: u64,
+    ) -> Result<(), BanksClientError> {
+        let avs_vault_ticket = AvsVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &avs_root.avs_pubkey,
+            vault,
+        )
+        .0;
+        let avs_slasher_ticket = AvsVaultSlasherTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &avs_root.avs_pubkey,
+            vault,
+            slasher,
+        )
+        .0;
+
+        self.avs_add_vault_slasher(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &avs_root.avs_pubkey,
+            vault,
+            slasher,
+            &avs_vault_ticket,
+            &avs_slasher_ticket,
+            &avs_root.avs_admin,
+            &self.payer.insecure_clone(),
+            max_slash_amount,
+        )
         .await
     }
 
@@ -619,6 +828,21 @@ impl RestakingProgramClient {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),
+                CommitmentLevel::Processed,
+            )
+            .await
+    }
+
+    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &[transfer(&self.payer.pubkey(), to, sol_to_lamports(sol))],
+                    Some(&self.payer.pubkey()),
+                    &[&self.payer],
+                    blockhash,
+                ),
                 CommitmentLevel::Processed,
             )
             .await

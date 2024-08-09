@@ -54,6 +54,10 @@ pub fn process_slash(
         slasher_token_account,
     } = SanitizedAccounts::sanitize(program_id, accounts, slot)?;
 
+    vault_delegation_list
+        .vault_delegation_list_mut()
+        .check_update_needed(slot, config.config().epoch_length())?;
+
     // The vault shall be opted-in to the AVS and the AVS shall be opted-in to the vault
     vault_avs_ticket
         .vault_avs_ticket()
@@ -95,11 +99,9 @@ pub fn process_slash(
     vault_delegation_list
         .vault_delegation_list_mut()
         .slash(operator.account().key, slash_amount)?;
-
     vault_avs_slasher_operator_ticket
         .vault_avs_slasher_operator_ticket_mut()
         .increment_slashed_amount(slash_amount)?;
-
     _transfer_slashed_funds(
         &vault,
         &vault_token_account,
@@ -260,7 +262,6 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             true,
             vault.account().key,
         )?;
-
         let epoch = slot.checked_div(config.config().epoch_length()).unwrap();
         let vault_avs_slasher_operator_ticket = SanitizedVaultAvsSlasherOperatorTicket::sanitize(
             program_id,

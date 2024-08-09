@@ -113,7 +113,6 @@ impl Config {
             return Err(RestakingCoreError::ConfigInvalidOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let config = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| RestakingCoreError::ConfigInvalidData(e.to_string()))?;
         if config.account_type != AccountType::Config {

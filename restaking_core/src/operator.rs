@@ -167,7 +167,6 @@ impl Operator {
             return Err(RestakingCoreError::OperatorInvalidOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let operator = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| RestakingCoreError::OperatorInvalidData(e.to_string()))?;
         if operator.account_type != AccountType::Operator {

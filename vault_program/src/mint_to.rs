@@ -23,7 +23,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         vault_token_account,
         depositor_lrt_token_account,
         vault_fee_token_account,
-        token_program,
         mint_signer,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
@@ -48,7 +47,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         .set_tokens_deposited(vault_token_account.token_account().amount);
 
     _transfer_to_vault(
-        &token_program,
         &depositor_token_account,
         &vault_token_account,
         &depositor,
@@ -64,7 +62,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     // mint LRT to user and fee wallet
     _mint_lrt(
         program_id,
-        &token_program,
         &vault,
         &lrt_mint,
         &depositor_lrt_token_account,
@@ -72,7 +69,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     )?;
     _mint_lrt(
         program_id,
-        &token_program,
         &vault,
         &lrt_mint,
         &vault_fee_token_account,
@@ -92,7 +88,6 @@ struct SanitizedAccounts<'a, 'info> {
     vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     depositor_lrt_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
     vault_fee_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    token_program: SanitizedTokenProgram<'a, 'info>,
     mint_signer: Option<SanitizedSignerAccount<'a, 'info>>,
 }
 
@@ -127,7 +122,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             &vault.vault().lrt_mint(),
             &vault.vault().fee_owner(),
         )?;
-        let token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
+        let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
         let mint_signer = if vault.vault().mint_burn_authority().is_some() {
             Some(SanitizedSignerAccount::sanitize(
                 next_account_info(accounts_iter)?,
@@ -145,7 +140,6 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             vault_token_account,
             depositor_lrt_token_account,
             vault_fee_token_account,
-            token_program,
             mint_signer,
         })
     }
@@ -160,7 +154,6 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
 /// * `owner` - The owner of the source token account
 /// * `amount` - The amount of tokens to transfer
 fn _transfer_to_vault<'a, 'info>(
-    token_program: &SanitizedTokenProgram,
     depositor_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
     vault_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
     owner: &SanitizedSignerAccount<'a, 'info>,
@@ -168,7 +161,7 @@ fn _transfer_to_vault<'a, 'info>(
 ) -> ProgramResult {
     invoke(
         &transfer(
-            token_program.account().key,
+            &spl_token::id(),
             depositor_token_account.account().key,
             vault_token_account.account().key,
             owner.account().key,
@@ -185,7 +178,6 @@ fn _transfer_to_vault<'a, 'info>(
 
 fn _mint_lrt<'a, 'info>(
     program_id: &Pubkey,
-    token_program: &SanitizedTokenProgram,
     vault: &SanitizedVault<'a, 'info>,
     lrt_mint: &SanitizedTokenMint<'a, 'info>,
     depositor_lrt_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
@@ -197,7 +189,7 @@ fn _mint_lrt<'a, 'info>(
 
     invoke_signed(
         &mint_to(
-            token_program.account().key,
+            &spl_token::id(),
             lrt_mint.account().key,
             depositor_lrt_token_account.account().key,
             vault.account().key,
