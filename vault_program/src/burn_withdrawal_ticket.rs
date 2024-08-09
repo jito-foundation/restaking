@@ -142,7 +142,7 @@ pub fn process_burn_withdrawal_ticket(
         vault.vault().withdrawable_reserve_amount()
     );
 
-    // TODO (LB): this logic needs to be fixed and is broken
+    // TODO (LB): https://github.com/jito-foundation/restaking/issues/24
     //  If a withdraw ticket is created and there is a slashing event before the withdraw ticket
     //  has fully matured, the program can end up in a situation where the original_redemption_amount
     //  is greater than the total withdrawable_reserve_amount. This is a bug and needs to be fixed.
