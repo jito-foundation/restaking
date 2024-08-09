@@ -649,7 +649,7 @@ impl VaultProgramClient {
             .await?;
 
         let vault_staker_fee_token_account =
-            get_associated_token_address(&vault.fee_owner(), &vault.lrt_mint());
+            get_associated_token_address(&vault.fee_wallet(), &vault.lrt_mint());
 
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,

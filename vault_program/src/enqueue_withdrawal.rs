@@ -52,7 +52,17 @@ pub fn process_enqueue_withdrawal(
         staker_lrt_token_account,
         base,
         system_program,
+        burn_signer,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
+
+    // If a mint_signer is set, the signer shall be authorized by the vault to make deposits
+    if let Some(burn_signer) = burn_signer {
+        assert_with_msg(
+            *burn_signer.account().key == vault.vault().mint_burn_authority().unwrap(),
+            ProgramError::InvalidAccountData,
+            "Burn signer does not match vault mint-burn authority",
+        )?;
+    }
 
     let slot = Clock::get()?.slot;
     let epoch_length = config.config().epoch_length();
@@ -212,6 +222,7 @@ struct SanitizedAccounts<'a, 'info> {
     staker_lrt_token_account: SanitizedTokenAccount<'a, 'info>,
     base: SanitizedSignerAccount<'a, 'info>,
     system_program: SanitizedSystemProgram<'a, 'info>,
+    burn_signer: Option<SanitizedSignerAccount<'a, 'info>>,
 }
 
 impl<'a, 'info> SanitizedAccounts<'a, 'info> {
@@ -242,7 +253,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
-            &vault.vault().fee_owner(),
+            &vault.vault().fee_wallet(),
         )?;
         let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
         let staker_lrt_token_account = SanitizedTokenAccount::sanitize(
@@ -253,6 +264,15 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let base = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
         let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
+
+        let burn_signer = if vault.vault().mint_burn_authority().is_some() {
+            Some(SanitizedSignerAccount::sanitize(
+                next_account_info(accounts_iter)?,
+                false,
+            )?)
+        } else {
+            None
+        };
 
         Ok(SanitizedAccounts {
             config,
@@ -265,6 +285,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
             staker_lrt_token_account,
             base,
             system_program,
+            burn_signer,
         })
     }
 }

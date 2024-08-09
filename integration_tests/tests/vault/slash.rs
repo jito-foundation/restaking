@@ -124,7 +124,7 @@ mod tests {
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint()),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint()),
                 &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint()),
-                &get_associated_token_address(&vault.fee_owner(), &vault.lrt_mint()),
+                &get_associated_token_address(&vault.fee_wallet(), &vault.lrt_mint()),
                 None,
                 100_000,
             )

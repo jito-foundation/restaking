@@ -120,7 +120,7 @@ impl<'a, 'info> SanitizedAccounts<'a, 'info> {
         let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
             next_account_info(accounts_iter)?,
             &vault.vault().lrt_mint(),
-            &vault.vault().fee_owner(),
+            &vault.vault().fee_wallet(),
         )?;
         let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
         let mint_signer = if vault.vault().mint_burn_authority().is_some() {

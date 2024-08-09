@@ -104,6 +104,7 @@ pub enum VaultInstruction {
     #[account(8, signer, name = "base")]
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
+    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
         amount: u64
     },
