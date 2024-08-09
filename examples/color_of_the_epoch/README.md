@@ -64,3 +64,16 @@ Functions
 `submit_and_vote`
 `submit_vote`
 `distribute_crank`
+
+## TODOs
+
+### Vault
+
+1. Create Config
+2. Create Vault
+
+### Restaking
+
+### NCN
+
+### Operators
