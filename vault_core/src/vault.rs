@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey};
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
@@ -50,6 +50,9 @@ pub struct Vault {
     /// The total number of tokens deposited
     tokens_deposited: u64,
 
+    /// The amount of tokens that are reserved for withdrawal
+    withdrawable_reserve_amount: u64,
+
     /// The deposit fee in basis points
     deposit_fee_bps: u16,
 
@@ -97,6 +100,7 @@ impl Vault {
             vault_index,
             lrt_supply: 0,
             tokens_deposited: 0,
+            withdrawable_reserve_amount: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
             avs_count: 0,
@@ -141,6 +145,36 @@ impl Vault {
             .checked_add(1)
             .ok_or(VaultCoreError::VaultSlasherOverflow)?;
         Ok(())
+    }
+
+    pub const fn withdrawable_reserve_amount(&self) -> u64 {
+        self.withdrawable_reserve_amount
+    }
+
+    pub fn increment_withdrawable_reserve_amount(&mut self, amount: u64) -> VaultCoreResult<()> {
+        self.withdrawable_reserve_amount = self
+            .withdrawable_reserve_amount
+            .checked_add(amount)
+            .ok_or(VaultCoreError::VaultDepositOverflow)?;
+        Ok(())
+    }
+
+    pub fn decrement_withdrawable_reserve_amount(&mut self, amount: u64) -> VaultCoreResult<()> {
+        self.withdrawable_reserve_amount = self
+            .withdrawable_reserve_amount
+            .checked_sub(amount)
+            .ok_or(VaultCoreError::VaultDepositUnderflow)?;
+        Ok(())
+    }
+
+    pub const fn tokens_deposited(&self) -> u64 {
+        self.tokens_deposited
+    }
+
+    pub fn max_delegation_amount(&self) -> VaultCoreResult<u64> {
+        self.tokens_deposited
+            .checked_sub(self.withdrawable_reserve_amount)
+            .ok_or(VaultCoreError::VaultDelegationUnderflow)
     }
 
     pub const fn lrt_mint(&self) -> Pubkey {
@@ -254,10 +288,6 @@ impl Vault {
             .checked_div(10_000)
             .unwrap();
         Ok(fee)
-    }
-
-    pub const fn tokens_deposited(&self) -> u64 {
-        self.tokens_deposited
     }
 
     pub fn set_lrt_supply(&mut self, lrt_supply: u64) {
@@ -379,26 +409,33 @@ impl Vault {
         account: &AccountInfo,
     ) -> VaultCoreResult<Self> {
         if account.data_is_empty() {
+            msg!("Vault account data is empty");
             return Err(VaultCoreError::VaultDataEmpty);
         }
         if account.owner != program_id {
+            msg!("Vault account owner is not the program id");
             return Err(VaultCoreError::VaultInvalidProgramOwner);
         }
 
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::VaultInvalidData(e.to_string()))?;
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref()).map_err(|e| {
+            msg!("Vault account deserialization failed: {}", e);
+            VaultCoreError::VaultInvalidData
+        })?;
         if !state.is_struct_valid() {
-            return Err(VaultCoreError::VaultInvalidData(
-                "Vault account header is invalid".to_string(),
-            ));
+            msg!("Vault account header is invalid");
+            return Err(VaultCoreError::VaultInvalidData);
         }
 
         let mut seeds = Self::seeds(&state.base);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultInvalidPda)?;
+        let expected_pubkey =
+            Pubkey::create_program_address(&seeds_iter, program_id).map_err(|e| {
+                msg!("Vault account PDA creation failed: {}", e);
+                VaultCoreError::VaultInvalidPda
+            })?;
         if expected_pubkey != *account.key {
+            msg!("Vault account PDA is invalid");
             return Err(VaultCoreError::VaultInvalidPda);
         }
 
@@ -418,6 +455,7 @@ impl<'a, 'info> SanitizedVault<'a, 'info> {
         expect_writable: bool,
     ) -> VaultCoreResult<SanitizedVault<'a, 'info>> {
         if expect_writable && !account.is_writable {
+            msg!("Vault account is not writable");
             return Err(VaultCoreError::VaultExpectedWritable);
         }
         let vault = Box::new(Vault::deserialize_checked(program_id, account)?);

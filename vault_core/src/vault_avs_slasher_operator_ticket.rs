@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
@@ -101,12 +101,16 @@ impl VaultAvsSlasherOperatorTicket {
         slash_amount: u64,
         max_slashable_per_epoch: u64,
     ) -> VaultCoreResult<()> {
-        if self
+        let new_slashed_amount = self
             .slashed
             .checked_add(slash_amount)
-            .ok_or(VaultCoreError::VaultAvsSlasherOperatorOverflow)?
-            > max_slashable_per_epoch
-        {
+            .ok_or(VaultCoreError::VaultAvsSlasherOperatorOverflow)?;
+        if new_slashed_amount > max_slashable_per_epoch {
+            msg!(
+                "Max slashable per epoch exceeded ({} > {})",
+                new_slashed_amount,
+                max_slashable_per_epoch
+            );
             return Err(VaultCoreError::VaultAvsSlasherOperatorMaxSlashableExceeded);
         }
         Ok(())

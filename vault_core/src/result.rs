@@ -9,7 +9,7 @@ pub enum VaultCoreError {
     VaultFeeCalculationOverflow,
     VaultDataEmpty,
     VaultInvalidProgramOwner,
-    VaultInvalidData(String),
+    VaultInvalidData,
     VaultInvalidPda,
     VaultExpectedWritable,
     VaultSerializationFailed(String),
@@ -116,6 +116,7 @@ pub enum VaultCoreError {
     VaultStakerWithdrawalTicketOverflow,
     VaultStakerWithdrawalTicketNotWithdrawable,
     VaultUndelegationUnderflow,
+    VaultDepositUnderflow,
 }
 
 impl From<VaultCoreError> for ProgramError {

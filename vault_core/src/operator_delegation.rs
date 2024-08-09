@@ -113,7 +113,11 @@ impl OperatorDelegation {
     pub fn slash(&mut self, slash_amount: u64) -> VaultCoreResult<()> {
         let total_security_amount = self.total_security()?;
         if slash_amount > total_security_amount {
-            msg!("slashing too much");
+            msg!(
+                "slash amount exceeds total security ({}>{})",
+                slash_amount,
+                total_security_amount
+            );
             return Err(VaultCoreError::VaultSlashingUnderflow);
         }
 
@@ -147,7 +151,7 @@ impl OperatorDelegation {
 
         // Ensure we've slashed the exact amount requested
         if remaining_slash > 0 {
-            msg!("slashing incomplete");
+            msg!("slashing incomplete ({} remaining)", remaining_slash);
             return Err(VaultCoreError::VaultSlashingIncomplete);
         }
 

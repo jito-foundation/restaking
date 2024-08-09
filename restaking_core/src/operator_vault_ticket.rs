@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
 
 use crate::{
     result::{RestakingCoreError, RestakingCoreResult},
@@ -78,6 +78,7 @@ impl OperatorVaultTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
+            msg!("OperatorVaultTicket is not active or in cooldown");
             Err(RestakingCoreError::OperatorVaultTicketInactive)
         }
     }

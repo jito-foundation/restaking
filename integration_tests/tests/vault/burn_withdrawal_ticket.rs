@@ -276,12 +276,6 @@ mod tests {
             .await
             .unwrap();
 
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        assert_eq!(vault_delegation_list.withdrawable_reserve_amount(), 0);
-
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
             .await
@@ -354,12 +348,6 @@ mod tests {
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
             .await
             .unwrap();
-
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        assert_eq!(vault_delegation_list.withdrawable_reserve_amount(), 0);
 
         // user should have 1100 tokens
         let depositor_token_account = fixture
@@ -441,12 +429,6 @@ mod tests {
             .await
             .unwrap();
 
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        assert_eq!(vault_delegation_list.withdrawable_reserve_amount(), 0);
-
         // user should have 1000 tokens and should also get back excess LRT tokens
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
@@ -476,14 +458,14 @@ mod tests {
         assert_eq!(vault_token_account.amount, 100);
     }
 
-    // /// This test is complicated... TODO (LB): need to figure out this logic guh
-    // ///
-    // /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
-    // /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
-    // /// set aside is reduced to 0.
-    // ///
-    // /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
-    // /// won't match the withdrawal amount reserved in the withdrawal ticket.
+    /// This test is complicated... TODO (LB): need to figure out this logic guh
+    ///
+    /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
+    /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
+    /// set aside is reduced to 0.
+    ///
+    /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
+    /// won't match the withdrawal amount reserved in the withdrawal ticket.
     // #[tokio::test]
     // async fn test_burn_withdrawal_ticket_with_slashing_before_update() {
     //     let mut fixture = TestBuilder::new().await;
@@ -514,6 +496,11 @@ mod tests {
     //         .await
     //         .unwrap();
     //
+    //     let config = vault_program_client
+    //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    //         .await
+    //         .unwrap();
+    //
     //     // create slasher w/ token account
     //     let slasher = Keypair::new();
     //     fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
@@ -527,8 +514,19 @@ mod tests {
     //         .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
     //         .await
     //         .unwrap();
+    //
+    //     fixture
+    //         .warp_slot_incremental(2 * config.epoch_length())
+    //         .await
+    //         .unwrap();
+    //
     //     vault_program_client
     //         .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
+    //         .await
+    //         .unwrap();
+    //
+    //     fixture
+    //         .warp_slot_incremental(2 * config.epoch_length())
     //         .await
     //         .unwrap();
     //
@@ -669,12 +667,6 @@ mod tests {
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
             .await
             .unwrap();
-
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        assert_eq!(vault_delegation_list.withdrawable_reserve_amount(), 0);
 
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(

@@ -1,7 +1,8 @@
 use jito_restaking_sanitization::associated_token_account::SanitizedAssociatedTokenAccount;
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault,
-    vault_delegation_list::SanitizedVaultDelegationList,
+    config::SanitizedConfig,
+    vault::SanitizedVault,
+    vault_delegation_list::{SanitizedVaultDelegationList, VaultDelegationUpdateSummary},
 };
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -22,9 +23,16 @@ pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pr
 
     let slot = Clock::get()?.slot;
 
-    vault_delegation_list
+    if let VaultDelegationUpdateSummary::Updated {
+        amount_reserved_for_withdraw,
+    } = vault_delegation_list
         .vault_delegation_list_mut()
-        .update(slot, config.config().epoch_length())?;
+        .update(slot, config.config().epoch_length())?
+    {
+        vault
+            .vault_mut()
+            .increment_withdrawable_reserve_amount(amount_reserved_for_withdraw)?;
+    }
     vault
         .vault_mut()
         .set_tokens_deposited(vault_token_account.token_account().amount);

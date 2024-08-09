@@ -48,7 +48,7 @@ pub fn process_add_delegation(
     vault_delegation_list.vault_delegation_list_mut().delegate(
         *operator.key,
         amount,
-        vault.vault().tokens_deposited(),
+        vault.vault().max_delegation_amount()?,
     )?;
 
     vault_delegation_list.save_with_realloc(&Rent::get()?, payer.account())?;
