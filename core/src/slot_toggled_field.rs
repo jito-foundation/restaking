@@ -1,8 +1,9 @@
 use std::fmt::Debug;
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use bytemuck::{Pod, Zeroable};
 
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]
+#[repr(C)]
 pub struct SlotToggle {
     slot_added: u64,
     slot_removed: u64,

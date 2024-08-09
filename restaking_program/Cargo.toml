@@ -32,6 +32,8 @@ solana-security-txt = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
+jito-jsm-core = { workspace = true }
+jito-account-traits = { workspace = true }
 
 [dev-dependencies]
 solana-program-test = { workspace = true }

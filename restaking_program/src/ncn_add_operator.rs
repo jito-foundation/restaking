@@ -1,162 +1,100 @@
-use borsh::BorshSerialize;
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
+use jito_jsm_core::slot_toggled_field::SlotToggle;
+use jito_restaking_core::config::Config;
+use jito_restaking_core::ncn_operator_ticket::NcnOperatorTicket;
+use jito_restaking_core::operator::Operator;
+use jito_restaking_core::operator_ncn_ticket::OperatorNcnTicket;
 use jito_restaking_core::{
-    config::SanitizedConfig, ncn::SanitizedNcn, ncn_operator_ticket::NcnOperatorTicket,
-    operator::SanitizedOperator, operator_ncn_ticket::SanitizedOperatorNcnTicket,
+    loader::{
+        load_config, load_ncn, load_ncn_operator_ticket, load_operator, load_operator_ncn_ticket,
+    },
+    ncn::Ncn,
 };
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
-};
+use jito_restaking_sanitization::create_account;
+use solana_program::clock::Clock;
+use solana_program::rent::Rent;
+use solana_program::sysvar::Sysvar;
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
 };
+use std::mem::size_of;
 
 /// After an operator opts-in to an NCN, the NCN operator admin can add the operator to the NCN.
 /// The operator must have opted-in to the NCN before the NCN opts-in to the operator.
 ///
 /// [`crate::RestakingInstruction::NcnAddOperator`]
 pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
-        mut ncn,
-        operator,
-        ncn_operator_ticket_account,
-        operator_ncn_ticket,
-        admin,
-        payer,
-        system_program,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, ncn_info, operator, ncn_operator_ticket, operator_ncn_ticket, ncn_operator_admin, payer, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    ncn.ncn().check_operator_admin(admin.account().key)?;
+    load_config(program_id, config, false)?;
+    load_ncn(program_id, ncn_info, true)?;
+    load_operator(program_id, operator, false)?;
+    load_system_account(ncn_operator_ticket, false)?;
+    load_operator_ncn_ticket(program_id, operator_ncn_ticket, operator, ncn_info, false)?;
+    load_signer(ncn_operator_admin, false)?;
+    load_signer(payer, true)?;
+    load_system_program(system_program)?;
+
+    let (ncn_operator_ticket_pubkey, ncn_operator_ticket_bump, mut ncn_operator_ticket_seeds) =
+        NcnOperatorTicket::find_program_address(program_id, &ncn_info.key, &operator.key);
+    ncn_operator_ticket_seeds.push(vec![ncn_operator_ticket_bump]);
+    if ncn_operator_ticket_pubkey.ne(ncn_operator_ticket.key) {
+        msg!("NCN operator ticket is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
     let slot = Clock::get()?.slot;
 
-    operator_ncn_ticket
-        .operator_ncn_ticket()
-        .check_active_or_cooldown(slot, config.config().epoch_length())?;
+    let config = Config::try_from_slice(&config.data.borrow())?;
 
-    _create_ncn_operator_ticket(
-        program_id,
-        &ncn,
-        &operator,
-        &ncn_operator_ticket_account,
-        &payer,
-        &system_program,
-        &Rent::get()?,
-        slot,
-    )?;
-
-    ncn.ncn_mut().increment_operator_count()?;
-
-    ncn.save()?;
-
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn _create_ncn_operator_ticket<'a, 'info>(
-    program_id: &Pubkey,
-    ncn: &SanitizedNcn<'a, 'info>,
-    operator: &SanitizedOperator<'a, 'info>,
-    ncn_operator_ticket_account: &EmptyAccount<'a, 'info>,
-    payer: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-    slot: u64,
-) -> ProgramResult {
-    let (address, bump, mut seeds) = NcnOperatorTicket::find_program_address(
-        program_id,
-        ncn.account().key,
-        operator.account().key,
-    );
-    seeds.push(vec![bump]);
-
-    assert_with_msg(
-        address == *ncn_operator_ticket_account.account().key,
-        ProgramError::InvalidAccountData,
-        "NCN operator ticket is not at the correct PDA",
-    )?;
-
-    let ncn_operator_ticket = NcnOperatorTicket::new(
-        *ncn.account().key,
-        *operator.account().key,
-        ncn.ncn().operator_count(),
-        slot,
-        bump,
-    );
-
-    msg!(
-        "Creating NCN operator ticket: {:?}",
-        ncn_operator_ticket_account.account().key
-    );
-    let serialized = ncn_operator_ticket.try_to_vec()?;
-    create_account(
-        payer.account(),
-        ncn_operator_ticket_account.account(),
-        system_program.account(),
-        program_id,
-        rent,
-        serialized.len() as u64,
-        &seeds,
-    )?;
-    ncn_operator_ticket_account.account().data.borrow_mut()[..serialized.len()]
-        .copy_from_slice(&serialized);
-    Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    ncn: SanitizedNcn<'a, 'info>,
-    operator: SanitizedOperator<'a, 'info>,
-    ncn_operator_ticket_account: EmptyAccount<'a, 'info>,
-    operator_ncn_ticket: SanitizedOperatorNcnTicket<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    payer: SanitizedSignerAccount<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// [`crate::RestakingInstruction::NcnAddOperator`]
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let ncn = SanitizedNcn::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-        let operator =
-            SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let ncn_operator_ticket_account =
-            EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let operator_ncn_ticket = SanitizedOperatorNcnTicket::sanitize(
-            program_id,
-            next_account_info(accounts_iter)?,
-            false,
-            operator.account().key,
-            ncn.account().key,
-        )?;
-        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        let payer = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            ncn,
-            operator,
-            ncn_operator_ticket_account,
-            operator_ncn_ticket,
-            admin,
-            payer,
-            system_program,
-        })
+    // The NCN operator admin must be the signer for adding an operator to the NCN
+    let ncn = Ncn::try_from_slice_mut(&mut ncn_info.data.borrow_mut())?;
+    if ncn.operator_admin.ne(ncn_operator_admin.key) {
+        msg!("Invalid operator admin for NCN");
+        return Err(ProgramError::InvalidAccountData);
     }
+
+    // The operator must have opted-in to the NCN and it must be active
+    let operator_ncn_ticket =
+        OperatorNcnTicket::try_from_slice(&operator_ncn_ticket.data.borrow())?;
+    if !operator_ncn_ticket
+        .state
+        .is_active_or_cooldown(slot, config.epoch_length)
+    {
+        msg!("Operator NCN ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    msg!("Initializing NcnOperatorTicket at address {}", operator.key);
+    create_account(
+        payer,
+        ncn_operator_ticket,
+        system_program,
+        program_id,
+        &Rent::get()?,
+        (8 + size_of::<NcnOperatorTicket>()) as u64,
+        &ncn_operator_ticket_seeds,
+    )?;
+
+    let mut ncn_operator_ticket_data = ncn_operator_ticket.try_borrow_mut_data()?;
+    ncn_operator_ticket_data[0] = NcnOperatorTicket::DISCRIMINATOR;
+    let ncn_operator_ticket = NcnOperatorTicket::try_from_slice_mut(&mut ncn_operator_ticket_data)?;
+    ncn_operator_ticket.ncn = *ncn_info.key;
+    ncn_operator_ticket.operator = *operator.key;
+    ncn_operator_ticket.index = ncn.operator_count;
+    ncn_operator_ticket.state = SlotToggle::new(slot);
+    ncn_operator_ticket.bump = ncn_operator_ticket_bump;
+
+    ncn.operator_count = ncn
+        .operator_count
+        .checked_add(1)
+        .ok_or(ProgramError::InvalidAccountData)?;
+
+    Ok(())
 }

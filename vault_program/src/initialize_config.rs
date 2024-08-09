@@ -36,7 +36,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
         "Initializing config @ address {}",
         config_account.account().key
     );
-    let config_serialized = config.try_to_vec()?;
+    let config_serialized = vec![]; //config.try_to_vec()?;
     create_account(
         admin.account(),
         config_account.account(),

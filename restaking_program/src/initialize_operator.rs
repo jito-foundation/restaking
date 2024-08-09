@@ -1,5 +1,13 @@
+use std::mem::size_of;
+
 use borsh::BorshSerialize;
-use jito_restaking_core::{config::SanitizedConfig, operator::Operator};
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
+use jito_restaking_core::{
+    config::{Config, SanitizedConfig},
+    loader::load_config,
+    operator::Operator,
+};
 use jito_restaking_sanitization::{
     assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
     system_program::SanitizedSystemProgram,
@@ -7,6 +15,7 @@ use jito_restaking_sanitization::{
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
+    msg,
     program_error::ProgramError,
     pubkey::Pubkey,
     rent::Rent,
@@ -14,31 +23,55 @@ use solana_program::{
 };
 
 /// Initializes a node operator and associated accounts.
-///
 /// [`crate::RestakingInstruction::InitializeOperator`]
 pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        mut config,
-        operator_account,
+    let [config, operator, admin, base, system_program] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+    load_config(program_id, config, true)?;
+    load_system_account(operator, true)?;
+    load_signer(admin, true)?;
+    load_signer(base, false)?;
+    load_system_program(system_program)?;
+
+    let (operator_pubkey, operator_bump, mut operator_seed) =
+        Operator::find_program_address(program_id, base.key);
+    operator_seed.push(vec![operator_bump]);
+    if operator.key.ne(&operator_pubkey) {
+        msg!("Operator account is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    msg!("Initializing operator at address {}", operator.key);
+    create_account(
         admin,
-        base,
+        config,
         system_program,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
-
-    let rent = Rent::get()?;
-
-    _create_operator(
         program_id,
-        &config,
-        &operator_account,
-        &base,
-        &admin,
-        &system_program,
-        &rent,
+        &Rent::get()?,
+        (8 + size_of::<Operator>()) as u64,
+        &operator_seed,
     )?;
 
-    config.config_mut().increment_operators()?;
-    config.save()?;
+    let config = Config::try_from_slice_mut(&mut config.data.borrow_mut())?;
+
+    let mut operator_data = operator.try_borrow_mut_data()?;
+    operator_data[0] = Operator::DISCRIMINATOR;
+    let operator = Operator::try_from_slice_mut(&mut operator_data)?;
+    operator.base = *base.key;
+    operator.admin = *admin.key;
+    operator.ncn_admin = *admin.key;
+    operator.vault_admin = *admin.key;
+    operator.voter = *admin.key;
+    operator.index = config.operator_count;
+    operator.ncn_count = 0;
+    operator.vault_count = 0;
+    operator.bump = operator_bump;
+
+    config.operator_count = config
+        .operator_count
+        .checked_add(1)
+        .ok_or(ProgramError::InvalidAccountData)?;
 
     Ok(())
 }

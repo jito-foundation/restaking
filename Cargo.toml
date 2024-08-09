@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "account_traits",
+    "account_traits_derive",
     "core",
     "integration_tests",
     "restaking_core",
@@ -34,7 +36,7 @@ readme = "README.md"
 [workspace.dependencies]
 assert_matches = "1.5.0"
 borsh = { version = "0.10.3" }
-bytemuck = "1.16.1"
+bytemuck = "1.16.3"
 jito-restaking-sanitization = { path = "sanitization", version = "=0.0.1" }
 jito-jsm-core = { path = "core", version = "=0.0.1" }
 jito-vault-core = { path = "vault_core", version = "=0.0.1" }
@@ -43,6 +45,8 @@ jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.1" }
 jito-vault-sdk = { path = "vault_sdk", version = "=0.0.1" }
 jito-vault-program = { path = "vault_program", version = "=0.0.1" }
 jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
+jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
+jito-account-traits = { path = "account_traits", version = "=0.0.1" }
 shank = "0.4.2"
 solana-program = "~1.18"
 solana-program-test = "~1.18"
@@ -53,3 +57,6 @@ spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"]
 thiserror = "1.0.57"
 tokio = "1.36.0"
 matches = "0.1.10"
+quote = "1.0.36"
+syn = "2.0.72"
+proc-macro2 = "1.0.86"
