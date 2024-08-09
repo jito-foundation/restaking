@@ -22,7 +22,6 @@ use solana_program::{
     sysvar::Sysvar,
 };
 use spl_token::instruction::{burn, close_account, transfer};
-use std::cmp::min;
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
