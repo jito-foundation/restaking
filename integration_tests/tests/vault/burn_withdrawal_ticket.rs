@@ -18,6 +18,7 @@ mod tests {
         operator_root: OperatorRoot,
         depositor: Keypair,
         withdrawal_ticket_base: Pubkey,
+        slasher: Keypair,
     }
 
     async fn setup_withdrawal_ticket(
@@ -30,6 +31,7 @@ mod tests {
         deposit_amount: u64,
         delegate_amount: u64,
         withdrawal_amount: u64,
+        max_slash_amount: u64,
     ) -> PreparedWithdrawalTicket {
         // Setup vault with initial deposit
         let (_vault_config_admin, vault_root) = vault_program_client
@@ -136,6 +138,50 @@ mod tests {
             .await
             .unwrap();
 
+        // create slasher w/ token account
+        let slasher = Keypair::new();
+        fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
+        fixture
+            .create_ata(&vault.supported_mint(), &slasher.pubkey())
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        // do all the opt-in stuff for the slasher
+        restaking_program_client
+            .avs_vault_slasher_opt_in(
+                &avs_root,
+                &vault_root.vault_pubkey,
+                &slasher.pubkey(),
+                max_slash_amount,
+            )
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, withdrawal_amount)
             .await
@@ -147,6 +193,7 @@ mod tests {
             operator_root,
             depositor,
             withdrawal_ticket_base: base,
+            slasher,
         }
     }
 
@@ -163,6 +210,7 @@ mod tests {
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
+            slasher: _,
         } = setup_withdrawal_ticket(
             &mut fixture,
             &mut vault_program_client,
@@ -170,6 +218,7 @@ mod tests {
             0,
             0,
             1000,
+            100,
             100,
             100,
             100,
@@ -196,6 +245,7 @@ mod tests {
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
+            slasher: _,
         } = setup_withdrawal_ticket(
             &mut fixture,
             &mut vault_program_client,
@@ -203,6 +253,7 @@ mod tests {
             0,
             0,
             1000,
+            100,
             100,
             100,
             100,
@@ -243,6 +294,7 @@ mod tests {
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
+            slasher: _,
         } = setup_withdrawal_ticket(
             &mut fixture,
             &mut vault_program_client,
@@ -253,6 +305,7 @@ mod tests {
             1000,
             1000,
             1000,
+            100,
         )
         .await;
 
@@ -306,6 +359,7 @@ mod tests {
             operator_root: _,
             depositor,
             withdrawal_ticket_base,
+            slasher: _,
         } = setup_withdrawal_ticket(
             &mut fixture,
             &mut vault_program_client,
@@ -316,6 +370,7 @@ mod tests {
             1000,
             1000,
             1000,
+            100,
         )
         .await;
 
@@ -376,6 +431,7 @@ mod tests {
             operator_root,
             depositor,
             withdrawal_ticket_base,
+            slasher: _,
         } = setup_withdrawal_ticket(
             &mut fixture,
             &mut vault_program_client,
@@ -386,6 +442,7 @@ mod tests {
             1000,
             1000,
             1000,
+            100,
         )
         .await;
 
@@ -458,8 +515,6 @@ mod tests {
         assert_eq!(vault_token_account.amount, 100);
     }
 
-    /// This test is complicated... TODO (LB): need to figure out this logic guh
-    ///
     /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
     /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
     /// set aside is reduced to 0.
@@ -478,6 +533,7 @@ mod tests {
     //         operator_root,
     //         depositor,
     //         withdrawal_ticket_base,
+    //         slasher,
     //     } = setup_withdrawal_ticket(
     //         &mut fixture,
     //         &mut vault_program_client,
@@ -488,6 +544,7 @@ mod tests {
     //         1000,
     //         1000,
     //         1000,
+    //         100,
     //     )
     //     .await;
     //
@@ -501,35 +558,6 @@ mod tests {
     //         .await
     //         .unwrap();
     //
-    //     // create slasher w/ token account
-    //     let slasher = Keypair::new();
-    //     fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
-    //     fixture
-    //         .create_ata(&vault.supported_mint(), &slasher.pubkey())
-    //         .await
-    //         .unwrap();
-    //
-    //     // do all the opt-in stuff
-    //     restaking_program_client
-    //         .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
-    //         .await
-    //         .unwrap();
-    //
-    //     fixture
-    //         .warp_slot_incremental(2 * config.epoch_length())
-    //         .await
-    //         .unwrap();
-    //
-    //     vault_program_client
-    //         .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
-    //         .await
-    //         .unwrap();
-    //
-    //     fixture
-    //         .warp_slot_incremental(2 * config.epoch_length())
-    //         .await
-    //         .unwrap();
-    //
     //     vault_program_client
     //         .setup_vault_avs_slasher_operator_ticket(
     //             &vault_root,
@@ -539,6 +567,12 @@ mod tests {
     //         )
     //         .await
     //         .unwrap();
+    //
+    //     vault_program_client
+    //         .do_update_vault(&vault_root.vault_pubkey)
+    //         .await
+    //         .unwrap();
+    //
     //     vault_program_client
     //         .do_slash(
     //             &vault_root,
@@ -585,6 +619,7 @@ mod tests {
             operator_root,
             depositor,
             withdrawal_ticket_base,
+            slasher,
         } = setup_withdrawal_ticket(
             &mut fixture,
             &mut vault_program_client,
@@ -595,38 +630,12 @@ mod tests {
             1000,
             1000,
             900,
+            100,
         )
         .await;
 
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        // create slasher w/ token account
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
-        fixture
-            .create_ata(&vault.supported_mint(), &slasher.pubkey())
-            .await
-            .unwrap();
-
-        // do all the opt-in stuff
-        restaking_program_client
-            .avs_vault_slasher_opt_in(&avs_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
-            .await
-            .unwrap();
-        let restaking_config = restaking_program_client
-            .get_config(&RestakingConfig::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length())
-            .await
-            .unwrap();
-
-        vault_program_client
-            .vault_avs_vault_slasher_opt_in(&vault_root, &avs_root.avs_pubkey, &slasher.pubkey())
             .await
             .unwrap();
 
@@ -638,6 +647,7 @@ mod tests {
             .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
+
         vault_program_client
             .do_update_vault(&vault_root.vault_pubkey)
             .await

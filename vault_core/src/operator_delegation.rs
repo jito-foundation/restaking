@@ -114,7 +114,7 @@ impl OperatorDelegation {
         let total_security_amount = self.total_security()?;
         if slash_amount > total_security_amount {
             msg!(
-                "slash amount exceeds total security ({}>{})",
+                "slash amount exceeds total security (slash_amount: {}, total_security: {})",
                 slash_amount,
                 total_security_amount
             );

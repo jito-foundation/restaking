@@ -142,12 +142,11 @@ pub fn process_burn_withdrawal_ticket(
         vault.vault().withdrawable_reserve_amount()
     );
 
-    // Decrement the amount reserved for withdraw tickets because it's been claimed now.
-    // This part is tricky in the event the ratio
-    // TODO (LB): this is tricky... if there's a withdraw ticket and there's a slashing event in the epoch
-    // where withdrawal funds are cooling down, the slashing event will be applied to the withdraw reserve on the operator
-    // which propagates to this. if there's a slashing after the withdrawed funds are fully cooled down and ready, it won't
-    // show up in this. how do we reconcile this?
+    // TODO (LB): this logic needs to be fixed and is broken
+    //  If a withdraw ticket is created and there is a slashing event before the withdraw ticket
+    //  has fully matured, the program can end up in a situation where the original_redemption_amount
+    //  is greater than the total withdrawable_reserve_amount. This is a bug and needs to be fixed.
+    //  see test_burn_withdrawal_ticket_with_slashing_before_update
     vault
         .vault_mut()
         .decrement_withdrawable_reserve_amount(original_redemption_amount)?;
