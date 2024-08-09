@@ -1,5 +1,8 @@
+use std::mem::size_of;
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use bytemuck::{Pod, Zeroable};
+use sokoban::ZeroCopy;
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 use VaultCoreError::ConfigInvalidPda;
 
@@ -11,6 +14,7 @@ use crate::{
 pub const MAX_RESTAKING_PROGRAMS: usize = 8;
 
 #[derive(Debug, Copy, BorshSerialize, BorshDeserialize, Clone)]
+#[repr(C)]
 pub struct Config {
     /// The account type
     account_type: AccountType,
@@ -36,6 +40,7 @@ pub struct Config {
 
 unsafe impl Pod for Config {}
 unsafe impl Zeroable for Config {}
+impl ZeroCopy for Config {}
 
 impl Config {
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
@@ -122,7 +127,7 @@ impl Config {
 
 pub struct SanitizedConfig<'a, 'info> {
     account: &'a AccountInfo<'info>,
-    config: Box<Config>,
+    config: Config,
 }
 
 impl<'a, 'info> SanitizedConfig<'a, 'info> {
@@ -134,9 +139,14 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::ConfigExpectedWritable);
         }
-        let config = Box::new(Config::deserialize_checked(program_id, account)?);
+        // let config = Config::deserialize_checked(program_id, account)?;
+        let data = account.try_borrow_data().unwrap();
+        let config = Config::load_bytes(&data[..size_of::<Config>()]).unwrap();
 
-        Ok(SanitizedConfig { account, config })
+        Ok(SanitizedConfig {
+            account,
+            config: *config,
+        })
     }
 
     pub const fn account(&self) -> &AccountInfo<'info> {

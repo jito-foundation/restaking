@@ -1931,6 +1931,7 @@ dependencies = [
  "bytemuck",
  "jito-jsm-core",
  "jito-restaking-sanitization",
+ "lib-sokoban",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -2024,6 +2025,18 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
+name = "lib-sokoban"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0640eb476052d9f48e920969f8117b054d1be1a0b2e4055e61293cd2b1afcce1"
+dependencies = [
+ "bytemuck",
+ "num-derive 0.3.3",
+ "num-traits",
+ "thiserror",
+]
 
 [[package]]
 name = "libc"

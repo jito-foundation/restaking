@@ -46,7 +46,7 @@ use crate::{
     withdrawal_asset::process_withdrawal_asset,
 };
 
-declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
+declare_id!("AE7fSUJSGxMzjNxSPpNTemrz9cr26RFue4GwoJ1cuR6f");
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {

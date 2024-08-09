@@ -16,6 +16,7 @@ jito-jsm-core = { workspace = true }
 jito-restaking-sanitization = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
+lib-sokoban = "0.3.2"
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
