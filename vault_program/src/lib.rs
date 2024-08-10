@@ -174,7 +174,7 @@ pub fn process_instruction(
         // Vault slashing
         // ------------------------------------------
         VaultInstruction::AddSlasher => {
-            msg!("Instruction: RegisterSlasher");
+            msg!("Instruction: AddSlasher");
             process_add_slasher(program_id, accounts)
         }
         VaultInstruction::InitializeVaultNcnSlasherOperatorTicket => {

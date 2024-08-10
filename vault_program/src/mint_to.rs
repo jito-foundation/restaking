@@ -99,6 +99,13 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     let lrt_to_depositor = vault.calculate_lrt_mint_amount(vault_deposit_amount)?;
     let lrt_to_vault_fee_wallet = vault.calculate_lrt_mint_amount(vault_fee)?;
 
+    vault.lrt_supply = vault
+        .lrt_supply
+        .checked_add(lrt_to_depositor)
+        .and_then(|supply| supply.checked_add(lrt_to_vault_fee_wallet))
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    vault.tokens_deposited = vault_token_amount_after_deposit;
+
     // mint to depositor and fee wallet
     {
         let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
@@ -139,13 +146,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
             &[&seed_slices],
         )?;
     }
-
-    vault.lrt_supply = vault
-        .lrt_supply
-        .checked_add(lrt_to_depositor)
-        .and_then(|supply| supply.checked_add(lrt_to_vault_fee_wallet))
-        .ok_or(ProgramError::ArithmeticOverflow)?;
-    vault.tokens_deposited = vault_token_amount_after_deposit;
 
     Ok(())
 }

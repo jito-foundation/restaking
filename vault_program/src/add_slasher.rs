@@ -71,7 +71,7 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     let ncn_vault_slasher_ticket_data = ncn_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =
         NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
-    if ncn_vault_slasher_ticket
+    if !ncn_vault_slasher_ticket
         .state
         .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
     {

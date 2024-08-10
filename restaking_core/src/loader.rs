@@ -122,7 +122,7 @@ pub fn load_operator_vault_ticket(
         msg!("Operator vault ticket account is not writable");
         return Err(ProgramError::InvalidAccountData);
     }
-    if operator_vault_ticket.data.borrow()[0].ne(&NcnOperatorTicket::DISCRIMINATOR) {
+    if operator_vault_ticket.data.borrow()[0].ne(&OperatorVaultTicket::DISCRIMINATOR) {
         msg!("Operator vault ticket account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
