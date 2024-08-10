@@ -123,7 +123,7 @@ impl From<VaultCoreError> for ProgramError {
     fn from(_value: VaultCoreError) -> Self {
         Self::Custom(0)
         // match value {
-        //
+
         //     VaultCoreError::VaultDepositOverflow => ProgramError::Custom(1000),
         //     VaultCoreError::VaultDepositExceedsCapacity => ProgramError::Custom(1001),
         //     VaultCoreError::VaultFeeCalculationOverflow => ProgramError::Custom(1002),
