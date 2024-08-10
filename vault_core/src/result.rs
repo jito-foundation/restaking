@@ -120,24 +120,21 @@ pub enum VaultCoreError {
 }
 
 impl From<VaultCoreError> for ProgramError {
-    fn from(value: VaultCoreError) -> Self {
-        match value {
-            VaultCoreError::ConfigInvalidPda => ProgramError::Custom(5000),
-            VaultCoreError::ConfigInvalidAccountType => ProgramError::Custom(1001),
-            VaultCoreError::ConfigInvalidData(_) => ProgramError::Custom(1002),
-            VaultCoreError::ConfigInvalidProgramOwner => ProgramError::Custom(1003),
-            VaultCoreError::ConfigDataEmpty => ProgramError::Custom(1004),
-            _ => Self::Custom(0), //     VaultCoreError::VaultDepositOverflow => ProgramError::Custom(1000),
-                                  //     VaultCoreError::VaultDepositExceedsCapacity => ProgramError::Custom(1001),
-                                  //     VaultCoreError::VaultFeeCalculationOverflow => ProgramError::Custom(1002),
-                                  //     VaultCoreError::VaultDataEmpty => ProgramError::Custom(1003),
-                                  //     VaultCoreError::VaultInvalidProgramOwner => ProgramError::Custom(1004),
-                                  //     VaultCoreError::VaultInvalidData(_) => ProgramError::Custom(1005),
-                                  //     VaultCoreError::VaultInvalidPda => ProgramError::Custom(1006),
-                                  //     VaultCoreError::VaultNotWritable => ProgramError::Custom(1007),
-                                  //     VaultCoreError::VaultSerializationFailed(_) => ProgramError::Custom(1008),
-                                  //     VaultCoreError::VaultNcnAlreadyActive => ProgramError::Custom(1009),
-                                  //     VaultCoreError::VaultInvalidAdmin => ProgramError::Custom(1010),
-        }
+    fn from(_value: VaultCoreError) -> Self {
+        Self::Custom(0)
+        // match value {
+        //
+        //     VaultCoreError::VaultDepositOverflow => ProgramError::Custom(1000),
+        //     VaultCoreError::VaultDepositExceedsCapacity => ProgramError::Custom(1001),
+        //     VaultCoreError::VaultFeeCalculationOverflow => ProgramError::Custom(1002),
+        //     VaultCoreError::VaultDataEmpty => ProgramError::Custom(1003),
+        //     VaultCoreError::VaultInvalidProgramOwner => ProgramError::Custom(1004),
+        //     VaultCoreError::VaultInvalidData(_) => ProgramError::Custom(1005),
+        //     VaultCoreError::VaultInvalidPda => ProgramError::Custom(1006),
+        //     VaultCoreError::VaultNotWritable => ProgramError::Custom(1007),
+        //     VaultCoreError::VaultSerializationFailed(_) => ProgramError::Custom(1008),
+        //     VaultCoreError::VaultNcnAlreadyActive => ProgramError::Custom(1009),
+        //     VaultCoreError::VaultInvalidAdmin => ProgramError::Custom(1010),
+        // }
     }
 }

@@ -14,10 +14,7 @@ mod tests {
         let config_admin = vault_program_client.setup_config().await.unwrap();
 
         let (config_pda, bump, _) = Config::find_program_address(&jito_vault_program::id());
-        let config = vault_program_client
-            .get_config(&config_pda)
-            .await
-            .unwrap();
+        let config = vault_program_client.get_config(&config_pda).await.unwrap();
 
         assert_eq!(config.admin(), config_admin.pubkey());
         assert_eq!(config.restaking_program(), jito_restaking_program::id());

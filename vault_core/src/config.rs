@@ -28,10 +28,10 @@ pub struct Config {
     /// The approved restaking program for this vault
     restaking_program: Pubkey,
 
-    /// The number of vaults managed by the program
+    /// The length of an epoch in slots
     epoch_length: u64,
 
-    /// The length of an epoch in slots
+    /// The number of vaults managed by the program
     num_vaults: u64,
 
     /// Reserved space
@@ -123,7 +123,8 @@ impl Config {
         let mut seeds = Self::seeds();
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id).unwrap();
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
+            .map_err(|_| ConfigInvalidPda)?;
         if expected_pubkey != *account.key {
             return Err(ConfigInvalidPda);
         }
@@ -167,7 +168,6 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
         let mut config_bytes = self.account.try_borrow_mut_data()?;
         *Config::load_mut_bytes(&mut config_bytes).ok_or(ProgramError::InvalidAccountData)? =
             self.config;
-        // borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.config)?;
         Ok(())
     }
 }

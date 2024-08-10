@@ -47,7 +47,7 @@ use crate::{
     update_vault::process_update_vault, withdrawal_asset::process_withdrawal_asset,
 };
 
-declare_id!("AE7fSUJSGxMzjNxSPpNTemrz9cr26RFue4GwoJ1cuR6f");
+declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
