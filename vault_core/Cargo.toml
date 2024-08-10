@@ -14,7 +14,6 @@ borsh = { workspace = true }
 bytemuck = { workspace = true }
 jito-account-traits = { workspace = true }
 jito-jsm-core = { workspace = true }
-jito-restaking-sanitization = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }

@@ -1,9 +1,11 @@
 use std::mem::size_of;
 
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+};
 use jito_restaking_core::{config::Config, loader::load_config, ncn::Ncn};
-use jito_restaking_sanitization::create_account;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -39,7 +41,8 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
         &ncn_seed,
     )?;
 
-    let config = Config::try_from_slice_mut(&mut config.data.borrow_mut())?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
 
     let mut ncn_data = ncn.try_borrow_mut_data()?;
     ncn_data[0] = Ncn::DISCRIMINATOR;
@@ -50,6 +53,7 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
     ncn.vault_admin = *admin.key;
     ncn.slasher_admin = *admin.key;
     ncn.withdraw_admin = *admin.key;
+    ncn.withdraw_fee_wallet = *admin.key;
     ncn.index = config.ncn_count;
     ncn.operator_count = 0;
     ncn.vault_count = 0;

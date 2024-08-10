@@ -1,178 +1,115 @@
-use borsh::BorshSerialize;
-use jito_restaking_core::{
-    ncn::SanitizedNcn, ncn_vault_slasher_ticket::SanitizedNcnVaultSlasherTicket,
+use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+    slot_toggled_field::SlotToggle,
 };
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
+use jito_restaking_core::{
+    loader::{load_config, load_ncn, load_ncn_vault_slasher_ticket},
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
 };
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault, vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
+    config::Config, loader::load_vault, vault::Vault,
+    vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Processes the register slasher instruction: [`crate::VaultInstruction::AddSlasher`]
 pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
-        mut vault,
-        ncn,
-        slasher,
+    let [config, vault_info, ncn, slasher, ncn_slasher_ticket, vault_ncn_slasher_ticket, vault_slasher_admin, payer, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault_info, false)?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
+    load_ncn(&config.restaking_program, ncn, false)?;
+    load_ncn_vault_slasher_ticket(
+        &config.restaking_program,
         ncn_slasher_ticket,
-        vault_ncn_slasher_ticket_account,
-        admin,
-        payer,
-        system_program,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
-
-    vault.vault().check_slasher_admin(admin.account().key)?;
-    let slot = Clock::get()?.slot;
-
-    ncn_slasher_ticket
-        .ncn_vault_slasher_ticket()
-        .check_active_or_cooldown(slot, config.config().epoch_length())?;
-
-    let max_slashable_per_epoch = ncn_slasher_ticket
-        .ncn_vault_slasher_ticket()
-        .max_slashable_per_epoch();
-
-    _create_vault_ncn_slasher_ticket(
-        program_id,
-        &vault,
-        &ncn,
+        ncn,
+        vault_info,
         slasher,
-        &vault_ncn_slasher_ticket_account,
-        &payer,
-        &system_program,
-        &Rent::get()?,
-        slot,
-        max_slashable_per_epoch,
+        false,
     )?;
+    load_system_account(vault_ncn_slasher_ticket, true)?;
+    load_signer(vault_slasher_admin, false)?;
+    load_signer(payer, true)?;
+    load_system_program(system_program)?;
 
-    vault.vault_mut().increment_slasher_count()?;
-
-    vault.save()?;
-
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn _create_vault_ncn_slasher_ticket<'a, 'info>(
-    program_id: &Pubkey,
-    vault: &SanitizedVault<'a, 'info>,
-    ncn: &SanitizedNcn<'a, 'info>,
-    slasher: &AccountInfo<'info>,
-    vault_ncn_slasher_ticket_account: &EmptyAccount<'a, 'info>,
-    payer: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-    slot: u64,
-    max_slashable_per_epoch: u64,
-) -> ProgramResult {
-    let (address, bump, mut seeds) = VaultNcnSlasherTicket::find_program_address(
+    let (
+        vault_ncn_slasher_ticket_pubkey,
+        vault_ncn_slasher_ticket_bump,
+        mut vault_ncn_slasher_ticket_seeds,
+    ) = VaultNcnSlasherTicket::find_program_address(
         program_id,
-        vault.account().key,
-        ncn.account().key,
+        vault_info.key,
+        ncn.key,
         slasher.key,
     );
-    seeds.push(vec![bump]);
+    vault_ncn_slasher_ticket_seeds.push(vec![vault_ncn_slasher_ticket_bump]);
+    if vault_ncn_slasher_ticket_pubkey.ne(vault_ncn_slasher_ticket.key) {
+        msg!("Vault NCN slasher ticket is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    assert_with_msg(
-        address == *vault_ncn_slasher_ticket_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Vault NCN slasher ticket is not at the correct PDA",
-    )?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    if vault.slasher_admin.ne(vault_slasher_admin.key) {
+        msg!("Invalid slasher admin for vault");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    let vault_ncn_slasher_ticket = VaultNcnSlasherTicket::new(
-        *vault.account().key,
-        *ncn.account().key,
-        *slasher.key,
-        max_slashable_per_epoch,
-        vault.vault().slasher_count(),
-        slot,
-        bump,
-    );
+    let ncn_vault_slasher_ticket_data = ncn_slasher_ticket.data.borrow();
+    let ncn_vault_slasher_ticket =
+        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
+    if ncn_vault_slasher_ticket
+        .state
+        .is_active_or_cooldown(Clock::get()?.slot, config.config().epoch_length())
+    {
+        msg!("Slasher is not ready to be activated");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
     msg!(
-        "Creating vault NCN slasher ticket: {:?}",
-        vault_ncn_slasher_ticket_account.account().key
+        "Initializing VaultNcnSlasherTicket at address {}",
+        vault_ncn_slasher_ticket.key
     );
-    let serialized = vault_ncn_slasher_ticket.try_to_vec()?;
     create_account(
-        payer.account(),
-        vault_ncn_slasher_ticket_account.account(),
-        system_program.account(),
+        payer,
+        vault_ncn_slasher_ticket,
+        system_program,
         program_id,
-        rent,
-        serialized.len() as u64,
-        &seeds,
+        &Rent::get()?,
+        (8 + size_of::<VaultNcnSlasherTicket>()) as u64,
+        &vault_ncn_slasher_ticket_seeds,
     )?;
-    vault_ncn_slasher_ticket_account.account().data.borrow_mut()[..serialized.len()]
-        .copy_from_slice(&serialized);
+
+    let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.try_borrow_mut_data()?;
+    vault_ncn_slasher_ticket_data[0] = VaultNcnSlasherTicket::DISCRIMINATOR;
+    let vault_ncn_slasher_ticket =
+        VaultNcnSlasherTicket::try_from_slice_mut(&mut vault_ncn_slasher_ticket_data)?;
+    vault_ncn_slasher_ticket.vault = *vault_info.key;
+    vault_ncn_slasher_ticket.ncn = *ncn.key;
+    vault_ncn_slasher_ticket.slasher = *slasher.key;
+    vault_ncn_slasher_ticket.max_slashable_per_epoch =
+        ncn_vault_slasher_ticket.max_slashable_per_epoch;
+    vault_ncn_slasher_ticket.index = vault.slasher_count;
+    vault_ncn_slasher_ticket.state = SlotToggle::new(Clock::get()?.slot);
+    vault_ncn_slasher_ticket.bump = vault_ncn_slasher_ticket_bump;
+
+    vault.slasher_count = vault
+        .slasher_count
+        .checked_add(1)
+        .ok_or(ProgramError::InvalidAccountData)?;
+
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-    ncn: SanitizedNcn<'a, 'info>,
-    slasher: &'a AccountInfo<'info>,
-    ncn_slasher_ticket: SanitizedNcnVaultSlasherTicket<'a, 'info>,
-    vault_ncn_slasher_ticket_account: EmptyAccount<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    payer: SanitizedSignerAccount<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let account_iter = &mut accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(account_iter)?, false)?;
-        let vault = SanitizedVault::sanitize(program_id, next_account_info(account_iter)?, false)?;
-        let ncn = SanitizedNcn::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(account_iter)?,
-            false,
-        )?;
-        let slasher = next_account_info(account_iter)?;
-        let ncn_slasher_ticket = SanitizedNcnVaultSlasherTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(account_iter)?,
-            false,
-            ncn.account().key,
-            vault.account().key,
-            slasher.key,
-        )?;
-        let vault_ncn_slasher_ticket_account =
-            EmptyAccount::sanitize(next_account_info(account_iter)?, true)?;
-        let admin = SanitizedSignerAccount::sanitize(next_account_info(account_iter)?, false)?;
-        let payer = SanitizedSignerAccount::sanitize(next_account_info(account_iter)?, true)?;
-        let system_program = SanitizedSystemProgram::sanitize(next_account_info(account_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            vault,
-            ncn,
-            slasher,
-            ncn_slasher_ticket,
-            vault_ncn_slasher_ticket_account,
-            admin,
-            payer,
-            system_program,
-        })
-    }
 }

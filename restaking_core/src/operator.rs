@@ -19,6 +19,10 @@ pub struct Operator {
 
     pub vault_admin: Pubkey,
 
+    pub withdraw_admin: Pubkey,
+
+    pub withdraw_fee_wallet: Pubkey,
+
     /// The voter pubkey
     pub voter: Pubkey,
 
@@ -43,6 +47,8 @@ impl Operator {
             admin,
             ncn_admin: admin,
             vault_admin: admin,
+            withdraw_admin: admin,
+            withdraw_fee_wallet: admin,
             voter,
             index,
             ncn_count: 0,

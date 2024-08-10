@@ -1,7 +1,8 @@
-use crate::result::{VaultCoreError, VaultCoreResult};
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::pubkey::Pubkey;
+
+use crate::result::{VaultCoreError, VaultCoreResult};
 
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;

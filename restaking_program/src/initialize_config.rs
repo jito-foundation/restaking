@@ -1,9 +1,11 @@
 use std::mem::size_of;
 
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+};
 use jito_restaking_core::config::Config;
-use jito_restaking_sanitization::create_account;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
     msg, program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,

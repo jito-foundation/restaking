@@ -25,8 +25,8 @@ borsh = { workspace = true }
 jito-account-traits = { workspace = true }
 jito-jsm-core = { workspace = true }
 jito-restaking-core = { workspace = true }
-jito-restaking-sanitization = { workspace = true }
 jito-restaking-sdk = { workspace = true }
+jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
@@ -34,7 +34,6 @@ solana-security-txt = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
-jito-vault-core = { workspace = true }
 
 [dev-dependencies]
 solana-program-test = { workspace = true }

@@ -22,7 +22,7 @@ pub struct VaultOperatorTicket {
     /// The slot toggle
     pub state: SlotToggle,
 
-    bump: u8,
+    pub bump: u8,
 
     /// Reserved space
     reserved: [u8; 7],

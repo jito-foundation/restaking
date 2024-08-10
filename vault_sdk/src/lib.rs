@@ -73,15 +73,16 @@ pub enum VaultInstruction {
     RemoveOperator,
 
     /// Mints LRT by depositing tokens into the vault
-    #[account(0, writable, name = "vault")]
-    #[account(1, writable, name = "lrt_mint")]
-    #[account(2, writable, signer, name = "depositor")]
-    #[account(3, writable, name = "depositor_token_account")]
-    #[account(4, writable, name = "vault_token_account")]
-    #[account(5, writable, name = "depositor_lrt_token_account")]
-    #[account(6, writable, name = "vault_fee_token_account")]
-    #[account(7, name = "token_program")]
-    #[account(8, signer, optional, name = "mint_signer", description = "Signer for minting")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "lrt_mint")]
+    #[account(3, writable, signer, name = "depositor")]
+    #[account(4, writable, name = "depositor_token_account")]
+    #[account(5, writable, name = "vault_token_account")]
+    #[account(6, writable, name = "depositor_lrt_token_account")]
+    #[account(7, writable, name = "vault_fee_token_account")]
+    #[account(8, name = "token_program")]
+    #[account(9, signer, optional, name = "mint_signer", description = "Signer for minting")]
     MintTo {
         amount: u64
     },
@@ -167,7 +168,7 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_delegation_list")]
     #[account(4, signer, name = "admin")]
-    RemoveDelegation {
+    CooldownDelegation {
         amount: u64,
     },
 
@@ -406,6 +407,7 @@ pub fn remove_operator(
 #[allow(clippy::too_many_arguments)]
 pub fn mint_to(
     program_id: &Pubkey,
+    config: &Pubkey,
     vault: &Pubkey,
     lrt_mint: &Pubkey,
     depositor: &Pubkey,
@@ -417,6 +419,7 @@ pub fn mint_to(
     amount: u64,
 ) -> Instruction {
     let mut accounts = vec![
+        AccountMeta::new(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new(*lrt_mint, false),
         AccountMeta::new(*depositor, true),
@@ -563,7 +566,7 @@ pub fn remove_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveDelegation { amount }
+        data: VaultInstruction::CooldownDelegation { amount }
             .try_to_vec()
             .unwrap(),
     }

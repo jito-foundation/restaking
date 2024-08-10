@@ -1,8 +1,9 @@
 use std::cmp::min;
 
-use crate::result::{VaultCoreError, VaultCoreResult};
 use bytemuck::{Pod, Zeroable};
 use solana_program::{msg, pubkey::Pubkey};
+
+use crate::result::{VaultCoreError, VaultCoreResult};
 
 /// Represents an operator that has opted-in to the vault and any associated stake on this operator
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]

@@ -39,7 +39,7 @@ pub enum RestakingInstruction {
     #[account(2, name = "vault")]
     #[account(3, writable, name = "ncn_vault_ticket")]
     #[account(4, signer, name = "admin")]
-    NcnRemoveVault,
+    NcnCooldownVault,
 
     /// After the operator has signaled they are ready to join the network,
     /// the NCN admin can add the operator to the NCN
@@ -58,7 +58,7 @@ pub enum RestakingInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "ncn_operator_ticket")]
     #[account(4, signer, name = "admin")]
-    NcnRemoveOperator,
+    NcnCooldownOperator,
 
     /// The NCN adds support for a vault slasher
     ///
@@ -82,7 +82,7 @@ pub enum RestakingInstruction {
     #[account(3, name = "slasher")]
     #[account(4, writable, name = "ncn_slasher_ticket")]
     #[account(5, signer, name = "admin")]
-    NcnRemoveVaultSlasher,
+    NcnCooldownVaultSlasher,
 
     #[account(0, writable, name = "ncn")]
     #[account(1, signer, name = "old_admin")]
@@ -103,16 +103,16 @@ pub enum RestakingInstruction {
     InitializeOperator,
 
     /// Sets the admin for a node operator
-    #[account(0, writable, name = "node_operator")]
+    #[account(0, writable, name = "operator")]
     #[account(1, signer, name = "old_admin")]
     #[account(2, signer, name = "new_admin")]
     OperatorSetAdmin,
 
     /// Sets the voter for a node operator
-    #[account(0, writable, name = "node_operator")]
+    #[account(0, writable, name = "operator")]
     #[account(1, signer, name = "admin")]
-    #[account(2, name = "voter")]
-    OperatorSetVoter,
+    #[account(2, name = "new_admin")]
+    OperatorSetSecondaryAdmin(OperatorAdminRole),
 
     /// Operator adds support for receiving delegation from a vault
     #[account(0, name = "config")]
@@ -130,7 +130,7 @@ pub enum RestakingInstruction {
     #[account(2, name = "vault")]
     #[account(3, writable, name = "operator_vault_ticket")]
     #[account(4, signer, name = "admin")]
-    OperatorRemoveVault,
+    OperatorCooldownVault,
 
     /// Node operator adds support for running an NCN
     #[account(0, name = "config")]
@@ -148,7 +148,7 @@ pub enum RestakingInstruction {
     #[account(2, name = "ncn")]
     #[account(3, writable, name = "operator_ncn_ticket")]
     #[account(4, signer, name = "admin")]
-    OperatorRemoveNcn,
+    OperatorCooldownNcn,
 
     #[account(0, name = "ncn")]
     #[account(1, writable, name = "ncn_token_account")]
@@ -171,6 +171,16 @@ pub enum NcnAdminRole {
     Vault,
     Slasher,
     Withdraw,
+    WithdrawWallet,
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+pub enum OperatorAdminRole {
+    NcnAdmin,
+    VaultAdmin,
+    VoterAdmin,
+    WithdrawAdmin,
+    WithdrawWallet,
 }
 
 pub fn initialize_config(
@@ -256,7 +266,7 @@ pub fn ncn_remove_vault(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnRemoveVault.try_to_vec().unwrap(),
+        data: RestakingInstruction::NcnCooldownVault.try_to_vec().unwrap(),
     }
 }
 
@@ -306,7 +316,7 @@ pub fn ncn_remove_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnRemoveOperator
+        data: RestakingInstruction::NcnCooldownOperator
             .try_to_vec()
             .unwrap(),
     }
@@ -366,7 +376,7 @@ pub fn ncn_remove_vault_slasher(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnRemoveVaultSlasher
+        data: RestakingInstruction::NcnCooldownVaultSlasher
             .try_to_vec()
             .unwrap(),
     }
@@ -436,12 +446,12 @@ pub fn initialize_operator(
 
 pub fn operator_set_admin(
     program_id: &Pubkey,
-    node_operator: &Pubkey,
+    operator: &Pubkey,
     old_admin: &Pubkey,
     new_admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new(*node_operator, false),
+        AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*old_admin, true),
         AccountMeta::new_readonly(*new_admin, true),
     ];
@@ -452,21 +462,24 @@ pub fn operator_set_admin(
     }
 }
 
-pub fn operator_set_voter(
+pub fn operator_set_secondary_admin(
     program_id: &Pubkey,
-    node_operator: &Pubkey,
+    operator: &Pubkey,
     admin: &Pubkey,
     voter: &Pubkey,
+    operator_admin_role: OperatorAdminRole,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new(*node_operator, false),
+        AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*voter, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorSetVoter.try_to_vec().unwrap(),
+        data: RestakingInstruction::OperatorSetSecondaryAdmin(operator_admin_role)
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -513,7 +526,7 @@ pub fn operator_remove_vault(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorRemoveVault
+        data: RestakingInstruction::OperatorCooldownVault
             .try_to_vec()
             .unwrap(),
     }
@@ -562,7 +575,7 @@ pub fn operator_remove_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorRemoveNcn
+        data: RestakingInstruction::OperatorCooldownNcn
             .try_to_vec()
             .unwrap(),
     }

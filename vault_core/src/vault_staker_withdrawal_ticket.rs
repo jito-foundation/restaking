@@ -1,7 +1,8 @@
-use crate::result::{VaultCoreError, VaultCoreResult};
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{msg, pubkey::Pubkey};
+
+use crate::result::{VaultCoreError, VaultCoreResult};
 
 impl Discriminator for VaultStakerWithdrawalTicket {
     const DISCRIMINATOR: u8 = 7;

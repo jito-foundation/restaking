@@ -23,6 +23,9 @@ pub struct Ncn {
     /// The withdraw admin of the NCN
     pub withdraw_admin: Pubkey,
 
+    /// The withdraw fee wallet of the NCN
+    pub withdraw_fee_wallet: Pubkey,
+
     /// The index of the NCN
     pub index: u64,
 
@@ -55,6 +58,7 @@ impl Ncn {
         vault_admin: Pubkey,
         slasher_admin: Pubkey,
         withdraw_admin: Pubkey,
+        withdraw_fee_wallet: Pubkey,
         ncn_index: u64,
         bump: u8,
     ) -> Self {
@@ -65,6 +69,7 @@ impl Ncn {
             vault_admin,
             slasher_admin,
             withdraw_admin,
+            withdraw_fee_wallet,
             index: ncn_index,
             operator_count: 0,
             vault_count: 0,

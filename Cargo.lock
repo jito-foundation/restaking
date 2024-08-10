@@ -1929,7 +1929,6 @@ dependencies = [
  "bytemuck",
  "jito-account-traits",
  "jito-account-traits-derive",
- "jito-restaking-sanitization",
  "quote",
  "shank",
  "solana-program",
@@ -1948,7 +1947,6 @@ dependencies = [
  "bytemuck",
  "jito-account-traits",
  "jito-jsm-core",
- "jito-restaking-sanitization",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -1963,7 +1961,6 @@ dependencies = [
  "borsh 0.10.3",
  "jito-restaking-core",
  "jito-restaking-program",
- "jito-restaking-sanitization",
  "jito-restaking-sdk",
  "jito-vault-core",
  "jito-vault-program",
@@ -1988,7 +1985,6 @@ dependencies = [
  "jito-account-traits",
  "jito-jsm-core",
  "jito-restaking-core",
- "jito-restaking-sanitization",
  "jito-restaking-sdk",
  "jito-vault-core",
  "jito-vault-sdk",
@@ -2004,24 +2000,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "jito-restaking-sanitization"
-version = "0.0.1"
-dependencies = [
- "assert_matches",
- "borsh 0.10.3",
- "shank",
- "solana-program",
- "spl-associated-token-account",
- "spl-token",
- "thiserror",
-]
-
-[[package]]
 name = "jito-restaking-sdk"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-restaking-sanitization",
  "jito-vault-core",
  "shank",
  "solana-program",
@@ -2043,7 +2025,6 @@ dependencies = [
  "bytemuck",
  "jito-account-traits",
  "jito-jsm-core",
- "jito-restaking-sanitization",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -2056,8 +2037,9 @@ name = "jito-vault-program"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "jito-account-traits",
+ "jito-jsm-core",
  "jito-restaking-core",
- "jito-restaking-sanitization",
  "jito-restaking-sdk",
  "jito-vault-core",
  "jito-vault-sdk",
@@ -2077,7 +2059,6 @@ name = "jito-vault-sdk"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-restaking-sanitization",
  "jito-vault-core",
  "shank",
  "solana-program",

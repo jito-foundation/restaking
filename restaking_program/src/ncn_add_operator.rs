@@ -2,20 +2,17 @@ use std::mem::size_of;
 
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
+    create_account,
     loader::{load_signer, load_system_account, load_system_program},
     slot_toggled_field::SlotToggle,
 };
 use jito_restaking_core::{
     config::Config,
-    loader::{
-        load_config, load_ncn, load_ncn_operator_ticket, load_operator, load_operator_ncn_ticket,
-    },
+    loader::{load_config, load_ncn, load_operator, load_operator_ncn_ticket},
     ncn::Ncn,
     ncn_operator_ticket::NcnOperatorTicket,
-    operator::Operator,
     operator_ncn_ticket::OperatorNcnTicket,
 };
-use jito_restaking_sanitization::create_account;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -51,18 +48,20 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     let slot = Clock::get()?.slot;
 
-    let config = Config::try_from_slice(&config.data.borrow())?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
 
     // The NCN operator admin must be the signer for adding an operator to the NCN
-    let ncn = Ncn::try_from_slice_mut(&mut ncn_info.data.borrow_mut())?;
+    let mut ncn_data = ncn_info.data.borrow_mut();
+    let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.operator_admin.ne(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
         return Err(ProgramError::InvalidAccountData);
     }
 
     // The operator must have opted-in to the NCN and it must be active
-    let operator_ncn_ticket =
-        OperatorNcnTicket::try_from_slice(&operator_ncn_ticket.data.borrow())?;
+    let operator_ncn_ticket_data = operator_ncn_ticket.data.borrow();
+    let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
     if !operator_ncn_ticket
         .state
         .is_active_or_cooldown(slot, config.epoch_length)

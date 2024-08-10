@@ -7,7 +7,6 @@ members = [
     "restaking_core",
     "restaking_program",
     "restaking_sdk",
-    "sanitization",
     "vault_core",
     "vault_program",
     "vault_sdk"]
@@ -37,7 +36,6 @@ readme = "README.md"
 assert_matches = "1.5.0"
 borsh = { version = "0.10.3" }
 bytemuck = "1.16.3"
-jito-restaking-sanitization = { path = "sanitization", version = "=0.0.1" }
 jito-jsm-core = { path = "core", version = "=0.0.1" }
 jito-vault-core = { path = "vault_core", version = "=0.0.1" }
 jito-restaking-core = { path = "restaking_core", version = "=0.0.1" }

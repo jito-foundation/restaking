@@ -5,17 +5,17 @@ mod ncn_add_operator;
 mod ncn_add_vault;
 mod ncn_add_vault_slasher;
 mod ncn_cooldown_operator;
-mod ncn_remove_vault;
-mod ncn_remove_vault_slasher;
+mod ncn_cooldown_vault;
+mod ncn_cooldown_vault_slasher;
 mod ncn_set_admin;
 mod ncn_set_secondary_admin;
 mod ncn_withdraw_asset;
 mod operator_add_ncn;
 mod operator_add_vault;
-mod operator_remove_ncn;
-mod operator_remove_vault;
+mod operator_cooldown_ncn;
+mod operator_cooldown_vault;
 mod operator_set_admin;
-mod operator_set_voter;
+mod operator_set_secondary_admin;
 mod operator_withdrawal_asset;
 
 use borsh::BorshDeserialize;
@@ -31,15 +31,16 @@ use crate::{
     initialize_config::process_initialize_config, initialize_ncn::process_initialize_ncn,
     initialize_operator::process_initialize_operator, ncn_add_operator::process_ncn_add_operator,
     ncn_add_vault::process_ncn_add_vault, ncn_add_vault_slasher::process_ncn_add_vault_slasher,
-    ncn_remove_operator::process_ncn_remove_operator, ncn_remove_vault::process_ncn_remove_vault,
-    ncn_remove_vault_slasher::process_ncn_remove_slasher, ncn_set_admin::process_ncn_set_admin,
+    ncn_cooldown_operator::process_ncn_cooldown_operator,
+    ncn_cooldown_vault::process_ncn_cooldown_vault,
+    ncn_cooldown_vault_slasher::process_ncn_remove_slasher, ncn_set_admin::process_ncn_set_admin,
     ncn_set_secondary_admin::process_ncn_set_secondary_admin,
     ncn_withdraw_asset::process_ncn_withdraw_asset, operator_add_ncn::process_operator_add_ncn,
     operator_add_vault::process_operator_add_vault,
-    operator_remove_ncn::process_operator_remove_ncn,
-    operator_remove_vault::process_operator_remove_vault,
+    operator_cooldown_ncn::process_operator_cooldown_ncn,
+    operator_cooldown_vault::process_operator_cooldown_vault,
     operator_set_admin::process_set_node_operator_admin,
-    operator_set_voter::process_set_node_operator_voter,
+    operator_set_secondary_admin::process_set_operator_secondary_admin,
     operator_withdrawal_asset::process_operator_withdrawal_asset,
 };
 
@@ -84,24 +85,24 @@ pub fn process_instruction(
             msg!("Instruction: NcnAddVault");
             process_ncn_add_vault(program_id, accounts)
         }
-        RestakingInstruction::NcnRemoveVault => {
-            msg!("Instruction: NcnRemoveVault");
-            process_ncn_remove_vault(program_id, accounts)
+        RestakingInstruction::NcnCooldownVault => {
+            msg!("Instruction: NcnCooldownVault");
+            process_ncn_cooldown_vault(program_id, accounts)
         }
         RestakingInstruction::NcnAddOperator => {
             msg!("Instruction: NcnAddOperator");
             process_ncn_add_operator(program_id, accounts)
         }
-        RestakingInstruction::NcnRemoveOperator => {
-            msg!("Instruction: NcnRemoveOperator");
-            process_ncn_remove_operator(program_id, accounts)
+        RestakingInstruction::NcnCooldownOperator => {
+            msg!("Instruction: NcnCooldownOperator");
+            process_ncn_cooldown_operator(program_id, accounts)
         }
         RestakingInstruction::NcnAddVaultSlasher(max_slashable_per_epoch) => {
             msg!("Instruction: NcnAddVaultSlasher");
             process_ncn_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
         }
-        RestakingInstruction::NcnRemoveVaultSlasher => {
-            msg!("Instruction: NcnRemoveVaultSlasher");
+        RestakingInstruction::NcnCooldownVaultSlasher => {
+            msg!("Instruction: NcnCooldownVaultSlasher");
             process_ncn_remove_slasher(program_id, accounts)
         }
         RestakingInstruction::NcnSetAdmin => {
@@ -120,25 +121,25 @@ pub fn process_instruction(
             msg!("Instruction: OperatorSetAdmin");
             process_set_node_operator_admin(program_id, accounts)
         }
-        RestakingInstruction::OperatorSetVoter => {
-            msg!("Instruction: OperatorSetVoter");
-            process_set_node_operator_voter(program_id, accounts)
+        RestakingInstruction::OperatorSetSecondaryAdmin(role) => {
+            msg!("Instruction: OperatorSetSecondaryAdmin");
+            process_set_operator_secondary_admin(program_id, accounts, role)
         }
         RestakingInstruction::OperatorAddVault => {
             msg!("Instruction: OperatorAddVault");
             process_operator_add_vault(program_id, accounts)
         }
-        RestakingInstruction::OperatorRemoveVault => {
-            msg!("Instruction: OperatorRemoveVault");
-            process_operator_remove_vault(program_id, accounts)
+        RestakingInstruction::OperatorCooldownVault => {
+            msg!("Instruction: OperatorCooldownVault");
+            process_operator_cooldown_vault(program_id, accounts)
         }
         RestakingInstruction::OperatorAddNcn => {
             msg!("Instruction: OperatorAddNcn");
             process_operator_add_ncn(program_id, accounts)
         }
-        RestakingInstruction::OperatorRemoveNcn => {
-            msg!("Instruction: OperatorRemoveNcn");
-            process_operator_remove_ncn(program_id, accounts)
+        RestakingInstruction::OperatorCooldownNcn => {
+            msg!("Instruction: OperatorCooldownNcn");
+            process_operator_cooldown_ncn(program_id, accounts)
         }
         RestakingInstruction::NcnWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: NcnWithdrawalAsset");

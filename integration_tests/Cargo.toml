@@ -13,7 +13,6 @@ readme = { workspace = true }
 borsh = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-restaking-program = { workspace = true }
-jito-restaking-sanitization = { workspace = true }
 jito-restaking-sdk = { workspace = true }
 jito-vault-core = { workspace = true }
 jito-vault-program = { workspace = true }

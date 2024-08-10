@@ -1,13 +1,11 @@
-use crate::config::Config;
-use crate::vault::Vault;
-use crate::vault_ncn_slasher_ticket::VaultNcnSlasherTicket;
-use crate::vault_ncn_ticket::VaultNcnTicket;
-use crate::vault_operator_ticket::VaultOperatorTicket;
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+
+use crate::{
+    config::Config, vault::Vault, vault_delegation_list::VaultDelegationList,
+    vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
+    vault_operator_ticket::VaultOperatorTicket,
+};
 
 pub fn load_config(
     program_id: &Pubkey,
@@ -132,15 +130,33 @@ pub fn load_vault_operator_ticket(
     Ok(())
 }
 
-pub fn load_vault_ncn_slasher_operator_ticket(
+pub fn load_vault_delegation_list(
     program_id: &Pubkey,
-    vault_ncn_slasher_operator_ticket: &AccountInfo,
+    vault_delegation_list: &AccountInfo,
     vault: &AccountInfo,
-    ncn: &AccountInfo,
-    slasher: &AccountInfo,
-    operator: &AccountInfo,
     expect_writable: bool,
 ) -> Result<(), ProgramError> {
+    if vault_delegation_list.owner.ne(program_id) {
+        msg!("Vault delegation list has an invalid owner");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    if vault_delegation_list.data_is_empty() {
+        msg!("Vault delegation list data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if expect_writable && !vault_delegation_list.is_writable {
+        msg!("Vault delegation list is not writable");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if vault_delegation_list.data.borrow()[0].ne(&VaultDelegationList::DISCRIMINATOR) {
+        msg!("Vault delegation list discriminator is invalid");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    let expected_pubkey = VaultDelegationList::find_program_address(program_id, vault.key).0;
+    if vault_delegation_list.key.ne(&expected_pubkey) {
+        msg!("Vault delegation list is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
     Ok(())
 }
 

@@ -4,6 +4,7 @@ mod add_operator;
 mod add_slasher;
 mod burn;
 mod burn_withdrawal_ticket;
+mod cooldown_delegation;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
@@ -11,7 +12,6 @@ mod initialize_vault;
 mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_with_mint;
 mod mint_to;
-mod remove_delegation;
 mod remove_ncn;
 mod remove_operator;
 mod set_admin;
@@ -35,16 +35,17 @@ use crate::{
     add_delegation::process_add_delegation, add_ncn::process_vault_add_ncn,
     add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
     burn_withdrawal_ticket::process_burn_withdrawal_ticket,
+    cooldown_delegation::process_cooldown_delegation,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
-    remove_delegation::process_remove_delegation, remove_ncn::process_vault_remove_ncn,
-    remove_operator::process_vault_remove_operator, set_admin::process_set_admin,
-    set_capacity::process_set_capacity, set_secondary_admin::process_set_secondary_admin,
-    slash::process_slash, update_token_metadata::process_update_token_metadata,
-    update_vault::process_update_vault, withdrawal_asset::process_withdrawal_asset,
+    remove_ncn::process_vault_remove_ncn, remove_operator::process_vault_remove_operator,
+    set_admin::process_set_admin, set_capacity::process_set_capacity,
+    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    update_token_metadata::process_update_token_metadata, update_vault::process_update_vault,
+    withdrawal_asset::process_withdrawal_asset,
 };
 
 declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
@@ -161,9 +162,9 @@ pub fn process_instruction(
             msg!("Instruction: AddDelegation");
             process_add_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::RemoveDelegation { amount } => {
+        VaultInstruction::CooldownDelegation { amount } => {
             msg!("Instruction: RemoveDelegation");
-            process_remove_delegation(program_id, accounts, amount)
+            process_cooldown_delegation(program_id, accounts, amount)
         }
         VaultInstruction::UpdateVault => {
             msg!("Instruction: UpdateDelegations");

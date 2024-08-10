@@ -1,21 +1,23 @@
-use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
-use jito_restaking_core::config::Config;
-use jito_restaking_core::loader::{load_config, load_ncn, load_ncn_vault_ticket};
-use jito_restaking_core::ncn::Ncn;
-use jito_restaking_core::ncn_vault_slasher_ticket::NcnVaultSlasherTicket;
-use jito_restaking_core::ncn_vault_ticket::NcnVaultTicket;
-use jito_restaking_sanitization::create_account;
-use jito_vault_core::loader::load_vault;
-use solana_program::clock::Clock;
-use solana_program::rent::Rent;
-use solana_program::sysvar::Sysvar;
-use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
-};
 use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+    slot_toggled_field::SlotToggle,
+};
+use jito_restaking_core::{
+    config::Config,
+    loader::{load_config, load_ncn, load_ncn_vault_ticket},
+    ncn::Ncn,
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket,
+};
+use jito_vault_core::loader::load_vault;
+use solana_program::{
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+};
 
 pub fn process_ncn_add_vault_slasher(
     program_id: &Pubkey,
@@ -30,7 +32,8 @@ pub fn process_ncn_add_vault_slasher(
 
     load_config(program_id, config, false)?;
     load_ncn(program_id, ncn_info, true)?;
-    let config = Config::try_from_slice(&config.data.borrow())?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
     load_vault(&config.vault_program, vault, false)?;
     load_ncn_vault_ticket(program_id, ncn_vault_ticket, ncn_info, vault, false)?;
     load_system_account(ncn_vault_slasher_ticket, true)?;
@@ -59,13 +62,15 @@ pub fn process_ncn_add_vault_slasher(
         return Err(ProgramError::InvalidArgument);
     }
 
-    let ncn = Ncn::try_from_slice_mut(&mut ncn_info.data.borrow_mut())?;
+    let mut ncn_data = ncn_info.data.borrow_mut();
+    let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.slasher_admin.ne(ncn_slasher_admin.key) {
         msg!("Admin is not the slasher admin");
         return Err(ProgramError::InvalidArgument);
     }
 
-    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket.data.borrow())?;
+    let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
+    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
     if !ncn_vault_ticket
         .state
         .is_active_or_cooldown(slot, config.epoch_length)

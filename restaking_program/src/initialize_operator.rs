@@ -1,25 +1,14 @@
 use std::mem::size_of;
 
-use borsh::BorshSerialize;
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
-use jito_restaking_core::{
-    config::{Config, SanitizedConfig},
-    loader::load_config,
-    operator::Operator,
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
-};
+use jito_restaking_core::{config::Config, loader::load_config, operator::Operator};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Initializes a node operator and associated accounts.
@@ -53,7 +42,8 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
         &operator_seed,
     )?;
 
-    let config = Config::try_from_slice_mut(&mut config.data.borrow_mut())?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
 
     let mut operator_data = operator.try_borrow_mut_data()?;
     operator_data[0] = Operator::DISCRIMINATOR;
@@ -63,6 +53,8 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     operator.ncn_admin = *admin.key;
     operator.vault_admin = *admin.key;
     operator.voter = *admin.key;
+    operator.withdraw_admin = *admin.key;
+    operator.withdraw_fee_wallet = *admin.key;
     operator.index = config.operator_count;
     operator.ncn_count = 0;
     operator.vault_count = 0;
@@ -74,80 +66,4 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
         .ok_or(ProgramError::InvalidAccountData)?;
 
     Ok(())
-}
-
-fn _create_operator<'a, 'info>(
-    program_id: &Pubkey,
-    config: &SanitizedConfig,
-    operator_account: &EmptyAccount<'a, 'info>,
-    base: &SanitizedSignerAccount<'a, 'info>,
-    admin: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-) -> ProgramResult {
-    let (expected_operator_pubkey, operator_bump, mut operator_seeds) =
-        Operator::find_program_address(program_id, base.account().key);
-    operator_seeds.push(vec![operator_bump]);
-    assert_with_msg(
-        expected_operator_pubkey == *operator_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Operator account is not at the correct PDA",
-    )?;
-
-    let operator = Operator::new(
-        *base.account().key,
-        *admin.account().key,
-        *admin.account().key,
-        config.config().operators_count(),
-        operator_bump,
-    );
-
-    let serialized_operator = operator.try_to_vec()?;
-    create_account(
-        admin.account(),
-        operator_account.account(),
-        system_program.account(),
-        program_id,
-        rent,
-        serialized_operator.len() as u64,
-        &operator_seeds,
-    )?;
-    operator_account.account().data.borrow_mut()[..serialized_operator.len()]
-        .copy_from_slice(&serialized_operator);
-
-    Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    operator_account: EmptyAccount<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    base: SanitizedSignerAccount<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::InitializeOperator`]
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-        let operator_account = EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-
-        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let base = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            operator_account,
-            admin,
-            base,
-            system_program,
-        })
-    }
 }

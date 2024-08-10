@@ -2,14 +2,17 @@ use std::mem::size_of;
 
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
+    create_account,
     loader::{load_signer, load_system_account, load_system_program},
     slot_toggled_field::SlotToggle,
 };
 use jito_restaking_core::{
-    loader::load_ncn, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket,
+    config::Config,
+    loader::{load_config, load_ncn},
+    ncn::Ncn,
     ncn_vault_ticket::NcnVaultTicket,
 };
-use jito_restaking_sanitization::create_account;
+use jito_vault_core::loader::load_vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -20,13 +23,17 @@ use solana_program::{
 ///
 /// [`crate::RestakingInstruction::NcnAddVault`]
 pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let [ncn_info, vault, ncn_vault_ticket, ncn_vault_admin, payer, system_program] = accounts
+    let [config, ncn_info, vault, ncn_vault_ticket, ncn_vault_admin, payer, system_program] =
+        accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
+    load_config(program_id, config, false)?;
     load_ncn(program_id, ncn_info, true)?;
-    // TODO (LB): load vault
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+    load_vault(&config.vault_program, vault, false)?;
     load_system_account(ncn_vault_ticket, true)?;
     load_signer(ncn_vault_admin, false)?;
     load_signer(payer, true)?;
@@ -43,7 +50,8 @@ pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let ncn = Ncn::try_from_slice_mut(&mut ncn_info.data.borrow_mut())?;
+    let mut ncn_data = ncn_info.data.borrow_mut();
+    let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
         return Err(ProgramError::InvalidAccountData);

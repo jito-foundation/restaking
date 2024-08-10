@@ -1,10 +1,11 @@
+use bytemuck::{Pod, Zeroable};
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use solana_program::{msg, program_error::ProgramError, pubkey::Pubkey};
+
 use crate::{
     operator_delegation::OperatorDelegation,
     result::{VaultCoreError, VaultCoreResult},
 };
-use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{msg, program_error::ProgramError, pubkey::Pubkey};
 
 pub enum UndelegateForWithdrawMethod {
     /// Withdraws from each operator's delegated amount in proportion to the total delegated amount
@@ -17,7 +18,7 @@ pub enum VaultDelegationUpdateSummary {
     Updated { amount_reserved_for_withdraw: u64 },
 }
 
-const MAX_DELEGATIONS: usize = 128; // TODO (LB): make bigger
+pub const MAX_DELEGATIONS: usize = 128; // TODO (LB): make bigger
 
 impl Discriminator for VaultDelegationList {
     const DISCRIMINATOR: u8 = 8;
@@ -28,17 +29,17 @@ impl Discriminator for VaultDelegationList {
 #[repr(C)]
 pub struct VaultDelegationList {
     /// The vault this operator list is associated with
-    vault: Pubkey,
+    pub vault: Pubkey,
 
     /// the list of delegations
-    delegations: [OperatorDelegation; MAX_DELEGATIONS],
+    pub delegations: [OperatorDelegation; MAX_DELEGATIONS],
 
     /// The last slot the operator list was updated.
     /// Delegation information here is out of date if the last update epoch < current epoch
-    last_slot_updated: u64,
+    pub last_slot_updated: u64,
 
     /// The bump seed for the PDA
-    bump: u8,
+    pub bump: u8,
 
     /// Reserved space
     reserved: [u8; 7],
@@ -199,7 +200,7 @@ impl VaultDelegationList {
         } else {
             let mut delegation = OperatorDelegation::new(operator);
             delegation.delegate(amount)?;
-            let mut first_spot = self
+            let first_spot = self
                 .delegations
                 .iter_mut()
                 .find(|d| d.operator == Pubkey::default());
