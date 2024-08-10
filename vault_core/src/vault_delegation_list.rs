@@ -1,14 +1,10 @@
-use borsh::{BorshDeserialize, BorshSerialize};
-use jito_restaking_sanitization::realloc;
-use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey, rent::Rent,
-};
+use bytemuck::{Pod, Zeroable};
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use solana_program::{msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::{
     operator_delegation::OperatorDelegation,
     result::{VaultCoreError, VaultCoreResult},
-    AccountType,
 };
 
 pub enum UndelegateForWithdrawMethod {
@@ -22,38 +18,41 @@ pub enum VaultDelegationUpdateSummary {
     Updated { amount_reserved_for_withdraw: u64 },
 }
 
-/// Represents the operators which have opted-in to this vault
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct VaultDelegationList {
-    /// The account type
-    account_type: AccountType,
+pub const MAX_DELEGATIONS: usize = 2048;
 
+impl Discriminator for VaultDelegationList {
+    const DISCRIMINATOR: u8 = 8;
+}
+
+/// Represents the operators which have opted-in to this vault
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[repr(C)]
+pub struct VaultDelegationList {
     /// The vault this operator list is associated with
-    vault: Pubkey,
+    pub vault: Pubkey,
 
     /// the list of delegations
-    delegations: Vec<OperatorDelegation>,
+    pub delegations: [OperatorDelegation; MAX_DELEGATIONS],
 
     /// The last slot the operator list was updated.
     /// Delegation information here is out of date if the last update epoch < current epoch
-    last_slot_updated: u64,
-
-    /// Reserved space
-    reserved: [u8; 128],
+    pub last_slot_updated: u64,
 
     /// The bump seed for the PDA
-    bump: u8,
+    pub bump: u8,
+
+    /// Reserved space
+    reserved: [u8; 7],
 }
 
 impl VaultDelegationList {
-    pub const fn new(vault: Pubkey, bump: u8) -> Self {
+    pub fn new(vault: Pubkey, bump: u8) -> Self {
         Self {
-            account_type: AccountType::VaultDelegationList,
             vault,
-            delegations: vec![],
+            delegations: [OperatorDelegation::default(); MAX_DELEGATIONS],
             last_slot_updated: 0,
-            reserved: [0; 128],
             bump,
+            reserved: [0; 7],
         }
     }
 
@@ -65,16 +64,20 @@ impl VaultDelegationList {
 
     /// # Returns
     /// The list of delegations
-    pub fn delegations(&self) -> &[OperatorDelegation] {
+    pub const fn delegations(&self) -> &[OperatorDelegation] {
         &self.delegations
     }
 
     /// Returns the total security in the delegation list
     pub fn total_security(&self) -> VaultCoreResult<u64> {
         let mut total: u64 = 0;
-        for operator in self.delegations.iter() {
+        for delegation in self
+            .delegations
+            .iter()
+            .filter(|delegation| delegation.is_used == 1)
+        {
             total = total
-                .checked_add(operator.total_security()?)
+                .checked_add(delegation.total_security()?)
                 .ok_or(VaultCoreError::VaultDelegationListTotalDelegationOverflow)?;
         }
         Ok(total)
@@ -84,9 +87,10 @@ impl VaultDelegationList {
     /// staked and assets cooling down that aren't set aside for the withdrawal reserve
     pub fn withdrawable_security(&self) -> VaultCoreResult<u64> {
         let mut total: u64 = 0;
-        for operator in self.delegations.iter() {
+
+        for delegation in self.delegations.iter().filter(|d| d.is_used == 1) {
             total = total
-                .checked_add(operator.withdrawable_security()?)
+                .checked_add(delegation.withdrawable_security()?)
                 .ok_or(VaultCoreError::VaultDelegationListTotalDelegationOverflow)?;
         }
         Ok(total)
@@ -102,16 +106,6 @@ impl VaultDelegationList {
         let last_updated_epoch = self.last_slot_updated.checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
         last_updated_epoch < current_epoch
-    }
-
-    #[inline(always)]
-    pub fn check_update_needed(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
-        if self.is_update_needed(slot, epoch_length) {
-            msg!("Vault delegation list update required");
-            Err(VaultCoreError::VaultDelegationListUpdateRequired)
-        } else {
-            Ok(())
-        }
     }
 
     /// Updates the delegation list for the current epoch if needed.
@@ -132,23 +126,31 @@ impl VaultDelegationList {
             0 => return Ok(VaultDelegationUpdateSummary::NotUpdated),
             1 => {
                 // enqueued -> cooling down, enqueued wiped
-                for operator in self.delegations.iter_mut() {
+                for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
                     amount_reserved_for_withdraw = amount_reserved_for_withdraw
-                        .checked_add(operator.update())
+                        .checked_add(delegation.update())
                         .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?;
+
+                    if delegation.is_empty() {
+                        delegation.clear();
+                    }
                 }
             }
             _ => {
                 // max updates required are two (enqueued -> cooling down -> wiped out),
                 // so this only needs to be done twice even if >2 epochs have passed
-                for operator in self.delegations.iter_mut() {
-                    let amount_withdrawal_1 = operator.update();
-                    let amount_withdrawal_2 = operator.update();
+                for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
+                    let amount_withdrawal_1 = delegation.update();
+                    let amount_withdrawal_2 = delegation.update();
 
                     amount_reserved_for_withdraw = amount_reserved_for_withdraw
                         .checked_add(amount_withdrawal_1)
                         .and_then(|x| x.checked_add(amount_withdrawal_2))
                         .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?;
+
+                    if delegation.is_empty() {
+                        delegation.clear();
+                    }
                 }
             }
         }
@@ -188,16 +190,18 @@ impl VaultDelegationList {
             return Err(VaultCoreError::VaultDelegationListInsufficientSecurity);
         }
 
-        if let Some(operator) = self
-            .delegations
-            .iter_mut()
-            .find(|d| d.operator() == operator)
-        {
-            operator.delegate(amount)?;
-        } else {
-            let mut delegation = OperatorDelegation::new(operator);
-            delegation.delegate(amount)?;
-            self.delegations.push(delegation);
+        match self.delegations.iter_mut().find(|d| d.operator == operator) {
+            Some(existing_delegation) => existing_delegation.delegate(amount)?,
+            None => {
+                let empty_spot = self
+                    .delegations
+                    .iter_mut()
+                    .find(|d| d.operator == Pubkey::default())
+                    .ok_or(VaultCoreError::VaultDelegationListFull)?;
+
+                *empty_spot = OperatorDelegation::new(operator);
+                empty_spot.delegate(amount)?;
+            }
         }
 
         Ok(())
@@ -225,7 +229,7 @@ impl VaultDelegationList {
 
         let mut total_undelegated: u64 = 0;
 
-        for delegation in self.delegations.iter_mut() {
+        for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
             let delegated_security = delegation.withdrawable_security()?;
 
             // Calculate un-delegate amount, rounding up
@@ -264,11 +268,7 @@ impl VaultDelegationList {
     /// * `operator` - The operator pubkey to undelegate from
     /// * `amount` - The amount of stake to undelegate
     pub fn undelegate(&mut self, operator: Pubkey, amount: u64) -> Result<(), ProgramError> {
-        if let Some(operator) = self
-            .delegations
-            .iter_mut()
-            .find(|d| d.operator() == operator)
-        {
+        if let Some(operator) = self.delegations.iter_mut().find(|d| d.operator == operator) {
             operator.undelegate(amount)?;
         } else {
             msg!("Delegation not found");
@@ -281,7 +281,7 @@ impl VaultDelegationList {
     pub fn slash(&mut self, operator: &Pubkey, slash_amount: u64) -> VaultCoreResult<()> {
         self.delegations
             .iter_mut()
-            .find(|x| x.operator() == *operator)
+            .find(|operator_delegation| operator_delegation.operator == *operator)
             .ok_or(VaultCoreError::VaultOperatorNotFound)?
             .slash(slash_amount)
     }
@@ -295,94 +295,6 @@ impl VaultDelegationList {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
-    }
-
-    pub fn deserialize_checked(
-        program_id: &Pubkey,
-        account: &AccountInfo,
-        vault: &Pubkey,
-    ) -> VaultCoreResult<Self> {
-        if account.data_is_empty() {
-            return Err(VaultCoreError::VaultDelegationListDataEmpty);
-        }
-        if account.owner != program_id {
-            return Err(VaultCoreError::VaultDelegationListInvalidProgramOwner);
-        }
-
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::VaultDelegationListInvalidData(e.to_string()))?;
-        if state.account_type != AccountType::VaultDelegationList {
-            return Err(VaultCoreError::VaultDelegationListInvalidAccountType);
-        }
-
-        let mut seeds = Self::seeds(vault);
-        seeds.push(vec![state.bump]);
-        let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultDelegationListInvalidPda)?;
-        if expected_pubkey != *account.key {
-            return Err(VaultCoreError::VaultDelegationListInvalidPda);
-        }
-
-        Ok(state)
-    }
-}
-
-pub struct SanitizedVaultDelegationList<'a, 'info> {
-    account: &'a AccountInfo<'info>,
-    vault_delegation_list: Box<VaultDelegationList>,
-}
-
-impl<'a, 'info> SanitizedVaultDelegationList<'a, 'info> {
-    pub fn sanitize(
-        program_id: &Pubkey,
-        account: &'a AccountInfo<'info>,
-        expect_writable: bool,
-        vault: &Pubkey,
-    ) -> VaultCoreResult<SanitizedVaultDelegationList<'a, 'info>> {
-        if expect_writable && !account.is_writable {
-            return Err(VaultCoreError::VaultDelegationListExpectedWritable);
-        }
-        let vault_delegation_list = Box::new(VaultDelegationList::deserialize_checked(
-            program_id, account, vault,
-        )?);
-
-        Ok(SanitizedVaultDelegationList {
-            account,
-            vault_delegation_list,
-        })
-    }
-
-    pub const fn account(&self) -> &AccountInfo<'info> {
-        self.account
-    }
-
-    pub const fn vault_delegation_list(&self) -> &VaultDelegationList {
-        &self.vault_delegation_list
-    }
-
-    pub fn vault_delegation_list_mut(&mut self) -> &mut VaultDelegationList {
-        &mut self.vault_delegation_list
-    }
-
-    pub fn save_with_realloc(&self, rent: &Rent, payer: &'a AccountInfo<'info>) -> ProgramResult {
-        let serialized = self.vault_delegation_list.try_to_vec()?;
-
-        if serialized.len() > self.account.data.borrow().len() {
-            realloc(self.account, serialized.len(), payer, rent)?;
-        }
-
-        self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
-
-        Ok(())
-    }
-
-    pub fn save(&self) -> ProgramResult {
-        let serialized = self.vault_delegation_list.try_to_vec()?;
-
-        self.account.data.borrow_mut()[..serialized.len()].copy_from_slice(&serialized);
-
-        Ok(())
     }
 }
 
@@ -404,10 +316,9 @@ mod tests {
         assert!(list.delegate(operator, 100, 1_000).is_ok());
         assert_eq!(list.total_security().unwrap(), 100);
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.operator(), operator);
-        assert_eq!(delegation.staked_amount(), 100);
+        assert_eq!(delegation.operator, operator);
+        assert_eq!(delegation.staked_amount, 100);
         assert_eq!(delegation.total_security().unwrap(), 100);
     }
 
@@ -419,10 +330,9 @@ mod tests {
         list.delegate(operator, 50, 1_000).unwrap();
         assert_eq!(list.total_security().unwrap(), 150);
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.operator(), operator);
-        assert_eq!(delegation.staked_amount(), 150);
+        assert_eq!(delegation.operator, operator);
+        assert_eq!(delegation.staked_amount, 150);
     }
 
     #[test]
@@ -433,10 +343,9 @@ mod tests {
         list.delegate(operator, 100, 1_000).unwrap();
         list.undelegate(operator, 30).unwrap();
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 70);
-        assert_eq!(delegation.enqueued_for_cooldown_amount(), 30);
+        assert_eq!(delegation.staked_amount, 70);
+        assert_eq!(delegation.enqueued_for_cooldown_amount, 30);
         assert_eq!(delegation.total_security().unwrap(), 100);
     }
 
@@ -449,7 +358,7 @@ mod tests {
         list.slash(&operator, 20).unwrap();
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 80);
+        assert_eq!(delegation.staked_amount, 80);
         assert_eq!(delegation.total_security().unwrap(), 80);
     }
 
@@ -473,9 +382,9 @@ mod tests {
         );
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 70);
-        assert_eq!(delegation.cooling_down_amount(), 30);
-        assert_eq!(delegation.enqueued_for_cooldown_amount(), 0);
+        assert_eq!(delegation.staked_amount, 70);
+        assert_eq!(delegation.cooling_down_amount, 30);
+        assert_eq!(delegation.enqueued_for_cooldown_amount, 0);
 
         // Simulate passing of another epoch
         assert_eq!(
@@ -486,8 +395,8 @@ mod tests {
         );
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 70);
-        assert_eq!(delegation.cooling_down_amount(), 0);
+        assert_eq!(delegation.staked_amount, 70);
+        assert_eq!(delegation.cooling_down_amount, 0);
     }
 
     #[test]
@@ -499,10 +408,9 @@ mod tests {
         list.undelegate_for_withdrawal(200, UndelegateForWithdrawMethod::ProRata)
             .unwrap();
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 300);
-        assert_eq!(delegation.enqueued_for_withdraw_amount(), 200);
+        assert_eq!(delegation.staked_amount, 300);
+        assert_eq!(delegation.enqueued_for_withdraw_amount, 200);
 
         assert_eq!(
             list.update(100, 100).unwrap(),
@@ -534,8 +442,8 @@ mod tests {
             .unwrap();
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 500);
-        assert_eq!(delegation.enqueued_for_withdraw_amount(), 500);
+        assert_eq!(delegation.staked_amount, 500);
+        assert_eq!(delegation.enqueued_for_withdraw_amount, 500);
     }
 
     #[test]
@@ -561,12 +469,12 @@ mod tests {
 
         // 3000 total staked, 600 withdrawn
         let delegations = list.delegations();
-        assert_eq!(delegations[0].staked_amount(), 800);
-        assert_eq!(delegations[0].enqueued_for_withdraw_amount(), 200);
-        assert_eq!(delegations[1].staked_amount(), 1200);
-        assert_eq!(delegations[1].enqueued_for_withdraw_amount(), 300);
-        assert_eq!(delegations[2].staked_amount(), 400);
-        assert_eq!(delegations[2].enqueued_for_withdraw_amount(), 100);
+        assert_eq!(delegations[0].staked_amount, 800);
+        assert_eq!(delegations[0].enqueued_for_withdraw_amount, 200);
+        assert_eq!(delegations[1].staked_amount, 1200);
+        assert_eq!(delegations[1].enqueued_for_withdraw_amount, 300);
+        assert_eq!(delegations[2].staked_amount, 400);
+        assert_eq!(delegations[2].enqueued_for_withdraw_amount, 100);
     }
 
     #[test]
@@ -584,9 +492,9 @@ mod tests {
             .unwrap();
 
         let delegations = list.delegations();
-        assert_eq!(delegations[0].enqueued_for_withdraw_amount(), 34);
-        assert_eq!(delegations[1].enqueued_for_withdraw_amount(), 34);
-        assert_eq!(delegations[2].enqueued_for_withdraw_amount(), 32);
+        assert_eq!(delegations[0].enqueued_for_withdraw_amount, 34);
+        assert_eq!(delegations[1].enqueued_for_withdraw_amount, 34);
+        assert_eq!(delegations[2].enqueued_for_withdraw_amount, 32);
     }
 
     #[test]
@@ -623,8 +531,8 @@ mod tests {
             .unwrap();
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 100);
-        assert_eq!(delegation.enqueued_for_withdraw_amount(), 0);
+        assert_eq!(delegation.staked_amount, 100);
+        assert_eq!(delegation.enqueued_for_withdraw_amount, 0);
     }
 
     // ensures cooling down assets are handled correctly when undelegating
@@ -647,17 +555,17 @@ mod tests {
         assert_eq!(list.total_security().unwrap(), total_deposited);
 
         let delegation_1 = list.delegations().get(0).unwrap();
-        assert_eq!(delegation_1.operator(), operator_1);
+        assert_eq!(delegation_1.operator, operator_1);
         assert_eq!(delegation_1.withdrawable_security().unwrap(), 10_000);
 
         let delegation_2 = list.delegations().get(1).unwrap();
-        assert_eq!(delegation_2.operator(), operator_2);
+        assert_eq!(delegation_2.operator, operator_2);
         assert_eq!(delegation_2.withdrawable_security().unwrap(), 60_000);
-        assert_eq!(delegation_2.staked_amount(), 30_000);
-        assert_eq!(delegation_2.enqueued_for_cooldown_amount(), 30_000);
+        assert_eq!(delegation_2.staked_amount, 30_000);
+        assert_eq!(delegation_2.enqueued_for_cooldown_amount, 30_000);
 
         let delegation_3 = list.delegations().get(2).unwrap();
-        assert_eq!(delegation_3.operator(), operator_3);
+        assert_eq!(delegation_3.operator, operator_3);
         assert_eq!(delegation_3.withdrawable_security().unwrap(), 30_000);
 
         list.undelegate_for_withdrawal(50_000, UndelegateForWithdrawMethod::ProRata)
@@ -665,24 +573,24 @@ mod tests {
 
         // 10% of assets staked -> 10% of withdraw
         let delegation_1 = list.delegations().get(0).unwrap();
-        assert_eq!(delegation_1.operator(), operator_1);
+        assert_eq!(delegation_1.operator, operator_1);
         assert_eq!(delegation_1.total_security().unwrap(), 10_000);
-        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 5_000);
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount, 5_000);
 
         // 30k was staked, 30k was cooling down
         // 60% of assets staked -> 60% of withdraw -> 30,000 withdrawn
         let delegation_2 = list.delegations().get(1).unwrap();
         assert_eq!(delegation_2.total_security().unwrap(), 60_000);
-        assert_eq!(delegation_2.operator(), operator_2);
-        assert_eq!(delegation_2.staked_amount(), 0);
-        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 30_000);
-        assert_eq!(delegation_2.enqueued_for_cooldown_amount(), 30_000);
+        assert_eq!(delegation_2.operator, operator_2);
+        assert_eq!(delegation_2.staked_amount, 0);
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount, 30_000);
+        assert_eq!(delegation_2.enqueued_for_cooldown_amount, 30_000);
 
         // 30% of assets staked -> 30% of withdraw
         let delegation_3 = list.delegations().get(2).unwrap();
         assert_eq!(delegation_3.total_security().unwrap(), 30_000);
-        assert_eq!(delegation_3.operator(), operator_3);
-        assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 15_000);
+        assert_eq!(delegation_3.operator, operator_3);
+        assert_eq!(delegation_3.enqueued_for_withdraw_amount, 15_000);
     }
 
     /// ensures that assets cooling down for withdraw are handled correctly when undelegating
@@ -705,15 +613,15 @@ mod tests {
 
         // 10000 * 30000 /_ceil 95000
         let delegation_1 = list.delegations.get(0).unwrap();
-        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 3_158);
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount, 3_158);
 
         // 60000 * 30000 /_ceil 95000
         let delegation_2 = list.delegations.get(1).unwrap();
-        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 18_948);
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount, 18_948);
 
         // min(25000 * 30000 /_ceil 95000, 30000 - 18948 - 3158)
         let delegation_3 = list.delegations.get(2).unwrap();
-        assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 7_894);
+        assert_eq!(delegation_3.enqueued_for_withdraw_amount, 7_894);
 
         // send 5k more to operator 3
         list.delegate(operator_3, 5_000, total_deposited).unwrap();
@@ -723,16 +631,16 @@ mod tests {
 
         // 3158 + ((10000 - 3158) * 20000 /_ceil 70000)
         let delegation_1 = list.delegations.get(0).unwrap();
-        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 5113);
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount, 5113);
 
         // 18948 + ((60000 - 18948) * 20000 /_ceil 70000)
         let delegation_2 = list.delegations.get(1).unwrap();
-        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 30678);
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount, 30678);
 
         // minimum of 7894 + ((30000 -  7894) * 20000 /_ceil 70000) and whatever is left to get to 50000 total
         // undelegated
         let delegation_3 = list.delegations.get(2).unwrap();
-        assert_eq!(delegation_3.enqueued_for_withdraw_amount(), 14209);
+        assert_eq!(delegation_3.enqueued_for_withdraw_amount, 14209);
     }
 
     #[test]
@@ -751,10 +659,10 @@ mod tests {
 
         // 1 * 99999 / 100000
         let delegation_1 = list.delegations().get(0).unwrap();
-        assert_eq!(delegation_1.enqueued_for_withdraw_amount(), 1);
+        assert_eq!(delegation_1.enqueued_for_withdraw_amount, 1);
 
         let delegation_2 = list.delegations().get(1).unwrap();
-        assert_eq!(delegation_2.enqueued_for_withdraw_amount(), 99_998);
+        assert_eq!(delegation_2.enqueued_for_withdraw_amount, 99_998);
     }
 
     #[test]
@@ -772,8 +680,8 @@ mod tests {
 
         // 100k staked, 25k enqueued + 10k slashed
         // 25% of staked assets was enqueued for cooldown -> 25% of slashed funds -> 2500
-        assert_eq!(delegation.staked_amount(), 67500);
-        assert_eq!(delegation.enqueued_for_cooldown_amount(), 22500);
+        assert_eq!(delegation.staked_amount, 67500);
+        assert_eq!(delegation.enqueued_for_cooldown_amount, 22500);
         assert_eq!(delegation.total_security().unwrap(), 90_000);
     }
 
@@ -794,8 +702,8 @@ mod tests {
 
         // 100k staked, 25k cooldown + 10k slashed
         // 25% of staked assets were cooling down -> 25% of slashed funds -> 2500
-        assert_eq!(delegation.staked_amount(), 67500);
-        assert_eq!(delegation.cooling_down_amount(), 22500);
+        assert_eq!(delegation.staked_amount, 67500);
+        assert_eq!(delegation.cooling_down_amount, 22500);
         assert_eq!(delegation.total_security().unwrap(), 90_000);
     }
 
@@ -815,9 +723,9 @@ mod tests {
 
         let delegation = list.delegations().get(0).unwrap();
 
-        assert_eq!(delegation.staked_amount(), 67500);
-        assert_eq!(delegation.cooling_down_amount(), 11250);
-        assert_eq!(delegation.enqueued_for_cooldown_amount(), 11250);
+        assert_eq!(delegation.staked_amount, 67500);
+        assert_eq!(delegation.cooling_down_amount, 11250);
+        assert_eq!(delegation.enqueued_for_cooldown_amount, 11250);
         assert_eq!(delegation.total_security().unwrap(), 90_000);
     }
 
@@ -835,8 +743,8 @@ mod tests {
 
         let delegation = list.delegations().get(0).unwrap();
 
-        assert_eq!(delegation.staked_amount(), 67500);
-        assert_eq!(delegation.enqueued_for_withdraw_amount(), 22500);
+        assert_eq!(delegation.staked_amount, 67500);
+        assert_eq!(delegation.enqueued_for_withdraw_amount, 22500);
         assert_eq!(delegation.total_security().unwrap(), 90_000);
     }
 
@@ -855,8 +763,8 @@ mod tests {
 
         let delegation = list.delegations().get(0).unwrap();
 
-        assert_eq!(delegation.staked_amount(), 67500);
-        assert_eq!(delegation.cooling_down_for_withdraw_amount(), 22500);
+        assert_eq!(delegation.staked_amount, 67500);
+        assert_eq!(delegation.cooling_down_for_withdraw_amount, 22500);
         assert_eq!(delegation.total_security().unwrap(), 90_000);
     }
 
@@ -877,9 +785,9 @@ mod tests {
         list.slash(&operator_1, 10_000).unwrap();
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 67500);
-        assert_eq!(delegation.cooling_down_for_withdraw_amount(), 11250);
-        assert_eq!(delegation.enqueued_for_withdraw_amount(), 11250);
+        assert_eq!(delegation.staked_amount, 67500);
+        assert_eq!(delegation.cooling_down_for_withdraw_amount, 11250);
+        assert_eq!(delegation.enqueued_for_withdraw_amount, 11250);
         assert_eq!(delegation.total_security().unwrap(), 90_000);
     }
 
@@ -904,16 +812,16 @@ mod tests {
         );
 
         let delegation = list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount(), 50000);
-        assert_eq!(delegation.cooling_down_for_withdraw_amount(), 25000);
+        assert_eq!(delegation.staked_amount, 50000);
+        assert_eq!(delegation.cooling_down_for_withdraw_amount, 25000);
         assert_eq!(delegation.total_security().unwrap(), 75000);
 
         list.slash(&operator_1, 10_000).unwrap();
         let delegation = list.delegations().get(0).unwrap();
 
         // 2/3 staked -> 2/3 of slashed
-        assert_eq!(delegation.staked_amount(), 43333);
-        assert_eq!(delegation.cooling_down_for_withdraw_amount(), 21667);
+        assert_eq!(delegation.staked_amount, 43333);
+        assert_eq!(delegation.cooling_down_for_withdraw_amount, 21667);
         assert_eq!(delegation.total_security().unwrap(), 65000);
     }
 }

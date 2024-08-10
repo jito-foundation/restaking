@@ -18,9 +18,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(config.admin(), config_admin.pubkey());
-        assert_eq!(config.restaking_program(), jito_restaking_program::id());
-        assert_eq!(config.epoch_length(), DEFAULT_SLOTS_PER_EPOCH);
-        assert_eq!(config.vaults_count(), 0);
+        assert_eq!(config.admin, config_admin.pubkey());
+        assert_eq!(config.restaking_program, jito_restaking_program::id());
+        assert_eq!(config.epoch_length, DEFAULT_SLOTS_PER_EPOCH);
+        assert_eq!(config.num_vaults, 0);
     }
 }

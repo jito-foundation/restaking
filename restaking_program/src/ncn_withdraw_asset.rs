@@ -1,14 +1,9 @@
-use jito_restaking_core::ncn::{Ncn, SanitizedNcn};
-use jito_restaking_sanitization::{
-    assert_with_msg, signer::SanitizedSignerAccount, token_account::SanitizedTokenAccount,
-    token_program::SanitizedTokenProgram,
-};
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::{load_associated_token_account, load_signer, load_token_program};
+use jito_restaking_core::{loader::load_ncn, ncn::Ncn};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    program::invoke_signed,
-    program_error::ProgramError,
-    pubkey::Pubkey,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
+    program_error::ProgramError, pubkey::Pubkey,
 };
 use spl_token::instruction::transfer;
 
@@ -18,91 +13,70 @@ pub fn process_ncn_withdraw_asset(
     token_mint: Pubkey,
     amount: u64,
 ) -> ProgramResult {
-    let SanitizedAccounts {
-        ncn,
-        ncn_token_account,
+    let [ncn_info, ncn_token_account, receiver_token_account, withdraw_admin, token_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_ncn(program_id, ncn_info, false)?;
+    load_associated_token_account(ncn_token_account, ncn_info.key, &token_mint)?;
+    let ncn_data = ncn_info.data.borrow();
+    let ncn = Ncn::try_from_slice(&ncn_data)?;
+    load_associated_token_account(
         receiver_token_account,
-        admin,
-    } = SanitizedAccounts::sanitize(program_id, accounts, &token_mint)?;
-
-    ncn.ncn().check_withdraw_admin(admin.account().key)?;
-
-    assert_with_msg(
-        ncn_token_account.token_account().amount >= amount,
-        ProgramError::InsufficientFunds,
-        "Not enough funds in NCN token account",
+        &ncn.withdraw_fee_wallet,
+        &token_mint,
     )?;
+    load_signer(withdraw_admin, false)?;
+    load_token_program(token_program)?;
 
-    _withdraw_ncn_asset(&ncn, &ncn_token_account, receiver_token_account, amount)?;
+    if ncn.withdraw_admin.ne(withdraw_admin.key) {
+        msg!("Invalid withdraw admin for NCN");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    Ok(())
-}
-
-fn _withdraw_ncn_asset<'a, 'info>(
-    ncn: &SanitizedNcn<'a, 'info>,
-    ncn_token_account: &SanitizedTokenAccount<'a, 'info>,
-    receiver_token_account: &'a AccountInfo<'info>,
-    amount: u64,
-) -> ProgramResult {
-    let mut ncn_seeds = Ncn::seeds(&ncn.ncn().base());
-    ncn_seeds.push(vec![ncn.ncn().bump()]);
-
+    let mut ncn_seeds = Ncn::seeds(&ncn.base);
+    ncn_seeds.push(vec![ncn.bump]);
     let ncn_seeds_slice = ncn_seeds
         .iter()
         .map(|seed| seed.as_slice())
         .collect::<Vec<&[u8]>>();
 
-    invoke_signed(
-        &transfer(
-            &spl_token::id(),
-            ncn_token_account.account().key,
-            receiver_token_account.key,
-            ncn.account().key,
-            &[],
-            amount,
-        )?,
-        &[
-            ncn_token_account.account().clone(),
-            receiver_token_account.clone(),
-            ncn.account().clone(),
-        ],
-        &[ncn_seeds_slice.as_slice()],
+    _withdraw_ncn_asset(
+        ncn_info,
+        ncn_token_account,
+        receiver_token_account,
+        &ncn_seeds_slice,
+        amount,
     )?;
 
     Ok(())
 }
 
-struct SanitizedAccounts<'a, 'info> {
-    ncn: SanitizedNcn<'a, 'info>,
-    ncn_token_account: SanitizedTokenAccount<'a, 'info>,
+fn _withdraw_ncn_asset<'a, 'info>(
+    ncn: &'a AccountInfo<'info>,
+    ncn_token_account: &'a AccountInfo<'info>,
     receiver_token_account: &'a AccountInfo<'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-}
+    seeds: &[&[u8]],
+    amount: u64,
+) -> ProgramResult {
+    invoke_signed(
+        &transfer(
+            &spl_token::id(),
+            ncn_token_account.key,
+            receiver_token_account.key,
+            ncn.key,
+            &[],
+            amount,
+        )?,
+        &[
+            ncn_token_account.clone(),
+            receiver_token_account.clone(),
+            ncn.clone(),
+        ],
+        &[seeds],
+    )?;
 
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// [`jito_restaking_sdk::RestakingInstruction::NcnWithdrawalAsset`]
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-        token_mint: &Pubkey,
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let ncn = SanitizedNcn::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let ncn_token_account = SanitizedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            token_mint,
-            ncn.account().key,
-        )?;
-        let receiver_token_account = next_account_info(accounts_iter)?; // let token program handle this
-        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            ncn,
-            ncn_token_account,
-            receiver_token_account,
-            admin,
-        })
-    }
+    Ok(())
 }

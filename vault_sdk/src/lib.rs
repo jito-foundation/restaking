@@ -19,13 +19,12 @@ pub enum VaultInstruction {
     /// Initializes the vault
     #[account(0, writable, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, signer, name = "lrt_mint")]
-    #[account(4, name = "token_mint")]
-    #[account(5, writable, signer, name = "admin")]
-    #[account(6, signer, name = "base")]
-    #[account(7, name = "system_program")]
-    #[account(8, name = "token_program")]
+    #[account(2, writable, signer, name = "lrt_mint")]
+    #[account(3, name = "token_mint")]
+    #[account(4, writable, signer, name = "admin")]
+    #[account(5, signer, name = "base")]
+    #[account(6, name = "system_program")]
+    #[account(7, name = "token_program")]
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
@@ -33,6 +32,15 @@ pub enum VaultInstruction {
 
     /// Initializes a vault with an already-created LRT mint
     InitializeVaultWithMint,
+
+    /// The vault_delegation_list account is too big for a single instruction, so it needs to be
+    /// called until the discriminator is set
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_delegation_list")]
+    #[account(3, writable, signer, name = "payer")]
+    #[account(4, name = "system_program")]
+    InitializeVaultDelegationList,
 
     /// Vault adds support for the NCN
     #[account(0, name = "config")]
@@ -51,7 +59,7 @@ pub enum VaultInstruction {
     #[account(2, name = "ncn")]
     #[account(3, writable, name = "vault_ncn_ticket")]
     #[account(4, signer, name = "admin")]
-    RemoveNcn,
+    CooldownNcn,
 
     /// Vault adds support for an operator
     #[account(0, name = "config")]
@@ -70,18 +78,19 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_ticket")]
     #[account(4, signer, name = "admin")]
-    RemoveOperator,
+    CooldownOperator,
 
     /// Mints LRT by depositing tokens into the vault
-    #[account(0, writable, name = "vault")]
-    #[account(1, writable, name = "lrt_mint")]
-    #[account(2, writable, signer, name = "depositor")]
-    #[account(3, writable, name = "depositor_token_account")]
-    #[account(4, writable, name = "vault_token_account")]
-    #[account(5, writable, name = "depositor_lrt_token_account")]
-    #[account(6, writable, name = "vault_fee_token_account")]
-    #[account(7, name = "token_program")]
-    #[account(8, signer, optional, name = "mint_signer", description = "Signer for minting")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "lrt_mint")]
+    #[account(3, writable, signer, name = "depositor")]
+    #[account(4, writable, name = "depositor_token_account")]
+    #[account(5, writable, name = "vault_token_account")]
+    #[account(6, writable, name = "depositor_lrt_token_account")]
+    #[account(7, writable, name = "vault_fee_token_account")]
+    #[account(8, name = "token_program")]
+    #[account(9, signer, optional, name = "mint_signer", description = "Signer for minting")]
     MintTo {
         amount: u64
     },
@@ -126,8 +135,9 @@ pub enum VaultInstruction {
     BurnWithdrawTicket,
 
     /// Sets the max tokens that can be deposited into the LRT
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
     SetDepositCapacity {
         amount: u64
     },
@@ -138,15 +148,17 @@ pub enum VaultInstruction {
     },
 
     /// Changes the signer for vault admin
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "old_admin")]
-    #[account(2, signer, name = "new_admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "old_admin")]
+    #[account(3, signer, name = "new_admin")]
     SetAdmin,
 
     /// Changes the signer for vault delegation
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "admin")]
-    #[account(2, name = "new_admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
+    #[account(3, name = "new_admin")]
     SetSecondaryAdmin(VaultAdminRole),
 
     /// Delegates a token amount to a specific node operator
@@ -167,7 +179,7 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_delegation_list")]
     #[account(4, signer, name = "admin")]
-    RemoveDelegation {
+    CooldownDelegation {
         amount: u64,
     },
 
@@ -243,9 +255,14 @@ pub enum VaultInstruction {
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub enum VaultAdminRole {
-    Delegataion,
-    FeeOwner,
-    MintBurnAuthority,
+    DelegationAdmin,
+    OperatorAdmin,
+    NcnAdmin,
+    SlasherAdmin,
+    CapacityAdmin,
+    FeeWallet,
+    MintBurnAdmin,
+    WithdrawAdmin,
 }
 
 pub fn initialize_config(
@@ -272,7 +289,6 @@ pub fn initialize_vault(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    vault_delegation_list: &Pubkey,
     lrt_mint: &Pubkey,
     token_mint: &Pubkey,
     admin: &Pubkey,
@@ -283,7 +299,6 @@ pub fn initialize_vault(
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new(*vault_delegation_list, false),
         AccountMeta::new(*lrt_mint, true),
         AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new(*admin, true),
@@ -300,6 +315,28 @@ pub fn initialize_vault(
         }
         .try_to_vec()
         .unwrap(),
+    }
+}
+
+pub fn initialize_vault_delegation_list(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_delegation_list: &Pubkey,
+    payer: &Pubkey,
+) -> Instruction {
+    Instruction {
+        program_id: *program_id,
+        accounts: vec![
+            AccountMeta::new_readonly(*config, false),
+            AccountMeta::new_readonly(*vault, false),
+            AccountMeta::new(*vault_delegation_list, false),
+            AccountMeta::new(*payer, true),
+            AccountMeta::new_readonly(system_program::id(), false),
+        ],
+        data: VaultInstruction::InitializeVaultDelegationList
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -349,7 +386,7 @@ pub fn remove_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveNcn.try_to_vec().unwrap(),
+        data: VaultInstruction::CooldownNcn.try_to_vec().unwrap(),
     }
 }
 
@@ -399,13 +436,14 @@ pub fn remove_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveOperator.try_to_vec().unwrap(),
+        data: VaultInstruction::CooldownOperator.try_to_vec().unwrap(),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn mint_to(
     program_id: &Pubkey,
+    config: &Pubkey,
     vault: &Pubkey,
     lrt_mint: &Pubkey,
     depositor: &Pubkey,
@@ -417,6 +455,7 @@ pub fn mint_to(
     amount: u64,
 ) -> Instruction {
     let mut accounts = vec![
+        AccountMeta::new(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new(*lrt_mint, false),
         AccountMeta::new(*depositor, true),
@@ -563,7 +602,7 @@ pub fn remove_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveDelegation { amount }
+        data: VaultInstruction::CooldownDelegation { amount }
             .try_to_vec()
             .unwrap(),
     }

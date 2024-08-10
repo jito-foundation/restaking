@@ -1,50 +1,28 @@
-use jito_restaking_core::ncn::SanitizedNcn;
-use jito_restaking_sanitization::signer::SanitizedSignerAccount;
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::load_signer;
+use jito_restaking_core::{loader::load_ncn, ncn::Ncn};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
 };
 
 pub fn process_ncn_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        mut ncn,
-        old_admin,
-        new_admin,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [ncn, old_admin, new_admin] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    ncn.ncn().check_admin(old_admin.account().key)?;
-    ncn.ncn_mut().set_admin(*new_admin.account().key);
+    load_ncn(program_id, ncn, true)?;
+    load_signer(old_admin, false)?;
+    load_signer(new_admin, false)?;
 
-    ncn.save()?;
+    let mut ncn_data = ncn.data.borrow_mut();
+    let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
+    if ncn.admin.ne(old_admin.key) {
+        msg!("Invalid admin for NCN");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    ncn.admin = *new_admin.key;
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    ncn: SanitizedNcn<'a, 'info>,
-    old_admin: SanitizedSignerAccount<'a, 'info>,
-    new_admin: SanitizedSignerAccount<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<Self, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let ncn = SanitizedNcn::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        let old_admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        let new_admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-
-        Ok(Self {
-            ncn,
-            old_admin,
-            new_admin,
-        })
-    }
 }

@@ -35,7 +35,7 @@ mod tests {
     ) -> PreparedWithdrawalTicket {
         // Setup vault with initial deposit
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_vault(deposit_fee_bps, withdraw_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps)
             .await
             .unwrap();
         let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
@@ -55,7 +55,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
             .await
             .unwrap();
         restaking_program_client
@@ -68,7 +68,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
             .await
             .unwrap();
         vault_program_client
@@ -81,7 +81,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
             .await
             .unwrap();
         vault_program_client
@@ -90,7 +90,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length())
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
             .await
             .unwrap();
 
@@ -103,11 +103,11 @@ mod tests {
         let depositor = Keypair::new();
         fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
         fixture
-            .mint_to(&vault.supported_mint(), &depositor.pubkey(), mint_amount)
+            .mint_to(&vault.supported_mint, &depositor.pubkey(), mint_amount)
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.lrt_mint(), &depositor.pubkey())
+            .create_ata(&vault.lrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
@@ -115,12 +115,12 @@ mod tests {
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint(),
+                &vault.lrt_mint,
                 &depositor,
-                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint()),
-                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint()),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint()),
-                &get_associated_token_address(&vault.fee_wallet(), &vault.lrt_mint()),
+                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
+                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
                 None,
                 deposit_amount,
             )
@@ -142,7 +142,7 @@ mod tests {
         let slasher = Keypair::new();
         fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
         fixture
-            .create_ata(&vault.supported_mint(), &slasher.pubkey())
+            .create_ata(&vault.supported_mint, &slasher.pubkey())
             .await
             .unwrap();
 
@@ -163,7 +163,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
 
@@ -173,7 +173,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
 
@@ -266,7 +266,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(config.epoch_length())
+            .warp_slot_incremental(config.epoch_length)
             .await
             .unwrap();
 
@@ -315,7 +315,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
 
@@ -337,7 +337,7 @@ mod tests {
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.supported_mint(),
+                &vault.supported_mint,
             ))
             .await
             .unwrap();
@@ -381,7 +381,7 @@ mod tests {
 
         // send 100 tokens to vault as rewards, increasing value of it by 10%
         fixture
-            .mint_to(&vault.supported_mint(), &vault_root.vault_pubkey, 100)
+            .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
             .await
             .unwrap();
 
@@ -391,7 +391,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
         vault_program_client
@@ -408,7 +408,7 @@ mod tests {
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.supported_mint(),
+                &vault.supported_mint,
             ))
             .await
             .unwrap();
@@ -454,7 +454,7 @@ mod tests {
         // send 100 tokens to vault as rewards, increasing value of it by 10%
         // but delegate those to the operator. they won't be available for withdraw
         fixture
-            .mint_to(&vault.supported_mint(), &vault_root.vault_pubkey, 100)
+            .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
             .await
             .unwrap();
 
@@ -473,7 +473,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
         vault_program_client
@@ -490,7 +490,7 @@ mod tests {
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.supported_mint(),
+                &vault.supported_mint,
             ))
             .await
             .unwrap();
@@ -499,7 +499,7 @@ mod tests {
         let depositor_lrt_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint(),
+                &vault.lrt_mint,
             ))
             .await
             .unwrap();
@@ -508,7 +508,7 @@ mod tests {
         let vault_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &vault_root.vault_pubkey,
-                &vault.supported_mint(),
+                &vault.supported_mint,
             ))
             .await
             .unwrap();
@@ -589,7 +589,7 @@ mod tests {
     //         .await
     //         .unwrap();
     //     fixture
-    //         .warp_slot_incremental(2 * config.epoch_length())
+    //         .warp_slot_incremental(2 * config.epoch_length)
     //         .await
     //         .unwrap();
     //
@@ -644,7 +644,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
 
@@ -681,7 +681,7 @@ mod tests {
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.supported_mint(),
+                &vault.supported_mint,
             ))
             .await
             .unwrap();
@@ -690,7 +690,7 @@ mod tests {
         let depositor_lrt_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint(),
+                &vault.lrt_mint,
             ))
             .await
             .unwrap();
@@ -699,7 +699,7 @@ mod tests {
         let vault_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &vault_root.vault_pubkey,
-                &vault.supported_mint(),
+                &vault.supported_mint,
             ))
             .await
             .unwrap();

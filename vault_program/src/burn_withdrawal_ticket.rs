@@ -1,27 +1,29 @@
-use jito_restaking_sanitization::{
-    assert_with_msg, associated_token_account::SanitizedAssociatedTokenAccount,
-    close_program_account, signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
-    token_mint::SanitizedTokenMint, token_program::SanitizedTokenProgram,
-};
-use jito_vault_core::{
-    config::SanitizedConfig,
-    vault::{SanitizedVault, Vault},
-    vault_delegation_list::SanitizedVaultDelegationList,
-    vault_staker_withdrawal_ticket::{
-        SanitizedVaultStakerWithdrawalTicket, VaultStakerWithdrawalTicket,
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::{
+    close_program_account,
+    loader::{
+        load_associated_token_account, load_signer, load_system_program, load_token_mint,
+        load_token_program,
     },
 };
+use jito_vault_core::{
+    config::Config,
+    loader::{
+        load_config, load_vault, load_vault_delegation_list, load_vault_staker_withdrawal_ticket,
+    },
+    vault::Vault,
+    vault_delegation_list::VaultDelegationList,
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    msg,
-    program::invoke_signed,
-    program_error::ProgramError,
-    pubkey::Pubkey,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::instruction::{burn, close_account, transfer};
+use spl_token::{
+    instruction::{burn, close_account, transfer},
+    state::Account,
+};
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
@@ -31,46 +33,66 @@ pub fn process_burn_withdrawal_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
-        mut vault,
-        vault_delegation_list,
-        mut vault_token_account,
-        mut lrt_mint,
+    let [config, vault_info, vault_delegation_list, vault_token_account, lrt_mint, staker, staker_token_account, staker_lrt_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, token_program, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault_info, true)?;
+    load_vault_delegation_list(program_id, vault_delegation_list, vault_info, true)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
+    load_token_mint(lrt_mint)?;
+    load_signer(staker, false)?;
+    load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
+    load_associated_token_account(staker_lrt_token_account, staker.key, &vault.lrt_mint)?;
+    load_vault_staker_withdrawal_ticket(
+        program_id,
+        vault_staker_withdrawal_ticket_info,
+        vault_info,
         staker,
-        mut staker_token_account,
-        staker_lrt_token_account,
-        vault_staker_withdrawal_ticket,
-        mut vault_staker_withdrawal_ticket_token_account,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
-
-    let slot = Clock::get()?.slot;
-    let epoch_length = config.config().epoch_length();
-
-    vault_delegation_list
-        .vault_delegation_list()
-        .check_update_needed(slot, epoch_length)?;
-
-    assert_with_msg(
-        vault.vault().lrt_mint() == *lrt_mint.account().key,
-        ProgramError::InvalidArgument,
-        "LRT mint mismatch",
+        true,
     )?;
-
-    vault_staker_withdrawal_ticket
-        .vault_staker_withdrawal_ticket()
-        .check_withdrawable(slot, epoch_length)?;
-
-    // find the current redemption amount and the original redemption amount in the withdraw ticket
-    let redemption_amount = vault.vault().calculate_assets_returned_amount(
-        vault_staker_withdrawal_ticket
-            .vault_staker_withdrawal_ticket()
-            .lrt_amount(),
+    load_associated_token_account(
+        vault_staker_withdrawal_ticket_token_account,
+        vault_staker_withdrawal_ticket_info.key,
+        &vault.lrt_mint,
     )?;
+    load_token_program(token_program)?;
+    load_system_program(system_program)?;
 
-    let original_redemption_amount = vault_staker_withdrawal_ticket
-        .vault_staker_withdrawal_ticket()
-        .withdraw_allocation_amount();
+    if vault.lrt_mint.ne(lrt_mint.key) {
+        msg!("Vault LRT mint mismatch");
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+
+    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
+    let vault_delegation_list =
+        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
+    if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault delegation list needs to be updated");
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket_info.data.borrow();
+    let vault_staker_withdrawal_ticket =
+        VaultStakerWithdrawalTicket::try_from_slice(&vault_staker_withdrawal_ticket_data)?;
+    if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length)? {
+        msg!("Vault staker withdrawal ticket is not withdrawable");
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    // find the current redemption amount and the original redemption amount in the withdrawal ticket
+    // TODO (LB): this logic is buggy no doubt
+    let redemption_amount =
+        vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.lrt_amount)?;
+    let original_redemption_amount = vault_staker_withdrawal_ticket.withdraw_allocation_amount;
 
     let actual_withdraw_amount = if redemption_amount > original_redemption_amount {
         // The program can guarantee the original redemption amount, but if the redemption amount
@@ -80,11 +102,9 @@ pub fn process_burn_withdrawal_ticket(
         // as much of the redemption amount as possible.
         // Available unstaked assets is equal to:
         // the amount of tokens deposited - any delegated security - the amount reserved for withdraw tickets
-        let tokens_deposited_in_vault = vault.vault().tokens_deposited();
-        let delegated_security_in_vault = vault_delegation_list
-            .vault_delegation_list()
-            .total_security()?;
-        let assets_reserved_for_withdrawal_tickets = vault.vault().withdrawable_reserve_amount();
+        let tokens_deposited_in_vault = vault.tokens_deposited;
+        let delegated_security_in_vault = vault_delegation_list.total_security()?;
+        let assets_reserved_for_withdrawal_tickets = vault.withdrawable_reserve_amount;
 
         let available_unstaked_assets = tokens_deposited_in_vault
             .checked_sub(delegated_security_in_vault)
@@ -104,291 +124,126 @@ pub fn process_burn_withdrawal_ticket(
         redemption_amount
     };
 
-    let lrt_to_burn = vault
-        .vault()
-        .calculate_lrt_mint_amount(actual_withdraw_amount)?;
-    let lrt_amount_to_burn = std::cmp::min(
-        lrt_to_burn,
-        vault_staker_withdrawal_ticket
-            .vault_staker_withdrawal_ticket()
-            .lrt_amount(),
-    );
+    let lrt_to_burn = vault.calculate_lrt_mint_amount(actual_withdraw_amount)?;
+    let lrt_to_burn = std::cmp::min(lrt_to_burn, vault_staker_withdrawal_ticket.lrt_amount);
 
-    _burn_lrt(
-        program_id,
-        &vault,
-        &staker,
-        &vault_staker_withdrawal_ticket,
-        &vault_staker_withdrawal_ticket_token_account,
-        &lrt_mint,
-        lrt_amount_to_burn,
-    )?;
-    lrt_mint.reload()?;
-    vault_staker_withdrawal_ticket_token_account.reload()?;
+    // burn the assets + close the token account + withdraw token account
+    {
+        let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =
+            VaultStakerWithdrawalTicket::find_program_address(
+                program_id,
+                vault_info.key,
+                staker.key,
+                &vault_staker_withdrawal_ticket.base,
+            );
+        vault_staker_withdraw_seeds.push(vec![vault_staker_withdraw_bump]);
+        let seed_slices: Vec<&[u8]> = vault_staker_withdraw_seeds
+            .iter()
+            .map(|seed| seed.as_slice())
+            .collect();
 
-    _transfer_vault_tokens_to_staker(
-        program_id,
-        &vault,
-        &vault_token_account,
-        &staker_token_account,
-        actual_withdraw_amount,
-    )?;
-    vault_token_account.reload()?;
-    staker_token_account.reload()?;
+        drop(vault_staker_withdrawal_ticket_data);
 
-    msg!(
-        "decrementing reserve amount: {:?}, amount available: {:?}",
-        original_redemption_amount,
-        vault.vault().withdrawable_reserve_amount()
-    );
+        // burn the LRT tokens
+        invoke_signed(
+            &burn(
+                &spl_token::id(),
+                vault_staker_withdrawal_ticket_token_account.key,
+                lrt_mint.key,
+                vault_staker_withdrawal_ticket_info.key,
+                &[],
+                lrt_to_burn,
+            )?,
+            &[
+                vault_staker_withdrawal_ticket_token_account.clone(),
+                lrt_mint.clone(),
+                vault_staker_withdrawal_ticket_info.clone(),
+            ],
+            &[&seed_slices],
+        )?;
 
+        // if there are any excess, transfer them to the staker
+        let lrt_token_account =
+            Account::unpack(&vault_staker_withdrawal_ticket_token_account.data.borrow())?;
+        if lrt_token_account.amount > 0 {
+            invoke_signed(
+                &transfer(
+                    &spl_token::id(),
+                    vault_staker_withdrawal_ticket_token_account.key,
+                    staker_lrt_token_account.key,
+                    vault_staker_withdrawal_ticket_info.key,
+                    &[],
+                    lrt_token_account.amount,
+                )?,
+                &[
+                    vault_staker_withdrawal_ticket_token_account.clone(),
+                    staker_lrt_token_account.clone(),
+                    vault_staker_withdrawal_ticket_info.clone(),
+                ],
+                &[&seed_slices],
+            )?;
+        }
+
+        // close token account
+        invoke_signed(
+            &close_account(
+                &spl_token::id(),
+                vault_staker_withdrawal_ticket_token_account.key,
+                staker.key,
+                vault_staker_withdrawal_ticket_info.key,
+                &[],
+            )?,
+            &[
+                vault_staker_withdrawal_ticket_token_account.clone(),
+                staker.clone(),
+                vault_staker_withdrawal_ticket_info.clone(),
+            ],
+            &[&seed_slices],
+        )?;
+
+        close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
+    }
+
+    vault.lrt_supply = vault
+        .lrt_supply
+        .checked_sub(lrt_to_burn)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
     // TODO (LB): https://github.com/jito-foundation/restaking/issues/24
     //  If a withdraw ticket is created and there is a slashing event before the withdraw ticket
     //  has fully matured, the program can end up in a situation where the original_redemption_amount
     //  is greater than the total withdrawable_reserve_amount. This is a bug and needs to be fixed.
     //  see test_burn_withdrawal_ticket_with_slashing_before_update
-    vault
-        .vault_mut()
-        .decrement_withdrawable_reserve_amount(original_redemption_amount)?;
+    vault.withdrawable_reserve_amount = vault
+        .withdrawable_reserve_amount
+        .checked_sub(original_redemption_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
-    // refresh after burn
-    vault
-        .vault_mut()
-        .set_tokens_deposited(vault_token_account.token_account().amount);
-    vault.vault_mut().set_lrt_supply(lrt_mint.mint().supply);
+    vault.tokens_deposited = vault
+        .tokens_deposited
+        .checked_sub(actual_withdraw_amount)
+        .ok_or(ProgramError::InsufficientFunds)?;
 
-    _close_token_account(
-        program_id,
-        &vault,
-        &staker,
-        &vault_staker_withdrawal_ticket,
-        &vault_staker_withdrawal_ticket_token_account,
-        &staker_lrt_token_account,
-    )?;
-
-    close_program_account(
-        program_id,
-        vault_staker_withdrawal_ticket.account(),
-        staker.account(),
-    )?;
-
-    vault.save()?;
-    vault_delegation_list.save()?;
-
-    Ok(())
-}
-
-/// transfers all remaining assets to the staker + closes the account
-fn _close_token_account<'a, 'info>(
-    program_id: &Pubkey,
-    vault: &SanitizedVault<'a, 'info>,
-    staker: &SanitizedSignerAccount<'a, 'info>,
-    vault_staker_withdrawal_ticket: &SanitizedVaultStakerWithdrawalTicket<'a, 'info>,
-    vault_staker_withdrawal_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-    staker_lrt_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-) -> ProgramResult {
-    let (_, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
-        program_id,
-        vault.account().key,
-        staker.account().key,
-        &vault_staker_withdrawal_ticket
-            .vault_staker_withdrawal_ticket()
-            .base(),
-    );
-    seeds.push(vec![bump]);
-    let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
-
-    if vault_staker_withdrawal_ticket_token_account
-        .token_account()
-        .amount
-        > 0
-    {
-        invoke_signed(
-            &transfer(
-                &spl_token::id(),
-                vault_staker_withdrawal_ticket_token_account.account().key,
-                staker_lrt_token_account.account().key,
-                vault_staker_withdrawal_ticket.account().key,
-                &[],
-                vault_staker_withdrawal_ticket_token_account
-                    .token_account()
-                    .amount,
-            )?,
-            &[
-                vault_staker_withdrawal_ticket_token_account
-                    .account()
-                    .clone(),
-                staker_lrt_token_account.account().clone(),
-                vault_staker_withdrawal_ticket.account().clone(),
-            ],
-            &[&seed_slices],
-        )?;
-    }
-
-    invoke_signed(
-        &close_account(
-            &spl_token::id(),
-            vault_staker_withdrawal_ticket_token_account.account().key,
-            staker.account().key,
-            vault_staker_withdrawal_ticket.account().key,
-            &[],
-        )?,
-        &[
-            vault_staker_withdrawal_ticket_token_account
-                .account()
-                .clone(),
-            staker.account().clone(),
-            vault_staker_withdrawal_ticket.account().clone(),
-        ],
-        &[&seed_slices],
-    )?;
-    Ok(())
-}
-
-fn _transfer_vault_tokens_to_staker<'a, 'info>(
-    program_id: &Pubkey,
-    vault: &SanitizedVault<'a, 'info>,
-    vault_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-    staker_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-    amount: u64,
-) -> ProgramResult {
-    let (_, bump, mut seeds) = Vault::find_program_address(program_id, &vault.vault().base());
-    seeds.push(vec![bump]);
-    let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
-
+    // transfer the assets to the staker
+    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
+    vault_seeds.push(vec![vault_bump]);
+    let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+    drop(vault_data); // avoid double borrow
     invoke_signed(
         &transfer(
             &spl_token::id(),
-            vault_token_account.account().key,
-            staker_token_account.account().key,
-            vault.account().key,
+            vault_token_account.key,
+            staker_token_account.key,
+            vault_info.key,
             &[],
-            amount,
+            actual_withdraw_amount,
         )?,
         &[
-            vault_token_account.account().clone(),
-            staker_token_account.account().clone(),
-            vault.account().clone(),
+            vault_token_account.clone(),
+            staker_token_account.clone(),
+            vault_info.clone(),
         ],
         &[&seed_slices],
     )?;
+
     Ok(())
-}
-
-fn _burn_lrt<'a, 'info>(
-    program_id: &Pubkey,
-    vault: &SanitizedVault<'a, 'info>,
-    staker: &SanitizedSignerAccount<'a, 'info>,
-    vault_staker_withdrawal_ticket: &SanitizedVaultStakerWithdrawalTicket<'a, 'info>,
-    vault_staker_withdrawal_ticket_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-    token_mint: &SanitizedTokenMint<'a, 'info>,
-    burn_amount: u64,
-) -> ProgramResult {
-    let (_, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
-        program_id,
-        vault.account().key,
-        staker.account().key,
-        &vault_staker_withdrawal_ticket
-            .vault_staker_withdrawal_ticket()
-            .base(),
-    );
-    seeds.push(vec![bump]);
-    let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
-
-    invoke_signed(
-        &burn(
-            &spl_token::id(),
-            vault_staker_withdrawal_ticket_token_account.account().key,
-            token_mint.account().key,
-            vault_staker_withdrawal_ticket.account().key,
-            &[],
-            burn_amount,
-        )?,
-        &[
-            vault_staker_withdrawal_ticket_token_account
-                .account()
-                .clone(),
-            token_mint.account().clone(),
-            vault_staker_withdrawal_ticket.account().clone(),
-        ],
-        &[&seed_slices],
-    )
-}
-
-pub struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-    vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    lrt_mint: SanitizedTokenMint<'a, 'info>,
-    staker: SanitizedSignerAccount<'a, 'info>,
-    staker_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    staker_lrt_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    vault_staker_withdrawal_ticket: SanitizedVaultStakerWithdrawalTicket<'a, 'info>,
-    vault_staker_withdrawal_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-
-        let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
-            program_id,
-            next_account_info(accounts_iter)?,
-            true,
-            vault.account().key,
-        )?;
-        let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            &vault.vault().supported_mint(),
-            vault.account().key,
-        )?;
-        let lrt_mint = SanitizedTokenMint::sanitize(next_account_info(accounts_iter)?, true)?;
-        let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let staker_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            &vault.vault().supported_mint(),
-            staker.account().key,
-        )?;
-        let staker_lrt_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            &vault.vault().lrt_mint(),
-            staker.account().key,
-        )?;
-        let vault_staker_withdrawal_ticket = SanitizedVaultStakerWithdrawalTicket::sanitize(
-            program_id,
-            next_account_info(accounts_iter)?,
-            vault.account().key,
-            staker.account().key,
-            true,
-        )?;
-        let vault_staker_withdrawal_ticket_token_account =
-            SanitizedAssociatedTokenAccount::sanitize(
-                next_account_info(accounts_iter)?,
-                &vault.vault().lrt_mint(),
-                vault_staker_withdrawal_ticket.account().key,
-            )?;
-        let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-        let _system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            vault,
-            vault_delegation_list,
-            vault_token_account,
-            lrt_mint,
-            staker,
-            staker_token_account,
-            staker_lrt_token_account,
-            vault_staker_withdrawal_ticket,
-            vault_staker_withdrawal_ticket_token_account,
-        })
-    }
 }

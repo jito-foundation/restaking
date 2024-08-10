@@ -1,21 +1,23 @@
-use borsh::BorshSerialize;
-use jito_restaking_core::{ncn::SanitizedNcn, ncn_vault_ticket::SanitizedNcnVaultTicket};
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
+use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+};
+use jito_restaking_core::{
+    loader::{load_ncn, load_ncn_vault_ticket},
+    ncn_vault_ticket::NcnVaultTicket,
 };
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault, vault_ncn_ticket::VaultNcnTicket,
+    config::Config,
+    loader::{load_config, load_vault},
+    vault::Vault,
+    vault_ncn_ticket::VaultNcnTicket,
 };
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Adds an NCN to the vault NCN list, which means delegation applied to operators staking to the NCN
@@ -23,147 +25,88 @@ use solana_program::{
 ///
 /// # Behavior
 /// * The vault admin shall have the ability to add support for a new NCN
-/// if the NCN is actively supporting the vault
+///   if the NCN is actively supporting the vault
 ///
 /// Instruction: [`crate::VaultInstruction::AddNcn`]
 pub fn process_vault_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
-        mut vault,
-        ncn,
+    let [config, vault_info, ncn, ncn_vault_ticket, vault_ncn_ticket, vault_ncn_admin, payer, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault_info, true)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+    load_ncn(&config.restaking_program, ncn, false)?;
+    load_ncn_vault_ticket(
+        &config.restaking_program,
         ncn_vault_ticket,
-        vault_ncn_ticket,
-        admin,
-        payer,
-        system_program,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
-
-    vault.vault().check_ncn_admin(admin.account().key)?;
-
-    let slot = Clock::get()?.slot;
-    ncn_vault_ticket
-        .ncn_vault_ticket()
-        .check_active_or_cooldown(slot, config.config().epoch_length())?;
-
-    _create_vault_ncn_ticket(
-        program_id,
-        &vault,
-        &ncn,
-        &vault_ncn_ticket,
-        &payer,
-        &system_program,
-        &Rent::get()?,
-        slot,
+        ncn,
+        vault_info,
+        false,
     )?;
+    load_system_account(vault_ncn_ticket, false)?;
+    load_signer(vault_ncn_admin, false)?;
+    load_signer(payer, true)?;
+    load_system_program(system_program)?;
 
-    vault.vault_mut().increment_ncn_count()?;
+    let (vault_ncn_ticket_pubkey, vault_ncn_ticket_bump, mut vault_ncn_ticket_seeds) =
+        VaultNcnTicket::find_program_address(program_id, vault_info.key, ncn.key);
+    vault_ncn_ticket_seeds.push(vec![vault_ncn_ticket_bump]);
+    if vault_ncn_ticket_pubkey.ne(vault_ncn_ticket.key) {
+        msg!("Vault NCN ticket is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    vault.save()?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    if vault.ncn_admin.ne(vault_ncn_admin.key) {
+        msg!("Invalid NCN admin for vault");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    Ok(())
-}
+    let ncn_vault_data = ncn_vault_ticket.data.borrow();
+    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_data)?;
+    if !ncn_vault_ticket
+        .state
+        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+    {
+        msg!("NCN vault ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-#[allow(clippy::too_many_arguments)]
-fn _create_vault_ncn_ticket<'a, 'info>(
-    program_id: &Pubkey,
-    vault: &SanitizedVault<'a, 'info>,
-    ncn: &SanitizedNcn<'a, 'info>,
-    vault_ncn_ticket_account: &EmptyAccount<'a, 'info>,
-    payer: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-    slot: u64,
-) -> ProgramResult {
-    let (address, bump, mut seeds) =
-        VaultNcnTicket::find_program_address(program_id, vault.account().key, ncn.account().key);
-    seeds.push(vec![bump]);
-
-    assert_with_msg(
-        address == *vault_ncn_ticket_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Vault NCN ticket is not at the correct PDA",
-    )?;
-
-    let vault_ncn_ticket = VaultNcnTicket::new(
-        *vault.account().key,
-        *ncn.account().key,
-        vault.vault().ncn_count(),
-        slot,
-        bump,
-    );
-
-    let serialized = vault_ncn_ticket.try_to_vec()?;
     msg!(
-        "Creating vault NCN ticket: {:?} with space: {}",
-        vault_ncn_ticket_account.account().key,
-        serialized.len()
+        "Initializing VaultNcnTicket at address {}",
+        vault_ncn_ticket.key
     );
     create_account(
-        payer.account(),
-        vault_ncn_ticket_account.account(),
-        system_program.account(),
+        payer,
+        vault_ncn_ticket,
+        system_program,
         program_id,
-        rent,
-        serialized.len() as u64,
-        &seeds,
+        &Rent::get()?,
+        8_u64
+            .checked_add(size_of::<VaultNcnTicket>() as u64)
+            .unwrap(),
+        &vault_ncn_ticket_seeds,
     )?;
-    vault_ncn_ticket_account.account().data.borrow_mut()[..serialized.len()]
-        .copy_from_slice(&serialized);
+    let mut vault_ncn_ticket_data = vault_ncn_ticket.try_borrow_mut_data()?;
+    vault_ncn_ticket_data[0] = VaultNcnTicket::DISCRIMINATOR;
+    let vault_ncn_ticket = VaultNcnTicket::try_from_slice_mut(&mut vault_ncn_ticket_data)?;
+    *vault_ncn_ticket = VaultNcnTicket::new(
+        *vault_info.key,
+        *ncn.key,
+        vault.ncn_count,
+        Clock::get()?.slot,
+        vault_ncn_ticket_bump,
+    );
+
+    vault.ncn_count = vault
+        .ncn_count
+        .checked_add(1)
+        .ok_or(ProgramError::InvalidAccountData)?;
+
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-    ncn: SanitizedNcn<'a, 'info>,
-    ncn_vault_ticket: SanitizedNcnVaultTicket<'a, 'info>,
-    vault_ncn_ticket: EmptyAccount<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    payer: SanitizedSignerAccount<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::VaultInstruction::AddNcn`]
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        let ncn = SanitizedNcn::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-        )?;
-        let ncn_vault_ticket = SanitizedNcnVaultTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-            ncn.account().key,
-            vault.account().key,
-        )?;
-        let vault_ncn_ticket =
-            EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        let payer = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let system_program =
-            SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            vault,
-            ncn,
-            ncn_vault_ticket,
-            vault_ncn_ticket,
-            admin,
-            payer,
-            system_program,
-        })
-    }
 }

@@ -12,7 +12,10 @@ mod tests {
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
 
-        let (_config_admin, vault_root) = vault_program_client.setup_vault(99, 100).await.unwrap();
+        let (_config_admin, vault_root) = vault_program_client
+            .setup_config_and_vault(99, 100)
+            .await
+            .unwrap();
 
         let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
 
@@ -29,7 +32,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config_account.epoch_length())
+            .warp_slot_incremental(2 * config_account.epoch_length)
             .await
             .unwrap();
 
@@ -45,7 +48,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config_account.epoch_length())
+            .warp_slot_incremental(2 * config_account.epoch_length)
             .await
             .unwrap();
 
@@ -62,13 +65,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(vault_ncn_slasher.vault(), vault_root.vault_pubkey);
-        assert_eq!(vault_ncn_slasher.ncn(), ncn_root.ncn_pubkey);
-        assert_eq!(vault_ncn_slasher.slasher(), slasher.pubkey());
-        assert_eq!(vault_ncn_slasher.index(), 0);
-        assert_eq!(vault_ncn_slasher.max_slashable_per_epoch(), 100);
+        assert_eq!(vault_ncn_slasher.vault, vault_root.vault_pubkey);
+        assert_eq!(vault_ncn_slasher.ncn, ncn_root.ncn_pubkey);
+        assert_eq!(vault_ncn_slasher.slasher, slasher.pubkey());
+        assert_eq!(vault_ncn_slasher.index, 0);
+        assert_eq!(vault_ncn_slasher.max_slashable_per_epoch, 100);
         assert_eq!(
-            vault_ncn_slasher.state().slot_added(),
+            vault_ncn_slasher.state.slot_added(),
             fixture.get_current_slot().await.unwrap()
         );
     }

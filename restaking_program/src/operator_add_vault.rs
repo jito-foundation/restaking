@@ -1,21 +1,18 @@
-use borsh::BorshSerialize;
+use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+};
 use jito_restaking_core::{
-    config::SanitizedConfig, operator::SanitizedOperator,
+    config::Config, loader::load_operator, operator::Operator,
     operator_vault_ticket::OperatorVaultTicket,
 };
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
-};
+use jito_vault_core::loader::{load_config, load_vault};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// The node operator admin can add support for receiving delegation from a vault.
@@ -24,121 +21,72 @@ use solana_program::{
 ///
 /// [`crate::RestakingInstruction::OperatorAddVault`]
 pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        mut operator,
-        vault,
-        operator_vault_ticket_account,
-        admin,
-        payer,
-        system_program,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, operator_info, vault, operator_vault_ticket_account, operator_vault_admin, payer, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    operator.operator().check_vault_admin(admin.account().key)?;
+    load_config(program_id, config, false)?;
+    load_operator(program_id, operator_info, true)?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
+    load_vault(&config.vault_program, vault, false)?;
+    load_system_account(operator_vault_ticket_account, true)?;
+    load_signer(operator_vault_admin, false)?;
+    load_signer(payer, true)?;
+    load_system_program(system_program)?;
 
-    let slot = Clock::get()?.slot;
-    let rent = Rent::get()?;
+    let (operator_vault_ticket_pubkey, operator_vault_ticket_bump, mut operator_vault_ticket_seeds) =
+        OperatorVaultTicket::find_program_address(program_id, operator_info.key, vault.key);
+    operator_vault_ticket_seeds.push(vec![operator_vault_ticket_bump]);
+    if operator_vault_ticket_account
+        .key
+        .ne(&operator_vault_ticket_pubkey)
+    {
+        msg!("Operator vault ticket account is not at the correct PDA");
+        return Err(ProgramError::InvalidArgument);
+    }
 
-    _create_operator_vault_ticket(
-        program_id,
-        &operator,
-        vault,
-        &operator_vault_ticket_account,
-        &payer,
-        &system_program,
-        &rent,
-        slot,
-    )?;
-
-    operator.operator_mut().increment_vault_count()?;
-
-    operator.save()?;
-
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn _create_operator_vault_ticket<'a, 'info>(
-    program_id: &Pubkey,
-    operator: &SanitizedOperator<'a, 'info>,
-    vault: &AccountInfo<'info>,
-    operator_vault_ticket_account: &EmptyAccount<'a, 'info>,
-    payer: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-    slot: u64,
-) -> ProgramResult {
-    let (address, bump, mut seeds) =
-        OperatorVaultTicket::find_program_address(program_id, operator.account().key, vault.key);
-    seeds.push(vec![bump]);
-
-    assert_with_msg(
-        address == *operator_vault_ticket_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Invalid operator vault ticket PDA",
-    )?;
-
-    let operator_vault_ticket = OperatorVaultTicket::new(
-        *operator.account().key,
-        *vault.key,
-        operator.operator().vault_count(),
-        slot,
-        bump,
-    );
+    let mut operator_data = operator_info.data.borrow_mut();
+    let operator = Operator::try_from_slice_mut(&mut operator_data)?;
+    if operator.vault_admin.ne(operator_vault_admin.key) {
+        msg!("Invalid operator vault admin");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
     msg!(
-        "Creating operator vault ticket: {:?}",
-        operator_vault_ticket_account.account().key
+        "Initializing OperatorVaultTicket at address {}",
+        operator_vault_ticket_account.key
     );
-    let serialized = operator_vault_ticket.try_to_vec()?;
     create_account(
-        payer.account(),
-        operator_vault_ticket_account.account(),
-        system_program.account(),
+        payer,
+        operator_vault_ticket_account,
+        system_program,
         program_id,
-        rent,
-        serialized.len() as u64,
-        &seeds,
+        &Rent::get()?,
+        8_u64
+            .checked_add(size_of::<OperatorVaultTicket>() as u64)
+            .unwrap(),
+        &operator_vault_ticket_seeds,
     )?;
-    operator_vault_ticket_account.account().data.borrow_mut()[..serialized.len()]
-        .copy_from_slice(&serialized);
+    let mut operator_vault_ticket_account_data =
+        operator_vault_ticket_account.try_borrow_mut_data()?;
+    operator_vault_ticket_account_data[0] = OperatorVaultTicket::DISCRIMINATOR;
+    let operator_vault_ticket =
+        OperatorVaultTicket::try_from_slice_mut(&mut operator_vault_ticket_account_data)?;
+    *operator_vault_ticket = OperatorVaultTicket::new(
+        *operator_info.key,
+        *vault.key,
+        operator.vault_count,
+        Clock::get()?.slot,
+        operator_vault_ticket_bump,
+    );
+
+    operator.vault_count = operator
+        .vault_count
+        .checked_add(1)
+        .ok_or(ProgramError::InvalidAccountData)?;
+
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    operator: SanitizedOperator<'a, 'info>,
-    vault: &'a AccountInfo<'info>,
-    operator_vault_ticket_account: EmptyAccount<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    payer: SanitizedSignerAccount<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::RestakingInstruction::OperatorAddVault`]
-    pub fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let _config =
-            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let operator =
-            SanitizedOperator::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-        let vault = next_account_info(accounts_iter)?;
-        let operator_vault_ticket_account =
-            EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let admin = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        let payer = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-        let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            operator,
-            vault,
-            operator_vault_ticket_account,
-            admin,
-            payer,
-            system_program,
-        })
-    }
 }

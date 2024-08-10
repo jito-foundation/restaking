@@ -75,7 +75,7 @@ mod tests {
 
         let config_account = restaking_program_client.get_config(&config).await.unwrap();
         fixture
-            .warp_slot_incremental(2 * config_account.epoch_length())
+            .warp_slot_incremental(2 * config_account.epoch_length)
             .await
             .unwrap();
 
@@ -101,18 +101,18 @@ mod tests {
 
         // Verify NCN state
         let ncn = restaking_program_client.get_ncn(&ncn_pubkey).await.unwrap();
-        assert_eq!(ncn.operator_count(), 1);
+        assert_eq!(ncn.operator_count, 1);
 
         // Verify NCN operator ticket
         let ticket = restaking_program_client
             .get_ncn_operator_ticket(&ncn_pubkey, &operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(ticket.ncn(), ncn_pubkey);
-        assert_eq!(ticket.operator(), operator_pubkey);
-        assert_eq!(ticket.index(), 0);
+        assert_eq!(ticket.ncn, ncn_pubkey);
+        assert_eq!(ticket.operator, operator_pubkey);
+        assert_eq!(ticket.index, 0);
         assert_eq!(
-            ticket.state().slot_added(),
+            ticket.state.slot_added(),
             fixture.get_current_slot().await.unwrap()
         );
     }
@@ -350,7 +350,7 @@ mod tests {
 
         let config_account = restaking_program_client.get_config(&config).await.unwrap();
         fixture
-            .warp_slot_incremental(2 * config_account.epoch_length())
+            .warp_slot_incremental(2 * config_account.epoch_length)
             .await
             .unwrap();
 

@@ -1,51 +1,31 @@
-use jito_restaking_sanitization::signer::SanitizedSignerAccount;
-use jito_vault_core::vault::SanitizedVault;
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::load_signer;
+use jito_vault_core::{
+    loader::{load_config, load_vault},
+    vault::Vault,
+};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
 };
 
 /// Processes the set admin instruction: [`crate::VaultInstruction::SetAdmin`]
 pub fn process_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        old_admin,
-        new_admin,
-        mut vault,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, vault, old_admin, new_admin] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault, false)?;
+    load_signer(old_admin, false)?;
+    load_signer(new_admin, false)?;
 
-    vault.vault().check_admin(old_admin.account().key)?;
-    vault.vault_mut().set_admin(*new_admin.account().key);
-    vault.save()?;
+    let mut vault_data = vault.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    if vault.admin.ne(old_admin.key) {
+        msg!("Invalid admin for vault");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    vault.admin = *new_admin.key;
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    old_admin: SanitizedSignerAccount<'a, 'info>,
-    new_admin: SanitizedSignerAccount<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        let old_admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        let new_admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-
-        Ok(SanitizedAccounts {
-            old_admin,
-            new_admin,
-            vault,
-        })
-    }
 }

@@ -1,23 +1,19 @@
-use borsh::BorshSerialize;
-use jito_restaking_core::{ncn::SanitizedNcn, operator::SanitizedOperator};
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
+use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
 };
+use jito_restaking_core::loader::{load_ncn, load_operator};
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault,
+    config::Config,
+    loader::{load_config, load_vault, load_vault_ncn_slasher_ticket},
     vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
-    vault_ncn_slasher_ticket::SanitizedVaultNcnSlasherTicket,
 };
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Instruction: [`crate::VaultInstruction::InitializeVaultNcnSlasherOperatorTicket`]
@@ -25,159 +21,83 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
+    let [config, vault, ncn, slasher, operator, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, payer, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault, false)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+    load_ncn(&config.restaking_program, ncn, false)?;
+    load_operator(&config.restaking_program, operator, false)?;
+    load_vault_ncn_slasher_ticket(
+        program_id,
+        vault_ncn_slasher_ticket,
         vault,
         ncn,
-        operator,
         slasher,
-        vault_ncn_slasher_ticket,
-        vault_ncn_slasher_operator_ticket,
-        payer,
-        system_program,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
-
-    let slot = Clock::get()?.slot;
-    vault_ncn_slasher_ticket
-        .vault_ncn_slasher_ticket()
-        .check_active_or_cooldown(slot, config.config().epoch_length())?;
-
-    let epoch = slot.checked_div(config.config().epoch_length()).unwrap();
-
-    _create_vault_ncn_slasher_operator_ticket(
-        program_id,
-        &vault_ncn_slasher_operator_ticket,
-        &vault,
-        &ncn,
-        &operator,
-        slasher,
-        &payer,
-        &system_program,
-        &Rent::get()?,
-        epoch,
+        false,
     )?;
+    load_system_account(vault_ncn_slasher_operator_ticket, true)?;
+    load_signer(payer, false)?;
+    load_system_program(system_program)?;
 
-    Ok(())
-}
+    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
 
-#[allow(clippy::too_many_arguments)]
-fn _create_vault_ncn_slasher_operator_ticket<'a, 'info>(
-    program_id: &Pubkey,
-    vault_ncn_slasher_operator_ticket_account: &EmptyAccount<'a, 'info>,
-    vault: &SanitizedVault<'a, 'info>,
-    ncn: &SanitizedNcn<'a, 'info>,
-    operator: &SanitizedOperator<'a, 'info>,
-    slasher: &'a AccountInfo<'info>,
-    payer: &SanitizedSignerAccount<'a, 'info>,
-    system_program: &SanitizedSystemProgram<'a, 'info>,
-    rent: &Rent,
-    epoch: u64,
-) -> ProgramResult {
-    let (address, bump, mut seeds) = VaultNcnSlasherOperatorTicket::find_program_address(
+    let (
+        vault_ncn_slasher_operator_ticket_pubkey,
+        vault_ncn_slasher_operator_ticket_bump,
+        mut vault_ncn_slasher_operator_ticket_seeds,
+    ) = VaultNcnSlasherOperatorTicket::find_program_address(
         program_id,
-        vault.account().key,
-        ncn.account().key,
+        vault.key,
+        ncn.key,
         slasher.key,
-        operator.account().key,
-        epoch,
+        operator.key,
+        ncn_epoch,
     );
-    seeds.push(vec![bump]);
-
-    assert_with_msg(
-        address == *vault_ncn_slasher_operator_ticket_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Invalid vault NCN slasher operator ticket PDA",
-    )?;
-
-    let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::new(
-        *vault.account().key,
-        *ncn.account().key,
-        *slasher.key,
-        *operator.account().key,
-        epoch,
-        0,
-        bump,
-    );
+    vault_ncn_slasher_operator_ticket_seeds.push(vec![vault_ncn_slasher_operator_ticket_bump]);
+    if vault_ncn_slasher_operator_ticket
+        .key
+        .ne(&vault_ncn_slasher_operator_ticket_pubkey)
+    {
+        msg!("Vault NCN slasher operator ticket is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
     msg!(
-        "Creating vault NCN slasher operator ticket: {:?}",
-        vault_ncn_slasher_operator_ticket_account.account().key
+        "Initializing vault NCN slasher operator ticket at address {}",
+        vault_ncn_slasher_operator_ticket.key
     );
-    let serialized = vault_ncn_slasher_operator_ticket.try_to_vec()?;
     create_account(
-        payer.account(),
-        vault_ncn_slasher_operator_ticket_account.account(),
-        system_program.account(),
+        payer,
+        vault_ncn_slasher_operator_ticket,
+        system_program,
         program_id,
-        rent,
-        serialized.len() as u64,
-        &seeds,
+        &Rent::get()?,
+        8_u64
+            .checked_add(size_of::<VaultNcnSlasherOperatorTicket>() as u64)
+            .unwrap(),
+        &vault_ncn_slasher_operator_ticket_seeds,
     )?;
-    vault_ncn_slasher_operator_ticket_account
-        .account()
-        .data
-        .borrow_mut()[..serialized.len()]
-        .copy_from_slice(&serialized);
+
+    let mut vault_ncn_slasher_operator_ticket_data =
+        vault_ncn_slasher_operator_ticket.try_borrow_mut_data()?;
+    vault_ncn_slasher_operator_ticket_data[0] = VaultNcnSlasherOperatorTicket::DISCRIMINATOR;
+    let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
+        &mut vault_ncn_slasher_operator_ticket_data,
+    )?;
+    *vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::new(
+        *vault.key,
+        *ncn.key,
+        *slasher.key,
+        *operator.key,
+        ncn_epoch,
+        vault_ncn_slasher_operator_ticket_bump,
+    );
+
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-    ncn: SanitizedNcn<'a, 'info>,
-    operator: SanitizedOperator<'a, 'info>,
-    slasher: &'a AccountInfo<'info>,
-    vault_ncn_slasher_ticket: SanitizedVaultNcnSlasherTicket<'a, 'info>,
-    vault_ncn_slasher_operator_ticket: EmptyAccount<'a, 'info>,
-    payer: SanitizedSignerAccount<'a, 'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the instruction: [`crate::VaultInstruction::InitializeVaultNcnSlasherOperatorTicket`]
-    pub fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let ncn = SanitizedNcn::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(accounts_iter)?,
-            false,
-        )?;
-        let slasher = next_account_info(accounts_iter)?;
-        let operator = SanitizedOperator::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(accounts_iter)?,
-            false,
-        )?;
-        let vault_ncn_slasher_ticket = SanitizedVaultNcnSlasherTicket::sanitize(
-            program_id,
-            next_account_info(accounts_iter)?,
-            false,
-            vault.account().key,
-            ncn.account().key,
-            slasher.key,
-        )?;
-        let vault_ncn_slasher_operator_ticket =
-            EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let payer = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-        let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            vault,
-            ncn,
-            operator,
-            slasher,
-            vault_ncn_slasher_ticket,
-            vault_ncn_slasher_operator_ticket,
-            payer,
-            system_program,
-        })
-    }
 }

@@ -1,10 +1,12 @@
-use jito_restaking_sanitization::signer::SanitizedSignerAccount;
-use jito_vault_core::vault::SanitizedVault;
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::load_signer;
+use jito_vault_core::{
+    loader::{load_config, load_vault},
+    vault::Vault,
+};
 use jito_vault_sdk::VaultAdminRole;
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
 };
 
@@ -14,54 +16,55 @@ pub fn process_set_secondary_admin(
     accounts: &[AccountInfo],
     role: VaultAdminRole,
 ) -> ProgramResult {
-    let SanitizedAccounts {
-        mut vault,
-        admin,
-        new_admin,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, vault, admin, new_admin] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    vault.vault().check_admin(admin.account().key)?;
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault, true)?;
+    load_signer(admin, false)?;
+
+    let mut vault_data = vault.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    if vault.admin.ne(admin.key) {
+        msg!("Invalid admin for vault");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
     match role {
-        VaultAdminRole::Delegataion => {
-            vault.vault_mut().set_delegation_admin(*new_admin.key);
+        VaultAdminRole::DelegationAdmin => {
+            vault.delegation_admin = *new_admin.key;
+            msg!("Delegation admin set to {:?}", new_admin.key);
         }
-        VaultAdminRole::FeeOwner => {
-            vault.vault_mut().set_fee_wallet(*new_admin.key);
+        VaultAdminRole::OperatorAdmin => {
+            vault.operator_admin = *new_admin.key;
+            msg!("Operator admin set to {:?}", new_admin.key);
         }
-        VaultAdminRole::MintBurnAuthority => {
-            vault.vault_mut().set_mint_burn_authority(*new_admin.key);
+        VaultAdminRole::NcnAdmin => {
+            vault.ncn_admin = *new_admin.key;
+            msg!("Ncn admin set to {:?}", new_admin.key);
+        }
+        VaultAdminRole::SlasherAdmin => {
+            vault.slasher_admin = *new_admin.key;
+            msg!("Slasher admin set to {:?}", new_admin.key);
+        }
+        VaultAdminRole::CapacityAdmin => {
+            vault.capacity_admin = *new_admin.key;
+            msg!("Capacity admin set to {:?}", new_admin.key);
+        }
+        VaultAdminRole::FeeWallet => {
+            vault.fee_wallet = *new_admin.key;
+            msg!("Fee wallet set to {:?}", new_admin.key);
+        }
+        VaultAdminRole::MintBurnAdmin => {
+            vault.mint_burn_admin = *new_admin.key;
+            msg!("Mint burn admin set to {:?}", new_admin.key);
+        }
+        VaultAdminRole::WithdrawAdmin => {
+            vault.withdraw_admin = *new_admin.key;
+            msg!("Withdraw admin set to {:?}", new_admin.key);
         }
     }
-
-    vault.save()?;
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    vault: SanitizedVault<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    new_admin: &'a AccountInfo<'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        let admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        let new_admin = next_account_info(&mut accounts_iter)?;
-
-        Ok(SanitizedAccounts {
-            vault,
-            admin,
-            new_admin,
-        })
-    }
 }

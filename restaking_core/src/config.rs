@@ -1,94 +1,47 @@
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{
-    account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, entrypoint::ProgramResult,
-    pubkey::Pubkey,
-};
+use bytemuck::{Pod, Zeroable};
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, pubkey::Pubkey};
 
-use crate::{
-    result::{RestakingCoreError, RestakingCoreResult},
-    AccountType,
-};
+impl Discriminator for Config {
+    const DISCRIMINATOR: u8 = 1;
+}
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct Config {
-    /// The account type
-    account_type: AccountType,
-
     /// The configuration admin
-    admin: Pubkey,
+    pub admin: Pubkey,
 
     /// The vault program
-    vault_program: Pubkey,
+    pub vault_program: Pubkey,
 
     /// The number of NCN managed by the program
-    ncn_count: u64,
+    pub ncn_count: u64,
 
     /// The number of operators managed by the program
-    operator_count: u64,
+    pub operator_count: u64,
 
     /// The length of an epoch in slots
-    epoch_length: u64,
-
-    /// Reserved space
-    reserved: [u8; 128],
+    pub epoch_length: u64,
 
     /// The bump seed for the PDA
-    bump: u8,
+    pub bump: u8,
+
+    /// Reserved space
+    reserved_1: [u8; 7],
 }
 
 impl Config {
     pub const fn new(admin: Pubkey, vault_program: Pubkey, bump: u8) -> Self {
         Self {
-            account_type: AccountType::Config,
             admin,
             vault_program,
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             ncn_count: 0,
             operator_count: 0,
-            reserved: [0; 128],
             bump,
+            reserved_1: [0; 7],
         }
-    }
-
-    pub fn increment_ncn(&mut self) -> RestakingCoreResult<()> {
-        self.ncn_count = self
-            .ncn_count
-            .checked_add(1)
-            .ok_or(RestakingCoreError::NcnOverflow)?;
-        Ok(())
-    }
-
-    pub const fn ncn_count(&self) -> u64 {
-        self.ncn_count
-    }
-
-    pub fn increment_operators(&mut self) -> RestakingCoreResult<()> {
-        self.operator_count = self
-            .operator_count
-            .checked_add(1)
-            .ok_or(RestakingCoreError::OperatorOverflow)?;
-        Ok(())
-    }
-
-    pub const fn epoch_length(&self) -> u64 {
-        self.epoch_length
-    }
-
-    pub const fn operators_count(&self) -> u64 {
-        self.operator_count
-    }
-
-    pub const fn vault_program(&self) -> Pubkey {
-        self.vault_program
-    }
-
-    pub const fn admin(&self) -> Pubkey {
-        self.admin
-    }
-
-    pub const fn bump(&self) -> u8 {
-        self.bump
     }
 
     pub fn seeds() -> Vec<Vec<u8>> {
@@ -100,72 +53,5 @@ impl Config {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
-    }
-
-    pub fn deserialize_checked(
-        program_id: &Pubkey,
-        account: &AccountInfo,
-    ) -> RestakingCoreResult<Self> {
-        if account.data_is_empty() {
-            return Err(RestakingCoreError::ConfigEmpty);
-        }
-        if account.owner != program_id {
-            return Err(RestakingCoreError::ConfigInvalidOwner);
-        }
-
-        let config = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| RestakingCoreError::ConfigInvalidData(e.to_string()))?;
-        if config.account_type != AccountType::Config {
-            return Err(RestakingCoreError::ConfigInvalidAccountType);
-        }
-
-        let mut seeds = Self::seeds();
-        seeds.push(vec![config.bump]);
-        let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| RestakingCoreError::ConfigInvalidPda)?;
-
-        if expected_pubkey != *account.key {
-            return Err(RestakingCoreError::ConfigInvalidPda);
-        }
-
-        Ok(config)
-    }
-}
-
-pub struct SanitizedConfig<'a, 'info> {
-    account: &'a AccountInfo<'info>,
-    config: Box<Config>,
-}
-
-impl<'a, 'info> SanitizedConfig<'a, 'info> {
-    pub fn sanitize(
-        program_id: &Pubkey,
-        account: &'a AccountInfo<'info>,
-        expect_writable: bool,
-    ) -> RestakingCoreResult<SanitizedConfig<'a, 'info>> {
-        if expect_writable && !account.is_writable {
-            return Err(RestakingCoreError::ConfigNotWritable);
-        }
-        let config = Box::new(Config::deserialize_checked(program_id, account)?);
-
-        Ok(SanitizedConfig { account, config })
-    }
-
-    pub const fn account(&self) -> &AccountInfo<'info> {
-        self.account
-    }
-
-    pub const fn config(&self) -> &Config {
-        &self.config
-    }
-
-    pub fn config_mut(&mut self) -> &mut Config {
-        &mut self.config
-    }
-
-    pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.config)?;
-        Ok(())
     }
 }
