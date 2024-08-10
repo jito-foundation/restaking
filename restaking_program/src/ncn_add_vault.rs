@@ -43,7 +43,7 @@ pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
 
     // Check ncn_vault_ticket PDA
     let (ncn_vault_ticket_pubkey, ncn_vault_ticket_bump, mut ncn_vault_ticket_seeds) =
-        NcnVaultTicket::find_program_address(program_id, &ncn_info.key, &vault.key);
+        NcnVaultTicket::find_program_address(program_id, ncn_info.key, vault.key);
     ncn_vault_ticket_seeds.push(vec![ncn_vault_ticket_bump]);
     if ncn_vault_ticket_pubkey.ne(ncn_vault_ticket.key) {
         msg!("NCN vault ticket is not at the correct PDA");
@@ -67,7 +67,9 @@ pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<NcnVaultTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<NcnVaultTicket>() as u64)
+            .unwrap(),
         &ncn_vault_ticket_seeds,
     )?;
 

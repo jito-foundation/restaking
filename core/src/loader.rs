@@ -2,7 +2,8 @@ use solana_program::{
     account_info::AccountInfo, msg, program_error::ProgramError, program_pack::Pack,
     pubkey::Pubkey, system_program,
 };
-use spl_token::state::{Account, Mint};
+use spl_associated_token_account::get_associated_token_address;
+use spl_token::state::Mint;
 
 pub fn load_signer(info: &AccountInfo, expect_writable: bool) -> Result<(), ProgramError> {
     if !info.is_signer {
@@ -35,25 +36,6 @@ pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
     Ok(())
 }
 
-pub fn load_uninitialized_pda<'a, 'info>(
-    info: &'a AccountInfo<'info>,
-    seeds: &[&[u8]],
-    bump: u8,
-    program_id: &Pubkey,
-) -> Result<(), ProgramError> {
-    let pda = Pubkey::find_program_address(seeds, program_id);
-
-    if info.key.ne(&pda.0) {
-        return Err(ProgramError::InvalidSeeds);
-    }
-
-    if bump.ne(&pda.1) {
-        return Err(ProgramError::InvalidSeeds);
-    }
-
-    load_system_account(info, true)
-}
-
 pub fn load_system_account(info: &AccountInfo, is_writable: bool) -> Result<(), ProgramError> {
     if info.owner.ne(&system_program::id()) {
         msg!("Account is not owned by the system program");
@@ -73,28 +55,24 @@ pub fn load_system_account(info: &AccountInfo, is_writable: bool) -> Result<(), 
     Ok(())
 }
 
-pub fn load_token_account(
-    info: &AccountInfo,
+pub fn load_associated_token_account(
+    token_account: &AccountInfo,
     owner: &Pubkey,
     mint: &Pubkey,
 ) -> Result<(), ProgramError> {
-    if info.owner.ne(&spl_token::id()) {
+    if token_account.owner.ne(&spl_token::id()) {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
 
-    if info.data_is_empty() {
+    if token_account.data_is_empty() {
         msg!("Account data is empty");
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let token_account = Account::unpack(&info.data.borrow())?;
-    if token_account.owner.ne(owner) {
-        msg!("Token account owner is invalid");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    if token_account.mint.ne(mint) {
-        msg!("Token account mint is invalid");
+    let associated_token_account = get_associated_token_address(owner, mint);
+    if token_account.key.ne(&associated_token_account) {
+        msg!("Account is not the associated token account");
         return Err(ProgramError::InvalidAccountData);
     }
 

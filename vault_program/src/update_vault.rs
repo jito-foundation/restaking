@@ -1,83 +1,51 @@
-use jito_restaking_sanitization::associated_token_account::SanitizedAssociatedTokenAccount;
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::load_associated_token_account;
 use jito_vault_core::{
-    config::SanitizedConfig,
-    vault::SanitizedVault,
-    vault_delegation_list::{SanitizedVaultDelegationList, VaultDelegationUpdateSummary},
+    config::Config,
+    loader::{load_config, load_vault, load_vault_delegation_list},
+    vault::Vault,
+    vault_delegation_list::{VaultDelegationList, VaultDelegationUpdateSummary},
 };
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult,
+    program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, sysvar::Sysvar,
 };
+use spl_token::state::Account;
 
 pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
-        mut vault,
-        mut vault_delegation_list,
-        vault_token_account,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, vault_info, vault_delegation_list, vault_token_account] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    let slot = Clock::get()?.slot;
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault_info, true)?;
+    load_vault_delegation_list(program_id, vault_delegation_list, vault_info, true)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
 
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+
+    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
+    let vault_delegation_list =
+        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
+
+    // Update the vault delegation list
     if let VaultDelegationUpdateSummary::Updated {
         amount_reserved_for_withdraw,
-    } = vault_delegation_list
-        .vault_delegation_list_mut()
-        .update(slot, config.config().epoch_length())?
+    } = vault_delegation_list.update(Clock::get()?.slot, config.epoch_length)?
     {
-        vault
-            .vault_mut()
-            .increment_withdrawable_reserve_amount(amount_reserved_for_withdraw)?;
+        vault.withdrawable_reserve_amount = vault
+            .withdrawable_reserve_amount
+            .checked_add(amount_reserved_for_withdraw)
+            .ok_or(ProgramError::InvalidAccountData)?;
     }
-    vault
-        .vault_mut()
-        .set_tokens_deposited(vault_token_account.token_account().amount);
 
-    vault.save()?;
-    vault_delegation_list.save()?;
+    // Update the total amount of tokens
+    let vault_token_account_data = vault_token_account.data.borrow();
+    let vault_token_account = Account::unpack(&vault_token_account_data)?;
+    vault.tokens_deposited = vault_token_account.amount;
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-    vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let accounts_iter = &mut accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-        let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-
-        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
-            program_id,
-            next_account_info(accounts_iter)?,
-            true,
-            vault.account().key,
-        )?;
-        let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(accounts_iter)?,
-            &vault.vault().supported_mint(),
-            vault.account().key,
-        )?;
-
-        Ok(SanitizedAccounts {
-            config,
-            vault,
-            vault_delegation_list,
-            vault_token_account,
-        })
-    }
 }

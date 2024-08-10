@@ -3,6 +3,7 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 use crate::{
     config::Config, vault::Vault, vault_delegation_list::VaultDelegationList,
+    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
 };
@@ -193,12 +194,47 @@ pub fn load_vault_ncn_slasher_ticket(
     Ok(())
 }
 
-pub fn load_vault_staker_withdrawal_ticket(
+#[allow(clippy::too_many_arguments)]
+pub fn load_vault_ncn_slasher_operator_ticket(
     program_id: &Pubkey,
-    vault_staker_withdrawal_ticket: &AccountInfo,
+    vault_ncn_slasher_operator_ticket: &AccountInfo,
     vault: &AccountInfo,
-    staker: &AccountInfo,
+    ncn: &AccountInfo,
+    slasher: &AccountInfo,
+    operator: &AccountInfo,
+    ncn_epoch: u64,
     expect_writable: bool,
 ) -> Result<(), ProgramError> {
+    if vault_ncn_slasher_operator_ticket.owner.ne(program_id) {
+        msg!("Vault NCN slasher operator has an invalid owner");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    if vault_ncn_slasher_operator_ticket.data_is_empty() {
+        msg!("Vault NCN slasher operator data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if expect_writable && !vault_ncn_slasher_operator_ticket.is_writable {
+        msg!("Vault NCN slasher operator is not writable");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if vault_ncn_slasher_operator_ticket.data.borrow()[0]
+        .ne(&VaultNcnSlasherOperatorTicket::DISCRIMINATOR)
+    {
+        msg!("Vault NCN slasher operator discriminator is invalid");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    let expected_pubkey = VaultNcnSlasherOperatorTicket::find_program_address(
+        program_id,
+        vault.key,
+        ncn.key,
+        slasher.key,
+        operator.key,
+        ncn_epoch,
+    )
+    .0;
+    if vault_ncn_slasher_operator_ticket.key.ne(&expected_pubkey) {
+        msg!("Vault NCN slasher operator is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
     Ok(())
 }

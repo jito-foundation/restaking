@@ -1,5 +1,7 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint, load_token_program};
+use jito_jsm_core::loader::{
+    load_associated_token_account, load_signer, load_token_mint, load_token_program,
+};
 use jito_vault_core::{
     loader::{load_config, load_vault},
     vault::Vault,
@@ -33,21 +35,21 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     load_signer(depositor, false)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
-    load_token_account(
+    load_associated_token_account(
         depositor_token_account,
         depositor.key,
         &vault.supported_mint,
     )?;
-    load_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
-    load_token_account(depositor_lrt_token_account, depositor.key, &lrt_mint.key)?;
-    load_token_account(vault_fee_token_account, &vault.fee_wallet, &lrt_mint.key)?;
+    load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
+    load_associated_token_account(depositor_lrt_token_account, depositor.key, lrt_mint.key)?;
+    load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, lrt_mint.key)?;
     load_token_program(token_program)?;
 
     // check optional signer
     if let Some(mint_signer) = optional_accounts.first() {
         load_signer(mint_signer, false)?;
-        if vault.mint_burn_authority.ne(&Pubkey::default())
-            && mint_signer.key.ne(&vault.mint_burn_authority)
+        if vault.mint_burn_admin.ne(&Pubkey::default())
+            && mint_signer.key.ne(&vault.mint_burn_admin)
         {
             msg!("Mint signer does not match vault mint signer");
             return Err(ProgramError::InvalidAccountData);

@@ -34,7 +34,7 @@ pub fn process_ncn_remove_slasher(program_id: &Pubkey, accounts: &[AccountInfo])
 
     let ncn_data = ncn.data.borrow();
     let ncn = Ncn::try_from_slice(&ncn_data)?;
-    if ncn.slasher_admin.ne(&ncn_slasher_admin.key) {
+    if ncn.slasher_admin.ne(ncn_slasher_admin.key) {
         msg!("Invalid slasher admin for NCN");
         return Err(ProgramError::InvalidAccountData);
     }

@@ -72,7 +72,7 @@ pub fn process_vault_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_data)?;
     if !ncn_vault_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.config().epoch_length())
+        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
     {
         msg!("NCN vault ticket is not active or in cooldown");
         return Err(ProgramError::InvalidAccountData);
@@ -88,7 +88,9 @@ pub fn process_vault_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<VaultNcnTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<VaultNcnTicket>() as u64)
+            .unwrap(),
         &vault_ncn_ticket_seeds,
     )?;
 

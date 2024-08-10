@@ -24,7 +24,7 @@ pub fn process_set_node_operator_admin(
 
     let mut operator_data = operator.data.borrow_mut();
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
-    if operator.admin.ne(&old_admin.key) {
+    if operator.admin.ne(old_admin.key) {
         msg!("Invalid operator admin");
         return Err(ProgramError::InvalidAccountData);
     }

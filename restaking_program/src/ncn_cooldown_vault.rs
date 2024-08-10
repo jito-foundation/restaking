@@ -25,7 +25,7 @@ pub fn process_ncn_cooldown_vault(program_id: &Pubkey, accounts: &[AccountInfo])
 
     let ncn_data = ncn.data.borrow();
     let ncn = Ncn::try_from_slice(&ncn_data)?;
-    if ncn.vault_admin.ne(&ncn_vault_admin.key) {
+    if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
         return Err(ProgramError::InvalidAccountData);
     }

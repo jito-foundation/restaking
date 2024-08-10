@@ -100,7 +100,7 @@ pub fn process_initialize_vault(
             system_program,
             program_id,
             &Rent::get()?,
-            (8 + size_of::<Vault>()) as u64,
+            8_u64.checked_add(size_of::<Vault>() as u64).unwrap(),
             &vault_seeds,
         )?;
 
@@ -115,8 +115,10 @@ pub fn process_initialize_vault(
         vault.operator_admin = *admin.key;
         vault.ncn_admin = *admin.key;
         vault.slasher_admin = *admin.key;
+        vault.capacity_admin = *admin.key;
         vault.fee_wallet = *admin.key;
-        vault.mint_burn_authority = Pubkey::default();
+        vault.withdraw_admin = *admin.key;
+        vault.mint_burn_admin = Pubkey::default();
         vault.capacity = u64::MAX;
         vault.vault_index = config.num_vaults;
         vault.lrt_supply = 0;
@@ -142,7 +144,9 @@ pub fn process_initialize_vault(
             system_program,
             program_id,
             &Rent::get()?,
-            (8 + size_of::<VaultDelegationList>()) as u64,
+            8_u64
+                .checked_add(size_of::<VaultDelegationList>() as u64)
+                .unwrap(),
             &vault_delegation_list_seeds,
         )?;
 

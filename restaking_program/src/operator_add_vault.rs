@@ -28,7 +28,7 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, true)?;
+    load_config(program_id, config, false)?;
     load_operator(program_id, operator_info, true)?;
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_mut(&mut config_data)?;
@@ -51,7 +51,7 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
 
     let mut operator_data = operator_info.data.borrow_mut();
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
-    if operator.vault_admin.ne(&operator_vault_admin.key) {
+    if operator.vault_admin.ne(operator_vault_admin.key) {
         msg!("Invalid operator vault admin");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -66,7 +66,9 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<OperatorVaultTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<OperatorVaultTicket>() as u64)
+            .unwrap(),
         &operator_vault_ticket_seeds,
     )?;
     let mut operator_vault_ticket_account_data =

@@ -17,7 +17,7 @@ pub fn process_ncn_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
 
     let mut ncn_data = ncn.data.borrow_mut();
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
-    if ncn.admin.ne(&old_admin.key) {
+    if ncn.admin.ne(old_admin.key) {
         msg!("Invalid admin for NCN");
         return Err(ProgramError::InvalidAccountData);
     }

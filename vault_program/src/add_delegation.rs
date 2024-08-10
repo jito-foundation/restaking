@@ -25,7 +25,7 @@ pub fn process_add_delegation(
     };
 
     load_config(program_id, config, false)?;
-    load_vault(&program_id, vault, false)?;
+    load_vault(program_id, vault, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice(&config_data)?;
     load_operator(&config.restaking_program, operator, false)?;
@@ -36,7 +36,7 @@ pub fn process_add_delegation(
 
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
-    if vault.delegation_admin.ne(&vault_delegation_admin.key) {
+    if vault.delegation_admin.ne(vault_delegation_admin.key) {
         msg!("Invalid delegation admin for vault");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -52,7 +52,7 @@ pub fn process_add_delegation(
     }
 
     let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
-    let mut vault_delegation_list =
+    let vault_delegation_list =
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         vault_delegation_list.check_update_needed(Clock::get()?.slot, config.epoch_length)?;

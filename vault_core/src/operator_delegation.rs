@@ -43,7 +43,7 @@ impl OperatorDelegation {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.staked_amount == 0
             && self.enqueued_for_cooldown_amount == 0
             && self.cooling_down_amount == 0

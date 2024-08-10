@@ -34,11 +34,11 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     msg!("Initializing operator at address {}", operator.key);
     create_account(
         admin,
-        config,
+        operator,
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<Operator>()) as u64,
+        8_u64.checked_add(size_of::<Operator>() as u64).unwrap(),
         &operator_seed,
     )?;
 

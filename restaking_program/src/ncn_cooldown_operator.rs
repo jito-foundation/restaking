@@ -33,7 +33,7 @@ pub fn process_ncn_cooldown_operator(
 
     let ncn_data = ncn.data.borrow();
     let ncn = Ncn::try_from_slice(&ncn_data)?;
-    if !ncn.operator_admin.eq(&ncn_operator_admin.key) {
+    if !ncn.operator_admin.eq(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
         return Err(ProgramError::InvalidAccountData);
     }

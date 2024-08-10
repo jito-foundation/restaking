@@ -38,11 +38,16 @@ pub struct Vault {
     /// The admin responsible for adding and removing slashers.
     pub slasher_admin: Pubkey,
 
+    /// The admin responsible for setting the capacity
+    pub capacity_admin: Pubkey,
+
+    pub withdraw_admin: Pubkey,
+
     /// Fee wallet account
     pub fee_wallet: Pubkey,
 
     /// Optional mint signer
-    pub mint_burn_authority: Pubkey,
+    pub mint_burn_admin: Pubkey,
 
     /// Max capacity of tokens in the vault
     pub capacity: u64,
@@ -102,8 +107,10 @@ impl Vault {
             operator_admin: admin,
             ncn_admin: admin,
             slasher_admin: admin,
+            capacity_admin: admin,
+            withdraw_admin: admin,
             fee_wallet: admin,
-            mint_burn_authority: Pubkey::default(),
+            mint_burn_admin: Pubkey::default(),
             capacity: u64::MAX,
             vault_index,
             lrt_supply: 0,

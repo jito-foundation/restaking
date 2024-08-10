@@ -11,6 +11,7 @@ readme = { workspace = true }
 
 [dev-dependencies]
 borsh = { workspace = true }
+jito-account-traits = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-restaking-program = { workspace = true }
 jito-restaking-sdk = { workspace = true }
@@ -26,5 +27,6 @@ spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+
 [dependencies]
 log = "0.4.21"

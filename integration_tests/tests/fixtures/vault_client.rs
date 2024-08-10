@@ -1,4 +1,4 @@
-use borsh::BorshDeserialize;
+use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket, operator_ncn_ticket::OperatorNcnTicket,
@@ -21,7 +21,7 @@ use solana_program::{
     rent::Rent,
     system_instruction::{create_account, transfer},
 };
-use solana_program_test::{BanksClient, BanksClientError};
+use solana_program_test::BanksClient;
 use solana_sdk::{
     commitment_config::CommitmentLevel,
     signature::{Keypair, Signer},
@@ -31,6 +31,8 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
+
+use crate::fixtures::TestError;
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
@@ -55,49 +57,45 @@ impl VaultProgramClient {
         }
     }
 
-    pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, BanksClientError> {
+    pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Config::deserialize(&mut account.data.as_slice())?)
+        Ok(Config::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_vault(&mut self, account: &Pubkey) -> Result<Vault, BanksClientError> {
+    pub async fn get_vault(&mut self, account: &Pubkey) -> Result<Vault, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Vault::deserialize(&mut account.data.as_slice())?)
+        Ok(Vault::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_ncn_ticket(
         &mut self,
         vault: &Pubkey,
         ncn: &Pubkey,
-    ) -> Result<VaultNcnTicket, BanksClientError> {
+    ) -> Result<VaultNcnTicket, TestError> {
         let account = VaultNcnTicket::find_program_address(&jito_vault_program::id(), vault, ncn).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultNcnTicket::deserialize(&mut account.data.as_slice())?)
+        Ok(VaultNcnTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_operator_ticket(
         &mut self,
         vault: &Pubkey,
         operator: &Pubkey,
-    ) -> Result<VaultOperatorTicket, BanksClientError> {
+    ) -> Result<VaultOperatorTicket, TestError> {
         let account =
             VaultOperatorTicket::find_program_address(&jito_vault_program::id(), vault, operator).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultOperatorTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(VaultOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_delegation_list(
         &mut self,
         vault_pubkey: &Pubkey,
-    ) -> Result<VaultDelegationList, BanksClientError> {
+    ) -> Result<VaultDelegationList, TestError> {
         let account =
             VaultDelegationList::find_program_address(&jito_vault_program::id(), &vault_pubkey).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultDelegationList::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(VaultDelegationList::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_staker_withdrawal_ticket(
@@ -105,7 +103,7 @@ impl VaultProgramClient {
         vault: &Pubkey,
         staker: &Pubkey,
         base: &Pubkey,
-    ) -> Result<VaultStakerWithdrawalTicket, BanksClientError> {
+    ) -> Result<VaultStakerWithdrawalTicket, TestError> {
         let account = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             vault,
@@ -114,9 +112,7 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultStakerWithdrawalTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(VaultStakerWithdrawalTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_ncn_slasher_ticket(
@@ -124,7 +120,7 @@ impl VaultProgramClient {
         vault: &Pubkey,
         ncn: &Pubkey,
         slasher: &Pubkey,
-    ) -> Result<VaultNcnSlasherTicket, BanksClientError> {
+    ) -> Result<VaultNcnSlasherTicket, TestError> {
         let account = VaultNcnSlasherTicket::find_program_address(
             &jito_vault_program::id(),
             vault,
@@ -133,9 +129,7 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultNcnSlasherTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(VaultNcnSlasherTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_ncn_slasher_operator_ticket(
@@ -145,7 +139,7 @@ impl VaultProgramClient {
         slasher: &Pubkey,
         operator: &Pubkey,
         epoch: u64,
-    ) -> Result<VaultNcnSlasherOperatorTicket, BanksClientError> {
+    ) -> Result<VaultNcnSlasherOperatorTicket, TestError> {
         let account = VaultNcnSlasherOperatorTicket::find_program_address(
             &jito_vault_program::id(),
             vault,
@@ -156,12 +150,10 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultNcnSlasherOperatorTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn setup_config(&mut self) -> Result<Keypair, BanksClientError> {
+    pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
         let config_admin = Keypair::new();
 
         self._airdrop(&config_admin.pubkey(), 1.0).await?;
@@ -177,7 +169,7 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         config_admin: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[initialize_config(
@@ -193,11 +185,11 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn setup_vault(
+    pub async fn setup_config_and_vault(
         &mut self,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
-    ) -> Result<(Keypair, VaultRoot), BanksClientError> {
+    ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.setup_config().await?;
 
         let vault_base = Keypair::new();
@@ -246,7 +238,7 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         ncn: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let vault_ncn_ticket = VaultNcnTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
@@ -279,7 +271,7 @@ impl VaultProgramClient {
         ncn_pubkey: &Pubkey,
         slasher: &Pubkey,
         operator_pubkey: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let config = self
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
@@ -300,7 +292,7 @@ impl VaultProgramClient {
                 ncn_pubkey,
                 slasher,
                 operator_pubkey,
-                clock.slot / config.epoch_length(),
+                clock.slot / config.epoch_length,
             )
             .0;
         self.initialize_vault_ncn_slasher_operator_ticket(
@@ -326,7 +318,7 @@ impl VaultProgramClient {
         slasher: &Keypair,
         operator_pubkey: &Pubkey,
         amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let ncn_operator_ticket_pubkey = NcnOperatorTicket::find_program_address(
             &jito_restaking_program::id(),
             ncn_pubkey,
@@ -395,15 +387,15 @@ impl VaultProgramClient {
                 ncn_pubkey,
                 &slasher.pubkey(),
                 operator_pubkey,
-                clock.slot / config.epoch_length(),
+                clock.slot / config.epoch_length,
             )
             .0;
 
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let vault_token_account =
-            get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint());
+            get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint);
         let slasher_token_account =
-            get_associated_token_address(&slasher.pubkey(), &vault.supported_mint());
+            get_associated_token_address(&slasher.pubkey(), &vault.supported_mint);
 
         self.slash(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -434,7 +426,7 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         operator_pubkey: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let vault_operator_ticket = VaultOperatorTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
@@ -466,7 +458,7 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         ncn_pubkey: &Pubkey,
         slasher: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let vault_slasher_ticket_pubkey = VaultNcnSlasherTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
@@ -502,7 +494,7 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         operator: &Pubkey,
         amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         self.add_delegation(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
@@ -538,7 +530,7 @@ impl VaultProgramClient {
         vault_base: &Keypair,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -570,7 +562,7 @@ impl VaultProgramClient {
         vault_ncn_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -600,7 +592,7 @@ impl VaultProgramClient {
         vault_operator_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::add_operator(
@@ -625,10 +617,10 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         depositor: &Keypair,
         amount: u64,
-    ) -> Result<VaultStakerWithdrawalTicketRoot, BanksClientError> {
+    ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let depositor_lrt_token_account =
-            get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint());
+            get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint);
 
         let base = Keypair::new();
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
@@ -643,13 +635,13 @@ impl VaultProgramClient {
             vault_staker_withdrawal_ticket
         );
         let vault_staker_withdrawal_ticket_token_account =
-            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint());
+            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint);
 
-        self.create_ata(&vault.lrt_mint(), &vault_staker_withdrawal_ticket)
+        self.create_ata(&vault.lrt_mint, &vault_staker_withdrawal_ticket)
             .await?;
 
         let vault_staker_fee_token_account =
-            get_associated_token_address(&vault.fee_wallet(), &vault.lrt_mint());
+            get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint);
 
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -674,7 +666,7 @@ impl VaultProgramClient {
         })
     }
 
-    pub async fn do_update_vault(&mut self, vault_pubkey: &Pubkey) -> Result<(), BanksClientError> {
+    pub async fn do_update_vault(&mut self, vault_pubkey: &Pubkey) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         let vault = self.get_vault(vault_pubkey).await?;
@@ -686,7 +678,7 @@ impl VaultProgramClient {
                 vault_pubkey,
                 &VaultDelegationList::find_program_address(&jito_vault_program::id(), vault_pubkey)
                     .0,
-                &get_associated_token_address(vault_pubkey, &vault.supported_mint()),
+                &get_associated_token_address(vault_pubkey, &vault.supported_mint),
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],
@@ -707,7 +699,7 @@ impl VaultProgramClient {
         staker_lrt_token_account: &Pubkey,
         base: &Keypair,
         amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::enqueue_withdraw(
@@ -735,7 +727,7 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         staker: &Keypair,
         vault_staker_withdrawal_ticket_base: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
@@ -753,13 +745,13 @@ impl VaultProgramClient {
                 &vault_root.vault_pubkey,
             )
             .0,
-            &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint()),
-            &vault.lrt_mint(),
+            &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+            &vault.lrt_mint,
             staker,
-            &get_associated_token_address(&staker.pubkey(), &vault.supported_mint()),
-            &get_associated_token_address(&staker.pubkey(), &vault.lrt_mint()),
+            &get_associated_token_address(&staker.pubkey(), &vault.supported_mint),
+            &get_associated_token_address(&staker.pubkey(), &vault.lrt_mint),
             &vault_staker_withdrawal_ticket,
-            &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint()),
+            &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint),
         )
         .await?;
 
@@ -778,7 +770,7 @@ impl VaultProgramClient {
         staker_lrt_token_account: &Pubkey,
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::burn_withdrawal_ticket(
@@ -811,7 +803,7 @@ impl VaultProgramClient {
         admin: &Keypair,
         payer: &Keypair,
         amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[add_delegation(
@@ -843,7 +835,7 @@ impl VaultProgramClient {
         vault_fee_token_account: &Pubkey,
         mint_signer: Option<&Keypair>,
         amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let mut signers = vec![depositor];
         if let Some(signer) = mint_signer {
@@ -852,6 +844,7 @@ impl VaultProgramClient {
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::mint_to(
                 &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
                 vault,
                 lrt_mint,
                 &depositor.pubkey(),
@@ -879,7 +872,7 @@ impl VaultProgramClient {
         vault_slasher_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::add_slasher(
@@ -910,7 +903,7 @@ impl VaultProgramClient {
         vault_ncn_slasher_ticket: &Pubkey,
         vault_ncn_slasher_operator_ticket: &Pubkey,
         payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[
@@ -953,7 +946,7 @@ impl VaultProgramClient {
         vault_token_account: &Pubkey,
         slasher_token_account: &Pubkey,
         amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::slash(
@@ -984,16 +977,17 @@ impl VaultProgramClient {
         .await
     }
 
-    async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), BanksClientError> {
+    async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),
                 CommitmentLevel::Processed,
             )
-            .await
+            .await?;
+        Ok(())
     }
 
-    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), BanksClientError> {
+    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
@@ -1005,10 +999,11 @@ impl VaultProgramClient {
                 ),
                 CommitmentLevel::Processed,
             )
-            .await
+            .await?;
+        Ok(())
     }
 
-    async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), BanksClientError> {
+    async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         self.banks_client
@@ -1037,14 +1032,11 @@ impl VaultProgramClient {
                 ),
                 CommitmentLevel::Processed,
             )
-            .await
+            .await?;
+        Ok(())
     }
 
-    pub async fn create_ata(
-        &mut self,
-        mint: &Pubkey,
-        owner: &Pubkey,
-    ) -> Result<(), BanksClientError> {
+    pub async fn create_ata(&mut self, mint: &Pubkey, owner: &Pubkey) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
@@ -1061,6 +1053,7 @@ impl VaultProgramClient {
                 ),
                 CommitmentLevel::Processed,
             )
-            .await
+            .await?;
+        Ok(())
     }
 }

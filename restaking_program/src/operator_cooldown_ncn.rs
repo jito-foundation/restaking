@@ -28,7 +28,7 @@ pub fn process_operator_cooldown_ncn(
 
     let operator_data = operator.data.borrow();
     let operator = Operator::try_from_slice(&operator_data)?;
-    if operator.ncn_admin.ne(&operator_ncn_admin.key) {
+    if operator.ncn_admin.ne(operator_ncn_admin.key) {
         msg!("Invalid operator NCN admin");
         return Err(ProgramError::InvalidAccountData);
     }

@@ -39,7 +39,7 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
     load_system_program(system_program)?;
 
     let (ncn_operator_ticket_pubkey, ncn_operator_ticket_bump, mut ncn_operator_ticket_seeds) =
-        NcnOperatorTicket::find_program_address(program_id, &ncn_info.key, &operator.key);
+        NcnOperatorTicket::find_program_address(program_id, ncn_info.key, operator.key);
     ncn_operator_ticket_seeds.push(vec![ncn_operator_ticket_bump]);
     if ncn_operator_ticket_pubkey.ne(ncn_operator_ticket.key) {
         msg!("NCN operator ticket is not at the correct PDA");
@@ -77,7 +77,9 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<NcnOperatorTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<NcnOperatorTicket>() as u64)
+            .unwrap(),
         &ncn_operator_ticket_seeds,
     )?;
 

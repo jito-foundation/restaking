@@ -56,7 +56,7 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
 
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
-    if vault.operator_admin.ne(&vault_operator_admin.key) {
+    if vault.operator_admin.ne(vault_operator_admin.key) {
         msg!("Invalid operator admin for vault");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -81,7 +81,9 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<VaultOperatorTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<VaultOperatorTicket>() as u64)
+            .unwrap(),
         &vault_operator_ticket_seeds,
     )?;
 

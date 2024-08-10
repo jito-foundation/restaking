@@ -64,7 +64,7 @@ impl VaultDelegationList {
 
     /// # Returns
     /// The list of delegations
-    pub fn delegations(&self) -> &[OperatorDelegation] {
+    pub const fn delegations(&self) -> &[OperatorDelegation] {
         &self.delegations
     }
 

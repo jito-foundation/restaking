@@ -51,7 +51,7 @@ pub enum VaultInstruction {
     #[account(2, name = "ncn")]
     #[account(3, writable, name = "vault_ncn_ticket")]
     #[account(4, signer, name = "admin")]
-    RemoveNcn,
+    CooldownNcn,
 
     /// Vault adds support for an operator
     #[account(0, name = "config")]
@@ -70,7 +70,7 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_ticket")]
     #[account(4, signer, name = "admin")]
-    RemoveOperator,
+    CooldownOperator,
 
     /// Mints LRT by depositing tokens into the vault
     #[account(0, name = "config")]
@@ -127,8 +127,9 @@ pub enum VaultInstruction {
     BurnWithdrawTicket,
 
     /// Sets the max tokens that can be deposited into the LRT
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
     SetDepositCapacity {
         amount: u64
     },
@@ -139,15 +140,17 @@ pub enum VaultInstruction {
     },
 
     /// Changes the signer for vault admin
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "old_admin")]
-    #[account(2, signer, name = "new_admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "old_admin")]
+    #[account(3, signer, name = "new_admin")]
     SetAdmin,
 
     /// Changes the signer for vault delegation
-    #[account(0, writable, name = "vault")]
-    #[account(1, signer, name = "admin")]
-    #[account(2, name = "new_admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
+    #[account(3, name = "new_admin")]
     SetSecondaryAdmin(VaultAdminRole),
 
     /// Delegates a token amount to a specific node operator
@@ -244,9 +247,14 @@ pub enum VaultInstruction {
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub enum VaultAdminRole {
-    Delegataion,
-    FeeOwner,
-    MintBurnAuthority,
+    DelegationAdmin,
+    OperatorAdmin,
+    NcnAdmin,
+    SlasherAdmin,
+    CapacityAdmin,
+    FeeWallet,
+    MintBurnAdmin,
+    WithdrawAdmin,
 }
 
 pub fn initialize_config(
@@ -350,7 +358,7 @@ pub fn remove_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveNcn.try_to_vec().unwrap(),
+        data: VaultInstruction::CooldownNcn.try_to_vec().unwrap(),
     }
 }
 
@@ -400,7 +408,7 @@ pub fn remove_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RemoveOperator.try_to_vec().unwrap(),
+        data: VaultInstruction::CooldownOperator.try_to_vec().unwrap(),
     }
 }
 

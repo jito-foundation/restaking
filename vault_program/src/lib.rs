@@ -5,6 +5,8 @@ mod add_slasher;
 mod burn;
 mod burn_withdrawal_ticket;
 mod cooldown_delegation;
+mod cooldown_ncn;
+mod cooldown_operator;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
@@ -12,8 +14,6 @@ mod initialize_vault;
 mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_with_mint;
 mod mint_to;
-mod remove_ncn;
-mod remove_operator;
 mod set_admin;
 mod set_capacity;
 mod set_secondary_admin;
@@ -35,14 +35,14 @@ use crate::{
     add_delegation::process_add_delegation, add_ncn::process_vault_add_ncn,
     add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
     burn_withdrawal_ticket::process_burn_withdrawal_ticket,
-    cooldown_delegation::process_cooldown_delegation,
+    cooldown_delegation::process_cooldown_delegation, cooldown_ncn::process_vault_cooldown_ncn,
+    cooldown_operator::process_vault_cooldown_operator,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
-    remove_ncn::process_vault_remove_ncn, remove_operator::process_vault_remove_operator,
-    set_admin::process_set_admin, set_capacity::process_set_capacity,
+    set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
     set_secondary_admin::process_set_secondary_admin, slash::process_slash,
     update_token_metadata::process_update_token_metadata, update_vault::process_update_vault,
     withdrawal_asset::process_withdrawal_asset,
@@ -107,8 +107,8 @@ pub fn process_instruction(
             process_set_admin(program_id, accounts)
         }
         VaultInstruction::SetDepositCapacity { amount } => {
-            msg!("Instruction: SetCapacity");
-            process_set_capacity(program_id, accounts, amount)
+            msg!("Instruction: SetDepositCapacity");
+            process_set_deposit_capacity(program_id, accounts, amount)
         }
         VaultInstruction::AdminWithdraw { amount } => {
             msg!("Instruction: WithdrawalAsset");
@@ -140,9 +140,9 @@ pub fn process_instruction(
             msg!("Instruction: AddNcn");
             process_vault_add_ncn(program_id, accounts)
         }
-        VaultInstruction::RemoveNcn => {
+        VaultInstruction::CooldownNcn => {
             msg!("Instruction: RemoveNcn");
-            process_vault_remove_ncn(program_id, accounts)
+            process_vault_cooldown_ncn(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-operator operations
@@ -151,9 +151,9 @@ pub fn process_instruction(
             msg!("Instruction: AddOperator");
             process_vault_add_operator(program_id, accounts)
         }
-        VaultInstruction::RemoveOperator => {
+        VaultInstruction::CooldownOperator => {
             msg!("Instruction: RemoveOperator");
-            process_vault_remove_operator(program_id, accounts)
+            process_vault_cooldown_operator(program_id, accounts)
         }
         // ------------------------------------------
         // Vault delegation

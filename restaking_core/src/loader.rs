@@ -250,7 +250,7 @@ pub fn load_ncn_vault_slasher_ticket(
         msg!("NCN vault slasher ticket account is not writable");
         return Err(ProgramError::InvalidAccountData);
     }
-    if ncn_vault_slasher_ticket.data.borrow()[0].ne(&OperatorNcnTicket::DISCRIMINATOR) {
+    if ncn_vault_slasher_ticket.data.borrow()[0].ne(&NcnVaultSlasherTicket::DISCRIMINATOR) {
         msg!("NCN vault slasher ticket account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }

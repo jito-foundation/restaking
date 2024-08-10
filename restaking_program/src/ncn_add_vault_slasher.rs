@@ -89,7 +89,9 @@ pub fn process_ncn_add_vault_slasher(
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<NcnVaultSlasherTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<NcnVaultSlasherTicket>() as u64)
+            .unwrap(),
         &ncn_vault_slasher_ticket_seeds,
     )?;
     let mut ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.try_borrow_mut_data()?;

@@ -23,8 +23,8 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
     load_signer(base, false)?;
     load_system_program(system_program)?;
 
-    let (ncn_pubkey, ncn_bump, mut ncn_seed) = Ncn::find_program_address(program_id, base.key);
-    ncn_seed.push(vec![ncn_bump]);
+    let (ncn_pubkey, ncn_bump, mut ncn_seeds) = Ncn::find_program_address(program_id, base.key);
+    ncn_seeds.push(vec![ncn_bump]);
     if ncn.key.ne(&ncn_pubkey) {
         msg!("NCN account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
@@ -33,12 +33,12 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
     msg!("Initializing NCN at address {}", ncn.key);
     create_account(
         admin,
-        config,
+        ncn,
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<Ncn>()) as u64,
-        &ncn_seed,
+        8_u64.checked_add(size_of::<Ncn>() as u64).unwrap(),
+        &ncn_seeds,
     )?;
 
     let mut config_data = config.data.borrow_mut();

@@ -28,7 +28,7 @@ pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, true)?;
+    load_config(program_id, config, false)?;
     load_operator(program_id, operator_info, true)?;
     load_ncn(program_id, ncn, false)?;
     load_system_account(operator_ncn_ticket, true)?;
@@ -46,7 +46,7 @@ pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -
 
     let mut operator_data = operator_info.data.borrow_mut();
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
-    if operator.ncn_admin.ne(&operator_ncn_admin.key) {
+    if operator.ncn_admin.ne(operator_ncn_admin.key) {
         msg!("Invalid operator NCN admin");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -61,7 +61,9 @@ pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<OperatorNcnTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<OperatorNcnTicket>() as u64)
+            .unwrap(),
         &operator_ncn_ticket_seeds,
     )?;
     let mut operator_ncn_ticket_data = operator_ncn_ticket.try_borrow_mut_data()?;

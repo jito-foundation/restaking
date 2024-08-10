@@ -31,7 +31,7 @@ pub fn process_operator_cooldown_vault(
 
     let operator_data = operator.data.borrow();
     let operator = Operator::try_from_slice(&operator_data)?;
-    if operator.vault_admin.ne(&operator_vault_admin.key) {
+    if operator.vault_admin.ne(operator_vault_admin.key) {
         msg!("Invalid operator vault admin");
         return Err(ProgramError::InvalidAccountData);
     }

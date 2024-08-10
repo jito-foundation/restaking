@@ -77,7 +77,7 @@ mod tests {
             .get_operator(&operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.ncn_count(), 1);
+        assert_eq!(operator.ncn_count, 1);
 
         // Verify operator NCN ticket
         let ticket = restaking_program_client
@@ -85,9 +85,9 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(ticket.operator, operator_pubkey);
-        assert_eq!(ticket.ncn(), ncn_pubkey);
-        assert_eq!(ticket.index(), 0);
-        assert_eq!(ticket.state().slot_added(), 1);
+        assert_eq!(ticket.ncn, ncn_pubkey);
+        assert_eq!(ticket.index, 0);
+        assert_eq!(ticket.state.slot_added(), 1);
     }
 
     #[tokio::test]
@@ -191,7 +191,7 @@ mod tests {
             .get_operator(&operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.ncn_count(), 2);
+        assert_eq!(operator.ncn_count, 2);
 
         // Verify operator NCN tickets
         let ticket1 = restaking_program_client
@@ -199,16 +199,16 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(ticket1.operator, operator_pubkey);
-        assert_eq!(ticket1.ncn(), ncn_pubkey1);
-        assert_eq!(ticket1.index(), 0);
+        assert_eq!(ticket1.ncn, ncn_pubkey1);
+        assert_eq!(ticket1.index, 0);
 
         let ticket2 = restaking_program_client
             .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey2)
             .await
             .unwrap();
         assert_eq!(ticket2.operator, operator_pubkey);
-        assert_eq!(ticket2.ncn(), ncn_pubkey2);
-        assert_eq!(ticket2.index(), 1);
+        assert_eq!(ticket2.ncn, ncn_pubkey2);
+        assert_eq!(ticket2.index, 1);
     }
 
     #[tokio::test]

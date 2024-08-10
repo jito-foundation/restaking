@@ -45,10 +45,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     load_signer(payer, false)?;
     load_system_program(system_program)?;
 
-    let ncn_epoch = Clock::get()?
-        .slot
-        .checked_div(config.config().epoch_length())
-        .unwrap();
+    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
 
     let (
         vault_ncn_slasher_operator_ticket_pubkey,
@@ -81,7 +78,9 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<VaultNcnSlasherOperatorTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<VaultNcnSlasherOperatorTicket>() as u64)
+            .unwrap(),
         &vault_ncn_slasher_operator_ticket_seeds,
     )?;
 

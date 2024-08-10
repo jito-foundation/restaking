@@ -1,5 +1,5 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_token_account};
+use jito_jsm_core::loader::{load_associated_token_account, load_signer};
 use jito_restaking_core::{loader::load_operator, operator::Operator};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
@@ -21,16 +21,16 @@ pub fn process_operator_withdrawal_asset(
 
     load_operator(program_id, operator_info, false)?;
     load_signer(operator_withdraw_admin, false)?;
-    load_token_account(operator_token_account, operator_info.key, &token_mint)?;
-    let mut operator_data = operator_info.data.borrow_mut();
-    let operator = Operator::try_from_slice(&mut operator_data)?;
-    load_token_account(
+    load_associated_token_account(operator_token_account, operator_info.key, &token_mint)?;
+    let operator_data = operator_info.data.borrow();
+    let operator = Operator::try_from_slice(&operator_data)?;
+    load_associated_token_account(
         receiver_token_account,
         &operator.withdraw_fee_wallet,
         &token_mint,
     )?;
 
-    if operator.withdraw_admin.ne(&operator_withdraw_admin.key) {
+    if operator.withdraw_admin.ne(operator_withdraw_admin.key) {
         msg!("Invalid operator withdraw admin");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -42,8 +42,8 @@ pub fn process_operator_withdrawal_asset(
         .map(|seed| seed.as_slice())
         .collect::<Vec<&[u8]>>();
     _withdraw_operator_asset(
-        &operator_info,
-        &operator_token_account,
+        operator_info,
+        operator_token_account,
         receiver_token_account,
         &ncn_seeds_slice,
         amount,

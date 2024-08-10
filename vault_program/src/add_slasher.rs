@@ -73,7 +73,7 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
         NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
     if ncn_vault_slasher_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.config().epoch_length())
+        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Slasher is not ready to be activated");
         return Err(ProgramError::InvalidAccountData);
@@ -89,7 +89,9 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<VaultNcnSlasherTicket>()) as u64,
+        8_u64
+            .checked_add(size_of::<VaultNcnSlasherTicket>() as u64)
+            .unwrap(),
         &vault_ncn_slasher_ticket_seeds,
     )?;
 

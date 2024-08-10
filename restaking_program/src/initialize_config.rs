@@ -36,7 +36,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
         system_program,
         program_id,
         &Rent::get()?,
-        (8 + size_of::<Config>()) as u64,
+        8_u64.checked_add(size_of::<Config>() as u64).unwrap(),
         &config_seeds,
     )?;
 

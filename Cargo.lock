@@ -1959,6 +1959,7 @@ name = "jito-restaking-integration-tests"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "jito-account-traits",
  "jito-restaking-core",
  "jito-restaking-program",
  "jito-restaking-sdk",
