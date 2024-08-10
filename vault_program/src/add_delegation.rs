@@ -55,7 +55,8 @@ pub fn process_add_delegation(
     let vault_delegation_list =
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        vault_delegation_list.check_update_needed(Clock::get()?.slot, config.epoch_length)?;
+        msg!("Vault delegation list update is needed");
+        return Err(ProgramError::InvalidAccountData);
     }
 
     vault_delegation_list.delegate(*operator.key, amount, vault.max_delegation_amount()?)?;

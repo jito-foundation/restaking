@@ -29,6 +29,10 @@ pub struct OperatorDelegation {
     /// Any stake that was enqueued for withdraw in the previous epoch,
     /// to be available for withdrawal in the current epoch + 1
     pub cooling_down_for_withdraw_amount: u64,
+
+    pub is_used: u8,
+
+    reserved: [u8; 7],
 }
 
 impl OperatorDelegation {
@@ -40,7 +44,19 @@ impl OperatorDelegation {
             cooling_down_amount: 0,
             enqueued_for_withdraw_amount: 0,
             cooling_down_for_withdraw_amount: 0,
+            reserved: [0; 7],
+            is_used: 1,
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.operator = Pubkey::default();
+        self.staked_amount = 0;
+        self.enqueued_for_cooldown_amount = 0;
+        self.cooling_down_amount = 0;
+        self.enqueued_for_withdraw_amount = 0;
+        self.cooling_down_for_withdraw_amount = 0;
+        self.is_used = 0;
     }
 
     pub const fn is_empty(&self) -> bool {

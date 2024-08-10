@@ -11,6 +11,7 @@ mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
+mod initialize_vault_delegation_list;
 mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_with_mint;
 mod mint_to;
@@ -40,6 +41,7 @@ use crate::{
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
+    initialize_vault_delegation_list::process_initialize_vault_delegation_list,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
@@ -90,6 +92,10 @@ pub fn process_instruction(
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+        }
+        VaultInstruction::InitializeVaultDelegationList => {
+            msg!("Instruction: InitializeVaultDelegationList");
+            process_initialize_vault_delegation_list(program_id, accounts)
         }
         VaultInstruction::InitializeVaultWithMint => {
             msg!("Instruction: InitializeVaultWithMint");
@@ -152,7 +158,7 @@ pub fn process_instruction(
             process_vault_add_operator(program_id, accounts)
         }
         VaultInstruction::CooldownOperator => {
-            msg!("Instruction: RemoveOperator");
+            msg!("Instruction: CooldownOperator");
             process_vault_cooldown_operator(program_id, accounts)
         }
         // ------------------------------------------
@@ -163,11 +169,11 @@ pub fn process_instruction(
             process_add_delegation(program_id, accounts, amount)
         }
         VaultInstruction::CooldownDelegation { amount } => {
-            msg!("Instruction: RemoveDelegation");
+            msg!("Instruction: CooldownDelegation");
             process_cooldown_delegation(program_id, accounts, amount)
         }
         VaultInstruction::UpdateVault => {
-            msg!("Instruction: UpdateDelegations");
+            msg!("Instruction: UpdateVault");
             process_update_vault(program_id, accounts)
         }
         // ------------------------------------------

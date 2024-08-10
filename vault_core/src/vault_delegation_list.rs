@@ -18,7 +18,7 @@ pub enum VaultDelegationUpdateSummary {
     Updated { amount_reserved_for_withdraw: u64 },
 }
 
-pub const MAX_DELEGATIONS: usize = 4096;
+pub const MAX_DELEGATIONS: usize = 2048;
 
 impl Discriminator for VaultDelegationList {
     const DISCRIMINATOR: u8 = 8;
@@ -71,9 +71,13 @@ impl VaultDelegationList {
     /// Returns the total security in the delegation list
     pub fn total_security(&self) -> VaultCoreResult<u64> {
         let mut total: u64 = 0;
-        for operator in self.delegations.iter() {
+        for delegation in self
+            .delegations
+            .iter()
+            .filter(|delegation| delegation.is_used == 1)
+        {
             total = total
-                .checked_add(operator.total_security()?)
+                .checked_add(delegation.total_security()?)
                 .ok_or(VaultCoreError::VaultDelegationListTotalDelegationOverflow)?;
         }
         Ok(total)
@@ -83,9 +87,10 @@ impl VaultDelegationList {
     /// staked and assets cooling down that aren't set aside for the withdrawal reserve
     pub fn withdrawable_security(&self) -> VaultCoreResult<u64> {
         let mut total: u64 = 0;
-        for operator in self.delegations.iter() {
+
+        for delegation in self.delegations.iter().filter(|d| d.is_used == 1) {
             total = total
-                .checked_add(operator.withdrawable_security()?)
+                .checked_add(delegation.withdrawable_security()?)
                 .ok_or(VaultCoreError::VaultDelegationListTotalDelegationOverflow)?;
         }
         Ok(total)
@@ -101,16 +106,6 @@ impl VaultDelegationList {
         let last_updated_epoch = self.last_slot_updated.checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
         last_updated_epoch < current_epoch
-    }
-
-    #[inline(always)]
-    pub fn check_update_needed(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
-        if self.is_update_needed(slot, epoch_length) {
-            msg!("Vault delegation list update required");
-            Err(VaultCoreError::VaultDelegationListUpdateRequired)
-        } else {
-            Ok(())
-        }
     }
 
     /// Updates the delegation list for the current epoch if needed.
@@ -131,30 +126,30 @@ impl VaultDelegationList {
             0 => return Ok(VaultDelegationUpdateSummary::NotUpdated),
             1 => {
                 // enqueued -> cooling down, enqueued wiped
-                for operator in self.delegations.iter_mut() {
+                for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
                     amount_reserved_for_withdraw = amount_reserved_for_withdraw
-                        .checked_add(operator.update())
+                        .checked_add(delegation.update())
                         .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?;
 
-                    if operator.is_empty() {
-                        *operator = OperatorDelegation::default();
+                    if delegation.is_empty() {
+                        delegation.clear();
                     }
                 }
             }
             _ => {
                 // max updates required are two (enqueued -> cooling down -> wiped out),
                 // so this only needs to be done twice even if >2 epochs have passed
-                for operator in self.delegations.iter_mut() {
-                    let amount_withdrawal_1 = operator.update();
-                    let amount_withdrawal_2 = operator.update();
+                for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
+                    let amount_withdrawal_1 = delegation.update();
+                    let amount_withdrawal_2 = delegation.update();
 
                     amount_reserved_for_withdraw = amount_reserved_for_withdraw
                         .checked_add(amount_withdrawal_1)
                         .and_then(|x| x.checked_add(amount_withdrawal_2))
                         .ok_or(VaultCoreError::VaultDelegationListUpdateOverflow)?;
 
-                    if operator.is_empty() {
-                        *operator = OperatorDelegation::default();
+                    if delegation.is_empty() {
+                        delegation.clear();
                     }
                 }
             }
@@ -195,19 +190,17 @@ impl VaultDelegationList {
             return Err(VaultCoreError::VaultDelegationListInsufficientSecurity);
         }
 
-        if let Some(operator) = self.delegations.iter_mut().find(|d| d.operator == operator) {
-            operator.delegate(amount)?;
-        } else {
-            let mut delegation = OperatorDelegation::new(operator);
-            delegation.delegate(amount)?;
-            let first_spot = self
-                .delegations
-                .iter_mut()
-                .find(|d| d.operator == Pubkey::default());
-            if let Some(spot) = first_spot {
-                *spot = delegation;
-            } else {
-                return Err(VaultCoreError::VaultDelegationListFull);
+        match self.delegations.iter_mut().find(|d| d.operator == operator) {
+            Some(existing_delegation) => existing_delegation.delegate(amount)?,
+            None => {
+                let empty_spot = self
+                    .delegations
+                    .iter_mut()
+                    .find(|d| d.operator == Pubkey::default())
+                    .ok_or(VaultCoreError::VaultDelegationListFull)?;
+
+                *empty_spot = OperatorDelegation::new(operator);
+                empty_spot.delegate(amount)?;
             }
         }
 
@@ -236,7 +229,7 @@ impl VaultDelegationList {
 
         let mut total_undelegated: u64 = 0;
 
-        for delegation in self.delegations.iter_mut() {
+        for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
             let delegated_security = delegation.withdrawable_security()?;
 
             // Calculate un-delegate amount, rounding up

@@ -19,13 +19,12 @@ pub enum VaultInstruction {
     /// Initializes the vault
     #[account(0, writable, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, signer, name = "lrt_mint")]
-    #[account(4, name = "token_mint")]
-    #[account(5, writable, signer, name = "admin")]
-    #[account(6, signer, name = "base")]
-    #[account(7, name = "system_program")]
-    #[account(8, name = "token_program")]
+    #[account(2, writable, signer, name = "lrt_mint")]
+    #[account(3, name = "token_mint")]
+    #[account(4, writable, signer, name = "admin")]
+    #[account(5, signer, name = "base")]
+    #[account(6, name = "system_program")]
+    #[account(7, name = "token_program")]
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
@@ -33,6 +32,15 @@ pub enum VaultInstruction {
 
     /// Initializes a vault with an already-created LRT mint
     InitializeVaultWithMint,
+
+    /// The vault_delegation_list account is too big for a single instruction, so it needs to be
+    /// called until the discriminator is set
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_delegation_list")]
+    #[account(3, writable, signer, name = "payer")]
+    #[account(4, name = "system_program")]
+    InitializeVaultDelegationList,
 
     /// Vault adds support for the NCN
     #[account(0, name = "config")]
@@ -281,7 +289,6 @@ pub fn initialize_vault(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    vault_delegation_list: &Pubkey,
     lrt_mint: &Pubkey,
     token_mint: &Pubkey,
     admin: &Pubkey,
@@ -292,7 +299,6 @@ pub fn initialize_vault(
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new(*vault_delegation_list, false),
         AccountMeta::new(*lrt_mint, true),
         AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new(*admin, true),
@@ -309,6 +315,28 @@ pub fn initialize_vault(
         }
         .try_to_vec()
         .unwrap(),
+    }
+}
+
+pub fn initialize_vault_delegation_list(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_delegation_list: &Pubkey,
+    payer: &Pubkey,
+) -> Instruction {
+    Instruction {
+        program_id: *program_id,
+        accounts: vec![
+            AccountMeta::new_readonly(*config, false),
+            AccountMeta::new_readonly(*vault, false),
+            AccountMeta::new(*vault_delegation_list, false),
+            AccountMeta::new(*payer, true),
+            AccountMeta::new_readonly(system_program::id(), false),
+        ],
+        data: VaultInstruction::InitializeVaultDelegationList
+            .try_to_vec()
+            .unwrap(),
     }
 }
 

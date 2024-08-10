@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
@@ -11,10 +13,13 @@ use jito_vault_core::{
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
-use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
+use jito_vault_sdk::{
+    add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list,
+};
 use log::info;
 use solana_program::{
     clock::Clock,
+    entrypoint::MAX_PERMITTED_DATA_INCREASE,
     native_token::sol_to_lamports,
     program_pack::Pack,
     pubkey::Pubkey,
@@ -196,8 +201,6 @@ impl VaultProgramClient {
 
         let vault_pubkey =
             Vault::find_program_address(&jito_vault_program::id(), &vault_base.pubkey()).0;
-        let vault_delegation_list =
-            VaultDelegationList::find_program_address(&jito_vault_program::id(), &vault_pubkey).0;
 
         let lrt_mint = Keypair::new();
         let vault_admin = Keypair::new();
@@ -206,10 +209,11 @@ impl VaultProgramClient {
         self._airdrop(&vault_admin.pubkey(), 100.0).await?;
         self._create_token_mint(&token_mint).await?;
 
+        let config_address = Config::find_program_address(&jito_vault_program::id()).0;
+
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_pubkey,
-            &vault_delegation_list,
             &lrt_mint,
             &token_mint,
             &vault_admin,
@@ -218,6 +222,45 @@ impl VaultProgramClient {
             withdraw_fee_bps,
         )
         .await?;
+
+        let vault_delegation_list =
+            VaultDelegationList::find_program_address(&jito_vault_program::id(), &vault_pubkey).0;
+
+        let num_ixs = (8 + size_of::<VaultDelegationList>()).div_ceil(MAX_PERMITTED_DATA_INCREASE);
+        let ixs = (0..num_ixs)
+            .map(|_| {
+                initialize_vault_delegation_list(
+                    &jito_vault_program::id(),
+                    &config_address,
+                    &vault_pubkey,
+                    &vault_delegation_list,
+                    &self.payer.pubkey(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        // the max instructions + CPIs per transaction are 64
+        // each call to initialize_vault_delegation_list counts as one instruction in addition to the
+        // create_account or realloc instruction
+        for ix_chunk in ixs.chunks(32) {
+            let blockhash = self.banks_client.get_latest_blockhash().await?;
+            self._process_transaction(&Transaction::new_signed_with_payer(
+                &ix_chunk,
+                Some(&self.payer.pubkey()),
+                &[&self.payer],
+                blockhash,
+            ))
+            .await?;
+        }
+
+        // let account = self
+        //     .banks_client
+        //     .get_account(vault_delegation_list)
+        //     .await?
+        //     .unwrap();
+        // if account.data[0] == VaultDelegationList::DISCRIMINATOR {
+        //     break;
+        // }
 
         // for holding the backed asset in the vault
         self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
@@ -523,7 +566,6 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
-        vault_delegation_list: &Pubkey,
         lrt_mint: &Keypair,
         token_mint: &Keypair,
         vault_admin: &Keypair,
@@ -538,7 +580,6 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 &config,
                 &vault,
-                &vault_delegation_list,
                 &lrt_mint.pubkey(),
                 &token_mint.pubkey(),
                 &vault_admin.pubkey(),

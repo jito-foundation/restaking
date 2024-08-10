@@ -102,3 +102,20 @@ pub fn close_program_account<'a>(
 
     Ok(())
 }
+
+pub fn realloc<'a, 'info>(
+    account: &'a AccountInfo<'info>,
+    new_size: usize,
+    payer: &'a AccountInfo<'info>,
+    rent: &Rent,
+) -> ProgramResult {
+    let new_minimum_balance = rent.minimum_balance(new_size);
+
+    let lamports_diff = new_minimum_balance.saturating_sub(account.lamports());
+    invoke(
+        &system_instruction::transfer(payer.key, account.key, lamports_diff),
+        &[payer.clone(), account.clone()],
+    )?;
+    account.realloc(new_size, false)?;
+    Ok(())
+}
