@@ -18,7 +18,7 @@ pub struct Operator {
     /// The admin pubkey
     admin: Pubkey,
 
-    avs_admin: Pubkey,
+    ncn_admin: Pubkey,
 
     vault_admin: Pubkey,
 
@@ -28,7 +28,7 @@ pub struct Operator {
     /// The operator index
     index: u64,
 
-    avs_count: u64,
+    ncn_count: u64,
 
     vault_count: u64,
 
@@ -45,11 +45,11 @@ impl Operator {
             account_type: AccountType::Operator,
             base,
             admin,
-            avs_admin: admin,
+            ncn_admin: admin,
             vault_admin: admin,
             voter,
             index,
-            avs_count: 0,
+            ncn_count: 0,
             vault_count: 0,
             reserved_space: [0; 1024],
             bump,
@@ -60,15 +60,15 @@ impl Operator {
         self.index
     }
 
-    pub const fn avs_count(&self) -> u64 {
-        self.avs_count
+    pub const fn ncn_count(&self) -> u64 {
+        self.ncn_count
     }
 
-    pub fn increment_avs_count(&mut self) -> RestakingCoreResult<()> {
-        self.avs_count = self
-            .avs_count
+    pub fn increment_ncn_count(&mut self) -> RestakingCoreResult<()> {
+        self.ncn_count = self
+            .ncn_count
             .checked_add(1)
-            .ok_or(RestakingCoreError::OperatorAvsCountOverflow)?;
+            .ok_or(RestakingCoreError::OperatorNcnCountOverflow)?;
         Ok(())
     }
 
@@ -107,19 +107,19 @@ impl Operator {
         self.admin = admin;
     }
 
-    pub const fn avs_admin(&self) -> Pubkey {
-        self.avs_admin
+    pub const fn ncn_admin(&self) -> Pubkey {
+        self.ncn_admin
     }
 
-    pub fn check_avs_admin(&self, avs_admin: &Pubkey) -> RestakingCoreResult<()> {
-        if self.avs_admin != *avs_admin {
-            return Err(RestakingCoreError::OperatorInvalidAvsAdmin);
+    pub fn check_ncn_admin(&self, ncn_admin: &Pubkey) -> RestakingCoreResult<()> {
+        if self.ncn_admin != *ncn_admin {
+            return Err(RestakingCoreError::OperatorInvalidNcnAdmin);
         }
         Ok(())
     }
 
-    pub fn set_avs_admin(&mut self, avs_admin: Pubkey) {
-        self.avs_admin = avs_admin;
+    pub fn set_ncn_admin(&mut self, ncn_admin: Pubkey) {
+        self.ncn_admin = ncn_admin;
     }
 
     pub const fn vault_admin(&self) -> Pubkey {
@@ -167,7 +167,6 @@ impl Operator {
             return Err(RestakingCoreError::OperatorInvalidOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
         let operator = Self::deserialize(&mut account.data.borrow_mut().as_ref())
             .map_err(|e| RestakingCoreError::OperatorInvalidData(e.to_string()))?;
         if operator.account_type != AccountType::Operator {

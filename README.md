@@ -24,7 +24,7 @@ Expect breaking changes.**
 - Universal framework for staking, restaking, and liquid restaking
 - LRT construction and management
 - Customizable slashing conditions
-- Flexible AVS and operator management
+- Flexible NCN and operator management
 
 ## Installation
 

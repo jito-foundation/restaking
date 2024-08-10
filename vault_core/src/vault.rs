@@ -1,11 +1,14 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey};
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
     AccountType,
 };
 
+/// The vault is repsonsible for holding tokens and minting LRT tokens
+/// based on the amount of tokens deposited.
+/// It also contains several administrative functions for features inside the vault.
 #[derive(Debug, Clone, Copy, PartialEq, BorshDeserialize, BorshSerialize)]
 pub struct Vault {
     /// The account type
@@ -23,17 +26,20 @@ pub struct Vault {
     /// Vault admin
     admin: Pubkey,
 
-    /// Delegation admin
+    /// The delegation admin responsible for adding and removing delegations from operators.
     delegation_admin: Pubkey,
 
+    /// The operator admin responsible for adding and removing operators.
     operator_admin: Pubkey,
 
-    avs_admin: Pubkey,
+    /// The node consensus network admin responsible for adding and removing support for NCNs.
+    ncn_admin: Pubkey,
 
+    /// The admin responsible for adding and removing slashers.
     slasher_admin: Pubkey,
 
-    /// Fee account owner
-    fee_owner: Pubkey,
+    /// Fee wallet account
+    fee_wallet: Pubkey,
 
     /// Optional mint signer
     mint_burn_authority: Pubkey,
@@ -50,16 +56,22 @@ pub struct Vault {
     /// The total number of tokens deposited
     tokens_deposited: u64,
 
+    /// The amount of tokens that are reserved for withdrawal
+    withdrawable_reserve_amount: u64,
+
     /// The deposit fee in basis points
     deposit_fee_bps: u16,
 
     /// The withdrawal fee in basis points
     withdrawal_fee_bps: u16,
 
-    avs_count: u64,
+    /// Number of VaultNcnTicket accounts tracked by this vault
+    ncn_count: u64,
 
+    /// Number of VaultOperatorTicket accounts tracked by this vault
     operator_count: u64,
 
+    /// Number of VaultNcnSlasherTicket accounts tracked by this vault
     slasher_count: u64,
 
     /// Reserved space
@@ -75,7 +87,7 @@ impl Vault {
         lrt_mint: Pubkey,
         supported_mint: Pubkey,
         admin: Pubkey,
-        lrt_index: u64,
+        vault_index: u64,
         base: Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
@@ -89,17 +101,18 @@ impl Vault {
             admin,
             delegation_admin: admin,
             operator_admin: admin,
-            avs_admin: admin,
+            ncn_admin: admin,
             slasher_admin: admin,
-            fee_owner: admin,
+            fee_wallet: admin,
             mint_burn_authority: Pubkey::default(),
             capacity: u64::MAX,
-            vault_index: lrt_index,
+            vault_index,
             lrt_supply: 0,
             tokens_deposited: 0,
+            withdrawable_reserve_amount: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            avs_count: 0,
+            ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
             reserved: [0; 128],
@@ -107,15 +120,144 @@ impl Vault {
         }
     }
 
-    pub const fn avs_count(&self) -> u64 {
-        self.avs_count
+    // ------------------------------------------
+    // Asset accounting and tracking
+    // ------------------------------------------
+
+    pub const fn withdrawable_reserve_amount(&self) -> u64 {
+        self.withdrawable_reserve_amount
     }
 
-    pub fn increment_avs_count(&mut self) -> VaultCoreResult<()> {
-        self.avs_count = self
-            .avs_count
+    pub fn increment_withdrawable_reserve_amount(&mut self, amount: u64) -> VaultCoreResult<()> {
+        self.withdrawable_reserve_amount = self
+            .withdrawable_reserve_amount
+            .checked_add(amount)
+            .ok_or(VaultCoreError::VaultDepositOverflow)?;
+        Ok(())
+    }
+
+    pub fn decrement_withdrawable_reserve_amount(&mut self, amount: u64) -> VaultCoreResult<()> {
+        self.withdrawable_reserve_amount = self
+            .withdrawable_reserve_amount
+            .checked_sub(amount)
+            .ok_or(VaultCoreError::VaultDepositUnderflow)?;
+        Ok(())
+    }
+
+    pub const fn tokens_deposited(&self) -> u64 {
+        self.tokens_deposited
+    }
+
+    pub fn max_delegation_amount(&self) -> VaultCoreResult<u64> {
+        self.tokens_deposited
+            .checked_sub(self.withdrawable_reserve_amount)
+            .ok_or(VaultCoreError::VaultDelegationUnderflow)
+    }
+
+    pub fn set_tokens_deposited(&mut self, tokens_deposited: u64) {
+        self.tokens_deposited = tokens_deposited;
+    }
+
+    pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+        if self.lrt_supply == 0 {
+            return Err(VaultCoreError::VaultEmpty);
+        } else if lrt_amount > self.lrt_supply {
+            return Err(VaultCoreError::VaultInsufficientFunds);
+        }
+
+        lrt_amount
+            .checked_mul(self.tokens_deposited)
+            .ok_or(VaultCoreError::VaultWithdrawOverflow)?
+            .checked_div(self.lrt_supply)
+            .ok_or(VaultCoreError::VaultWithdrawOverflow)
+    }
+
+    pub fn calculate_lrt_mint_amount(&self, amount: u64) -> VaultCoreResult<u64> {
+        if self.tokens_deposited == 0 {
+            return Ok(amount);
+        }
+
+        amount
+            .checked_mul(self.lrt_supply)
+            .ok_or(VaultCoreError::VaultDepositOverflow)?
+            .checked_div(self.tokens_deposited)
+            .ok_or(VaultCoreError::VaultDepositOverflow)
+    }
+
+    pub const fn deposit_fee_bps(&self) -> u16 {
+        self.deposit_fee_bps
+    }
+
+    pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+        let fee = lrt_amount
+            .checked_mul(self.deposit_fee_bps as u64)
+            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
+            .div_ceil(10_000);
+        Ok(fee)
+    }
+
+    pub const fn withdrawal_fee_bps(&self) -> u16 {
+        self.withdrawal_fee_bps
+    }
+
+    pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+        let fee = lrt_amount
+            .checked_mul(self.withdrawal_fee_bps as u64)
+            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
+            .div_ceil(10_000);
+        Ok(fee)
+    }
+
+    /// Deposit tokens into the vault
+    pub fn deposit_and_mint_with_capacity_check(&mut self, amount: u64) -> VaultCoreResult<u64> {
+        // the number of tokens to mint is the pro-rata amount of the total tokens deposited and the LRT supply
+        let num_tokens_to_mint = self.calculate_lrt_mint_amount(amount)?;
+
+        // deposit tokens + check against capacity
+        let total_post_deposit = self
+            .tokens_deposited
+            .checked_add(amount)
+            .ok_or(VaultCoreError::VaultDepositOverflow)?;
+        if total_post_deposit > self.capacity {
+            return Err(VaultCoreError::VaultDepositExceedsCapacity);
+        }
+
+        let lrt_supply = self
+            .lrt_supply
+            .checked_add(num_tokens_to_mint)
+            .ok_or(VaultCoreError::VaultDepositOverflow)?;
+
+        self.lrt_supply = lrt_supply;
+        self.tokens_deposited = total_post_deposit;
+
+        Ok(num_tokens_to_mint)
+    }
+
+    pub fn set_lrt_supply(&mut self, lrt_supply: u64) {
+        self.lrt_supply = lrt_supply;
+    }
+
+    pub const fn capacity(&self) -> u64 {
+        self.capacity
+    }
+
+    pub fn set_capacity(&mut self, capacity: u64) {
+        self.capacity = capacity;
+    }
+
+    // ------------------------------------------
+    // Entity Management
+    // ------------------------------------------
+
+    pub const fn ncn_count(&self) -> u64 {
+        self.ncn_count
+    }
+
+    pub fn increment_ncn_count(&mut self) -> VaultCoreResult<()> {
+        self.ncn_count = self
+            .ncn_count
             .checked_add(1)
-            .ok_or(VaultCoreError::VaultAvsOverflow)?;
+            .ok_or(VaultCoreError::VaultNcnOverflow)?;
         Ok(())
     }
 
@@ -155,20 +297,16 @@ impl Vault {
         self.base
     }
 
-    pub const fn fee_owner(&self) -> Pubkey {
-        self.fee_owner
+    // ------------------------------------------
+    // Administration
+    // ------------------------------------------
+
+    pub const fn fee_wallet(&self) -> Pubkey {
+        self.fee_wallet
     }
 
-    pub fn set_fee_owner(&mut self, fee_owner: Pubkey) {
-        self.fee_owner = fee_owner;
-    }
-
-    pub const fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps
-    }
-
-    pub const fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps
+    pub fn set_fee_wallet(&mut self, fee_wallet: Pubkey) {
+        self.fee_wallet = fee_wallet;
     }
 
     pub fn mint_burn_authority(&self) -> Option<Pubkey> {
@@ -181,94 +319,6 @@ impl Vault {
 
     pub fn set_mint_burn_authority(&mut self, mint_burn_authority: Pubkey) {
         self.mint_burn_authority = mint_burn_authority;
-    }
-
-    pub fn set_tokens_deposited(&mut self, tokens_deposited: u64) {
-        self.tokens_deposited = tokens_deposited;
-    }
-
-    /// Deposit tokens into the vault
-    pub fn deposit_and_mint_with_capacity_check(&mut self, amount: u64) -> VaultCoreResult<u64> {
-        // the number of tokens to mint is the pro-rata amount of the total tokens deposited and the LRT supply
-        let num_tokens_to_mint = if self.tokens_deposited == 0 {
-            amount
-        } else {
-            amount
-                .checked_mul(self.lrt_supply)
-                .ok_or(VaultCoreError::VaultDepositOverflow)?
-                .checked_div(self.tokens_deposited)
-                .ok_or(VaultCoreError::VaultDepositOverflow)?
-        };
-
-        // deposit tokens + check against capacity
-        let total_post_deposit = self
-            .tokens_deposited
-            .checked_add(amount)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?;
-        if total_post_deposit > self.capacity {
-            return Err(VaultCoreError::VaultDepositExceedsCapacity);
-        }
-
-        let lrt_supply = self
-            .lrt_supply
-            .checked_add(num_tokens_to_mint)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?;
-
-        self.lrt_supply = lrt_supply;
-        self.tokens_deposited = total_post_deposit;
-
-        Ok(num_tokens_to_mint)
-    }
-
-    pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
-        let fee = lrt_amount
-            .checked_mul(self.deposit_fee_bps as u64)
-            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
-            .checked_div(10_000)
-            .unwrap();
-        Ok(fee)
-    }
-
-    pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
-        let fee = lrt_amount
-            .checked_mul(self.withdrawal_fee_bps as u64)
-            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
-            .checked_div(10_000)
-            .unwrap();
-        Ok(fee)
-    }
-
-    pub const fn tokens_deposited(&self) -> u64 {
-        self.tokens_deposited
-    }
-
-    pub fn set_lrt_supply(&mut self, lrt_supply: u64) {
-        self.lrt_supply = lrt_supply;
-    }
-
-    pub fn increment_lrt_supply(&mut self, amount: u64) -> Option<u64> {
-        self.lrt_supply = self.lrt_supply.checked_add(amount)?;
-        Some(self.lrt_supply)
-    }
-
-    pub const fn lrt_supply(&self) -> u64 {
-        self.lrt_supply
-    }
-
-    pub const fn bump(&self) -> u8 {
-        self.bump
-    }
-
-    pub fn is_struct_valid(&self) -> bool {
-        self.account_type == AccountType::Vault
-    }
-
-    pub const fn capacity(&self) -> u64 {
-        self.capacity
-    }
-
-    pub fn set_capacity(&mut self, capacity: u64) {
-        self.capacity = capacity;
     }
 
     pub const fn vault_index(&self) -> u64 {
@@ -305,17 +355,17 @@ impl Vault {
         Ok(())
     }
 
-    pub fn set_avs_admin(&mut self, avs_admin: Pubkey) {
-        self.avs_admin = avs_admin;
+    pub fn set_ncn_admin(&mut self, ncn_admin: Pubkey) {
+        self.ncn_admin = ncn_admin;
     }
 
-    pub const fn avs_admin(&self) -> Pubkey {
-        self.avs_admin
+    pub const fn ncn_admin(&self) -> Pubkey {
+        self.ncn_admin
     }
 
-    pub fn check_avs_admin(&self, avs_admin: &Pubkey) -> VaultCoreResult<()> {
-        if self.avs_admin != *avs_admin {
-            return Err(VaultCoreError::VaultInvalidAvsAdmin);
+    pub fn check_ncn_admin(&self, ncn_admin: &Pubkey) -> VaultCoreResult<()> {
+        if self.ncn_admin != *ncn_admin {
+            return Err(VaultCoreError::VaultInvalidNcnAdmin);
         }
         Ok(())
     }
@@ -350,6 +400,22 @@ impl Vault {
         Ok(())
     }
 
+    pub const fn lrt_supply(&self) -> u64 {
+        self.lrt_supply
+    }
+
+    // ------------------------------------------
+    // Serialization & Deserialization
+    // ------------------------------------------
+
+    pub const fn bump(&self) -> u8 {
+        self.bump
+    }
+
+    pub fn is_struct_valid(&self) -> bool {
+        self.account_type == AccountType::Vault
+    }
+
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
     }
@@ -366,27 +432,33 @@ impl Vault {
         account: &AccountInfo,
     ) -> VaultCoreResult<Self> {
         if account.data_is_empty() {
+            msg!("Vault account data is empty");
             return Err(VaultCoreError::VaultDataEmpty);
         }
         if account.owner != program_id {
+            msg!("Vault account owner is not the program id");
             return Err(VaultCoreError::VaultInvalidProgramOwner);
         }
 
-        // The AvsState shall be properly deserialized and valid struct
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::VaultInvalidData(e.to_string()))?;
+        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref()).map_err(|e| {
+            msg!("Vault account deserialization failed: {}", e);
+            VaultCoreError::VaultInvalidData
+        })?;
         if !state.is_struct_valid() {
-            return Err(VaultCoreError::VaultInvalidData(
-                "Vault account header is invalid".to_string(),
-            ));
+            msg!("Vault account header is invalid");
+            return Err(VaultCoreError::VaultInvalidData);
         }
 
         let mut seeds = Self::seeds(&state.base);
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultInvalidPda)?;
+        let expected_pubkey =
+            Pubkey::create_program_address(&seeds_iter, program_id).map_err(|e| {
+                msg!("Vault account PDA creation failed: {}", e);
+                VaultCoreError::VaultInvalidPda
+            })?;
         if expected_pubkey != *account.key {
+            msg!("Vault account PDA is invalid");
             return Err(VaultCoreError::VaultInvalidPda);
         }
 
@@ -406,6 +478,7 @@ impl<'a, 'info> SanitizedVault<'a, 'info> {
         expect_writable: bool,
     ) -> VaultCoreResult<SanitizedVault<'a, 'info>> {
         if expect_writable && !account.is_writable {
+            msg!("Vault account is not writable");
             return Err(VaultCoreError::VaultExpectedWritable);
         }
         let vault = Box::new(Vault::deserialize_checked(program_id, account)?);
@@ -519,5 +592,58 @@ mod tests {
             vault.deposit_and_mint_with_capacity_check(1),
             Err(VaultCoreError::VaultDepositExceedsCapacity)
         );
+    }
+
+    #[test]
+    fn test_calculate_assets_returned_amount_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+
+        vault.set_lrt_supply(100_000);
+        vault.set_tokens_deposited(100_000);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            50_000
+        );
+
+        vault.set_tokens_deposited(90_000);
+        vault.set_lrt_supply(100_000);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            45_000
+        );
+
+        vault.set_tokens_deposited(110_000);
+        vault.set_lrt_supply(100_000);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            55_000
+        );
+
+        vault.set_tokens_deposited(100);
+        vault.set_lrt_supply(0);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(100),
+            Err(VaultCoreError::VaultEmpty)
+        );
+
+        vault.set_tokens_deposited(100);
+        vault.set_lrt_supply(1);
+        assert_eq!(
+            vault.calculate_assets_returned_amount(100),
+            Err(VaultCoreError::VaultInsufficientFunds)
+        );
+
+        vault.set_tokens_deposited(100);
+        vault.set_lrt_supply(13);
+        assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);
     }
 }

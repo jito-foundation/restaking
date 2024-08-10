@@ -28,9 +28,12 @@ pub fn process_remove_delegation(
     vault
         .vault()
         .check_delegation_admin(delegation_admin.account().key)?;
+
+    let slot = Clock::get()?.slot;
+    let epoch_length = config.config().epoch_length();
     vault_delegation_list
         .vault_delegation_list_mut()
-        .update_delegations(Clock::get()?.slot, config.config().epoch_length());
+        .check_update_needed(slot, epoch_length)?;
     vault_delegation_list
         .vault_delegation_list_mut()
         .undelegate(*operator.key, amount)?;

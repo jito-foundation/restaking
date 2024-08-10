@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
 
 use crate::{
     result::{VaultCoreError, VaultCoreResult},
@@ -69,6 +69,7 @@ impl VaultOperatorTicket {
         if self.state.is_active_or_cooldown(slot, epoch_length) {
             Ok(())
         } else {
+            msg!("VaultOperatorTicket is not active or in cooldown");
             Err(VaultCoreError::VaultOperatorTicketInactive)
         }
     }
@@ -142,13 +143,13 @@ impl<'a, 'info> SanitizedVaultOperatorTicket<'a, 'info> {
         account: &'a AccountInfo<'info>,
         expect_writable: bool,
         vault: &Pubkey,
-        avs: &Pubkey,
+        ncn: &Pubkey,
     ) -> VaultCoreResult<SanitizedVaultOperatorTicket<'a, 'info>> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::VaultOperatorTicketNotWritable);
         }
         let vault_operator_ticket = Box::new(VaultOperatorTicket::deserialize_checked(
-            program_id, account, vault, avs,
+            program_id, account, vault, ncn,
         )?);
 
         Ok(SanitizedVaultOperatorTicket {

@@ -102,6 +102,31 @@ pub fn realloc<'a, 'info>(
     Ok(())
 }
 
+/// Closes the program account
+pub fn close_program_account<'a>(
+    program_id: &Pubkey,
+    account_to_close: &AccountInfo<'a>,
+    destination_account: &AccountInfo<'a>,
+) -> ProgramResult {
+    // Check if the account is owned by the program
+    if account_to_close.owner != program_id {
+        return Err(ProgramError::IllegalOwner);
+    }
+
+    **destination_account.lamports.borrow_mut() = destination_account
+        .lamports()
+        .checked_add(account_to_close.lamports())
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    **account_to_close.lamports.borrow_mut() = 0;
+
+    account_to_close.assign(&solana_program::system_program::id());
+    let mut account_data = account_to_close.data.borrow_mut();
+    let data_len = account_data.len();
+    solana_program::program_memory::sol_memset(*account_data, 0, data_len);
+
+    Ok(())
+}
+
 #[inline(always)]
 pub fn assert_with_msg(v: bool, err: impl Into<ProgramError>, msg: &str) -> ProgramResult {
     if v {

@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use borsh::BorshSerialize;
 use jito_restaking_sanitization::{
     assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
@@ -36,7 +38,8 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
         "Initializing config @ address {}",
         config_account.account().key
     );
-    let config_serialized = config.try_to_vec()?;
+    // let config_serialized = config.try_to_vec()?;
+    let config_serialized = bytemuck::bytes_of(&config);
     create_account(
         admin.account(),
         config_account.account(),

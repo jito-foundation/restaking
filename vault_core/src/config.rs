@@ -3,7 +3,10 @@ use std::mem::size_of;
 use borsh::{BorshDeserialize, BorshSerialize};
 use bytemuck::{Pod, Zeroable};
 use sokoban::ZeroCopy;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
+    pubkey::Pubkey,
+};
 use VaultCoreError::ConfigInvalidPda;
 
 use crate::{
@@ -11,13 +14,14 @@ use crate::{
     AccountType,
 };
 
-pub const MAX_RESTAKING_PROGRAMS: usize = 8;
-
-#[derive(Debug, Copy, BorshSerialize, BorshDeserialize, Clone)]
 #[repr(C)]
+#[derive(Debug, Copy, BorshSerialize, BorshDeserialize, Clone, Zeroable, Pod)]
 pub struct Config {
     /// The account type
     account_type: AccountType,
+
+    /// Padding to align the next 8-byte field
+    _padding0: [u8; 4],
 
     /// The configuration admin
     admin: Pubkey,
@@ -25,10 +29,10 @@ pub struct Config {
     /// The approved restaking program for this vault
     restaking_program: Pubkey,
 
-    /// The length of an epoch in slots
+    /// The number of vaults managed by the program
     epoch_length: u64,
 
-    /// The number of vaults managed by the program
+    /// The length of an epoch in slots
     num_vaults: u64,
 
     /// Reserved space
@@ -36,22 +40,27 @@ pub struct Config {
 
     /// The bump seed for the PDA
     bump: u8,
+
+    /// Padding to align the struct size to a multiple of 8 bytes
+    _padding1: [u8; 7],
 }
 
-unsafe impl Pod for Config {}
-unsafe impl Zeroable for Config {}
 impl ZeroCopy for Config {}
 
 impl Config {
+    pub const LEN: usize = 213;
+
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
             account_type: AccountType::Config,
             admin,
             restaking_program,
-            epoch_length: 864_000,
+            epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
             reserved: [0; 128],
             bump,
+            _padding0: [0; 4],
+            _padding1: [0; 7],
         }
     }
 
@@ -106,8 +115,16 @@ impl Config {
             return Err(VaultCoreError::ConfigInvalidProgramOwner);
         }
 
-        let state = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::ConfigInvalidData(e.to_string()))?;
+        let data = account.data.borrow();
+        // let state: Config = *bytemuck::try_from_bytes(&data[..Self::LEN]).unwrap();
+        // let state = Ref::map(data, |data| {
+        //     Config::load_bytes(&data[..size_of::<Config>()]).unwrap()
+        // });
+        let state = Config::load_bytes(&data[..size_of::<Self>()]).ok_or(
+            VaultCoreError::ConfigInvalidData("invalid data".to_string()),
+        )?;
+        // let state = Self::deserialize(&mut account.data.borrow().as_ref())
+        //     .map_err(|e| VaultCoreError::ConfigInvalidData(e.to_string()))?;
         if state.account_type != AccountType::Config {
             return Err(VaultCoreError::ConfigInvalidAccountType);
         }
@@ -121,7 +138,7 @@ impl Config {
             return Err(ConfigInvalidPda);
         }
 
-        Ok(state)
+        Ok(*state)
     }
 }
 
@@ -139,14 +156,9 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
         if expect_writable && !account.is_writable {
             return Err(VaultCoreError::ConfigExpectedWritable);
         }
-        // let config = Config::deserialize_checked(program_id, account)?;
-        let data = account.try_borrow_data().unwrap();
-        let config = Config::load_bytes(&data[..size_of::<Config>()]).unwrap();
+        let config = Config::deserialize_checked(program_id, account)?;
 
-        Ok(SanitizedConfig {
-            account,
-            config: *config,
-        })
+        Ok(SanitizedConfig { account, config })
     }
 
     pub const fn account(&self) -> &AccountInfo<'info> {

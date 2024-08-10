@@ -47,17 +47,17 @@ The vault program interacts with other entities in the Jito Restaking protocol:
 The vault program uses similar ticket structures as the restaking program to manage these relationships, ensuring mutual
 opt-in from all parties involved. Those tickets include:
 
-#### Vault AVS Ticket
+#### Vault NCN Ticket
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
-    AVS[AVS]:::main
-    VaultAvsTicket[VaultAVSTicket]:::ticket
-    Vault -->|Creates| VaultAvsTicket
-    Vault -.->|Opts in| AVS
+    Ncn[Ncn]:::main
+    VaultNcnTicket[VaultNcnTicket]:::ticket
+    Vault -->|Creates| VaultNcnTicket
+    Vault -.->|Opts in| Ncn
 ```
 
 #### Vault Operator Ticket
@@ -73,31 +73,31 @@ graph TD
     Vault -.->|Opts in| Operator
 ```
 
-#### Vault AVS Slasher Ticket
+#### Vault NCN Slasher Ticket
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
-    AvsVaultSlasherTicket[AVSVaultSlasherTicket]:::ticket
-    Vault -->|Creates| VaultAvsSlasherTicket
-    Vault -.->|Recognizes and copies from| AvsVaultSlasherTicket
+    NcnVaultSlasherTicket[NcnVaultSlasherTicket]:::ticket
+    Vault -->|Creates| VaultNcnSlasherTicket
+    Vault -.->|Recognizes and copies from| NcnVaultSlasherTicket
 ```
 
-#### Vault AVS Slasher Operator Ticket
+#### Vault NCN Slasher Operator Ticket
 
 ```mermaid
 graph TD
     classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
-    AVS[AVS]:::main
+    Ncn[Ncn]:::main
     Slasher[Slasher]:::main
     Operator[Operator]:::main
-    VaultAvsSlasherOperatorTicket[VaultAVSSlasherOperatorTicket]:::ticket
-    Vault -->|Creates| VaultAvsSlasherOperatorTicket
-    Vault -.->|Tracks slashing for| AVS
+    VaultNcnSlasherOperatorTicket[VaultNcnSlasherOperatorTicket]:::ticket
+    Vault -->|Creates| VaultNcnSlasherOperatorTicket
+    Vault -.->|Tracks slashing for| Ncn
     Vault -.->|Tracks slashing by| Slasher
     Vault -.->|Tracks slashing of| Operator
 ```

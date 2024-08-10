@@ -1,6 +1,8 @@
-mod add_avs;
+mod add_ncn;
 mod add_operator;
 mod add_slasher;
+mod burn_withdrawal_ticket;
+mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
 mod mint_to;

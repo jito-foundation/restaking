@@ -1,6 +1,6 @@
 [package]
 name = "jito-jsm-core"
-description = "JSM core library"
+description = "JSM Core library"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
