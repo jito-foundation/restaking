@@ -106,12 +106,14 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         .ok_or(ProgramError::ArithmeticOverflow)?;
     vault.tokens_deposited = vault_token_amount_after_deposit;
 
+    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
+    vault_seeds.push(vec![vault_bump]);
+    let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+
+    drop(vault_data); // no double borrow
+
     // mint to depositor and fee wallet
     {
-        let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-        vault_seeds.push(vec![vault_bump]);
-        let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
-
         invoke_signed(
             &mint_to(
                 &spl_token::id(),

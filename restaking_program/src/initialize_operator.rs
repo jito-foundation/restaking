@@ -48,17 +48,7 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     let mut operator_data = operator.try_borrow_mut_data()?;
     operator_data[0] = Operator::DISCRIMINATOR;
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
-    operator.base = *base.key;
-    operator.admin = *admin.key;
-    operator.ncn_admin = *admin.key;
-    operator.vault_admin = *admin.key;
-    operator.voter = *admin.key;
-    operator.withdraw_admin = *admin.key;
-    operator.withdraw_fee_wallet = *admin.key;
-    operator.index = config.operator_count;
-    operator.ncn_count = 0;
-    operator.vault_count = 0;
-    operator.bump = operator_bump;
+    *operator = Operator::new(*base.key, *admin.key, config.operator_count, operator_bump);
 
     config.operator_count = config
         .operator_count

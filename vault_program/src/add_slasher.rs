@@ -4,7 +4,6 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
-    slot_toggled_field::SlotToggle,
 };
 use jito_restaking_core::{
     loader::{load_config, load_ncn, load_ncn_vault_slasher_ticket},
@@ -99,14 +98,15 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     vault_ncn_slasher_ticket_data[0] = VaultNcnSlasherTicket::DISCRIMINATOR;
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice_mut(&mut vault_ncn_slasher_ticket_data)?;
-    vault_ncn_slasher_ticket.vault = *vault_info.key;
-    vault_ncn_slasher_ticket.ncn = *ncn.key;
-    vault_ncn_slasher_ticket.slasher = *slasher.key;
-    vault_ncn_slasher_ticket.max_slashable_per_epoch =
-        ncn_vault_slasher_ticket.max_slashable_per_epoch;
-    vault_ncn_slasher_ticket.index = vault.slasher_count;
-    vault_ncn_slasher_ticket.state = SlotToggle::new(Clock::get()?.slot);
-    vault_ncn_slasher_ticket.bump = vault_ncn_slasher_ticket_bump;
+    *vault_ncn_slasher_ticket = VaultNcnSlasherTicket::new(
+        *vault_info.key,
+        *ncn.key,
+        *slasher.key,
+        ncn_vault_slasher_ticket.max_slashable_per_epoch,
+        vault.slasher_count,
+        Clock::get()?.slot,
+        vault_ncn_slasher_ticket_bump,
+    );
 
     vault.slasher_count = vault
         .slasher_count

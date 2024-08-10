@@ -8,11 +8,7 @@ use jito_jsm_core::{
     },
 };
 use jito_vault_core::{
-    config::Config,
-    loader::load_config,
-    operator_delegation::OperatorDelegation,
-    vault::Vault,
-    vault_delegation_list::{VaultDelegationList, MAX_DELEGATIONS},
+    config::Config, loader::load_config, vault::Vault, vault_delegation_list::VaultDelegationList,
 };
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke,
@@ -107,29 +103,16 @@ pub fn process_initialize_vault(
         let mut vault_data = vault.try_borrow_mut_data()?;
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_mut(&mut vault_data)?;
-        vault.base = *base.key;
-        vault.lrt_mint = *lrt_mint.key;
-        vault.supported_mint = *mint.key;
-        vault.admin = *admin.key;
-        vault.delegation_admin = *admin.key;
-        vault.operator_admin = *admin.key;
-        vault.ncn_admin = *admin.key;
-        vault.slasher_admin = *admin.key;
-        vault.capacity_admin = *admin.key;
-        vault.fee_wallet = *admin.key;
-        vault.withdraw_admin = *admin.key;
-        vault.mint_burn_admin = Pubkey::default();
-        vault.capacity = u64::MAX;
-        vault.vault_index = config.num_vaults;
-        vault.lrt_supply = 0;
-        vault.tokens_deposited = 0;
-        vault.withdrawable_reserve_amount = 0;
-        vault.ncn_count = 0;
-        vault.operator_count = 0;
-        vault.slasher_count = 0;
-        vault.deposit_fee_bps = deposit_fee_bps;
-        vault.withdrawal_fee_bps = withdrawal_fee_bps;
-        vault.bump = vault_bump;
+        *vault = Vault::new(
+            *lrt_mint.key,
+            *mint.key,
+            *admin.key,
+            config.num_vaults,
+            *base.key,
+            deposit_fee_bps,
+            withdrawal_fee_bps,
+            vault_bump,
+        );
     }
 
     // Initialize vault delegation list
@@ -154,10 +137,7 @@ pub fn process_initialize_vault(
         vault_delegation_list_data[0] = VaultDelegationList::DISCRIMINATOR;
         let vault_delegation_list =
             VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
-        vault_delegation_list.vault = *vault.key;
-        vault_delegation_list.delegations = [OperatorDelegation::default(); MAX_DELEGATIONS];
-        vault_delegation_list.last_slot_updated = 0; // force an update as soon as possible
-        vault_delegation_list.bump = vault_delegation_list_bump;
+        *vault_delegation_list = VaultDelegationList::new(*vault.key, vault_delegation_list_bump);
     }
 
     config.num_vaults = config

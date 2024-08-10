@@ -42,7 +42,6 @@ impl VaultNcnSlasherOperatorTicket {
         slasher: Pubkey,
         operator: Pubkey,
         epoch: u64,
-        slashed: u64,
         bump: u8,
     ) -> Self {
         Self {
@@ -51,7 +50,7 @@ impl VaultNcnSlasherOperatorTicket {
             slasher,
             operator,
             epoch,
-            slashed,
+            slashed: 0,
             bump,
             reserved: [0; 7],
         }

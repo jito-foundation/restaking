@@ -1,4 +1,25 @@
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{
+        load_associated_token_account, load_signer, load_system_account, load_system_program,
+        load_token_program,
+    },
+};
+use jito_vault_core::{
+    config::Config,
+    loader::{load_config, load_vault, load_vault_delegation_list},
+    vault::Vault,
+    vault_delegation_list::{UndelegateForWithdrawMethod, VaultDelegationList},
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+};
+use solana_program::{
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+};
+use spl_token::instruction::transfer;
 
 /// Enqueues a withdraw into the VaultStakerWithdrawalTicket account, transferring the amount from the
 /// staker's LRT token account to the VaultStakerWithdrawalTicket LRT token account. It also queues
@@ -12,256 +33,152 @@ use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubke
 ///
 /// One should call the [`crate::VaultInstruction::UpdateVault`] instruction before running this instruction
 /// to ensure that any rewards that were accrued are accounted for.
-pub const fn process_enqueue_withdrawal(
-    _program_id: &Pubkey,
-    _accounts: &[AccountInfo],
-    _lrt_amount: u64,
+pub fn process_enqueue_withdrawal(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    lrt_amount: u64,
 ) -> ProgramResult {
-    // let SanitizedAccounts {
-    //     config,
-    //     vault,
-    //     mut vault_delegation_list,
-    //     vault_staker_withdrawal_ticket,
-    //     vault_staker_withdrawal_ticket_token_account,
-    //     vault_fee_token_account,
-    //     staker,
-    //     staker_lrt_token_account,
-    //     base,
-    //     system_program,
-    //     burn_signer,
-    // } = SanitizedAccounts::sanitize(program_id, accounts)?;
-    //
-    // // If a mint_signer is set, the signer shall be authorized by the vault to make deposits
-    // if let Some(burn_signer) = burn_signer {
-    //     assert_with_msg(
-    //         *burn_signer.account().key == vault.vault.mint_burn_authority().unwrap(),
-    //         ProgramError::InvalidAccountData,
-    //         "Burn signer does not match vault mint-burn authority",
-    //     )?;
-    // }
-    //
-    // let slot = Clock::get()?.slot;
-    // let epoch_length = config.epoch_length;
-    // let rent = Rent::get()?;
-    //
-    // vault_delegation_list
-    //     .vault_delegation_list_mut()
-    //     .check_update_needed(slot, epoch_length)?;
-    //
-    // // The withdraw fee is subtracted here as opposed to when the withdraw ticket is processed
-    // // so the amount representing the fee isn't unstaked.
-    // let fee_amount = vault.vault.calculate_withdraw_fee(lrt_amount)?;
-    // let amount_to_vault_staker_withdrawal_ticket = lrt_amount
-    //     .checked_sub(fee_amount)
-    //     .ok_or(ProgramError::ArithmeticOverflow)?;
-    //
-    // // Find the redemption ratio at this point in time.
-    // // It may change in between this point in time and when the withdraw ticket is processed.
-    // // Stakers may get back less than redemption if there were accrued rewards accrued in between
-    // // this point and the redemption.
-    // let amount_to_withdraw = vault
-    //     .vault
-    //     .calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
-    // msg!(
-    //     "lrt_supply: {} lrt_amount: {}, amount_to_withdraw: {}",
-    //     vault.vault.lrt_supply(),
-    //     amount_to_vault_staker_withdrawal_ticket,
-    //     amount_to_withdraw
-    // );
-    //
-    // vault_delegation_list
-    //     .vault_delegation_list_mut()
-    //     .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
-    //
-    // _create_vault_staker_withdrawal_ticket(
-    //     program_id,
-    //     &vault,
-    //     &staker,
-    //     &base,
-    //     &vault_staker_withdrawal_ticket,
-    //     &system_program,
-    //     &rent,
-    //     slot,
-    //     amount_to_withdraw,
-    //     amount_to_vault_staker_withdrawal_ticket,
-    // )?;
-    //
-    // // Transfers the LRT tokens from the staker to their withdrawal account and the vault's fee account
-    // _transfer_to(
-    //     &staker_lrt_token_account,
-    //     &vault_staker_withdrawal_ticket_token_account,
-    //     &staker,
-    //     amount_to_vault_staker_withdrawal_ticket,
-    // )?;
-    // _transfer_to(
-    //     &staker_lrt_token_account,
-    //     &vault_fee_token_account,
-    //     &staker,
-    //     fee_amount,
-    // )?;
-    //
-    // vault_delegation_list.save()?;
+    let (required_accounts, optional_accounts) = accounts.split_at(11);
+
+    let [config, vault_info, vault_delegation_list, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, staker, staker_lrt_token_account, base, token_program, system_program] =
+        required_accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault_info, true)?;
+    load_vault_delegation_list(program_id, vault_delegation_list, vault_info, true)?;
+    load_system_account(vault_staker_withdrawal_ticket, true)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    load_associated_token_account(
+        vault_staker_withdrawal_ticket_token_account,
+        vault_staker_withdrawal_ticket.key,
+        &vault.lrt_mint,
+    )?;
+    load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.lrt_mint)?;
+    load_signer(staker, false)?;
+    load_associated_token_account(staker_lrt_token_account, staker.key, &vault.lrt_mint)?;
+    load_signer(base, false)?;
+    load_token_program(token_program)?;
+    load_system_program(system_program)?;
+
+    let (
+        vault_staker_withdrawal_ticket_pubkey,
+        vault_staker_withdrawal_ticket_bump,
+        mut vault_staker_withdrawal_ticket_seeds,
+    ) = VaultStakerWithdrawalTicket::find_program_address(
+        program_id,
+        vault_info.key,
+        staker.key,
+        base.key,
+    );
+    vault_staker_withdrawal_ticket_seeds.push(vec![vault_staker_withdrawal_ticket_bump]);
+    if vault_staker_withdrawal_ticket
+        .key
+        .ne(&vault_staker_withdrawal_ticket_pubkey)
+    {
+        msg!("Vault staker withdrawal ticket is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // check optional signer
+    if let Some(burn_signer) = optional_accounts.first() {
+        load_signer(burn_signer, false)?;
+        if vault.mint_burn_admin.ne(&Pubkey::default())
+            && burn_signer.key.ne(&vault.mint_burn_admin)
+        {
+            msg!("Burn signer does not match vault mint signer");
+            return Err(ProgramError::InvalidAccountData);
+        }
+    }
+
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+
+    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
+    let vault_delegation_list =
+        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
+
+    if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault delegation list is not up to date");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    let fee_amount = vault.calculate_withdraw_fee(lrt_amount)?;
+    let amount_to_vault_staker_withdrawal_ticket = lrt_amount
+        .checked_sub(fee_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    let amount_to_withdraw =
+        vault.calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
+    vault_delegation_list
+        .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
+
+    msg!(
+        "Initializing vault staker withdraw ticket at address {}",
+        vault_staker_withdrawal_ticket.key
+    );
+    create_account(
+        staker,
+        vault_staker_withdrawal_ticket,
+        system_program,
+        program_id,
+        &Rent::get()?,
+        8_u64
+            .checked_add(size_of::<VaultStakerWithdrawalTicket>() as u64)
+            .unwrap(),
+        &vault_staker_withdrawal_ticket_seeds,
+    )?;
+
+    let mut vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow_mut();
+    vault_staker_withdrawal_ticket_data[0] = VaultStakerWithdrawalTicket::DISCRIMINATOR;
+    let vault_staker_withdrawal_ticket =
+        VaultStakerWithdrawalTicket::try_from_slice_mut(&mut vault_staker_withdrawal_ticket_data)?;
+
+    *vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::new(
+        *vault_info.key,
+        *staker.key,
+        *base.key,
+        amount_to_withdraw,
+        amount_to_vault_staker_withdrawal_ticket,
+        Clock::get()?.slot,
+        vault_staker_withdrawal_ticket_bump,
+    );
+
+    // transfer from the staker to the vault staker withdrawal ticket ATA
+    invoke(
+        &transfer(
+            &spl_token::id(),
+            staker_lrt_token_account.key,
+            vault_staker_withdrawal_ticket_token_account.key,
+            staker.key,
+            &[],
+            amount_to_vault_staker_withdrawal_ticket,
+        )?,
+        &[
+            staker_lrt_token_account.clone(),
+            vault_staker_withdrawal_ticket_token_account.clone(),
+            staker.clone(),
+        ],
+    )?;
+
+    // transfer from the staker to the vault fee ATA
+    invoke(
+        &transfer(
+            &spl_token::id(),
+            staker_lrt_token_account.key,
+            vault_fee_token_account.key,
+            staker.key,
+            &[],
+            fee_amount,
+        )?,
+        &[
+            staker_lrt_token_account.clone(),
+            vault_fee_token_account.clone(),
+            staker.clone(),
+        ],
+    )?;
 
     Ok(())
 }
-//
-// fn _transfer_to<'a, 'info>(
-//     from: &SanitizedTokenAccount<'a, 'info>,
-//     to: &SanitizedAssociatedTokenAccount<'a, 'info>,
-//     staker: &SanitizedSignerAccount<'a, 'info>,
-//     amount: u64,
-// ) -> ProgramResult {
-//     invoke(
-//         &transfer(
-//             &spl_token::id(),
-//             from.account().key,
-//             to.account().key,
-//             staker.account().key,
-//             &[],
-//             amount,
-//         )?,
-//         &[
-//             from.account().clone(),
-//             to.account().clone(),
-//             staker.account().clone(),
-//         ],
-//     )
-// }
-//
-// #[allow(clippy::too_many_arguments)]
-// fn _create_vault_staker_withdrawal_ticket<'a, 'info>(
-//     program_id: &Pubkey,
-//     vault: &SanitizedVault<'a, 'info>,
-//     staker: &SanitizedSignerAccount<'a, 'info>,
-//     base: &SanitizedSignerAccount<'a, 'info>,
-//     vault_staker_withdrawal_ticket_account: &EmptyAccount<'a, 'info>,
-//     system_program: &SanitizedSystemProgram<'a, 'info>,
-//     rent: &Rent,
-//     slot: Slot,
-//     amount_to_withdraw: u64,
-//     amount_to_vault_staker_withdrawal_ticket: u64,
-// ) -> ProgramResult {
-//     let (address, bump, mut seeds) = VaultStakerWithdrawalTicket::find_program_address(
-//         program_id,
-//         vault.account().key,
-//         staker.account().key,
-//         base.account().key,
-//     );
-//     seeds.push(vec![bump]);
-//
-//     assert_with_msg(
-//         address == *vault_staker_withdrawal_ticket_account.account().key,
-//         ProgramError::InvalidAccountData,
-//         "Vault staker withdraw ticket is not at the correct PDA",
-//     )?;
-//
-//     let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::new(
-//         *vault.account().key,
-//         *staker.account().key,
-//         *base.account().key,
-//         amount_to_withdraw,
-//         amount_to_vault_staker_withdrawal_ticket,
-//         slot,
-//         bump,
-//     );
-//
-//     msg!(
-//         "Creating vault staker withdraw ticket: {:?}",
-//         vault_staker_withdrawal_ticket_account.account().key
-//     );
-//     let serialized = vault_staker_withdrawal_ticket.try_to_vec()?;
-//     create_account(
-//         staker.account(),
-//         vault_staker_withdrawal_ticket_account.account(),
-//         system_program.account(),
-//         program_id,
-//         rent,
-//         serialized.len() as u64,
-//         &seeds,
-//     )?;
-//     vault_staker_withdrawal_ticket_account
-//         .account()
-//         .data
-//         .borrow_mut()[..serialized.len()]
-//         .copy_from_slice(&serialized);
-//     Ok(())
-// }
-//
-// struct SanitizedAccounts<'a, 'info> {
-//     config: SanitizedConfig<'a, 'info>,
-//     vault: SanitizedVault<'a, 'info>,
-//     vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-//     vault_staker_withdrawal_ticket: EmptyAccount<'a, 'info>,
-//     vault_staker_withdrawal_ticket_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-//     vault_fee_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-//     staker: SanitizedSignerAccount<'a, 'info>,
-//     staker_lrt_token_account: SanitizedTokenAccount<'a, 'info>,
-//     base: SanitizedSignerAccount<'a, 'info>,
-//     system_program: SanitizedSystemProgram<'a, 'info>,
-//     burn_signer: Option<SanitizedSignerAccount<'a, 'info>>,
-// }
-//
-// impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-//     /// Loads accounts for [`crate::VaultInstruction::EnqueueWithdrawal`]
-//     fn sanitize(
-//         program_id: &Pubkey,
-//         accounts: &'a [AccountInfo<'info>],
-//     ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-//         let accounts_iter = &mut accounts.iter();
-//
-//         let config =
-//             SanitizedConfig::sanitize(program_id, next_account_info(accounts_iter)?, false)?;
-//         let vault = SanitizedVault::sanitize(program_id, next_account_info(accounts_iter)?, true)?;
-//         let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
-//             program_id,
-//             next_account_info(accounts_iter)?,
-//             true,
-//             vault.account().key,
-//         )?;
-//         let vault_staker_withdrawal_ticket =
-//             EmptyAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-//         let vault_staker_withdrawal_ticket_token_account =
-//             SanitizedAssociatedTokenAccount::sanitize(
-//                 next_account_info(accounts_iter)?,
-//                 &vault.vault.lrt_mint,
-//                 vault_staker_withdrawal_ticket.account().key,
-//             )?;
-//         let vault_fee_token_account = SanitizedAssociatedTokenAccount::sanitize(
-//             next_account_info(accounts_iter)?,
-//             &vault.vault.lrt_mint,
-//             &vault.vault.fee_wallet,
-//         )?;
-//         let staker = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, true)?;
-//         let staker_lrt_token_account = SanitizedTokenAccount::sanitize(
-//             next_account_info(accounts_iter)?,
-//             &vault.vault.lrt_mint,
-//             staker.account().key,
-//         )?;
-//         let base = SanitizedSignerAccount::sanitize(next_account_info(accounts_iter)?, false)?;
-//         let _token_program = SanitizedTokenProgram::sanitize(next_account_info(accounts_iter)?)?;
-//         let system_program = SanitizedSystemProgram::sanitize(next_account_info(accounts_iter)?)?;
-//
-//         let burn_signer = if vault.vault.mint_burn_authority().is_some() {
-//             Some(SanitizedSignerAccount::sanitize(
-//                 next_account_info(accounts_iter)?,
-//                 false,
-//             )?)
-//         } else {
-//             None
-//         };
-//
-//         Ok(SanitizedAccounts {
-//             config,
-//             vault,
-//             vault_delegation_list,
-//             vault_staker_withdrawal_ticket,
-//             vault_staker_withdrawal_ticket_token_account,
-//             vault_fee_token_account,
-//             staker,
-//             staker_lrt_token_account,
-//             base,
-//             system_program,
-//             burn_signer,
-//         })
-//     }
-// }

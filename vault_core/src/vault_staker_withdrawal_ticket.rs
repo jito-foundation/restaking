@@ -1,8 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{msg, pubkey::Pubkey};
-
-use crate::result::{VaultCoreError, VaultCoreResult};
+use solana_program::{program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultStakerWithdrawalTicket {
     const DISCRIMINATOR: u8 = 7;
@@ -64,23 +62,18 @@ impl VaultStakerWithdrawalTicket {
 
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
-    #[inline(always)]
-    pub fn check_withdrawable(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
-        let current_epoch = slot.checked_div(epoch_length).unwrap(); // epoch_length is always > 0
+    pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
         let epoch_unstaked = self.slot_unstaked.checked_div(epoch_length).unwrap();
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)
-                .ok_or(VaultCoreError::VaultStakerWithdrawalTicketOverflow)?
+                .ok_or(ProgramError::ArithmeticOverflow)?
         {
-            msg!(
-                "current_epoch: {:?}, epoch_unstaked: {:?}",
-                current_epoch,
-                epoch_unstaked
-            );
-            return Err(VaultCoreError::VaultStakerWithdrawalTicketNotWithdrawable);
+            Ok(false)
+        } else {
+            Ok(true)
         }
-        Ok(())
     }
 
     pub fn seeds(vault: &Pubkey, staker: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {

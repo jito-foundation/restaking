@@ -36,8 +36,8 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     load_vault_ncn_slasher_ticket(
         program_id,
         vault_ncn_slasher_ticket,
-        ncn,
         vault,
+        ncn,
         slasher,
         false,
     )?;
@@ -53,8 +53,8 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         mut vault_ncn_slasher_operator_ticket_seeds,
     ) = VaultNcnSlasherOperatorTicket::find_program_address(
         program_id,
-        ncn.key,
         vault.key,
+        ncn.key,
         slasher.key,
         operator.key,
         ncn_epoch,
@@ -90,13 +90,14 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
         &mut vault_ncn_slasher_operator_ticket_data,
     )?;
-    vault_ncn_slasher_operator_ticket.vault = *vault.key;
-    vault_ncn_slasher_operator_ticket.ncn = *ncn.key;
-    vault_ncn_slasher_operator_ticket.slasher = *slasher.key;
-    vault_ncn_slasher_operator_ticket.operator = *operator.key;
-    vault_ncn_slasher_operator_ticket.epoch = ncn_epoch;
-    vault_ncn_slasher_operator_ticket.slashed = 0;
-    vault_ncn_slasher_operator_ticket.bump = vault_ncn_slasher_operator_ticket_bump;
+    *vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::new(
+        *vault.key,
+        *ncn.key,
+        *slasher.key,
+        *operator.key,
+        ncn_epoch,
+        vault_ncn_slasher_operator_ticket_bump,
+    );
 
     Ok(())
 }

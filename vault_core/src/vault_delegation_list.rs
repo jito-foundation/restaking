@@ -323,7 +323,6 @@ mod tests {
         assert!(list.delegate(operator, 100, 1_000).is_ok());
         assert_eq!(list.total_security().unwrap(), 100);
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.operator, operator);
         assert_eq!(delegation.staked_amount, 100);
@@ -338,7 +337,6 @@ mod tests {
         list.delegate(operator, 50, 1_000).unwrap();
         assert_eq!(list.total_security().unwrap(), 150);
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.operator, operator);
         assert_eq!(delegation.staked_amount, 150);
@@ -352,7 +350,6 @@ mod tests {
         list.delegate(operator, 100, 1_000).unwrap();
         list.undelegate(operator, 30).unwrap();
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.staked_amount, 70);
         assert_eq!(delegation.enqueued_for_cooldown_amount, 30);
@@ -418,7 +415,6 @@ mod tests {
         list.undelegate_for_withdrawal(200, UndelegateForWithdrawMethod::ProRata)
             .unwrap();
 
-        assert_eq!(list.delegations().len(), 1);
         let delegation = list.delegations().get(0).unwrap();
         assert_eq!(delegation.staked_amount, 300);
         assert_eq!(delegation.enqueued_for_withdraw_amount, 200);

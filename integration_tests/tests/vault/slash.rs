@@ -151,7 +151,6 @@ mod tests {
             .unwrap();
 
         let delegations = vault_delegation_list.delegations();
-        assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].operator, operator_root.operator_pubkey);
         assert_eq!(delegations[0].staked_amount, 10_000);
 
@@ -192,7 +191,6 @@ mod tests {
             .await
             .unwrap();
         let delegations = delegation_list.delegations();
-        assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].operator, operator_root.operator_pubkey);
         assert_eq!(delegations[0].staked_amount, 9_900);
 

@@ -4,7 +4,6 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
-    slot_toggled_field::SlotToggle,
 };
 use jito_restaking_core::{
     config::Config,
@@ -76,11 +75,13 @@ pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
     let mut ncn_vault_ticket_data = ncn_vault_ticket.try_borrow_mut_data()?;
     ncn_vault_ticket_data[0] = NcnVaultTicket::DISCRIMINATOR;
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice_mut(&mut ncn_vault_ticket_data)?;
-    ncn_vault_ticket.ncn = *ncn_info.key;
-    ncn_vault_ticket.vault = *vault.key;
-    ncn_vault_ticket.index = ncn.vault_count;
-    ncn_vault_ticket.state = SlotToggle::new(slot);
-    ncn_vault_ticket.bump = ncn_vault_ticket_bump;
+    *ncn_vault_ticket = NcnVaultTicket::new(
+        *ncn_info.key,
+        *vault.key,
+        ncn.vault_count,
+        slot,
+        ncn_vault_ticket_bump,
+    );
 
     ncn.vault_count = ncn
         .vault_count

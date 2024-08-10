@@ -7,8 +7,8 @@ use jito_jsm_core::{
 };
 use jito_restaking_core::config::Config;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
-    msg, program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Initializes the global configuration for the restaking program
@@ -43,12 +43,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
     let mut config_data = config.try_borrow_mut_data()?;
     config_data[0] = Config::DISCRIMINATOR;
     let config = Config::try_from_slice_mut(&mut config_data)?;
-    config.admin = *admin.key;
-    config.vault_program = *vault_program.key;
-    config.ncn_count = 0;
-    config.operator_count = 0;
-    config.epoch_length = DEFAULT_SLOTS_PER_EPOCH;
-    config.bump = config_bump;
+    *config = Config::new(*admin.key, *vault_program.key, config_bump);
 
     Ok(())
 }

@@ -4,7 +4,6 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
-    slot_toggled_field::SlotToggle,
 };
 use jito_restaking_core::{
     loader::{load_operator, load_operator_vault_ticket},
@@ -91,11 +90,13 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
     vault_operator_ticket_data[0] = VaultOperatorTicket::DISCRIMINATOR;
     let vault_operator_ticket =
         VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
-    vault_operator_ticket.vault = *vault_info.key;
-    vault_operator_ticket.operator = *operator.key;
-    vault_operator_ticket.index = vault.operator_count;
-    vault_operator_ticket.state = SlotToggle::new(Clock::get()?.slot);
-    vault_operator_ticket.bump = vault_operator_ticket_bump;
+    *vault_operator_ticket = VaultOperatorTicket::new(
+        *vault_info.key,
+        *operator.key,
+        vault.operator_count,
+        Clock::get()?.slot,
+        vault_operator_ticket_bump,
+    );
 
     vault.operator_count = vault
         .operator_count

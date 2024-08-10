@@ -4,7 +4,6 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
-    slot_toggled_field::SlotToggle,
 };
 use jito_restaking_core::{
     config::Config,
@@ -86,11 +85,13 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
     let mut ncn_operator_ticket_data = ncn_operator_ticket.try_borrow_mut_data()?;
     ncn_operator_ticket_data[0] = NcnOperatorTicket::DISCRIMINATOR;
     let ncn_operator_ticket = NcnOperatorTicket::try_from_slice_mut(&mut ncn_operator_ticket_data)?;
-    ncn_operator_ticket.ncn = *ncn_info.key;
-    ncn_operator_ticket.operator = *operator.key;
-    ncn_operator_ticket.index = ncn.operator_count;
-    ncn_operator_ticket.state = SlotToggle::new(slot);
-    ncn_operator_ticket.bump = ncn_operator_ticket_bump;
+    *ncn_operator_ticket = NcnOperatorTicket::new(
+        *ncn_info.key,
+        *operator.key,
+        ncn.operator_count,
+        slot,
+        ncn_operator_ticket_bump,
+    );
 
     ncn.operator_count = ncn
         .operator_count

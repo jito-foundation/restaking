@@ -231,6 +231,10 @@ pub fn process_slash(
     // slash and update the slashed amount
     vault_delegation_list.slash(operator.key, slash_amount)?;
     vault_ncn_slasher_operator_ticket.slashed = amount_after_slash;
+    vault.tokens_deposited = vault
+        .tokens_deposited
+        .checked_sub(slash_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     // transfer the slashed funds
     {
@@ -240,6 +244,7 @@ pub fn process_slash(
             .iter()
             .map(|seed| seed.as_slice())
             .collect::<Vec<&[u8]>>();
+        drop(vault_data);
 
         invoke_signed(
             &transfer(
@@ -258,11 +263,6 @@ pub fn process_slash(
             &[vault_seeds_slice.as_slice()],
         )?;
     }
-
-    vault.tokens_deposited = vault
-        .tokens_deposited
-        .checked_sub(slash_amount)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     Ok(())
 }

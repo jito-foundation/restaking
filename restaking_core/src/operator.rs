@@ -41,7 +41,7 @@ pub struct Operator {
 }
 
 impl Operator {
-    pub const fn new(base: Pubkey, admin: Pubkey, voter: Pubkey, index: u64, bump: u8) -> Self {
+    pub const fn new(base: Pubkey, admin: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             base,
             admin,
@@ -49,7 +49,7 @@ impl Operator {
             vault_admin: admin,
             withdraw_admin: admin,
             withdraw_fee_wallet: admin,
-            voter,
+            voter: admin,
             index,
             ncn_count: 0,
             vault_count: 0,

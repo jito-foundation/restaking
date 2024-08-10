@@ -6,6 +6,7 @@ use crate::{
     vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 
 pub fn load_config(
@@ -234,6 +235,44 @@ pub fn load_vault_ncn_slasher_operator_ticket(
     .0;
     if vault_ncn_slasher_operator_ticket.key.ne(&expected_pubkey) {
         msg!("Vault NCN slasher operator is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    Ok(())
+}
+
+pub fn load_vault_staker_withdrawal_ticket(
+    program_id: &Pubkey,
+    vault_staker_withdrawal_ticket: &AccountInfo,
+    vault: &AccountInfo,
+    staker: &AccountInfo,
+    expect_writable: bool,
+) -> Result<(), ProgramError> {
+    if vault_staker_withdrawal_ticket.owner.ne(program_id) {
+        msg!("Vault staker withdraw ticket has an invalid owner");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    if vault_staker_withdrawal_ticket.data_is_empty() {
+        msg!("Vault staker withdraw ticket data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if expect_writable && !vault_staker_withdrawal_ticket.is_writable {
+        msg!("Vault staker withdraw ticket is not writable");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if vault_staker_withdrawal_ticket.data.borrow()[0]
+        .ne(&VaultStakerWithdrawalTicket::DISCRIMINATOR)
+    {
+        msg!("Vault staker withdraw ticket discriminator is invalid");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    let vault_staker_withdraw_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
+    let base =
+        VaultStakerWithdrawalTicket::try_from_slice(&vault_staker_withdraw_ticket_data)?.base;
+    let expected_pubkey =
+        VaultStakerWithdrawalTicket::find_program_address(program_id, vault.key, staker.key, &base)
+            .0;
+    if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
+        msg!("Vault staker withdraw ticket is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
     Ok(())

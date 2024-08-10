@@ -47,18 +47,7 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
     let mut ncn_data = ncn.try_borrow_mut_data()?;
     ncn_data[0] = Ncn::DISCRIMINATOR;
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
-    ncn.base = *base.key;
-    ncn.admin = *admin.key;
-    ncn.operator_admin = *admin.key;
-    ncn.vault_admin = *admin.key;
-    ncn.slasher_admin = *admin.key;
-    ncn.withdraw_admin = *admin.key;
-    ncn.withdraw_fee_wallet = *admin.key;
-    ncn.index = config.ncn_count;
-    ncn.operator_count = 0;
-    ncn.vault_count = 0;
-    ncn.slasher_count = 0;
-    ncn.bump = ncn_bump;
+    *ncn = Ncn::new(*base.key, *admin.key, config.ncn_count, ncn_bump);
 
     config.ncn_count = config
         .ncn_count

@@ -51,25 +51,15 @@ impl Discriminator for Ncn {
 
 impl Ncn {
     #[allow(clippy::too_many_arguments)]
-    pub const fn new(
-        base: Pubkey,
-        admin: Pubkey,
-        operator_admin: Pubkey,
-        vault_admin: Pubkey,
-        slasher_admin: Pubkey,
-        withdraw_admin: Pubkey,
-        withdraw_fee_wallet: Pubkey,
-        ncn_index: u64,
-        bump: u8,
-    ) -> Self {
+    pub const fn new(base: Pubkey, admin: Pubkey, ncn_index: u64, bump: u8) -> Self {
         Self {
             base,
             admin,
-            operator_admin,
-            vault_admin,
-            slasher_admin,
-            withdraw_admin,
-            withdraw_fee_wallet,
+            operator_admin: admin,
+            vault_admin: admin,
+            slasher_admin: admin,
+            withdraw_admin: admin,
+            withdraw_fee_wallet: admin,
             index: ncn_index,
             operator_count: 0,
             vault_count: 0,
