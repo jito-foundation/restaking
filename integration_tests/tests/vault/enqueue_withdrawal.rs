@@ -188,14 +188,19 @@ mod tests {
             .await
             .unwrap();
 
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let delegation = vault_delegation_list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount, 100_000);
-        assert_eq!(delegation.total_security().unwrap(), 100_000);
+        {
+            let vault_delegation_list = vault_program_client
+                .get_vault_delegation_list(&vault_root.vault_pubkey)
+                .await
+                .unwrap();
+            assert_eq!(vault_delegation_list.delegations[0].staked_amount, 100_000);
+            assert_eq!(
+                vault_delegation_list.delegations[0]
+                    .total_security()
+                    .unwrap(),
+                100_000
+            );
+        }
 
         // the user is withdrawing 99,000 LRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw
@@ -204,17 +209,26 @@ mod tests {
             .await
             .unwrap();
 
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
+        {
+            let vault_delegation_list = vault_program_client
+                .get_vault_delegation_list(&vault_root.vault_pubkey)
+                .await
+                .unwrap();
 
-        let delegation = vault_delegation_list.delegations().get(0).unwrap();
-        // this is 1,000 because 1% of the fee went to the vault fee account, the assets still staked
-        // are for the LRT in the fee account to unstake later
-        assert_eq!(delegation.staked_amount, 1_990);
-        assert_eq!(delegation.enqueued_for_withdraw_amount, 98_010);
-        assert_eq!(delegation.total_security().unwrap(), 100_000);
+            // this is 1,000 because 1% of the fee went to the vault fee account, the assets still staked
+            // are for the LRT in the fee account to unstake later
+            assert_eq!(vault_delegation_list.delegations[0].staked_amount, 1_990);
+            assert_eq!(
+                vault_delegation_list.delegations[0].enqueued_for_withdraw_amount,
+                98_010
+            );
+            assert_eq!(
+                vault_delegation_list.delegations[0]
+                    .total_security()
+                    .unwrap(),
+                100_000
+            );
+        }
 
         let vault_staker_withdrawal_ticket = vault_program_client
             .get_vault_staker_withdrawal_ticket(

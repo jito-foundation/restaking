@@ -75,7 +75,7 @@ fn _withdraw_ncn_asset<'a, 'info>(
             receiver_token_account.clone(),
             ncn.clone(),
         ],
-        &[&seeds],
+        &[seeds],
     )?;
 
     Ok(())

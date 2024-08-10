@@ -25,7 +25,7 @@ use solana_program::{
 ///
 /// # Behavior
 /// * The vault admin shall have the ability to add support for a new NCN
-/// if the NCN is actively supporting the vault
+///   if the NCN is actively supporting the vault
 ///
 /// Instruction: [`crate::VaultInstruction::AddNcn`]
 pub fn process_vault_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {

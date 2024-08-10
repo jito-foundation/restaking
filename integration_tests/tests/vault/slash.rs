@@ -145,14 +145,18 @@ mod tests {
             .await
             .unwrap();
 
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
+        {
+            let vault_delegation_list = vault_program_client
+                .get_vault_delegation_list(&vault_root.vault_pubkey)
+                .await
+                .unwrap();
 
-        let delegations = vault_delegation_list.delegations();
-        assert_eq!(delegations[0].operator, operator_root.operator_pubkey);
-        assert_eq!(delegations[0].staked_amount, 10_000);
+            assert_eq!(
+                vault_delegation_list.delegations[0].operator,
+                operator_root.operator_pubkey
+            );
+            assert_eq!(vault_delegation_list.delegations[0].staked_amount, 10_000);
+        }
 
         fixture
             .create_ata(&vault.supported_mint, &slasher.pubkey())
@@ -186,13 +190,17 @@ mod tests {
             .unwrap();
         assert_eq!(vault.tokens_deposited, 99_900);
 
-        let delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        let delegations = delegation_list.delegations();
-        assert_eq!(delegations[0].operator, operator_root.operator_pubkey);
-        assert_eq!(delegations[0].staked_amount, 9_900);
+        {
+            let delegation_list = vault_program_client
+                .get_vault_delegation_list(&vault_root.vault_pubkey)
+                .await
+                .unwrap();
+            assert_eq!(
+                delegation_list.delegations[0].operator,
+                operator_root.operator_pubkey
+            );
+            assert_eq!(delegation_list.delegations[0].staked_amount, 9_900);
+        }
 
         let epoch = fixture.get_current_slot().await.unwrap() / restaking_config.epoch_length;
         let vault_ncn_slasher_operator_ticket = vault_program_client

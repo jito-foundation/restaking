@@ -16,7 +16,7 @@ use solana_program::{
 ///
 /// # Behavior:
 /// * The vault admin shall have the ability to remove support for a previously supported vault
-/// at any time, independent of whether the NCN still supports the vault or not.
+///   at any time, independent of whether the NCN still supports the vault or not.
 ///
 /// Instruction: [`crate::VaultInstruction::CooldownNcn`]
 pub fn process_vault_cooldown_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {

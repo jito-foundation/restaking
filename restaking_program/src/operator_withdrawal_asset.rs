@@ -73,7 +73,7 @@ fn _withdraw_operator_asset<'a, 'info>(
             receiver_token_account.clone(),
             operator.clone(),
         ],
-        &[&seeds],
+        &[seeds],
     )?;
 
     Ok(())
