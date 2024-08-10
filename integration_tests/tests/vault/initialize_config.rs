@@ -13,8 +13,9 @@ mod tests {
 
         let config_admin = vault_program_client.setup_config().await.unwrap();
 
+        let (config_pda, bump, _) = Config::find_program_address(&jito_vault_program::id());
         let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .get_config(&config_pda)
             .await
             .unwrap();
 
@@ -22,5 +23,6 @@ mod tests {
         assert_eq!(config.restaking_program(), jito_restaking_program::id());
         assert_eq!(config.epoch_length(), DEFAULT_SLOTS_PER_EPOCH);
         assert_eq!(config.vaults_count(), 0);
+        assert_eq!(config.bump(), bump);
     }
 }

@@ -1,11 +1,11 @@
-use std::mem::size_of;
+use std::{mem::size_of, cell::Ref};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use bytemuck::{Pod, Zeroable};
 use sokoban::ZeroCopy;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
-    pubkey::Pubkey,
+    pubkey::Pubkey, msg,
 };
 use VaultCoreError::ConfigInvalidPda;
 
@@ -20,7 +20,6 @@ pub struct Config {
     /// The account type
     account_type: AccountType,
 
-    /// Padding to align the next 8-byte field
     _padding0: [u8; 4],
 
     /// The configuration admin
@@ -41,26 +40,23 @@ pub struct Config {
     /// The bump seed for the PDA
     bump: u8,
 
-    /// Padding to align the struct size to a multiple of 8 bytes
     _padding1: [u8; 7],
 }
 
 impl ZeroCopy for Config {}
 
 impl Config {
-    pub const LEN: usize = 213;
-
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
             account_type: AccountType::Config,
+            _padding0: [0u8; 4],
             admin,
             restaking_program,
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
-            reserved: [0; 128],
+            reserved: [0u8; 128],
             bump,
-            _padding0: [0; 4],
-            _padding1: [0; 7],
+            _padding1: [0u8; 7],
         }
     }
 
@@ -116,24 +112,33 @@ impl Config {
         }
 
         let data = account.data.borrow();
-        // let state: Config = *bytemuck::try_from_bytes(&data[..Self::LEN]).unwrap();
-        // let state = Ref::map(data, |data| {
-        //     Config::load_bytes(&data[..size_of::<Config>()]).unwrap()
-        // });
-        let state = Config::load_bytes(&data[..size_of::<Self>()]).ok_or(
-            VaultCoreError::ConfigInvalidData("invalid data".to_string()),
-        )?;
+        // let state: Config = *bytemuck::try_from_bytes(&data[..size_of::<Self>()]).unwrap();
+        let state = Ref::map(data, |data| {
+            Config::load_bytes(&data[..size_of::<Config>()]).unwrap()
+        });
+        // let state = Self::load_bytes(&data[..size_of::<Self>()]).ok_or(
+        //     VaultCoreError::ConfigInvalidData("invalid data".to_string()),
+        // )?;
         // let state = Self::deserialize(&mut account.data.borrow().as_ref())
         //     .map_err(|e| VaultCoreError::ConfigInvalidData(e.to_string()))?;
         if state.account_type != AccountType::Config {
             return Err(VaultCoreError::ConfigInvalidAccountType);
         }
 
+
+        msg!("account_key: {:?}", account.key);
+        msg!("account_type: {:?}", state.account_type);
+        msg!("admin: {}", state.admin);
+        msg!("Restaking program: {}", state.restaking_program());
+        msg!("Bump: {}", state.bump);
+        // msg!("Bump: {}", state.bump);
+        // msg!("Bump: {}", state.bump);
+        // msg!("Bump: {}", state.bump);
+
         let mut seeds = Self::seeds();
         seeds.push(vec![state.bump]);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| ConfigInvalidPda)?;
+        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id).unwrap();
         if expected_pubkey != *account.key {
             return Err(ConfigInvalidPda);
         }

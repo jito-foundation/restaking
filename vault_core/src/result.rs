@@ -122,7 +122,7 @@ pub enum VaultCoreError {
 impl From<VaultCoreError> for ProgramError {
     fn from(value: VaultCoreError) -> Self {
         match value {
-            VaultCoreError::ConfigInvalidPda => ProgramError::Custom(1000),
+            VaultCoreError::ConfigInvalidPda => ProgramError::Custom(5000),
             VaultCoreError::ConfigInvalidAccountType => ProgramError::Custom(1001),
             VaultCoreError::ConfigInvalidData(_) => ProgramError::Custom(1002),
             VaultCoreError::ConfigInvalidProgramOwner => ProgramError::Custom(1003),

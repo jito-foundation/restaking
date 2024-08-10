@@ -13,6 +13,7 @@ use jito_vault_core::{
 };
 use jito_vault_sdk::{add_delegation, initialize_config, initialize_vault};
 use log::info;
+use sokoban::ZeroCopy;
 use solana_program::{
     clock::Clock,
     native_token::sol_to_lamports,
@@ -57,7 +58,8 @@ impl VaultProgramClient {
 
     pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, BanksClientError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Config::deserialize(&mut account.data.as_slice())?)
+        let config = Config::load_bytes(&mut account.data.as_slice()).unwrap();
+        Ok(*config)
     }
 
     pub async fn get_vault(&mut self, account: &Pubkey) -> Result<Vault, BanksClientError> {

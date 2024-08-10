@@ -43,6 +43,7 @@ jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.1" }
 jito-vault-sdk = { path = "vault_sdk", version = "=0.0.1" }
 jito-vault-program = { path = "vault_program", version = "=0.0.1" }
 jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
+lib-sokoban = "0.3.2"
 shank = "0.4.2"
 solana-program = "~1.18"
 solana-program-test = "~1.18"

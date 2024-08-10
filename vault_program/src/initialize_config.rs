@@ -6,6 +6,7 @@ use jito_restaking_sanitization::{
     system_program::SanitizedSystemProgram,
 };
 use jito_vault_core::config::Config;
+use sokoban::ZeroCopy;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
@@ -38,19 +39,25 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
         "Initializing config @ address {}",
         config_account.account().key
     );
+    msg!("{}", bump);
     // let config_serialized = config.try_to_vec()?;
-    let config_serialized = bytemuck::bytes_of(&config);
+    // let config_serialized = bytemuck::bytes_of(&config);
     create_account(
         admin.account(),
         config_account.account(),
         system_program.account(),
         program_id,
         &Rent::get()?,
-        config_serialized.len() as u64,
+        size_of::<Config>() as u64,
         &config_seeds,
     )?;
-    config_account.account().data.borrow_mut()[..config_serialized.len()]
-        .copy_from_slice(&config_serialized);
+
+    let mut config_bytes = config_account.account().try_borrow_mut_data()?;
+    *Config::load_mut_bytes(&mut config_bytes).ok_or(ProgramError::InvalidAccountData)? = config;
+    // config_account.account().data.borrow_mut()[..config_serialized.len()]
+    //     .copy_from_slice(&config_serialized);
+    // config_account.account().try_bro
+    //     Config::load_mut_bytes();
 
     Ok(())
 }
