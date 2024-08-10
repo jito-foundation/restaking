@@ -18,7 +18,7 @@ pub enum VaultDelegationUpdateSummary {
     Updated { amount_reserved_for_withdraw: u64 },
 }
 
-pub const MAX_DELEGATIONS: usize = 128; // TODO (LB): make bigger
+pub const MAX_DELEGATIONS: usize = 4096;
 
 impl Discriminator for VaultDelegationList {
     const DISCRIMINATOR: u8 = 8;

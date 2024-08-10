@@ -10,6 +10,7 @@ use jito_jsm_core::{
 use jito_vault_core::{
     config::Config, loader::load_config, vault::Vault, vault_delegation_list::VaultDelegationList,
 };
+use solana_program::clock::Clock;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, rent::Rent,
@@ -117,9 +118,13 @@ pub fn process_initialize_vault(
 
     // Initialize vault delegation list
     {
+        let alloc_size = 8_u64
+            .checked_add(size_of::<VaultDelegationList>() as u64)
+            .unwrap();
         msg!(
-            "Initializing vault delegation list at address {}",
-            vault_delegation_list.key
+            "Initializing vault delegation list at address {} size {}",
+            vault_delegation_list.key,
+            alloc_size
         );
         create_account(
             admin,
@@ -137,7 +142,9 @@ pub fn process_initialize_vault(
         vault_delegation_list_data[0] = VaultDelegationList::DISCRIMINATOR;
         let vault_delegation_list =
             VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
-        *vault_delegation_list = VaultDelegationList::new(*vault.key, vault_delegation_list_bump);
+        vault_delegation_list.vault = *vault.key;
+        vault_delegation_list.last_slot_updated = Clock::get()?.slot;
+        vault_delegation_list.bump = vault_delegation_list_bump;
     }
 
     config.num_vaults = config

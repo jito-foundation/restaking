@@ -203,7 +203,7 @@ impl VaultProgramClient {
         let vault_admin = Keypair::new();
         let token_mint = Keypair::new();
 
-        self._airdrop(&vault_admin.pubkey(), 1.0).await?;
+        self._airdrop(&vault_admin.pubkey(), 100.0).await?;
         self._create_token_mint(&token_mint).await?;
 
         self.initialize_vault(
