@@ -21,7 +21,7 @@ pub fn process_set_node_operator_voter(
         voter,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_admin(admin.account().key)?;
+    operator.operator.check_admin(admin.account().key)?;
     operator.operator_mut().set_voter(*voter.key);
     operator.save()?;
 

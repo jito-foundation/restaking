@@ -1,40 +1,38 @@
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
+use bytemuck::{Pod, Zeroable};
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use solana_program::pubkey::Pubkey;
 
-use crate::{
-    result::{VaultCoreError, VaultCoreResult},
-    AccountType,
-};
+impl Discriminator for VaultNcnSlasherOperatorTicket {
+    const DISCRIMINATOR: u8 = 6;
+}
 
 /// Represents a vault node consensus network (NCN) slasher operator ticket, which tracks how much an operator
 /// has been slashed by a slasher for a given NCN and vault for a given epoch.
-#[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[repr(C)]
 pub struct VaultNcnSlasherOperatorTicket {
-    /// The account type
-    account_type: AccountType,
-
     /// The vault slashed
-    vault: Pubkey,
+    pub vault: Pubkey,
 
     /// The node consensus network slashed
-    ncn: Pubkey,
+    pub ncn: Pubkey,
 
     /// The slasher
-    slasher: Pubkey,
+    pub slasher: Pubkey,
 
     /// The operator
-    operator: Pubkey,
+    pub operator: Pubkey,
 
     /// The epoch
-    epoch: u64,
+    pub epoch: u64,
 
     /// The amount slashed for the given epoch
-    slashed: u64,
+    pub slashed: u64,
+
+    pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 128],
-
-    bump: u8,
+    reserved: [u8; 7],
 }
 
 impl VaultNcnSlasherOperatorTicket {
@@ -48,72 +46,15 @@ impl VaultNcnSlasherOperatorTicket {
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::VaultNcnSlasherOperatorTicket,
             vault,
             ncn,
             slasher,
             operator,
             epoch,
             slashed,
-            reserved: [0; 128],
             bump,
+            reserved: [0; 7],
         }
-    }
-
-    pub const fn vault(&self) -> Pubkey {
-        self.vault
-    }
-
-    pub const fn ncn(&self) -> Pubkey {
-        self.ncn
-    }
-
-    pub const fn slasher(&self) -> Pubkey {
-        self.slasher
-    }
-
-    pub const fn operator(&self) -> Pubkey {
-        self.operator
-    }
-
-    pub const fn epoch(&self) -> u64 {
-        self.epoch
-    }
-
-    pub const fn slashed(&self) -> u64 {
-        self.slashed
-    }
-
-    pub fn increment_slashed_amount(&mut self, amount: u64) -> VaultCoreResult<()> {
-        self.slashed = self
-            .slashed
-            .checked_add(amount)
-            .ok_or(VaultCoreError::VaultNcnSlasherOperatorOverflow)?;
-        Ok(())
-    }
-
-    pub const fn bump(&self) -> u8 {
-        self.bump
-    }
-
-    pub fn check_max_slashable_not_exceeded(
-        &self,
-        slash_amount: u64,
-        max_slashable_per_epoch: u64,
-    ) -> VaultCoreResult<()> {
-        let new_slashed_amount = self
-            .slashed
-            .checked_add(slash_amount)
-            .ok_or(VaultCoreError::VaultNcnSlasherOperatorOverflow)?;
-        if new_slashed_amount > max_slashable_per_epoch {
-            msg!(
-                "Max slashable per epoch exceeded ({} > {})",
-                new_slashed_amount,
-                max_slashable_per_epoch
-            );
-            return Err(VaultCoreError::VaultNcnSlasherOperatorMaxSlashableExceeded);
-        }
-        Ok(())
     }
 
     pub fn seeds(
@@ -145,94 +86,5 @@ impl VaultNcnSlasherOperatorTicket {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
-    }
-
-    pub fn deserialize_checked(
-        program_id: &Pubkey,
-        account: &AccountInfo,
-        vault: &Pubkey,
-        ncn: &Pubkey,
-        slasher: &Pubkey,
-        operator: &Pubkey,
-        epoch: u64,
-    ) -> VaultCoreResult<Self> {
-        if account.data_is_empty() {
-            return Err(VaultCoreError::VaultNcnSlasherOperatorDataEmpty);
-        }
-        if account.owner != program_id {
-            return Err(VaultCoreError::VaultNcnSlasherOperatorInvalidOwner);
-        }
-
-        let vault_ncn_slasher_operator_ticket =
-            Self::deserialize(&mut account.data.borrow_mut().as_ref())
-                .map_err(|e| VaultCoreError::VaultNcnSlasherOperatorInvalidData(e.to_string()))?;
-        if vault_ncn_slasher_operator_ticket.account_type
-            != AccountType::VaultNcnSlasherOperatorTicket
-        {
-            return Err(VaultCoreError::VaultNcnSlasherOperatorInvalidAccountType);
-        }
-
-        let mut seeds = Self::seeds(vault, ncn, slasher, operator, epoch);
-        seeds.push(vec![vault_ncn_slasher_operator_ticket.bump]);
-        let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultNcnSlasherOperatorInvalidPda)?;
-        if expected_pubkey != *account.key {
-            return Err(VaultCoreError::VaultNcnSlasherOperatorInvalidPda);
-        }
-
-        Ok(vault_ncn_slasher_operator_ticket)
-    }
-}
-
-pub struct SanitizedVaultNcnSlasherOperatorTicket<'a, 'info> {
-    account: &'a AccountInfo<'info>,
-    vault_ncn_slasher_operator_ticket: Box<VaultNcnSlasherOperatorTicket>,
-}
-
-impl<'a, 'info> SanitizedVaultNcnSlasherOperatorTicket<'a, 'info> {
-    #[allow(clippy::too_many_arguments)]
-    pub fn sanitize(
-        program_id: &Pubkey,
-        account: &'a AccountInfo<'info>,
-        expect_writable: bool,
-        vault: &Pubkey,
-        ncn: &Pubkey,
-        slasher: &Pubkey,
-        operator: &Pubkey,
-        epoch: u64,
-    ) -> VaultCoreResult<Self> {
-        if expect_writable && !account.is_writable {
-            return Err(VaultCoreError::VaultNcnSlasherOperatorNotWritable);
-        }
-        let vault_ncn_slasher_operator_ticket =
-            Box::new(VaultNcnSlasherOperatorTicket::deserialize_checked(
-                program_id, account, vault, ncn, slasher, operator, epoch,
-            )?);
-
-        Ok(Self {
-            account,
-            vault_ncn_slasher_operator_ticket,
-        })
-    }
-
-    pub const fn account(&self) -> &AccountInfo<'info> {
-        self.account
-    }
-
-    pub const fn vault_ncn_slasher_operator_ticket(&self) -> &VaultNcnSlasherOperatorTicket {
-        &self.vault_ncn_slasher_operator_ticket
-    }
-
-    pub fn vault_ncn_slasher_operator_ticket_mut(&mut self) -> &mut VaultNcnSlasherOperatorTicket {
-        &mut self.vault_ncn_slasher_operator_ticket
-    }
-
-    pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(
-            &mut self.account.data.borrow_mut()[..],
-            &*self.vault_ncn_slasher_operator_ticket,
-        )?;
-        Ok(())
     }
 }

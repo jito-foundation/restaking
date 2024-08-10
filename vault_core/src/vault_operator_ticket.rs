@@ -1,33 +1,31 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+use bytemuck::{Pod, Zeroable};
+use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
+use solana_program::pubkey::Pubkey;
 
-use crate::{
-    result::{VaultCoreError, VaultCoreResult},
-    AccountType,
-};
+impl Discriminator for VaultOperatorTicket {
+    const DISCRIMINATOR: u8 = 4;
+}
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[repr(C)]
 pub struct VaultOperatorTicket {
-    /// The account type
-    account_type: AccountType,
-
     /// The vault account
-    vault: Pubkey,
+    pub vault: Pubkey,
 
     /// The operator account
-    operator: Pubkey,
+    pub operator: Pubkey,
 
     /// The index
-    index: u64,
+    pub index: u64,
 
     /// The slot toggle
-    state: SlotToggle,
-
-    /// Reserved space
-    reserved: [u8; 128],
+    pub state: SlotToggle,
 
     bump: u8,
+
+    /// Reserved space
+    reserved: [u8; 7],
 }
 
 impl VaultOperatorTicket {
@@ -39,46 +37,12 @@ impl VaultOperatorTicket {
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::VaultOperatorTicket,
             vault,
             operator,
             index,
             state: SlotToggle::new(slot_added),
-            reserved: [0; 128],
             bump,
-        }
-    }
-
-    pub const fn vault(&self) -> Pubkey {
-        self.vault
-    }
-
-    pub const fn operator(&self) -> Pubkey {
-        self.operator
-    }
-
-    pub const fn index(&self) -> u64 {
-        self.index
-    }
-
-    pub const fn state(&self) -> &SlotToggle {
-        &self.state
-    }
-
-    pub fn check_active_or_cooldown(&self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
-        if self.state.is_active_or_cooldown(slot, epoch_length) {
-            Ok(())
-        } else {
-            msg!("VaultOperatorTicket is not active or in cooldown");
-            Err(VaultCoreError::VaultOperatorTicketInactive)
-        }
-    }
-
-    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> VaultCoreResult<()> {
-        if self.state.deactivate(slot, epoch_length) {
-            Ok(())
-        } else {
-            Err(VaultCoreError::VaultOperatorTicketAlreadyDeactivated)
+            reserved: [0; 7],
         }
     }
 
@@ -99,82 +63,5 @@ impl VaultOperatorTicket {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
-    }
-
-    pub fn deserialize_checked(
-        program_id: &Pubkey,
-        account: &AccountInfo,
-        vault: &Pubkey,
-        operator: &Pubkey,
-    ) -> VaultCoreResult<Self> {
-        if account.data_is_empty() {
-            return Err(VaultCoreError::VaultOperatorTicketEmpty);
-        }
-        if account.owner != program_id {
-            return Err(VaultCoreError::VaultOperatorTicketInvalidOwner);
-        }
-
-        let ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| VaultCoreError::VaultOperatorTicketInvalidData(e.to_string()))?;
-        if ticket.account_type != AccountType::VaultOperatorTicket {
-            return Err(VaultCoreError::VaultOperatorTicketInvalidAccountType);
-        }
-
-        let mut seeds = Self::seeds(vault, operator);
-        seeds.push(vec![ticket.bump]);
-        let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| VaultCoreError::VaultOperatorTicketInvalidPda)?;
-        if expected_pubkey != *account.key {
-            return Err(VaultCoreError::VaultOperatorTicketInvalidPda);
-        }
-        Ok(ticket)
-    }
-}
-
-pub struct SanitizedVaultOperatorTicket<'a, 'info> {
-    account: &'a AccountInfo<'info>,
-    vault_operator_ticket: Box<VaultOperatorTicket>,
-}
-
-impl<'a, 'info> SanitizedVaultOperatorTicket<'a, 'info> {
-    pub fn sanitize(
-        program_id: &Pubkey,
-        account: &'a AccountInfo<'info>,
-        expect_writable: bool,
-        vault: &Pubkey,
-        ncn: &Pubkey,
-    ) -> VaultCoreResult<SanitizedVaultOperatorTicket<'a, 'info>> {
-        if expect_writable && !account.is_writable {
-            return Err(VaultCoreError::VaultOperatorTicketNotWritable);
-        }
-        let vault_operator_ticket = Box::new(VaultOperatorTicket::deserialize_checked(
-            program_id, account, vault, ncn,
-        )?);
-
-        Ok(SanitizedVaultOperatorTicket {
-            account,
-            vault_operator_ticket,
-        })
-    }
-
-    pub const fn account(&self) -> &AccountInfo<'info> {
-        self.account
-    }
-
-    pub const fn vault_operator_ticket(&self) -> &VaultOperatorTicket {
-        &self.vault_operator_ticket
-    }
-
-    pub fn vault_operator_ticket_mut(&mut self) -> &mut VaultOperatorTicket {
-        &mut self.vault_operator_ticket
-    }
-
-    pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(
-            &mut self.account.data.borrow_mut()[..],
-            &self.vault_operator_ticket,
-        )?;
-        Ok(())
     }
 }

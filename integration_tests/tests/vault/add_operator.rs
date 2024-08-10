@@ -42,7 +42,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault_operator_ticket.vault(), vault_root.vault_pubkey);
         assert_eq!(
-            vault_operator_ticket.operator(),
+            vault_operator_ticket.operator,
             operator_root.operator_pubkey
         );
         assert_eq!(vault_operator_ticket.index(), 0);

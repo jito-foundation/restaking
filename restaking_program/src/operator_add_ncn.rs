@@ -32,7 +32,7 @@ pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -
         system_program,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_ncn_admin(admin.account().key)?;
+    operator.operator.check_ncn_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
     let rent = Rent::get()?;
@@ -81,7 +81,7 @@ fn _create_operator_ncn_ticket<'a, 'info>(
     let operator_ncn_ticket = OperatorNcnTicket::new(
         *operator.account().key,
         *ncn.account().key,
-        operator.operator().ncn_count(),
+        operator.operator.ncn_count(),
         slot,
         bump,
     );

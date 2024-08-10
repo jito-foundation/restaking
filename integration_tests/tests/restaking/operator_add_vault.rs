@@ -87,7 +87,7 @@ mod tests {
             .get_operator_vault_ticket(&operator_pubkey, &vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(ticket.operator(), operator_pubkey);
+        assert_eq!(ticket.operator, operator_pubkey);
         assert_eq!(ticket.vault(), vault_pubkey);
         assert_eq!(ticket.index(), 0);
         assert_eq!(ticket.state().slot_added(), 1);

@@ -21,7 +21,7 @@ pub fn process_operator_remove_ncn(program_id: &Pubkey, accounts: &[AccountInfo]
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_ncn_admin(admin.account().key)?;
+    operator.operator.check_ncn_admin(admin.account().key)?;
 
     // TODO (LB): should it get removed from the NCN?
 

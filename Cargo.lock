@@ -1990,6 +1990,7 @@ dependencies = [
  "jito-restaking-core",
  "jito-restaking-sanitization",
  "jito-restaking-sdk",
+ "jito-vault-core",
  "jito-vault-sdk",
  "shank",
  "solana-program",
@@ -2039,6 +2040,8 @@ version = "0.0.1"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
+ "bytemuck",
+ "jito-account-traits",
  "jito-jsm-core",
  "jito-restaking-sanitization",
  "shank",

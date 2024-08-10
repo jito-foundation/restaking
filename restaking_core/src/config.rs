@@ -1,11 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{
-    account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, entrypoint::ProgramResult, msg,
-    pubkey::Pubkey,
-};
-
-use crate::result::{RestakingCoreError, RestakingCoreResult};
+use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, pubkey::Pubkey};
 
 impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
@@ -49,22 +44,6 @@ impl Config {
         }
     }
 
-    pub fn increment_ncn(&mut self) -> RestakingCoreResult<()> {
-        self.ncn_count = self
-            .ncn_count
-            .checked_add(1)
-            .ok_or(RestakingCoreError::NcnOverflow)?;
-        Ok(())
-    }
-
-    pub fn increment_operators(&mut self) -> RestakingCoreResult<()> {
-        self.operator_count = self
-            .operator_count
-            .checked_add(1)
-            .ok_or(RestakingCoreError::OperatorOverflow)?;
-        Ok(())
-    }
-
     pub fn seeds() -> Vec<Vec<u8>> {
         vec![b"config".to_vec()]
     }
@@ -74,42 +53,5 @@ impl Config {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
-    }
-}
-
-pub struct SanitizedConfig<'a, 'info> {
-    account: &'a AccountInfo<'info>,
-    config: Box<Config>,
-}
-
-impl<'a, 'info> SanitizedConfig<'a, 'info> {
-    pub fn sanitize(
-        program_id: &Pubkey,
-        account: &'a AccountInfo<'info>,
-        expect_writable: bool,
-    ) -> RestakingCoreResult<SanitizedConfig<'a, 'info>> {
-        if expect_writable && !account.is_writable {
-            return Err(RestakingCoreError::ConfigNotWritable);
-        }
-        let config = Box::new(Config::new(Pubkey::default(), Pubkey::default(), 0));
-
-        Ok(SanitizedConfig { account, config })
-    }
-
-    pub const fn account(&self) -> &AccountInfo<'info> {
-        self.account
-    }
-
-    pub const fn config(&self) -> &Config {
-        &self.config
-    }
-
-    pub fn config_mut(&mut self) -> &mut Config {
-        &mut self.config
-    }
-
-    pub fn save(&self) -> ProgramResult {
-        // borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.config)?;
-        Ok(())
     }
 }

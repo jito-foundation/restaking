@@ -33,7 +33,7 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
         system_program,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_vault_admin(admin.account().key)?;
+    operator.operator.check_vault_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
     let rent = Rent::get()?;
@@ -80,7 +80,7 @@ fn _create_operator_vault_ticket<'a, 'info>(
     let operator_vault_ticket = OperatorVaultTicket::new(
         *operator.account().key,
         *vault.key,
-        operator.operator().vault_count(),
+        operator.operator.vault_count(),
         slot,
         bump,
     );

@@ -25,7 +25,7 @@ pub fn process_operator_withdrawal_asset(
         receiver_token_account,
     } = SanitizedAccounts::sanitize(program_id, accounts, &token_mint)?;
 
-    operator.operator().check_admin(admin.account().key)?;
+    operator.operator.check_admin(admin.account().key)?;
 
     assert_with_msg(
         operator_token_account.token_account().amount >= amount,
@@ -49,8 +49,8 @@ fn _withdraw_operator_asset<'a, 'info>(
     receiver_token_account: &AccountInfo<'info>,
     amount: u64,
 ) -> ProgramResult {
-    let mut operator_seeds = Operator::seeds(&operator.operator().base());
-    operator_seeds.push(vec![operator.operator().bump()]);
+    let mut operator_seeds = Operator::seeds(&operator.operator.base());
+    operator_seeds.push(vec![operator.operator.bump()]);
     let operator_seeds_slice = operator_seeds
         .iter()
         .map(|seed| seed.as_slice())

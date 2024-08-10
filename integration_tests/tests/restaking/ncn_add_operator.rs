@@ -109,7 +109,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(ticket.ncn(), ncn_pubkey);
-        assert_eq!(ticket.operator(), operator_pubkey);
+        assert_eq!(ticket.operator, operator_pubkey);
         assert_eq!(ticket.index(), 0);
         assert_eq!(
             ticket.state().slot_added(),

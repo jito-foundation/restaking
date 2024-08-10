@@ -149,8 +149,8 @@ mod tests {
 
         let delegations = vault_delegation_list.delegations();
         assert_eq!(delegations.len(), 1);
-        assert_eq!(delegations[0].operator(), operator_root.operator_pubkey);
-        assert_eq!(delegations[0].staked_amount(), 10_000);
+        assert_eq!(delegations[0].operator, operator_root.operator_pubkey);
+        assert_eq!(delegations[0].staked_amount, 10_000);
 
         fixture
             .create_ata(&vault.supported_mint(), &slasher.pubkey())
@@ -190,8 +190,8 @@ mod tests {
             .unwrap();
         let delegations = delegation_list.delegations();
         assert_eq!(delegations.len(), 1);
-        assert_eq!(delegations[0].operator(), operator_root.operator_pubkey);
-        assert_eq!(delegations[0].staked_amount(), 9_900);
+        assert_eq!(delegations[0].operator, operator_root.operator_pubkey);
+        assert_eq!(delegations[0].staked_amount, 9_900);
 
         let epoch = fixture.get_current_slot().await.unwrap() / restaking_config.epoch_length();
         let vault_ncn_slasher_operator_ticket = vault_program_client
@@ -216,7 +216,7 @@ mod tests {
             slasher.pubkey()
         );
         assert_eq!(
-            vault_ncn_slasher_operator_ticket.operator(),
+            vault_ncn_slasher_operator_ticket.operator,
             operator_root.operator_pubkey
         );
     }

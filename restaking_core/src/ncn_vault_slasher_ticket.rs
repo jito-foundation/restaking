@@ -29,7 +29,7 @@ pub struct NcnVaultSlasherTicket {
     pub state: SlotToggle,
 
     /// The bump seed for the PDA
-    bump: u8,
+    pub bump: u8,
 
     /// Reserved space
     reserved: [u8; 7],

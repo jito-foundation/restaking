@@ -1,17 +1,18 @@
-use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
-use jito_restaking_core::loader::load_ncn;
-use jito_restaking_core::ncn::Ncn;
 use std::mem::size_of;
 
-use jito_jsm_core::slot_toggled_field::SlotToggle;
-use jito_restaking_core::ncn_operator_ticket::NcnOperatorTicket;
-use jito_restaking_core::ncn_vault_ticket::NcnVaultTicket;
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    loader::{load_signer, load_system_account, load_system_program},
+    slot_toggled_field::SlotToggle,
+};
+use jito_restaking_core::{
+    loader::load_ncn, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket,
+    ncn_vault_ticket::NcnVaultTicket,
+};
 use jito_restaking_sanitization::create_account;
-use solana_program::rent::Rent;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// The NCN opts-in to vaults by storing the vault in the NCN vault list. It also CPI's into

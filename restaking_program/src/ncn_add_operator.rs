@@ -1,25 +1,25 @@
+use std::mem::size_of;
+
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
-use jito_restaking_core::config::Config;
-use jito_restaking_core::ncn_operator_ticket::NcnOperatorTicket;
-use jito_restaking_core::operator::Operator;
-use jito_restaking_core::operator_ncn_ticket::OperatorNcnTicket;
+use jito_jsm_core::{
+    loader::{load_signer, load_system_account, load_system_program},
+    slot_toggled_field::SlotToggle,
+};
 use jito_restaking_core::{
+    config::Config,
     loader::{
         load_config, load_ncn, load_ncn_operator_ticket, load_operator, load_operator_ncn_ticket,
     },
     ncn::Ncn,
+    ncn_operator_ticket::NcnOperatorTicket,
+    operator::Operator,
+    operator_ncn_ticket::OperatorNcnTicket,
 };
 use jito_restaking_sanitization::create_account;
-use solana_program::clock::Clock;
-use solana_program::rent::Rent;
-use solana_program::sysvar::Sysvar;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
-use std::mem::size_of;
 
 /// After an operator opts-in to an NCN, the NCN operator admin can add the operator to the NCN.
 /// The operator must have opted-in to the NCN before the NCN opts-in to the operator.

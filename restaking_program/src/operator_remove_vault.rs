@@ -24,7 +24,7 @@ pub fn process_operator_remove_vault(
         admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_vault_admin(admin.account().key)?;
+    operator.operator.check_vault_admin(admin.account().key)?;
 
     let slot = Clock::get()?.slot;
     operator_vault_ticket

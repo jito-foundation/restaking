@@ -21,7 +21,7 @@ pub fn process_set_node_operator_admin(
         new_admin,
     } = SanitizedAccounts::sanitize(program_id, accounts)?;
 
-    operator.operator().check_admin(old_admin.account().key)?;
+    operator.operator.check_admin(old_admin.account().key)?;
     operator.operator_mut().set_admin(*new_admin.account().key);
 
     operator.save()?;

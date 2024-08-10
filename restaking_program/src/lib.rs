@@ -4,7 +4,7 @@ mod initialize_operator;
 mod ncn_add_operator;
 mod ncn_add_vault;
 mod ncn_add_vault_slasher;
-mod ncn_remove_operator;
+mod ncn_cooldown_operator;
 mod ncn_remove_vault;
 mod ncn_remove_vault_slasher;
 mod ncn_set_admin;

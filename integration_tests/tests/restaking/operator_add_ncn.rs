@@ -84,7 +84,7 @@ mod tests {
             .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey)
             .await
             .unwrap();
-        assert_eq!(ticket.operator(), operator_pubkey);
+        assert_eq!(ticket.operator, operator_pubkey);
         assert_eq!(ticket.ncn(), ncn_pubkey);
         assert_eq!(ticket.index(), 0);
         assert_eq!(ticket.state().slot_added(), 1);
@@ -198,7 +198,7 @@ mod tests {
             .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey1)
             .await
             .unwrap();
-        assert_eq!(ticket1.operator(), operator_pubkey);
+        assert_eq!(ticket1.operator, operator_pubkey);
         assert_eq!(ticket1.ncn(), ncn_pubkey1);
         assert_eq!(ticket1.index(), 0);
 
@@ -206,7 +206,7 @@ mod tests {
             .get_operator_ncn_ticket(&operator_pubkey, &ncn_pubkey2)
             .await
             .unwrap();
-        assert_eq!(ticket2.operator(), operator_pubkey);
+        assert_eq!(ticket2.operator, operator_pubkey);
         assert_eq!(ticket2.ncn(), ncn_pubkey2);
         assert_eq!(ticket2.index(), 1);
     }

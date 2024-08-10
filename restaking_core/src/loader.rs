@@ -3,8 +3,10 @@
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::ncn_operator_ticket::NcnOperatorTicket;
-use crate::{config::Config, ncn::Ncn, operator::Operator};
+use crate::{
+    config::Config, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket,
+    ncn_vault_ticket::NcnVaultTicket, operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
+};
 
 pub fn load_config(
     program_id: &Pubkey,
@@ -27,7 +29,7 @@ pub fn load_config(
         msg!("Config account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
-    if *account.key != Config::find_program_address(program_id).0 {
+    if account.key.ne(&Config::find_program_address(program_id).0) {
         msg!("Config account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -56,9 +58,11 @@ pub fn load_ncn(
         msg!("NCN account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
-    // TODO (LB): try not to double deserialize and return NCN?
-    let ncn = Ncn::try_from_slice(&account.data.borrow())?;
-    if *account.key != Ncn::find_program_address(program_id, &ncn.base).0 {
+    let base = Ncn::try_from_slice(&account.data.borrow())?.base;
+    if account
+        .key
+        .ne(&Ncn::find_program_address(program_id, &base).0)
+    {
         msg!("NCN account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -86,8 +90,11 @@ pub fn load_operator(
         msg!("Operator account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
-    let operator = Operator::try_from_slice(&account.data.borrow())?;
-    if *account.key != Operator::find_program_address(program_id, &operator.base).0 {
+    let base = Operator::try_from_slice(&account.data.borrow())?.base;
+    if account
+        .key
+        .ne(&Operator::find_program_address(program_id, &base).0)
+    {
         msg!("Operator account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -119,8 +126,39 @@ pub fn load_ncn_operator_ticket(
     }
     let expected_pubkey =
         NcnOperatorTicket::find_program_address(program_id, ncn.key, operator.key).0;
-    if *ncn_operator_ticket.key != expected_pubkey {
+    if ncn_operator_ticket.key.ne(&expected_pubkey) {
         msg!("NCN operator ticket account is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    Ok(())
+}
+
+pub fn load_ncn_vault_ticket(
+    program_id: &Pubkey,
+    ncn_vault_ticket: &AccountInfo,
+    ncn: &AccountInfo,
+    vault: &AccountInfo,
+    expect_writable: bool,
+) -> Result<(), ProgramError> {
+    if ncn_vault_ticket.owner.ne(program_id) {
+        msg!("NCN vault ticket account has an invalid owner");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    if ncn_vault_ticket.data_is_empty() {
+        msg!("NCN vault ticket account data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if expect_writable && !ncn_vault_ticket.is_writable {
+        msg!("NCN vault ticket account is not writable");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if ncn_vault_ticket.data.borrow()[0].ne(&NcnVaultTicket::DISCRIMINATOR) {
+        msg!("NCN vault ticket account discriminator is invalid");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    let expected_pubkey = NcnVaultTicket::find_program_address(program_id, ncn.key, vault.key).0;
+    if ncn_vault_ticket.key.ne(&expected_pubkey) {
+        msg!("NCN vault ticket account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
     Ok(())
@@ -133,5 +171,27 @@ pub fn load_operator_ncn_ticket(
     ncn: &AccountInfo,
     expect_writable: bool,
 ) -> Result<(), ProgramError> {
+    if operator_ncn_ticket.owner.ne(program_id) {
+        msg!("Operator NCN ticket account has an invalid owner");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    if operator_ncn_ticket.data_is_empty() {
+        msg!("Operator NCN ticket account data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if expect_writable && !operator_ncn_ticket.is_writable {
+        msg!("Operator NCN ticket account is not writable");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if operator_ncn_ticket.data.borrow()[0].ne(&OperatorNcnTicket::DISCRIMINATOR) {
+        msg!("Operator NCN ticket account discriminator is invalid");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    let expected_pubkey =
+        OperatorNcnTicket::find_program_address(program_id, operator.key, ncn.key).0;
+    if operator_ncn_ticket.key.ne(&expected_pubkey) {
+        msg!("Operator NCN ticket account is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
     Ok(())
 }
