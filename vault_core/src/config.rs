@@ -5,7 +5,7 @@ use bytemuck::{Pod, Zeroable};
 use sokoban::ZeroCopy;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
-    msg, program_error::ProgramError, pubkey::Pubkey,
+    program_error::ProgramError, pubkey::Pubkey,
 };
 use VaultCoreError::ConfigInvalidPda;
 
@@ -112,27 +112,13 @@ impl Config {
         }
 
         let data = account.data.borrow();
-        // let state: Config = *bytemuck::try_from_bytes(&data[..size_of::<Self>()]).unwrap();
         let state = Ref::map(data, |data| {
             Config::load_bytes(&data[..size_of::<Config>()]).unwrap()
         });
-        // let state = Self::load_bytes(&data[..size_of::<Self>()]).ok_or(
-        //     VaultCoreError::ConfigInvalidData("invalid data".to_string()),
-        // )?;
-        // let state = Self::deserialize(&mut account.data.borrow().as_ref())
-        //     .map_err(|e| VaultCoreError::ConfigInvalidData(e.to_string()))?;
+
         if state.account_type != AccountType::Config {
             return Err(VaultCoreError::ConfigInvalidAccountType);
         }
-
-        msg!("account_key: {:?}", account.key);
-        msg!("account_type: {:?}", state.account_type);
-        msg!("admin: {}", state.admin);
-        msg!("Restaking program: {}", state.restaking_program());
-        msg!("Bump: {}", state.bump);
-        // msg!("Bump: {}", state.bump);
-        // msg!("Bump: {}", state.bump);
-        // msg!("Bump: {}", state.bump);
 
         let mut seeds = Self::seeds();
         seeds.push(vec![state.bump]);
