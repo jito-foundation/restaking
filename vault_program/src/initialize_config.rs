@@ -1,6 +1,5 @@
 use std::mem::size_of;
 
-use borsh::BorshSerialize;
 use jito_restaking_sanitization::{
     assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
     system_program::SanitizedSystemProgram,
@@ -39,9 +38,6 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
         "Initializing config @ address {}",
         config_account.account().key
     );
-    msg!("{}", bump);
-    // let config_serialized = config.try_to_vec()?;
-    // let config_serialized = bytemuck::bytes_of(&config);
     create_account(
         admin.account(),
         config_account.account(),
@@ -54,10 +50,6 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
 
     let mut config_bytes = config_account.account().try_borrow_mut_data()?;
     *Config::load_mut_bytes(&mut config_bytes).ok_or(ProgramError::InvalidAccountData)? = config;
-    // config_account.account().data.borrow_mut()[..config_serialized.len()]
-    //     .copy_from_slice(&config_serialized);
-    // config_account.account().try_bro
-    //     Config::load_mut_bytes();
 
     Ok(())
 }

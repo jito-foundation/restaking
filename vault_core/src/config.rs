@@ -1,11 +1,11 @@
-use std::{mem::size_of, cell::Ref};
+use std::{cell::Ref, mem::size_of};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use bytemuck::{Pod, Zeroable};
 use sokoban::ZeroCopy;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH,
-    pubkey::Pubkey, msg,
+    msg, program_error::ProgramError, pubkey::Pubkey,
 };
 use VaultCoreError::ConfigInvalidPda;
 
@@ -125,7 +125,6 @@ impl Config {
             return Err(VaultCoreError::ConfigInvalidAccountType);
         }
 
-
         msg!("account_key: {:?}", account.key);
         msg!("account_type: {:?}", state.account_type);
         msg!("admin: {}", state.admin);
@@ -179,7 +178,10 @@ impl<'a, 'info> SanitizedConfig<'a, 'info> {
     }
 
     pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.config)?;
+        let mut config_bytes = self.account.try_borrow_mut_data()?;
+        *Config::load_mut_bytes(&mut config_bytes).ok_or(ProgramError::InvalidAccountData)? =
+            self.config;
+        // borsh::to_writer(&mut self.account.data.borrow_mut()[..], &self.config)?;
         Ok(())
     }
 }
