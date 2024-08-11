@@ -40,6 +40,7 @@ pub fn process_warmup_vault_operator_ticket(
     load_vault_operator_ticket(program_id, vault_operator_ticket, vault, operator, true)?;
     load_signer(vault_operator_admin, false)?;
 
+    // The Vault operator admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.operator_admin.ne(vault_operator_admin.key) {
@@ -47,6 +48,7 @@ pub fn process_warmup_vault_operator_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The OperatorVaultTicket shall be active
     let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
     let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
     if !operator_vault_ticket
@@ -57,6 +59,7 @@ pub fn process_warmup_vault_operator_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The VaultOperatorTicket shall be ready to be activated
     let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
     let vault_operator_ticket =
         VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;

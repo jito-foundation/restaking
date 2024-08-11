@@ -34,6 +34,7 @@ pub fn process_add_delegation(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The Vault delegation admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.delegation_admin.ne(vault_delegation_admin.key) {
@@ -41,16 +42,18 @@ pub fn process_add_delegation(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault operator ticket must be active in order to add delegation to the operator
     let vault_operator_ticket_data = vault_operator_ticket.data.borrow();
     let vault_operator_ticket = VaultOperatorTicket::try_from_slice(&vault_operator_ticket_data)?;
     if !vault_operator_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+        .is_active(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Vault operator ticket is not active or in cooldown");
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault delegation list shall be up-to-date
     let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
     let vault_delegation_list =
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;

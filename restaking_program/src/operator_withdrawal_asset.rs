@@ -30,6 +30,7 @@ pub fn process_operator_withdrawal_asset(
         &token_mint,
     )?;
 
+    // The Operator withdraw admin shall be the signer of the transaction
     if operator.withdraw_admin.ne(operator_withdraw_admin.key) {
         msg!("Invalid operator withdraw admin");
         return Err(ProgramError::InvalidAccountData);

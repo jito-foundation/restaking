@@ -253,15 +253,6 @@ impl VaultProgramClient {
             .await?;
         }
 
-        // let account = self
-        //     .banks_client
-        //     .get_account(vault_delegation_list)
-        //     .await?
-        //     .unwrap();
-        // if account.data[0] == VaultDelegationList::DISCRIMINATOR {
-        //     break;
-        // }
-
         // for holding the backed asset in the vault
         self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
         // for holding fees
@@ -294,7 +285,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.add_ncn(
+        self.initialize_vault_ncn_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &ncn,
@@ -482,7 +473,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.add_operator(
+        self.initialize_vault_operator_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &operator_pubkey,
@@ -594,7 +585,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn add_ncn(
+    pub async fn initialize_vault_ncn_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -624,7 +615,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn add_operator(
+    pub async fn initialize_vault_operator_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,

@@ -22,6 +22,7 @@ pub fn process_set_operator_secondary_admin(
     load_operator(program_id, operator, false)?;
     load_signer(admin, false)?;
 
+    // The Operator admin shall be the signer of the transaction
     let mut operator_data = operator.data.borrow_mut();
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
     if operator.admin.ne(admin.key) {

@@ -23,6 +23,7 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     load_signer(base, false)?;
     load_system_program(system_program)?;
 
+    // The Operator shall be at the canonical PDA
     let (operator_pubkey, operator_bump, mut operator_seed) =
         Operator::find_program_address(program_id, base.key);
     operator_seed.push(vec![operator_bump]);

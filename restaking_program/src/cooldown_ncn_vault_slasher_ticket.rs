@@ -36,6 +36,7 @@ pub fn process_cooldown_ncn_vault_slasher_ticket(
     )?;
     load_signer(ncn_slasher_admin, false)?;
 
+    // The NCN slasher admin shall be the signer of the transaction
     let ncn_data = ncn.data.borrow();
     let ncn = Ncn::try_from_slice(&ncn_data)?;
     if ncn.slasher_admin.ne(ncn_slasher_admin.key) {
@@ -43,10 +44,10 @@ pub fn process_cooldown_ncn_vault_slasher_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The NcnVaultSlasherTicket shall be active before it can be cooled down
     let mut ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow_mut();
     let ncn_vault_slasher_ticket =
         NcnVaultSlasherTicket::try_from_slice_mut(&mut ncn_vault_slasher_ticket_data)?;
-
     if !ncn_vault_slasher_ticket
         .state
         .deactivate(Clock::get()?.slot, config.epoch_length)

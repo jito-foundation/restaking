@@ -123,7 +123,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The vault shall be opted-in to the NCN
+    // The VaultNcnTicket shall be active or cooling down to get slashed
     let vault_ncn_ticket_data = vault_ncn_ticket.data.borrow();
     let vault_ncn_ticket = VaultNcnTicket::try_from_slice(&vault_ncn_ticket_data)?;
     if !vault_ncn_ticket
@@ -134,7 +134,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The NCN shall be opted-in to the vault
+    // The NcnVaultTicket shall be active or cooling down to get slashed
     let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
     if !ncn_vault_ticket
@@ -145,7 +145,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The operator shall be opted-in to the vault
+    // The OperatorVaultTicket shall be active or cooling down to get slashed
     let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
     let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
     if !operator_vault_ticket
@@ -156,7 +156,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The vault shall be opted-in to the operator
+    // The VaultOperatorTicket shall be active or cooling down to get slashed
     let vault_operator_ticket_data = vault_operator_ticket.data.borrow();
     let vault_operator_ticket = VaultOperatorTicket::try_from_slice(&vault_operator_ticket_data)?;
     if !vault_operator_ticket
@@ -167,7 +167,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The NCN shall be opted-in to the operator
+    // The NcnOperatorTicket shall be active or cooling down to get slashed
     let ncn_operator_ticket_data = ncn_operator_ticket.data.borrow();
     let ncn_operator_ticket = NcnOperatorTicket::try_from_slice(&ncn_operator_ticket_data)?;
     if !ncn_operator_ticket
@@ -178,7 +178,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The operator shall be opted-in to the NCN
+    // The OperatorNcnTicket shall be active or cooling down to get slashed
     let operator_ncn_ticket_data = operator_ncn_ticket.data.borrow();
     let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
     if !operator_ncn_ticket
@@ -189,7 +189,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The NCN shall be opted-in to the slasher
+    // The NcnVaultSlasherTicket shall be active or cooling down to slash
     let ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =
         NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
@@ -201,7 +201,7 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The vault shall be opted-in to the NCN slasher
+    // The VaultNcnSlasherTicket shall be active or cooling down to slash
     let vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow();
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice(&vault_ncn_slasher_ticket_data)?;
@@ -213,12 +213,12 @@ pub fn process_slash(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The amount slashed for this operator shall not exceed the maximum slashable amount per epoch
     let mut vault_ncn_slasher_operator_ticket_data =
         vault_ncn_slasher_operator_ticket.data.borrow_mut();
     let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
         &mut vault_ncn_slasher_operator_ticket_data,
     )?;
-
     let amount_after_slash = vault_ncn_slasher_operator_ticket
         .slashed
         .checked_add(slash_amount)
@@ -230,7 +230,10 @@ pub fn process_slash(
 
     // slash and update the slashed amount
     vault_delegation_list.slash(operator.key, slash_amount)?;
-    vault_ncn_slasher_operator_ticket.slashed = amount_after_slash;
+    vault_ncn_slasher_operator_ticket.slashed = vault_ncn_slasher_operator_ticket
+        .slashed
+        .checked_add(slash_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
     vault.tokens_deposited = vault
         .tokens_deposited
         .checked_sub(slash_amount)

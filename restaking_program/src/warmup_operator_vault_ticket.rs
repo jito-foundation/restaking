@@ -28,6 +28,7 @@ pub fn process_warmup_operator_vault_ticket(
     load_operator_vault_ticket(program_id, operator_vault_ticket, operator, vault, true)?;
     load_signer(operator_vault_admin, false)?;
 
+    // The operator vault admin shall be the signer of the transaction
     let operator_data = operator.data.borrow();
     let operator = Operator::try_from_slice(&operator_data)?;
     if operator.vault_admin.ne(operator_vault_admin.key) {
@@ -35,6 +36,7 @@ pub fn process_warmup_operator_vault_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The OperatorVaultTicket shall be inactive before it can warmed up
     let mut operator_vault_ticket_data = operator_vault_ticket.data.borrow_mut();
     let operator_vault_ticket =
         OperatorVaultTicket::try_from_slice_mut(&mut operator_vault_ticket_data)?;

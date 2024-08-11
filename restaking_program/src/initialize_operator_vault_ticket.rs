@@ -40,6 +40,7 @@ pub fn process_initialize_operator_vault_ticket(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The OperatorVaultTicket shall be at the canonical PDA
     let (operator_vault_ticket_pubkey, operator_vault_ticket_bump, mut operator_vault_ticket_seeds) =
         OperatorVaultTicket::find_program_address(program_id, operator_info.key, vault.key);
     operator_vault_ticket_seeds.push(vec![operator_vault_ticket_bump]);

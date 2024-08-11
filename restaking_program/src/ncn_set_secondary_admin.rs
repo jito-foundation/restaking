@@ -19,12 +19,14 @@ pub fn process_ncn_set_secondary_admin(
     load_ncn(program_id, ncn, true)?;
     load_signer(admin, false)?;
 
+    // The Ncn admin shall be the signer of the transaction
     let mut ncn_data = ncn.data.borrow_mut();
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.admin.ne(admin.key) {
         msg!("Invalid admin for NCN");
         return Err(ProgramError::InvalidAccountData);
     }
+
     match role {
         NcnAdminRole::Operator => {
             ncn.operator_admin = *new_admin.key;

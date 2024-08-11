@@ -37,6 +37,7 @@ pub fn process_cooldown_vault_ncn_slasher_ticket(
     )?;
     load_signer(vault_slasher_admin, false)?;
 
+    // The Vault slasher admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
@@ -44,6 +45,7 @@ pub fn process_cooldown_vault_ncn_slasher_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault slasher ticket must be active in order to cooldown the slasher
     let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow_mut();
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice_mut(&mut vault_ncn_slasher_ticket_data)?;

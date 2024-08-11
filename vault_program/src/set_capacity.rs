@@ -19,6 +19,7 @@ pub fn process_set_deposit_capacity(
     load_vault(program_id, vault, false)?;
     load_signer(vault_capacity_admin, false)?;
 
+    // The vault capacity admin shall be the signer of the transaction
     let mut vault_data = vault.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.capacity_admin.ne(vault_capacity_admin.key) {

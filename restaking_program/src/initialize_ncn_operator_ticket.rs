@@ -40,6 +40,7 @@ pub fn process_initialize_ncn_operator_ticket(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The NcnOperatorTicket shall be at the canonical PDA
     let (ncn_operator_ticket_pubkey, ncn_operator_ticket_bump, mut ncn_operator_ticket_seeds) =
         NcnOperatorTicket::find_program_address(program_id, ncn_info.key, operator.key);
     ncn_operator_ticket_seeds.push(vec![ncn_operator_ticket_bump]);
@@ -66,7 +67,7 @@ pub fn process_initialize_ncn_operator_ticket(
     let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
     if !operator_ncn_ticket
         .state
-        .is_active_or_cooldown(slot, config.epoch_length)
+        .is_active(slot, config.epoch_length)
     {
         msg!("Operator NCN ticket is not active or in cooldown");
         return Err(ProgramError::InvalidAccountData);

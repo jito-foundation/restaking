@@ -26,6 +26,7 @@ pub fn process_cooldown_operator_ncn_ticket(
     load_operator_ncn_ticket(program_id, operator_ncn_ticket, operator, ncn, true)?;
     load_signer(operator_ncn_admin, false)?;
 
+    // The operator NCN admin shall be the signer of the transaction
     let operator_data = operator.data.borrow();
     let operator = Operator::try_from_slice(&operator_data)?;
     if operator.ncn_admin.ne(operator_ncn_admin.key) {
@@ -33,9 +34,9 @@ pub fn process_cooldown_operator_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The OperatorNcnTicket shall be active before it can be cooled down
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_mut(&mut config_data)?;
-
     let mut operator_ncn_ticket_data = operator_ncn_ticket.data.borrow_mut();
     let operator_ncn_ticket = OperatorNcnTicket::try_from_slice_mut(&mut operator_ncn_ticket_data)?;
     if !operator_ncn_ticket

@@ -38,6 +38,7 @@ pub fn process_warmup_vault_ncn_ticket(
     load_vault_ncn_ticket(program_id, vault_ncn_ticket, vault, ncn, true)?;
     load_signer(vault_ncn_admin, false)?;
 
+    // The Vault NCN admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.ncn_admin.ne(vault_ncn_admin.key) {
@@ -45,6 +46,7 @@ pub fn process_warmup_vault_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The NcnVaultTicket shall be active
     let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
     if !ncn_vault_ticket
@@ -55,6 +57,7 @@ pub fn process_warmup_vault_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The VaultNcnTicket shall be ready to be activated
     let mut vault_ncn_ticket_data = vault_ncn_ticket.data.borrow_mut();
     let vault_ncn_ticket = VaultNcnTicket::try_from_slice_mut(&mut vault_ncn_ticket_data)?;
     if !vault_ncn_ticket

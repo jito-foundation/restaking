@@ -42,6 +42,7 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
 
     let slot = Clock::get()?.slot;
 
+    // The NcnVaultSlasherTicket shall be at the canonical PDA
     let (
         ncn_vault_slasher_ticket_pubkey,
         ncn_vault_slasher_ticket_bump,

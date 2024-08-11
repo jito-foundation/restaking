@@ -1,9 +1,9 @@
-mod add_ncn;
-mod add_operator;
-mod add_slasher;
 mod burn_withdrawal_ticket;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
+mod initialize_vault_ncn_slasher_ticket;
+mod initialize_vault_ncn_ticket;
+mod initialize_vault_operator_ticket;
 mod mint_to;
 mod slash;

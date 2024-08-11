@@ -48,6 +48,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
     )?;
     load_signer(vault_slasher_admin, false)?;
 
+    // The Vault slasher admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
@@ -55,6 +56,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The NcnVaultSlasherTicket shall be active
     let ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =
         NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
@@ -66,6 +68,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The VaultNcnSlasherTicket shall be ready to be activated
     let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow_mut();
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice_mut(&mut vault_ncn_slasher_ticket_data)?;

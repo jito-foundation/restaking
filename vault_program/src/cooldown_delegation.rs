@@ -29,6 +29,7 @@ pub fn process_cooldown_delegation(
     load_vault_delegation_list(program_id, vault_delegation_list, vault, true)?;
     load_signer(vault_delegation_admin, false)?;
 
+    // The Vault delegation admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.delegation_admin.ne(vault_delegation_admin.key) {
@@ -36,6 +37,7 @@ pub fn process_cooldown_delegation(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault delegation list shall be up-to-date
     let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
     let vault_delegation_list =
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;

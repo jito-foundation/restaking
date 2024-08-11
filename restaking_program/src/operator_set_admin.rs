@@ -22,6 +22,7 @@ pub fn process_set_node_operator_admin(
     load_signer(old_admin, false)?;
     load_signer(new_admin, false)?;
 
+    // The Operator admin shall be the signer of the transaction
     let mut operator_data = operator.data.borrow_mut();
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
     if operator.admin.ne(old_admin.key) {

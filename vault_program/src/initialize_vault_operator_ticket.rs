@@ -48,6 +48,7 @@ pub fn process_initialize_vault_operator_ticket(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The VaultOperatorTicket shall be at the canonical PDA
     let (vault_operator_ticket_pubkey, vault_operator_ticket_bump, mut vault_operator_ticket_seeds) =
         VaultOperatorTicket::find_program_address(program_id, vault_info.key, operator.key);
     vault_operator_ticket_seeds.push(vec![vault_operator_ticket_bump]);
@@ -56,6 +57,7 @@ pub fn process_initialize_vault_operator_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault operator admin shall be a signer on the transaction
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.operator_admin.ne(vault_operator_admin.key) {
@@ -63,11 +65,12 @@ pub fn process_initialize_vault_operator_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The OperatorVaultTicket shall be active
     let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
     let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
     if !operator_vault_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+        .is_active(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Operator vault ticket is not active or in cooldown");
         return Err(ProgramError::InvalidAccountData);

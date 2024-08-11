@@ -38,6 +38,7 @@ pub fn process_initialize_operator_ncn_ticket(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The OperatorNcnTicket shall be at the canonical PDA
     let (operator_ncn_ticket_pubkey, operator_ncn_ticket_bump, mut operator_ncn_ticket_seeds) =
         OperatorNcnTicket::find_program_address(program_id, operator_info.key, ncn.key);
     operator_ncn_ticket_seeds.push(vec![operator_ncn_ticket_bump]);

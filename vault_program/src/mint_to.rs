@@ -45,13 +45,16 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, lrt_mint.key)?;
     load_token_program(token_program)?;
 
-    // check optional signer
-    if let Some(mint_signer) = optional_accounts.first() {
-        load_signer(mint_signer, false)?;
-        if vault.mint_burn_admin.ne(&Pubkey::default())
-            && mint_signer.key.ne(&vault.mint_burn_admin)
-        {
-            msg!("Mint signer does not match vault mint signer");
+    // If the vault has a mint_burn_admin, it must be the signer
+    if vault.mint_burn_admin.ne(&Pubkey::default()) {
+        if let Some(mint_signer) = optional_accounts.first() {
+            load_signer(mint_signer, false)?;
+            if mint_signer.key.ne(&vault.mint_burn_admin) {
+                msg!("Mint signer does not match vault mint signer");
+                return Err(ProgramError::InvalidAccountData);
+            }
+        } else {
+            msg!("Mint signer is required for vault mint");
             return Err(ProgramError::InvalidAccountData);
         }
     }

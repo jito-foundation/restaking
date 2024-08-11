@@ -43,7 +43,7 @@ pub fn process_initialize_ncn_vault_ticket(
 
     let slot = Clock::get()?.slot;
 
-    // Check ncn_vault_ticket PDA
+    // The NcnVaultTicket shall be at the canonical PDA
     let (ncn_vault_ticket_pubkey, ncn_vault_ticket_bump, mut ncn_vault_ticket_seeds) =
         NcnVaultTicket::find_program_address(program_id, ncn_info.key, vault.key);
     ncn_vault_ticket_seeds.push(vec![ncn_vault_ticket_bump]);

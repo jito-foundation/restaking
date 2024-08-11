@@ -31,6 +31,7 @@ pub fn process_ncn_withdraw_asset(
     load_signer(withdraw_admin, false)?;
     load_token_program(token_program)?;
 
+    // The Ncn withdraw admin shall be the signer of the transaction
     if ncn.withdraw_admin.ne(withdraw_admin.key) {
         msg!("Invalid withdraw admin for NCN");
         return Err(ProgramError::InvalidAccountData);

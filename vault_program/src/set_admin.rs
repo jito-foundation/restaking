@@ -19,6 +19,7 @@ pub fn process_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> Progr
     load_signer(old_admin, false)?;
     load_signer(new_admin, false)?;
 
+    // The old admin shall be the signer of the transaction
     let mut vault_data = vault.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.admin.ne(old_admin.key) {

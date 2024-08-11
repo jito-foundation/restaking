@@ -35,6 +35,7 @@ pub fn process_cooldown_vault_ncn_ticket(
     load_vault_ncn_ticket(program_id, vault_ncn_ticket, ncn, vault, true)?;
     load_signer(vault_ncn_admin, false)?;
 
+    // The Vault NCN admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.ncn_admin.ne(vault_ncn_admin.key) {
@@ -42,6 +43,7 @@ pub fn process_cooldown_vault_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The VaultNcnTicket must be active in order to cooldown the NCN
     let mut vault_ncn_ticket_data = vault_ncn_ticket.data.borrow_mut();
     let vault_ncn_ticket = VaultNcnTicket::try_from_slice_mut(&mut vault_ncn_ticket_data)?;
     if !vault_ncn_ticket

@@ -55,6 +55,7 @@ pub fn process_initialize_vault_ncn_ticket(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The VaultNcnTicket shall be at the canonical PDA
     let (vault_ncn_ticket_pubkey, vault_ncn_ticket_bump, mut vault_ncn_ticket_seeds) =
         VaultNcnTicket::find_program_address(program_id, vault_info.key, ncn.key);
     vault_ncn_ticket_seeds.push(vec![vault_ncn_ticket_bump]);
@@ -63,6 +64,7 @@ pub fn process_initialize_vault_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault NCN admin shall be the signer
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.ncn_admin.ne(vault_ncn_admin.key) {
@@ -70,11 +72,12 @@ pub fn process_initialize_vault_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The NcnVaultTicket shall be active
     let ncn_vault_data = ncn_vault_ticket.data.borrow();
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_data)?;
     if !ncn_vault_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+        .is_active(Clock::get()?.slot, config.epoch_length)
     {
         msg!("NCN vault ticket is not active or in cooldown");
         return Err(ProgramError::InvalidAccountData);
