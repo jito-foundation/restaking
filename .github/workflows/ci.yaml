@@ -34,7 +34,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2023-10-05
+          toolchain: nightly-2024-07-25
       - name: Install cargo-sort from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.12/install)"
+        run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: cargo-build-sbf
@@ -67,7 +67,6 @@ jobs:
           name: jito_vault_program.so
           path: target/sbf-solana-solana/release/jito_vault_program.so
 
-
   # coverage runs tests as a native program
   coverage:
     name: coverage
@@ -77,13 +76,13 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2023-10-05
+          toolchain: nightly-2024-07-25
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4.0.1
+        uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: jito-foundation/restaking

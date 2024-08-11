@@ -1,31 +1,32 @@
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::{load_associated_token_account, load_token_program};
 use jito_restaking_core::{
-    avs::SanitizedAvs, avs_operator_ticket::SanitizedAvsOperatorTicket,
-    avs_vault_slasher_ticket::SanitizedAvsVaultSlasherTicket,
-    avs_vault_ticket::SanitizedAvsVaultTicket, operator::SanitizedOperator,
-    operator_avs_ticket::SanitizedOperatorAvsTicket,
-    operator_vault_ticket::SanitizedOperatorVaultTicket,
-};
-use jito_restaking_sanitization::{
-    associated_token_account::SanitizedAssociatedTokenAccount, signer::SanitizedSignerAccount,
-    token_program::SanitizedTokenProgram,
+    loader::{
+        load_ncn, load_ncn_operator_ticket, load_ncn_vault_slasher_ticket, load_ncn_vault_ticket,
+        load_operator, load_operator_ncn_ticket, load_operator_vault_ticket,
+    },
+    ncn_operator_ticket::NcnOperatorTicket,
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket,
+    operator_ncn_ticket::OperatorNcnTicket,
+    operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
-    config::SanitizedConfig,
-    vault::{SanitizedVault, Vault},
-    vault_avs_slasher_operator_ticket::SanitizedVaultAvsSlasherOperatorTicket,
-    vault_avs_slasher_ticket::SanitizedVaultAvsSlasherTicket,
-    vault_avs_ticket::SanitizedVaultAvsTicket,
-    vault_delegation_list::SanitizedVaultDelegationList,
-    vault_operator_ticket::SanitizedVaultOperatorTicket,
+    config::Config,
+    loader::{
+        load_config, load_vault, load_vault_delegation_list,
+        load_vault_ncn_slasher_operator_ticket, load_vault_ncn_ticket, load_vault_operator_ticket,
+    },
+    vault::Vault,
+    vault_delegation_list::VaultDelegationList,
+    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
+    vault_ncn_ticket::VaultNcnTicket,
+    vault_operator_ticket::VaultOperatorTicket,
 };
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    program::invoke_signed,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 use spl_token::instruction::transfer;
 
@@ -35,265 +36,233 @@ pub fn process_slash(
     accounts: &[AccountInfo],
     slash_amount: u64,
 ) -> ProgramResult {
-    let slot = Clock::get()?.slot;
-    let SanitizedAccounts {
-        mut vault,
+    let [config, vault_info, ncn, operator, slasher, ncn_operator_ticket, operator_ncn_ticket, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_ticket, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_delegation_list, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault_info, false)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+    load_ncn(&config.restaking_program, ncn, false)?;
+    load_operator(&config.restaking_program, operator, false)?;
+    // slasher
+    load_ncn_operator_ticket(
+        &config.restaking_program,
+        ncn_operator_ticket,
+        ncn,
         operator,
-        avs_operator_ticket,
-        operator_avs_ticket,
-        avs_vault_ticket,
+        false,
+    )?;
+    load_operator_ncn_ticket(
+        &config.restaking_program,
+        operator_ncn_ticket,
+        operator,
+        ncn,
+        false,
+    )?;
+    load_ncn_vault_ticket(
+        &config.restaking_program,
+        ncn_vault_ticket,
+        ncn,
+        vault_info,
+        false,
+    )?;
+    load_operator_vault_ticket(
+        &config.restaking_program,
         operator_vault_ticket,
-        vault_avs_ticket,
+        operator,
+        vault_info,
+        false,
+    )?;
+    load_vault_ncn_ticket(program_id, vault_ncn_ticket, vault_info, ncn, false)?;
+    load_vault_operator_ticket(
+        program_id,
         vault_operator_ticket,
-        avs_vault_slasher_ticket,
-        vault_avs_slasher_ticket,
-        mut vault_delegation_list,
-        mut vault_avs_slasher_operator_ticket,
-        mut vault_token_account,
-        slasher_token_account,
-    } = SanitizedAccounts::sanitize(program_id, accounts, slot)?;
-
-    // The vault shall be opted-in to the AVS and the AVS shall be opted-in to the vault
-    vault_avs_ticket.vault_avs_ticket().check_active(slot)?;
-    avs_vault_ticket.avs_vault_ticket().check_active(slot)?;
-
-    // The operator shall be opted-in to vault and the vault shall be staked to the operator
-    operator_vault_ticket
-        .operator_vault_ticket()
-        .check_active(slot)?;
-    vault_operator_ticket
-        .vault_operator_ticket()
-        .check_active(slot)?;
-
-    // The operator shall be opted-in to the AVS and the AVS shall be opted-in to the operator
-    avs_operator_ticket
-        .avs_operator_ticket()
-        .check_active(slot)?;
-    operator_avs_ticket
-        .operator_avs_ticket()
-        .check_active(slot)?;
-    // The slasher shall be active for the AVS and the vault
-    avs_vault_slasher_ticket
-        .avs_vault_slasher_ticket()
-        .check_active(slot)?;
-    vault_avs_slasher_ticket
-        .vault_avs_slasher_ticket()
-        .check_active(slot)?;
-
-    let max_slashable_per_epoch = vault_avs_slasher_ticket
-        .vault_avs_slasher_ticket()
-        .max_slashable_per_epoch();
-    vault_avs_slasher_operator_ticket
-        .vault_avs_slasher_operator_ticket()
-        .check_max_slashable_not_exceeded(slash_amount, max_slashable_per_epoch)?;
-
-    vault_delegation_list
-        .vault_delegation_list_mut()
-        .slash(operator.account().key, slash_amount)?;
-
-    vault_avs_slasher_operator_ticket
-        .vault_avs_slasher_operator_ticket_mut()
-        .increment_slashed_amount(slash_amount)?;
-
-    _transfer_slashed_funds(
-        &vault,
-        &vault_token_account,
-        &slasher_token_account,
-        slash_amount,
+        vault_info,
+        operator,
+        false,
     )?;
-
-    vault_token_account.reload()?;
-    vault
-        .vault_mut()
-        .set_tokens_deposited(vault_token_account.token_account().amount);
-
-    vault.save()?;
-    vault_delegation_list.save()?;
-    vault_avs_slasher_operator_ticket.save()?;
-
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn _transfer_slashed_funds<'a, 'info>(
-    vault: &SanitizedVault<'a, 'info>,
-    vault_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-    slasher_token_account: &SanitizedAssociatedTokenAccount<'a, 'info>,
-    amount: u64,
-) -> ProgramResult {
-    let mut vault_seeds = Vault::seeds(&vault.vault().base());
-    vault_seeds.push(vec![vault.vault().bump()]);
-    let vault_seeds_slice = vault_seeds
-        .iter()
-        .map(|seed| seed.as_slice())
-        .collect::<Vec<&[u8]>>();
-
-    invoke_signed(
-        &transfer(
-            &spl_token::id(),
-            vault_token_account.account().key,
-            slasher_token_account.account().key,
-            vault.account().key,
-            &[],
-            amount,
-        )?,
-        &[
-            vault_token_account.account().clone(),
-            slasher_token_account.account().clone(),
-            vault.account().clone(),
-        ],
-        &[vault_seeds_slice.as_slice()],
+    load_ncn_vault_slasher_ticket(
+        &config.restaking_program,
+        ncn_vault_slasher_ticket,
+        ncn,
+        vault_info,
+        slasher,
+        false,
     )?;
+    load_vault_delegation_list(program_id, vault_delegation_list, vault_info, false)?;
+    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
+    load_vault_ncn_slasher_operator_ticket(
+        program_id,
+        vault_ncn_slasher_operator_ticket,
+        vault_info,
+        ncn,
+        slasher,
+        operator,
+        ncn_epoch,
+        true,
+    )?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
+    load_associated_token_account(slasher_token_account, slasher.key, &vault.supported_mint)?;
+    load_token_program(token_program)?;
 
-    Ok(())
-}
+    let slot = Clock::get()?.slot;
+    let epoch_length = config.epoch_length;
 
-struct SanitizedAccounts<'a, 'info> {
-    vault: SanitizedVault<'a, 'info>,
-    operator: SanitizedOperator<'a, 'info>,
-    avs_operator_ticket: SanitizedAvsOperatorTicket<'a, 'info>,
-    operator_avs_ticket: SanitizedOperatorAvsTicket<'a, 'info>,
-    avs_vault_ticket: SanitizedAvsVaultTicket<'a, 'info>,
-    operator_vault_ticket: SanitizedOperatorVaultTicket<'a, 'info>,
-    vault_avs_ticket: SanitizedVaultAvsTicket<'a, 'info>,
-    vault_operator_ticket: SanitizedVaultOperatorTicket<'a, 'info>,
-    avs_vault_slasher_ticket: SanitizedAvsVaultSlasherTicket<'a, 'info>,
-    vault_avs_slasher_ticket: SanitizedVaultAvsSlasherTicket<'a, 'info>,
-    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-    vault_avs_slasher_operator_ticket: SanitizedVaultAvsSlasherOperatorTicket<'a, 'info>,
-    vault_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-    slasher_token_account: SanitizedAssociatedTokenAccount<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    /// Sanitizes the accounts for the slash instruction: [`crate::VaultInstruction::Slash`]
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-        slot: u64,
-    ) -> Result<Self, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        let avs = SanitizedAvs::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-        )?;
-        let operator = SanitizedOperator::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-        )?;
-        let slasher =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        let avs_operator_ticket = SanitizedAvsOperatorTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-            avs.account().key,
-            operator.account().key,
-        )?;
-        let operator_avs_ticket = SanitizedOperatorAvsTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-            operator.account().key,
-            avs.account().key,
-        )?;
-        let avs_vault_ticket = SanitizedAvsVaultTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-            avs.account().key,
-            vault.account().key,
-        )?;
-        let operator_vault_ticket = SanitizedOperatorVaultTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-            operator.account().key,
-            vault.account().key,
-        )?;
-        let vault_avs_ticket = SanitizedVaultAvsTicket::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            false,
-            vault.account().key,
-            avs.account().key,
-        )?;
-        let vault_operator_ticket = SanitizedVaultOperatorTicket::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            false,
-            vault.account().key,
-            operator.account().key,
-        )?;
-        let avs_vault_slasher_ticket = SanitizedAvsVaultSlasherTicket::sanitize(
-            &config.config().restaking_program(),
-            next_account_info(&mut accounts_iter)?,
-            false,
-            avs.account().key,
-            vault.account().key,
-            slasher.account().key,
-        )?;
-        let vault_avs_slasher_ticket = SanitizedVaultAvsSlasherTicket::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            false,
-            vault.account().key,
-            avs.account().key,
-            slasher.account().key,
-        )?;
-        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            true,
-            vault.account().key,
-        )?;
-
-        let epoch = slot.checked_div(config.config().epoch_length()).unwrap();
-        let vault_avs_slasher_operator_ticket = SanitizedVaultAvsSlasherOperatorTicket::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            true,
-            vault.account().key,
-            avs.account().key,
-            slasher.account().key,
-            operator.account().key,
-            epoch,
-        )?;
-
-        let vault_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(&mut accounts_iter)?,
-            &vault.vault().supported_mint(),
-            vault.account().key,
-        )?;
-        let slasher_token_account = SanitizedAssociatedTokenAccount::sanitize(
-            next_account_info(&mut accounts_iter)?,
-            &vault.vault().supported_mint(),
-            slasher.account().key,
-        )?;
-        let _token_program =
-            SanitizedTokenProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
-        Ok(Self {
-            vault,
-            operator,
-            avs_operator_ticket,
-            operator_avs_ticket,
-            avs_vault_ticket,
-            operator_vault_ticket,
-            vault_avs_ticket,
-            vault_operator_ticket,
-            avs_vault_slasher_ticket,
-            vault_avs_slasher_ticket,
-            vault_delegation_list,
-            vault_avs_slasher_operator_ticket,
-            vault_token_account,
-            slasher_token_account,
-        })
+    // The vault delegation list shall not need an update
+    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
+    let vault_delegation_list =
+        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
+    if vault_delegation_list.is_update_needed(slot, epoch_length) {
+        msg!("Vault delegation list update needed");
+        return Err(ProgramError::InvalidAccountData);
     }
+
+    // The vault shall be opted-in to the NCN
+    let vault_ncn_ticket_data = vault_ncn_ticket.data.borrow();
+    let vault_ncn_ticket = VaultNcnTicket::try_from_slice(&vault_ncn_ticket_data)?;
+    if !vault_ncn_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("Vault NCN ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The NCN shall be opted-in to the vault
+    let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
+    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
+    if !ncn_vault_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("NCN vault ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The operator shall be opted-in to the vault
+    let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
+    let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
+    if !operator_vault_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("Operator vault ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The vault shall be opted-in to the operator
+    let vault_operator_ticket_data = vault_operator_ticket.data.borrow();
+    let vault_operator_ticket = VaultOperatorTicket::try_from_slice(&vault_operator_ticket_data)?;
+    if !vault_operator_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("Vault operator ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The NCN shall be opted-in to the operator
+    let ncn_operator_ticket_data = ncn_operator_ticket.data.borrow();
+    let ncn_operator_ticket = NcnOperatorTicket::try_from_slice(&ncn_operator_ticket_data)?;
+    if !ncn_operator_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("NCN operator ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The operator shall be opted-in to the NCN
+    let operator_ncn_ticket_data = operator_ncn_ticket.data.borrow();
+    let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
+    if !operator_ncn_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("Operator NCN ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The NCN shall be opted-in to the slasher
+    let ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow();
+    let ncn_vault_slasher_ticket =
+        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
+    if !ncn_vault_slasher_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("NCN vault slasher ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The vault shall be opted-in to the NCN slasher
+    let vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow();
+    let vault_ncn_slasher_ticket =
+        VaultNcnSlasherTicket::try_from_slice(&vault_ncn_slasher_ticket_data)?;
+    if !vault_ncn_slasher_ticket
+        .state
+        .is_active_or_cooldown(slot, epoch_length)
+    {
+        msg!("Vault NCN slasher ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    let mut vault_ncn_slasher_operator_ticket_data =
+        vault_ncn_slasher_operator_ticket.data.borrow_mut();
+    let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
+        &mut vault_ncn_slasher_operator_ticket_data,
+    )?;
+
+    let amount_after_slash = vault_ncn_slasher_operator_ticket
+        .slashed
+        .checked_add(slash_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    if amount_after_slash > vault_ncn_slasher_ticket.max_slashable_per_epoch {
+        msg!("Slash amount exceeds the maximum slashable amount per epoch");
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    // slash and update the slashed amount
+    vault_delegation_list.slash(operator.key, slash_amount)?;
+    vault_ncn_slasher_operator_ticket.slashed = amount_after_slash;
+    vault.tokens_deposited = vault
+        .tokens_deposited
+        .checked_sub(slash_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    // transfer the slashed funds
+    {
+        let mut vault_seeds = Vault::seeds(&vault.base);
+        vault_seeds.push(vec![vault.bump]);
+        let vault_seeds_slice = vault_seeds
+            .iter()
+            .map(|seed| seed.as_slice())
+            .collect::<Vec<&[u8]>>();
+        drop(vault_data);
+
+        invoke_signed(
+            &transfer(
+                &spl_token::id(),
+                vault_token_account.key,
+                slasher_token_account.key,
+                vault_info.key,
+                &[],
+                slash_amount,
+            )?,
+            &[
+                vault_token_account.clone(),
+                slasher_token_account.clone(),
+                vault_info.clone(),
+            ],
+            &[vault_seeds_slice.as_slice()],
+        )?;
+    }
+
+    Ok(())
 }

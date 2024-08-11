@@ -15,84 +15,84 @@ pub enum RestakingInstruction {
     #[account(3, name = "system_program")]
     InitializeConfig,
 
-    /// Initializes the AVS
+    /// Initializes the NCN
     #[account(0, writable, name = "config")]
-    #[account(1, writable, name = "avs")]
+    #[account(1, writable, name = "ncn")]
     #[account(2, writable, signer, name = "admin")]
     #[account(3, signer, name = "base")]
     #[account(4, name = "system_program")]
-    InitializeAvs,
+    InitializeNcn,
 
-    /// AVS adds support for receiving delegation from a vault
+    /// NCN adds support for receiving delegation from a vault
     #[account(0, name = "config")]
-    #[account(1, writable, name = "avs")]
+    #[account(1, writable, name = "ncn")]
     #[account(2, name = "vault")]
-    #[account(3, writable, name = "avs_vault_ticket")]
+    #[account(3, writable, name = "ncn_vault_ticket")]
     #[account(4, signer, name = "admin")]
     #[account(5, writable, signer, name = "payer")]
     #[account(6, name = "system_program")]
-    AvsAddVault,
+    NcnAddVault,
 
-    /// AVS removes support for receiving delegation from a vault
+    /// NCN removes support for receiving delegation from a vault
     #[account(0, name = "config")]
-    #[account(1, name = "avs")]
+    #[account(1, name = "ncn")]
     #[account(2, name = "vault")]
-    #[account(3, writable, name = "avs_vault_ticket")]
+    #[account(3, writable, name = "ncn_vault_ticket")]
     #[account(4, signer, name = "admin")]
-    AvsRemoveVault,
+    NcnCooldownVault,
 
     /// After the operator has signaled they are ready to join the network,
-    /// the AVS admin can add the operator to the AVS
+    /// the NCN admin can add the operator to the NCN
     #[account(0, name = "config")]
-    #[account(1, writable, name = "avs")]
+    #[account(1, writable, name = "ncn")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "avs_operator_ticket")]
-    #[account(4, name = "operator_avs_ticket")]
+    #[account(3, writable, name = "ncn_operator_ticket")]
+    #[account(4, name = "operator_ncn_ticket")]
     #[account(5, signer, name = "admin")]
     #[account(6, writable, signer, name = "payer")]
     #[account(7, name = "system_program")]
-    AvsAddOperator,
+    NcnAddOperator,
 
     #[account(0, name = "config")]
-    #[account(1, name = "avs")]
+    #[account(1, name = "ncn")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "avs_operator_ticket")]
+    #[account(3, writable, name = "ncn_operator_ticket")]
     #[account(4, signer, name = "admin")]
-    AvsRemoveOperator,
+    NcnCooldownOperator,
 
-    /// The AVS adds support for a vault slasher
+    /// The NCN adds support for a vault slasher
     ///
     /// # Arguments
     /// * `u64` - The maximum amount that can be slashed from the vault per epoch
     #[account(0, name = "config")]
-    #[account(1, writable, name = "avs")]
+    #[account(1, writable, name = "ncn")]
     #[account(2, name = "vault")]
     #[account(3, name = "slasher")]
-    #[account(4, name = "avs_vault_ticket")]
-    #[account(5, writable, name = "avs_slasher_ticket")]
+    #[account(4, name = "ncn_vault_ticket")]
+    #[account(5, writable, name = "ncn_slasher_ticket")]
     #[account(6, signer, name = "admin")]
     #[account(7, writable, signer, name = "payer")]
     #[account(8, name = "system_program")]
-    AvsAddVaultSlasher(u64),
+    NcnAddVaultSlasher(u64),
 
-    /// AVS removes support for a slasher
+    /// NCN removes support for a slasher
     #[account(0, name = "config")]
-    #[account(1, name = "avs")]
+    #[account(1, name = "ncn")]
     #[account(2, name = "vault")]
     #[account(3, name = "slasher")]
-    #[account(4, writable, name = "avs_slasher_ticket")]
+    #[account(4, writable, name = "ncn_slasher_ticket")]
     #[account(5, signer, name = "admin")]
-    AvsRemoveVaultSlasher,
+    NcnCooldownVaultSlasher,
 
-    #[account(0, writable, name = "avs")]
+    #[account(0, writable, name = "ncn")]
     #[account(1, signer, name = "old_admin")]
     #[account(2, signer, name = "new_admin")]
-    AvsSetAdmin,
+    NcnSetAdmin,
 
-    #[account(0, writable, name = "avs")]
+    #[account(0, writable, name = "ncn")]
     #[account(1, signer, name = "admin")]
     #[account(2, name = "new_admin")]
-    AvsSetSecondaryAdmin(AvsAdminRole),
+    NcnSetSecondaryAdmin(NcnAdminRole),
 
     /// Initializes a operator
     #[account(0, writable, name = "config")]
@@ -103,16 +103,16 @@ pub enum RestakingInstruction {
     InitializeOperator,
 
     /// Sets the admin for a node operator
-    #[account(0, writable, name = "node_operator")]
+    #[account(0, writable, name = "operator")]
     #[account(1, signer, name = "old_admin")]
     #[account(2, signer, name = "new_admin")]
     OperatorSetAdmin,
 
     /// Sets the voter for a node operator
-    #[account(0, writable, name = "node_operator")]
+    #[account(0, writable, name = "operator")]
     #[account(1, signer, name = "admin")]
-    #[account(2, name = "voter")]
-    OperatorSetVoter,
+    #[account(2, name = "new_admin")]
+    OperatorSetSecondaryAdmin(OperatorAdminRole),
 
     /// Operator adds support for receiving delegation from a vault
     #[account(0, name = "config")]
@@ -130,32 +130,32 @@ pub enum RestakingInstruction {
     #[account(2, name = "vault")]
     #[account(3, writable, name = "operator_vault_ticket")]
     #[account(4, signer, name = "admin")]
-    OperatorRemoveVault,
+    OperatorCooldownVault,
 
-    /// Node operator adds support for running an AVS
+    /// Node operator adds support for running an NCN
     #[account(0, name = "config")]
     #[account(1, writable, name = "operator")]
-    #[account(2, name = "avs")]
-    #[account(3, writable, name = "operator_avs_ticket")]
+    #[account(2, name = "ncn")]
+    #[account(3, writable, name = "operator_ncn_ticket")]
     #[account(4, signer, name = "admin")]
     #[account(5, writable, signer, name = "payer")]
     #[account(6, name = "system_program")]
-    OperatorAddAvs,
+    OperatorAddNcn,
 
-    /// Node operator removes support for running an AVS
+    /// Node operator removes support for running an NCN
     #[account(0, name = "config")]
     #[account(1, name = "operator")]
-    #[account(2, name = "avs")]
-    #[account(3, writable, name = "operator_avs_ticket")]
+    #[account(2, name = "ncn")]
+    #[account(3, writable, name = "operator_ncn_ticket")]
     #[account(4, signer, name = "admin")]
-    OperatorRemoveAvs,
+    OperatorCooldownNcn,
 
-    #[account(0, name = "avs")]
-    #[account(1, writable, name = "avs_token_account")]
+    #[account(0, name = "ncn")]
+    #[account(1, writable, name = "ncn_token_account")]
     #[account(2, writable, name = "receiver_token_account")]
     #[account(3, signer, name = "admin")]
     #[account(4, name = "token_program")]
-    AvsWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+    NcnWithdrawalAsset { token_mint: Pubkey, amount: u64 },
 
     #[account(0, name = "operator")]
     #[account(1, signer, name = "admin")]
@@ -166,11 +166,21 @@ pub enum RestakingInstruction {
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
-pub enum AvsAdminRole {
+pub enum NcnAdminRole {
     Operator,
     Vault,
     Slasher,
     Withdraw,
+    WithdrawWallet,
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+pub enum OperatorAdminRole {
+    NcnAdmin,
+    VaultAdmin,
+    VoterAdmin,
+    WithdrawAdmin,
+    WithdrawWallet,
 }
 
 pub fn initialize_config(
@@ -192,16 +202,16 @@ pub fn initialize_config(
     }
 }
 
-pub fn initialize_avs(
+pub fn initialize_ncn(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
-        AccountMeta::new(*avs, false),
+        AccountMeta::new(*ncn, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*base, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -209,24 +219,24 @@ pub fn initialize_avs(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeAvs.try_to_vec().unwrap(),
+        data: RestakingInstruction::InitializeNcn.try_to_vec().unwrap(),
     }
 }
 
-pub fn avs_add_vault(
+pub fn ncn_add_vault(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     vault: &Pubkey,
-    avs_vault_ticket: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*avs, false),
+        AccountMeta::new(*ncn, false),
         AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new(*avs_vault_ticket, false),
+        AccountMeta::new(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -234,49 +244,49 @@ pub fn avs_add_vault(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsAddVault.try_to_vec().unwrap(),
+        data: RestakingInstruction::NcnAddVault.try_to_vec().unwrap(),
     }
 }
 
-pub fn avs_remove_vault(
+pub fn ncn_remove_vault(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     vault: &Pubkey,
-    avs_vault_ticket: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new(*avs_vault_ticket, false),
+        AccountMeta::new(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsRemoveVault.try_to_vec().unwrap(),
+        data: RestakingInstruction::NcnCooldownVault.try_to_vec().unwrap(),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn avs_add_operator(
+pub fn ncn_add_operator(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     operator: &Pubkey,
-    avs_operator_ticket: &Pubkey,
-    operator_avs_ticket: &Pubkey,
+    ncn_operator_ticket: &Pubkey,
+    operator_ncn_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*avs, false),
+        AccountMeta::new(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*avs_operator_ticket, false),
-        AccountMeta::new_readonly(*operator_avs_ticket, false),
+        AccountMeta::new(*ncn_operator_ticket, false),
+        AccountMeta::new_readonly(*operator_ncn_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -284,43 +294,43 @@ pub fn avs_add_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsAddOperator.try_to_vec().unwrap(),
+        data: RestakingInstruction::NcnAddOperator.try_to_vec().unwrap(),
     }
 }
 
-pub fn avs_remove_operator(
+pub fn ncn_remove_operator(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     operator: &Pubkey,
-    avs_operator_ticket: &Pubkey,
+    ncn_operator_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*avs_operator_ticket, false),
+        AccountMeta::new(*ncn_operator_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsRemoveOperator
+        data: RestakingInstruction::NcnCooldownOperator
             .try_to_vec()
             .unwrap(),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn avs_add_vault_slasher(
+pub fn ncn_add_vault_slasher(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     vault: &Pubkey,
     slasher: &Pubkey,
-    avs_vault_ticket: &Pubkey,
-    avs_slasher_ticket: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
+    ncn_slasher_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 
@@ -328,11 +338,11 @@ pub fn avs_add_vault_slasher(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*avs, false),
+        AccountMeta::new(*ncn, false),
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*slasher, false),
-        AccountMeta::new_readonly(*avs_vault_ticket, false),
-        AccountMeta::new(*avs_slasher_ticket, false),
+        AccountMeta::new_readonly(*ncn_vault_ticket, false),
+        AccountMeta::new(*ncn_slasher_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -340,72 +350,72 @@ pub fn avs_add_vault_slasher(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsAddVaultSlasher(max_slash_amount)
+        data: RestakingInstruction::NcnAddVaultSlasher(max_slash_amount)
             .try_to_vec()
             .unwrap(),
     }
 }
 
-pub fn avs_remove_vault_slasher(
+pub fn ncn_remove_vault_slasher(
     program_id: &Pubkey,
     config: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     vault: &Pubkey,
     slasher: &Pubkey,
-    avs_slasher_ticket: &Pubkey,
+    ncn_slasher_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*avs, false),
+        AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*slasher, false),
-        AccountMeta::new(*avs_slasher_ticket, false),
+        AccountMeta::new(*ncn_slasher_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsRemoveVaultSlasher
+        data: RestakingInstruction::NcnCooldownVaultSlasher
             .try_to_vec()
             .unwrap(),
     }
 }
 
-pub fn avs_set_admin(
+pub fn ncn_set_admin(
     program_id: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     old_admin: &Pubkey,
     new_admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new(*avs, false),
+        AccountMeta::new(*ncn, false),
         AccountMeta::new_readonly(*old_admin, true),
         AccountMeta::new_readonly(*new_admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsSetAdmin.try_to_vec().unwrap(),
+        data: RestakingInstruction::NcnSetAdmin.try_to_vec().unwrap(),
     }
 }
 
-pub fn avs_set_secondary_admin(
+pub fn ncn_set_secondary_admin(
     program_id: &Pubkey,
-    avs: &Pubkey,
+    ncn: &Pubkey,
     admin: &Pubkey,
     new_admin: &Pubkey,
-    role: AvsAdminRole,
+    role: NcnAdminRole,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new(*avs, false),
+        AccountMeta::new(*ncn, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*new_admin, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsSetSecondaryAdmin(role)
+        data: RestakingInstruction::NcnSetSecondaryAdmin(role)
             .try_to_vec()
             .unwrap(),
     }
@@ -436,12 +446,12 @@ pub fn initialize_operator(
 
 pub fn operator_set_admin(
     program_id: &Pubkey,
-    node_operator: &Pubkey,
+    operator: &Pubkey,
     old_admin: &Pubkey,
     new_admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new(*node_operator, false),
+        AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*old_admin, true),
         AccountMeta::new_readonly(*new_admin, true),
     ];
@@ -452,21 +462,24 @@ pub fn operator_set_admin(
     }
 }
 
-pub fn operator_set_voter(
+pub fn operator_set_secondary_admin(
     program_id: &Pubkey,
-    node_operator: &Pubkey,
+    operator: &Pubkey,
     admin: &Pubkey,
     voter: &Pubkey,
+    operator_admin_role: OperatorAdminRole,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new(*node_operator, false),
+        AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*voter, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorSetVoter.try_to_vec().unwrap(),
+        data: RestakingInstruction::OperatorSetSecondaryAdmin(operator_admin_role)
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -513,26 +526,26 @@ pub fn operator_remove_vault(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorRemoveVault
+        data: RestakingInstruction::OperatorCooldownVault
             .try_to_vec()
             .unwrap(),
     }
 }
 
-pub fn operator_add_avs(
+pub fn operator_add_ncn(
     program_id: &Pubkey,
     config: &Pubkey,
     operator: &Pubkey,
-    avs: &Pubkey,
-    operator_avs_ticket: &Pubkey,
+    ncn: &Pubkey,
+    operator_ncn_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*operator, false),
-        AccountMeta::new_readonly(*avs, false),
-        AccountMeta::new(*operator_avs_ticket, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new(*operator_ncn_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -540,39 +553,39 @@ pub fn operator_add_avs(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorAddAvs.try_to_vec().unwrap(),
+        data: RestakingInstruction::OperatorAddNcn.try_to_vec().unwrap(),
     }
 }
 
-pub fn operator_remove_avs(
+pub fn operator_remove_ncn(
     program_id: &Pubkey,
     config: &Pubkey,
     operator: &Pubkey,
-    avs: &Pubkey,
-    operator_avs_ticket: &Pubkey,
+    ncn: &Pubkey,
+    operator_ncn_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*avs, false),
-        AccountMeta::new(*operator_avs_ticket, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new(*operator_ncn_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorRemoveAvs
+        data: RestakingInstruction::OperatorCooldownNcn
             .try_to_vec()
             .unwrap(),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn avs_withdrawal_asset(
+pub fn ncn_withdrawal_asset(
     program_id: &Pubkey,
-    avs: &Pubkey,
-    avs_token_account: &Pubkey,
+    ncn: &Pubkey,
+    ncn_token_account: &Pubkey,
     receiver_token_account: &Pubkey,
     admin: &Pubkey,
     token_program: &Pubkey,
@@ -580,8 +593,8 @@ pub fn avs_withdrawal_asset(
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new_readonly(*avs, false),
-        AccountMeta::new(*avs_token_account, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new(*ncn_token_account, false),
         AccountMeta::new(*receiver_token_account, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*token_program, false),
@@ -589,7 +602,7 @@ pub fn avs_withdrawal_asset(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::AvsWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::NcnWithdrawalAsset { token_mint, amount }
             .try_to_vec()
             .unwrap(),
     }

@@ -1,19 +1,16 @@
-use jito_restaking_sanitization::{
-    signer::SanitizedSignerAccount, system_program::SanitizedSystemProgram,
-};
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::{load_signer, load_system_program};
+use jito_restaking_core::loader::load_operator;
 use jito_vault_core::{
-    config::SanitizedConfig, vault::SanitizedVault,
-    vault_delegation_list::SanitizedVaultDelegationList,
-    vault_operator_ticket::SanitizedVaultOperatorTicket,
+    config::Config,
+    loader::{load_config, load_vault, load_vault_operator_ticket},
+    vault::Vault,
+    vault_delegation_list::VaultDelegationList,
+    vault_operator_ticket::VaultOperatorTicket,
 };
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    clock::Clock,
-    entrypoint::ProgramResult,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
 pub fn process_add_delegation(
@@ -21,89 +18,48 @@ pub fn process_add_delegation(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let SanitizedAccounts {
-        config,
-        vault,
-        vault_operator_ticket,
-        mut vault_delegation_list,
-        operator,
-        delegation_admin,
-        payer,
-    } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, vault, operator, vault_operator_ticket, vault_delegation_list, vault_delegation_admin, payer, system_program] =
+        accounts
+    else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    vault
-        .vault()
-        .check_delegation_admin(delegation_admin.account().key)?;
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault, false)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+    load_operator(&config.restaking_program, operator, false)?;
+    load_vault_operator_ticket(program_id, vault_operator_ticket, vault, operator, false)?;
+    load_signer(vault_delegation_admin, false)?;
+    load_signer(payer, true)?;
+    load_system_program(system_program)?;
 
-    let slot = Clock::get()?.slot;
+    let vault_data = vault.data.borrow();
+    let vault = Vault::try_from_slice(&vault_data)?;
+    if vault.delegation_admin.ne(vault_delegation_admin.key) {
+        msg!("Invalid delegation admin for vault");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    vault_operator_ticket
-        .vault_operator_ticket()
-        .check_active(slot)?;
+    let vault_operator_ticket_data = vault_operator_ticket.data.borrow();
+    let vault_operator_ticket = VaultOperatorTicket::try_from_slice(&vault_operator_ticket_data)?;
+    if !vault_operator_ticket
+        .state
+        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+    {
+        msg!("Vault operator ticket is not active or in cooldown");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    vault_delegation_list
-        .vault_delegation_list_mut()
-        .update_delegations(slot, config.config().epoch_length());
-    vault_delegation_list.vault_delegation_list_mut().delegate(
-        *operator.key,
-        amount,
-        vault.vault().tokens_deposited(),
-    )?;
+    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
+    let vault_delegation_list =
+        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
+    if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault delegation list update is needed");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    vault_delegation_list.save_with_realloc(&Rent::get()?, payer.account())?;
+    vault_delegation_list.delegate(*operator.key, amount, vault.max_delegation_amount()?)?;
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config: SanitizedConfig<'a, 'info>,
-    vault: SanitizedVault<'a, 'info>,
-    operator: &'a AccountInfo<'info>,
-    vault_operator_ticket: SanitizedVaultOperatorTicket<'a, 'info>,
-    vault_delegation_list: SanitizedVaultDelegationList<'a, 'info>,
-    delegation_admin: SanitizedSignerAccount<'a, 'info>,
-    payer: SanitizedSignerAccount<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let config =
-            SanitizedConfig::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, false)?;
-        let operator = next_account_info(&mut accounts_iter)?;
-        let vault_operator_ticket = SanitizedVaultOperatorTicket::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            false,
-            vault.account().key,
-            operator.key,
-        )?;
-        let vault_delegation_list = SanitizedVaultDelegationList::sanitize(
-            program_id,
-            next_account_info(&mut accounts_iter)?,
-            true,
-            vault.account().key,
-        )?;
-        let delegation_admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-        let payer = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let _system_program =
-            SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config,
-            vault,
-            operator,
-            vault_operator_ticket,
-            vault_delegation_list,
-            delegation_admin,
-            payer,
-        })
-    }
 }

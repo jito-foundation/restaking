@@ -1,21 +1,21 @@
-mod avs_add_operator;
-mod avs_add_vault;
-mod avs_add_vault_slasher;
-mod avs_remove_operator;
-mod avs_remove_vault;
-mod avs_remove_vault_slasher;
-mod avs_set_admin;
-mod avs_set_secondary_admin;
-mod avs_withdraw_asset;
-mod initialize_avs;
 mod initialize_config;
+mod initialize_ncn;
 mod initialize_operator;
-mod operator_add_avs;
+mod ncn_add_operator;
+mod ncn_add_vault;
+mod ncn_add_vault_slasher;
+mod ncn_cooldown_operator;
+mod ncn_cooldown_vault;
+mod ncn_cooldown_vault_slasher;
+mod ncn_set_admin;
+mod ncn_set_secondary_admin;
+mod ncn_withdraw_asset;
+mod operator_add_ncn;
 mod operator_add_vault;
-mod operator_remove_avs;
-mod operator_remove_vault;
+mod operator_cooldown_ncn;
+mod operator_cooldown_vault;
 mod operator_set_admin;
-mod operator_set_voter;
+mod operator_set_secondary_admin;
 mod operator_withdrawal_asset;
 
 use borsh::BorshDeserialize;
@@ -28,18 +28,19 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
-    avs_add_operator::process_avs_add_operator, avs_add_vault::process_avs_add_vault,
-    avs_add_vault_slasher::process_avs_add_vault_slasher,
-    avs_remove_operator::process_avs_remove_operator, avs_remove_vault::process_avs_remove_vault,
-    avs_remove_vault_slasher::process_avs_remove_slasher, avs_set_admin::process_avs_set_admin,
-    avs_set_secondary_admin::process_avs_set_secondary_admin,
-    avs_withdraw_asset::process_avs_withdraw_asset, initialize_avs::process_initialize_avs,
-    initialize_config::process_initialize_config, initialize_operator::process_initialize_operator,
-    operator_add_avs::process_operator_add_avs, operator_add_vault::process_operator_add_vault,
-    operator_remove_avs::process_operator_remove_avs,
-    operator_remove_vault::process_operator_remove_vault,
+    initialize_config::process_initialize_config, initialize_ncn::process_initialize_ncn,
+    initialize_operator::process_initialize_operator, ncn_add_operator::process_ncn_add_operator,
+    ncn_add_vault::process_ncn_add_vault, ncn_add_vault_slasher::process_ncn_add_vault_slasher,
+    ncn_cooldown_operator::process_ncn_cooldown_operator,
+    ncn_cooldown_vault::process_ncn_cooldown_vault,
+    ncn_cooldown_vault_slasher::process_ncn_remove_slasher, ncn_set_admin::process_ncn_set_admin,
+    ncn_set_secondary_admin::process_ncn_set_secondary_admin,
+    ncn_withdraw_asset::process_ncn_withdraw_asset, operator_add_ncn::process_operator_add_ncn,
+    operator_add_vault::process_operator_add_vault,
+    operator_cooldown_ncn::process_operator_cooldown_ncn,
+    operator_cooldown_vault::process_operator_cooldown_vault,
     operator_set_admin::process_set_node_operator_admin,
-    operator_set_voter::process_set_node_operator_voter,
+    operator_set_secondary_admin::process_set_operator_secondary_admin,
     operator_withdrawal_asset::process_operator_withdrawal_asset,
 };
 
@@ -76,41 +77,41 @@ pub fn process_instruction(
             msg!("Instruction: InitializeConfig");
             process_initialize_config(program_id, accounts)
         }
-        RestakingInstruction::InitializeAvs => {
-            msg!("Instruction: InitializeAvs");
-            process_initialize_avs(program_id, accounts)
+        RestakingInstruction::InitializeNcn => {
+            msg!("Instruction: InitializeNcn");
+            process_initialize_ncn(program_id, accounts)
         }
-        RestakingInstruction::AvsAddVault => {
-            msg!("Instruction: AvsAddVault");
-            process_avs_add_vault(program_id, accounts)
+        RestakingInstruction::NcnAddVault => {
+            msg!("Instruction: NcnAddVault");
+            process_ncn_add_vault(program_id, accounts)
         }
-        RestakingInstruction::AvsRemoveVault => {
-            msg!("Instruction: AvsRemoveVault");
-            process_avs_remove_vault(program_id, accounts)
+        RestakingInstruction::NcnCooldownVault => {
+            msg!("Instruction: NcnCooldownVault");
+            process_ncn_cooldown_vault(program_id, accounts)
         }
-        RestakingInstruction::AvsAddOperator => {
-            msg!("Instruction: AvsAddOperator");
-            process_avs_add_operator(program_id, accounts)
+        RestakingInstruction::NcnAddOperator => {
+            msg!("Instruction: NcnAddOperator");
+            process_ncn_add_operator(program_id, accounts)
         }
-        RestakingInstruction::AvsRemoveOperator => {
-            msg!("Instruction: AvsRemoveOperator");
-            process_avs_remove_operator(program_id, accounts)
+        RestakingInstruction::NcnCooldownOperator => {
+            msg!("Instruction: NcnCooldownOperator");
+            process_ncn_cooldown_operator(program_id, accounts)
         }
-        RestakingInstruction::AvsAddVaultSlasher(max_slashable_per_epoch) => {
-            msg!("Instruction: AvsAddVaultSlasher");
-            process_avs_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
+        RestakingInstruction::NcnAddVaultSlasher(max_slashable_per_epoch) => {
+            msg!("Instruction: NcnAddVaultSlasher");
+            process_ncn_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
         }
-        RestakingInstruction::AvsRemoveVaultSlasher => {
-            msg!("Instruction: AvsRemoveVaultSlasher");
-            process_avs_remove_slasher(program_id, accounts)
+        RestakingInstruction::NcnCooldownVaultSlasher => {
+            msg!("Instruction: NcnCooldownVaultSlasher");
+            process_ncn_remove_slasher(program_id, accounts)
         }
-        RestakingInstruction::AvsSetAdmin => {
-            msg!("Instruction: AvsSetAdmin");
-            process_avs_set_admin(program_id, accounts)
+        RestakingInstruction::NcnSetAdmin => {
+            msg!("Instruction: NcnSetAdmin");
+            process_ncn_set_admin(program_id, accounts)
         }
-        RestakingInstruction::AvsSetSecondaryAdmin(role) => {
-            msg!("Instruction: AvsSetSecondaryAdmin");
-            process_avs_set_secondary_admin(program_id, accounts, role)
+        RestakingInstruction::NcnSetSecondaryAdmin(role) => {
+            msg!("Instruction: NcnSetSecondaryAdmin");
+            process_ncn_set_secondary_admin(program_id, accounts, role)
         }
         RestakingInstruction::InitializeOperator => {
             msg!("Instruction: InitializeNodeOperator");
@@ -120,29 +121,29 @@ pub fn process_instruction(
             msg!("Instruction: OperatorSetAdmin");
             process_set_node_operator_admin(program_id, accounts)
         }
-        RestakingInstruction::OperatorSetVoter => {
-            msg!("Instruction: OperatorSetVoter");
-            process_set_node_operator_voter(program_id, accounts)
+        RestakingInstruction::OperatorSetSecondaryAdmin(role) => {
+            msg!("Instruction: OperatorSetSecondaryAdmin");
+            process_set_operator_secondary_admin(program_id, accounts, role)
         }
         RestakingInstruction::OperatorAddVault => {
             msg!("Instruction: OperatorAddVault");
             process_operator_add_vault(program_id, accounts)
         }
-        RestakingInstruction::OperatorRemoveVault => {
-            msg!("Instruction: OperatorRemoveVault");
-            process_operator_remove_vault(program_id, accounts)
+        RestakingInstruction::OperatorCooldownVault => {
+            msg!("Instruction: OperatorCooldownVault");
+            process_operator_cooldown_vault(program_id, accounts)
         }
-        RestakingInstruction::OperatorAddAvs => {
-            msg!("Instruction: OperatorAddAvs");
-            process_operator_add_avs(program_id, accounts)
+        RestakingInstruction::OperatorAddNcn => {
+            msg!("Instruction: OperatorAddNcn");
+            process_operator_add_ncn(program_id, accounts)
         }
-        RestakingInstruction::OperatorRemoveAvs => {
-            msg!("Instruction: OperatorRemoveAvs");
-            process_operator_remove_avs(program_id, accounts)
+        RestakingInstruction::OperatorCooldownNcn => {
+            msg!("Instruction: OperatorCooldownNcn");
+            process_operator_cooldown_ncn(program_id, accounts)
         }
-        RestakingInstruction::AvsWithdrawalAsset { token_mint, amount } => {
-            msg!("Instruction: AvsWithdrawalAsset");
-            process_avs_withdraw_asset(program_id, accounts, token_mint, amount)
+        RestakingInstruction::NcnWithdrawalAsset { token_mint, amount } => {
+            msg!("Instruction: NcnWithdrawalAsset");
+            process_ncn_withdraw_asset(program_id, accounts, token_mint, amount)
         }
         RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: OperatorWithdrawalAsset");

@@ -1,127 +1,194 @@
-use borsh::BorshDeserialize;
+use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
-    avs::Avs, avs_operator_ticket::AvsOperatorTicket,
-    avs_vault_slasher_ticket::AvsVaultSlasherTicket, avs_vault_ticket::AvsVaultTicket,
-    config::Config, operator::Operator, operator_avs_ticket::OperatorAvsTicket,
+    config::Config, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket,
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
+    operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_restaking_sdk::{
-    avs_add_operator, avs_add_vault, avs_add_vault_slasher, initialize_avs, initialize_config,
-    initialize_operator, operator_add_avs, operator_add_vault,
+    initialize_config, initialize_ncn, initialize_operator, ncn_add_operator, ncn_add_vault,
+    ncn_add_vault_slasher, operator_add_ncn, operator_add_vault,
 };
-use solana_program::pubkey::Pubkey;
-use solana_program_test::{BanksClient, BanksClientError};
+use solana_program::{native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer};
+use solana_program_test::BanksClient;
 use solana_sdk::{
     commitment_config::CommitmentLevel,
     signature::{Keypair, Signer},
     transaction::Transaction,
 };
 
+use crate::fixtures::TestError;
+
+pub struct NcnRoot {
+    pub ncn_pubkey: Pubkey,
+    pub ncn_admin: Keypair,
+}
+
+pub struct OperatorRoot {
+    pub operator_pubkey: Pubkey,
+    pub operator_admin: Keypair,
+}
+
 pub struct RestakingProgramClient {
     banks_client: BanksClient,
+    payer: Keypair,
 }
 
 impl RestakingProgramClient {
-    pub const fn new(banks_client: BanksClient) -> Self {
-        Self { banks_client }
+    pub const fn new(banks_client: BanksClient, payer: Keypair) -> Self {
+        Self {
+            banks_client,
+            payer,
+        }
     }
 
-    pub async fn get_avs(&mut self, avs: &Pubkey) -> Result<Avs, BanksClientError> {
-        let account = self.banks_client.get_account(*avs).await?.unwrap();
+    pub async fn get_ncn(&mut self, ncn: &Pubkey) -> Result<Ncn, TestError> {
+        let account = self
+            .banks_client
+            .get_account_with_commitment(*ncn, CommitmentLevel::Processed)
+            .await?
+            .unwrap();
 
-        Ok(Avs::deserialize(&mut account.data.as_slice())?)
+        Ok(Ncn::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, BanksClientError> {
+    pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Config::deserialize(&mut account.data.as_slice())?)
+        Ok(Config::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_avs_vault_ticket(
+    pub async fn get_ncn_vault_ticket(
         &mut self,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         vault: &Pubkey,
-    ) -> Result<AvsVaultTicket, BanksClientError> {
+    ) -> Result<NcnVaultTicket, TestError> {
         let account =
-            AvsVaultTicket::find_program_address(&jito_restaking_program::id(), &avs, &vault).0;
+            NcnVaultTicket::find_program_address(&jito_restaking_program::id(), ncn, vault).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(AvsVaultTicket::deserialize(&mut account.data.as_slice())?)
+        Ok(NcnVaultTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_avs_operator_ticket(
+    pub async fn get_ncn_operator_ticket(
         &mut self,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         operator: &Pubkey,
-    ) -> Result<AvsOperatorTicket, BanksClientError> {
+    ) -> Result<NcnOperatorTicket, TestError> {
         let account =
-            AvsOperatorTicket::find_program_address(&jito_restaking_program::id(), &avs, &operator)
-                .0;
+            NcnOperatorTicket::find_program_address(&jito_restaking_program::id(), ncn, operator).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(AvsOperatorTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(NcnOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_avs_vault_slasher_ticket(
+    pub async fn get_ncn_vault_slasher_ticket(
         &mut self,
-        avs: &Pubkey,
+        ncn: &Pubkey,
         vault: &Pubkey,
         slasher: &Pubkey,
-    ) -> Result<AvsVaultSlasherTicket, BanksClientError> {
-        let account = AvsVaultSlasherTicket::find_program_address(
+    ) -> Result<NcnVaultSlasherTicket, TestError> {
+        let account = NcnVaultSlasherTicket::find_program_address(
             &jito_restaking_program::id(),
-            &avs,
-            &vault,
-            &slasher,
+            ncn,
+            vault,
+            slasher,
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(AvsVaultSlasherTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(NcnVaultSlasherTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_operator(&mut self, account: &Pubkey) -> Result<Operator, BanksClientError> {
+    pub async fn get_operator(&mut self, account: &Pubkey) -> Result<Operator, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Operator::deserialize(&mut account.data.as_slice())?)
+        Ok(Operator::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_operator_vault_ticket(
         &mut self,
         operator: &Pubkey,
         vault: &Pubkey,
-    ) -> Result<OperatorVaultTicket, BanksClientError> {
+    ) -> Result<OperatorVaultTicket, TestError> {
         let account = OperatorVaultTicket::find_program_address(
             &jito_restaking_program::id(),
-            &operator,
-            &vault,
+            operator,
+            vault,
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(OperatorVaultTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(OperatorVaultTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_operator_avs_ticket(
+    pub async fn get_operator_ncn_ticket(
         &mut self,
         operator: &Pubkey,
-        avs: &Pubkey,
-    ) -> Result<OperatorAvsTicket, BanksClientError> {
+        ncn: &Pubkey,
+    ) -> Result<OperatorNcnTicket, TestError> {
         let account =
-            OperatorAvsTicket::find_program_address(&jito_restaking_program::id(), &operator, &avs)
-                .0;
+            OperatorNcnTicket::find_program_address(&jito_restaking_program::id(), operator, ncn).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(OperatorAvsTicket::deserialize(
-            &mut account.data.as_slice(),
-        )?)
+        Ok(OperatorNcnTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+    }
+
+    pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
+        let restaking_config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
+        let restaking_config_admin = Keypair::new();
+
+        self._airdrop(&restaking_config_admin.pubkey(), 1.0).await?;
+        self.initialize_config(&restaking_config_pubkey, &restaking_config_admin)
+            .await?;
+
+        Ok(restaking_config_admin)
+    }
+
+    pub async fn setup_operator(&mut self) -> Result<OperatorRoot, TestError> {
+        // create operator + add operator vault
+        let operator_base = Keypair::new();
+        let operator_pubkey =
+            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
+                .0;
+        let operator_admin = Keypair::new();
+        self._airdrop(&operator_admin.pubkey(), 1.0).await?;
+        self.initialize_operator(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_pubkey,
+            &operator_admin,
+            &operator_base,
+        )
+        .await
+        .unwrap();
+        Ok(OperatorRoot {
+            operator_pubkey,
+            operator_admin,
+        })
+    }
+
+    pub async fn operator_vault_opt_in(
+        &mut self,
+        operator_root: &OperatorRoot,
+        vault_pubkey: &Pubkey,
+    ) -> Result<(), TestError> {
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_root.operator_pubkey,
+            &vault_pubkey,
+        )
+        .0;
+        self.operator_add_vault(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_root.operator_pubkey,
+            &vault_pubkey,
+            &operator_vault_ticket,
+            &operator_root.operator_admin,
+            &operator_root.operator_admin,
+        )
+        .await?;
+
+        Ok(())
     }
 
     pub async fn initialize_config(
         &mut self,
         config: &Pubkey,
         config_admin: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.process_transaction(&Transaction::new_signed_with_payer(
             &[initialize_config(
@@ -137,214 +204,348 @@ impl RestakingProgramClient {
         .await
     }
 
-    pub async fn initialize_avs(
-        &mut self,
-        config: &Pubkey,
-        avs: &Pubkey,
-        avs_admin: &Keypair,
-        avs_base: &Keypair,
-    ) -> Result<(), BanksClientError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
+    pub async fn setup_ncn(&mut self) -> Result<NcnRoot, TestError> {
+        let ncn_admin = Keypair::new();
+        let ncn_base = Keypair::new();
 
-        self.process_transaction(&Transaction::new_signed_with_payer(
-            &[initialize_avs(
-                &jito_restaking_program::id(),
-                &config,
-                &avs,
-                &avs_admin.pubkey(),
-                &avs_base.pubkey(),
-            )],
-            Some(&avs_admin.pubkey()),
-            &[&avs_admin, &avs_base],
-            blockhash,
-        ))
+        self._airdrop(&ncn_admin.pubkey(), 1.0).await?;
+
+        let ncn_pubkey =
+            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
+        self.initialize_ncn(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &ncn_pubkey,
+            &ncn_admin,
+            &ncn_base,
+        )
         .await
+        .unwrap();
+
+        Ok(NcnRoot {
+            ncn_pubkey,
+            ncn_admin,
+        })
     }
 
-    pub async fn avs_add_vault(
+    pub async fn ncn_vault_opt_in(
         &mut self,
-        config: &Pubkey,
-        avs: &Pubkey,
+        ncn_root: &NcnRoot,
         vault: &Pubkey,
-        avs_vault_ticket: &Pubkey,
-        avs_admin: &Keypair,
-        payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
+    ) -> Result<(), TestError> {
+        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn_root.ncn_pubkey,
+            vault,
+        )
+        .0;
 
-        self.process_transaction(&Transaction::new_signed_with_payer(
-            &[avs_add_vault(
-                &jito_restaking_program::id(),
-                config,
-                avs,
-                vault,
-                avs_vault_ticket,
-                &avs_admin.pubkey(),
-                &payer.pubkey(),
-            )],
-            Some(&payer.pubkey()),
-            &[avs_admin, payer],
-            blockhash,
-        ))
+        self.ncn_add_vault(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &ncn_root.ncn_pubkey,
+            vault,
+            &ncn_vault_ticket,
+            &ncn_root.ncn_admin,
+            &self.payer.insecure_clone(),
+        )
         .await
     }
 
-    // pub async fn avs_remove_vault(
-    //     &mut self,
-    //     config: &Pubkey,
-    //     avs: &Pubkey,
-    //     vault: &Pubkey,
-    //     avs_vault_ticket: &Pubkey,
-    //     avs_admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
-    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
-    //
-    //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[avs_remove_vault(
-    //             &jito_restaking_program::id(),
-    //             config,
-    //             avs,
-    //             vault,
-    //             avs_vault_ticket,
-    //             &avs_admin.pubkey(),
-    //         )],
-    //         Some(&avs_admin.pubkey()),
-    //         &[avs_admin],
-    //         blockhash,
-    //     ))
-    //     .await
-    // }
-
-    pub async fn avs_add_operator(
+    pub async fn ncn_operator_opt_in(
         &mut self,
-        config: &Pubkey,
-        avs: &Pubkey,
+        ncn_root: &NcnRoot,
         operator: &Pubkey,
-        avs_operator_ticket: &Pubkey,
-        operator_avs_ticket: &Pubkey,
-        avs_admin: &Keypair,
-        payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
+    ) -> Result<(), TestError> {
+        let ncn_operator_ticket = NcnOperatorTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn_root.ncn_pubkey,
+            operator,
+        )
+        .0;
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+            &jito_restaking_program::id(),
+            operator,
+            &ncn_root.ncn_pubkey,
+        )
+        .0;
 
-        self.process_transaction(&Transaction::new_signed_with_payer(
-            &[avs_add_operator(
-                &jito_restaking_program::id(),
-                config,
-                avs,
-                operator,
-                avs_operator_ticket,
-                operator_avs_ticket,
-                &avs_admin.pubkey(),
-                &payer.pubkey(),
-            )],
-            Some(&payer.pubkey()),
-            &[avs_admin, payer],
-            blockhash,
-        ))
+        self.ncn_add_operator(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &ncn_root.ncn_pubkey,
+            operator,
+            &ncn_operator_ticket,
+            &operator_ncn_ticket,
+            &ncn_root.ncn_admin,
+            &self.payer.insecure_clone(),
+        )
         .await
     }
 
-    // pub async fn avs_remove_operator(
-    //     &mut self,
-    //     config: &Pubkey,
-    //     avs: &Pubkey,
-    //     operator: &Pubkey,
-    //     avs_operator_ticket: &Pubkey,
-    //     avs_admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
-    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
-    //
-    //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[avs_remove_operator(
-    //             &jito_restaking_program::id(),
-    //             config,
-    //             avs,
-    //             operator,
-    //             avs_operator_ticket,
-    //             &avs_admin.pubkey(),
-    //         )],
-    //         Some(&avs_admin.pubkey()),
-    //         &[avs_admin],
-    //         blockhash,
-    //     ))
-    //     .await
-    // }
-
-    pub async fn avs_add_vault_slasher(
+    pub async fn operator_ncn_opt_in(
         &mut self,
-        config: &Pubkey,
-        avs: &Pubkey,
+        operator_root: &OperatorRoot,
+        ncn: &Pubkey,
+    ) -> Result<(), TestError> {
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_root.operator_pubkey,
+            ncn,
+        )
+        .0;
+
+        self.operator_add_ncn(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_root.operator_pubkey,
+            ncn,
+            &operator_ncn_ticket,
+            &operator_root.operator_admin,
+            &operator_root.operator_admin,
+        )
+        .await
+    }
+
+    pub async fn ncn_vault_slasher_opt_in(
+        &mut self,
+        ncn_root: &NcnRoot,
         vault: &Pubkey,
         slasher: &Pubkey,
-        avs_vault_ticket: &Pubkey,
-        avs_slasher_ticket: &Pubkey,
-        avs_admin: &Keypair,
-        payer: &Keypair,
         max_slash_amount: u64,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
+        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn_root.ncn_pubkey,
+            vault,
+        )
+        .0;
+        let ncn_slasher_ticket = NcnVaultSlasherTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn_root.ncn_pubkey,
+            vault,
+            slasher,
+        )
+        .0;
+
+        self.ncn_add_vault_slasher(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &ncn_root.ncn_pubkey,
+            vault,
+            slasher,
+            &ncn_vault_ticket,
+            &ncn_slasher_ticket,
+            &ncn_root.ncn_admin,
+            &self.payer.insecure_clone(),
+            max_slash_amount,
+        )
+        .await
+    }
+
+    pub async fn initialize_ncn(
+        &mut self,
+        config: &Pubkey,
+        ncn: &Pubkey,
+        ncn_admin: &Keypair,
+        ncn_base: &Keypair,
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
-            &[avs_add_vault_slasher(
+            &[initialize_ncn(
+                &jito_restaking_program::id(),
+                &config,
+                &ncn,
+                &ncn_admin.pubkey(),
+                &ncn_base.pubkey(),
+            )],
+            Some(&ncn_admin.pubkey()),
+            &[&ncn_admin, &ncn_base],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn ncn_add_vault(
+        &mut self,
+        config: &Pubkey,
+        ncn: &Pubkey,
+        vault: &Pubkey,
+        ncn_vault_ticket: &Pubkey,
+        ncn_admin: &Keypair,
+        payer: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[ncn_add_vault(
                 &jito_restaking_program::id(),
                 config,
-                avs,
+                ncn,
+                vault,
+                ncn_vault_ticket,
+                &ncn_admin.pubkey(),
+                &payer.pubkey(),
+            )],
+            Some(&payer.pubkey()),
+            &[ncn_admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    // pub async fn ncn_remove_vault(
+    //     &mut self,
+    //     config: &Pubkey,
+    //     ncn: &Pubkey,
+    //     vault: &Pubkey,
+    //     ncn_vault_ticket: &Pubkey,
+    //     ncn_admin: &Keypair,
+    // ) -> Result<(), TestError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[ncn_remove_vault(
+    //             &jito_restaking_program::id(),
+    //             config,
+    //             ncn,
+    //             vault,
+    //             ncn_vault_ticket,
+    //             &ncn_admin.pubkey(),
+    //         )],
+    //         Some(&ncn_admin.pubkey()),
+    //         &[ncn_admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    pub async fn ncn_add_operator(
+        &mut self,
+        config: &Pubkey,
+        ncn: &Pubkey,
+        operator: &Pubkey,
+        ncn_operator_ticket: &Pubkey,
+        operator_ncn_ticket: &Pubkey,
+        ncn_admin: &Keypair,
+        payer: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[ncn_add_operator(
+                &jito_restaking_program::id(),
+                config,
+                ncn,
+                operator,
+                ncn_operator_ticket,
+                operator_ncn_ticket,
+                &ncn_admin.pubkey(),
+                &payer.pubkey(),
+            )],
+            Some(&payer.pubkey()),
+            &[ncn_admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    // pub async fn ncn_remove_operator(
+    //     &mut self,
+    //     config: &Pubkey,
+    //     ncn: &Pubkey,
+    //     operator: &Pubkey,
+    //     ncn_operator_ticket: &Pubkey,
+    //     ncn_admin: &Keypair,
+    // ) -> Result<(), TestError> {
+    //     let blockhash = self.banks_client.get_latest_blockhash().await?;
+    //
+    //     self.process_transaction(&Transaction::new_signed_with_payer(
+    //         &[ncn_remove_operator(
+    //             &jito_restaking_program::id(),
+    //             config,
+    //             ncn,
+    //             operator,
+    //             ncn_operator_ticket,
+    //             &ncn_admin.pubkey(),
+    //         )],
+    //         Some(&ncn_admin.pubkey()),
+    //         &[ncn_admin],
+    //         blockhash,
+    //     ))
+    //     .await
+    // }
+
+    pub async fn ncn_add_vault_slasher(
+        &mut self,
+        config: &Pubkey,
+        ncn: &Pubkey,
+        vault: &Pubkey,
+        slasher: &Pubkey,
+        ncn_vault_ticket: &Pubkey,
+        ncn_slasher_ticket: &Pubkey,
+        ncn_admin: &Keypair,
+        payer: &Keypair,
+        max_slash_amount: u64,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[ncn_add_vault_slasher(
+                &jito_restaking_program::id(),
+                config,
+                ncn,
                 vault,
                 slasher,
-                avs_vault_ticket,
-                avs_slasher_ticket,
-                &avs_admin.pubkey(),
+                ncn_vault_ticket,
+                ncn_slasher_ticket,
+                &ncn_admin.pubkey(),
                 &payer.pubkey(),
                 max_slash_amount,
             )],
             Some(&payer.pubkey()),
-            &[avs_admin, payer],
+            &[ncn_admin, payer],
             blockhash,
         ))
         .await
     }
 
-    // pub async fn avs_remove_vault_slasher(
+    // pub async fn ncn_remove_vault_slasher(
     //     &mut self,
     //     config: &Pubkey,
-    //     avs: &Pubkey,
+    //     ncn: &Pubkey,
     //     vault: &Pubkey,
     //     slasher: &Pubkey,
-    //     avs_slasher_ticket: &Pubkey,
-    //     avs_admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
+    //     ncn_slasher_ticket: &Pubkey,
+    //     ncn_admin: &Keypair,
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[avs_remove_vault_slasher(
+    //         &[ncn_remove_vault_slasher(
     //             &jito_restaking_program::id(),
     //             config,
-    //             avs,
+    //             ncn,
     //             vault,
     //             slasher,
-    //             avs_slasher_ticket,
-    //             &avs_admin.pubkey(),
+    //             ncn_slasher_ticket,
+    //             &ncn_admin.pubkey(),
     //         )],
-    //         Some(&avs_admin.pubkey()),
-    //         &[avs_admin],
+    //         Some(&ncn_admin.pubkey()),
+    //         &[ncn_admin],
     //         blockhash,
     //     ))
     //     .await
     // }
     //
-    // pub async fn avs_set_admin(
+    // pub async fn ncn_set_admin(
     //     &mut self,
-    //     avs: &Pubkey,
+    //     ncn: &Pubkey,
     //     old_admin: &Keypair,
     //     new_admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[avs_set_admin(
+    //         &[ncn_set_admin(
     //             &jito_restaking_program::id(),
-    //             avs,
+    //             ncn,
     //             &old_admin.pubkey(),
     //             &new_admin.pubkey(),
     //         )],
@@ -355,19 +556,19 @@ impl RestakingProgramClient {
     //     .await
     // }
     //
-    // pub async fn avs_set_secondary_admin(
+    // pub async fn ncn_set_secondary_admin(
     //     &mut self,
-    //     avs: &Pubkey,
+    //     ncn: &Pubkey,
     //     admin: &Keypair,
     //     new_admin: &Pubkey,
-    //     role: AvsAdminRole,
-    // ) -> Result<(), BanksClientError> {
+    //     role: NcnAdminRole,
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[avs_set_secondary_admin(
+    //         &[ncn_set_secondary_admin(
     //             &jito_restaking_program::id(),
-    //             avs,
+    //             ncn,
     //             &admin.pubkey(),
     //             new_admin,
     //             role,
@@ -385,7 +586,7 @@ impl RestakingProgramClient {
         operator: &Pubkey,
         admin: &Keypair,
         base: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -408,7 +609,7 @@ impl RestakingProgramClient {
     //     node_operator: &Pubkey,
     //     old_admin: &Keypair,
     //     new_admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
@@ -430,7 +631,7 @@ impl RestakingProgramClient {
     //     node_operator: &Pubkey,
     //     admin: &Keypair,
     //     voter: &Pubkey,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
@@ -455,7 +656,7 @@ impl RestakingProgramClient {
         operator_vault_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -482,7 +683,7 @@ impl RestakingProgramClient {
     //     vault: &Pubkey,
     //     operator_vault_ticket: &Pubkey,
     //     admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
@@ -501,24 +702,24 @@ impl RestakingProgramClient {
     //     .await
     // }
 
-    pub async fn operator_add_avs(
+    pub async fn operator_add_ncn(
         &mut self,
         config: &Pubkey,
         operator: &Pubkey,
-        avs: &Pubkey,
-        operator_avs_ticket: &Pubkey,
+        ncn: &Pubkey,
+        operator_ncn_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), BanksClientError> {
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
-            &[operator_add_avs(
+            &[operator_add_ncn(
                 &jito_restaking_program::id(),
                 config,
                 operator,
-                avs,
-                operator_avs_ticket,
+                ncn,
+                operator_ncn_ticket,
                 &admin.pubkey(),
                 &payer.pubkey(),
             )],
@@ -529,23 +730,23 @@ impl RestakingProgramClient {
         .await
     }
 
-    // pub async fn operator_remove_avs(
+    // pub async fn operator_remove_ncn(
     //     &mut self,
     //     config: &Pubkey,
     //     operator: &Pubkey,
-    //     avs: &Pubkey,
-    //     operator_avs_ticket: &Pubkey,
+    //     ncn: &Pubkey,
+    //     operator_ncn_ticket: &Pubkey,
     //     admin: &Keypair,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[operator_remove_avs(
+    //         &[operator_remove_ncn(
     //             &jito_restaking_program::id(),
     //             config,
     //             operator,
-    //             avs,
-    //             operator_avs_ticket,
+    //             ncn,
+    //             operator_ncn_ticket,
     //             &admin.pubkey(),
     //         )],
     //         Some(&admin.pubkey()),
@@ -555,23 +756,23 @@ impl RestakingProgramClient {
     //     .await
     // }
     //
-    // pub async fn avs_withdrawal_asset(
+    // pub async fn ncn_withdrawal_asset(
     //     &mut self,
-    //     avs: &Pubkey,
-    //     avs_token_account: &Pubkey,
+    //     ncn: &Pubkey,
+    //     ncn_token_account: &Pubkey,
     //     receiver_token_account: &Pubkey,
     //     admin: &Keypair,
     //     token_program: &Pubkey,
     //     token_mint: Pubkey,
     //     amount: u64,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
-    //         &[avs_withdrawal_asset(
+    //         &[ncn_withdrawal_asset(
     //             &jito_restaking_program::id(),
-    //             avs,
-    //             avs_token_account,
+    //             ncn,
+    //             ncn_token_account,
     //             receiver_token_account,
     //             &admin.pubkey(),
     //             token_program,
@@ -594,7 +795,7 @@ impl RestakingProgramClient {
     //     token_program: &Pubkey,
     //     token_mint: Pubkey,
     //     amount: u64,
-    // ) -> Result<(), BanksClientError> {
+    // ) -> Result<(), TestError> {
     //     let blockhash = self.banks_client.get_latest_blockhash().await?;
     //
     //     self.process_transaction(&Transaction::new_signed_with_payer(
@@ -615,12 +816,29 @@ impl RestakingProgramClient {
     //     .await
     // }
 
-    pub async fn process_transaction(&mut self, tx: &Transaction) -> Result<(), BanksClientError> {
+    pub async fn process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),
                 CommitmentLevel::Processed,
             )
-            .await
+            .await?;
+        Ok(())
+    }
+
+    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &[transfer(&self.payer.pubkey(), to, sol_to_lamports(sol))],
+                    Some(&self.payer.pubkey()),
+                    &[&self.payer],
+                    blockhash,
+                ),
+                CommitmentLevel::Processed,
+            )
+            .await?;
+        Ok(())
     }
 }

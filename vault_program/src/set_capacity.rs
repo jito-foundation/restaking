@@ -1,43 +1,32 @@
-use jito_restaking_sanitization::signer::SanitizedSignerAccount;
-use jito_vault_core::vault::SanitizedVault;
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::load_signer;
+use jito_restaking_core::loader::load_config;
+use jito_vault_core::{loader::load_vault, vault::Vault};
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
 };
 
-pub fn process_set_capacity(
+pub fn process_set_deposit_capacity(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     capacity: u64,
 ) -> ProgramResult {
-    let SanitizedAccounts { mut vault, admin } = SanitizedAccounts::sanitize(program_id, accounts)?;
+    let [config, vault, vault_capacity_admin] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+    load_config(program_id, config, false)?;
+    load_vault(program_id, vault, false)?;
+    load_signer(vault_capacity_admin, false)?;
 
-    vault.vault().check_admin(admin.account().key)?;
-    vault.vault_mut().set_capacity(capacity);
-    vault.save()?;
+    let mut vault_data = vault.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    if vault.capacity_admin.ne(vault_capacity_admin.key) {
+        msg!("Invalid capacity admin for vault");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    vault.capacity = capacity;
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    vault: SanitizedVault<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        program_id: &Pubkey,
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let vault =
-            SanitizedVault::sanitize(program_id, next_account_info(&mut accounts_iter)?, true)?;
-        let admin =
-            SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, false)?;
-
-        Ok(SanitizedAccounts { vault, admin })
-    }
 }

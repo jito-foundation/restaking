@@ -1,6 +1,6 @@
 [package]
 name = "jito-jsm-core"
-description = "JSM core library"
+description = "JSM Core library"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
@@ -11,11 +11,15 @@ readme = { workspace = true }
 
 [dependencies]
 borsh = { workspace = true }
-jito-restaking-sanitization = { workspace = true }
+bytemuck = { workspace = true }
+jito-account-traits = { workspace = true }
+jito-account-traits-derive = { workspace = true }
+quote = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
+syn = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

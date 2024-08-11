@@ -24,47 +24,50 @@ Expect breaking changes.**
 - Universal framework for staking, restaking, and liquid restaking
 - LRT construction and management
 - Customizable slashing conditions
-- Flexible AVS and operator management
+- Flexible NCN and operator management
 
 ## Installation
 
-```console
-$ git clone https://github.com/jito-foundation/restaking.git
-$ cd restaking
-$ cargo-build-sbf
+```bash
+git clone https://github.com/jito-foundation/restaking.git
+cd restaking
+cargo-build-sbf
 ```
 
 ## Usage
 
 ### Building the software
 
-```console
-$ cargo-build-sbf
+```bash
+cargo-build-sbf
 ```
 
 ## Running Tests
 
+If you haven't installed `cargo-nextest` yet, it's recommended to install it.
+You find the installation instructions [here](https://nexte.st/docs/installation/from-source/).
+
 ### Outside of SVM
 
-```console
-$ cargo nextest run
+```bash
+cargo nextest run
 ```
 
 ### Testing using the SVM environment
 
-```console
-$ cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run
+```bash
+cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run --all-features
 ```
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-* Fork the project
-* Create your feature branch (git checkout -b username/feature_name)
-* Commit your changes (git commit -m 'Add some feature')
-* Push to the branch (git push origin username/feature_name)
-* Open a Pull Request
+- Fork the project
+- Create your feature branch (git checkout -b username/feature_name)
+- Commit your changes (git commit -m 'Add some feature')
+- Push to the branch (git push origin username/feature_name)
+- Open a Pull Request
 
 ## License
 

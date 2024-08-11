@@ -1,34 +1,31 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+use bytemuck::{Pod, Zeroable};
+use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggled_field::SlotToggle;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::pubkey::Pubkey;
 
-use crate::{
-    result::{RestakingCoreError, RestakingCoreResult},
-    AccountType,
-};
+impl Discriminator for OperatorVaultTicket {
+    const DISCRIMINATOR: u8 = 6;
+}
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct OperatorVaultTicket {
-    /// The account type
-    account_type: AccountType,
-
     /// The operator account
-    operator: Pubkey,
+    pub operator: Pubkey,
 
     /// The vault account
-    vault: Pubkey,
+    pub vault: Pubkey,
 
     /// The index
-    index: u64,
+    pub index: u64,
 
     /// The slot toggle
-    state: SlotToggle,
+    pub state: SlotToggle,
+
+    pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 128],
-
-    bump: u8,
+    reserved: [u8; 7],
 }
 
 impl OperatorVaultTicket {
@@ -40,50 +37,13 @@ impl OperatorVaultTicket {
         bump: u8,
     ) -> Self {
         Self {
-            account_type: AccountType::OperatorVaultTicket,
             operator,
             vault,
             index,
             state: SlotToggle::new(slot_added),
-            reserved: [0; 128],
             bump,
+            reserved: [0; 7],
         }
-    }
-
-    pub const fn operator(&self) -> Pubkey {
-        self.operator
-    }
-
-    pub const fn vault(&self) -> Pubkey {
-        self.vault
-    }
-
-    pub const fn state(&self) -> &SlotToggle {
-        &self.state
-    }
-
-    pub fn deactivate(&mut self, slot: u64) -> RestakingCoreResult<()> {
-        if self.state.deactivate(slot) {
-            Ok(())
-        } else {
-            Err(RestakingCoreError::OperatorVaultTicketAlreadyDeactivated)
-        }
-    }
-
-    pub const fn check_active(&self, slot: u64) -> RestakingCoreResult<()> {
-        if self.state.is_active(slot) {
-            Ok(())
-        } else {
-            Err(RestakingCoreError::OperatorVaultTicketInactive)
-        }
-    }
-
-    pub const fn index(&self) -> u64 {
-        self.index
-    }
-
-    pub const fn bump(&self) -> u8 {
-        self.bump
     }
 
     pub fn seeds(operator: &Pubkey, vault: &Pubkey) -> Vec<Vec<u8>> {
@@ -103,85 +63,5 @@ impl OperatorVaultTicket {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
-    }
-
-    pub fn deserialize_checked(
-        program_id: &Pubkey,
-        account: &AccountInfo,
-        operator: &Pubkey,
-        vault: &Pubkey,
-    ) -> RestakingCoreResult<Self> {
-        if account.data_is_empty() {
-            return Err(RestakingCoreError::OperatorVaultTicketEmpty);
-        }
-        if account.owner != program_id {
-            return Err(RestakingCoreError::OperatorVaultTicketInvalidOwner);
-        }
-
-        // The AvsState shall be properly deserialized and valid struct
-        let avs_vault_ticket = Self::deserialize(&mut account.data.borrow_mut().as_ref())
-            .map_err(|e| RestakingCoreError::OperatorVaultTicketInvalidData(e.to_string()))?;
-        if avs_vault_ticket.account_type != AccountType::OperatorVaultTicket {
-            return Err(RestakingCoreError::OperatorVaultTicketInvalidAccountType);
-        }
-
-        let mut seeds = Self::seeds(operator, vault);
-        seeds.push(vec![avs_vault_ticket.bump]);
-        let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_ref()).collect();
-        let expected_pubkey = Pubkey::create_program_address(&seeds_iter, program_id)
-            .map_err(|_| RestakingCoreError::OperatorVaultTicketInvalidPda)?;
-        if expected_pubkey != *account.key {
-            return Err(RestakingCoreError::OperatorVaultTicketInvalidPda);
-        }
-
-        Ok(avs_vault_ticket)
-    }
-}
-
-pub struct SanitizedOperatorVaultTicket<'a, 'info> {
-    account: &'a AccountInfo<'info>,
-    operator_vault_ticket: Box<OperatorVaultTicket>,
-}
-
-impl<'a, 'info> SanitizedOperatorVaultTicket<'a, 'info> {
-    pub fn sanitize(
-        program_id: &Pubkey,
-        account: &'a AccountInfo<'info>,
-        expect_writable: bool,
-        operator: &Pubkey,
-        avs: &Pubkey,
-    ) -> RestakingCoreResult<Self> {
-        if expect_writable && !account.is_writable {
-            return Err(RestakingCoreError::OperatorVaultTicketNotWritable);
-        }
-
-        let operator_vault_ticket = Box::new(OperatorVaultTicket::deserialize_checked(
-            program_id, account, operator, avs,
-        )?);
-
-        Ok(Self {
-            account,
-            operator_vault_ticket,
-        })
-    }
-
-    pub const fn account(&self) -> &AccountInfo<'info> {
-        self.account
-    }
-
-    pub const fn operator_vault_ticket(&self) -> &OperatorVaultTicket {
-        &self.operator_vault_ticket
-    }
-
-    pub fn operator_vault_ticket_mut(&mut self) -> &mut OperatorVaultTicket {
-        &mut self.operator_vault_ticket
-    }
-
-    pub fn save(&self) -> ProgramResult {
-        borsh::to_writer(
-            &mut &mut self.account.data.borrow_mut()[..],
-            &self.operator_vault_ticket,
-        )?;
-        Ok(())
     }
 }

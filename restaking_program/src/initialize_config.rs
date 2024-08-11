@@ -1,83 +1,49 @@
-use borsh::BorshSerialize;
-use jito_restaking_core::config::Config;
-use jito_restaking_sanitization::{
-    assert_with_msg, create_account, empty_account::EmptyAccount, signer::SanitizedSignerAccount,
-    system_program::SanitizedSystemProgram,
+use std::mem::size_of;
+
+use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
 };
+use jito_restaking_core::config::Config;
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Initializes the global configuration for the restaking program
 /// [`crate::RestakingInstruction::InitializeConfig`]
 pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let SanitizedAccounts {
-        config_account,
-        admin,
-        vault_program,
-        system_program,
-    } = SanitizedAccounts::sanitize(accounts)?;
+    let [config, admin, vault_program, system_program] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
 
-    let (expected_config_key, bump, mut config_seeds) = Config::find_program_address(program_id);
-    config_seeds.push(vec![bump]);
-    assert_with_msg(
-        expected_config_key == *config_account.account().key,
-        ProgramError::InvalidAccountData,
-        "Config account is not at the correct PDA",
-    )?;
+    load_system_account(config, true)?;
+    load_signer(admin, true)?;
+    load_system_program(system_program)?;
 
-    let config = Config::new(*admin.account().key, *vault_program.key, bump);
+    let (config_pubkey, config_bump, mut config_seeds) = Config::find_program_address(program_id);
+    config_seeds.push(vec![config_bump]);
+    if config.key.ne(&config_pubkey) {
+        msg!("Config account is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
 
-    msg!(
-        "Initializing config @ address {}",
-        config_account.account().key
-    );
-    let config_serialized = config.try_to_vec()?;
+    msg!("Initializing config at address {}", config.key);
     create_account(
-        admin.account(),
-        config_account.account(),
-        system_program.account(),
+        admin,
+        config,
+        system_program,
         program_id,
         &Rent::get()?,
-        config_serialized.len() as u64,
+        8_u64.checked_add(size_of::<Config>() as u64).unwrap(),
         &config_seeds,
     )?;
-    config_account.account().data.borrow_mut()[..config_serialized.len()]
-        .copy_from_slice(&config_serialized);
+
+    let mut config_data = config.try_borrow_mut_data()?;
+    config_data[0] = Config::DISCRIMINATOR;
+    let config = Config::try_from_slice_mut(&mut config_data)?;
+    *config = Config::new(*admin.key, *vault_program.key, config_bump);
 
     Ok(())
-}
-
-struct SanitizedAccounts<'a, 'info> {
-    config_account: EmptyAccount<'a, 'info>,
-    admin: SanitizedSignerAccount<'a, 'info>,
-    vault_program: &'a AccountInfo<'info>,
-    system_program: SanitizedSystemProgram<'a, 'info>,
-}
-
-impl<'a, 'info> SanitizedAccounts<'a, 'info> {
-    fn sanitize(
-        accounts: &'a [AccountInfo<'info>],
-    ) -> Result<SanitizedAccounts<'a, 'info>, ProgramError> {
-        let mut accounts_iter = accounts.iter();
-
-        let config_account = EmptyAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let admin = SanitizedSignerAccount::sanitize(next_account_info(&mut accounts_iter)?, true)?;
-        let vault_program = next_account_info(&mut accounts_iter)?;
-        let system_program =
-            SanitizedSystemProgram::sanitize(next_account_info(&mut accounts_iter)?)?;
-
-        Ok(SanitizedAccounts {
-            config_account,
-            admin,
-            vault_program,
-            system_program,
-        })
-    }
 }

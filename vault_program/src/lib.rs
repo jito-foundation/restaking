@@ -1,24 +1,26 @@
-mod add_avs;
 mod add_delegation;
+mod add_ncn;
 mod add_operator;
 mod add_slasher;
 mod burn;
+mod burn_withdrawal_ticket;
+mod cooldown_delegation;
+mod cooldown_ncn;
+mod cooldown_operator;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
-mod initialize_vault_avs_slasher_operator_ticket;
+mod initialize_vault_delegation_list;
+mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_with_mint;
 mod mint_to;
-mod remove_avs;
-mod remove_delegation;
-mod remove_operator;
 mod set_admin;
 mod set_capacity;
 mod set_secondary_admin;
 mod slash;
-mod update_delegations;
 mod update_token_metadata;
+mod update_vault;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
@@ -31,18 +33,20 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
-    add_avs::process_vault_add_avs, add_delegation::process_add_delegation,
+    add_delegation::process_add_delegation, add_ncn::process_vault_add_ncn,
     add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
+    burn_withdrawal_ticket::process_burn_withdrawal_ticket,
+    cooldown_delegation::process_cooldown_delegation, cooldown_ncn::process_vault_cooldown_ncn,
+    cooldown_operator::process_vault_cooldown_operator,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
-    initialize_vault_avs_slasher_operator_ticket::process_initialize_vault_avs_slasher_operator_ticket,
+    initialize_vault_delegation_list::process_initialize_vault_delegation_list,
+    initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
-    remove_avs::process_vault_remove_avs, remove_delegation::process_remove_delegation,
-    remove_operator::process_vault_remove_operator, set_admin::process_set_admin,
-    set_capacity::process_set_capacity, set_secondary_admin::process_set_secondary_admin,
-    slash::process_slash, update_delegations::process_update_delegations,
-    update_token_metadata::process_update_token_metadata,
+    set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
+    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    update_token_metadata::process_update_token_metadata, update_vault::process_update_vault,
     withdrawal_asset::process_withdrawal_asset,
 };
 
@@ -89,6 +93,10 @@ pub fn process_instruction(
             msg!("Instruction: InitializeVault");
             process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
         }
+        VaultInstruction::InitializeVaultDelegationList => {
+            msg!("Instruction: InitializeVaultDelegationList");
+            process_initialize_vault_delegation_list(program_id, accounts)
+        }
         VaultInstruction::InitializeVaultWithMint => {
             msg!("Instruction: InitializeVaultWithMint");
             process_initialize_vault_with_mint(program_id, accounts)
@@ -105,10 +113,10 @@ pub fn process_instruction(
             process_set_admin(program_id, accounts)
         }
         VaultInstruction::SetDepositCapacity { amount } => {
-            msg!("Instruction: SetCapacity");
-            process_set_capacity(program_id, accounts, amount)
+            msg!("Instruction: SetDepositCapacity");
+            process_set_deposit_capacity(program_id, accounts, amount)
         }
-        VaultInstruction::WithdrawalAsset { amount } => {
+        VaultInstruction::AdminWithdraw { amount } => {
             msg!("Instruction: WithdrawalAsset");
             process_withdrawal_asset(program_id, accounts, amount)
         }
@@ -127,16 +135,20 @@ pub fn process_instruction(
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
         }
-        // ------------------------------------------
-        // Vault-AVS operations
-        // ------------------------------------------
-        VaultInstruction::AddAvs => {
-            msg!("Instruction: AddAvs");
-            process_vault_add_avs(program_id, accounts)
+        VaultInstruction::BurnWithdrawTicket => {
+            msg!("Instruction: BurnWithdrawTicket");
+            process_burn_withdrawal_ticket(program_id, accounts)
         }
-        VaultInstruction::RemoveAvs => {
-            msg!("Instruction: RemoveAvs");
-            process_vault_remove_avs(program_id, accounts)
+        // ------------------------------------------
+        // Vault-NCN operations
+        // ------------------------------------------
+        VaultInstruction::AddNcn => {
+            msg!("Instruction: AddNcn");
+            process_vault_add_ncn(program_id, accounts)
+        }
+        VaultInstruction::CooldownNcn => {
+            msg!("Instruction: RemoveNcn");
+            process_vault_cooldown_ncn(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-operator operations
@@ -145,9 +157,9 @@ pub fn process_instruction(
             msg!("Instruction: AddOperator");
             process_vault_add_operator(program_id, accounts)
         }
-        VaultInstruction::RemoveOperator => {
-            msg!("Instruction: RemoveOperator");
-            process_vault_remove_operator(program_id, accounts)
+        VaultInstruction::CooldownOperator => {
+            msg!("Instruction: CooldownOperator");
+            process_vault_cooldown_operator(program_id, accounts)
         }
         // ------------------------------------------
         // Vault delegation
@@ -156,24 +168,24 @@ pub fn process_instruction(
             msg!("Instruction: AddDelegation");
             process_add_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::RemoveDelegation { amount } => {
-            msg!("Instruction: RemoveDelegation");
-            process_remove_delegation(program_id, accounts, amount)
+        VaultInstruction::CooldownDelegation { amount } => {
+            msg!("Instruction: CooldownDelegation");
+            process_cooldown_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::UpdateDelegations => {
-            msg!("Instruction: UpdateDelegations");
-            process_update_delegations(program_id, accounts)
+        VaultInstruction::UpdateVault => {
+            msg!("Instruction: UpdateVault");
+            process_update_vault(program_id, accounts)
         }
         // ------------------------------------------
         // Vault slashing
         // ------------------------------------------
         VaultInstruction::AddSlasher => {
-            msg!("Instruction: RegisterSlasher");
+            msg!("Instruction: AddSlasher");
             process_add_slasher(program_id, accounts)
         }
-        VaultInstruction::InitializeVaultAvsSlasherOperatorTicket => {
-            msg!("Instruction: InitializeVaultAvsSlasherOperatorTicket");
-            process_initialize_vault_avs_slasher_operator_ticket(program_id, accounts)
+        VaultInstruction::InitializeVaultNcnSlasherOperatorTicket => {
+            msg!("Instruction: InitializeVaultNcnSlasherOperatorTicket");
+            process_initialize_vault_ncn_slasher_operator_ticket(program_id, accounts)
         }
         VaultInstruction::Slash { amount } => {
             msg!("Instruction: Slash");

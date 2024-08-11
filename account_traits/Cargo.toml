@@ -1,0 +1,15 @@
+[package]
+name = "jito-account-traits"
+description = "Jito account traits"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+bytemuck = { workspace = true }
+jito-account-traits-derive = { workspace = true }
+solana-program = { workspace = true }
