@@ -1,22 +1,27 @@
+mod cooldown_ncn_operator_ticket;
+mod cooldown_ncn_vault_slasher_ticket;
+mod cooldown_ncn_vault_ticket;
+mod cooldown_operator_ncn_ticket;
+mod cooldown_operator_vault_ticket;
 mod initialize_config;
 mod initialize_ncn;
+mod initialize_ncn_operator_ticket;
+mod initialize_ncn_vault_slasher_ticket;
+mod initialize_ncn_vault_ticket;
 mod initialize_operator;
-mod ncn_add_operator;
-mod ncn_add_vault;
-mod ncn_add_vault_slasher;
-mod ncn_cooldown_operator;
-mod ncn_cooldown_vault;
-mod ncn_cooldown_vault_slasher;
+mod initialize_operator_ncn_ticket;
+mod initialize_operator_vault_ticket;
 mod ncn_set_admin;
 mod ncn_set_secondary_admin;
 mod ncn_withdraw_asset;
-mod operator_add_ncn;
-mod operator_add_vault;
-mod operator_cooldown_ncn;
-mod operator_cooldown_vault;
 mod operator_set_admin;
 mod operator_set_secondary_admin;
 mod operator_withdrawal_asset;
+mod warmup_ncn_operator_ticket;
+mod warmup_ncn_vault_slasher_ticket;
+mod warmup_ncn_vault_ticket;
+mod warmup_operator_ncn_ticket;
+mod warmup_operator_vault_ticket;
 
 use borsh::BorshDeserialize;
 use jito_restaking_sdk::RestakingInstruction;
@@ -28,20 +33,28 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
+    cooldown_ncn_operator_ticket::process_cooldown_ncn_operator_ticket,
+    cooldown_ncn_vault_slasher_ticket::process_cooldown_ncn_vault_slasher_ticket,
+    cooldown_ncn_vault_ticket::process_cooldown_ncn_vault_ticket,
+    cooldown_operator_ncn_ticket::process_cooldown_operator_ncn_ticket,
+    cooldown_operator_vault_ticket::process_cooldown_operator_vault_ticket,
     initialize_config::process_initialize_config, initialize_ncn::process_initialize_ncn,
-    initialize_operator::process_initialize_operator, ncn_add_operator::process_ncn_add_operator,
-    ncn_add_vault::process_ncn_add_vault, ncn_add_vault_slasher::process_ncn_add_vault_slasher,
-    ncn_cooldown_operator::process_ncn_cooldown_operator,
-    ncn_cooldown_vault::process_ncn_cooldown_vault,
-    ncn_cooldown_vault_slasher::process_ncn_remove_slasher, ncn_set_admin::process_ncn_set_admin,
-    ncn_set_secondary_admin::process_ncn_set_secondary_admin,
-    ncn_withdraw_asset::process_ncn_withdraw_asset, operator_add_ncn::process_operator_add_ncn,
-    operator_add_vault::process_operator_add_vault,
-    operator_cooldown_ncn::process_operator_cooldown_ncn,
-    operator_cooldown_vault::process_operator_cooldown_vault,
+    initialize_ncn_operator_ticket::process_initialize_ncn_operator_ticket,
+    initialize_ncn_vault_slasher_ticket::process_initialize_ncn_vault_slasher_ticket,
+    initialize_ncn_vault_ticket::process_initialize_ncn_vault_ticket,
+    initialize_operator::process_initialize_operator,
+    initialize_operator_ncn_ticket::process_initialize_operator_ncn_ticket,
+    initialize_operator_vault_ticket::process_initialize_operator_vault_ticket,
+    ncn_set_admin::process_ncn_set_admin, ncn_set_secondary_admin::process_ncn_set_secondary_admin,
+    ncn_withdraw_asset::process_ncn_withdraw_asset,
     operator_set_admin::process_set_node_operator_admin,
     operator_set_secondary_admin::process_set_operator_secondary_admin,
     operator_withdrawal_asset::process_operator_withdrawal_asset,
+    warmup_ncn_operator_ticket::process_warmup_ncn_operator_ticket,
+    warmup_ncn_vault_slasher_ticket::process_warmup_ncn_vault_slasher_ticket,
+    warmup_ncn_vault_ticket::process_warmup_ncn_vault_ticket,
+    warmup_operator_ncn_ticket::process_warmup_operator_ncn_ticket,
+    warmup_operator_vault_ticket::process_warmup_operator_vault_ticket,
 };
 
 declare_id!("E5YF9Um1mwQWHffqaUEUwtwnhQKsbMEt33qtvjto3NDZ");
@@ -81,29 +94,73 @@ pub fn process_instruction(
             msg!("Instruction: InitializeNcn");
             process_initialize_ncn(program_id, accounts)
         }
-        RestakingInstruction::NcnAddVault => {
-            msg!("Instruction: NcnAddVault");
-            process_ncn_add_vault(program_id, accounts)
+        RestakingInstruction::InitializeOperator => {
+            msg!("Instruction: InitializeOperator");
+            process_initialize_operator(program_id, accounts)
         }
-        RestakingInstruction::NcnCooldownVault => {
-            msg!("Instruction: NcnCooldownVault");
-            process_ncn_cooldown_vault(program_id, accounts)
+        RestakingInstruction::InitializeNcnVaultTicket => {
+            msg!("Instruction: InitializeNcnVaultTicket");
+            process_initialize_ncn_vault_ticket(program_id, accounts)
         }
-        RestakingInstruction::NcnAddOperator => {
-            msg!("Instruction: NcnAddOperator");
-            process_ncn_add_operator(program_id, accounts)
+        RestakingInstruction::InitializeNcnOperatorTicket => {
+            msg!("Instruction: InitializeNcnOperatorTicket");
+            process_initialize_ncn_operator_ticket(program_id, accounts)
         }
-        RestakingInstruction::NcnCooldownOperator => {
-            msg!("Instruction: NcnCooldownOperator");
-            process_ncn_cooldown_operator(program_id, accounts)
+        RestakingInstruction::InitializeNcnVaultSlasherTicket(max_slashable_per_epoch) => {
+            msg!("Instruction: InitializeNcnVaultSlasherTicket");
+            process_initialize_ncn_vault_slasher_ticket(
+                program_id,
+                accounts,
+                max_slashable_per_epoch,
+            )
         }
-        RestakingInstruction::NcnAddVaultSlasher(max_slashable_per_epoch) => {
-            msg!("Instruction: NcnAddVaultSlasher");
-            process_ncn_add_vault_slasher(program_id, accounts, max_slashable_per_epoch)
+        RestakingInstruction::InitializeOperatorNcnTicket => {
+            msg!("Instruction: InitializeOperatorNcnTicket");
+            process_initialize_operator_ncn_ticket(program_id, accounts)
         }
-        RestakingInstruction::NcnCooldownVaultSlasher => {
-            msg!("Instruction: NcnCooldownVaultSlasher");
-            process_ncn_remove_slasher(program_id, accounts)
+        RestakingInstruction::InitializeOperatorVaultTicket => {
+            msg!("Instruction: InitializeOperatorVaultTicket");
+            process_initialize_operator_vault_ticket(program_id, accounts)
+        }
+        RestakingInstruction::WarmupNcnVaultTicket => {
+            msg!("Instruction: WarmupNcnVaultTicket");
+            process_warmup_ncn_vault_ticket(program_id, accounts)
+        }
+        RestakingInstruction::CooldownNcnVaultTicket => {
+            msg!("Instruction: CooldownNcnVaultTicket");
+            process_cooldown_ncn_vault_ticket(program_id, accounts)
+        }
+        RestakingInstruction::WarmupNcnOperatorTicket => {
+            msg!("Instruction: WarmupNcnOperatorTicket");
+            process_warmup_ncn_operator_ticket(program_id, accounts)
+        }
+        RestakingInstruction::CooldownNcnOperatorTicket => {
+            msg!("Instruction: CooldownNcnOperatorTicket");
+            process_cooldown_ncn_operator_ticket(program_id, accounts)
+        }
+        RestakingInstruction::WarmupNcnVaultSlasherTicket => {
+            msg!("Instruction: WarmupNcnVaultSlasherTicket");
+            process_warmup_ncn_vault_slasher_ticket(program_id, accounts)
+        }
+        RestakingInstruction::CooldownNcnVaultSlasherTicket => {
+            msg!("Instruction: CooldownNcnVaultSlasherTicket");
+            process_cooldown_ncn_vault_slasher_ticket(program_id, accounts)
+        }
+        RestakingInstruction::WarmupOperatorVaultTicket => {
+            msg!("Instruction: WarmupOperatorVaultTicket");
+            process_warmup_operator_vault_ticket(program_id, accounts)
+        }
+        RestakingInstruction::CooldownOperatorVaultTicket => {
+            msg!("Instruction: CooldownOperatorVaultTicket");
+            process_cooldown_operator_vault_ticket(program_id, accounts)
+        }
+        RestakingInstruction::WarmupOperatorNcnTicket => {
+            msg!("Instruction: WarmupOperatorNcnTicket");
+            process_warmup_operator_ncn_ticket(program_id, accounts)
+        }
+        RestakingInstruction::CooldownOperatorNcnTicket => {
+            msg!("Instruction: CooldownOperatorNcnTicket");
+            process_cooldown_operator_ncn_ticket(program_id, accounts)
         }
         RestakingInstruction::NcnSetAdmin => {
             msg!("Instruction: NcnSetAdmin");
@@ -113,10 +170,6 @@ pub fn process_instruction(
             msg!("Instruction: NcnSetSecondaryAdmin");
             process_ncn_set_secondary_admin(program_id, accounts, role)
         }
-        RestakingInstruction::InitializeOperator => {
-            msg!("Instruction: InitializeNodeOperator");
-            process_initialize_operator(program_id, accounts)
-        }
         RestakingInstruction::OperatorSetAdmin => {
             msg!("Instruction: OperatorSetAdmin");
             process_set_node_operator_admin(program_id, accounts)
@@ -124,22 +177,6 @@ pub fn process_instruction(
         RestakingInstruction::OperatorSetSecondaryAdmin(role) => {
             msg!("Instruction: OperatorSetSecondaryAdmin");
             process_set_operator_secondary_admin(program_id, accounts, role)
-        }
-        RestakingInstruction::OperatorAddVault => {
-            msg!("Instruction: OperatorAddVault");
-            process_operator_add_vault(program_id, accounts)
-        }
-        RestakingInstruction::OperatorCooldownVault => {
-            msg!("Instruction: OperatorCooldownVault");
-            process_operator_cooldown_vault(program_id, accounts)
-        }
-        RestakingInstruction::OperatorAddNcn => {
-            msg!("Instruction: OperatorAddNcn");
-            process_operator_add_ncn(program_id, accounts)
-        }
-        RestakingInstruction::OperatorCooldownNcn => {
-            msg!("Instruction: OperatorCooldownNcn");
-            process_operator_cooldown_ncn(program_id, accounts)
         }
         RestakingInstruction::NcnWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: NcnWithdrawalAsset");

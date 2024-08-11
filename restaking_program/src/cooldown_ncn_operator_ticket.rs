@@ -13,8 +13,8 @@ use solana_program::{
 
 /// The NCN admin can remove a node operator from the NCN.
 /// This method is permissioned to the NCN admin.
-/// [`crate::RestakingInstruction::NcnCooldownOperator`]
-pub fn process_ncn_cooldown_operator(
+/// [`crate::RestakingInstruction::CooldownNcnOperatorTicket`]
+pub fn process_cooldown_ncn_operator_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {

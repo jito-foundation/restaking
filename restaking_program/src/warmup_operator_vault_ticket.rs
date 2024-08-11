@@ -12,19 +12,18 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// [`crate::RestakingInstruction::OperatorCooldownVault`]
-pub fn process_operator_cooldown_vault(
+/// [`crate::RestakingInstruction::WarmupOperatorVaultTicket`]
+pub fn process_warmup_operator_vault_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
     let [config, operator, vault, operator_vault_ticket, operator_vault_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-
     load_config(program_id, config, false)?;
     load_operator(program_id, operator, false)?;
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
     load_vault(&config.vault_program, vault, false)?;
     load_operator_vault_ticket(program_id, operator_vault_ticket, operator, vault, true)?;
     load_signer(operator_vault_admin, false)?;
@@ -32,18 +31,18 @@ pub fn process_operator_cooldown_vault(
     let operator_data = operator.data.borrow();
     let operator = Operator::try_from_slice(&operator_data)?;
     if operator.vault_admin.ne(operator_vault_admin.key) {
-        msg!("Invalid operator vault admin");
+        msg!("Invalid vault admin for operator");
         return Err(ProgramError::InvalidAccountData);
     }
 
     let mut operator_vault_ticket_data = operator_vault_ticket.data.borrow_mut();
     let operator_vault_ticket =
         OperatorVaultTicket::try_from_slice_mut(&mut operator_vault_ticket_data)?;
-    if operator_vault_ticket
+    if !operator_vault_ticket
         .state
-        .deactivate(Clock::get()?.slot, config.epoch_length)
+        .activate(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("Vault is not ready to be deactivated");
+        msg!("Operator is not ready to be activated");
         return Err(ProgramError::InvalidAccountData);
     }
 

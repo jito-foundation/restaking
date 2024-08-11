@@ -1,6 +1,9 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::loader::load_operator;
+use jito_restaking_core::{
+    loader::{load_operator, load_operator_vault_ticket},
+    operator_vault_ticket::OperatorVaultTicket,
+};
 use jito_vault_core::{
     config::Config,
     loader::{load_config, load_vault, load_vault_operator_ticket},
@@ -12,20 +15,28 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// Processes the vault remove operator instruction: [`crate::VaultInstruction::CooldownOperator`]
-pub fn process_vault_cooldown_operator(
+/// Instruction: [`crate::VaultInstruction::WarmupVaultOperatorTicket`]
+pub fn process_warmup_vault_operator_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault, operator, vault_operator_ticket, vault_operator_admin] = accounts else {
+    let [config, vault, operator, operator_vault_ticket, vault_operator_ticket, vault_operator_admin] =
+        accounts
+    else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-
     load_config(program_id, config, false)?;
     load_vault(program_id, vault, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice(&config_data)?;
     load_operator(&config.restaking_program, operator, false)?;
+    load_operator_vault_ticket(
+        &config.restaking_program,
+        operator_vault_ticket,
+        operator,
+        vault,
+        false,
+    )?;
     load_vault_operator_ticket(program_id, vault_operator_ticket, vault, operator, true)?;
     load_signer(vault_operator_admin, false)?;
 
@@ -36,18 +47,26 @@ pub fn process_vault_cooldown_operator(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
+    let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
+    if !operator_vault_ticket
+        .state
+        .is_active(Clock::get()?.slot, config.epoch_length)
+    {
+        msg!("Operator vault ticket is not active");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
     let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
     let vault_operator_ticket =
         VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
     if !vault_operator_ticket
         .state
-        .deactivate(Clock::get()?.slot, config.epoch_length)
+        .activate(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("Operator is not ready to be deactivated");
+        msg!("Vault operator ticket is not ready to be activated");
         return Err(ProgramError::InvalidAccountData);
     }
-
-    // TODO (LB): deactivate stake too?
 
     Ok(())
 }

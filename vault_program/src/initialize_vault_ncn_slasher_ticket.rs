@@ -18,8 +18,11 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
-/// Processes the register slasher instruction: [`crate::VaultInstruction::AddSlasher`]
-pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// Processes the register slasher instruction: [`crate::VaultInstruction::InitializeVaultNcnSlasherTicket`]
+pub fn process_initialize_vault_ncn_slasher_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, vault_info, ncn, slasher, ncn_slasher_ticket, vault_ncn_slasher_ticket, vault_slasher_admin, payer, system_program] =
         accounts
     else {

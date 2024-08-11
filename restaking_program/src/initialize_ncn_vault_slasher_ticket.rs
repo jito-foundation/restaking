@@ -18,7 +18,7 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
-pub fn process_ncn_add_vault_slasher(
+pub fn process_initialize_ncn_vault_slasher_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     max_slashable_per_epoch: u64,

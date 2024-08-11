@@ -12,8 +12,11 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// [`crate::RestakingInstruction::NcnCooldownVault`]
-pub fn process_ncn_cooldown_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::CooldownNcnVaultTicket`]
+pub fn process_cooldown_ncn_vault_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, ncn, vault, ncn_vault_ticket, ncn_vault_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

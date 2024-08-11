@@ -20,8 +20,11 @@ use solana_program::{
 /// After an operator opts-in to an NCN, the NCN operator admin can add the operator to the NCN.
 /// The operator must have opted-in to the NCN before the NCN opts-in to the operator.
 ///
-/// [`crate::RestakingInstruction::NcnAddOperator`]
-pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeNcnOperatorTicket`]
+pub fn process_initialize_ncn_operator_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, ncn_info, operator, ncn_operator_ticket, operator_ncn_ticket, ncn_operator_admin, payer, system_program] =
         accounts
     else {

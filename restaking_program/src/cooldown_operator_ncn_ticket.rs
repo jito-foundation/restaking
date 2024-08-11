@@ -11,8 +11,8 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// [`crate::RestakingInstruction::OperatorCooldownNcn`]
-pub fn process_operator_cooldown_ncn(
+/// [`crate::RestakingInstruction::CooldownOperatorNcnTicket`]
+pub fn process_cooldown_operator_ncn_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {

@@ -42,25 +42,6 @@ pub enum VaultInstruction {
     #[account(4, name = "system_program")]
     InitializeVaultDelegationList,
 
-    /// Vault adds support for the NCN
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, name = "ncn_vault_ticket")]
-    #[account(4, writable, name = "vault_ncn_ticket")]
-    #[account(5, signer, name = "admin")]
-    #[account(6, writable, signer, name = "payer")]
-    #[account(7, name = "system_program")]
-    AddNcn,
-
-    /// Vault removes support for an NCN
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, writable, name = "vault_ncn_ticket")]
-    #[account(4, signer, name = "admin")]
-    CooldownNcn,
-
     /// Vault adds support for an operator
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
@@ -70,7 +51,67 @@ pub enum VaultInstruction {
     #[account(5, signer, name = "admin")]
     #[account(6, writable, signer, name = "payer")]
     #[account(7, name = "system_program")]
-    AddOperator,
+    InitializeVaultOperatorTicket,
+
+    /// Vault adds support for the NCN
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "ncn_vault_ticket")]
+    #[account(4, writable, name = "vault_ncn_ticket")]
+    #[account(5, signer, name = "admin")]
+    #[account(6, writable, signer, name = "payer")]
+    #[account(7, name = "system_program")]
+    InitializeVaultNcnTicket,
+
+    /// Initializes the account which keeps track of how much an operator has been slashed
+    /// by a slasher for a given NCN and vault for a given epoch.
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "slasher")]
+    #[account(4, name = "operator")]
+    #[account(5, name = "vault_ncn_slasher_ticket")]
+    #[account(6, writable, name = "vault_ncn_slasher_operator_ticket")]
+    #[account(7, writable, signer, name = "payer")]
+    #[account(8, name = "system_program")]
+    InitializeVaultNcnSlasherOperatorTicket,
+
+    /// Registers a slasher with the vault
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "slasher")]
+    #[account(4, name = "ncn_slasher_ticket")]
+    #[account(5, writable, name = "vault_slasher_ticket")]
+    #[account(6, signer, name = "admin")]
+    #[account(7, signer, writable, name = "payer")]
+    #[account(8, name = "system_program")]
+    InitializeVaultNcnSlasherTicket,
+
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "ncn_vault_ticket")]
+    #[account(4, writable, name = "vault_ncn_ticket")]
+    #[account(5, signer, name = "admin")]
+    WarmupVaultNcnTicket,
+
+    /// Vault removes support for an NCN
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, writable, name = "vault_ncn_ticket")]
+    #[account(4, signer, name = "admin")]
+    CooldownVaultNcnTicket,
+
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "operator")]
+    #[account(3, name = "operator_vault_ticket")]
+    #[account(4, writable, name = "vault_operator_ticket")]
+    #[account(5, signer, name = "admin")]
+    WarmupVaultOperatorTicket,
 
     /// Vault removes support for an operator
     #[account(0, name = "config")]
@@ -78,7 +119,24 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_ticket")]
     #[account(4, signer, name = "admin")]
-    CooldownOperator,
+    CooldownVaultOperatorTicket,
+
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "slasher")]
+    #[account(4, name = "ncn_slasher_ticket")]
+    #[account(5, writable, name = "vault_slasher_ticket")]
+    #[account(6, signer, name = "admin")]
+    WarmupVaultNcnSlasherTicket,
+
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "ncn")]
+    #[account(3, name = "slasher")]
+    #[account(4, writable, name = "vault_ncn_slasher_ticket")]
+    #[account(5, signer, name = "admin")]
+    CooldownVaultNcnSlasherTicket,
 
     /// Mints LRT by depositing tokens into the vault
     #[account(0, name = "config")]
@@ -190,18 +248,6 @@ pub enum VaultInstruction {
     #[account(3, writable, name = "vault_token_account")]
     UpdateVault,
 
-    /// Registers a slasher with the vault
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, name = "slasher")]
-    #[account(4, name = "ncn_slasher_ticket")]
-    #[account(5, writable, name = "vault_slasher_ticket")]
-    #[account(6, signer, name = "admin")]
-    #[account(7, signer, writable, name = "payer")]
-    #[account(8, name = "system_program")]
-    AddSlasher,
-
     /// Creates token metadata for the vault LRT
     CreateTokenMetadata {
         name: String,
@@ -215,19 +261,6 @@ pub enum VaultInstruction {
         symbol: String,
         uri: String,
     },
-
-    /// Initializes the account which keeps track of how much an operator has been slashed
-    /// by a slasher for a given NCN and vault for a given epoch.
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, name = "slasher")]
-    #[account(4, name = "operator")]
-    #[account(5, name = "vault_ncn_slasher_ticket")]
-    #[account(6, writable, name = "vault_ncn_slasher_operator_ticket")]
-    #[account(7, writable, signer, name = "payer")]
-    #[account(8, name = "system_program")]
-    InitializeVaultNcnSlasherOperatorTicket,
 
     /// Slashes an amount of tokens from the vault
     #[account(0, name = "config")]
@@ -341,7 +374,7 @@ pub fn initialize_vault_delegation_list(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn add_ncn(
+pub fn initialize_vault_ncn_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -364,11 +397,13 @@ pub fn add_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::AddNcn.try_to_vec().unwrap(),
+        data: VaultInstruction::InitializeVaultNcnTicket
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
-pub fn remove_ncn(
+pub fn cooldown_vault_ncn_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -386,12 +421,14 @@ pub fn remove_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownNcn.try_to_vec().unwrap(),
+        data: VaultInstruction::CooldownVaultNcnTicket
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn add_operator(
+pub fn initialize_vault_operator_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -414,11 +451,13 @@ pub fn add_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::AddOperator.try_to_vec().unwrap(),
+        data: VaultInstruction::InitializeVaultOperatorTicket
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
-pub fn remove_operator(
+pub fn cooldown_vault_operator_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -436,7 +475,9 @@ pub fn remove_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownOperator.try_to_vec().unwrap(),
+        data: VaultInstruction::CooldownVaultOperatorTicket
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -583,7 +624,7 @@ pub fn add_delegation(
     }
 }
 
-pub fn remove_delegation(
+pub fn cooldown_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -629,7 +670,7 @@ pub fn update_vault(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn add_slasher(
+pub fn initialize_vault_ncn_slasher_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -654,7 +695,9 @@ pub fn add_slasher(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::AddSlasher.try_to_vec().unwrap(),
+        data: VaultInstruction::InitializeVaultNcnSlasherTicket
+            .try_to_vec()
+            .unwrap(),
     }
 }
 

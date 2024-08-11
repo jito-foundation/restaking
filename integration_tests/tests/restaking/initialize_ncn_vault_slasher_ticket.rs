@@ -51,7 +51,7 @@ mod tests {
         )
         .0;
         restaking_program_client
-            .ncn_add_vault(
+            .initialize_ncn_vault_ticket(
                 &config,
                 &ncn_pubkey,
                 &vault_root.vault_pubkey,
@@ -79,7 +79,7 @@ mod tests {
         .0;
         let max_slashable_per_epoch = 1000;
         restaking_program_client
-            .ncn_add_vault_slasher(
+            .initialize_ncn_vault_slasher_ticket(
                 &config,
                 &ncn_pubkey,
                 &vault_root.vault_pubkey,

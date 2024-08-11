@@ -47,7 +47,7 @@ mod tests {
         )
         .0;
         restaking_program_client
-            .ncn_add_vault(
+            .initialize_ncn_vault_ticket(
                 &config,
                 &ncn_pubkey,
                 &vault_root.vault_pubkey,

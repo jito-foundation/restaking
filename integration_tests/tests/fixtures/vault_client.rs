@@ -607,7 +607,7 @@ impl VaultProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_ncn(
+            &[jito_vault_sdk::initialize_vault_ncn_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -636,7 +636,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_operator(
+            &[jito_vault_sdk::initialize_vault_operator_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -916,7 +916,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_slasher(
+            &[jito_vault_sdk::initialize_vault_ncn_slasher_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,

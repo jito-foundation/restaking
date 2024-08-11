@@ -19,8 +19,11 @@ use solana_program::{
 /// The vault can be used at the end of epoch + 1.
 /// This method is permissioned to the node operator admin.
 ///
-/// [`crate::RestakingInstruction::OperatorAddVault`]
-pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeOperatorVaultTicket`]
+pub fn process_initialize_operator_vault_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, operator_info, vault, operator_vault_ticket_account, operator_vault_admin, payer, system_program] =
         accounts
     else {

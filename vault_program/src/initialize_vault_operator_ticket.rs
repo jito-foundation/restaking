@@ -20,8 +20,11 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
-/// Instruction: [`crate::VaultInstruction::AddOperator`]
-pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// Instruction: [`crate::VaultInstruction::InitializeVaultOperatorTicket`]
+pub fn process_initialize_vault_operator_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, vault_info, operator, operator_vault_ticket, vault_operator_ticket, vault_operator_admin, payer, system_program] =
         accounts
     else {

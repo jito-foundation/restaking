@@ -65,7 +65,7 @@ mod tests {
         )
         .0;
         restaking_program_client
-            .operator_add_vault(
+            .initialize_operator_vault_ticket(
                 &config,
                 &operator_pubkey,
                 &vault_root.vault_pubkey,

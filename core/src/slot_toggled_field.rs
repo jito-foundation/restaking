@@ -60,6 +60,10 @@ impl SlotToggle {
         )
     }
 
+    pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
+        matches!(self.state(slot, epoch_length), SlotToggleState::Active)
+    }
+
     pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
         let current_epoch = slot.checked_div(epoch_length).unwrap();
 

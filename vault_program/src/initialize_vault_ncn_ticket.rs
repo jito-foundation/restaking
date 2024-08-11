@@ -27,8 +27,11 @@ use solana_program::{
 /// * The vault admin shall have the ability to add support for a new NCN
 ///   if the NCN is actively supporting the vault
 ///
-/// Instruction: [`crate::VaultInstruction::AddNcn`]
-pub fn process_vault_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// Instruction: [`crate::VaultInstruction::InitializeVaultNcnTicket`]
+pub fn process_initialize_vault_ncn_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, vault_info, ncn, ncn_vault_ticket, vault_ncn_ticket, vault_ncn_admin, payer, system_program] =
         accounts
     else {

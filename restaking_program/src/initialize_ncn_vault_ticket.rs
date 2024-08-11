@@ -20,8 +20,11 @@ use solana_program::{
 /// The NCN opts-in to vaults by storing the vault in the NCN vault list. It also CPI's into
 /// the vault program and adds the NCN to the vault's NCN list.
 ///
-/// [`crate::RestakingInstruction::NcnAddVault`]
-pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeNcnVaultTicket`]
+pub fn process_initialize_ncn_vault_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, ncn_info, vault, ncn_vault_ticket, ncn_vault_admin, payer, system_program] =
         accounts
     else {

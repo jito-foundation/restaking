@@ -19,8 +19,11 @@ use solana_program::{
 /// The node operator admin can add support for running an NCN.
 /// This method is permissioned to the node operator admin.
 ///
-/// [`crate::RestakingInstruction::OperatorAddNcn`]
-pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeOperatorNcnTicket`]
+pub fn process_initialize_operator_ncn_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, operator_info, ncn, operator_ncn_ticket, operator_ncn_admin, payer, system_program] =
         accounts
     else {
