@@ -399,4 +399,159 @@ mod tests {
         assert_eq!(delegation.enqueued_for_withdraw_amount, 55_000);
         assert_eq!(delegation.total_security().unwrap(), 100_000);
     }
+
+    #[tokio::test]
+    async fn test_enqueue_withdraw_with_reward_err() {
+        let mut fixture = TestBuilder::new().await;
+        let mut vault_program_client = fixture.vault_program_client();
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        // Setup vault with initial deposit
+        let (_vault_config_admin, vault_root) = vault_program_client
+            .setup_config_and_vault(0, 0, 100)
+            .await
+            .unwrap();
+        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+
+        // Setup operator and NCN
+        let operator_root = restaking_program_client.setup_operator().await.unwrap();
+        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
+
+        let restaking_config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+
+        // Setup necessary relationships
+        restaking_program_client
+            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+
+        restaking_program_client
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
+        restaking_program_client
+            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        restaking_program_client
+            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // Initial deposit
+        let depositor = Keypair::new();
+        fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
+        fixture
+            .mint_to(&vault.supported_mint, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        fixture
+            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .await
+            .unwrap();
+
+        // Mint LRT tokens to depositor
+        vault_program_client
+            .mint_to(
+                &vault_root.vault_pubkey,
+                &vault.lrt_mint,
+                &depositor,
+                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
+                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                None,
+                100_000,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // Delegate all funds to the operator
+        vault_program_client
+            .delegate(&vault_root, &operator_root.operator_pubkey, 100_000)
+            .await
+            .unwrap();
+
+        // Simulate rewards by adding more tokens to the vault
+        fixture
+            .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 10_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // Enqueue withdrawal for half of the original deposit
+        let withdraw_amount = 50_000;
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, withdraw_amount)
+            .await
+            .unwrap();
+
+        // Verify the withdraw ticket
+        let withdrawal_ticket = vault_program_client
+            .get_vault_staker_withdrawal_ticket(
+                &vault_root.vault_pubkey,
+                &depositor.pubkey(),
+                &base,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(withdrawal_ticket.lrt_amount, withdraw_amount);
+
+        // The actual assets to be withdrawn should be more than the LRT amount due to rewards
+        assert_eq!(withdrawal_ticket.withdraw_allocation_amount, 55_000);
+
+        // Verify the vault delegation list
+        let vault_delegation_list = vault_program_client
+            .get_vault_delegation_list(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let delegation = vault_delegation_list.delegations().get(0).unwrap();
+        assert_eq!(delegation.staked_amount, 45_000);
+        assert_eq!(delegation.enqueued_for_withdraw_amount, 55_000);
+        assert_eq!(delegation.total_security().unwrap(), 100_000);
+    }
 }

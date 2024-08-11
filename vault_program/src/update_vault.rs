@@ -46,6 +46,7 @@ pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pr
     let vault_token_account_data = vault_token_account.data.borrow();
     let vault_token_account = Account::unpack(&vault_token_account_data)?;
     vault.tokens_deposited = vault_token_account.amount;
+    vault.current_epoch = Clock::get()?.epoch;
 
     Ok(())
 }

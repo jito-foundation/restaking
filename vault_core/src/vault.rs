@@ -439,5 +439,25 @@ mod tests {
                 .unwrap(),
             7
         );
+
+        current_epoch = 107;
+        vault.current_epoch = 107;
+        vault.tokens_deposited = 1_000_000;
+        vault.lrt_supply = 1_000_000;
+        vault.epoch_withdrawn_amount = 1;
+        assert_eq!(
+            vault.calculate_assets_returned_amount(100_000, current_epoch),
+            Err(VaultCoreError::VaultWithdrawOverflow)
+        );
+
+        current_epoch = 108;
+        vault.current_epoch = 107;
+        vault.tokens_deposited = 1_000_000;
+        vault.lrt_supply = 1_000_000;
+        vault.epoch_withdrawn_amount = 0;
+        assert_eq!(
+            vault.calculate_assets_returned_amount(100_000, current_epoch),
+            Ok(100_000)
+        );
     }
 }
