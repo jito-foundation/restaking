@@ -21,6 +21,7 @@ pub fn process_initialize_vault(
     accounts: &[AccountInfo],
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
+    epoch_withdraw_cap: u64,
 ) -> ProgramResult {
     let [config, vault, lrt_mint, mint, admin, base, system_program, token_program] = accounts
     else {
@@ -100,6 +101,7 @@ pub fn process_initialize_vault(
             deposit_fee_bps,
             withdrawal_fee_bps,
             vault_bump,
+            epoch_withdraw_cap,
         );
     }
 

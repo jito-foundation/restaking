@@ -28,6 +28,7 @@ pub enum VaultInstruction {
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        epoch_withdraw_cap: u64
     },
 
     /// Initializes a vault with an already-created LRT mint
@@ -295,6 +296,7 @@ pub fn initialize_vault(
     base: &Pubkey,
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
+    epoch_withdraw_cap: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -312,6 +314,7 @@ pub fn initialize_vault(
         data: VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            epoch_withdraw_cap,
         }
         .try_to_vec()
         .unwrap(),

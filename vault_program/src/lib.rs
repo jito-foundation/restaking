@@ -89,9 +89,16 @@ pub fn process_instruction(
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            epoch_withdraw_cap,
         } => {
             msg!("Instruction: InitializeVault");
-            process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+            process_initialize_vault(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                epoch_withdraw_cap,
+            )
         }
         VaultInstruction::InitializeVaultDelegationList => {
             msg!("Instruction: InitializeVaultDelegationList");

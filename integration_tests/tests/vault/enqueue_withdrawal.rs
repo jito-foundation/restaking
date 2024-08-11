@@ -13,7 +13,7 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(100, 100)
+            .setup_config_and_vault(100, 100, 100)
             .await
             .unwrap();
 
@@ -71,7 +71,7 @@ mod tests {
         let mut restaking_program_client = fixture.restaking_program_client();
 
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(100, 100)
+            .setup_config_and_vault(100, 100, 100)
             .await
             .unwrap();
 
@@ -253,7 +253,7 @@ mod tests {
 
         // Setup vault with initial deposit
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0)
+            .setup_config_and_vault(0, 0, 100)
             .await
             .unwrap();
         let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();

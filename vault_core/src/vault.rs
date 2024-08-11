@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::pubkey::Pubkey;
+use solana_program::{clock::Clock, pubkey::Pubkey, sysvar::Sysvar};
 
 use crate::result::{VaultCoreError, VaultCoreResult};
 
@@ -73,6 +73,15 @@ pub struct Vault {
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault
     pub slasher_count: u64,
 
+    /// The maximum amount of tokens that can be withdrawn per epoch
+    pub epoch_withdraw_cap: u64,
+
+    /// The current epoch number
+    pub current_epoch: u64,
+
+    /// The amount of tokens withdrawn in the current epoch
+    pub epoch_withdrawn_amount: u64,
+
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
 
@@ -97,7 +106,10 @@ impl Vault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         bump: u8,
+        epoch_withdraw_cap: u64,
     ) -> Self {
+        let current_epoch = Clock::get().unwrap().epoch;
+
         Self {
             base,
             lrt_mint,
@@ -121,6 +133,9 @@ impl Vault {
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
+            epoch_withdraw_cap,
+            current_epoch,
+            epoch_withdrawn_amount: 0,
             bump,
             reserved: [0; 3],
         }
@@ -136,18 +151,34 @@ impl Vault {
             .ok_or(VaultCoreError::VaultDelegationUnderflow)
     }
 
-    pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+    pub fn calculate_assets_returned_amount(&mut self, lrt_amount: u64) -> VaultCoreResult<u64> {
         if self.lrt_supply == 0 {
             return Err(VaultCoreError::VaultEmpty);
         } else if lrt_amount > self.lrt_supply {
             return Err(VaultCoreError::VaultInsufficientFunds);
         }
 
-        lrt_amount
+        let returned_amount = lrt_amount
             .checked_mul(self.tokens_deposited)
             .ok_or(VaultCoreError::VaultWithdrawOverflow)?
             .checked_div(self.lrt_supply)
-            .ok_or(VaultCoreError::VaultWithdrawOverflow)
+            .ok_or(VaultCoreError::VaultWithdrawOverflow)?;
+
+        let current_epoch = Clock::get().unwrap().epoch;
+        if current_epoch == self.current_epoch {
+            // Check if the returned amount exceeds the remaining withdrawal cap for the epoch
+            if self.epoch_withdrawn_amount + returned_amount > self.epoch_withdraw_cap {
+                return Err(VaultCoreError::VaultWithdrawOverflow);
+            }
+        } else {
+            self.current_epoch = current_epoch;
+            self.epoch_withdrawn_amount = 0;
+        }
+
+        // Update the epoch withdrawn amount
+        self.epoch_withdrawn_amount += returned_amount;
+
+        Ok(returned_amount)
     }
 
     pub fn calculate_lrt_mint_amount(&self, amount: u64) -> VaultCoreResult<u64> {
@@ -244,6 +275,7 @@ mod tests {
             0,
             0,
             0,
+            100,
         );
         let num_minted = vault.deposit_and_mint_with_capacity_check(100).unwrap();
         assert_eq!(num_minted, 100);
@@ -263,6 +295,7 @@ mod tests {
             0,
             0,
             0,
+            100,
         );
         vault.tokens_deposited = 90;
         vault.lrt_supply = 100;
@@ -285,6 +318,7 @@ mod tests {
             0,
             0,
             0,
+            100,
         );
         vault.capacity = 100;
 
@@ -305,6 +339,7 @@ mod tests {
             0,
             0,
             0,
+            100,
         );
         vault.capacity = 100;
 
@@ -327,6 +362,7 @@ mod tests {
             0,
             0,
             0,
+            100,
         );
 
         vault.lrt_supply = 100_000;

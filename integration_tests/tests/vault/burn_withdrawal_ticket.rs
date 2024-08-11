@@ -32,10 +32,11 @@ mod tests {
         delegate_amount: u64,
         withdrawal_amount: u64,
         max_slash_amount: u64,
+        epoch_withdraw_cap: u64,
     ) -> PreparedWithdrawalTicket {
         // Setup vault with initial deposit
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps, epoch_withdraw_cap)
             .await
             .unwrap();
         let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
@@ -222,6 +223,7 @@ mod tests {
             100,
             100,
             100,
+            100,
         )
         .await;
 
@@ -253,6 +255,7 @@ mod tests {
             0,
             0,
             1000,
+            100,
             100,
             100,
             100,
@@ -305,6 +308,7 @@ mod tests {
             1000,
             1000,
             1000,
+            100,
             100,
         )
         .await;
@@ -370,6 +374,7 @@ mod tests {
             1000,
             1000,
             1000,
+            100,
             100,
         )
         .await;
@@ -442,6 +447,7 @@ mod tests {
             1000,
             1000,
             1000,
+            100,
             100,
         )
         .await;
@@ -545,6 +551,7 @@ mod tests {
     //         1000,
     //         1000,
     //         100,
+    //         100,
     //     )
     //     .await;
     //
@@ -630,6 +637,7 @@ mod tests {
             1000,
             1000,
             900,
+            100,
             100,
         )
         .await;
