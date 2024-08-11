@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{clock::Clock, pubkey::Pubkey, sysvar::Sysvar};
+use solana_program::pubkey::Pubkey;
 
 use crate::result::{VaultCoreError, VaultCoreResult};
 
@@ -106,10 +106,9 @@ impl Vault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         bump: u8,
+        current_epoch: u64,
         epoch_withdraw_cap: u64,
     ) -> Self {
-        let current_epoch = Clock::get().unwrap().epoch;
-
         Self {
             base,
             lrt_mint,
@@ -151,7 +150,11 @@ impl Vault {
             .ok_or(VaultCoreError::VaultDelegationUnderflow)
     }
 
-    pub fn calculate_assets_returned_amount(&mut self, lrt_amount: u64) -> VaultCoreResult<u64> {
+    pub fn calculate_assets_returned_amount(
+        &mut self,
+        lrt_amount: u64,
+        current_epoch: u64,
+    ) -> VaultCoreResult<u64> {
         if self.lrt_supply == 0 {
             return Err(VaultCoreError::VaultEmpty);
         } else if lrt_amount > self.lrt_supply {
@@ -164,7 +167,6 @@ impl Vault {
             .checked_div(self.lrt_supply)
             .ok_or(VaultCoreError::VaultWithdrawOverflow)?;
 
-        let current_epoch = Clock::get().unwrap().epoch;
         if current_epoch == self.current_epoch {
             // Check if the returned amount exceeds the remaining withdrawal cap for the epoch
             if self.epoch_withdrawn_amount + returned_amount > self.epoch_withdraw_cap {
@@ -266,6 +268,8 @@ mod tests {
 
     #[test]
     fn test_deposit_ratio_simple_ok() {
+        let current_epoch = 100;
+
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -275,6 +279,7 @@ mod tests {
             0,
             0,
             0,
+            current_epoch,
             100,
         );
         let num_minted = vault.deposit_and_mint_with_capacity_check(100).unwrap();
@@ -286,6 +291,8 @@ mod tests {
 
     #[test]
     fn test_deposit_ratio_after_slashed_ok() {
+        let current_epoch = 100;
+
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -295,6 +302,7 @@ mod tests {
             0,
             0,
             0,
+            current_epoch,
             100,
         );
         vault.tokens_deposited = 90;
@@ -309,6 +317,8 @@ mod tests {
 
     #[test]
     fn test_deposit_capacity_exceeded_fails() {
+        let current_epoch = 100;
+
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -318,6 +328,7 @@ mod tests {
             0,
             0,
             0,
+            current_epoch,
             100,
         );
         vault.capacity = 100;
@@ -330,6 +341,8 @@ mod tests {
 
     #[test]
     fn test_deposit_capacity_ok() {
+        let current_epoch = 100;
+
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -339,6 +352,7 @@ mod tests {
             0,
             0,
             0,
+            current_epoch,
             100,
         );
         vault.capacity = 100;
@@ -353,6 +367,8 @@ mod tests {
 
     #[test]
     fn test_calculate_assets_returned_amount_ok() {
+        let mut current_epoch = 100;
+
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -362,46 +378,66 @@ mod tests {
             0,
             0,
             0,
-            100,
+            current_epoch,
+            100_000,
         );
 
+        current_epoch = 101;
         vault.lrt_supply = 100_000;
         vault.tokens_deposited = 100_000;
         assert_eq!(
-            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            vault
+                .calculate_assets_returned_amount(50_000, current_epoch)
+                .unwrap(),
             50_000
         );
 
+        current_epoch = 102;
         vault.tokens_deposited = 90_000;
         vault.lrt_supply = 100_000;
+        vault.epoch_withdrawn_amount = 100_000;
         assert_eq!(
-            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            vault
+                .calculate_assets_returned_amount(50_000, current_epoch)
+                .unwrap(),
             45_000
         );
 
+        current_epoch = 103;
         vault.tokens_deposited = 110_000;
         vault.lrt_supply = 100_000;
+        vault.epoch_withdrawn_amount = 100_000;
         assert_eq!(
-            vault.calculate_assets_returned_amount(50_000).unwrap(),
+            vault
+                .calculate_assets_returned_amount(50_000, current_epoch)
+                .unwrap(),
             55_000
         );
 
+        current_epoch = 104;
         vault.tokens_deposited = 100;
         vault.lrt_supply = 0;
         assert_eq!(
-            vault.calculate_assets_returned_amount(100),
+            vault.calculate_assets_returned_amount(100, current_epoch),
             Err(VaultCoreError::VaultEmpty)
         );
 
+        current_epoch = 105;
         vault.tokens_deposited = 100;
         vault.lrt_supply = 1;
         assert_eq!(
-            vault.calculate_assets_returned_amount(100),
+            vault.calculate_assets_returned_amount(100, current_epoch),
             Err(VaultCoreError::VaultInsufficientFunds)
         );
 
+        current_epoch = 106;
         vault.tokens_deposited = 100;
         vault.lrt_supply = 13;
-        assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);
+        assert_eq!(
+            vault
+                .calculate_assets_returned_amount(1, current_epoch)
+                .unwrap(),
+            7
+        );
     }
 }

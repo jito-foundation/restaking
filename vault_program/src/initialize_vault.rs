@@ -9,7 +9,7 @@ use jito_jsm_core::{
 };
 use jito_vault_core::{config::Config, loader::load_config, vault::Vault};
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, rent::Rent,
     system_instruction, sysvar::Sysvar,
 };
@@ -101,6 +101,7 @@ pub fn process_initialize_vault(
             deposit_fee_bps,
             withdrawal_fee_bps,
             vault_bump,
+            Clock::get()?.epoch,
             epoch_withdraw_cap,
         );
     }

@@ -90,8 +90,10 @@ pub fn process_burn_withdrawal_ticket(
 
     // find the current redemption amount and the original redemption amount in the withdrawal ticket
     // TODO (LB): this logic is buggy no doubt
-    let redemption_amount =
-        vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.lrt_amount)?;
+    let redemption_amount = vault.calculate_assets_returned_amount(
+        vault_staker_withdrawal_ticket.lrt_amount,
+        Clock::get()?.epoch,
+    )?;
     let original_redemption_amount = vault_staker_withdrawal_ticket.withdraw_allocation_amount;
 
     let actual_withdraw_amount = if redemption_amount > original_redemption_amount {

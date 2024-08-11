@@ -110,8 +110,10 @@ pub fn process_enqueue_withdrawal(
     let amount_to_vault_staker_withdrawal_ticket = lrt_amount
         .checked_sub(fee_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
-    let amount_to_withdraw =
-        vault.calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
+    let amount_to_withdraw = vault.calculate_assets_returned_amount(
+        amount_to_vault_staker_withdrawal_ticket,
+        Clock::get()?.epoch,
+    )?;
 
     vault_delegation_list
         .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
