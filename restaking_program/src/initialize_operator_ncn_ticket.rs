@@ -44,7 +44,7 @@ pub fn process_initialize_operator_ncn_ticket(
     operator_ncn_ticket_seeds.push(vec![operator_ncn_ticket_bump]);
     if operator_ncn_ticket.key.ne(&operator_ncn_ticket_pubkey) {
         msg!("Operator NCN ticket account is not at the correct PDA");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidAccountData);
     }
 
     let mut operator_data = operator_info.data.borrow_mut();

@@ -12,6 +12,7 @@ use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket,
     operator_ncn_ticket::OperatorNcnTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -59,7 +60,7 @@ pub fn process_initialize_ncn_operator_ticket(
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.operator_admin.ne(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnOperatorAdminInvalid.into());
     }
 
     // The operator must have opted-in to the NCN and it must be active
@@ -70,7 +71,7 @@ pub fn process_initialize_ncn_operator_ticket(
         .is_active(slot, config.epoch_length)
     {
         msg!("Operator NCN ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorNcnTicketNotActive.into());
     }
 
     msg!("Initializing NcnOperatorTicket at address {}", operator.key);

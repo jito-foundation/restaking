@@ -6,6 +6,7 @@ use jito_restaking_core::{
     ncn::Ncn,
     ncn_vault_ticket::NcnVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_config;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -31,7 +32,7 @@ pub fn process_cooldown_ncn_vault_ticket(
     let ncn = Ncn::try_from_slice(&ncn_data)?;
     if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultAdminInvalid.into());
     }
 
     // The NcnVaultTicket shall be active before it can be cooled down
@@ -44,7 +45,7 @@ pub fn process_cooldown_ncn_vault_ticket(
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Vault is not ready to be deactivated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultTicketFailedCooldown.into());
     }
 
     Ok(())

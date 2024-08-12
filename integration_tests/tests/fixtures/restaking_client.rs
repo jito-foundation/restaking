@@ -5,10 +5,11 @@ use jito_restaking_core::{
     operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
-use jito_restaking_sdk::{
-    initialize_config, initialize_ncn, initialize_ncn_operator_ticket,
-    initialize_ncn_vault_slasher_ticket, initialize_ncn_vault_ticket, initialize_operator,
-    initialize_operator_ncn_ticket, initialize_operator_vault_ticket,
+use jito_restaking_sdk::sdk::{
+    cooldown_ncn_vault_ticket, cooldown_operator_ncn_ticket, initialize_config, initialize_ncn,
+    initialize_ncn_operator_ticket, initialize_ncn_vault_slasher_ticket,
+    initialize_ncn_vault_ticket, initialize_operator, initialize_operator_ncn_ticket,
+    initialize_operator_vault_ticket,
 };
 use solana_program::{native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer};
 use solana_program_test::BanksClient;
@@ -18,13 +19,15 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::fixtures::TestError;
+use crate::fixtures::TestResult;
 
+#[derive(Debug)]
 pub struct NcnRoot {
     pub ncn_pubkey: Pubkey,
     pub ncn_admin: Keypair,
 }
 
+#[derive(Debug)]
 pub struct OperatorRoot {
     pub operator_pubkey: Pubkey,
     pub operator_admin: Keypair,
@@ -43,7 +46,7 @@ impl RestakingProgramClient {
         }
     }
 
-    pub async fn get_ncn(&mut self, ncn: &Pubkey) -> Result<Ncn, TestError> {
+    pub async fn get_ncn(&mut self, ncn: &Pubkey) -> TestResult<Ncn> {
         let account = self
             .banks_client
             .get_account_with_commitment(*ncn, CommitmentLevel::Processed)
@@ -53,7 +56,7 @@ impl RestakingProgramClient {
         Ok(Ncn::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, TestError> {
+    pub async fn get_config(&mut self, account: &Pubkey) -> TestResult<Config> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
         Ok(Config::try_from_slice(&mut account.data.as_slice())?.clone())
     }
@@ -62,7 +65,7 @@ impl RestakingProgramClient {
         &mut self,
         ncn: &Pubkey,
         vault: &Pubkey,
-    ) -> Result<NcnVaultTicket, TestError> {
+    ) -> TestResult<NcnVaultTicket> {
         let account =
             NcnVaultTicket::find_program_address(&jito_restaking_program::id(), ncn, vault).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
@@ -73,7 +76,7 @@ impl RestakingProgramClient {
         &mut self,
         ncn: &Pubkey,
         operator: &Pubkey,
-    ) -> Result<NcnOperatorTicket, TestError> {
+    ) -> TestResult<NcnOperatorTicket> {
         let account =
             NcnOperatorTicket::find_program_address(&jito_restaking_program::id(), ncn, operator).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
@@ -85,7 +88,7 @@ impl RestakingProgramClient {
         ncn: &Pubkey,
         vault: &Pubkey,
         slasher: &Pubkey,
-    ) -> Result<NcnVaultSlasherTicket, TestError> {
+    ) -> TestResult<NcnVaultSlasherTicket> {
         let account = NcnVaultSlasherTicket::find_program_address(
             &jito_restaking_program::id(),
             ncn,
@@ -97,7 +100,7 @@ impl RestakingProgramClient {
         Ok(NcnVaultSlasherTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_operator(&mut self, account: &Pubkey) -> Result<Operator, TestError> {
+    pub async fn get_operator(&mut self, account: &Pubkey) -> TestResult<Operator> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
         Ok(Operator::try_from_slice(&mut account.data.as_slice())?.clone())
     }
@@ -106,7 +109,7 @@ impl RestakingProgramClient {
         &mut self,
         operator: &Pubkey,
         vault: &Pubkey,
-    ) -> Result<OperatorVaultTicket, TestError> {
+    ) -> TestResult<OperatorVaultTicket> {
         let account = OperatorVaultTicket::find_program_address(
             &jito_restaking_program::id(),
             operator,
@@ -121,14 +124,14 @@ impl RestakingProgramClient {
         &mut self,
         operator: &Pubkey,
         ncn: &Pubkey,
-    ) -> Result<OperatorNcnTicket, TestError> {
+    ) -> TestResult<OperatorNcnTicket> {
         let account =
             OperatorNcnTicket::find_program_address(&jito_restaking_program::id(), operator, ncn).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(OperatorNcnTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
+    pub async fn do_initialize_config(&mut self) -> TestResult<Keypair> {
         let restaking_config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
         let restaking_config_admin = Keypair::new();
 
@@ -139,7 +142,7 @@ impl RestakingProgramClient {
         Ok(restaking_config_admin)
     }
 
-    pub async fn setup_operator(&mut self) -> Result<OperatorRoot, TestError> {
+    pub async fn do_initialize_operator(&mut self) -> TestResult<OperatorRoot> {
         // create operator + add operator vault
         let operator_base = Keypair::new();
         let operator_pubkey =
@@ -153,8 +156,7 @@ impl RestakingProgramClient {
             &operator_admin,
             &operator_base,
         )
-        .await
-        .unwrap();
+        .await?;
         Ok(OperatorRoot {
             operator_pubkey,
             operator_admin,
@@ -165,7 +167,7 @@ impl RestakingProgramClient {
         &mut self,
         operator_root: &OperatorRoot,
         vault_pubkey: &Pubkey,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let operator_vault_ticket = OperatorVaultTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_root.operator_pubkey,
@@ -189,7 +191,7 @@ impl RestakingProgramClient {
         &mut self,
         config: &Pubkey,
         config_admin: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.process_transaction(&Transaction::new_signed_with_payer(
             &[initialize_config(
@@ -205,7 +207,7 @@ impl RestakingProgramClient {
         .await
     }
 
-    pub async fn setup_ncn(&mut self) -> Result<NcnRoot, TestError> {
+    pub async fn do_initialize_ncn(&mut self) -> TestResult<NcnRoot> {
         let ncn_admin = Keypair::new();
         let ncn_base = Keypair::new();
 
@@ -219,8 +221,7 @@ impl RestakingProgramClient {
             &ncn_admin,
             &ncn_base,
         )
-        .await
-        .unwrap();
+        .await?;
 
         Ok(NcnRoot {
             ncn_pubkey,
@@ -228,11 +229,11 @@ impl RestakingProgramClient {
         })
     }
 
-    pub async fn ncn_vault_opt_in(
+    pub async fn do_initialize_ncn_vault_ticket(
         &mut self,
         ncn_root: &NcnRoot,
         vault: &Pubkey,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let ncn_vault_ticket = NcnVaultTicket::find_program_address(
             &jito_restaking_program::id(),
             &ncn_root.ncn_pubkey,
@@ -251,11 +252,58 @@ impl RestakingProgramClient {
         .await
     }
 
+    pub async fn do_cooldown_ncn_vault_ticket(
+        &mut self,
+        ncn_root: &NcnRoot,
+        vault: &Pubkey,
+    ) -> TestResult<()> {
+        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn_root.ncn_pubkey,
+            vault,
+        )
+        .0;
+        self.cooldown_ncn_vault_ticket(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &ncn_root.ncn_pubkey,
+            vault,
+            &ncn_vault_ticket,
+            &ncn_root.ncn_admin,
+        )
+        .await
+    }
+
+    pub async fn cooldown_ncn_vault_ticket(
+        &mut self,
+        config: &Pubkey,
+        ncn: &Pubkey,
+        vault: &Pubkey,
+        ncn_vault_ticket: &Pubkey,
+        admin: &Keypair,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[cooldown_ncn_vault_ticket(
+                &jito_restaking_program::id(),
+                config,
+                ncn,
+                vault,
+                ncn_vault_ticket,
+                &admin.pubkey(),
+            )],
+            Some(&self.payer.pubkey()),
+            &[admin, &self.payer],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn ncn_operator_opt_in(
         &mut self,
         ncn_root: &NcnRoot,
         operator: &Pubkey,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let ncn_operator_ticket = NcnOperatorTicket::find_program_address(
             &jito_restaking_program::id(),
             &ncn_root.ncn_pubkey,
@@ -281,11 +329,11 @@ impl RestakingProgramClient {
         .await
     }
 
-    pub async fn operator_ncn_opt_in(
+    pub async fn do_initialize_operator_ncn_ticket(
         &mut self,
         operator_root: &OperatorRoot,
         ncn: &Pubkey,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
             &jito_restaking_program::id(),
             &operator_root.operator_pubkey,
@@ -304,13 +352,59 @@ impl RestakingProgramClient {
         .await
     }
 
-    pub async fn ncn_vault_slasher_opt_in(
+    pub async fn do_cooldown_operator_ncn_ticket(
+        &mut self,
+        operator_root: &OperatorRoot,
+        ncn: &Pubkey,
+    ) -> TestResult<()> {
+        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_root.operator_pubkey,
+            ncn,
+        )
+        .0;
+        self.cooldown_operator_ncn_ticket(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_root.operator_pubkey,
+            ncn,
+            &operator_ncn_ticket,
+            &operator_root.operator_admin,
+        )
+        .await
+    }
+
+    pub async fn cooldown_operator_ncn_ticket(
+        &mut self,
+        config: &Pubkey,
+        operator: &Pubkey,
+        ncn: &Pubkey,
+        operator_ncn_ticket: &Pubkey,
+        operator_admin: &Keypair,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[cooldown_operator_ncn_ticket(
+                &jito_restaking_program::id(),
+                config,
+                operator,
+                ncn,
+                operator_ncn_ticket,
+                &operator_admin.pubkey(),
+            )],
+            Some(&self.payer.pubkey()),
+            &[operator_admin, &self.payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn do_ncn_vault_slasher_opt_in(
         &mut self,
         ncn_root: &NcnRoot,
         vault: &Pubkey,
         slasher: &Pubkey,
         max_slash_amount: u64,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let ncn_vault_ticket = NcnVaultTicket::find_program_address(
             &jito_restaking_program::id(),
             &ncn_root.ncn_pubkey,
@@ -345,7 +439,7 @@ impl RestakingProgramClient {
         ncn: &Pubkey,
         ncn_admin: &Keypair,
         ncn_base: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -371,7 +465,7 @@ impl RestakingProgramClient {
         ncn_vault_ticket: &Pubkey,
         ncn_admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -400,7 +494,7 @@ impl RestakingProgramClient {
         operator_ncn_ticket: &Pubkey,
         ncn_admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -432,7 +526,7 @@ impl RestakingProgramClient {
         ncn_admin: &Keypair,
         payer: &Keypair,
         max_slash_amount: u64,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -461,7 +555,7 @@ impl RestakingProgramClient {
         operator: &Pubkey,
         admin: &Keypair,
         base: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -487,7 +581,7 @@ impl RestakingProgramClient {
         operator_vault_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -515,7 +609,7 @@ impl RestakingProgramClient {
         operator_ncn_ticket: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
-    ) -> Result<(), TestError> {
+    ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -535,7 +629,7 @@ impl RestakingProgramClient {
         .await
     }
 
-    pub async fn process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
+    pub async fn process_transaction(&mut self, tx: &Transaction) -> TestResult<()> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),
@@ -545,7 +639,7 @@ impl RestakingProgramClient {
         Ok(())
     }
 
-    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), TestError> {
+    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.banks_client
             .process_transaction_with_preflight_and_commitment(

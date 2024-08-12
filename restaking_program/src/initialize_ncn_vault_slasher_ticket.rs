@@ -12,6 +12,7 @@ use jito_restaking_core::{
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -59,24 +60,21 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
         .ne(&ncn_vault_slasher_ticket_pubkey)
     {
         msg!("Ncn vault slasher ticket account is not at the correct PDA");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidAccountData);
     }
 
     let mut ncn_data = ncn_info.data.borrow_mut();
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.slasher_admin.ne(ncn_slasher_admin.key) {
         msg!("Admin is not the slasher admin");
-        return Err(ProgramError::InvalidArgument);
+        return Err(RestakingError::NcnSlasherAdminInvalid.into());
     }
 
     let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
-    if !ncn_vault_ticket
-        .state
-        .is_active_or_cooldown(slot, config.epoch_length)
-    {
-        msg!("Vault ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidArgument);
+    if !ncn_vault_ticket.state.is_active(slot, config.epoch_length) {
+        msg!("Vault ticket is not active");
+        return Err(RestakingError::NcnVaultTicketNotActive.into());
     }
 
     msg!(

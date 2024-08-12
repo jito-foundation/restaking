@@ -1,57 +1,40 @@
 #[cfg(test)]
 mod tests {
+    use crate::fixtures::fixture::TestBuilder;
     use jito_restaking_core::{config::Config, operator::Operator};
+    use solana_program::instruction::InstructionError;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::{Keypair, Signer};
-
-    use crate::fixtures::fixture::TestBuilder;
+    use solana_sdk::transaction::TransactionError;
 
     #[tokio::test]
     async fn test_initialize_operator_ok() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config first
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
-
-        // Initialize Operator
-        let operator_admin = Keypair::new();
-        let operator_base = Keypair::new();
-        fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
-
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
-                .0;
-
-        restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
             .await
             .unwrap();
 
         let operator = restaking_program_client
-            .get_operator(&operator_pubkey)
+            .get_operator(&operator_root.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.base, operator_base.pubkey());
-        assert_eq!(operator.admin, operator_admin.pubkey());
-        assert_eq!(operator.voter, operator_admin.pubkey());
-        assert_eq!(operator.ncn_admin, operator_admin.pubkey());
-        assert_eq!(operator.vault_admin, operator_admin.pubkey());
+        assert_eq!(operator.admin, operator_root.operator_admin.pubkey());
+        assert_eq!(operator.voter, operator_root.operator_admin.pubkey());
+        assert_eq!(operator.ncn_admin, operator_root.operator_admin.pubkey());
+        assert_eq!(operator.vault_admin, operator_root.operator_admin.pubkey());
         assert_eq!(operator.index, 0);
 
-        let updated_config = restaking_program_client.get_config(&config).await.unwrap();
+        let updated_config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         assert_eq!(updated_config.operator_count, 1);
     }
 
@@ -60,15 +43,8 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
 
@@ -82,17 +58,21 @@ mod tests {
 
         let incorrect_operator_pubkey = Pubkey::new_unique(); // This is not derived correctly
 
-        let result = restaking_program_client
+        let transaction_error = restaking_program_client
             .initialize_operator(
-                &config,
+                &Config::find_program_address(&jito_restaking_program::id()).0,
                 &incorrect_operator_pubkey,
                 &operator_admin,
                 &operator_base,
             )
-            .await;
-
-        // TODO (LB): check specific error
-        assert!(result.is_err());
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
+        );
     }
 
     #[tokio::test]
@@ -100,15 +80,8 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
 
@@ -124,112 +97,82 @@ mod tests {
             Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
                 .0;
 
+        let config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
         restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
+            .initialize_operator(
+                &config_pubkey,
+                &operator_pubkey,
+                &operator_admin,
+                &operator_base,
+            )
             .await
             .unwrap();
 
-        // Try to initialize the same Operator again
-        let result = restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
-            .await;
+        // get new blockhash
+        fixture.warp_slot_incremental(1).await.unwrap();
 
-        // TODO (LB): check specific error
-        assert!(result.is_err());
+        // Try to initialize the same Operator again
+        let transaction_error = restaking_program_client
+            .initialize_operator(
+                &config_pubkey,
+                &operator_pubkey,
+                &operator_admin,
+                &operator_base,
+            )
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
+        );
     }
 
     #[tokio::test]
     async fn test_initialize_operator_with_uninitialized_config_fails() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Try to initialize Operator without initializing config first
-        let operator_admin = Keypair::new();
-        let operator_base = Keypair::new();
-        fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
+        let transaction_error = restaking_program_client
+            .do_initialize_operator()
             .await
+            .unwrap_err()
+            .to_transaction_error()
             .unwrap();
-
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
-                .0;
-
-        let result = restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
-            .await;
-
-        // TODO (LB): check specific error
-        assert!(result.is_err());
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
+        );
     }
 
     #[tokio::test]
     async fn test_initialize_multiple_operators_ok() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
 
-        // Initialize first operator
-        let operator_admin1 = Keypair::new();
-        let operator_base1 = Keypair::new();
-        fixture
-            .transfer(&operator_admin1.pubkey(), 10.0)
+        let operator_root1 = restaking_program_client
+            .do_initialize_operator()
             .await
             .unwrap();
-        let operator_pubkey1 =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base1.pubkey())
-                .0;
-
-        restaking_program_client
-            .initialize_operator(
-                &config,
-                &operator_pubkey1,
-                &operator_admin1,
-                &operator_base1,
-            )
-            .await
-            .unwrap();
-
-        // Initialize second operator
-        let operator_admin2 = Keypair::new();
-        let operator_base2 = Keypair::new();
-        fixture
-            .transfer(&operator_admin2.pubkey(), 10.0)
-            .await
-            .unwrap();
-        let operator_pubkey2 =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base2.pubkey())
-                .0;
-
-        restaking_program_client
-            .initialize_operator(
-                &config,
-                &operator_pubkey2,
-                &operator_admin2,
-                &operator_base2,
-            )
+        let operator_root2 = restaking_program_client
+            .do_initialize_operator()
             .await
             .unwrap();
 
         // Verify operator accounts
         let operator1 = restaking_program_client
-            .get_operator(&operator_pubkey1)
+            .get_operator(&operator_root1.operator_pubkey)
             .await
             .unwrap();
         let operator2 = restaking_program_client
-            .get_operator(&operator_pubkey2)
+            .get_operator(&operator_root2.operator_pubkey)
             .await
             .unwrap();
 
@@ -237,7 +180,10 @@ mod tests {
         assert_eq!(operator2.index, 1);
 
         // Verify config update
-        let updated_config = restaking_program_client.get_config(&config).await.unwrap();
+        let updated_config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         assert_eq!(updated_config.operator_count, 2);
     }
 }

@@ -6,6 +6,7 @@ use jito_restaking_core::{
     ncn::Ncn,
     ncn_vault_ticket::NcnVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -34,7 +35,7 @@ pub fn process_warmup_ncn_vault_ticket(
     let ncn = Ncn::try_from_slice(&ncn_data)?;
     if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultAdminInvalid.into());
     }
 
     // The NcnVaultTicket shall be inactive before it can warmed up
@@ -45,7 +46,7 @@ pub fn process_warmup_ncn_vault_ticket(
         .activate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Vault is not ready to be activated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultTicketFailedWarmup.into());
     }
 
     Ok(())

@@ -1,6 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_signer, load_token_program};
 use jito_restaking_core::{loader::load_ncn, ncn::Ncn};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
@@ -34,7 +35,7 @@ pub fn process_ncn_withdraw_asset(
     // The Ncn withdraw admin shall be the signer of the transaction
     if ncn.withdraw_admin.ne(withdraw_admin.key) {
         msg!("Invalid withdraw admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnWithdrawAdminInvalid.into());
     }
 
     let mut ncn_seeds = Ncn::seeds(&ncn.base);

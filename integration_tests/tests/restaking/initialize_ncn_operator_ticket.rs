@@ -1,393 +1,361 @@
 #[cfg(test)]
 mod tests {
+    use jito_jsm_core::slot_toggled_field::SlotToggleState;
     use jito_restaking_core::{
-        config::Config, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket, operator::Operator,
+        config::Config, ncn_operator_ticket::NcnOperatorTicket,
         operator_ncn_ticket::OperatorNcnTicket,
     };
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_restaking_sdk::error::RestakingError;
+    use solana_program::instruction::InstructionError;
+    use solana_sdk::{signature::Keypair, transaction::TransactionError};
 
-    use crate::fixtures::fixture::TestBuilder;
+    use crate::fixtures::{
+        fixture::TestBuilder,
+        restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
+    };
+
+    async fn setup_config_ncn_operator(
+        restaking_program_client: &mut RestakingProgramClient,
+    ) -> (NcnRoot, OperatorRoot) {
+        restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+        (ncn_root, operator_root)
+    }
 
     #[tokio::test]
-    async fn test_ncn_add_operator_ok() {
+    async fn test_initialize_ncn_operator_ticket_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+        // transition to active epoch (one full epoch)
         fixture
-            .transfer(&config_admin.pubkey(), 10.0)
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
+
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
-        // Initialize operator
-        let operator_admin = Keypair::new();
-        let operator_base = Keypair::new();
-        fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
+        let ncn = restaking_program_client
+            .get_ncn(&ncn_root.ncn_pubkey)
             .await
             .unwrap();
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
-                .0;
-        restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
-            .await
-            .unwrap();
-
-        // Initialize NCN
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap();
-
-        let payer = Keypair::new();
-        fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
-
-        // Operator adds NCN
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &operator_pubkey,
-            &ncn_pubkey,
-        )
-        .0;
-        restaking_program_client
-            .initialize_operator_ncn_ticket(
-                &config,
-                &operator_pubkey,
-                &ncn_pubkey,
-                &operator_ncn_ticket,
-                &operator_admin,
-                &payer,
-            )
-            .await
-            .unwrap();
-
-        let config_account = restaking_program_client.get_config(&config).await.unwrap();
-        fixture
-            .warp_slot_incremental(2 * config_account.epoch_length)
-            .await
-            .unwrap();
-
-        // NCN adds operator
-        let ncn_operator_ticket = NcnOperatorTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &ncn_pubkey,
-            &operator_pubkey,
-        )
-        .0;
-        restaking_program_client
-            .initialize_ncn_operator_ticket(
-                &config,
-                &ncn_pubkey,
-                &operator_pubkey,
-                &ncn_operator_ticket,
-                &operator_ncn_ticket,
-                &ncn_admin,
-                &payer,
-            )
-            .await
-            .unwrap();
-
-        // Verify NCN state
-        let ncn = restaking_program_client.get_ncn(&ncn_pubkey).await.unwrap();
         assert_eq!(ncn.operator_count, 1);
 
         // Verify NCN operator ticket
         let ticket = restaking_program_client
-            .get_ncn_operator_ticket(&ncn_pubkey, &operator_pubkey)
+            .get_ncn_operator_ticket(&ncn_root.ncn_pubkey, &operator_root.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(ticket.ncn, ncn_pubkey);
-        assert_eq!(ticket.operator, operator_pubkey);
+        assert_eq!(ticket.ncn, ncn_root.ncn_pubkey);
+        assert_eq!(ticket.operator, operator_root.operator_pubkey);
         assert_eq!(ticket.index, 0);
         assert_eq!(
-            ticket.state.slot_added(),
-            fixture.get_current_slot().await.unwrap()
+            ticket.state.state(
+                fixture.get_current_slot().await.unwrap(),
+                config.epoch_length
+            ),
+            SlotToggleState::WarmUp
         );
     }
 
     #[tokio::test]
-    async fn test_ncn_add_operator_without_operator_opt_in_fails() {
-        let mut fixture = TestBuilder::new().await;
+    async fn test_initialize_ncn_operator_ticket_without_operator_opt_in_fails() {
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        let transaction_error = restaking_program_client
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
             .await
-            .unwrap();
-        restaking_program_client
-            .initialize_config(&config, &config_admin)
-            .await
+            .unwrap_err()
+            .to_transaction_error()
             .unwrap();
 
-        // Initialize operator
-        let operator_admin = Keypair::new();
-        let operator_base = Keypair::new();
-        fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
-                .0;
-        restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
-            .await
-            .unwrap();
-
-        // Initialize NCN
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap();
-
-        let payer = Keypair::new();
-        fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
-
-        // Attempt to add operator without operator opting in first
-        let ncn_operator_ticket = NcnOperatorTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &ncn_pubkey,
-            &operator_pubkey,
-        )
-        .0;
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &operator_pubkey,
-            &ncn_pubkey,
-        )
-        .0;
-        let result = restaking_program_client
-            .initialize_ncn_operator_ticket(
-                &config,
-                &ncn_pubkey,
-                &operator_pubkey,
-                &ncn_operator_ticket,
-                &operator_ncn_ticket,
-                &ncn_admin,
-                &payer,
-            )
-            .await;
-
-        // TODO (LB): check specific error
-        assert!(result.is_err());
+        // OperatorNcnTicket doesn't exist yet, so owned by system program
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
+        );
     }
 
     #[tokio::test]
-    async fn test_ncn_add_operator_non_admin_fails() {
-        let mut fixture = TestBuilder::new().await;
+    async fn test_initialize_ncn_operator_ticket_bad_admin_fails() {
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
-        // Initialize operator
-        let operator_admin = Keypair::new();
-        let operator_base = Keypair::new();
-        fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
-                .0;
-        restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
-            .await
-            .unwrap();
-
-        // Initialize NCN
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap();
-
-        let payer = Keypair::new();
-        fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
-
-        // Operator adds NCN
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &operator_pubkey,
-            &ncn_pubkey,
-        )
-        .0;
-        restaking_program_client
-            .initialize_operator_ncn_ticket(
-                &config,
-                &operator_pubkey,
-                &ncn_pubkey,
-                &operator_ncn_ticket,
-                &operator_admin,
-                &payer,
-            )
-            .await
-            .unwrap();
-
-        // Attempt to add operator with non-admin signer
-        let non_admin = Keypair::new();
-        fixture.transfer(&non_admin.pubkey(), 10.0).await.unwrap();
-
-        let ncn_operator_ticket = NcnOperatorTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &ncn_pubkey,
-            &operator_pubkey,
-        )
-        .0;
-        let result = restaking_program_client
+        let tx_error = restaking_program_client
             .initialize_ncn_operator_ticket(
-                &config,
-                &ncn_pubkey,
-                &operator_pubkey,
-                &ncn_operator_ticket,
-                &operator_ncn_ticket,
-                &non_admin,
-                &payer,
+                &Config::find_program_address(&jito_restaking_program::id()).0,
+                &ncn_root.ncn_pubkey,
+                &operator_root.operator_pubkey,
+                &NcnOperatorTicket::find_program_address(
+                    &jito_restaking_program::id(),
+                    &ncn_root.ncn_pubkey,
+                    &operator_root.operator_pubkey,
+                )
+                .0,
+                &OperatorNcnTicket::find_program_address(
+                    &jito_restaking_program::id(),
+                    &operator_root.operator_pubkey,
+                    &ncn_root.ncn_pubkey,
+                )
+                .0,
+                &Keypair::new(),
+                &ncn_root.ncn_admin,
             )
-            .await;
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
 
-        // TODO (LB): check specific error
-        assert!(result.is_err());
+        assert_eq!(
+            tx_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(RestakingError::NcnOperatorAdminInvalid as u32)
+            )
+        );
     }
 
     #[tokio::test]
-    async fn test_ncn_add_operator_duplicate_fails() {
+    async fn test_initialize_ncn_operator_ticket_bad_pda_fails() {
+        let fixture = TestBuilder::new().await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        let ncn_root_2 = restaking_program_client.do_initialize_ncn().await.unwrap();
+        let operator_root_2 = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root_2, &ncn_root_2.ncn_pubkey)
+            .await
+            .unwrap();
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        let transaction_error = restaking_program_client
+            .initialize_ncn_operator_ticket(
+                &Config::find_program_address(&jito_restaking_program::id()).0,
+                &ncn_root.ncn_pubkey,
+                &operator_root.operator_pubkey,
+                &NcnOperatorTicket::find_program_address(
+                    &jito_restaking_program::id(),
+                    &operator_root_2.operator_pubkey,
+                    &ncn_root_2.ncn_pubkey,
+                )
+                .0,
+                &OperatorNcnTicket::find_program_address(
+                    &jito_restaking_program::id(),
+                    &operator_root.operator_pubkey,
+                    &ncn_root.ncn_pubkey,
+                )
+                .0,
+                &ncn_root.ncn_admin,
+                &ncn_root.ncn_admin,
+            )
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
+        );
+    }
+
+    #[tokio::test]
+    async fn test_initialize_ncn_operator_ticket_operator_ncn_warming_up_fails() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
-        restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .warp_slot_incremental(config.epoch_length)
             .await
             .unwrap();
 
-        // Initialize operator
-        let operator_admin = Keypair::new();
-        let operator_base = Keypair::new();
+        let transaction_error = restaking_program_client
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(RestakingError::OperatorNcnTicketNotActive as u32)
+            )
+        );
+    }
+
+    #[tokio::test]
+    async fn test_initialize_ncn_operator_ticket_operator_ncn_cooling_down_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
-                .0;
-        restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &operator_base)
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
 
-        // Initialize NCN
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
         restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
+            .do_cooldown_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
-        let payer = Keypair::new();
-        fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
-
-        // Operator adds NCN
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &operator_pubkey,
-            &ncn_pubkey,
-        )
-        .0;
-        restaking_program_client
-            .initialize_operator_ncn_ticket(
-                &config,
-                &operator_pubkey,
-                &ncn_pubkey,
-                &operator_ncn_ticket,
-                &operator_admin,
-                &payer,
+        let transaction_error = restaking_program_client
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(RestakingError::OperatorNcnTicketNotActive as u32)
             )
+        );
+    }
+
+    #[tokio::test]
+    async fn test_initialize_ncn_operator_ticket_operator_ncn_inactive_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
-        let config_account = restaking_program_client.get_config(&config).await.unwrap();
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         fixture
-            .warp_slot_incremental(2 * config_account.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
 
-        // NCN adds operator (first time)
-        let ncn_operator_ticket = NcnOperatorTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &ncn_pubkey,
-            &operator_pubkey,
-        )
-        .0;
         restaking_program_client
-            .initialize_ncn_operator_ticket(
-                &config,
-                &ncn_pubkey,
-                &operator_pubkey,
-                &ncn_operator_ticket,
-                &operator_ncn_ticket,
-                &ncn_admin,
-                &payer,
-            )
+            .do_cooldown_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
-        // Attempt to add the same operator again
-        let result = restaking_program_client
-            .initialize_ncn_operator_ticket(
-                &config,
-                &ncn_pubkey,
-                &operator_pubkey,
-                &ncn_operator_ticket,
-                &operator_ncn_ticket,
-                &ncn_admin,
-                &payer,
-            )
-            .await;
+        let transaction_error = restaking_program_client
+            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
 
-        // TODO (LB): check specific error
-        assert!(result.is_err());
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(RestakingError::OperatorNcnTicketNotActive as u32)
+            )
+        );
+    }
+
+    #[tokio::test]
+    async fn test_initialize_ncn_operator_ticket_twice_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        let (ncn_root, operator_root) =
+            setup_config_ncn_operator(&mut restaking_program_client).await;
+
+        restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+
+        // get new blockhash for tx
+        fixture.warp_slot_incremental(1).await.unwrap();
+
+        let transaction_error = restaking_program_client
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        // expected the account to be initialized owned by system program
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
+        );
     }
 }

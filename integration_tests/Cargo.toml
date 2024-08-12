@@ -18,6 +18,7 @@ jito-restaking-sdk = { workspace = true }
 jito-vault-core = { workspace = true }
 jito-vault-program = { workspace = true }
 jito-vault-sdk = { workspace = true }
+jito-jsm-core = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 solana-program-test = { workspace = true }

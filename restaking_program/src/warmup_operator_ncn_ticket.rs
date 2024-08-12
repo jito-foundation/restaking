@@ -6,6 +6,7 @@ use jito_restaking_core::{
     operator::Operator,
     operator_ncn_ticket::OperatorNcnTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -30,7 +31,7 @@ pub fn process_warmup_operator_ncn_ticket(
     let operator = Operator::try_from_slice(&operator_data)?;
     if operator.ncn_admin.ne(operator_ncn_admin.key) {
         msg!("Invalid NCN admin for operator");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorNcnAdminInvalid.into());
     }
 
     // The OperatorNcnTicket shall be inactive before it can warmed up
@@ -43,7 +44,7 @@ pub fn process_warmup_operator_ncn_ticket(
         .activate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Operator is not ready to be activated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorNcnTicketFailedWarmup.into());
     }
 
     Ok(())

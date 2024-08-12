@@ -1,6 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{loader::load_operator, operator::Operator};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -27,7 +28,7 @@ pub fn process_set_node_operator_admin(
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
     if operator.admin.ne(old_admin.key) {
         msg!("Invalid operator admin");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorAdminInvalid.into());
     }
 
     operator.admin = *new_admin.key;

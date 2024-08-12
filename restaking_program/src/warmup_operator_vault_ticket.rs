@@ -6,6 +6,7 @@ use jito_restaking_core::{
     operator::Operator,
     operator_vault_ticket::OperatorVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -33,7 +34,7 @@ pub fn process_warmup_operator_vault_ticket(
     let operator = Operator::try_from_slice(&operator_data)?;
     if operator.vault_admin.ne(operator_vault_admin.key) {
         msg!("Invalid vault admin for operator");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorVaultAdminInvalid.into());
     }
 
     // The OperatorVaultTicket shall be inactive before it can warmed up
@@ -45,7 +46,7 @@ pub fn process_warmup_operator_vault_ticket(
         .activate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Operator is not ready to be activated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorVaultTicketFailedWarmup.into());
     }
 
     Ok(())

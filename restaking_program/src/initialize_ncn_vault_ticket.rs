@@ -11,6 +11,7 @@ use jito_restaking_core::{
     ncn::Ncn,
     ncn_vault_ticket::NcnVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -56,7 +57,7 @@ pub fn process_initialize_ncn_vault_ticket(
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultAdminInvalid.into());
     }
 
     msg!(

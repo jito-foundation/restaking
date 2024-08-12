@@ -24,7 +24,7 @@ mod warmup_operator_ncn_ticket;
 mod warmup_operator_vault_ticket;
 
 use borsh::BorshDeserialize;
-use jito_restaking_sdk::RestakingInstruction;
+use jito_restaking_sdk::instruction::RestakingInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,

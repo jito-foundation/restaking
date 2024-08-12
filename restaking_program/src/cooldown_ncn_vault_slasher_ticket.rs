@@ -6,6 +6,7 @@ use jito_restaking_core::{
     ncn::Ncn,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::{load_config, load_vault};
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -41,7 +42,7 @@ pub fn process_cooldown_ncn_vault_slasher_ticket(
     let ncn = Ncn::try_from_slice(&ncn_data)?;
     if ncn.slasher_admin.ne(ncn_slasher_admin.key) {
         msg!("Invalid slasher admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnSlasherAdminInvalid.into());
     }
 
     // The NcnVaultSlasherTicket shall be active before it can be cooled down
@@ -53,7 +54,7 @@ pub fn process_cooldown_ncn_vault_slasher_ticket(
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Slasher is not ready to be deactivated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultSlasherTicketFailedCooldown.into());
     }
 
     Ok(())
