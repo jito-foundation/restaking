@@ -300,4 +300,5 @@ pub enum VaultAdminRole {
     FeeWallet,
     MintBurnAdmin,
     WithdrawAdmin,
+    FeeAdmin,
 }
