@@ -53,6 +53,25 @@ pub fn process_set_fees(
         return Err(VaultError::VaultFeeChangeTooSoon.into());
     }
 
+    // Fees cannot be increased by more than the maximum bump per epoch
+    let current_deposit_fee_bps = vault.deposit_fee_bps;
+    let current_withdrawal_fee_bps = vault.withdrawal_fee_bps;
+    if current_deposit_fee_bps
+        .checked_add(config.max_fee_bump_per_epoch_bps)
+        .unwrap()
+        < deposit_fee_bps
+        || current_withdrawal_fee_bps
+            .checked_add(config.max_fee_bump_per_epoch_bps)
+            .unwrap()
+            < withdrawal_fee_bps
+    {
+        msg!(
+            "Fee changes exceed the maximum bump per epoch of {}",
+            config.max_fee_bump_per_epoch_bps
+        );
+        return Err(VaultError::VaultFeeBumpTooLarge.into());
+    }
+
     vault.deposit_fee_bps = deposit_fee_bps;
     vault.withdrawal_fee_bps = withdrawal_fee_bps;
     vault.last_fee_change_slot = current_slot;

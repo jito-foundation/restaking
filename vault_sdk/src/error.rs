@@ -28,6 +28,7 @@ pub enum VaultError {
     VaultFeeAdminInvalid = 2013,
     VaultFeeCapExceeded = 2014,
     VaultFeeChangeTooSoon = 2015,
+    VaultFeeBumpTooLarge = 2016,
 
     VaultDelegationListOverflow = 3000,
     VaultDelegationListUnderflow = 3001,

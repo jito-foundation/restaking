@@ -24,15 +24,19 @@ pub struct Config {
     /// The fee cap in basis points ( withdraw and deposit )
     pub fee_cap_bps: u16,
 
+    /// The maximum amount a fee can increase per epoch in basis points
+    pub max_fee_bump_per_epoch_bps: u16,
+
     /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 5],
+    reserved: [u8; 11],
 }
 
 impl Config {
-    pub const DEFAULT_FEES_CAP_BPS: u16 = 1_000; // 10%
+    pub const DEFAULT_FEES_CAP_BPS: u16 = 3_000; // 30%
+    pub const DEFAULT_FEE_BUMP_BPS: u16 = 1_000; // 10%
 
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
@@ -41,8 +45,9 @@ impl Config {
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
             fee_cap_bps: Self::DEFAULT_FEES_CAP_BPS,
+            max_fee_bump_per_epoch_bps: Self::DEFAULT_FEE_BUMP_BPS,
             bump,
-            reserved: [0; 5],
+            reserved: [0; 11],
         }
     }
 
