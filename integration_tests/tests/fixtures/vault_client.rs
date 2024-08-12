@@ -644,6 +644,31 @@ impl VaultProgramClient {
         .await
     }
 
+    pub async fn set_fees(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        fee_admin: &Keypair,
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_fees(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &fee_admin.pubkey(),
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+            )],
+            Some(&fee_admin.pubkey()),
+            &[fee_admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn do_enqueue_withdraw(
         &mut self,
         vault_root: &VaultRoot,
@@ -1035,7 +1060,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         self.banks_client

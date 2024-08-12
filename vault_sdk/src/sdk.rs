@@ -235,11 +235,13 @@ pub fn burn(program_id: &Pubkey, amount: u64) -> Instruction {
 
 pub fn set_deposit_capacity(
     program_id: &Pubkey,
+    config: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*admin, true),
     ];
@@ -249,6 +251,31 @@ pub fn set_deposit_capacity(
         data: VaultInstruction::SetDepositCapacity { amount }
             .try_to_vec()
             .unwrap(),
+    }
+}
+
+pub fn set_fees(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    admin: &Pubkey,
+    deposit_fee_bps: u16,
+    withdrawal_fee_bps: u16,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetFees {
+            deposit_fee_bps,
+            withdrawal_fee_bps,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 

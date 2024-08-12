@@ -6,4 +6,5 @@ mod initialize_vault_ncn_slasher_ticket;
 mod initialize_vault_ncn_ticket;
 mod initialize_vault_operator_ticket;
 mod mint_to;
+mod set_fees;
 mod slash;

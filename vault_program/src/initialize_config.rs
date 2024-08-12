@@ -46,6 +46,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
     config.admin = *admin.key;
     config.restaking_program = *restaking_program.key;
     config.epoch_length = DEFAULT_SLOTS_PER_EPOCH;
+    config.fee_cap_bps = Config::DEFAULT_FEES_CAP_BPS;
     config.num_vaults = 0;
     config.bump = config_bump;
 
