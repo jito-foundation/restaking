@@ -209,7 +209,6 @@ pub enum VaultInstruction {
     #[account(3, name = "mint_authority_info")]
     #[account(4, signer, name = "vault_admin")]
     #[account(5, name = "system_program")]
-    #[account(6, name = "token_program")]
     CreateTokenMetadata {
         name: String,
         symbol: String,
@@ -679,7 +678,6 @@ pub fn create_token_metadata(
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*vault_admin, true),
         AccountMeta::new_readonly(system_program::id(), false),
-        AccountMeta::new_readonly(spl_token::id(), false),
     ];
 
     Instruction {
