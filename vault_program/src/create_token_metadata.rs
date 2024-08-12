@@ -1,7 +1,5 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{
-    load_signer, load_system_account, load_system_program
-};
+use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
 use jito_vault_core::{loader::load_vault, vault::Vault};
 use solana_program::{
     account_info::AccountInfo, borsh1::get_instance_packed_len, entrypoint::ProgramResult,
@@ -27,8 +25,8 @@ pub fn process_create_token_metadata(
     load_signer(vault_admin, true)?;
     load_system_program(system_program)?;
 
-    let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice(&mut vault_data)?;
+    let vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice(&vault_data)?;
 
     let (vault_pubkey, _vault_bump, _vault_seeds) =
         Vault::find_program_address(program_id, &vault.base);

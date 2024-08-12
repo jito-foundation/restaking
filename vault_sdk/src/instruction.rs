@@ -244,6 +244,10 @@ pub enum VaultInstruction {
     UpdateVault,
 
     /// Creates token metadata for the vault LRT
+    #[account(0, writable, name = "metadata")]
+    #[account(1, name = "vault")]
+    #[account(2, signer, name = "vault_admin")]
+    #[account(3, name = "system_program")]
     CreateTokenMetadata {
         name: String,
         symbol: String,

@@ -412,13 +412,23 @@ pub fn initialize_vault_ncn_slasher_ticket(
 
 pub fn create_token_metadata(
     program_id: &Pubkey,
+    metadata: &Pubkey,
+    vault: &Pubkey,
+    vault_admin: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*metadata, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*vault_admin, true),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
+        accounts,
         data: VaultInstruction::CreateTokenMetadata { name, symbol, uri }
             .try_to_vec()
             .unwrap(),

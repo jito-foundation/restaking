@@ -1033,7 +1033,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::create_token_metadata(
+            &[jito_vault_sdk::sdk::create_token_metadata(
                 &jito_vault_program::id(),
                 metadata,
                 vault_pubkey,
