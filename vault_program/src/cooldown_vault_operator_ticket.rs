@@ -7,13 +7,14 @@ use jito_vault_core::{
     vault::Vault,
     vault_operator_ticket::VaultOperatorTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// Processes the vault remove operator instruction: [`crate::VaultInstruction::CooldownOperator`]
-pub fn process_vault_cooldown_operator(
+/// Processes the vault remove operator instruction: [`crate::VaultInstruction::CooldownVaultOperatorTicket`]
+pub fn process_cooldown_vault_operator_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
@@ -29,13 +30,15 @@ pub fn process_vault_cooldown_operator(
     load_vault_operator_ticket(program_id, vault_operator_ticket, vault, operator, true)?;
     load_signer(vault_operator_admin, false)?;
 
+    // The Vault operator admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.operator_admin.ne(vault_operator_admin.key) {
         msg!("Invalid operator admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultOperatorAdminInvalid.into());
     }
 
+    // The VaultOperatorTicket shall be active in order to cooldown the operator
     let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
     let vault_operator_ticket =
         VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
@@ -44,10 +47,8 @@ pub fn process_vault_cooldown_operator(
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Operator is not ready to be deactivated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultOperatorTicketFailedCooldown.into());
     }
-
-    // TODO (LB): deactivate stake too?
 
     Ok(())
 }

@@ -13,13 +13,17 @@ use jito_vault_core::{
     config::Config, loader::load_vault, vault::Vault,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
-/// Processes the register slasher instruction: [`crate::VaultInstruction::AddSlasher`]
-pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// Processes the register slasher instruction: [`crate::VaultInstruction::InitializeVaultNcnSlasherTicket`]
+pub fn process_initialize_vault_ncn_slasher_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, vault_info, ncn, slasher, ncn_slasher_ticket, vault_ncn_slasher_ticket, vault_slasher_admin, payer, system_program] =
         accounts
     else {
@@ -44,6 +48,7 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The VaultNcnSlasherTicket shall be at the canonical PDA
     let (
         vault_ncn_slasher_ticket_pubkey,
         vault_ncn_slasher_ticket_bump,
@@ -60,22 +65,24 @@ pub fn process_add_slasher(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The Vault slasher admin shall be the signer of the transaction
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
         msg!("Invalid slasher admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultSlasherAdminInvalid.into());
     }
 
+    // The NcnVaultSlasherTicket shall be active
     let ncn_vault_slasher_ticket_data = ncn_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =
         NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
     if !ncn_vault_slasher_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+        .is_active(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Slasher is not ready to be activated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::NcnVaultSlasherTicketNotActive.into());
     }
 
     msg!(

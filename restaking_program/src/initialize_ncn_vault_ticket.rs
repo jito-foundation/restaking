@@ -11,6 +11,7 @@ use jito_restaking_core::{
     ncn::Ncn,
     ncn_vault_ticket::NcnVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -20,8 +21,11 @@ use solana_program::{
 /// The NCN opts-in to vaults by storing the vault in the NCN vault list. It also CPI's into
 /// the vault program and adds the NCN to the vault's NCN list.
 ///
-/// [`crate::RestakingInstruction::NcnAddVault`]
-pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeNcnVaultTicket`]
+pub fn process_initialize_ncn_vault_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, ncn_info, vault, ncn_vault_ticket, ncn_vault_admin, payer, system_program] =
         accounts
     else {
@@ -40,7 +44,7 @@ pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
 
     let slot = Clock::get()?.slot;
 
-    // Check ncn_vault_ticket PDA
+    // The NcnVaultTicket shall be at the canonical PDA
     let (ncn_vault_ticket_pubkey, ncn_vault_ticket_bump, mut ncn_vault_ticket_seeds) =
         NcnVaultTicket::find_program_address(program_id, ncn_info.key, vault.key);
     ncn_vault_ticket_seeds.push(vec![ncn_vault_ticket_bump]);
@@ -53,7 +57,7 @@ pub fn process_ncn_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnVaultAdminInvalid.into());
     }
 
     msg!(

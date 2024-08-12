@@ -12,6 +12,7 @@ use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket,
     operator_ncn_ticket::OperatorNcnTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -20,8 +21,11 @@ use solana_program::{
 /// After an operator opts-in to an NCN, the NCN operator admin can add the operator to the NCN.
 /// The operator must have opted-in to the NCN before the NCN opts-in to the operator.
 ///
-/// [`crate::RestakingInstruction::NcnAddOperator`]
-pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeNcnOperatorTicket`]
+pub fn process_initialize_ncn_operator_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, ncn_info, operator, ncn_operator_ticket, operator_ncn_ticket, ncn_operator_admin, payer, system_program] =
         accounts
     else {
@@ -37,6 +41,7 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The NcnOperatorTicket shall be at the canonical PDA
     let (ncn_operator_ticket_pubkey, ncn_operator_ticket_bump, mut ncn_operator_ticket_seeds) =
         NcnOperatorTicket::find_program_address(program_id, ncn_info.key, operator.key);
     ncn_operator_ticket_seeds.push(vec![ncn_operator_ticket_bump]);
@@ -55,7 +60,7 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
     let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
     if ncn.operator_admin.ne(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::NcnOperatorAdminInvalid.into());
     }
 
     // The operator must have opted-in to the NCN and it must be active
@@ -63,10 +68,10 @@ pub fn process_ncn_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -
     let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
     if !operator_ncn_ticket
         .state
-        .is_active_or_cooldown(slot, config.epoch_length)
+        .is_active(slot, config.epoch_length)
     {
-        msg!("Operator NCN ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        msg!("Operator NCN ticket is not active");
+        return Err(RestakingError::OperatorNcnTicketNotActive.into());
     }
 
     msg!("Initializing NcnOperatorTicket at address {}", operator.key);

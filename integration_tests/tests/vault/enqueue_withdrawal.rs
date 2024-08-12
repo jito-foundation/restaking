@@ -1,7 +1,12 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::instruction::InstructionError;
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{fixture::TestBuilder, vault_client::VaultStakerWithdrawalTicketRoot};
@@ -57,10 +62,19 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_ata.amount, 99_000);
 
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, 49_500)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(VaultError::VaultDelegationListUnderflow as u32)
+            )
+        );
     }
 
     #[tokio::test]
@@ -75,10 +89,16 @@ mod tests {
             .await
             .unwrap();
 
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
-        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
@@ -86,7 +106,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -101,7 +121,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
         restaking_program_client
@@ -256,11 +276,17 @@ mod tests {
             .setup_config_and_vault(0, 0)
             .await
             .unwrap();
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
         // Setup operator and NCN
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
-        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
@@ -269,7 +295,7 @@ mod tests {
 
         // Setup necessary relationships
         restaking_program_client
-            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -283,7 +309,7 @@ mod tests {
             .await
             .unwrap();
         restaking_program_client
-            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 

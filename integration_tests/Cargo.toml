@@ -12,6 +12,7 @@ readme = { workspace = true }
 [dev-dependencies]
 borsh = { workspace = true }
 jito-account-traits = { workspace = true }
+jito-jsm-core = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-restaking-program = { workspace = true }
 jito-restaking-sdk = { workspace = true }

@@ -15,6 +15,7 @@ use jito_vault_core::{
     vault_delegation_list::VaultDelegationList,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
@@ -77,7 +78,7 @@ pub fn process_burn_withdrawal_ticket(
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault delegation list needs to be updated");
-        return Err(ProgramError::InvalidArgument);
+        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
     }
 
     let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket_info.data.borrow();
@@ -85,7 +86,7 @@ pub fn process_burn_withdrawal_ticket(
         VaultStakerWithdrawalTicket::try_from_slice(&vault_staker_withdrawal_ticket_data)?;
     if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length)? {
         msg!("Vault staker withdrawal ticket is not withdrawable");
-        return Err(ProgramError::InvalidArgument);
+        return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());
     }
 
     // find the current redemption amount and the original redemption amount in the withdrawal ticket

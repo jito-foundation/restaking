@@ -7,6 +7,7 @@ use jito_vault_core::{
     vault::Vault,
     vault_delegation_list::VaultDelegationList,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -29,19 +30,21 @@ pub fn process_cooldown_delegation(
     load_vault_delegation_list(program_id, vault_delegation_list, vault, true)?;
     load_signer(vault_delegation_admin, false)?;
 
+    // The Vault delegation admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.delegation_admin.ne(vault_delegation_admin.key) {
         msg!("Invalid delegation admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultDelegationAdminInvalid.into());
     }
 
+    // The vault delegation list shall be up-to-date
     let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
     let vault_delegation_list =
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault delegation list is not up to date");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
     }
     vault_delegation_list.undelegate(*operator.key, amount)?;
 

@@ -18,10 +18,16 @@ mod tests {
             .await
             .unwrap();
 
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
-        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
@@ -32,7 +38,7 @@ mod tests {
         fixture.transfer(&slasher.pubkey(), 1.0).await.unwrap();
 
         restaking_program_client
-            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
         restaking_program_client
@@ -53,7 +59,7 @@ mod tests {
         // NCN <-> Operator
         // operator needs to opt-in first
         restaking_program_client
-            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
         fixture
@@ -78,7 +84,12 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_vault_slasher_opt_in(&ncn_root, &vault_root.vault_pubkey, &slasher.pubkey(), 100)
+            .do_ncn_vault_slasher_opt_in(
+                &ncn_root,
+                &vault_root.vault_pubkey,
+                &slasher.pubkey(),
+                100,
+            )
             .await
             .unwrap();
 

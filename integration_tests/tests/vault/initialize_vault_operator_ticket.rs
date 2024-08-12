@@ -16,9 +16,15 @@ mod tests {
             .await
             .unwrap();
 
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
 
         restaking_program_client
             .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
