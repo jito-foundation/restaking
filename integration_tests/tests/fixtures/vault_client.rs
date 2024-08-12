@@ -36,7 +36,8 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
-use spl_token_metadata_interface::{borsh::BorshDeserialize, state::TokenMetadata};
+use spl_token_metadata_interface::state::TokenMetadata;
+use spl_type_length_value::state::{TlvState, TlvStateBorrowed};
 
 use crate::fixtures::TestError;
 
@@ -163,8 +164,11 @@ impl VaultProgramClient {
         &mut self,
         account: &Pubkey,
     ) -> Result<TokenMetadata, TestError> {
-        let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(TokenMetadata::try_from_slice(&mut account.data.as_slice())?)
+        let fetched_metadata_account = self.banks_client.get_account(*account).await?.unwrap();
+        let fetched_metadata_state = TlvStateBorrowed::unpack(&fetched_metadata_account.data)?;
+        let fetched_metadata =
+            fetched_metadata_state.get_first_variable_len_value::<TokenMetadata>()?;
+        Ok(fetched_metadata)
     }
 
     pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {

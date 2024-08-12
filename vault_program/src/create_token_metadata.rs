@@ -75,60 +75,19 @@ pub fn process_create_token_metadata(
         &seeds,
     )?;
 
-    // invoke(
-    //     &system_instruction::create_account(
-    //         mint_authority_info.key,
-    //         metadata.key,
-    //         &Rent::get()? as u64,
-    //         space,
-    //         token_program.key,
-    //     ),
-    //     &[admin.clone(), lrt_mint.clone(), system_program.clone()],
-    // )?;
-
-    // let ix = system_instruction::create_account(
-    //     vault_admin.key,
-    //     metadata_info.key,
-    //     rent_lamports.minimum_balance(space as usize),
-    //     space as u64,
-    //     program_id,
-    // );
-
-    // invoke(
-    //     &ix,
-    //     &[
-    //         vault_admin.clone(),
-    //         metadata_info.clone(),
-    //         system_program.clone(),
-    //     ],
-    // )?;
-    // create_account(
-    //     ,
-    //     ,
-    //     system_program,
-    //     program_id,
-    //     &,
-    //     space as u64,
-    //     &[vec![]],
-    // )?;
-
-    // let ix = spl_token_metadata_interface::instruction::initialize(
-    //     token_program.key,
-    //     metadata.key,
-    //     update_authority_info.key,
-    //     mint_info.key,
-    //     mint_authority_info.key,
-    //     token_metadata.name,
-    //     token_metadata.symbol,
-    //     token_metadata.uri,
-    // );
+    msg!("Instance size");
     let instance_size = get_instance_packed_len(&token_metadata)?;
 
+    msg!("Buffer");
     // allocate a TLV entry for the space and write it in
     let mut buffer = metadata_info.try_borrow_mut_data()?;
+    msg!("State");
     let mut state = TlvStateMut::unpack(&mut buffer)?;
+    msg!("allocation");
     state.alloc::<TokenMetadata>(instance_size, false)?;
+    msg!("pack_first");
     state.pack_first_variable_len_value(&token_metadata)?;
+    msg!("done");
     // let token_mint_authority_signer_seeds: &[&[_]] = &[
     //     stake_pool_info.key.as_ref(),
     //     AUTHORITY_WITHDRAW,

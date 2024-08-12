@@ -26,6 +26,7 @@ solana-security-txt = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 spl-token-metadata-interface = { workspace = true }
+spl-type-length-value = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 
