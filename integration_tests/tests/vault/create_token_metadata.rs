@@ -26,7 +26,6 @@ async fn test_create_token_metadata_ok() {
     let symbol = "rJTO";
     let uri = "https://www.jito.network/restaking/";
 
-    // let metadata = Keypair::new();
     let seeds = vec![
         b"metadata".as_ref().to_vec(),
         vault.lrt_mint.to_bytes().to_vec(),
@@ -51,8 +50,11 @@ async fn test_create_token_metadata_ok() {
         .get_token_metadata(&metadata_pubkey)
         .await
         .unwrap();
-    // assert_eq!(token_metadata.update_authority, vault_pubkey);
+
+    assert_eq!(token_metadata.update_authority.0, vault_pubkey);
     assert_eq!(token_metadata.mint, vault.lrt_mint);
-    assert!(token_metadata.name.contains(name));
-    assert!(token_metadata.symbol.contains(symbol));
+    assert_eq!(token_metadata.name, name);
+    assert_eq!(token_metadata.symbol, symbol);
+    assert_eq!(token_metadata.uri, uri);
+    assert!(token_metadata.additional_metadata.is_empty());
 }
