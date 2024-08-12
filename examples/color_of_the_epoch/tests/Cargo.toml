@@ -12,3 +12,11 @@ solana-sdk = "1.18"
 anchor-spl = "0.30.1"
 spl-token = "6.0.0"
 color_of_the_epoch = { version = "0.1.0", path = "../programs/color_of_the_epoch" }
+jito-vault-program = { path = "../../../vault_program", version = "=0.0.1" }
+jito-restaking-sanitization = { path = "../../../sanitization", version = "=0.0.1" }
+jito-jsm-core = { path = "../../../core", version = "=0.0.1" }
+jito-vault-core = { path = "../../../vault_core", version = "=0.0.1" }
+jito-restaking-core = { path = "../../../restaking_core", version = "=0.0.1" }
+jito-restaking-sdk = { path = "../../../restaking_sdk", version = "=0.0.1" }
+jito-vault-sdk = { path = "../../../vault_sdk", version = "=0.0.1" }
+jito-restaking-program = { path = "../../../restaking_program", version = "=0.0.1" }

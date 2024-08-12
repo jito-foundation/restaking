@@ -6,6 +6,7 @@ use color_of_the_epoch::{
     accounts as color_accounts, derive_color_coin_mint_address, derive_color_of_epoch_address,
     instruction as color_instruction, InitializeColorOfTheEpochParams,
 };
+use jito_vault_sdk::{add_delegation, initialize_config as initialize_vault_config};
 use solana_program_test::{ProgramTest, ProgramTestContext};
 use solana_sdk::{
     account::Account, instruction::Instruction, pubkey::Pubkey, signature::Keypair, signer::Signer,
@@ -17,12 +18,16 @@ pub struct TestFixture {
     pub color_of_the_epoch: Pubkey,
     pub color_program_id: Pubkey,
     pub color_coin_mint: Pubkey,
+    pub vault_program_id: Pubkey,
+    pub restaking_program_id: Pubkey,
     pub keypair: Keypair,
 }
 
 impl TestFixture {
     pub async fn new() -> Self {
         let color_program_id = color_of_the_epoch::ID;
+        let restaking_program_id = jito_restaking_program::id();
+        let vault_program_id = jito_vault_program::id();
 
         let mut program = {
             let program = ProgramTest::new("color_of_the_epoch", color_program_id, None);
@@ -42,6 +47,8 @@ impl TestFixture {
             color_of_the_epoch,
             color_program_id,
             color_coin_mint,
+            vault_program_id,
+            restaking_program_id,
             keypair,
         }
     }
@@ -68,6 +75,11 @@ impl TestFixture {
         );
 
         self.submit_transaction_assert_success(transaction).await;
+    }
+
+    pub async fn initalize_vault_config(&self) {
+        let config_admin = Keypair::new();
+        let ix = initialize_vault_config(&self.vault_program_id);
     }
 
     pub async fn load_and_deserialize<T: anchor_lang::AccountDeserialize>(
@@ -125,6 +137,22 @@ impl TestFixture {
         } else {
             panic!("Error: Transaction succeeded. Expected {}", error_message);
         }
+    }
+
+    pub async fn airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), BanksClientError> {
+        let banks_client = self.ctx.borrow().banks_client.clone();
+        let blockhash = banks_client.get_latest_blockhash().await?;
+        banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &[transfer(&self.payer.pubkey(), to, sol_to_lamports(sol))],
+                    Some(&self.payer.pubkey()),
+                    &[&self.payer],
+                    blockhash,
+                ),
+                CommitmentLevel::Processed,
+            )
+            .await
     }
 }
 
