@@ -36,6 +36,7 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
+use spl_token_metadata_interface::{borsh::BorshDeserialize, state::TokenMetadata};
 
 use crate::fixtures::TestError;
 
@@ -156,6 +157,14 @@ impl VaultProgramClient {
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+    }
+
+    pub async fn get_token_metadata(
+        &mut self,
+        account: &Pubkey,
+    ) -> Result<TokenMetadata, TestError> {
+        let account = self.banks_client.get_account(*account).await?.unwrap();
+        Ok(TokenMetadata::try_from_slice(&mut account.data.as_slice())?)
     }
 
     pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
@@ -1016,6 +1025,36 @@ impl VaultProgramClient {
             blockhash,
         ))
         .await
+    }
+
+    pub async fn create_token_metadata(
+        &mut self,
+        metadata: &Pubkey,
+        vault_pubkey: &Pubkey,
+        vault_admin: &Keypair,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::create_token_metadata(
+                &jito_vault_program::id(),
+                metadata,
+                vault_pubkey,
+                &vault_admin.pubkey(),
+                name,
+                symbol,
+                uri,
+            )],
+            Some(&vault_admin.pubkey()),
+            &[vault_admin],
+            blockhash,
+        ))
+        .await
+        .unwrap();
+
+        Ok(())
     }
 
     async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {

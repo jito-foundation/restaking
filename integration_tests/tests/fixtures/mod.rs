@@ -1,3 +1,5 @@
+use std::io;
+
 use solana_program::program_error::ProgramError;
 use solana_program_test::BanksClientError;
 use thiserror::Error;
@@ -12,4 +14,6 @@ pub enum TestError {
     BanksClientError(#[from] BanksClientError),
     #[error(transparent)]
     ProgramError(#[from] ProgramError),
+    #[error(transparent)]
+    IoError(#[from] io::Error),
 }

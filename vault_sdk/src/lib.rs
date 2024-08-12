@@ -203,6 +203,13 @@ pub enum VaultInstruction {
     AddSlasher,
 
     /// Creates token metadata for the vault LRT
+    #[account(0, writable, name = "metadata")]
+    #[account(1, name = "update_authority_info")]
+    #[account(2, name = "mint_info")]
+    #[account(3, name = "mint_authority_info")]
+    #[account(4, signer, name = "vault_admin")]
+    #[account(5, name = "system_program")]
+    #[account(6, name = "token_program")]
     CreateTokenMetadata {
         name: String,
         symbol: String,
@@ -660,13 +667,24 @@ pub fn add_slasher(
 
 pub fn create_token_metadata(
     program_id: &Pubkey,
+    metadata: &Pubkey,
+    vault: &Pubkey,
+    vault_admin: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*metadata, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*vault_admin, true),
+        AccountMeta::new_readonly(system_program::id(), false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+    ];
+
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
+        accounts,
         data: VaultInstruction::CreateTokenMetadata { name, symbol, uri }
             .try_to_vec()
             .unwrap(),
