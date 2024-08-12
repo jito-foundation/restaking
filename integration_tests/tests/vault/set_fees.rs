@@ -145,5 +145,29 @@ mod tests {
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
         assert_eq!(vault.deposit_fee_bps(), deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+
+        // Should not be able to set fees with wrong signer
+        let vault_admin = Keypair::new();
+        vault_program_client
+            ._airdrop(&vault_admin.pubkey(), 10.0)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(config.epoch_length * 2)
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .set_fees(
+                &config_pubkey,
+                &vault_pubkey,
+                &vault_admin,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+            )
+            .await;
+
+        assert!(result.is_err());
     }
 }
