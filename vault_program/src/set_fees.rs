@@ -3,10 +3,9 @@ use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::loader::load_config;
 use jito_vault_core::{config::Config, loader::load_vault, vault::Vault};
 use jito_vault_sdk::error::VaultError;
-use solana_program::sysvar::Sysvar;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
 pub fn process_set_fees(
@@ -49,7 +48,7 @@ pub fn process_set_fees(
         .checked_div(epoch_length)
         .unwrap();
 
-    if current_epoch <= last_fee_change_epoch + 1 {
+    if current_epoch <= last_fee_change_epoch.checked_add(1).unwrap() {
         msg!("Fee changes are only allowed once per epoch");
         return Err(VaultError::VaultFeeChangeTooSoon.into());
     }
