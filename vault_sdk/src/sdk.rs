@@ -291,11 +291,13 @@ pub fn withdrawal_asset(program_id: &Pubkey, amount: u64) -> Instruction {
 
 pub fn set_admin(
     program_id: &Pubkey,
+    config: &Pubkey,
     vault: &Pubkey,
     old_admin: &Pubkey,
     new_admin: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*old_admin, true),
         AccountMeta::new_readonly(*new_admin, true),
@@ -309,12 +311,14 @@ pub fn set_admin(
 
 pub fn set_secondary_admin(
     program_id: &Pubkey,
+    config: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
     new_admin: &Pubkey,
     role: VaultAdminRole,
 ) -> Instruction {
     let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*new_admin, false),
