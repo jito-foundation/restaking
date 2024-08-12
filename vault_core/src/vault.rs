@@ -1,8 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_vault_sdk::error::VaultError;
 use solana_program::pubkey::Pubkey;
-
-use crate::result::{VaultCoreError, VaultCoreResult};
 
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
@@ -130,47 +129,45 @@ impl Vault {
     // Asset accounting and tracking
     // ------------------------------------------
 
-    pub fn max_delegation_amount(&self) -> VaultCoreResult<u64> {
+    pub fn max_delegation_amount(&self) -> Result<u64, VaultError> {
         self.tokens_deposited
             .checked_sub(self.withdrawable_reserve_amount)
-            .ok_or(VaultCoreError::VaultDelegationUnderflow)
+            .ok_or(VaultError::VaultOverflow)
     }
 
-    pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+    pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         if self.lrt_supply == 0 {
-            return Err(VaultCoreError::VaultEmpty);
+            return Err(VaultError::VaultLrtEmpty);
         } else if lrt_amount > self.lrt_supply {
-            return Err(VaultCoreError::VaultInsufficientFunds);
+            return Err(VaultError::VaultInsufficientFunds);
         }
 
         lrt_amount
             .checked_mul(self.tokens_deposited)
-            .ok_or(VaultCoreError::VaultWithdrawOverflow)?
-            .checked_div(self.lrt_supply)
-            .ok_or(VaultCoreError::VaultWithdrawOverflow)
+            .and_then(|x| x.checked_div(self.lrt_supply))
+            .ok_or(VaultError::VaultOverflow)
     }
 
-    pub fn calculate_lrt_mint_amount(&self, amount: u64) -> VaultCoreResult<u64> {
+    pub fn calculate_lrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
         if self.tokens_deposited == 0 {
             return Ok(amount);
         }
 
         amount
             .checked_mul(self.lrt_supply)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?
-            .checked_div(self.tokens_deposited)
-            .ok_or(VaultCoreError::VaultDepositOverflow)
+            .and_then(|x| x.checked_div(self.tokens_deposited))
+            .ok_or(VaultError::VaultOverflow)
     }
 
     pub const fn deposit_fee_bps(&self) -> u16 {
         self.deposit_fee_bps
     }
 
-    pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+    pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
             .checked_mul(self.deposit_fee_bps as u64)
-            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
-            .div_ceil(10_000);
+            .and_then(|x| x.checked_div(10_000))
+            .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
     }
 
@@ -178,37 +175,12 @@ impl Vault {
         self.withdrawal_fee_bps
     }
 
-    pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
+    pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
-            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
-            .div_ceil(10_000);
+            .and_then(|x| x.checked_div(10_000))
+            .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
-    }
-
-    /// Deposit tokens into the vault
-    pub fn deposit_and_mint_with_capacity_check(&mut self, amount: u64) -> VaultCoreResult<u64> {
-        // the number of tokens to mint is the pro-rata amount of the total tokens deposited and the LRT supply
-        let num_tokens_to_mint = self.calculate_lrt_mint_amount(amount)?;
-
-        // deposit tokens + check against capacity
-        let total_post_deposit = self
-            .tokens_deposited
-            .checked_add(amount)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?;
-        if total_post_deposit > self.capacity {
-            return Err(VaultCoreError::VaultDepositExceedsCapacity);
-        }
-
-        let lrt_supply = self
-            .lrt_supply
-            .checked_add(num_tokens_to_mint)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?;
-
-        self.lrt_supply = lrt_supply;
-        self.tokens_deposited = total_post_deposit;
-
-        Ok(num_tokens_to_mint)
     }
 
     // ------------------------------------------
@@ -229,13 +201,13 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
+    use crate::vault::Vault;
+    use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
-
-    use crate::vault::{Vault, VaultCoreError};
 
     #[test]
     fn test_deposit_ratio_simple_ok() {
-        let mut vault = Vault::new(
+        let vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -245,11 +217,8 @@ mod tests {
             0,
             0,
         );
-        let num_minted = vault.deposit_and_mint_with_capacity_check(100).unwrap();
+        let num_minted = vault.calculate_lrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 100);
-
-        assert_eq!(vault.tokens_deposited, 100);
-        assert_eq!(vault.lrt_supply, 100);
     }
 
     #[test]
@@ -267,53 +236,8 @@ mod tests {
         vault.tokens_deposited = 90;
         vault.lrt_supply = 100;
 
-        let num_minted = vault.deposit_and_mint_with_capacity_check(100).unwrap();
+        let num_minted = vault.calculate_lrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 111);
-
-        assert_eq!(vault.tokens_deposited, 190);
-        assert_eq!(vault.lrt_supply, 211);
-    }
-
-    #[test]
-    fn test_deposit_capacity_exceeded_fails() {
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            0,
-        );
-        vault.capacity = 100;
-
-        assert_eq!(
-            vault.deposit_and_mint_with_capacity_check(101),
-            Err(VaultCoreError::VaultDepositExceedsCapacity)
-        );
-    }
-
-    #[test]
-    fn test_deposit_capacity_ok() {
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            0,
-        );
-        vault.capacity = 100;
-
-        vault.deposit_and_mint_with_capacity_check(50).unwrap();
-        vault.deposit_and_mint_with_capacity_check(50).unwrap();
-        assert_eq!(
-            vault.deposit_and_mint_with_capacity_check(1),
-            Err(VaultCoreError::VaultDepositExceedsCapacity)
-        );
     }
 
     #[test]
@@ -354,14 +278,14 @@ mod tests {
         vault.lrt_supply = 0;
         assert_eq!(
             vault.calculate_assets_returned_amount(100),
-            Err(VaultCoreError::VaultEmpty)
+            Err(VaultError::VaultLrtEmpty)
         );
 
         vault.tokens_deposited = 100;
         vault.lrt_supply = 1;
         assert_eq!(
             vault.calculate_assets_returned_amount(100),
-            Err(VaultCoreError::VaultInsufficientFunds)
+            Err(VaultError::VaultInsufficientFunds)
         );
 
         vault.tokens_deposited = 100;

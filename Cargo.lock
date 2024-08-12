@@ -2016,6 +2016,7 @@ dependencies = [
  "bytemuck",
  "jito-account-traits",
  "jito-jsm-core",
+ "jito-vault-sdk",
  "solana-program",
  "spl-associated-token-account",
  "spl-token",

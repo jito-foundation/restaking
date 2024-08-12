@@ -28,7 +28,7 @@ mod warmup_vault_operator_ticket;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
-use jito_vault_sdk::VaultInstruction;
+use jito_vault_sdk::instruction::VaultInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
