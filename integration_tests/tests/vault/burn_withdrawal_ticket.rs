@@ -2,8 +2,12 @@
 mod tests {
     use jito_restaking_core::config::Config as RestakingConfig;
     use jito_vault_core::config::Config;
-    use solana_program::pubkey::Pubkey;
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::{instruction::InstructionError, pubkey::Pubkey};
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{
@@ -231,11 +235,21 @@ mod tests {
         )
         .await;
 
-        // TODO (LB): check error type
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(
+                    VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
+                )
+            )
+        );
     }
 
     /// One can't burn the withdraw ticket until a full epoch has passed
@@ -281,10 +295,22 @@ mod tests {
             .await
             .unwrap();
 
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(
+                    VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
+                )
+            )
+        );
     }
 
     /// Tests basic withdraw ticket with no rewards or slashing incidents

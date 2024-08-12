@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::TestBuilder;
-    use jito_restaking_core::config::Config;
-    use jito_restaking_core::ncn_vault_slasher_ticket::NcnVaultSlasherTicket;
-    use jito_restaking_core::ncn_vault_ticket::NcnVaultTicket;
+    use jito_restaking_core::{
+        config::Config, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+        ncn_vault_ticket::NcnVaultTicket,
+    };
     use jito_restaking_sdk::error::RestakingError;
-    use solana_program::instruction::InstructionError;
-    use solana_program::pubkey::Pubkey;
-    use solana_sdk::signature::{Keypair, Signer};
-    use solana_sdk::transaction::TransactionError;
+    use solana_program::{instruction::InstructionError, pubkey::Pubkey};
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
+
+    use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_slasher_ticket_ok() {

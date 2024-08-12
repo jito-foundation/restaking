@@ -28,12 +28,12 @@ pub enum RestakingError {
 
 impl From<RestakingError> for ProgramError {
     fn from(e: RestakingError) -> Self {
-        ProgramError::Custom(e as u32)
+        Self::Custom(e as u32)
     }
 }
 
 impl From<RestakingError> for u64 {
     fn from(e: RestakingError) -> Self {
-        e as u64
+        e as Self
     }
 }

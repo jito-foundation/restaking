@@ -1,7 +1,12 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::instruction::InstructionError;
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{fixture::TestBuilder, vault_client::VaultStakerWithdrawalTicketRoot};
@@ -57,10 +62,19 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_ata.amount, 99_000);
 
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, 49_500)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(VaultError::VaultDelegationListUnderflow as u32)
+            )
+        );
     }
 
     #[tokio::test]

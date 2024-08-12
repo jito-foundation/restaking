@@ -1,8 +1,11 @@
-use crate::instruction::{VaultAdminRole, VaultInstruction};
 use borsh::BorshSerialize;
-use solana_program::instruction::{AccountMeta, Instruction};
-use solana_program::pubkey::Pubkey;
-use solana_program::system_program;
+use solana_program::{
+    instruction::{AccountMeta, Instruction},
+    pubkey::Pubkey,
+    system_program,
+};
+
+use crate::instruction::{VaultAdminRole, VaultInstruction};
 
 pub fn initialize_config(
     program_id: &Pubkey,

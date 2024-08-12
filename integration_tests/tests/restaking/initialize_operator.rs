@@ -1,11 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::TestBuilder;
     use jito_restaking_core::{config::Config, operator::Operator};
-    use solana_program::instruction::InstructionError;
-    use solana_program::pubkey::Pubkey;
-    use solana_sdk::signature::{Keypair, Signer};
-    use solana_sdk::transaction::TransactionError;
+    use solana_program::{instruction::InstructionError, pubkey::Pubkey};
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
+
+    use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_initialize_operator_ok() {

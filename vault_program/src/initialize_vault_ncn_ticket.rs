@@ -15,6 +15,7 @@ use jito_vault_core::{
     vault::Vault,
     vault_ncn_ticket::VaultNcnTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -69,7 +70,7 @@ pub fn process_initialize_vault_ncn_ticket(
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.ncn_admin.ne(vault_ncn_admin.key) {
         msg!("Invalid NCN admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultNcnAdminInvalid.into());
     }
 
     // The NcnVaultTicket shall be active
@@ -79,8 +80,8 @@ pub fn process_initialize_vault_ncn_ticket(
         .state
         .is_active(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("NCN vault ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        msg!("NCN vault ticket is not active");
+        return Err(VaultError::NcnVaultTicketNotActive.into());
     }
 
     msg!(

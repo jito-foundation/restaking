@@ -10,6 +10,7 @@ use jito_vault_core::{
     vault::Vault,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -53,7 +54,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
         msg!("Invalid slasher admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultSlasherAdminInvalid.into());
     }
 
     // The NcnVaultSlasherTicket shall be active
@@ -65,7 +66,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         .is_active(Clock::get()?.slot, config.epoch_length)
     {
         msg!("NcnVaultSlasherTicket is not active");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::NcnVaultSlasherTicketNotActive.into());
     }
 
     // The VaultNcnSlasherTicket shall be ready to be activated
@@ -77,7 +78,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         .activate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Slasher is not ready to be activated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultNcnSlasherTicketFailedWarmup.into());
     }
 
     Ok(())

@@ -1,8 +1,9 @@
-use crate::operator_delegation::OperatorDelegation;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{msg, pubkey::Pubkey};
+
+use crate::operator_delegation::OperatorDelegation;
 
 pub enum UndelegateForWithdrawMethod {
     /// Withdraws from each operator's delegated amount in proportion to the total delegated amount
@@ -232,7 +233,7 @@ impl VaultDelegationList {
             // Calculate un-delegate amount, rounding up
             let undelegate_amount = delegated_security
                 .checked_mul(amount)
-                .and_then(|x| Some(x.div_ceil(withdrawable_assets)))
+                .map(|x| x.div_ceil(withdrawable_assets))
                 .ok_or(VaultError::VaultDelegationListOverflow)?;
 
             if undelegate_amount > 0 {
@@ -269,7 +270,7 @@ impl VaultDelegationList {
             operator.undelegate(amount)?;
             Ok(())
         } else {
-            return Err(VaultError::VaultDelegationListOperatorNotFound);
+            Err(VaultError::VaultDelegationListOperatorNotFound)
         }
     }
 

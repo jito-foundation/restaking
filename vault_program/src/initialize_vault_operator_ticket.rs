@@ -15,6 +15,7 @@ use jito_vault_core::{
     vault::Vault,
     vault_operator_ticket::VaultOperatorTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -62,7 +63,7 @@ pub fn process_initialize_vault_operator_ticket(
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.operator_admin.ne(vault_operator_admin.key) {
         msg!("Invalid operator admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultOperatorAdminInvalid.into());
     }
 
     // The OperatorVaultTicket shall be active
@@ -72,8 +73,8 @@ pub fn process_initialize_vault_operator_ticket(
         .state
         .is_active(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("Operator vault ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        msg!("Operator vault ticket is not active");
+        return Err(VaultError::OperatorVaultTicketNotActive.into());
     }
 
     msg!(

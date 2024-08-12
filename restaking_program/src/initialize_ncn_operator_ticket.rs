@@ -70,7 +70,7 @@ pub fn process_initialize_ncn_operator_ticket(
         .state
         .is_active(slot, config.epoch_length)
     {
-        msg!("Operator NCN ticket is not active or in cooldown");
+        msg!("Operator NCN ticket is not active");
         return Err(RestakingError::OperatorNcnTicketNotActive.into());
     }
 

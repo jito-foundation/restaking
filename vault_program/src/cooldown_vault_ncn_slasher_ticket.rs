@@ -7,6 +7,7 @@ use jito_vault_core::{
     vault::Vault,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -42,7 +43,7 @@ pub fn process_cooldown_vault_ncn_slasher_ticket(
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
         msg!("Invalid slasher admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultSlasherAdminInvalid.into());
     }
 
     // The vault slasher ticket must be active in order to cooldown the slasher
@@ -54,7 +55,7 @@ pub fn process_cooldown_vault_ncn_slasher_ticket(
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {
         msg!("Slasher is not ready to be deactivated");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultNcnSlasherTicketFailedCooldown.into());
     }
 
     Ok(())

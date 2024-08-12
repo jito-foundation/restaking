@@ -4,6 +4,7 @@ use jito_vault_core::{
     loader::{load_config, load_vault},
     vault::Vault,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -24,7 +25,7 @@ pub fn process_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> Progr
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.admin.ne(old_admin.key) {
         msg!("Invalid admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultAdminInvalid.into());
     }
     vault.admin = *new_admin.key;
 

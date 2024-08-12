@@ -24,6 +24,7 @@ use jito_vault_core::{
     vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -120,7 +121,7 @@ pub fn process_slash(
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(slot, epoch_length) {
         msg!("Vault delegation list update needed");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
     }
 
     // The VaultNcnTicket shall be active or cooling down to get slashed
@@ -131,7 +132,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("Vault NCN ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultNcnTicketUnslashable.into());
     }
 
     // The NcnVaultTicket shall be active or cooling down to get slashed
@@ -142,7 +143,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("NCN vault ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::NcnVaultTicketUnslashable.into());
     }
 
     // The OperatorVaultTicket shall be active or cooling down to get slashed
@@ -153,7 +154,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("Operator vault ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::OperatorVaultTicketUnslashable.into());
     }
 
     // The VaultOperatorTicket shall be active or cooling down to get slashed
@@ -164,7 +165,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("Vault operator ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultOperatorTicketUnslashable.into());
     }
 
     // The NcnOperatorTicket shall be active or cooling down to get slashed
@@ -175,7 +176,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("NCN operator ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::NcnOperatorTicketUnslashable.into());
     }
 
     // The OperatorNcnTicket shall be active or cooling down to get slashed
@@ -186,7 +187,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("Operator NCN ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::OperatorNcnTicketUnslashable.into());
     }
 
     // The NcnVaultSlasherTicket shall be active or cooling down to slash
@@ -198,7 +199,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("NCN vault slasher ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::NcnVaultSlasherTicketUnslashable.into());
     }
 
     // The VaultNcnSlasherTicket shall be active or cooling down to slash
@@ -210,7 +211,7 @@ pub fn process_slash(
         .is_active_or_cooldown(slot, epoch_length)
     {
         msg!("Vault NCN slasher ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultNcnSlasherTicketUnslashable.into());
     }
 
     // The amount slashed for this operator shall not exceed the maximum slashable amount per epoch
@@ -225,7 +226,7 @@ pub fn process_slash(
         .ok_or(ProgramError::ArithmeticOverflow)?;
     if amount_after_slash > vault_ncn_slasher_ticket.max_slashable_per_epoch {
         msg!("Slash amount exceeds the maximum slashable amount per epoch");
-        return Err(ProgramError::InvalidArgument);
+        return Err(VaultError::VaultNcnSlasherOperatorMaxSlashableExceeded.into());
     }
 
     // slash and update the slashed amount

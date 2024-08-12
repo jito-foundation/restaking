@@ -6,6 +6,7 @@ use jito_vault_core::{
     loader::{load_config, load_vault},
     vault::Vault,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -51,11 +52,11 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
             load_signer(mint_signer, false)?;
             if mint_signer.key.ne(&vault.mint_burn_admin) {
                 msg!("Mint signer does not match vault mint signer");
-                return Err(ProgramError::InvalidAccountData);
+                return Err(VaultError::VaultMintBurnAdminInvalid.into());
             }
         } else {
             msg!("Mint signer is required for vault mint");
-            return Err(ProgramError::InvalidAccountData);
+            return Err(VaultError::VaultMintBurnAdminInvalid.into());
         }
     }
 
@@ -77,7 +78,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     // The vault capacity shall not be exceeded after deposit
     if vault_token_amount_after_deposit > vault.capacity {
         msg!("Amount exceeds vault capacity");
-        return Err(ProgramError::InvalidInstructionData);
+        return Err(VaultError::VaultCapacityExceeded.into());
     }
 
     // transfer tokens from depositor to vault

@@ -201,9 +201,10 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
-    use crate::vault::Vault;
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
+
+    use crate::vault::Vault;
 
     #[test]
     fn test_deposit_ratio_simple_ok() {

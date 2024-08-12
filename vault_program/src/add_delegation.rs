@@ -8,6 +8,7 @@ use jito_vault_core::{
     vault_delegation_list::VaultDelegationList,
     vault_operator_ticket::VaultOperatorTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -39,7 +40,7 @@ pub fn process_add_delegation(
     let vault = Vault::try_from_slice(&vault_data)?;
     if vault.delegation_admin.ne(vault_delegation_admin.key) {
         msg!("Invalid delegation admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultDelegationAdminInvalid.into());
     }
 
     // The vault operator ticket must be active in order to add delegation to the operator
@@ -49,8 +50,8 @@ pub fn process_add_delegation(
         .state
         .is_active(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("Vault operator ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        msg!("Vault operator ticket is not active");
+        return Err(VaultError::VaultOperatorTicketNotActive.into());
     }
 
     // The vault delegation list shall be up-to-date
@@ -59,7 +60,7 @@ pub fn process_add_delegation(
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault delegation list update is needed");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
     }
 
     vault_delegation_list.delegate(*operator.key, amount, vault.max_delegation_amount()?)?;

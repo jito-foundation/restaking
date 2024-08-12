@@ -1,6 +1,5 @@
 use std::mem::size_of;
 
-use crate::fixtures::TestError;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
@@ -37,6 +36,8 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
+
+use crate::fixtures::TestError;
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
