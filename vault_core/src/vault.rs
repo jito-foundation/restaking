@@ -40,6 +40,10 @@ pub struct Vault {
     /// The admin responsible for setting the capacity
     pub capacity_admin: Pubkey,
 
+    /// The admin responsible for setting the fees
+    pub fee_admin: Pubkey,
+
+    /// The admin responsible for withdrawing
     pub withdraw_admin: Pubkey,
 
     /// Fee wallet account
@@ -72,6 +76,9 @@ pub struct Vault {
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault
     pub slasher_count: u64,
 
+    /// The slot of the last fee change
+    pub last_fee_change_slot: u64,
+
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
 
@@ -82,7 +89,7 @@ pub struct Vault {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 3],
+    reserved: [u8; 11],
 }
 
 impl Vault {
@@ -107,6 +114,7 @@ impl Vault {
             ncn_admin: admin,
             slasher_admin: admin,
             capacity_admin: admin,
+            fee_admin: admin,
             withdraw_admin: admin,
             fee_wallet: admin,
             mint_burn_admin: Pubkey::default(),
@@ -115,13 +123,14 @@ impl Vault {
             lrt_supply: 0,
             tokens_deposited: 0,
             withdrawable_reserve_amount: 0,
+            last_fee_change_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
             bump,
-            reserved: [0; 3],
+            reserved: [0; 11],
         }
     }
 

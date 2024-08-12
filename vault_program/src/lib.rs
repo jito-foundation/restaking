@@ -18,6 +18,7 @@ mod initialize_vault_with_mint;
 mod mint_to;
 mod set_admin;
 mod set_capacity;
+mod set_fees;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
@@ -53,8 +54,9 @@ use crate::{
     initialize_vault_operator_ticket::process_initialize_vault_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
-    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
-    update_token_metadata::process_update_token_metadata, update_vault::process_update_vault,
+    set_fees::process_set_fees, set_secondary_admin::process_set_secondary_admin,
+    slash::process_slash, update_token_metadata::process_update_token_metadata,
+    update_vault::process_update_vault,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
     warmup_vault_operator_ticket::process_warmup_vault_operator_ticket,
@@ -146,6 +148,13 @@ pub fn process_instruction(
         VaultInstruction::AdminWithdraw { amount } => {
             msg!("Instruction: WithdrawalAsset");
             process_withdrawal_asset(program_id, accounts, amount)
+        }
+        VaultInstruction::SetFees {
+            deposit_fee_bps,
+            withdrawal_fee_bps,
+        } => {
+            msg!("Instruction: SetFees");
+            process_set_fees(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
         }
         // ------------------------------------------
         // Vault minting and burning
