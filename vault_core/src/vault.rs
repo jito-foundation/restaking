@@ -165,7 +165,7 @@ impl Vault {
 
     pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
-            .checked_mul(self.deposit_fee_bps as u64)
+            .checked_mul(self.deposit_fee_bps() as u64)
             .and_then(|x| x.checked_div(10_000))
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
@@ -177,7 +177,7 @@ impl Vault {
 
     pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
-            .checked_mul(self.withdrawal_fee_bps as u64)
+            .checked_mul(self.withdrawal_fee_bps() as u64)
             .and_then(|x| x.checked_div(10_000))
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)

@@ -21,22 +21,28 @@ pub struct Config {
     /// The number of vaults managed by the program
     pub num_vaults: u64,
 
+    /// The fee cap in basis points ( withdraw and deposit )
+    pub fee_cap_bps: u16,
+
     /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 5],
 }
 
 impl Config {
+    pub const DEFAULT_FEES_CAP_BPS: u16 = 1_000; // 10%
+
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
             admin,
             restaking_program,
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
+            fee_cap_bps: Self::DEFAULT_FEES_CAP_BPS,
             bump,
-            reserved: [0; 7],
+            reserved: [0; 5],
         }
     }
 

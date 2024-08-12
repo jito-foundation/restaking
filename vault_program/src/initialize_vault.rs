@@ -92,6 +92,12 @@ pub fn process_initialize_vault(
         let mut vault_data = vault.try_borrow_mut_data()?;
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+
+        if deposit_fee_bps > config.fee_cap_bps || withdrawal_fee_bps > config.fee_cap_bps {
+            msg!("Fee cap exceeds maximum allowed of {}", config.fee_cap_bps);
+            return Err(ProgramError::InvalidArgument);
+        }
+
         *vault = Vault::new(
             *lrt_mint.key,
             *mint.key,
