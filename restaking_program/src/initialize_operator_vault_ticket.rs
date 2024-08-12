@@ -19,8 +19,11 @@ use solana_program::{
 /// The vault can be used at the end of epoch + 1.
 /// This method is permissioned to the node operator admin.
 ///
-/// [`crate::RestakingInstruction::OperatorAddVault`]
-pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeOperatorVaultTicket`]
+pub fn process_initialize_operator_vault_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, operator_info, vault, operator_vault_ticket_account, operator_vault_admin, payer, system_program] =
         accounts
     else {
@@ -37,6 +40,7 @@ pub fn process_operator_add_vault(program_id: &Pubkey, accounts: &[AccountInfo])
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The OperatorVaultTicket shall be at the canonical PDA
     let (operator_vault_ticket_pubkey, operator_vault_ticket_bump, mut operator_vault_ticket_seeds) =
         OperatorVaultTicket::find_program_address(program_id, operator_info.key, vault.key);
     operator_vault_ticket_seeds.push(vec![operator_vault_ticket_bump]);

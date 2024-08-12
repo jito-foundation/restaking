@@ -17,7 +17,7 @@ pub fn load_config(
 ) -> Result<(), ProgramError> {
     if account.owner.ne(program_id) {
         msg!("Config account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if account.data_is_empty() {
         msg!("Config account data is empty");
@@ -46,7 +46,7 @@ pub fn load_ncn(
 ) -> Result<(), ProgramError> {
     if account.owner.ne(program_id) {
         msg!("NCN account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if account.data_is_empty() {
         msg!("NCN account data is empty");
@@ -78,7 +78,7 @@ pub fn load_operator(
 ) -> Result<(), ProgramError> {
     if account.owner.ne(program_id) {
         msg!("Operator account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if account.data_is_empty() {
         msg!("Operator account data is empty");
@@ -112,7 +112,7 @@ pub fn load_operator_vault_ticket(
 ) -> Result<(), ProgramError> {
     if operator_vault_ticket.owner.ne(program_id) {
         msg!("Operator vault ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if operator_vault_ticket.data_is_empty() {
         msg!("Operator vault ticket account data is empty");
@@ -144,7 +144,7 @@ pub fn load_ncn_operator_ticket(
 ) -> Result<(), ProgramError> {
     if ncn_operator_ticket.owner.ne(program_id) {
         msg!("NCN operator ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if ncn_operator_ticket.data_is_empty() {
         msg!("NCN operator ticket account data is empty");
@@ -176,7 +176,7 @@ pub fn load_ncn_vault_ticket(
 ) -> Result<(), ProgramError> {
     if ncn_vault_ticket.owner.ne(program_id) {
         msg!("NCN vault ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if ncn_vault_ticket.data_is_empty() {
         msg!("NCN vault ticket account data is empty");
@@ -207,7 +207,7 @@ pub fn load_operator_ncn_ticket(
 ) -> Result<(), ProgramError> {
     if operator_ncn_ticket.owner.ne(program_id) {
         msg!("Operator NCN ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if operator_ncn_ticket.data_is_empty() {
         msg!("Operator NCN ticket account data is empty");
@@ -240,7 +240,7 @@ pub fn load_ncn_vault_slasher_ticket(
 ) -> Result<(), ProgramError> {
     if ncn_vault_slasher_ticket.owner.ne(program_id) {
         msg!("NCN vault slasher ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if ncn_vault_slasher_ticket.data_is_empty() {
         msg!("NCN vault slasher ticket account data is empty");

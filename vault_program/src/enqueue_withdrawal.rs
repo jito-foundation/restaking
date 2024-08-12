@@ -83,13 +83,16 @@ pub fn process_enqueue_withdrawal(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // check optional signer
-    if let Some(burn_signer) = optional_accounts.first() {
-        load_signer(burn_signer, false)?;
-        if vault.mint_burn_admin.ne(&Pubkey::default())
-            && burn_signer.key.ne(&vault.mint_burn_admin)
-        {
-            msg!("Burn signer does not match vault mint signer");
+    // If the vault has a mint_burn_admin, it must be the signer
+    if vault.mint_burn_admin.ne(&Pubkey::default()) {
+        if let Some(burn_signer) = optional_accounts.first() {
+            load_signer(burn_signer, false)?;
+            if burn_signer.key.ne(&vault.mint_burn_admin) {
+                msg!("Burn signer does not match vault burn signer");
+                return Err(ProgramError::InvalidAccountData);
+            }
+        } else {
+            msg!("Mint signer is required for vault mint");
             return Err(ProgramError::InvalidAccountData);
         }
     }

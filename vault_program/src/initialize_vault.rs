@@ -36,6 +36,7 @@ pub fn process_initialize_vault(
     load_system_program(system_program)?;
     load_token_program(token_program)?;
 
+    // The vault account shall be at the canonical PDA
     let (vault_pubkey, vault_bump, mut vault_seeds) =
         Vault::find_program_address(program_id, base.key);
     vault_seeds.push(vec![vault_bump]);
@@ -43,9 +44,6 @@ pub fn process_initialize_vault(
         msg!("Vault account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
-
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
 
     let rent = Rent::get()?;
 
@@ -74,6 +72,9 @@ pub fn process_initialize_vault(
             &[lrt_mint.clone()],
         )?;
     }
+
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
 
     // Initialize vault
     {

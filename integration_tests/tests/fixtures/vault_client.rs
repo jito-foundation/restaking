@@ -13,7 +13,7 @@ use jito_vault_core::{
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
-use jito_vault_sdk::{
+use jito_vault_sdk::sdk::{
     add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list,
 };
 use log::info;
@@ -253,15 +253,6 @@ impl VaultProgramClient {
             .await?;
         }
 
-        // let account = self
-        //     .banks_client
-        //     .get_account(vault_delegation_list)
-        //     .await?
-        //     .unwrap();
-        // if account.data[0] == VaultDelegationList::DISCRIMINATOR {
-        //     break;
-        // }
-
         // for holding the backed asset in the vault
         self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
         // for holding fees
@@ -294,7 +285,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.add_ncn(
+        self.initialize_vault_ncn_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &ncn,
@@ -482,7 +473,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.add_operator(
+        self.initialize_vault_operator_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &operator_pubkey,
@@ -594,7 +585,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn add_ncn(
+    pub async fn initialize_vault_ncn_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -607,7 +598,7 @@ impl VaultProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_ncn(
+            &[jito_vault_sdk::sdk::initialize_vault_ncn_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -624,7 +615,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn add_operator(
+    pub async fn initialize_vault_operator_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -636,7 +627,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_operator(
+            &[jito_vault_sdk::sdk::initialize_vault_operator_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -713,7 +704,7 @@ impl VaultProgramClient {
         let vault = self.get_vault(vault_pubkey).await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::update_vault(
+            &[jito_vault_sdk::sdk::update_vault(
                 &jito_vault_program::id(),
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 vault_pubkey,
@@ -743,7 +734,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::enqueue_withdraw(
+            &[jito_vault_sdk::sdk::enqueue_withdraw(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -814,7 +805,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::burn_withdrawal_ticket(
+            &[jito_vault_sdk::sdk::burn_withdrawal_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -883,7 +874,7 @@ impl VaultProgramClient {
             signers.push(signer);
         }
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::mint_to(
+            &[jito_vault_sdk::sdk::mint_to(
                 &jito_vault_program::id(),
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 vault,
@@ -916,7 +907,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_slasher(
+            &[jito_vault_sdk::sdk::initialize_vault_ncn_slasher_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -948,7 +939,7 @@ impl VaultProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[
-                jito_vault_sdk::initialize_vault_ncn_slasher_operator_ticket(
+                jito_vault_sdk::sdk::initialize_vault_ncn_slasher_operator_ticket(
                     &jito_vault_program::id(),
                     config,
                     vault,
@@ -990,7 +981,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::slash(
+            &[jito_vault_sdk::sdk::slash(
                 &jito_vault_program::id(),
                 config,
                 vault,

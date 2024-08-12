@@ -23,6 +23,7 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
     load_signer(base, false)?;
     load_system_program(system_program)?;
 
+    // The Ncn shall be at the canonical PDA
     let (ncn_pubkey, ncn_bump, mut ncn_seeds) = Ncn::find_program_address(program_id, base.key);
     ncn_seeds.push(vec![ncn_bump]);
     if ncn.key.ne(&ncn_pubkey) {

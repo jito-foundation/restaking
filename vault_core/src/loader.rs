@@ -16,7 +16,7 @@ pub fn load_config(
 ) -> Result<(), ProgramError> {
     if account.owner.ne(program_id) {
         msg!("Config account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if account.data_is_empty() {
         msg!("Config account data is empty");
@@ -44,7 +44,7 @@ pub fn load_vault(
 ) -> Result<(), ProgramError> {
     if account.owner.ne(program_id) {
         msg!("Vault account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if account.data_is_empty() {
         msg!("Vault account data is empty");
@@ -78,7 +78,7 @@ pub fn load_vault_ncn_ticket(
 ) -> Result<(), ProgramError> {
     if vault_ncn_ticket.owner.ne(program_id) {
         msg!("Vault NCN ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if vault_ncn_ticket.data_is_empty() {
         msg!("Vault NCN ticket account data is empty");
@@ -109,7 +109,7 @@ pub fn load_vault_operator_ticket(
 ) -> Result<(), ProgramError> {
     if vault_operator_ticket.owner.ne(program_id) {
         msg!("Vault operator ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if vault_operator_ticket.data_is_empty() {
         msg!("Vault operator ticket account data is empty");
@@ -140,7 +140,7 @@ pub fn load_vault_delegation_list(
 ) -> Result<(), ProgramError> {
     if vault_delegation_list.owner.ne(program_id) {
         msg!("Vault delegation list has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if vault_delegation_list.data_is_empty() {
         msg!("Vault delegation list data is empty");
@@ -172,7 +172,7 @@ pub fn load_vault_ncn_slasher_ticket(
 ) -> Result<(), ProgramError> {
     if vault_ncn_slasher_ticket.owner.ne(program_id) {
         msg!("Vault NCN slasher ticket account has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if vault_ncn_slasher_ticket.data_is_empty() {
         msg!("Vault NCN slasher ticket account data is empty");
@@ -208,7 +208,7 @@ pub fn load_vault_ncn_slasher_operator_ticket(
 ) -> Result<(), ProgramError> {
     if vault_ncn_slasher_operator_ticket.owner.ne(program_id) {
         msg!("Vault NCN slasher operator has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if vault_ncn_slasher_operator_ticket.data_is_empty() {
         msg!("Vault NCN slasher operator data is empty");
@@ -249,7 +249,7 @@ pub fn load_vault_staker_withdrawal_ticket(
 ) -> Result<(), ProgramError> {
     if vault_staker_withdrawal_ticket.owner.ne(program_id) {
         msg!("Vault staker withdraw ticket has an invalid owner");
-        return Err(ProgramError::IncorrectProgramId);
+        return Err(ProgramError::InvalidAccountOwner);
     }
     if vault_staker_withdrawal_ticket.data_is_empty() {
         msg!("Vault staker withdraw ticket data is empty");

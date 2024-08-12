@@ -15,13 +15,17 @@ use jito_vault_core::{
     vault::Vault,
     vault_operator_ticket::VaultOperatorTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
-/// Instruction: [`crate::VaultInstruction::AddOperator`]
-pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// Instruction: [`crate::VaultInstruction::InitializeVaultOperatorTicket`]
+pub fn process_initialize_vault_operator_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, vault_info, operator, operator_vault_ticket, vault_operator_ticket, vault_operator_admin, payer, system_program] =
         accounts
     else {
@@ -45,6 +49,7 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The VaultOperatorTicket shall be at the canonical PDA
     let (vault_operator_ticket_pubkey, vault_operator_ticket_bump, mut vault_operator_ticket_seeds) =
         VaultOperatorTicket::find_program_address(program_id, vault_info.key, operator.key);
     vault_operator_ticket_seeds.push(vec![vault_operator_ticket_bump]);
@@ -53,21 +58,23 @@ pub fn process_vault_add_operator(program_id: &Pubkey, accounts: &[AccountInfo])
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault operator admin shall be a signer on the transaction
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.operator_admin.ne(vault_operator_admin.key) {
         msg!("Invalid operator admin for vault");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultOperatorAdminInvalid.into());
     }
 
+    // The OperatorVaultTicket shall be active
     let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
     let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
     if !operator_vault_ticket
         .state
-        .is_active_or_cooldown(Clock::get()?.slot, config.epoch_length)
+        .is_active(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("Operator vault ticket is not active or in cooldown");
-        return Err(ProgramError::InvalidAccountData);
+        msg!("Operator vault ticket is not active");
+        return Err(VaultError::OperatorVaultTicketNotActive.into());
     }
 
     msg!(

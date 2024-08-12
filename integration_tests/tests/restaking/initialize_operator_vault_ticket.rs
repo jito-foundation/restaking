@@ -1,12 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::{config::Config, ncn::Ncn, ncn_vault_ticket::NcnVaultTicket};
+    use jito_restaking_core::{
+        config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
+    };
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
-    async fn test_ncn_add_vault_happy_path() {
+    async fn test_operator_add_vault_ok() {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -39,35 +41,54 @@ mod tests {
             .await
             .unwrap();
 
-        // NCN adds vault
-        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
+        // Initialize operator
+        let base = Keypair::new();
+        let operator_admin = Keypair::new();
+
+        fixture
+            .transfer(&operator_admin.pubkey(), 10.0)
+            .await
+            .unwrap();
+
+        let operator_pubkey =
+            Operator::find_program_address(&jito_restaking_program::id(), &base.pubkey()).0;
+        restaking_program_client
+            .initialize_operator(&config, &operator_pubkey, &operator_admin, &base)
+            .await
+            .unwrap();
+
+        // Operator adds vault
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
             &jito_restaking_program::id(),
-            &ncn_pubkey,
+            &operator_pubkey,
             &vault_root.vault_pubkey,
         )
         .0;
         restaking_program_client
-            .ncn_add_vault(
+            .initialize_operator_vault_ticket(
                 &config,
-                &ncn_pubkey,
+                &operator_pubkey,
                 &vault_root.vault_pubkey,
-                &ncn_vault_ticket,
-                &ncn_admin,
-                &ncn_admin,
+                &operator_vault_ticket,
+                &operator_admin,
+                &operator_admin,
             )
             .await
             .unwrap();
 
-        // Verify NCN state
-        let ncn = restaking_program_client.get_ncn(&ncn_pubkey).await.unwrap();
-        assert_eq!(ncn.vault_count, 1);
-
-        // Verify NCN vault ticket
-        let ticket = restaking_program_client
-            .get_ncn_vault_ticket(&ncn_pubkey, &vault_root.vault_pubkey)
+        // Verify operator state
+        let operator = restaking_program_client
+            .get_operator(&operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(ticket.ncn, ncn_pubkey);
+        assert_eq!(operator.vault_count, 1);
+
+        // Verify operator vault ticket
+        let ticket = restaking_program_client
+            .get_operator_vault_ticket(&operator_pubkey, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(ticket.operator, operator_pubkey);
         assert_eq!(ticket.vault, vault_root.vault_pubkey);
         assert_eq!(ticket.index, 0);
         assert_eq!(ticket.state.slot_added(), 1);

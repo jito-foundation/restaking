@@ -1,18 +1,19 @@
 mod add_delegation;
-mod add_ncn;
-mod add_operator;
-mod add_slasher;
 mod burn;
 mod burn_withdrawal_ticket;
 mod cooldown_delegation;
-mod cooldown_ncn;
-mod cooldown_operator;
+mod cooldown_vault_ncn_slasher_ticket;
+mod cooldown_vault_ncn_ticket;
+mod cooldown_vault_operator_ticket;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
 mod initialize_vault_delegation_list;
 mod initialize_vault_ncn_slasher_operator_ticket;
+mod initialize_vault_ncn_slasher_ticket;
+mod initialize_vault_ncn_ticket;
+mod initialize_vault_operator_ticket;
 mod initialize_vault_with_mint;
 mod mint_to;
 mod set_admin;
@@ -21,10 +22,13 @@ mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
 mod update_vault;
+mod warmup_vault_ncn_slasher_ticket;
+mod warmup_vault_ncn_ticket;
+mod warmup_vault_operator_ticket;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
-use jito_vault_sdk::VaultInstruction;
+use jito_vault_sdk::instruction::VaultInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -33,20 +37,27 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
-    add_delegation::process_add_delegation, add_ncn::process_vault_add_ncn,
-    add_operator::process_vault_add_operator, add_slasher::process_add_slasher, burn::process_burn,
+    add_delegation::process_add_delegation, burn::process_burn,
     burn_withdrawal_ticket::process_burn_withdrawal_ticket,
-    cooldown_delegation::process_cooldown_delegation, cooldown_ncn::process_vault_cooldown_ncn,
-    cooldown_operator::process_vault_cooldown_operator,
+    cooldown_delegation::process_cooldown_delegation,
+    cooldown_vault_ncn_slasher_ticket::process_cooldown_vault_ncn_slasher_ticket,
+    cooldown_vault_ncn_ticket::process_cooldown_vault_ncn_ticket,
+    cooldown_vault_operator_ticket::process_cooldown_vault_operator_ticket,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_delegation_list::process_initialize_vault_delegation_list,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
+    initialize_vault_ncn_slasher_ticket::process_initialize_vault_ncn_slasher_ticket,
+    initialize_vault_ncn_ticket::process_initialize_vault_ncn_ticket,
+    initialize_vault_operator_ticket::process_initialize_vault_operator_ticket,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
     set_secondary_admin::process_set_secondary_admin, slash::process_slash,
     update_token_metadata::process_update_token_metadata, update_vault::process_update_vault,
+    warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
+    warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
+    warmup_vault_operator_ticket::process_warmup_vault_operator_ticket,
     withdrawal_asset::process_withdrawal_asset,
 };
 
@@ -101,6 +112,22 @@ pub fn process_instruction(
             msg!("Instruction: InitializeVaultWithMint");
             process_initialize_vault_with_mint(program_id, accounts)
         }
+        VaultInstruction::InitializeVaultNcnTicket => {
+            msg!("Instruction: InitializeVaultNcnTicket");
+            process_initialize_vault_ncn_ticket(program_id, accounts)
+        }
+        VaultInstruction::InitializeVaultOperatorTicket => {
+            msg!("Instruction: InitializeVaultOperatorTicket");
+            process_initialize_vault_operator_ticket(program_id, accounts)
+        }
+        VaultInstruction::InitializeVaultNcnSlasherTicket => {
+            msg!("Instruction: InitializeVaultNcnSlasherTicket");
+            process_initialize_vault_ncn_slasher_ticket(program_id, accounts)
+        }
+        VaultInstruction::InitializeVaultNcnSlasherOperatorTicket => {
+            msg!("Instruction: InitializeVaultNcnSlasherOperatorTicket");
+            process_initialize_vault_ncn_slasher_operator_ticket(program_id, accounts)
+        }
         // ------------------------------------------
         // Vault administration
         // ------------------------------------------
@@ -142,24 +169,35 @@ pub fn process_instruction(
         // ------------------------------------------
         // Vault-NCN operations
         // ------------------------------------------
-        VaultInstruction::AddNcn => {
-            msg!("Instruction: AddNcn");
-            process_vault_add_ncn(program_id, accounts)
+        VaultInstruction::WarmupVaultNcnTicket => {
+            msg!("Instruction: WarmupVaultNcnTicket");
+            process_warmup_vault_ncn_ticket(program_id, accounts)
         }
-        VaultInstruction::CooldownNcn => {
-            msg!("Instruction: RemoveNcn");
-            process_vault_cooldown_ncn(program_id, accounts)
+        VaultInstruction::CooldownVaultNcnTicket => {
+            msg!("Instruction: CooldownVaultNcnTicket");
+            process_cooldown_vault_ncn_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-operator operations
         // ------------------------------------------
-        VaultInstruction::AddOperator => {
-            msg!("Instruction: AddOperator");
-            process_vault_add_operator(program_id, accounts)
+        VaultInstruction::WarmupVaultOperatorTicket => {
+            msg!("Instruction: WarmupVaultOperatorTicket");
+            process_warmup_vault_operator_ticket(program_id, accounts)
         }
-        VaultInstruction::CooldownOperator => {
-            msg!("Instruction: CooldownOperator");
-            process_vault_cooldown_operator(program_id, accounts)
+        VaultInstruction::CooldownVaultOperatorTicket => {
+            msg!("Instruction: CooldownVaultOperatorTicket");
+            process_cooldown_vault_operator_ticket(program_id, accounts)
+        }
+        // ------------------------------------------
+        // Vault NCN slasher operations
+        // ------------------------------------------
+        VaultInstruction::WarmupVaultNcnSlasherTicket => {
+            msg!("Instruction: WarmupVaultNcnSlasherTicket");
+            process_warmup_vault_ncn_slasher_ticket(program_id, accounts)
+        }
+        VaultInstruction::CooldownVaultNcnSlasherTicket => {
+            msg!("Instruction: CooldownVaultNcnSlasherTicket");
+            process_cooldown_vault_ncn_slasher_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault delegation
@@ -179,14 +217,6 @@ pub fn process_instruction(
         // ------------------------------------------
         // Vault slashing
         // ------------------------------------------
-        VaultInstruction::AddSlasher => {
-            msg!("Instruction: AddSlasher");
-            process_add_slasher(program_id, accounts)
-        }
-        VaultInstruction::InitializeVaultNcnSlasherOperatorTicket => {
-            msg!("Instruction: InitializeVaultNcnSlasherOperatorTicket");
-            process_initialize_vault_ncn_slasher_operator_ticket(program_id, accounts)
-        }
         VaultInstruction::Slash { amount } => {
             msg!("Instruction: Slash");
             process_slash(program_id, accounts, amount)

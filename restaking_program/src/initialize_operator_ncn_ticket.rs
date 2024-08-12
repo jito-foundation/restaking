@@ -19,8 +19,11 @@ use solana_program::{
 /// The node operator admin can add support for running an NCN.
 /// This method is permissioned to the node operator admin.
 ///
-/// [`crate::RestakingInstruction::OperatorAddNcn`]
-pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+/// [`crate::RestakingInstruction::InitializeOperatorNcnTicket`]
+pub fn process_initialize_operator_ncn_ticket(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
     let [config, operator_info, ncn, operator_ncn_ticket, operator_ncn_admin, payer, system_program] =
         accounts
     else {
@@ -35,12 +38,13 @@ pub fn process_operator_add_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The OperatorNcnTicket shall be at the canonical PDA
     let (operator_ncn_ticket_pubkey, operator_ncn_ticket_bump, mut operator_ncn_ticket_seeds) =
         OperatorNcnTicket::find_program_address(program_id, operator_info.key, ncn.key);
     operator_ncn_ticket_seeds.push(vec![operator_ncn_ticket_bump]);
     if operator_ncn_ticket.key.ne(&operator_ncn_ticket_pubkey) {
         msg!("Operator NCN ticket account is not at the correct PDA");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidAccountData);
     }
 
     let mut operator_data = operator_info.data.borrow_mut();

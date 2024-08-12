@@ -1,55 +1,45 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::{config::Config, ncn::Ncn};
-    use solana_program::pubkey::Pubkey;
-    use solana_sdk::signature::{Keypair, Signer};
+    use solana_program::{instruction::InstructionError, pubkey::Pubkey};
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
 
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_initialize_ncn_ok() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config first
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
 
-        // Initialize NCN
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
-
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
-
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         // Verify NCN account
-        let ncn = restaking_program_client.get_ncn(&ncn_pubkey).await.unwrap();
-        assert_eq!(ncn.base, ncn_base.pubkey());
-        assert_eq!(ncn.admin, ncn_admin.pubkey());
-        assert_eq!(ncn.operator_admin, ncn_admin.pubkey());
-        assert_eq!(ncn.vault_admin, ncn_admin.pubkey());
-        assert_eq!(ncn.slasher_admin, ncn_admin.pubkey());
-        assert_eq!(ncn.withdraw_admin, ncn_admin.pubkey());
+        let ncn = restaking_program_client
+            .get_ncn(&ncn_root.ncn_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(ncn.admin, ncn_root.ncn_admin.pubkey());
+        assert_eq!(ncn.operator_admin, ncn_root.ncn_admin.pubkey());
+        assert_eq!(ncn.vault_admin, ncn_root.ncn_admin.pubkey());
+        assert_eq!(ncn.slasher_admin, ncn_root.ncn_admin.pubkey());
+        assert_eq!(ncn.withdraw_admin, ncn_root.ncn_admin.pubkey());
         assert_eq!(ncn.index, 0);
         assert_eq!(ncn.operator_count, 0);
         assert_eq!(ncn.slasher_count, 0);
         assert_eq!(ncn.vault_count, 0);
 
-        let updated_config = restaking_program_client.get_config(&config).await.unwrap();
+        let updated_config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         assert_eq!(updated_config.ncn_count, 1);
     }
 
@@ -79,10 +69,13 @@ mod tests {
 
         let result = restaking_program_client
             .initialize_ncn(&config, &incorrect_ncn_pubkey, &ncn_admin, &ncn_base)
-            .await;
+            .await
+            .unwrap_err();
 
-        // TODO (LB): check for specific error
-        assert!(result.is_err());
+        assert_eq!(
+            result.to_transaction_error().unwrap(),
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
+        );
     }
 
     #[tokio::test]
@@ -90,15 +83,8 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
 
@@ -110,89 +96,68 @@ mod tests {
         let ncn_pubkey =
             Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
 
+        let config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
         restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
+            .initialize_ncn(&config_pubkey, &ncn_pubkey, &ncn_admin, &ncn_base)
             .await
             .unwrap();
 
-        let result = restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await;
+        // get new blockhash
+        fixture.warp_slot_incremental(1).await.unwrap();
 
-        // TODO (LB): check for specific error
-        assert!(result.is_err());
+        let transaction_error = restaking_program_client
+            .initialize_ncn(&config_pubkey, &ncn_pubkey, &ncn_admin, &ncn_base)
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+
+        // expected ncn is system program during initialization
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
+        );
     }
 
     #[tokio::test]
-    async fn test_initialize_ncn_with_uninitialized_config_fails() {
-        let mut fixture = TestBuilder::new().await;
+    async fn test_initialize_ncn_no_config_fails() {
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Try to initialize NCN without initializing config first
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
+        let ncn_root = restaking_program_client
+            .do_initialize_ncn()
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
 
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
-
-        let result = restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await;
-
-        // TODO (LB): check for specific error
-        assert!(result.is_err());
+        // config isn't initialized, so owned by system program
+        assert_eq!(
+            ncn_root,
+            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
+        );
     }
 
     #[tokio::test]
     async fn test_initialize_multiple_ncn_ok() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
         restaking_program_client
-            .initialize_config(&config, &config_admin)
+            .do_initialize_config()
             .await
             .unwrap();
 
-        // Initialize first NCN
-        let ncn_admin1 = Keypair::new();
-        let ncn_base1 = Keypair::new();
-        fixture.transfer(&ncn_admin1.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey1 =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base1.pubkey()).0;
-
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey1, &ncn_admin1, &ncn_base1)
-            .await
-            .unwrap();
-
-        // Initialize second NCN
-        let ncn_admin2 = Keypair::new();
-        let ncn_base2 = Keypair::new();
-        fixture.transfer(&ncn_admin2.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey2 =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base2.pubkey()).0;
-
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey2, &ncn_admin2, &ncn_base2)
-            .await
-            .unwrap();
+        let ncn_root_1 = restaking_program_client.do_initialize_ncn().await.unwrap();
+        let ncn_root_2 = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         // Verify NCN accounts
         let ncn1 = restaking_program_client
-            .get_ncn(&ncn_pubkey1)
+            .get_ncn(&ncn_root_1.ncn_pubkey)
             .await
             .unwrap();
         let ncn2 = restaking_program_client
-            .get_ncn(&ncn_pubkey2)
+            .get_ncn(&ncn_root_2.ncn_pubkey)
             .await
             .unwrap();
 
@@ -200,7 +165,10 @@ mod tests {
         assert_eq!(ncn2.index, 1);
 
         // Verify config update
-        let updated_config = restaking_program_client.get_config(&config).await.unwrap();
+        let updated_config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         assert_eq!(updated_config.ncn_count, 2);
     }
 }

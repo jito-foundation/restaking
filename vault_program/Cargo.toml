@@ -25,7 +25,6 @@ borsh = { workspace = true }
 jito-account-traits = { workspace = true }
 jito-jsm-core = { workspace = true }
 jito-restaking-core = { workspace = true }
-jito-restaking-sdk = { workspace = true }
 jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 shank = { workspace = true }
