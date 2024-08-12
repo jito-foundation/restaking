@@ -12,13 +12,13 @@ readme = { workspace = true }
 [dev-dependencies]
 borsh = { workspace = true }
 jito-account-traits = { workspace = true }
+jito-jsm-core = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-restaking-program = { workspace = true }
 jito-restaking-sdk = { workspace = true }
 jito-vault-core = { workspace = true }
 jito-vault-program = { workspace = true }
 jito-vault-sdk = { workspace = true }
-jito-jsm-core = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 solana-program-test = { workspace = true }
