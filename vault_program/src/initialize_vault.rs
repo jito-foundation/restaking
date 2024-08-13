@@ -22,14 +22,14 @@ pub fn process_initialize_vault(
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
 ) -> ProgramResult {
-    let [config, vault, lrt_mint, mint, admin, base, system_program, token_program] = accounts
+    let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     load_config(program_id, config, true)?;
     load_system_account(vault, true)?;
-    load_system_account(lrt_mint, true)?;
-    load_signer(lrt_mint, true)?;
+    load_system_account(vrt_mint, true)?;
+    load_signer(vrt_mint, true)?;
     load_token_mint(mint)?;
     load_signer(admin, true)?;
     load_signer(base, false)?;
@@ -47,29 +47,29 @@ pub fn process_initialize_vault(
 
     let rent = Rent::get()?;
 
-    // Initialize LRT mint
+    // Initialize VRT mint
     {
-        msg!("Initializing mint @ address {}", lrt_mint.key);
+        msg!("Initializing mint @ address {}", vrt_mint.key);
         invoke(
             &system_instruction::create_account(
                 admin.key,
-                lrt_mint.key,
+                vrt_mint.key,
                 rent.minimum_balance(Mint::get_packed_len()),
                 Mint::get_packed_len() as u64,
                 token_program.key,
             ),
-            &[admin.clone(), lrt_mint.clone(), system_program.clone()],
+            &[admin.clone(), vrt_mint.clone(), system_program.clone()],
         )?;
 
         invoke(
             &spl_token::instruction::initialize_mint2(
                 &spl_token::id(),
-                lrt_mint.key,
+                vrt_mint.key,
                 vault.key,
                 None,
                 9,
             )?,
-            &[lrt_mint.clone()],
+            &[vrt_mint.clone()],
         )?;
     }
 
@@ -93,7 +93,7 @@ pub fn process_initialize_vault(
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_mut(&mut vault_data)?;
         *vault = Vault::new(
-            *lrt_mint.key,
+            *vrt_mint.key,
             *mint.key,
             *admin.key,
             config.num_vaults,

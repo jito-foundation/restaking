@@ -1,4 +1,4 @@
-//! The vault is responsible for holding tokens and minting LRT tokens.
+//! The vault is responsible for holding tokens and minting VRT tokens.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
@@ -8,19 +8,19 @@ impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
 }
 
-/// The vault is responsible for holding tokens and minting LRT tokens
+/// The vault is responsible for holding tokens and minting VRT tokens
 /// based on the amount of tokens deposited.
 /// It also contains several administrative functions for features inside the vault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct Vault {
-    /// The base account of the LRT
+    /// The base account of the VRT
     pub base: Pubkey,
 
-    /// Mint of the LRT token
-    pub lrt_mint: Pubkey,
+    /// Mint of the VRT token
+    pub vrt_mint: Pubkey,
 
-    /// Mint of the token that is supported by the LRT
+    /// Mint of the token that is supported by the VRT
     pub supported_mint: Pubkey,
 
     /// Vault admin
@@ -56,13 +56,13 @@ pub struct Vault {
     /// The index of the vault in the vault list
     pub vault_index: u64,
 
-    /// The total number of LRT in circulation
-    pub lrt_supply: u64,
+    /// The total number of VRT in circulation
+    pub vrt_supply: u64,
 
     /// The total number of tokens deposited
     pub tokens_deposited: u64,
 
-    /// The amount of tokens that are reserved for withdrawal
+    /// The amount of VRT that are reserved for withdrawal
     pub withdrawable_reserve_amount: u64,
 
     /// Number of VaultNcnTicket accounts tracked by this vault
@@ -90,7 +90,7 @@ pub struct Vault {
 impl Vault {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        lrt_mint: Pubkey,
+        vrt_mint: Pubkey,
         supported_mint: Pubkey,
         admin: Pubkey,
         vault_index: u64,
@@ -101,7 +101,7 @@ impl Vault {
     ) -> Self {
         Self {
             base,
-            lrt_mint,
+            vrt_mint,
             supported_mint,
             admin,
             delegation_admin: admin,
@@ -114,7 +114,7 @@ impl Vault {
             mint_burn_admin: Pubkey::default(),
             capacity: u64::MAX,
             vault_index,
-            lrt_supply: 0,
+            vrt_supply: 0,
             tokens_deposited: 0,
             withdrawable_reserve_amount: 0,
             deposit_fee_bps,
@@ -140,38 +140,38 @@ impl Vault {
             .ok_or(VaultError::VaultOverflow)
     }
 
-    /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the LRT
+    /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
-    pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> Result<u64, VaultError> {
-        if self.lrt_supply == 0 {
+    pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+        if self.vrt_supply == 0 {
             return Err(VaultError::VaultLrtEmpty);
-        } else if lrt_amount > self.lrt_supply {
+        } else if vrt_amount > self.vrt_supply {
             return Err(VaultError::VaultInsufficientFunds);
         }
 
-        lrt_amount
+        vrt_amount
             .checked_mul(self.tokens_deposited)
-            .and_then(|x| x.checked_div(self.lrt_supply))
+            .and_then(|x| x.checked_div(self.vrt_supply))
             .ok_or(VaultError::VaultOverflow)
     }
 
-    /// Calculate the amount of LRT tokens to mint based on the amount of tokens deposited in the vault.
+    /// Calculate the amount of VRT tokens to mint based on the amount of tokens deposited in the vault.
     /// If no tokens have been deposited, the amount is equal to the amount passed in.
-    /// Otherwise, the amount is calculated as the pro-rata share of the total LRT supply.
-    pub fn calculate_lrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
+    /// Otherwise, the amount is calculated as the pro-rata share of the total VRT supply.
+    pub fn calculate_vrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
         if self.tokens_deposited == 0 {
             return Ok(amount);
         }
 
         amount
-            .checked_mul(self.lrt_supply)
+            .checked_mul(self.vrt_supply)
             .and_then(|x| x.checked_div(self.tokens_deposited))
             .ok_or(VaultError::VaultOverflow)
     }
 
     /// Calculate the amount of tokens collected as a fee for depositing tokens in the vault.
-    pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
-        let fee = lrt_amount
+    pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+        let fee = vrt_amount
             .checked_mul(self.deposit_fee_bps as u64)
             .and_then(|x| x.checked_div(10_000))
             .ok_or(VaultError::VaultOverflow)?;
@@ -179,7 +179,7 @@ impl Vault {
     }
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
-    pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
+    pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
             .and_then(|x| x.checked_div(10_000))

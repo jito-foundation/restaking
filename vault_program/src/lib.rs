@@ -222,7 +222,7 @@ pub fn process_instruction(
             process_slash(program_id, accounts, amount)
         }
         // ------------------------------------------
-        // LRT metadata
+        // VRT metadata
         // ------------------------------------------
         VaultInstruction::CreateTokenMetadata { name, symbol, uri } => {
             msg!("Instruction: CreateTokenMetadata");
