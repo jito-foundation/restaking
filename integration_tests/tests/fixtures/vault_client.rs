@@ -1166,10 +1166,10 @@ impl VaultProgramClient {
     }
 }
 
-pub fn assert_vault_error(test_error: Result<(), TestError>, vault_error: VaultError) {
+pub fn assert_vault_error<T>(test_error: Result<T, TestError>, vault_error: VaultError) {
     assert!(test_error.is_err());
     assert_eq!(
-        test_error.unwrap_err().to_transaction_error().unwrap(),
+        test_error.err().unwrap().to_transaction_error().unwrap(),
         TransactionError::InstructionError(0, InstructionError::Custom(vault_error as u32))
     );
 }

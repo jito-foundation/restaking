@@ -135,3 +135,4 @@ mod tests {
         assert!(!toggle.deactivate(elapsed_slots, epoch_length));
     }
 }
+
