@@ -1,13 +1,16 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
-use jito_vault_core::{loader::load_vault, vault::Vault};
-use solana_program::{
-    account_info::AccountInfo, borsh1::get_instance_packed_len, entrypoint::ProgramResult,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+use jito_jsm_core::loader::{
+    load_signer, load_system_account, load_system_program, load_token_mint,
 };
-use spl_pod::optional_keys::OptionalNonZeroPubkey;
-use spl_token_metadata_interface::state::TokenMetadata;
-use spl_type_length_value::state::TlvStateMut;
+use jito_vault_core::{
+    loader::{load_mpl_metadata_program, load_vault},
+    vault::Vault,
+};
+use jito_vault_sdk::inline_mpl_token_metadata::instruction::create_metadata_accounts_v3;
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, program::invoke_signed,
+    program_error::ProgramError, pubkey::Pubkey,
+};
 
 pub fn process_create_token_metadata(
     program_id: &Pubkey,
@@ -16,56 +19,59 @@ pub fn process_create_token_metadata(
     symbol: String,
     uri: String,
 ) -> ProgramResult {
-    let [metadata_info, vault_info, vault_admin, system_program] = accounts else {
+    let [vault_info, admin, lrt_mint, payer, metadata, mpl_token_metadata_program, system_program] =
+        accounts
+    else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_system_account(metadata_info, true)?;
     load_vault(program_id, vault_info, false)?;
-    load_signer(vault_admin, true)?;
+    load_signer(admin, true)?;
+    load_token_mint(lrt_mint)?;
+    load_signer(payer, true)?;
+    load_system_account(metadata, true)?;
+    load_mpl_metadata_program(mpl_token_metadata_program)?;
     load_system_program(system_program)?;
 
     let vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice(&vault_data)?;
 
-    let (vault_pubkey, _vault_bump, _vault_seeds) =
-        Vault::find_program_address(program_id, &vault.base);
+    vault.check_admin(admin)?;
 
-    let token_metadata = TokenMetadata {
-        update_authority: OptionalNonZeroPubkey(vault_pubkey),
-        mint: vault.lrt_mint,
+    let new_metadata_instruction = create_metadata_accounts_v3(
+        *mpl_token_metadata_program.key,
+        *metadata.key,
+        *lrt_mint.key,
+        *vault_info.key,
+        *payer.key,
+        *vault_info.key,
         name,
         symbol,
         uri,
-        ..Default::default()
-    };
+    );
 
-    let space = token_metadata.tlv_size_of()?;
-    let mut seeds = vec![
-        b"metadata".as_ref().to_vec(),
-        vault.lrt_mint.to_bytes().to_vec(),
-    ];
-    let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
-    let (_, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
-    seeds.push(vec![bump]);
+    let (_vault_pubkey, vault_bump, mut vault_seeds) =
+        Vault::find_program_address(program_id, &vault.base);
+    vault_seeds.push(vec![vault_bump]);
 
-    jito_jsm_core::create_account(
-        vault_admin,
-        metadata_info,
-        system_program,
-        program_id,
-        &Rent::get()?,
-        space as u64,
-        &seeds,
+    drop(vault_data);
+
+    invoke_signed(
+        &new_metadata_instruction,
+        &[
+            metadata.clone(),
+            lrt_mint.clone(),
+            vault_info.clone(),
+            payer.clone(),
+            vault_info.clone(),
+            system_program.clone(),
+        ],
+        &[vault_seeds
+            .iter()
+            .map(|seed| seed.as_slice())
+            .collect::<Vec<&[u8]>>()
+            .as_slice()],
     )?;
-
-    let instance_size = get_instance_packed_len(&token_metadata)?;
-
-    // allocate a TLV entry for the space and write it in
-    let mut buffer = metadata_info.try_borrow_mut_data()?;
-    let mut state = TlvStateMut::unpack(&mut buffer)?;
-    state.alloc::<TokenMetadata>(instance_size, false)?;
-    state.pack_first_variable_len_value(&token_metadata)?;
 
     Ok(())
 }

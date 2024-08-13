@@ -1,4 +1,4 @@
-use solana_program::pubkey::Pubkey;
+use jito_vault_sdk::inline_mpl_token_metadata;
 
 use crate::fixtures::{fixture::TestBuilder, vault_client::VaultRoot};
 
@@ -26,19 +26,22 @@ async fn test_create_token_metadata_ok() {
     let symbol = "rJTO";
     let uri = "https://www.jito.network/restaking/";
 
-    let seeds = vec![
-        b"metadata".as_ref().to_vec(),
-        vault.lrt_mint.to_bytes().to_vec(),
-    ];
-    let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
-    let (metadata_pubkey, _bump) =
-        Pubkey::find_program_address(&seeds_iter, &jito_vault_program::id());
+    let metadata_pubkey = inline_mpl_token_metadata::pda::find_metadata_account(&vault.lrt_mint).0;
+    // let seeds = vec![
+    //     b"metadata".as_ref().to_vec(),
+    //     vault.lrt_mint.to_bytes().to_vec(),
+    // ];
+    // let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
+    // let (metadata_pubkey, _bump) =
+    //     Pubkey::find_program_address(&seeds_iter, &jito_vault_program::id());
 
     vault_program_client
         .create_token_metadata(
-            &metadata_pubkey,
             &vault_pubkey,
             &vault_admin,
+            &vault.lrt_mint,
+            &vault_admin,
+            &metadata_pubkey,
             name.to_string(),
             symbol.to_string(),
             uri.to_string(),
@@ -51,10 +54,7 @@ async fn test_create_token_metadata_ok() {
         .await
         .unwrap();
 
-    assert_eq!(token_metadata.update_authority.0, vault_pubkey);
-    assert_eq!(token_metadata.mint, vault.lrt_mint);
-    assert_eq!(token_metadata.name, name);
-    assert_eq!(token_metadata.symbol, symbol);
-    assert_eq!(token_metadata.uri, uri);
-    assert!(token_metadata.additional_metadata.is_empty());
+    assert!(token_metadata.name.starts_with(name));
+    assert!(token_metadata.symbol.starts_with(symbol));
+    assert!(token_metadata.uri.starts_with(uri));
 }

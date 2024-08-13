@@ -2,7 +2,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
@@ -193,6 +193,19 @@ impl Vault {
             .and_then(|x| x.checked_div(10_000))
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
+    }
+
+    /// Check admin validity and signature
+    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), ProgramError> {
+        if *admin_info.key != self.admin {
+            msg!(
+                "Incorrect admin provided, expected {}, received {}",
+                self.admin,
+                admin_info.key
+            );
+            return Err(VaultError::VaultAdminInvalid.into());
+        }
+        Ok(())
     }
 
     // ------------------------------------------

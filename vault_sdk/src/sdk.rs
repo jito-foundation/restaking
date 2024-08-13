@@ -5,7 +5,7 @@ use solana_program::{
     system_program,
 };
 
-use crate::instruction::{VaultAdminRole, VaultInstruction};
+use crate::{instruction::{VaultAdminRole, VaultInstruction}, inline_mpl_token_metadata};
 
 pub fn initialize_config(
     program_id: &Pubkey,
@@ -443,17 +443,22 @@ pub fn initialize_vault_ncn_slasher_ticket(
 
 pub fn create_token_metadata(
     program_id: &Pubkey,
-    metadata: &Pubkey,
     vault: &Pubkey,
-    vault_admin: &Pubkey,
+    admin: &Pubkey,
+    lrt_mint: &Pubkey,
+    payer: &Pubkey,
+    metadata: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
     let accounts = vec![
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*lrt_mint, false),
+        AccountMeta::new(*payer, true),
         AccountMeta::new(*metadata, false),
-        AccountMeta::new(*vault, false),
-        AccountMeta::new_readonly(*vault_admin, true),
+        AccountMeta::new_readonly(inline_mpl_token_metadata::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
 

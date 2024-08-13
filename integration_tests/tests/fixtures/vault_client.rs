@@ -1,5 +1,6 @@
 use std::mem::size_of;
 
+use borsh::BorshDeserialize;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
@@ -39,8 +40,6 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
-use spl_token_metadata_interface::state::TokenMetadata;
-use spl_type_length_value::state::{TlvState, TlvStateBorrowed};
 
 use crate::fixtures::TestError;
 
@@ -166,12 +165,13 @@ impl VaultProgramClient {
     pub async fn get_token_metadata(
         &mut self,
         account: &Pubkey,
-    ) -> Result<TokenMetadata, TestError> {
-        let fetched_metadata_account = self.banks_client.get_account(*account).await?.unwrap();
-        let fetched_metadata_state = TlvStateBorrowed::unpack(&fetched_metadata_account.data)?;
-        let fetched_metadata =
-            fetched_metadata_state.get_first_variable_len_value::<TokenMetadata>()?;
-        Ok(fetched_metadata)
+    ) -> Result<crate::helpers::token::Metadata, TestError> {
+        let token_metadata_account = self.banks_client.get_account(*account).await?.unwrap();
+        let metadata = crate::helpers::token::Metadata::deserialize(
+            &mut token_metadata_account.data.as_slice(),
+        )
+        .unwrap();
+        Ok(metadata)
     }
 
     pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
@@ -1100,9 +1100,11 @@ impl VaultProgramClient {
 
     pub async fn create_token_metadata(
         &mut self,
+        vault: &Pubkey,
+        admin: &Keypair,
+        lrt_mint: &Pubkey,
+        payer: &Keypair,
         metadata: &Pubkey,
-        vault_pubkey: &Pubkey,
-        vault_admin: &Keypair,
         name: String,
         symbol: String,
         uri: String,
@@ -1111,15 +1113,17 @@ impl VaultProgramClient {
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::create_token_metadata(
                 &jito_vault_program::id(),
+                vault,
+                &admin.pubkey(),
+                lrt_mint,
+                &payer.pubkey(),
                 metadata,
-                vault_pubkey,
-                &vault_admin.pubkey(),
                 name,
                 symbol,
                 uri,
             )],
-            Some(&vault_admin.pubkey()),
-            &[vault_admin],
+            Some(&payer.pubkey()),
+            &[admin, payer],
             blockhash,
         ))
         .await
