@@ -20,7 +20,7 @@ Funds do not leave the program under any conditions unless they are withdrawn by
 
 ## Vault
 
-Vaults are the core entities that manage deposits, withdrawals, and LRT minting/burning.
+Vaults are the core entities that manage deposits, withdrawals, and VRT minting/burning.
 
 Several operations can be performed with a vault:
 
@@ -118,7 +118,7 @@ The vault program handles slashing events, which may occur if an operator misbeh
 
 - Processing slash instructions from authorized slashers
 - Adjusting the vault's total assets and individual delegations
-- Ensuring the integrity of the LRT exchange rate
+- Ensuring the integrity of the VRT exchange rate
 - Respects the maximum slashing conditions set by the NCN
 
 ## Tracking State

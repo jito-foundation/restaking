@@ -34,7 +34,7 @@ pub fn process_burn_withdrawal_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault_info, vault_delegation_list, vault_token_account, lrt_mint, staker, staker_token_account, staker_lrt_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, token_program, system_program] =
+    let [config, vault_info, vault_delegation_list, vault_token_account, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, token_program, system_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -46,10 +46,10 @@ pub fn process_burn_withdrawal_ticket(
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
-    load_token_mint(lrt_mint)?;
+    load_token_mint(vrt_mint)?;
     load_signer(staker, false)?;
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
-    load_associated_token_account(staker_lrt_token_account, staker.key, &vault.lrt_mint)?;
+    load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
     load_vault_staker_withdrawal_ticket(
         program_id,
         vault_staker_withdrawal_ticket_info,
@@ -60,13 +60,13 @@ pub fn process_burn_withdrawal_ticket(
     load_associated_token_account(
         vault_staker_withdrawal_ticket_token_account,
         vault_staker_withdrawal_ticket_info.key,
-        &vault.lrt_mint,
+        &vault.vrt_mint,
     )?;
     load_token_program(token_program)?;
     load_system_program(system_program)?;
 
-    if vault.lrt_mint.ne(lrt_mint.key) {
-        msg!("Vault LRT mint mismatch");
+    if vault.vrt_mint.ne(vrt_mint.key) {
+        msg!("Vault VRT mint mismatch");
         return Err(ProgramError::InvalidArgument);
     }
 
@@ -92,13 +92,13 @@ pub fn process_burn_withdrawal_ticket(
     // find the current redemption amount and the original redemption amount in the withdrawal ticket
     // TODO (LB): this logic is buggy no doubt
     let redemption_amount =
-        vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.lrt_amount)?;
+        vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.vrt_amount)?;
     let original_redemption_amount = vault_staker_withdrawal_ticket.withdraw_allocation_amount;
 
     let actual_withdraw_amount = if redemption_amount > original_redemption_amount {
         // The program can guarantee the original redemption amount, but if the redemption amount
         // is greater than the original amount, there were rewards that accrued
-        // to the LRT.
+        // to the VRT.
         // The program attempts to figure out how much more of the asset can be unstaked to fulfill
         // as much of the redemption amount as possible.
         // Available unstaked assets is equal to:
@@ -125,8 +125,8 @@ pub fn process_burn_withdrawal_ticket(
         redemption_amount
     };
 
-    let lrt_to_burn = vault.calculate_lrt_mint_amount(actual_withdraw_amount)?;
-    let lrt_to_burn = std::cmp::min(lrt_to_burn, vault_staker_withdrawal_ticket.lrt_amount);
+    let vrt_to_burn = vault.calculate_vrt_mint_amount(actual_withdraw_amount)?;
+    let vrt_to_burn = std::cmp::min(vrt_to_burn, vault_staker_withdrawal_ticket.vrt_amount);
 
     // burn the assets + close the token account + withdraw token account
     {
@@ -145,40 +145,40 @@ pub fn process_burn_withdrawal_ticket(
 
         drop(vault_staker_withdrawal_ticket_data);
 
-        // burn the LRT tokens
+        // burn the VRT tokens
         invoke_signed(
             &burn(
                 &spl_token::id(),
                 vault_staker_withdrawal_ticket_token_account.key,
-                lrt_mint.key,
+                vrt_mint.key,
                 vault_staker_withdrawal_ticket_info.key,
                 &[],
-                lrt_to_burn,
+                vrt_to_burn,
             )?,
             &[
                 vault_staker_withdrawal_ticket_token_account.clone(),
-                lrt_mint.clone(),
+                vrt_mint.clone(),
                 vault_staker_withdrawal_ticket_info.clone(),
             ],
             &[&seed_slices],
         )?;
 
         // if there are any excess, transfer them to the staker
-        let lrt_token_account =
+        let vrt_token_account =
             Account::unpack(&vault_staker_withdrawal_ticket_token_account.data.borrow())?;
-        if lrt_token_account.amount > 0 {
+        if vrt_token_account.amount > 0 {
             invoke_signed(
                 &transfer(
                     &spl_token::id(),
                     vault_staker_withdrawal_ticket_token_account.key,
-                    staker_lrt_token_account.key,
+                    staker_vrt_token_account.key,
                     vault_staker_withdrawal_ticket_info.key,
                     &[],
-                    lrt_token_account.amount,
+                    vrt_token_account.amount,
                 )?,
                 &[
                     vault_staker_withdrawal_ticket_token_account.clone(),
-                    staker_lrt_token_account.clone(),
+                    staker_vrt_token_account.clone(),
                     vault_staker_withdrawal_ticket_info.clone(),
                 ],
                 &[&seed_slices],
@@ -205,9 +205,9 @@ pub fn process_burn_withdrawal_ticket(
         close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
     }
 
-    vault.lrt_supply = vault
-        .lrt_supply
-        .checked_sub(lrt_to_burn)
+    vault.vrt_supply = vault
+        .vrt_supply
+        .checked_sub(vrt_to_burn)
         .ok_or(ProgramError::ArithmeticOverflow)?;
     // TODO (LB): https://github.com/jito-foundation/restaking/issues/24
     //  If a withdraw ticket is created and there is a slashing event before the withdraw ticket

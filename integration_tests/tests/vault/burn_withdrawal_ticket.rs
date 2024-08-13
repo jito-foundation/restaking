@@ -117,20 +117,20 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
-        // Mint LRT tokens to depositor
+        // Mint VRT tokens to depositor
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
                 &depositor,
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 deposit_amount,
             )
@@ -450,7 +450,7 @@ mod tests {
     /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
     /// assets the user gets back shall be larger than the amount set aside for withdrawal. However,
     /// those rewards were staked, so the user can't receive them. In this case, they shall receive
-    /// back the amount set aside for withdraw and the excess LRT tokens.
+    /// back the amount set aside for withdraw and the excess VRT tokens.
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_with_staked_rewards() {
         let mut fixture = TestBuilder::new().await;
@@ -518,7 +518,7 @@ mod tests {
             .await
             .unwrap();
 
-        // user should have 1000 tokens and should also get back excess LRT tokens
+        // user should have 1000 tokens and should also get back excess VRT tokens
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
@@ -528,14 +528,14 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_token_account.amount, 1000);
 
-        let depositor_lrt_token_account = fixture
+        let depositor_vrt_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint,
+                &vault.vrt_mint,
             ))
             .await
             .unwrap();
-        assert_eq!(depositor_lrt_token_account.amount, 91);
+        assert_eq!(depositor_vrt_token_account.amount, 91);
 
         let vault_token_account = fixture
             .get_token_account(&get_associated_token_address(
@@ -719,14 +719,14 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_token_account.amount, 810);
 
-        let depositor_lrt_token_account = fixture
+        let depositor_vrt_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint,
+                &vault.vrt_mint,
             ))
             .await
             .unwrap();
-        assert_eq!(depositor_lrt_token_account.amount, 100);
+        assert_eq!(depositor_vrt_token_account.amount, 100);
 
         let vault_token_account = fixture
             .get_token_account(&get_associated_token_address(
