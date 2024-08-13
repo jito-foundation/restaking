@@ -1,3 +1,4 @@
+//! The vault is responsible for holding tokens and minting LRT tokens.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
@@ -7,7 +8,7 @@ impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
 }
 
-/// The vault is repsonsible for holding tokens and minting LRT tokens
+/// The vault is responsible for holding tokens and minting LRT tokens
 /// based on the amount of tokens deposited.
 /// It also contains several administrative functions for features inside the vault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
@@ -40,6 +41,10 @@ pub struct Vault {
     /// The admin responsible for setting the capacity
     pub capacity_admin: Pubkey,
 
+    /// The admin responsible for setting the fees
+    pub fee_admin: Pubkey,
+
+    /// The admin responsible for withdrawing tokens
     pub withdraw_admin: Pubkey,
 
     /// Fee wallet account
@@ -72,6 +77,9 @@ pub struct Vault {
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault
     pub slasher_count: u64,
 
+    /// The slot of the last fee change
+    pub last_fee_change_slot: u64,
+
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
 
@@ -82,7 +90,7 @@ pub struct Vault {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 3],
+    reserved: [u8; 11],
 }
 
 impl Vault {
@@ -107,6 +115,7 @@ impl Vault {
             ncn_admin: admin,
             slasher_admin: admin,
             capacity_admin: admin,
+            fee_admin: admin,
             withdraw_admin: admin,
             fee_wallet: admin,
             mint_burn_admin: Pubkey::default(),
@@ -115,13 +124,14 @@ impl Vault {
             lrt_supply: 0,
             tokens_deposited: 0,
             withdrawable_reserve_amount: 0,
+            last_fee_change_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
             bump,
-            reserved: [0; 3],
+            reserved: [0; 11],
         }
     }
 
@@ -129,12 +139,17 @@ impl Vault {
     // Asset accounting and tracking
     // ------------------------------------------
 
+    /// Calculate the maximum amount of tokens that can be delegated to operators, which
+    /// is the total amount of tokens deposited in the vault minus the amount of tokens
+    /// that are reserved for withdrawal.
     pub fn max_delegation_amount(&self) -> Result<u64, VaultError> {
         self.tokens_deposited
             .checked_sub(self.withdrawable_reserve_amount)
             .ok_or(VaultError::VaultOverflow)
     }
 
+    /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the LRT
+    /// amount. This is the pro-rata share of the total tokens deposited in the vault.
     pub fn calculate_assets_returned_amount(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         if self.lrt_supply == 0 {
             return Err(VaultError::VaultLrtEmpty);
@@ -148,6 +163,9 @@ impl Vault {
             .ok_or(VaultError::VaultOverflow)
     }
 
+    /// Calculate the amount of LRT tokens to mint based on the amount of tokens deposited in the vault.
+    /// If no tokens have been deposited, the amount is equal to the amount passed in.
+    /// Otherwise, the amount is calculated as the pro-rata share of the total LRT supply.
     pub fn calculate_lrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
         if self.tokens_deposited == 0 {
             return Ok(amount);
@@ -159,10 +177,7 @@ impl Vault {
             .ok_or(VaultError::VaultOverflow)
     }
 
-    pub const fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps
-    }
-
+    /// Calculate the amount of tokens collected as a fee for depositing tokens in the vault.
     pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
             .checked_mul(self.deposit_fee_bps as u64)
@@ -171,10 +186,7 @@ impl Vault {
         Ok(fee)
     }
 
-    pub const fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps
-    }
-
+    /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
     pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> Result<u64, VaultError> {
         let fee = lrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
@@ -187,10 +199,21 @@ impl Vault {
     // Serialization & Deserialization
     // ------------------------------------------
 
+    /// Returns the seeds for the PDA
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
     }
 
+    /// Find the program address for the Vault
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `base` - The base account used as a PDA seed
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(program_id: &Pubkey, base: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
         let seeds = Self::seeds(base);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();

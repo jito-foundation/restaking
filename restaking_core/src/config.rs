@@ -1,11 +1,15 @@
+//! Global configuration account for the restaking program
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, pubkey::Pubkey};
 
+/// The discriminator for the global configuration account
 impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
 }
 
+/// The global configuration account for the restaking program. Manages
+/// program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct Config {
@@ -44,10 +48,19 @@ impl Config {
         }
     }
 
+    /// Returns the seeds for the PDA
     pub fn seeds() -> Vec<Vec<u8>> {
         vec![b"config".to_vec()]
     }
 
+    /// Find the program address for the global configuration account
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// # Returns
+    /// * `Pubkey` - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(program_id: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
         let seeds = Self::seeds();
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();

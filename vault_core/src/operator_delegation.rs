@@ -1,14 +1,15 @@
+//! OperatorDelegation tracks the state of delegations to operators
 use std::cmp::min;
 
 use bytemuck::{Pod, Zeroable};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{msg, pubkey::Pubkey};
 
-/// Represents an operator that has opted-in to the vault and any associated stake on this operator
+/// OperatorDelegation tracks the state of delegation to a specific operator
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]
 #[repr(C)]
 pub struct OperatorDelegation {
-    /// The operator pubkey that has opted-in to the vault
+    /// The operator pubkey that the delegation is associated with
     pub operator: Pubkey,
 
     /// The amount of stake that is currently active on the operator
@@ -29,12 +30,17 @@ pub struct OperatorDelegation {
     /// to be available for withdrawal in the current epoch + 1
     pub cooling_down_for_withdraw_amount: u64,
 
+    /// Flag to indicate if the delegation is used
     pub is_used: u8,
 
     reserved: [u8; 7],
 }
 
 impl OperatorDelegation {
+    /// Creates a new OperatorDelegation with the given operator pubkey
+    ///
+    /// # Arguments
+    /// * `operator` - The operator pubkey
     pub const fn new(operator: Pubkey) -> Self {
         Self {
             operator,
@@ -48,6 +54,7 @@ impl OperatorDelegation {
         }
     }
 
+    /// Clears the delegation state to default values
     pub fn clear(&mut self) {
         self.operator = Pubkey::default();
         self.staked_amount = 0;
@@ -58,6 +65,7 @@ impl OperatorDelegation {
         self.is_used = 0;
     }
 
+    /// Returns true if the delegation is empty
     pub const fn is_empty(&self) -> bool {
         self.staked_amount == 0
             && self.enqueued_for_cooldown_amount == 0
@@ -87,6 +95,14 @@ impl OperatorDelegation {
             .ok_or(VaultError::OperatorDelegationWithdrawableSecurityOverflow)
     }
 
+    /// Updates the state of the delegation
+    /// The cooling_down_amount becomes the enqueued_for_cooldown_amount
+    /// The enqueued_for_cooldown_amount is zeroed out
+    /// The cooling_down_for_withdraw_amount becomes the enqueued_for_withdraw_amount
+    /// The enqueued_for_withdraw_amount is zeroed out
+    ///
+    /// # Returns
+    /// The amount that is available for withdraw
     #[inline(always)]
     pub fn update(&mut self) -> u64 {
         let available_for_withdraw = self.cooling_down_for_withdraw_amount;
@@ -98,7 +114,17 @@ impl OperatorDelegation {
         available_for_withdraw
     }
 
+    /// Slashes the operator delegation by the given amount
+    /// All buckets are slashed pro-rata based on the total security amount
+    ///
+    /// # Arguments
+    /// * `slash_amount` - The amount to slash
+    ///
+    /// # Returns
+    /// * `Ok(())` if the slash was successful
+    /// * `Err(VaultError)` if the slash failed
     pub fn slash(&mut self, slash_amount: u64) -> Result<(), VaultError> {
+        // ensure the there's no underflow when slashing
         let total_security_amount = self.total_security()?;
         if slash_amount > total_security_amount {
             msg!(
@@ -207,6 +233,7 @@ impl OperatorDelegation {
         Ok(())
     }
 
+    /// Delegates assets to the operator
     pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
         self.staked_amount = self
             .staked_amount

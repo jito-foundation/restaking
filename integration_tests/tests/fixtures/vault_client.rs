@@ -13,8 +13,10 @@ use jito_vault_core::{
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
-use jito_vault_sdk::sdk::{
-    add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list,
+use jito_vault_sdk::{
+    error::VaultError,
+    instruction::VaultAdminRole,
+    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list},
 };
 use log::info;
 use solana_program::{
@@ -29,8 +31,9 @@ use solana_program::{
 use solana_program_test::BanksClient;
 use solana_sdk::{
     commitment_config::CommitmentLevel,
+    instruction::InstructionError,
     signature::{Keypair, Signer},
-    transaction::Transaction,
+    transaction::{Transaction, TransactionError},
 };
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
@@ -657,6 +660,79 @@ impl VaultProgramClient {
         .await
     }
 
+    pub async fn set_admin(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        old_admin: &Keypair,
+        new_admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_admin(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &old_admin.pubkey(),
+                &new_admin.pubkey(),
+            )],
+            Some(&old_admin.pubkey()),
+            &[old_admin, new_admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn set_secondary_admin(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        admin: &Keypair,
+        new_admin: &Pubkey,
+        role: VaultAdminRole,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_secondary_admin(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &admin.pubkey(),
+                &new_admin,
+                role,
+            )],
+            Some(&admin.pubkey()),
+            &[admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn set_fees(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        fee_admin: &Keypair,
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_fees(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &fee_admin.pubkey(),
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+            )],
+            Some(&fee_admin.pubkey()),
+            &[fee_admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn do_enqueue_withdraw(
         &mut self,
         vault_root: &VaultRoot,
@@ -1078,7 +1154,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         self.banks_client
@@ -1131,4 +1207,12 @@ impl VaultProgramClient {
             .await?;
         Ok(())
     }
+}
+
+pub fn assert_vault_error<T>(test_error: Result<T, TestError>, vault_error: VaultError) {
+    assert!(test_error.is_err());
+    assert_eq!(
+        test_error.err().unwrap().to_transaction_error().unwrap(),
+        TransactionError::InstructionError(0, InstructionError::Custom(vault_error as u32))
+    );
 }
