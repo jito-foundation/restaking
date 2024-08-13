@@ -1,5 +1,5 @@
 //! The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-//! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's LRT.
+//! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{program_error::ProgramError, pubkey::Pubkey};
@@ -9,7 +9,7 @@ impl Discriminator for VaultStakerWithdrawalTicket {
 }
 
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-/// For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's LRT.
+/// For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
@@ -25,9 +25,9 @@ pub struct VaultStakerWithdrawalTicket {
     /// The amount of assets allocated for this staker's withdraw
     pub withdraw_allocation_amount: u64,
 
-    /// The amount of LRT held in the VaultStakerWithdrawalTicket token account at the time of creation.
+    /// The amount of VRT held in the VaultStakerWithdrawalTicket token account at the time of creation.
     /// This is used to ensure the amount redeemed is the same as the amount allocated.
-    pub lrt_amount: u64,
+    pub vrt_amount: u64,
 
     /// The slot the withdrawal was enqueued
     pub slot_unstaked: u64,
@@ -44,7 +44,7 @@ impl VaultStakerWithdrawalTicket {
         staker: Pubkey,
         base: Pubkey,
         withdraw_allocation_amount: u64,
-        lrt_amount: u64,
+        vrt_amount: u64,
         slot_unstaked: u64,
         bump: u8,
     ) -> Self {
@@ -53,7 +53,7 @@ impl VaultStakerWithdrawalTicket {
             staker,
             base,
             withdraw_allocation_amount,
-            lrt_amount,
+            vrt_amount,
             slot_unstaked,
             bump,
             reserved: [0; 7],

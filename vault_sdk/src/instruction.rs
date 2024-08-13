@@ -14,7 +14,7 @@ pub enum VaultInstruction {
     /// Initializes the vault
     #[account(0, writable, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, signer, name = "lrt_mint")]
+    #[account(2, writable, signer, name = "vrt_mint")]
     #[account(3, name = "token_mint")]
     #[account(4, writable, signer, name = "admin")]
     #[account(5, signer, name = "base")]
@@ -25,7 +25,7 @@ pub enum VaultInstruction {
         withdrawal_fee_bps: u16,
     },
 
-    /// Initializes a vault with an already-created LRT mint
+    /// Initializes a vault with an already-created VRT mint
     InitializeVaultWithMint,
 
     /// The vault_delegation_list account is too big for a single instruction, so it needs to be
@@ -133,14 +133,14 @@ pub enum VaultInstruction {
     #[account(5, signer, name = "admin")]
     CooldownVaultNcnSlasherTicket,
 
-    /// Mints LRT by depositing tokens into the vault
+    /// Mints VRT by depositing tokens into the vault
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "lrt_mint")]
+    #[account(2, writable, name = "vrt_mint")]
     #[account(3, writable, signer, name = "depositor")]
     #[account(4, writable, name = "depositor_token_account")]
     #[account(5, writable, name = "vault_token_account")]
-    #[account(6, writable, name = "depositor_lrt_token_account")]
+    #[account(6, writable, name = "depositor_vrt_token_account")]
     #[account(7, writable, name = "vault_fee_token_account")]
     #[account(8, name = "token_program")]
     #[account(9, signer, optional, name = "mint_signer", description = "Signer for minting")]
@@ -148,12 +148,12 @@ pub enum VaultInstruction {
         amount: u64
     },
 
-    /// Burns LRT by withdrawing tokens from the vault
+    /// Burns VRT by withdrawing tokens from the vault
     Burn {
         amount: u64
     },
 
-    /// Enqueues a withdrawal of LRT tokens
+    /// Enqueues a withdrawal of VRT tokens
     /// Used when there aren't enough idle assets in the vault to cover a withdrawal
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
@@ -162,7 +162,7 @@ pub enum VaultInstruction {
     #[account(4, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(5, writable, name = "vault_fee_token_account")]
     #[account(6, writable, signer, name = "staker")]
-    #[account(7, writable, name = "staker_lrt_token_account")]
+    #[account(7, writable, name = "staker_vrt_token_account")]
     #[account(8, signer, name = "base")]
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
@@ -177,17 +177,17 @@ pub enum VaultInstruction {
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_delegation_list")]
     #[account(3, writable, name = "vault_token_account")]
-    #[account(4, writable, name = "lrt_mint")]
+    #[account(4, writable, name = "vrt_mint")]
     #[account(5, writable, signer, name = "staker")]
     #[account(6, writable, name = "staker_token_account")]
-    #[account(7, writable, name = "staker_lrt_token_account")]
+    #[account(7, writable, name = "staker_vrt_token_account")]
     #[account(8, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(9, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(10, name = "token_program")]
     #[account(11, name = "system_program")]
     BurnWithdrawTicket,
 
-    /// Sets the max tokens that can be deposited into the LRT
+    /// Sets the max tokens that can be deposited into the VRT
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, signer, name = "admin")]
@@ -252,14 +252,14 @@ pub enum VaultInstruction {
     #[account(3, writable, name = "vault_token_account")]
     UpdateVault,
 
-    /// Creates token metadata for the vault LRT
+    /// Creates token metadata for the vault VRT
     CreateTokenMetadata {
         name: String,
         symbol: String,
         uri: String,
     },
 
-    /// Updates token metadata for the vault LRT
+    /// Updates token metadata for the vault VRT
     UpdateTokenMetadata {
         name: String,
         symbol: String,

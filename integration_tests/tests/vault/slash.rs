@@ -124,21 +124,21 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        // depositor ATA for LRT
+        // depositor ATA for VRT
         fixture
-            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
                 &depositor,
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 100_000,
             )
