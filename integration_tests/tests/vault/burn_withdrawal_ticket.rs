@@ -734,7 +734,7 @@ mod tests {
                 &vault.supported_mint,
             ))
             .await
-            .unwrap_err();
-        // assert_eq!(vault_token_account.amount, 90);
+            .unwrap();
+        assert_eq!(vault_token_account.amount, 90);
     }
 }
