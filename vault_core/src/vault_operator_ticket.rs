@@ -52,7 +52,6 @@ impl VaultOperatorTicket {
     }
 
     /// The seeds for the PDA
-    ///
     pub fn seeds(vault: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"vault_operator_ticket".to_vec(),
