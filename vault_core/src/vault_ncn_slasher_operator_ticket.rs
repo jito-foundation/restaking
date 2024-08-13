@@ -1,3 +1,5 @@
+//! The [`VaultNcnSlasherOperatorTicket`] account tracks the amount an operator has been slashed
+//! by a slasher for a given node consensus network (NCN) and vault for a given epoch.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::pubkey::Pubkey;
@@ -6,8 +8,10 @@ impl Discriminator for VaultNcnSlasherOperatorTicket {
     const DISCRIMINATOR: u8 = 6;
 }
 
-/// Represents a vault node consensus network (NCN) slasher operator ticket, which tracks how much an operator
-/// has been slashed by a slasher for a given NCN and vault for a given epoch.
+/// The [`VaultNcnSlasherOperatorTicket`] account tracks the amount an operator has been slashed
+/// by a slasher for a given node consensus network (NCN) and vault for a given epoch. It helps
+/// ensure that the operator is held accountable for their actions and that slashing conditions
+/// aren't exceeded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct VaultNcnSlasherOperatorTicket {
@@ -29,6 +33,7 @@ pub struct VaultNcnSlasherOperatorTicket {
     /// The amount slashed for the given epoch
     pub slashed: u64,
 
+    /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
@@ -56,6 +61,17 @@ impl VaultNcnSlasherOperatorTicket {
         }
     }
 
+    /// Returns the seeds for the PDA
+    ///
+    /// # Arguments
+    /// * `vault` - The vault
+    /// * `ncn` - The node consensus network
+    /// * `slasher` - The slasher
+    /// * `operator` - The operator
+    /// * `epoch` - The NCN epoch
+    ///
+    /// # Returns
+    /// The seeds for the PDA
     pub fn seeds(
         vault: &Pubkey,
         ncn: &Pubkey,
@@ -73,6 +89,21 @@ impl VaultNcnSlasherOperatorTicket {
         ])
     }
 
+    /// Find the program address for the [`VaultNcnSlasherOperatorTicket`]
+    /// account.
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault` - The vault
+    /// * `ncn` - The node consensus network
+    /// * `slasher` - The slasher
+    /// * `operator` - The operator
+    /// * `epoch` - The NCN epoch
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,

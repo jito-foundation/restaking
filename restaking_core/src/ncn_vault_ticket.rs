@@ -1,6 +1,8 @@
+//! The NcnVaultTicket tracks the state of a node consensus network opting-in to a vault.
+//! The NcnVaultTicket can be activated and deactivated over time by the NCN vault admin.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
+use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for NcnVaultTicket {

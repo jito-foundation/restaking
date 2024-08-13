@@ -1,3 +1,4 @@
+//! The vault delegation list is a list of operators that are receiving delegation from the vault.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
@@ -5,14 +6,19 @@ use solana_program::{msg, pubkey::Pubkey};
 
 use crate::operator_delegation::OperatorDelegation;
 
+/// The method used to undelegate for withdrawal
 pub enum UndelegateForWithdrawMethod {
     /// Withdraws from each operator's delegated amount in proportion to the total delegated amount
     ProRata,
 }
 
+/// The summary of the update operation
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VaultDelegationUpdateSummary {
+    /// The vault delegation list was not updated
     NotUpdated,
+    /// The vault delegation list was updated and the amount reserved for withdrawal
+    /// is returned.
     Updated { amount_reserved_for_withdraw: u64 },
 }
 
@@ -55,18 +61,14 @@ impl VaultDelegationList {
     }
 
     /// # Returns
-    /// The vault pubkey
-    pub const fn vault(&self) -> Pubkey {
-        self.vault
-    }
-
-    /// # Returns
     /// The list of delegations
     pub const fn delegations(&self) -> &[OperatorDelegation] {
         &self.delegations
     }
 
-    /// Returns the total security in the delegation list
+    /// Returns the total security in the delegation list, which is the sum of the security
+    /// delegated to all operators.
+    /// The total security is defined in [`OperatorDelegation::total_security`].
     pub fn total_security(&self) -> Result<u64, VaultError> {
         let mut total: u64 = 0;
         for delegation in self
@@ -81,8 +83,10 @@ impl VaultDelegationList {
         Ok(total)
     }
 
-    /// The amount of security available for withdrawal from the delegation list. Includes
-    /// staked and assets cooling down that aren't set aside for the withdrawal reserve
+    /// The amount of security available for withdrawal from the delegation list, which is the sum
+    /// of withdrawable security of all operators.
+    /// The withdrawable security defined in [`OperatorDelegation::withdrawable_security`].
+    /// It includes the currently staked assets and any assets marked for cooldown.
     pub fn withdrawable_security(&self) -> Result<u64, VaultError> {
         let mut total: u64 = 0;
 
@@ -98,7 +102,7 @@ impl VaultDelegationList {
     /// slot being less than the current epoch.
     ///
     /// # Returns
-    /// true if the vault delegation list needs updating, false if not.
+    /// `true` if the vault needs updating, `false` otherwise
     #[inline(always)]
     pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
         let last_updated_epoch = self.last_slot_updated.checked_div(epoch_length).unwrap();
@@ -274,6 +278,14 @@ impl VaultDelegationList {
         }
     }
 
+    /// Slashes an amount of stake from an operator
+    ///
+    /// # Arguments
+    /// * `operator` - The operator pubkey to slash
+    /// * `slash_amount` - The amount of stake to slash
+    ///
+    /// # Returns
+    /// Ok(()) if the slash was successful, otherwise an error
     pub fn slash(&mut self, operator: &Pubkey, slash_amount: u64) -> Result<(), VaultError> {
         self.delegations
             .iter_mut()
@@ -282,10 +294,21 @@ impl VaultDelegationList {
             .slash(slash_amount)
     }
 
+    /// Returns the seeds for the PDA
     pub fn seeds(vault: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault_delegation_list".to_vec(), vault.to_bytes().to_vec()]
     }
 
+    /// Find the program address for the VaultDelegationList
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault` - The vault pubkey
+    ///
+    /// # Returns
+    /// * `Pubkey` - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(program_id: &Pubkey, vault: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
         let seeds = Self::seeds(vault);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();

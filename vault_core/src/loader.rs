@@ -1,3 +1,4 @@
+//! Loader functions for the vault program.
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
@@ -9,6 +10,15 @@ use crate::{
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 
+/// Loads the vault [`Config`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `account` - The account to load
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_config(
     program_id: &Pubkey,
     account: &AccountInfo,
@@ -37,6 +47,15 @@ pub fn load_config(
     Ok(())
 }
 
+/// Loads the [`Vault`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `account` - The account to load
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_vault(
     program_id: &Pubkey,
     account: &AccountInfo,
@@ -69,6 +88,17 @@ pub fn load_vault(
     Ok(())
 }
 
+/// Loads the [`VaultNcnTicket`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `vault_ncn_ticket` - The account to load
+/// * `vault` - The vault account
+/// * `ncn` - The ncn account
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_vault_ncn_ticket(
     program_id: &Pubkey,
     vault_ncn_ticket: &AccountInfo,
@@ -100,6 +130,17 @@ pub fn load_vault_ncn_ticket(
     Ok(())
 }
 
+/// Loads the [`VaultOperatorTicket`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `vault_operator_ticket` - The [`VaultOperatorTicket`] account
+/// * `vault` - The vault account
+/// * `operator` - The operator account
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_vault_operator_ticket(
     program_id: &Pubkey,
     vault_operator_ticket: &AccountInfo,
@@ -132,6 +173,16 @@ pub fn load_vault_operator_ticket(
     Ok(())
 }
 
+/// Loads the [`VaultDelegationList`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `vault_delegation_list` - The [`VaultDelegationList`] account
+/// * `vault` - The [`Vault`] account
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_vault_delegation_list(
     program_id: &Pubkey,
     vault_delegation_list: &AccountInfo,
@@ -162,6 +213,18 @@ pub fn load_vault_delegation_list(
     Ok(())
 }
 
+/// Loads the [`VaultNcnSlasherTicket`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `vault_ncn_slasher_ticket` - The [`VaultNcnSlasherTicket`] account
+/// * `vault` - The [`Vault`] account
+/// * `ncn` - The ncn account
+/// * `slasher` - The slasher account
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_vault_ncn_slasher_ticket(
     program_id: &Pubkey,
     vault_ncn_slasher_ticket: &AccountInfo,
@@ -195,6 +258,20 @@ pub fn load_vault_ncn_slasher_ticket(
     Ok(())
 }
 
+/// Loads the [`VaultNcnSlasherOperatorTicket`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `vault_ncn_slasher_operator_ticket` - The [`VaultNcnSlasherOperatorTicket`] account
+/// * `vault` - The [`Vault`] account
+/// * `ncn` - The ncn account
+/// * `slasher` - The slasher account
+/// * `operator` - The operator account
+/// * `ncn_epoch` - The ncn epoch
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 #[allow(clippy::too_many_arguments)]
 pub fn load_vault_ncn_slasher_operator_ticket(
     program_id: &Pubkey,
@@ -240,6 +317,17 @@ pub fn load_vault_ncn_slasher_operator_ticket(
     Ok(())
 }
 
+/// Loads the [`VaultStakerWithdrawalTicket`] account
+///
+/// # Arguments
+/// * `program_id` - The program ID
+/// * `vault_staker_withdrawal_ticket` - The [`VaultStakerWithdrawalTicket`] account
+/// * `vault` - The [`Vault`] account
+/// * `staker` - The staker account
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_vault_staker_withdrawal_ticket(
     program_id: &Pubkey,
     vault_staker_withdrawal_ticket: &AccountInfo,

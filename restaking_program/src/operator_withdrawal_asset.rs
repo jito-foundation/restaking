@@ -27,12 +27,12 @@ pub fn process_operator_withdrawal_asset(
     let operator = Operator::try_from_slice(&operator_data)?;
     load_associated_token_account(
         receiver_token_account,
-        &operator.withdraw_fee_wallet,
+        &operator.withdrawal_fee_wallet,
         &token_mint,
     )?;
 
     // The Operator withdraw admin shall be the signer of the transaction
-    if operator.withdraw_admin.ne(operator_withdraw_admin.key) {
+    if operator.withdrawal_admin.ne(operator_withdraw_admin.key) {
         msg!("Invalid operator withdraw admin");
         return Err(RestakingError::OperatorWithdrawAdminInvalid.into());
     }
