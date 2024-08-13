@@ -180,7 +180,7 @@ impl Vault {
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
     pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
-        let fee = lrt_amount
+        let fee = vrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
             .and_then(|x| x.checked_div(10_000))
             .ok_or(VaultError::VaultOverflow)?;
@@ -233,7 +233,7 @@ mod tests {
             0,
             0,
         );
-        let num_minted = vault.calculate_lrt_mint_amount(100).unwrap();
+        let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 100);
     }
 
@@ -250,9 +250,9 @@ mod tests {
             0,
         );
         vault.tokens_deposited = 90;
-        vault.lrt_supply = 100;
+        vault.vrt_supply = 100;
 
-        let num_minted = vault.calculate_lrt_mint_amount(100).unwrap();
+        let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 111);
     }
 
@@ -269,7 +269,7 @@ mod tests {
             0,
         );
 
-        vault.lrt_supply = 100_000;
+        vault.vrt_supply = 100_000;
         vault.tokens_deposited = 100_000;
         assert_eq!(
             vault.calculate_assets_returned_amount(50_000).unwrap(),
@@ -277,35 +277,35 @@ mod tests {
         );
 
         vault.tokens_deposited = 90_000;
-        vault.lrt_supply = 100_000;
+        vault.vrt_supply = 100_000;
         assert_eq!(
             vault.calculate_assets_returned_amount(50_000).unwrap(),
             45_000
         );
 
         vault.tokens_deposited = 110_000;
-        vault.lrt_supply = 100_000;
+        vault.vrt_supply = 100_000;
         assert_eq!(
             vault.calculate_assets_returned_amount(50_000).unwrap(),
             55_000
         );
 
         vault.tokens_deposited = 100;
-        vault.lrt_supply = 0;
+        vault.vrt_supply = 0;
         assert_eq!(
             vault.calculate_assets_returned_amount(100),
             Err(VaultError::VaultLrtEmpty)
         );
 
         vault.tokens_deposited = 100;
-        vault.lrt_supply = 1;
+        vault.vrt_supply = 1;
         assert_eq!(
             vault.calculate_assets_returned_amount(100),
             Err(VaultError::VaultInsufficientFunds)
         );
 
         vault.tokens_deposited = 100;
-        vault.lrt_supply = 13;
+        vault.vrt_supply = 13;
         assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);
     }
 }
