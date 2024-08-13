@@ -62,7 +62,7 @@ pub struct Vault {
     /// The total number of tokens deposited
     pub tokens_deposited: u64,
 
-    /// The amount of VRT that are reserved for withdrawal
+    /// The amount of tokens that are reserved for withdrawal
     pub withdrawable_reserve_amount: u64,
 
     /// Number of VaultNcnTicket accounts tracked by this vault
