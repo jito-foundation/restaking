@@ -441,6 +441,7 @@ pub fn initialize_vault_ncn_slasher_ticket(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_token_metadata(
     program_id: &Pubkey,
     vault: &Pubkey,

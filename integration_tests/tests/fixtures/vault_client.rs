@@ -1127,9 +1127,6 @@ impl VaultProgramClient {
             blockhash,
         ))
         .await
-        .unwrap();
-
-        Ok(())
     }
 
     async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
