@@ -195,6 +195,15 @@ pub enum VaultInstruction {
         amount: u64
     },
 
+    /// Sets the fees for depositing and withdrawing
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
+    SetFees {
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+    },
+
     /// Withdraws any non-backing tokens from the vault
     AdminWithdraw {
         amount: u64
@@ -291,4 +300,5 @@ pub enum VaultAdminRole {
     FeeWallet,
     MintBurnAdmin,
     WithdrawAdmin,
+    FeeAdmin,
 }

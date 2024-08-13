@@ -7,8 +7,8 @@ use jito_jsm_core::{
 };
 use jito_vault_core::config::Config;
 use solana_program::{
-    account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Processes the initialize config instruction: [`crate::VaultInstruction::InitializeConfig`]
@@ -43,11 +43,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
     let mut config_data = config.try_borrow_mut_data()?;
     config_data[0] = Config::DISCRIMINATOR;
     let config = Config::try_from_slice_mut(&mut config_data)?;
-    config.admin = *admin.key;
-    config.restaking_program = *restaking_program.key;
-    config.epoch_length = DEFAULT_SLOTS_PER_EPOCH;
-    config.num_vaults = 0;
-    config.bump = config_bump;
+    *config = Config::new(*admin.key, *restaking_program.key, config_bump);
 
     Ok(())
 }

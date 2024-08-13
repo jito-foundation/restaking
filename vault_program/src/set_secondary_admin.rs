@@ -65,6 +65,10 @@ pub fn process_set_secondary_admin(
             vault.withdraw_admin = *new_admin.key;
             msg!("Withdraw admin set to {:?}", new_admin.key);
         }
+        VaultAdminRole::FeeAdmin => {
+            vault.fee_admin = *new_admin.key;
+            msg!("Fee admin set to {:?}", new_admin.key);
+        }
     }
 
     Ok(())
