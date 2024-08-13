@@ -214,10 +214,20 @@ pub fn process_burn_withdrawal_ticket(
     //  has fully matured, the program can end up in a situation where the original_redemption_amount
     //  is greater than the total withdrawable_reserve_amount. This is a bug and needs to be fixed.
     //  see test_burn_withdrawal_ticket_with_slashing_before_update
+    msg!(
+        "vault.withdrawable_reserve_amount before: {:?}",
+        vault.withdrawable_reserve_amount
+    );
+
     vault.withdrawable_reserve_amount = vault
         .withdrawable_reserve_amount
         .checked_sub(original_redemption_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    msg!(
+        "vault.withdrawable_reserve_amount after: {:?}",
+        vault.withdrawable_reserve_amount
+    );
 
     vault.tokens_deposited = vault
         .tokens_deposited

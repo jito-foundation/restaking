@@ -1,12 +1,16 @@
+//! The NCN operator ticket account tracks the state of an NCN opting-in to an operator.
+//! The NCN operator ticket account can be activated and deactivated over time by the NCN operator admin.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
+use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for NcnOperatorTicket {
     const DISCRIMINATOR: u8 = 5;
 }
 
+/// The NcnOperatorTicket is created by the NCN and it tracks the state of a node consensus network
+/// opting-in to an operator. The NcnOperatorTicket can be activated and deactivated over time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct NcnOperatorTicket {
@@ -30,6 +34,15 @@ pub struct NcnOperatorTicket {
 }
 
 impl NcnOperatorTicket {
+    /// Create a new NcnOperatorTicket and immediately activates it at the given slot, transitioning
+    /// it to warming up.
+    ///
+    /// # Arguments
+    /// * `ncn` - The node consensus network
+    /// * `operator` - The operator
+    /// * `index` - The index
+    /// * `slot_added` - The slot at which the ticket was created
+    /// * `bump` - The bump seed for the PDA
     pub const fn new(ncn: Pubkey, operator: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
         Self {
             ncn,
@@ -41,6 +54,7 @@ impl NcnOperatorTicket {
         }
     }
 
+    /// Returns the seeds for the PDA
     pub fn seeds(ncn: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"ncn_operator_ticket".to_vec(),
@@ -49,6 +63,17 @@ impl NcnOperatorTicket {
         ])
     }
 
+    /// Find the program address for the NcnOperatorTicket
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `ncn` - The node consensus network
+    /// * `operator` - The operator
+    ///
+    /// # Returns
+    /// * `Pubkey` - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(
         program_id: &Pubkey,
         ncn: &Pubkey,

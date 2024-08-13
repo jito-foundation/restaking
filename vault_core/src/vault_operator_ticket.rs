@@ -1,12 +1,16 @@
+//! The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
+//! and disabled over time by the vault operator admin.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
+use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for VaultOperatorTicket {
     const DISCRIMINATOR: u8 = 4;
 }
 
+/// The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
+/// and disabled over time by the vault operator admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct VaultOperatorTicket {
@@ -22,6 +26,7 @@ pub struct VaultOperatorTicket {
     /// The slot toggle
     pub state: SlotToggle,
 
+    /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
@@ -46,6 +51,8 @@ impl VaultOperatorTicket {
         }
     }
 
+    /// The seeds for the PDA
+    ///
     pub fn seeds(vault: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"vault_operator_ticket".to_vec(),
@@ -54,6 +61,17 @@ impl VaultOperatorTicket {
         ])
     }
 
+    /// Find the program address for the PDA
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault` - The vault account
+    /// * `operator` - The operator account
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,

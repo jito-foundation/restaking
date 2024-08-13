@@ -1,7 +1,12 @@
+//! The NCN (Node Consensus Network) account is a program-owned account that
+//! represents a network of nodes that participate in consensus. The NCN
+//! account is used to manage the operators, vaults, and slashers that are
+//! associated with the network.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::pubkey::Pubkey;
 
+/// The NCN manages the operators, vaults, and slashers associated with a network
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct Ncn {
@@ -69,10 +74,19 @@ impl Ncn {
         }
     }
 
+    /// Returns the seeds for the PDA
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([b"ncn".to_vec(), base.as_ref().to_vec()])
     }
 
+    /// Find the program address for the NCN account
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `base` - The base account used as a PDA seed
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
     pub fn find_program_address(program_id: &Pubkey, base: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
         let seeds = Self::seeds(base);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
