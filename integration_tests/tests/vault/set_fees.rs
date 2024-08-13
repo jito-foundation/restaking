@@ -33,8 +33,8 @@ mod tests {
                 },
             )) => {
                 let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
-                assert_eq!(vault.deposit_fee_bps(), deposit_fee_bps);
-                assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+                assert_eq!(vault.deposit_fee_bps, deposit_fee_bps);
+                assert_eq!(vault.withdrawal_fee_bps, withdrawal_fee_bps);
                 let config_address = Config::find_program_address(&jito_vault_program::id()).0;
 
                 Ok((config_address, vault_pubkey, vault_admin))
@@ -72,8 +72,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.deposit_fee_bps(), deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.deposit_fee_bps, deposit_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps, withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -114,8 +114,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -182,8 +182,8 @@ mod tests {
             .get_vault(&vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -253,8 +253,8 @@ mod tests {
             .get_vault(&vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -388,8 +388,8 @@ mod tests {
             .get_vault(&vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -471,8 +471,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.deposit_fee_bps(), deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.deposit_fee_bps, deposit_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps, withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -561,8 +561,8 @@ mod tests {
             .get_vault(&vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(updated_vault.deposit_fee_bps(), deposit_fee_bps);
-        assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(updated_vault.deposit_fee_bps, deposit_fee_bps);
+        assert_eq!(updated_vault.withdrawal_fee_bps, withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -601,7 +601,7 @@ mod tests {
             .get_vault(&vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(updated_vault.deposit_fee_bps(), deposit_fee_bps);
-        assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(updated_vault.deposit_fee_bps, deposit_fee_bps);
+        assert_eq!(updated_vault.withdrawal_fee_bps, withdrawal_fee_bps);
     }
 }
