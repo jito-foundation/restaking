@@ -13,7 +13,7 @@ pub enum VaultError {
     OperatorDelegationDelegateOverflow = 1008,
 
     VaultMaxDelegationOverflow = 2000,
-    VaultLrtEmpty = 2001,
+    VaultVrtEmpty = 2001,
     VaultInsufficientFunds = 2002,
     VaultAssetsReturnedOverflow = 2003,
     VaultOverflow = 2004,

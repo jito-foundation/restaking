@@ -144,7 +144,7 @@ impl Vault {
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
     pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         if self.vrt_supply == 0 {
-            return Err(VaultError::VaultLrtEmpty);
+            return Err(VaultError::VaultVrtEmpty);
         } else if vrt_amount > self.vrt_supply {
             return Err(VaultError::VaultInsufficientFunds);
         }
@@ -294,7 +294,7 @@ mod tests {
         vault.vrt_supply = 0;
         assert_eq!(
             vault.calculate_assets_returned_amount(100),
-            Err(VaultError::VaultLrtEmpty)
+            Err(VaultError::VaultVrtEmpty)
         );
 
         vault.tokens_deposited = 100;
