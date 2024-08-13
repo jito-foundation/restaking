@@ -1,3 +1,4 @@
+//! The vault configuration account
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{epoch_schedule::DEFAULT_SLOTS_PER_EPOCH, pubkey::Pubkey};
@@ -6,6 +7,8 @@ impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
 }
 
+/// The vault configuration account for the vault program.
+/// Manages program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct Config {

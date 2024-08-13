@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_jsm_core::slot_toggled_field::SlotToggleState;
+    use jito_jsm_core::slot_toggle::SlotToggleState;
     use jito_restaking_core::{
         config::Config, ncn_operator_ticket::NcnOperatorTicket,
         operator_ncn_ticket::OperatorNcnTicket,

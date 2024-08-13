@@ -1,3 +1,4 @@
+//! Loader functions for program accounts
 use solana_program::{
     account_info::AccountInfo, msg, program_error::ProgramError, program_pack::Pack,
     pubkey::Pubkey, system_program,
@@ -5,6 +6,15 @@ use solana_program::{
 use spl_associated_token_account::get_associated_token_address;
 use spl_token::state::Mint;
 
+/// Loads the account as a signer, returning an error if it is not or if it is not writable while
+/// expected to be.
+///
+/// # Arguments
+/// * `info` - The account to load the signer from
+/// * `expect_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_signer(info: &AccountInfo, expect_writable: bool) -> Result<(), ProgramError> {
     if !info.is_signer {
         msg!("Account is not a signer");
@@ -18,6 +28,13 @@ pub fn load_signer(info: &AccountInfo, expect_writable: bool) -> Result<(), Prog
     Ok(())
 }
 
+/// Loads the account as a system program, returning an error if it is not.
+///
+/// # Arguments
+/// * `info` - The account to load the system program from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
     if info.key.ne(&system_program::id()) {
         msg!("Account is not the system program");
@@ -27,6 +44,13 @@ pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
     Ok(())
 }
 
+/// Loads the account as the token program, returning an error if it is not.
+///
+/// # Arguments
+/// * `info` - The account to load the token program from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
     if info.key.ne(&spl_token::id()) {
         msg!("Account is not the token program");
@@ -36,6 +60,15 @@ pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
     Ok(())
 }
 
+/// Loads the account as a system account, returning an error if it is not or if it is not writable
+/// while expected to be.
+///
+/// # Arguments
+/// * `info` - The account to load the system account from
+/// * `is_writable` - Whether the account should be writable
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_system_account(info: &AccountInfo, is_writable: bool) -> Result<(), ProgramError> {
     if info.owner.ne(&system_program::id()) {
         msg!("Account is not owned by the system program");
@@ -55,6 +88,16 @@ pub fn load_system_account(info: &AccountInfo, is_writable: bool) -> Result<(), 
     Ok(())
 }
 
+/// Loads the account as a token account, returning an error if it is not or if it is not writable
+/// while expected to be.
+///
+/// # Arguments
+/// * `token_account` - The account to load the token account from
+/// * `owner` - The owner of the token account
+/// * `mint` - The mint of the token account
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_associated_token_account(
     token_account: &AccountInfo,
     owner: &Pubkey,
@@ -79,6 +122,13 @@ pub fn load_associated_token_account(
     Ok(())
 }
 
+/// Loads the account as a token mint, returning an error if it is not.
+///
+/// # Arguments
+/// * `info` - The account to load the token mint from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
     if info.owner.ne(&spl_token::id()) {
         msg!("Account is not owned by the token program");
