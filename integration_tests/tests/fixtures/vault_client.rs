@@ -1,5 +1,6 @@
 use std::mem::size_of;
 
+use borsh::BorshDeserialize;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
@@ -159,6 +160,18 @@ impl VaultProgramClient {
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+    }
+
+    pub async fn get_token_metadata(
+        &mut self,
+        account: &Pubkey,
+    ) -> Result<crate::helpers::token::Metadata, TestError> {
+        let token_metadata_account = self.banks_client.get_account(*account).await?.unwrap();
+        let metadata = crate::helpers::token::Metadata::deserialize(
+            &mut token_metadata_account.data.as_slice(),
+        )
+        .unwrap();
+        Ok(metadata)
     }
 
     pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
@@ -1083,6 +1096,37 @@ impl VaultProgramClient {
             )],
             Some(&slasher.pubkey()),
             &[slasher],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn create_token_metadata(
+        &mut self,
+        vault: &Pubkey,
+        admin: &Keypair,
+        lrt_mint: &Pubkey,
+        payer: &Keypair,
+        metadata: &Pubkey,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::create_token_metadata(
+                &jito_vault_program::id(),
+                vault,
+                &admin.pubkey(),
+                lrt_mint,
+                &payer.pubkey(),
+                metadata,
+                name,
+                symbol,
+                uri,
+            )],
+            Some(&payer.pubkey()),
+            &[admin, payer],
             blockhash,
         ))
         .await
