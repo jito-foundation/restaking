@@ -1,5 +1,6 @@
 //! Loader functions for the vault program.
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_vault_sdk::inline_mpl_token_metadata;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::{
@@ -363,5 +364,25 @@ pub fn load_vault_staker_withdrawal_ticket(
         msg!("Vault staker withdraw ticket is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
+    Ok(())
+}
+
+/// Loads the account as a mpl metadta program, returning an error if it is not.
+///
+/// # Arguments
+/// * `info` - The account to load the mpl metadata program from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
+pub fn load_mpl_metadata_program(info: &AccountInfo) -> Result<(), ProgramError> {
+    if info.key.ne(&inline_mpl_token_metadata::id()) {
+        msg!(
+            "Expected mpl metadata program {}, received {}",
+            inline_mpl_token_metadata::id(),
+            info.key
+        );
+        return Err(ProgramError::IncorrectProgramId);
+    }
+
     Ok(())
 }

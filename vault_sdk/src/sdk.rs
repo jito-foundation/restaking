@@ -5,7 +5,10 @@ use solana_program::{
     system_program,
 };
 
-use crate::instruction::{VaultAdminRole, VaultInstruction};
+use crate::{
+    inline_mpl_token_metadata,
+    instruction::{VaultAdminRole, VaultInstruction},
+};
 
 pub fn initialize_config(
     program_id: &Pubkey,
@@ -441,15 +444,31 @@ pub fn initialize_vault_ncn_slasher_ticket(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_token_metadata(
     program_id: &Pubkey,
+    vault: &Pubkey,
+    admin: &Pubkey,
+    lrt_mint: &Pubkey,
+    payer: &Pubkey,
+    metadata: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*lrt_mint, false),
+        AccountMeta::new(*payer, true),
+        AccountMeta::new(*metadata, false),
+        AccountMeta::new_readonly(inline_mpl_token_metadata::id(), false),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
+        accounts,
         data: VaultInstruction::CreateTokenMetadata { name, symbol, uri }
             .try_to_vec()
             .unwrap(),

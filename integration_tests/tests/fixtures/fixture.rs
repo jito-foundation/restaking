@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 
+use jito_vault_sdk::inline_mpl_token_metadata;
 use solana_program::{
     clock::Clock, native_token::sol_to_lamports, program_pack::Pack, pubkey::Pubkey,
     system_instruction::transfer,
@@ -36,6 +37,8 @@ impl TestBuilder {
             jito_restaking_program::id(),
             processor!(jito_restaking_program::process_instruction),
         );
+        program_test.prefer_bpf(true);
+        program_test.add_program("mpl_token_metadata", inline_mpl_token_metadata::id(), None);
 
         let context = program_test.start_with_context().await;
         Self { context }
