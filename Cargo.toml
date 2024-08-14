@@ -51,10 +51,7 @@ solana-program-test = "~1.18"
 solana-sdk = "~1.18"
 solana-security-txt = "1.1.1"
 spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
-spl-token-metadata-interface = "0.3.0"
-spl-type-length-value = "0.4.6"
 spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"] }
-spl-pod = "0.2.5"
 thiserror = "1.0.57"
 tokio = "1.36.0"
 matches = "0.1.10"
