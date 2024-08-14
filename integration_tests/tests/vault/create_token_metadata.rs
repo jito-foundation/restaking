@@ -1,5 +1,5 @@
 use jito_vault_sdk::{error::VaultError, inline_mpl_token_metadata};
-use solana_sdk::{signature::Keypair, signer::Signer};
+use solana_sdk::signature::Keypair;
 
 use crate::fixtures::{
     fixture::TestBuilder,
@@ -30,13 +30,13 @@ async fn test_create_token_metadata_ok() {
     let symbol = "rJTO";
     let uri = "https://www.jito.network/restaking/";
 
-    let metadata_pubkey = inline_mpl_token_metadata::pda::find_metadata_account(&vault.lrt_mint).0;
+    let metadata_pubkey = inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
     vault_program_client
         .create_token_metadata(
             &vault_pubkey,
             &vault_admin,
-            &vault.lrt_mint,
+            &vault.vrt_mint,
             &vault_admin,
             &metadata_pubkey,
             name.to_string(),
@@ -66,7 +66,7 @@ async fn test_wrong_admin_signed() {
         _config_admin,
         VaultRoot {
             vault_pubkey,
-            vault_admin: _,
+            vault_admin,
         },
     ) = vault_program_client
         .setup_config_and_vault(99, 100)
@@ -80,19 +80,15 @@ async fn test_wrong_admin_signed() {
     let symbol = "rJTO";
     let uri = "https://www.jito.network/restaking/";
 
-    let metadata_pubkey = inline_mpl_token_metadata::pda::find_metadata_account(&vault.lrt_mint).0;
+    let metadata_pubkey = inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
     let bad_admin = Keypair::new();
-    vault_program_client
-        ._airdrop(&bad_admin.pubkey(), 10.0)
-        .await
-        .unwrap();
     let response = vault_program_client
         .create_token_metadata(
             &vault_pubkey,
             &bad_admin,
-            &vault.lrt_mint,
-            &bad_admin,
+            &vault.vrt_mint,
+            &vault_admin,
             &metadata_pubkey,
             name.to_string(),
             symbol.to_string(),

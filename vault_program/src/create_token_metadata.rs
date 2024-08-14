@@ -26,7 +26,7 @@ pub fn process_create_token_metadata(
     };
 
     load_vault(program_id, vault_info, false)?;
-    load_signer(admin, true)?;
+    load_signer(admin, false)?;
     load_token_mint(lrt_mint)?;
     load_signer(payer, true)?;
     load_system_account(metadata, true)?;
