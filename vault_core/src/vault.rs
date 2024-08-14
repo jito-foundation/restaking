@@ -104,8 +104,6 @@ impl Vault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         bump: u8,
-        current_epoch: u64,
-        epoch_withdraw_cap: u64,
     ) -> Self {
         Self {
             base,
@@ -132,9 +130,6 @@ impl Vault {
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
-            epoch_withdraw_cap,
-            current_epoch,
-            epoch_withdrawn_amount: 0,
             bump,
             reserved: [0; 11],
         }
@@ -245,8 +240,6 @@ mod tests {
             0,
             0,
             0,
-            current_epoch,
-            100,
         );
         let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 100);
@@ -254,8 +247,6 @@ mod tests {
 
     #[test]
     fn test_deposit_ratio_after_slashed_ok() {
-        let current_epoch = 100;
-
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -265,8 +256,6 @@ mod tests {
             0,
             0,
             0,
-            current_epoch,
-            100,
         );
         vault.tokens_deposited = 90;
         vault.vrt_supply = 100;
@@ -277,8 +266,6 @@ mod tests {
 
     #[test]
     fn test_calculate_assets_returned_amount_ok() {
-        let mut current_epoch = 100;
-
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -288,40 +275,29 @@ mod tests {
             0,
             0,
             0,
-            current_epoch,
-            100_000,
         );
 
         vault.vrt_supply = 100_000;
         vault.tokens_deposited = 100_000;
         assert_eq!(
-            vault
-                .calculate_assets_returned_amount(50_000, current_epoch)
-                .unwrap(),
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
             50_000
         );
 
-        current_epoch = 102;
         vault.tokens_deposited = 90_000;
         vault.vrt_supply = 100_000;
         assert_eq!(
-            vault
-                .calculate_assets_returned_amount(50_000, current_epoch)
-                .unwrap(),
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
             45_000
         );
 
-        current_epoch = 103;
         vault.tokens_deposited = 110_000;
         vault.vrt_supply = 100_000;
         assert_eq!(
-            vault
-                .calculate_assets_returned_amount(50_000, current_epoch)
-                .unwrap(),
+            vault.calculate_assets_returned_amount(50_000).unwrap(),
             55_000
         );
 
-        current_epoch = 104;
         vault.tokens_deposited = 100;
         vault.vrt_supply = 0;
         assert_eq!(
@@ -329,7 +305,6 @@ mod tests {
             Err(VaultError::VaultVrtEmpty)
         );
 
-        current_epoch = 105;
         vault.tokens_deposited = 100;
         vault.vrt_supply = 1;
         assert_eq!(
@@ -337,7 +312,6 @@ mod tests {
             Err(VaultError::VaultInsufficientFunds)
         );
 
-        current_epoch = 106;
         vault.tokens_deposited = 100;
         vault.vrt_supply = 13;
         assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);

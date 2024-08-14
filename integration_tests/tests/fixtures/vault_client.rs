@@ -583,7 +583,6 @@ impl VaultProgramClient {
                 &vault_base.pubkey(),
                 deposit_fee_bps,
                 withdrawal_fee_bps,
-                epoch_withdraw_cap,
             )],
             Some(&vault_admin.pubkey()),
             &[&vault_admin, &vrt_mint, &vault_base],

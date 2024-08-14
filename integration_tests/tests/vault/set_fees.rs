@@ -21,7 +21,7 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let result = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, 0)
             .await;
 
         match result {

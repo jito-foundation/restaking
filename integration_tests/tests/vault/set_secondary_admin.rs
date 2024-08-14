@@ -28,7 +28,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, 0)
             .await
             .unwrap();
 
@@ -73,7 +73,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, 0)
             .await
             .unwrap();
 
