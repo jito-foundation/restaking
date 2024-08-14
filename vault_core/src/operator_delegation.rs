@@ -137,26 +137,21 @@ impl OperatorDelegation {
 
         let mut remaining_slash = slash_amount;
 
-        // Helper function to calculate and apply slash based on pro-rata share
-        let mut apply_slash = |amount: &mut u64| -> Result<(), VaultError> {
-            if *amount == 0 || remaining_slash == 0 {
-                return Ok(());
+        let mut apply_slash = |bucket: &mut u64| -> Result<u64, VaultError> {
+            if *bucket > 0 {
+                let slash = min(*bucket, remaining_slash);
+                *bucket = bucket
+                    .checked_sub(slash)
+                    .ok_or(VaultError::OperatorDelegationSlashUnderflow)?;
+                remaining_slash = remaining_slash
+                    .checked_sub(slash)
+                    .ok_or(VaultError::OperatorDelegationSlashUnderflow)?;
+                Ok(slash)
+            } else {
+                Ok(0)
             }
-            let pro_rata_slash = (*amount as u128)
-                .checked_mul(slash_amount as u128)
-                .ok_or(VaultError::OperatorDelegationSlashOverflow)?
-                .div_ceil(total_security_amount as u128);
-            let actual_slash = min(pro_rata_slash as u64, min(*amount, remaining_slash));
-            *amount = amount
-                .checked_sub(actual_slash)
-                .ok_or(VaultError::OperatorDelegationSlashUnderflow)?;
-            remaining_slash = remaining_slash
-                .checked_sub(actual_slash)
-                .ok_or(VaultError::OperatorDelegationSlashUnderflow)?;
-            Ok(())
         };
 
-        // Slash from each bucket
         apply_slash(&mut self.staked_amount)?;
         apply_slash(&mut self.enqueued_for_cooldown_amount)?;
         apply_slash(&mut self.cooling_down_amount)?;
