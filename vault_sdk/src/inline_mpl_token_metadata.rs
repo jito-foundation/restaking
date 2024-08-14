@@ -4,14 +4,13 @@
 solana_program::declare_id!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 pub mod instruction {
-    use {
-        super::state::DataV2,
-        borsh::{BorshDeserialize, BorshSerialize},
-        solana_program::{
-            instruction::{AccountMeta, Instruction},
-            pubkey::Pubkey,
-        },
+    use borsh::{BorshDeserialize, BorshSerialize};
+    use solana_program::{
+        instruction::{AccountMeta, Instruction},
+        pubkey::Pubkey,
     };
+
+    use super::state::DataV2;
 
     #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
     struct CreateMetadataAccountArgsV3 {
@@ -105,7 +104,9 @@ pub mod instruction {
 
 /// PDA creation helpers
 pub mod pda {
-    use {super::ID, solana_program::pubkey::Pubkey};
+    use solana_program::pubkey::Pubkey;
+
+    use super::ID;
     const PREFIX: &str = "metadata";
     /// Helper to find a metadata account address
     pub fn find_metadata_account(mint: &Pubkey) -> (Pubkey, u8) {

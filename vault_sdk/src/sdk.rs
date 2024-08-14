@@ -5,7 +5,10 @@ use solana_program::{
     system_program,
 };
 
-use crate::{instruction::{VaultAdminRole, VaultInstruction}, inline_mpl_token_metadata};
+use crate::{
+    inline_mpl_token_metadata,
+    instruction::{VaultAdminRole, VaultInstruction},
+};
 
 pub fn initialize_config(
     program_id: &Pubkey,
