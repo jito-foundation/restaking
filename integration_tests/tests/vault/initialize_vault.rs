@@ -32,10 +32,10 @@ mod tests {
         assert_eq!(vault.mint_burn_admin, Pubkey::default());
         assert_eq!(vault.capacity, u64::MAX);
         assert_eq!(vault.vault_index, 0);
-        assert_eq!(vault.lrt_supply, 0);
+        assert_eq!(vault.vrt_supply, 0);
         assert_eq!(vault.tokens_deposited, 0);
-        assert_eq!(vault.deposit_fee_bps(), 99);
-        assert_eq!(vault.withdrawal_fee_bps(), 100);
+        assert_eq!(vault.deposit_fee_bps, 99);
+        assert_eq!(vault.withdrawal_fee_bps, 100);
         assert_eq!(vault.ncn_count, 0);
         assert_eq!(vault.operator_count, 0);
         assert_eq!(vault.slasher_count, 0);

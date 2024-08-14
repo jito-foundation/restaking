@@ -2,8 +2,12 @@
 mod tests {
     use jito_restaking_core::config::Config as RestakingConfig;
     use jito_vault_core::config::Config;
-    use solana_program::pubkey::Pubkey;
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::{instruction::InstructionError, pubkey::Pubkey};
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{
@@ -39,11 +43,17 @@ mod tests {
             .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps, epoch_withdraw_cap)
             .await
             .unwrap();
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
         // Setup operator and NCN
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
-        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&RestakingConfig::find_program_address(&jito_restaking_program::id()).0)
@@ -52,7 +62,7 @@ mod tests {
 
         // Setup necessary relationships
         restaking_program_client
-            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
         fixture
@@ -65,7 +75,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
         fixture
@@ -108,20 +118,20 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
-        // Mint LRT tokens to depositor
+        // Mint VRT tokens to depositor
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
                 &depositor,
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 deposit_amount,
             )
@@ -154,7 +164,7 @@ mod tests {
 
         // do all the opt-in stuff for the slasher
         restaking_program_client
-            .ncn_vault_slasher_opt_in(
+            .do_ncn_vault_slasher_opt_in(
                 &ncn_root,
                 &vault_root.vault_pubkey,
                 &slasher.pubkey(),
@@ -227,11 +237,21 @@ mod tests {
         )
         .await;
 
-        // TODO (LB): check error type
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(
+                    VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
+                )
+            )
+        );
     }
 
     /// One can't burn the withdraw ticket until a full epoch has passed
@@ -278,10 +298,22 @@ mod tests {
             .await
             .unwrap();
 
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(
+                    VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
+                )
+            )
+        );
     }
 
     /// Tests basic withdraw ticket with no rewards or slashing incidents
@@ -423,7 +455,7 @@ mod tests {
     /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
     /// assets the user gets back shall be larger than the amount set aside for withdrawal. However,
     /// those rewards were staked, so the user can't receive them. In this case, they shall receive
-    /// back the amount set aside for withdraw and the excess LRT tokens.
+    /// back the amount set aside for withdraw and the excess VRT tokens.
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_with_staked_rewards() {
         let mut fixture = TestBuilder::new().await;
@@ -492,7 +524,7 @@ mod tests {
             .await
             .unwrap();
 
-        // user should have 1000 tokens and should also get back excess LRT tokens
+        // user should have 1000 tokens and should also get back excess VRT tokens
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
@@ -502,14 +534,14 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_token_account.amount, 1000);
 
-        let depositor_lrt_token_account = fixture
+        let depositor_vrt_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint,
+                &vault.vrt_mint,
             ))
             .await
             .unwrap();
-        assert_eq!(depositor_lrt_token_account.amount, 91);
+        assert_eq!(depositor_vrt_token_account.amount, 91);
 
         let vault_token_account = fixture
             .get_token_account(&get_associated_token_address(
@@ -521,12 +553,12 @@ mod tests {
         assert_eq!(vault_token_account.amount, 100);
     }
 
-    /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
-    /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
-    /// set aside is reduced to 0.
-    ///
-    /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
-    /// won't match the withdrawal amount reserved in the withdrawal ticket.
+    // /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
+    // /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
+    // /// set aside is reduced to 0.
+    // ///
+    // /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
+    // /// won't match the withdrawal amount reserved in the withdrawal ticket.
     // #[tokio::test]
     // async fn test_burn_withdrawal_ticket_with_slashing_before_update() {
     //     let mut fixture = TestBuilder::new().await;
@@ -695,14 +727,14 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_token_account.amount, 810);
 
-        let depositor_lrt_token_account = fixture
+        let depositor_vrt_token_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint,
+                &vault.vrt_mint,
             ))
             .await
             .unwrap();
-        assert_eq!(depositor_lrt_token_account.amount, 100);
+        assert_eq!(depositor_vrt_token_account.amount, 100);
 
         let vault_token_account = fixture
             .get_token_account(&get_associated_token_address(

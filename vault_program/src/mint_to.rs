@@ -6,6 +6,7 @@ use jito_vault_core::{
     loader::{load_config, load_vault},
     vault::Vault,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -23,7 +24,7 @@ use spl_token::instruction::{mint_to, transfer};
 pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(9);
 
-    let [config, vault_info, lrt_mint, depositor, depositor_token_account, vault_token_account, depositor_lrt_token_account, vault_fee_token_account, token_program] =
+    let [config, vault_info, vrt_mint, depositor, depositor_token_account, vault_token_account, depositor_vrt_token_account, vault_fee_token_account, token_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -31,7 +32,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
 
     load_config(program_id, config, false)?;
     load_vault(program_id, vault_info, false)?;
-    load_token_mint(lrt_mint)?;
+    load_token_mint(vrt_mint)?;
     load_signer(depositor, false)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
@@ -41,24 +42,27 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         &vault.supported_mint,
     )?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
-    load_associated_token_account(depositor_lrt_token_account, depositor.key, lrt_mint.key)?;
-    load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, lrt_mint.key)?;
+    load_associated_token_account(depositor_vrt_token_account, depositor.key, vrt_mint.key)?;
+    load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
     load_token_program(token_program)?;
 
-    // check optional signer
-    if let Some(mint_signer) = optional_accounts.first() {
-        load_signer(mint_signer, false)?;
-        if vault.mint_burn_admin.ne(&Pubkey::default())
-            && mint_signer.key.ne(&vault.mint_burn_admin)
-        {
-            msg!("Mint signer does not match vault mint signer");
-            return Err(ProgramError::InvalidAccountData);
+    // If the vault has a mint_burn_admin, it must be the signer
+    if vault.mint_burn_admin.ne(&Pubkey::default()) {
+        if let Some(mint_signer) = optional_accounts.first() {
+            load_signer(mint_signer, false)?;
+            if mint_signer.key.ne(&vault.mint_burn_admin) {
+                msg!("Mint signer does not match vault mint signer");
+                return Err(VaultError::VaultMintBurnAdminInvalid.into());
+            }
+        } else {
+            msg!("Mint signer is required for vault mint");
+            return Err(VaultError::VaultMintBurnAdminInvalid.into());
         }
     }
 
-    // check correct LRT mint
-    if lrt_mint.key.ne(&vault.lrt_mint) {
-        msg!("LRT mint account does not match vault LRT mint");
+    // check correct VRT mint
+    if vrt_mint.key.ne(&vault.vrt_mint) {
+        msg!("VRT mint account does not match vault VRT mint");
         return Err(ProgramError::InvalidAccountData);
     }
 
@@ -74,7 +78,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
     // The vault capacity shall not be exceeded after deposit
     if vault_token_amount_after_deposit > vault.capacity {
         msg!("Amount exceeds vault capacity");
-        return Err(ProgramError::InvalidInstructionData);
+        return Err(VaultError::VaultCapacityExceeded.into());
     }
 
     // transfer tokens from depositor to vault
@@ -96,13 +100,13 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         )?;
     }
 
-    let lrt_to_depositor = vault.calculate_lrt_mint_amount(vault_deposit_amount)?;
-    let lrt_to_vault_fee_wallet = vault.calculate_lrt_mint_amount(vault_fee)?;
+    let vrt_to_depositor = vault.calculate_vrt_mint_amount(vault_deposit_amount)?;
+    let vrt_to_vault_fee_wallet = vault.calculate_vrt_mint_amount(vault_fee)?;
 
-    vault.lrt_supply = vault
-        .lrt_supply
-        .checked_add(lrt_to_depositor)
-        .and_then(|supply| supply.checked_add(lrt_to_vault_fee_wallet))
+    vault.vrt_supply = vault
+        .vrt_supply
+        .checked_add(vrt_to_depositor)
+        .and_then(|supply| supply.checked_add(vrt_to_vault_fee_wallet))
         .ok_or(ProgramError::ArithmeticOverflow)?;
     vault.tokens_deposited = vault_token_amount_after_deposit;
 
@@ -117,15 +121,15 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         invoke_signed(
             &mint_to(
                 &spl_token::id(),
-                lrt_mint.key,
-                depositor_lrt_token_account.key,
+                vrt_mint.key,
+                depositor_vrt_token_account.key,
                 vault_info.key,
                 &[],
-                lrt_to_depositor,
+                vrt_to_depositor,
             )?,
             &[
-                lrt_mint.clone(),
-                depositor_lrt_token_account.clone(),
+                vrt_mint.clone(),
+                depositor_vrt_token_account.clone(),
                 vault_info.clone(),
             ],
             &[&seed_slices],
@@ -134,14 +138,14 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         invoke_signed(
             &mint_to(
                 &spl_token::id(),
-                lrt_mint.key,
+                vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,
                 &[],
-                lrt_to_vault_fee_wallet,
+                vrt_to_vault_fee_wallet,
             )?,
             &[
-                lrt_mint.clone(),
+                vrt_mint.clone(),
                 vault_fee_token_account.clone(),
                 vault_info.clone(),
             ],

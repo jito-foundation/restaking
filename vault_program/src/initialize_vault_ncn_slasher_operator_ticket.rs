@@ -47,6 +47,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
 
     let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
 
+    // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (
         vault_ncn_slasher_operator_ticket_pubkey,
         vault_ncn_slasher_operator_ticket_bump,

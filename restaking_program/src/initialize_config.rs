@@ -22,6 +22,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
     load_signer(admin, true)?;
     load_system_program(system_program)?;
 
+    // The Config shall be at the canonical PDA
     let (config_pubkey, config_bump, mut config_seeds) = Config::find_program_address(program_id);
     config_seeds.push(vec![config_bump]);
     if config.key.ne(&config_pubkey) {

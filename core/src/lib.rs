@@ -9,9 +9,19 @@ use solana_program::{
 };
 
 pub mod loader;
-pub mod slot_toggled_field;
+pub mod slot_toggle;
 
-/// Copied from phoenix-v1
+/// Creates a new account or initializes an existing account
+/// # Arguments
+/// * `payer` - The account that will pay for the lamports
+/// * `new_account` - The account to create or initialize
+/// * `system_program` - The system program account
+/// * `program_owner` - The owner of the program
+/// * `rent` - The rent sysvar
+/// * `space` - The space to allocate
+/// * `seeds` - The seeds to use for the PDA
+/// # Returns
+/// * `ProgramResult` - The result of the operation
 #[inline(always)]
 pub fn create_account<'a, 'info>(
     payer: &'a AccountInfo<'info>,

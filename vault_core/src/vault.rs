@@ -1,26 +1,26 @@
+//! The vault is responsible for holding tokens and minting VRT tokens.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_vault_sdk::error::VaultError;
 use solana_program::pubkey::Pubkey;
-
-use crate::result::{VaultCoreError, VaultCoreResult};
 
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
 }
 
-/// The vault is repsonsible for holding tokens and minting LRT tokens
+/// The vault is responsible for holding tokens and minting VRT tokens
 /// based on the amount of tokens deposited.
 /// It also contains several administrative functions for features inside the vault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct Vault {
-    /// The base account of the LRT
+    /// The base account of the VRT
     pub base: Pubkey,
 
-    /// Mint of the LRT token
-    pub lrt_mint: Pubkey,
+    /// Mint of the VRT token
+    pub vrt_mint: Pubkey,
 
-    /// Mint of the token that is supported by the LRT
+    /// Mint of the token that is supported by the VRT
     pub supported_mint: Pubkey,
 
     /// Vault admin
@@ -41,6 +41,10 @@ pub struct Vault {
     /// The admin responsible for setting the capacity
     pub capacity_admin: Pubkey,
 
+    /// The admin responsible for setting the fees
+    pub fee_admin: Pubkey,
+
+    /// The admin responsible for withdrawing tokens
     pub withdraw_admin: Pubkey,
 
     /// Fee wallet account
@@ -55,8 +59,8 @@ pub struct Vault {
     /// The index of the vault in the vault list
     pub vault_index: u64,
 
-    /// The total number of LRT in circulation
-    pub lrt_supply: u64,
+    /// The total number of VRT in circulation
+    pub vrt_supply: u64,
 
     /// The total number of tokens deposited
     pub tokens_deposited: u64,
@@ -73,14 +77,8 @@ pub struct Vault {
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault
     pub slasher_count: u64,
 
-    /// The maximum amount of tokens that can be withdrawn per epoch
-    pub epoch_withdraw_cap: u64,
-
-    /// The current epoch number
-    pub current_epoch: u64,
-
-    /// The amount of tokens withdrawn in the current epoch
-    pub epoch_withdrawn_amount: u64,
+    /// The slot of the last fee change
+    pub last_fee_change_slot: u64,
 
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
@@ -92,13 +90,13 @@ pub struct Vault {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 3],
+    reserved: [u8; 11],
 }
 
 impl Vault {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        lrt_mint: Pubkey,
+        vrt_mint: Pubkey,
         supported_mint: Pubkey,
         admin: Pubkey,
         vault_index: u64,
@@ -111,7 +109,7 @@ impl Vault {
     ) -> Self {
         Self {
             base,
-            lrt_mint,
+            vrt_mint,
             supported_mint,
             admin,
             delegation_admin: admin,
@@ -119,14 +117,16 @@ impl Vault {
             ncn_admin: admin,
             slasher_admin: admin,
             capacity_admin: admin,
+            fee_admin: admin,
             withdraw_admin: admin,
             fee_wallet: admin,
             mint_burn_admin: Pubkey::default(),
             capacity: u64::MAX,
             vault_index,
-            lrt_supply: 0,
+            vrt_supply: 0,
             tokens_deposited: 0,
             withdrawable_reserve_amount: 0,
+            last_fee_change_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
             ncn_count: 0,
@@ -136,7 +136,7 @@ impl Vault {
             current_epoch,
             epoch_withdrawn_amount: 0,
             bump,
-            reserved: [0; 3],
+            reserved: [0; 11],
         }
     }
 
@@ -144,114 +144,81 @@ impl Vault {
     // Asset accounting and tracking
     // ------------------------------------------
 
-    pub fn max_delegation_amount(&self) -> VaultCoreResult<u64> {
+    /// Calculate the maximum amount of tokens that can be delegated to operators, which
+    /// is the total amount of tokens deposited in the vault minus the amount of tokens
+    /// that are reserved for withdrawal.
+    pub fn max_delegation_amount(&self) -> Result<u64, VaultError> {
         self.tokens_deposited
             .checked_sub(self.withdrawable_reserve_amount)
-            .ok_or(VaultCoreError::VaultDelegationUnderflow)
+            .ok_or(VaultError::VaultOverflow)
     }
 
-    pub fn calculate_assets_returned_amount(
-        &mut self,
-        lrt_amount: u64,
-        current_epoch: u64,
-    ) -> VaultCoreResult<u64> {
-        if self.lrt_supply == 0 {
-            return Err(VaultCoreError::VaultEmpty);
-        } else if lrt_amount > self.lrt_supply {
-            return Err(VaultCoreError::VaultInsufficientFunds);
+    /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
+    /// amount. This is the pro-rata share of the total tokens deposited in the vault.
+    pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+        if self.vrt_supply == 0 {
+            return Err(VaultError::VaultVrtEmpty);
+        } else if vrt_amount > self.vrt_supply {
+            return Err(VaultError::VaultInsufficientFunds);
         }
 
-        let returned_amount = lrt_amount
+        vrt_amount
             .checked_mul(self.tokens_deposited)
-            .ok_or(VaultCoreError::VaultWithdrawOverflow)?
-            .checked_div(self.lrt_supply)
-            .ok_or(VaultCoreError::VaultWithdrawOverflow)?;
-
-        if current_epoch == self.current_epoch {
-            // Check if the returned amount exceeds the remaining withdrawal cap for the epoch
-            if self.epoch_withdrawn_amount + returned_amount > self.epoch_withdraw_cap {
-                return Err(VaultCoreError::VaultWithdrawOverflow);
-            }
-        } else {
-            self.current_epoch = current_epoch;
-            self.epoch_withdrawn_amount = 0;
-        }
-
-        // Update the epoch withdrawn amount
-        self.epoch_withdrawn_amount += returned_amount;
-
-        Ok(returned_amount)
+            .and_then(|x| x.checked_div(self.vrt_supply))
+            .ok_or(VaultError::VaultOverflow)
     }
 
-    pub fn calculate_lrt_mint_amount(&self, amount: u64) -> VaultCoreResult<u64> {
+    /// Calculate the amount of VRT tokens to mint based on the amount of tokens deposited in the vault.
+    /// If no tokens have been deposited, the amount is equal to the amount passed in.
+    /// Otherwise, the amount is calculated as the pro-rata share of the total VRT supply.
+    pub fn calculate_vrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
         if self.tokens_deposited == 0 {
             return Ok(amount);
         }
 
         amount
-            .checked_mul(self.lrt_supply)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?
-            .checked_div(self.tokens_deposited)
-            .ok_or(VaultCoreError::VaultDepositOverflow)
+            .checked_mul(self.vrt_supply)
+            .and_then(|x| x.checked_div(self.tokens_deposited))
+            .ok_or(VaultError::VaultOverflow)
     }
 
-    pub const fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps
-    }
-
-    pub fn calculate_deposit_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
-        let fee = lrt_amount
+    /// Calculate the amount of tokens collected as a fee for depositing tokens in the vault.
+    pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+        let fee = vrt_amount
             .checked_mul(self.deposit_fee_bps as u64)
-            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
-            .div_ceil(10_000);
+            .and_then(|x| x.checked_div(10_000))
+            .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
     }
 
-    pub const fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps
-    }
-
-    pub fn calculate_withdraw_fee(&self, lrt_amount: u64) -> VaultCoreResult<u64> {
-        let fee = lrt_amount
+    /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
+    pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+        let fee = vrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
-            .ok_or(VaultCoreError::VaultFeeCalculationOverflow)?
-            .div_ceil(10_000);
+            .and_then(|x| x.checked_div(10_000))
+            .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
-    }
-
-    /// Deposit tokens into the vault
-    pub fn deposit_and_mint_with_capacity_check(&mut self, amount: u64) -> VaultCoreResult<u64> {
-        // the number of tokens to mint is the pro-rata amount of the total tokens deposited and the LRT supply
-        let num_tokens_to_mint = self.calculate_lrt_mint_amount(amount)?;
-
-        // deposit tokens + check against capacity
-        let total_post_deposit = self
-            .tokens_deposited
-            .checked_add(amount)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?;
-        if total_post_deposit > self.capacity {
-            return Err(VaultCoreError::VaultDepositExceedsCapacity);
-        }
-
-        let lrt_supply = self
-            .lrt_supply
-            .checked_add(num_tokens_to_mint)
-            .ok_or(VaultCoreError::VaultDepositOverflow)?;
-
-        self.lrt_supply = lrt_supply;
-        self.tokens_deposited = total_post_deposit;
-
-        Ok(num_tokens_to_mint)
     }
 
     // ------------------------------------------
     // Serialization & Deserialization
     // ------------------------------------------
 
+    /// Returns the seeds for the PDA
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
     }
 
+    /// Find the program address for the Vault
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `base` - The base account used as a PDA seed
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(program_id: &Pubkey, base: &Pubkey) -> (Pubkey, u8, Vec<Vec<u8>>) {
         let seeds = Self::seeds(base);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
@@ -262,15 +229,14 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
+    use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
 
-    use crate::vault::{Vault, VaultCoreError};
+    use crate::vault::Vault;
 
     #[test]
     fn test_deposit_ratio_simple_ok() {
-        let current_epoch = 100;
-
-        let mut vault = Vault::new(
+        let vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -282,11 +248,8 @@ mod tests {
             current_epoch,
             100,
         );
-        let num_minted = vault.deposit_and_mint_with_capacity_check(100).unwrap();
+        let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 100);
-
-        assert_eq!(vault.tokens_deposited, 100);
-        assert_eq!(vault.lrt_supply, 100);
     }
 
     #[test]
@@ -306,63 +269,10 @@ mod tests {
             100,
         );
         vault.tokens_deposited = 90;
-        vault.lrt_supply = 100;
+        vault.vrt_supply = 100;
 
-        let num_minted = vault.deposit_and_mint_with_capacity_check(100).unwrap();
+        let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 111);
-
-        assert_eq!(vault.tokens_deposited, 190);
-        assert_eq!(vault.lrt_supply, 211);
-    }
-
-    #[test]
-    fn test_deposit_capacity_exceeded_fails() {
-        let current_epoch = 100;
-
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            0,
-            current_epoch,
-            100,
-        );
-        vault.capacity = 100;
-
-        assert_eq!(
-            vault.deposit_and_mint_with_capacity_check(101),
-            Err(VaultCoreError::VaultDepositExceedsCapacity)
-        );
-    }
-
-    #[test]
-    fn test_deposit_capacity_ok() {
-        let current_epoch = 100;
-
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            0,
-            current_epoch,
-            100,
-        );
-        vault.capacity = 100;
-
-        vault.deposit_and_mint_with_capacity_check(50).unwrap();
-        vault.deposit_and_mint_with_capacity_check(50).unwrap();
-        assert_eq!(
-            vault.deposit_and_mint_with_capacity_check(1),
-            Err(VaultCoreError::VaultDepositExceedsCapacity)
-        );
     }
 
     #[test]
@@ -382,8 +292,7 @@ mod tests {
             100_000,
         );
 
-        current_epoch = 101;
-        vault.lrt_supply = 100_000;
+        vault.vrt_supply = 100_000;
         vault.tokens_deposited = 100_000;
         assert_eq!(
             vault
@@ -394,8 +303,7 @@ mod tests {
 
         current_epoch = 102;
         vault.tokens_deposited = 90_000;
-        vault.lrt_supply = 100_000;
-        vault.epoch_withdrawn_amount = 100_000;
+        vault.vrt_supply = 100_000;
         assert_eq!(
             vault
                 .calculate_assets_returned_amount(50_000, current_epoch)
@@ -405,8 +313,7 @@ mod tests {
 
         current_epoch = 103;
         vault.tokens_deposited = 110_000;
-        vault.lrt_supply = 100_000;
-        vault.epoch_withdrawn_amount = 100_000;
+        vault.vrt_supply = 100_000;
         assert_eq!(
             vault
                 .calculate_assets_returned_amount(50_000, current_epoch)
@@ -416,48 +323,23 @@ mod tests {
 
         current_epoch = 104;
         vault.tokens_deposited = 100;
-        vault.lrt_supply = 0;
+        vault.vrt_supply = 0;
         assert_eq!(
-            vault.calculate_assets_returned_amount(100, current_epoch),
-            Err(VaultCoreError::VaultEmpty)
+            vault.calculate_assets_returned_amount(100),
+            Err(VaultError::VaultVrtEmpty)
         );
 
         current_epoch = 105;
         vault.tokens_deposited = 100;
-        vault.lrt_supply = 1;
+        vault.vrt_supply = 1;
         assert_eq!(
-            vault.calculate_assets_returned_amount(100, current_epoch),
-            Err(VaultCoreError::VaultInsufficientFunds)
+            vault.calculate_assets_returned_amount(100),
+            Err(VaultError::VaultInsufficientFunds)
         );
 
         current_epoch = 106;
         vault.tokens_deposited = 100;
-        vault.lrt_supply = 13;
-        assert_eq!(
-            vault
-                .calculate_assets_returned_amount(1, current_epoch)
-                .unwrap(),
-            7
-        );
-
-        current_epoch = 107;
-        vault.current_epoch = 107;
-        vault.tokens_deposited = 1_000_000;
-        vault.lrt_supply = 1_000_000;
-        vault.epoch_withdrawn_amount = 1;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(100_000, current_epoch),
-            Err(VaultCoreError::VaultWithdrawOverflow)
-        );
-
-        current_epoch = 108;
-        vault.current_epoch = 107;
-        vault.tokens_deposited = 1_000_000;
-        vault.lrt_supply = 1_000_000;
-        vault.epoch_withdrawn_amount = 0;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(100_000, current_epoch),
-            Ok(100_000)
-        );
+        vault.vrt_supply = 13;
+        assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);
     }
 }

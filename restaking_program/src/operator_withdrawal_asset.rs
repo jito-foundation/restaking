@@ -1,6 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_signer};
 use jito_restaking_core::{loader::load_operator, operator::Operator};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
@@ -26,13 +27,14 @@ pub fn process_operator_withdrawal_asset(
     let operator = Operator::try_from_slice(&operator_data)?;
     load_associated_token_account(
         receiver_token_account,
-        &operator.withdraw_fee_wallet,
+        &operator.withdrawal_fee_wallet,
         &token_mint,
     )?;
 
-    if operator.withdraw_admin.ne(operator_withdraw_admin.key) {
+    // The Operator withdraw admin shall be the signer of the transaction
+    if operator.withdrawal_admin.ne(operator_withdraw_admin.key) {
         msg!("Invalid operator withdraw admin");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorWithdrawAdminInvalid.into());
     }
 
     let mut operator_seeds = Operator::seeds(&operator.base);

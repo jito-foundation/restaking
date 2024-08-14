@@ -7,4 +7,3 @@ pub mod ncn_vault_ticket;
 pub mod operator;
 pub mod operator_ncn_ticket;
 pub mod operator_vault_ticket;
-pub mod result;

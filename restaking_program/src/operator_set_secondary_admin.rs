@@ -1,7 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{loader::load_operator, operator::Operator};
-use jito_restaking_sdk::OperatorAdminRole;
+use jito_restaking_sdk::{error::RestakingError, instruction::OperatorAdminRole};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -22,11 +22,12 @@ pub fn process_set_operator_secondary_admin(
     load_operator(program_id, operator, false)?;
     load_signer(admin, false)?;
 
+    // The Operator admin shall be the signer of the transaction
     let mut operator_data = operator.data.borrow_mut();
     let operator = Operator::try_from_slice_mut(&mut operator_data)?;
     if operator.admin.ne(admin.key) {
         msg!("Invalid operator admin");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(RestakingError::OperatorAdminInvalid.into());
     }
 
     match role {
@@ -40,10 +41,10 @@ pub fn process_set_operator_secondary_admin(
             operator.voter = *new_admin.key;
         }
         OperatorAdminRole::WithdrawAdmin => {
-            operator.withdraw_admin = *new_admin.key;
+            operator.withdrawal_admin = *new_admin.key;
         }
         OperatorAdminRole::WithdrawWallet => {
-            operator.withdraw_fee_wallet = *new_admin.key;
+            operator.withdrawal_fee_wallet = *new_admin.key;
         }
     }
 

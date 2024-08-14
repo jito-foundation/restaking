@@ -1,7 +1,12 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::instruction::InstructionError;
+    use solana_sdk::{
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{fixture::TestBuilder, vault_client::VaultStakerWithdrawalTicketRoot};
@@ -30,21 +35,21 @@ mod tests {
             .unwrap();
 
         fixture
-            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
-        let depositor_lrt_token_account =
-            get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint);
+        let depositor_vrt_token_account =
+            get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint);
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
                 &depositor,
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 100_000,
             )
@@ -52,15 +57,24 @@ mod tests {
             .unwrap();
 
         let depositor_ata = fixture
-            .get_token_account(&depositor_lrt_token_account)
+            .get_token_account(&depositor_vrt_token_account)
             .await
             .unwrap();
         assert_eq!(depositor_ata.amount, 99_000);
 
-        vault_program_client
+        let transaction_error = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, 49_500)
             .await
-            .unwrap_err();
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            transaction_error,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(VaultError::VaultDelegationListUnderflow as u32)
+            )
+        );
     }
 
     #[tokio::test]
@@ -75,10 +89,16 @@ mod tests {
             .await
             .unwrap();
 
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
-        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
@@ -86,7 +106,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -101,7 +121,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
         restaking_program_client
@@ -141,38 +161,38 @@ mod tests {
             .unwrap();
 
         fixture
-            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
                 &depositor,
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 100_000,
             )
             .await
             .unwrap();
 
-        let vault_lrt_account = fixture
+        let vault_vrt_account = fixture
             .get_token_account(&get_associated_token_address(
                 &depositor.pubkey(),
-                &vault.lrt_mint,
+                &vault.vrt_mint,
             ))
             .await
             .unwrap();
-        assert_eq!(vault_lrt_account.amount, 99_000);
+        assert_eq!(vault_vrt_account.amount, 99_000);
 
         let vault_fee_account = fixture
             .get_token_account(&get_associated_token_address(
                 &vault.fee_wallet,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
             ))
             .await
             .unwrap();
@@ -202,7 +222,7 @@ mod tests {
             );
         }
 
-        // the user is withdrawing 99,000 LRT tokens, there is a 1% fee on withdraws, so
+        // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, 99_000)
@@ -216,7 +236,7 @@ mod tests {
                 .unwrap();
 
             // this is 1,000 because 1% of the fee went to the vault fee account, the assets still staked
-            // are for the LRT in the fee account to unstake later
+            // are for the VRT in the fee account to unstake later
             assert_eq!(vault_delegation_list.delegations[0].staked_amount, 1_990);
             assert_eq!(
                 vault_delegation_list.delegations[0].enqueued_for_withdraw_amount,
@@ -238,7 +258,7 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(vault_staker_withdrawal_ticket.lrt_amount, 98_010);
+        assert_eq!(vault_staker_withdrawal_ticket.vrt_amount, 98_010);
         assert_eq!(
             vault_staker_withdrawal_ticket.withdraw_allocation_amount,
             98_010
@@ -256,11 +276,17 @@ mod tests {
             .setup_config_and_vault(0, 0, 100_000)
             .await
             .unwrap();
-        let _restaking_config_admin = restaking_program_client.setup_config().await.unwrap();
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
 
         // Setup operator and NCN
-        let operator_root = restaking_program_client.setup_operator().await.unwrap();
-        let ncn_root = restaking_program_client.setup_ncn().await.unwrap();
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         let restaking_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
@@ -269,7 +295,7 @@ mod tests {
 
         // Setup necessary relationships
         restaking_program_client
-            .operator_ncn_opt_in(&operator_root, &ncn_root.ncn_pubkey)
+            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -283,7 +309,7 @@ mod tests {
             .await
             .unwrap();
         restaking_program_client
-            .ncn_vault_opt_in(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -325,20 +351,20 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.lrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
-        // Mint LRT tokens to depositor
+        // Mint VRT tokens to depositor
         vault_program_client
             .mint_to(
                 &vault_root.vault_pubkey,
-                &vault.lrt_mint,
+                &vault.vrt_mint,
                 &depositor,
                 &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
                 &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 100_000,
             )
@@ -383,9 +409,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(withdrawal_ticket.lrt_amount, withdraw_amount);
+        assert_eq!(withdrawal_ticket.vrt_amount, withdraw_amount);
 
-        // The actual assets to be withdrawn should be more than the LRT amount due to rewards
+        // The actual assets to be withdrawn should be more than the VRT amount due to rewards
         assert_eq!(withdrawal_ticket.withdraw_allocation_amount, 55_000);
 
         // Verify the vault delegation list

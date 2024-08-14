@@ -23,6 +23,7 @@ use solana_program::{
 };
 
 /// Processes the instruction: [`crate::VaultInstruction::InitializeVaultDelegationList`]
+/// This shall be called repeatedly until fully initialized
 pub fn process_initialize_vault_delegation_list(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -35,6 +36,7 @@ pub fn process_initialize_vault_delegation_list(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    // The vault delegation list account shall be at the canonical PDA
     let (vault_delegation_list_pubkey, vault_delegation_list_bump, mut vault_delegation_list_seeds) =
         VaultDelegationList::find_program_address(program_id, vault.key);
     vault_delegation_list_seeds.push(vec![vault_delegation_list_bump]);
@@ -43,6 +45,7 @@ pub fn process_initialize_vault_delegation_list(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // The vault delegation list shall not be initialized
     if vault_delegation_list.data_len() > 0
         && vault_delegation_list.data.borrow()[0] == VaultDelegationList::DISCRIMINATOR
     {
@@ -50,6 +53,7 @@ pub fn process_initialize_vault_delegation_list(
         return Err(ProgramError::AccountAlreadyInitialized);
     }
 
+    // Each initialization step shall not exceed the maximum permitted data increase
     let allocation_size = 8_usize
         .checked_add(size_of::<VaultDelegationList>())
         .unwrap();
@@ -94,6 +98,8 @@ pub fn process_initialize_vault_delegation_list(
         return Err(ProgramError::InvalidAccountOwner);
     }
 
+    // When the vault delegation list is fully allocated, initialize it by writing the discriminator
+    // to the first byte
     let mut vault_delegation_list_data = vault_delegation_list.try_borrow_mut_data()?;
     if vault_delegation_list_data.len() == allocation_size {
         msg!("Initializing vault delegation list data");

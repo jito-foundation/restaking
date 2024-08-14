@@ -8,6 +8,7 @@ use jito_jsm_core::{
     },
 };
 use jito_vault_core::{config::Config, loader::load_config, vault::Vault};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, rent::Rent,
@@ -23,20 +24,21 @@ pub fn process_initialize_vault(
     withdrawal_fee_bps: u16,
     epoch_withdraw_cap: u64,
 ) -> ProgramResult {
-    let [config, vault, lrt_mint, mint, admin, base, system_program, token_program] = accounts
+    let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     load_config(program_id, config, true)?;
     load_system_account(vault, true)?;
-    load_system_account(lrt_mint, true)?;
-    load_signer(lrt_mint, true)?;
+    load_system_account(vrt_mint, true)?;
+    load_signer(vrt_mint, true)?;
     load_token_mint(mint)?;
     load_signer(admin, true)?;
     load_signer(base, false)?;
     load_system_program(system_program)?;
     load_token_program(token_program)?;
 
+    // The vault account shall be at the canonical PDA
     let (vault_pubkey, vault_bump, mut vault_seeds) =
         Vault::find_program_address(program_id, base.key);
     vault_seeds.push(vec![vault_bump]);
@@ -45,36 +47,36 @@ pub fn process_initialize_vault(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
-
     let rent = Rent::get()?;
 
-    // Initialize LRT mint
+    // Initialize VRT mint
     {
-        msg!("Initializing mint @ address {}", lrt_mint.key);
+        msg!("Initializing mint @ address {}", vrt_mint.key);
         invoke(
             &system_instruction::create_account(
                 admin.key,
-                lrt_mint.key,
+                vrt_mint.key,
                 rent.minimum_balance(Mint::get_packed_len()),
                 Mint::get_packed_len() as u64,
                 token_program.key,
             ),
-            &[admin.clone(), lrt_mint.clone(), system_program.clone()],
+            &[admin.clone(), vrt_mint.clone(), system_program.clone()],
         )?;
 
         invoke(
             &spl_token::instruction::initialize_mint2(
                 &spl_token::id(),
-                lrt_mint.key,
+                vrt_mint.key,
                 vault.key,
                 None,
                 9,
             )?,
-            &[lrt_mint.clone()],
+            &[vrt_mint.clone()],
         )?;
     }
+
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_mut(&mut config_data)?;
 
     // Initialize vault
     {
@@ -92,8 +94,14 @@ pub fn process_initialize_vault(
         let mut vault_data = vault.try_borrow_mut_data()?;
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+
+        if deposit_fee_bps > config.fee_cap_bps || withdrawal_fee_bps > config.fee_cap_bps {
+            msg!("Fee cap exceeds maximum allowed of {}", config.fee_cap_bps);
+            return Err(VaultError::VaultFeeCapExceeded.into());
+        }
+
         *vault = Vault::new(
-            *lrt_mint.key,
+            *vrt_mint.key,
             *mint.key,
             *admin.key,
             config.num_vaults,

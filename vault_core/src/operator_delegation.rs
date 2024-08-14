@@ -1,15 +1,15 @@
+//! OperatorDelegation tracks the state of delegations to operators
 use std::cmp::min;
 
 use bytemuck::{Pod, Zeroable};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{msg, pubkey::Pubkey};
 
-use crate::result::{VaultCoreError, VaultCoreResult};
-
-/// Represents an operator that has opted-in to the vault and any associated stake on this operator
+/// OperatorDelegation tracks the state of delegation to a specific operator
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]
 #[repr(C)]
 pub struct OperatorDelegation {
-    /// The operator pubkey that has opted-in to the vault
+    /// The operator pubkey that the delegation is associated with
     pub operator: Pubkey,
 
     /// The amount of stake that is currently active on the operator
@@ -30,12 +30,17 @@ pub struct OperatorDelegation {
     /// to be available for withdrawal in the current epoch + 1
     pub cooling_down_for_withdraw_amount: u64,
 
+    /// Flag to indicate if the delegation is used
     pub is_used: u8,
 
     reserved: [u8; 7],
 }
 
 impl OperatorDelegation {
+    /// Creates a new OperatorDelegation with the given operator pubkey
+    ///
+    /// # Arguments
+    /// * `operator` - The operator pubkey
     pub const fn new(operator: Pubkey) -> Self {
         Self {
             operator,
@@ -49,6 +54,7 @@ impl OperatorDelegation {
         }
     }
 
+    /// Clears the delegation state to default values
     pub fn clear(&mut self) {
         self.operator = Pubkey::default();
         self.staked_amount = 0;
@@ -59,6 +65,7 @@ impl OperatorDelegation {
         self.is_used = 0;
     }
 
+    /// Returns true if the delegation is empty
     pub const fn is_empty(&self) -> bool {
         self.staked_amount == 0
             && self.enqueued_for_cooldown_amount == 0
@@ -70,24 +77,32 @@ impl OperatorDelegation {
     /// # Returns
     /// The total amount of stake on the operator that can be applied for security, which includes
     /// the active and any cooling down stake for re-delegation or withdrawal
-    pub fn total_security(&self) -> VaultCoreResult<u64> {
+    pub fn total_security(&self) -> Result<u64, VaultError> {
         self.staked_amount
             .checked_add(self.enqueued_for_cooldown_amount)
             .and_then(|x| x.checked_add(self.cooling_down_amount))
             .and_then(|x| x.checked_add(self.enqueued_for_withdraw_amount))
             .and_then(|x| x.checked_add(self.cooling_down_for_withdraw_amount))
-            .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)
+            .ok_or(VaultError::OperatorDelegationTotalSecurityOverflow)
     }
 
     /// Returns the amount of withdrawable security, which is the sum of the amount actively staked,
     /// the amount enqueued for cooldown, and the cooling down amount.
-    pub fn withdrawable_security(&self) -> VaultCoreResult<u64> {
+    pub fn withdrawable_security(&self) -> Result<u64, VaultError> {
         self.staked_amount
             .checked_add(self.enqueued_for_cooldown_amount)
             .and_then(|x| x.checked_add(self.cooling_down_amount))
-            .ok_or(VaultCoreError::VaultOperatorActiveStakeOverflow)
+            .ok_or(VaultError::OperatorDelegationWithdrawableSecurityOverflow)
     }
 
+    /// Updates the state of the delegation
+    /// The cooling_down_amount becomes the enqueued_for_cooldown_amount
+    /// The enqueued_for_cooldown_amount is zeroed out
+    /// The cooling_down_for_withdraw_amount becomes the enqueued_for_withdraw_amount
+    /// The enqueued_for_withdraw_amount is zeroed out
+    ///
+    /// # Returns
+    /// The amount that is available for withdraw
     #[inline(always)]
     pub fn update(&mut self) -> u64 {
         let available_for_withdraw = self.cooling_down_for_withdraw_amount;
@@ -99,7 +114,17 @@ impl OperatorDelegation {
         available_for_withdraw
     }
 
-    pub fn slash(&mut self, slash_amount: u64) -> VaultCoreResult<()> {
+    /// Slashes the operator delegation by the given amount
+    /// All buckets are slashed pro-rata based on the total security amount
+    ///
+    /// # Arguments
+    /// * `slash_amount` - The amount to slash
+    ///
+    /// # Returns
+    /// * `Ok(())` if the slash was successful
+    /// * `Err(VaultError)` if the slash failed
+    pub fn slash(&mut self, slash_amount: u64) -> Result<(), VaultError> {
+        // ensure the there's no underflow when slashing
         let total_security_amount = self.total_security()?;
         if slash_amount > total_security_amount {
             msg!(
@@ -107,27 +132,27 @@ impl OperatorDelegation {
                 slash_amount,
                 total_security_amount
             );
-            return Err(VaultCoreError::VaultSlashingUnderflow);
+            return Err(VaultError::OperatorDelegationSlashExceedsTotalSecurity);
         }
 
         let mut remaining_slash = slash_amount;
 
         // Helper function to calculate and apply slash based on pro-rata share
-        let mut apply_slash = |amount: &mut u64| -> VaultCoreResult<()> {
+        let mut apply_slash = |amount: &mut u64| -> Result<(), VaultError> {
             if *amount == 0 || remaining_slash == 0 {
                 return Ok(());
             }
             let pro_rata_slash = (*amount as u128)
                 .checked_mul(slash_amount as u128)
-                .ok_or(VaultCoreError::VaultSlashingOverflow)?
+                .ok_or(VaultError::OperatorDelegationSlashOverflow)?
                 .div_ceil(total_security_amount as u128);
             let actual_slash = min(pro_rata_slash as u64, min(*amount, remaining_slash));
             *amount = amount
                 .checked_sub(actual_slash)
-                .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
+                .ok_or(VaultError::OperatorDelegationSlashUnderflow)?;
             remaining_slash = remaining_slash
                 .checked_sub(actual_slash)
-                .ok_or(VaultCoreError::VaultSlashingUnderflow)?;
+                .ok_or(VaultError::OperatorDelegationSlashUnderflow)?;
             Ok(())
         };
 
@@ -141,22 +166,22 @@ impl OperatorDelegation {
         // Ensure we've slashed the exact amount requested
         if remaining_slash > 0 {
             msg!("slashing incomplete ({} remaining)", remaining_slash);
-            return Err(VaultCoreError::VaultSlashingIncomplete);
+            return Err(VaultError::OperatorDelegationSlashIncomplete);
         }
 
         Ok(())
     }
 
     /// Undelegates assets from the operator, pulling from the staked assets.
-    pub fn undelegate(&mut self, amount: u64) -> VaultCoreResult<()> {
+    pub fn undelegate(&mut self, amount: u64) -> Result<(), VaultError> {
         self.staked_amount = self
             .staked_amount
             .checked_sub(amount)
-            .ok_or(VaultCoreError::VaultDelegationUnderflow)?;
-        self.enqueued_for_cooldown_amount = self
-            .enqueued_for_cooldown_amount
-            .checked_add(amount)
-            .ok_or(VaultCoreError::VaultDelegationOverflow)?;
+            .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
+        self.enqueued_for_cooldown_amount =
+            self.enqueued_for_cooldown_amount
+                .checked_add(amount)
+                .ok_or(VaultError::OperatorDelegationUndelegateOverflow)?;
 
         Ok(())
     }
@@ -168,9 +193,9 @@ impl OperatorDelegation {
     /// Funds that are cooling down are likely meant to be re-delegated by the delegation manager.
     /// The function first withdraws from staked assets, falling back to cooling down assets
     /// to avoid blocking the delegation manager from redelegating.
-    pub fn undelegate_for_withdraw(&mut self, amount: u64) -> VaultCoreResult<()> {
+    pub fn undelegate_for_withdraw(&mut self, amount: u64) -> Result<(), VaultError> {
         if amount > self.withdrawable_security()? {
-            return Err(VaultCoreError::VaultDelegationListInsufficientSecurity);
+            return Err(VaultError::OperatorDelegationUndelegateUnderflow);
         }
 
         let mut amount_left = amount;
@@ -179,40 +204,41 @@ impl OperatorDelegation {
         self.staked_amount = self
             .staked_amount
             .checked_sub(staked_amount_withdraw)
-            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+            .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
         amount_left = amount_left
             .checked_sub(staked_amount_withdraw)
-            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+            .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
 
         let enqueued_for_cooldown_amount_withdraw =
             min(self.enqueued_for_cooldown_amount, amount_left);
         self.enqueued_for_cooldown_amount = self
             .enqueued_for_cooldown_amount
             .checked_sub(enqueued_for_cooldown_amount_withdraw)
-            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+            .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
         amount_left = amount_left
             .checked_sub(enqueued_for_cooldown_amount_withdraw)
-            .ok_or(VaultCoreError::VaultUndelegationUnderflow)?;
+            .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
 
         let cooldown_amount_withdraw = min(self.cooling_down_amount, amount_left);
         self.cooling_down_amount = self
             .cooling_down_amount
             .checked_sub(cooldown_amount_withdraw)
-            .ok_or(VaultCoreError::VaultDelegationUnderflow)?;
+            .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
 
-        self.enqueued_for_withdraw_amount = self
-            .enqueued_for_withdraw_amount
-            .checked_add(amount)
-            .ok_or(VaultCoreError::VaultDelegationOverflow)?;
+        self.enqueued_for_withdraw_amount =
+            self.enqueued_for_withdraw_amount
+                .checked_add(amount)
+                .ok_or(VaultError::OperatorDelegationUndelegateUnderflow)?;
 
         Ok(())
     }
 
-    pub fn delegate(&mut self, amount: u64) -> VaultCoreResult<()> {
+    /// Delegates assets to the operator
+    pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
         self.staked_amount = self
             .staked_amount
             .checked_add(amount)
-            .ok_or(VaultCoreError::VaultDelegationOverflow)?;
+            .ok_or(VaultError::OperatorDelegationDelegateOverflow)?;
         Ok(())
     }
 }

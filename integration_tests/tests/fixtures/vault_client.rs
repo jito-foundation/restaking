@@ -14,7 +14,9 @@ use jito_vault_core::{
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::{
-    add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list,
+    error::VaultError,
+    instruction::VaultAdminRole,
+    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list},
 };
 use log::info;
 use solana_program::{
@@ -29,8 +31,9 @@ use solana_program::{
 use solana_program_test::BanksClient;
 use solana_sdk::{
     commitment_config::CommitmentLevel,
+    instruction::InstructionError,
     signature::{Keypair, Signer},
-    transaction::Transaction,
+    transaction::{Transaction, TransactionError},
 };
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
@@ -203,7 +206,7 @@ impl VaultProgramClient {
         let vault_pubkey =
             Vault::find_program_address(&jito_vault_program::id(), &vault_base.pubkey()).0;
 
-        let lrt_mint = Keypair::new();
+        let vrt_mint = Keypair::new();
         let vault_admin = Keypair::new();
         let token_mint = Keypair::new();
 
@@ -215,7 +218,7 @@ impl VaultProgramClient {
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_pubkey,
-            &lrt_mint,
+            &vrt_mint,
             &token_mint,
             &vault_admin,
             &vault_base,
@@ -255,19 +258,10 @@ impl VaultProgramClient {
             .await?;
         }
 
-        // let account = self
-        //     .banks_client
-        //     .get_account(vault_delegation_list)
-        //     .await?
-        //     .unwrap();
-        // if account.data[0] == VaultDelegationList::DISCRIMINATOR {
-        //     break;
-        // }
-
         // for holding the backed asset in the vault
         self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
         // for holding fees
-        self.create_ata(&lrt_mint.pubkey(), &vault_admin.pubkey())
+        self.create_ata(&vrt_mint.pubkey(), &vault_admin.pubkey())
             .await?;
 
         Ok((
@@ -296,7 +290,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.add_ncn(
+        self.initialize_vault_ncn_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &ncn,
@@ -484,7 +478,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.add_operator(
+        self.initialize_vault_operator_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &operator_pubkey,
@@ -568,7 +562,7 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
-        lrt_mint: &Keypair,
+        vrt_mint: &Keypair,
         token_mint: &Keypair,
         vault_admin: &Keypair,
         vault_base: &Keypair,
@@ -583,7 +577,7 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 &config,
                 &vault,
-                &lrt_mint.pubkey(),
+                &vrt_mint.pubkey(),
                 &token_mint.pubkey(),
                 &vault_admin.pubkey(),
                 &vault_base.pubkey(),
@@ -592,13 +586,13 @@ impl VaultProgramClient {
                 epoch_withdraw_cap,
             )],
             Some(&vault_admin.pubkey()),
-            &[&vault_admin, &lrt_mint, &vault_base],
+            &[&vault_admin, &vrt_mint, &vault_base],
             blockhash,
         ))
         .await
     }
 
-    pub async fn add_ncn(
+    pub async fn initialize_vault_ncn_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -611,7 +605,7 @@ impl VaultProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_ncn(
+            &[jito_vault_sdk::sdk::initialize_vault_ncn_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -628,7 +622,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn add_operator(
+    pub async fn initialize_vault_operator_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -640,7 +634,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_operator(
+            &[jito_vault_sdk::sdk::initialize_vault_operator_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -657,6 +651,79 @@ impl VaultProgramClient {
         .await
     }
 
+    pub async fn set_admin(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        old_admin: &Keypair,
+        new_admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_admin(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &old_admin.pubkey(),
+                &new_admin.pubkey(),
+            )],
+            Some(&old_admin.pubkey()),
+            &[old_admin, new_admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn set_secondary_admin(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        admin: &Keypair,
+        new_admin: &Pubkey,
+        role: VaultAdminRole,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_secondary_admin(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &admin.pubkey(),
+                &new_admin,
+                role,
+            )],
+            Some(&admin.pubkey()),
+            &[admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn set_fees(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        fee_admin: &Keypair,
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_fees(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &fee_admin.pubkey(),
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+            )],
+            Some(&fee_admin.pubkey()),
+            &[fee_admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn do_enqueue_withdraw(
         &mut self,
         vault_root: &VaultRoot,
@@ -664,8 +731,8 @@ impl VaultProgramClient {
         amount: u64,
     ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
-        let depositor_lrt_token_account =
-            get_associated_token_address(&depositor.pubkey(), &vault.lrt_mint);
+        let depositor_vrt_token_account =
+            get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint);
 
         let base = Keypair::new();
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
@@ -680,13 +747,13 @@ impl VaultProgramClient {
             vault_staker_withdrawal_ticket
         );
         let vault_staker_withdrawal_ticket_token_account =
-            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint);
+            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint);
 
-        self.create_ata(&vault.lrt_mint, &vault_staker_withdrawal_ticket)
+        self.create_ata(&vault.vrt_mint, &vault_staker_withdrawal_ticket)
             .await?;
 
         let vault_staker_fee_token_account =
-            get_associated_token_address(&vault.fee_wallet, &vault.lrt_mint);
+            get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint);
 
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -700,7 +767,7 @@ impl VaultProgramClient {
             &vault_staker_withdrawal_ticket_token_account,
             &vault_staker_fee_token_account,
             depositor,
-            &depositor_lrt_token_account,
+            &depositor_vrt_token_account,
             &base,
             amount,
         )
@@ -717,7 +784,7 @@ impl VaultProgramClient {
         let vault = self.get_vault(vault_pubkey).await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::update_vault(
+            &[jito_vault_sdk::sdk::update_vault(
                 &jito_vault_program::id(),
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 vault_pubkey,
@@ -741,13 +808,13 @@ impl VaultProgramClient {
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         staker: &Keypair,
-        staker_lrt_token_account: &Pubkey,
+        staker_vrt_token_account: &Pubkey,
         base: &Keypair,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::enqueue_withdraw(
+            &[jito_vault_sdk::sdk::enqueue_withdraw(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -756,7 +823,7 @@ impl VaultProgramClient {
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
                 &staker.pubkey(),
-                staker_lrt_token_account,
+                staker_vrt_token_account,
                 &base.pubkey(),
                 amount,
             )],
@@ -791,12 +858,12 @@ impl VaultProgramClient {
             )
             .0,
             &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-            &vault.lrt_mint,
+            &vault.vrt_mint,
             staker,
             &get_associated_token_address(&staker.pubkey(), &vault.supported_mint),
-            &get_associated_token_address(&staker.pubkey(), &vault.lrt_mint),
+            &get_associated_token_address(&staker.pubkey(), &vault.vrt_mint),
             &vault_staker_withdrawal_ticket,
-            &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.lrt_mint),
+            &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
         )
         .await?;
 
@@ -809,25 +876,25 @@ impl VaultProgramClient {
         vault: &Pubkey,
         vault_delegation_list: &Pubkey,
         vault_token_account: &Pubkey,
-        lrt_mint: &Pubkey,
+        vrt_mint: &Pubkey,
         staker: &Keypair,
         staker_token_account: &Pubkey,
-        staker_lrt_token_account: &Pubkey,
+        staker_vrt_token_account: &Pubkey,
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::burn_withdrawal_ticket(
+            &[jito_vault_sdk::sdk::burn_withdrawal_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
                 vault_delegation_list,
                 vault_token_account,
-                lrt_mint,
+                vrt_mint,
                 &staker.pubkey(),
                 staker_token_account,
-                staker_lrt_token_account,
+                staker_vrt_token_account,
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
             )],
@@ -872,11 +939,11 @@ impl VaultProgramClient {
     pub async fn mint_to(
         &mut self,
         vault: &Pubkey,
-        lrt_mint: &Pubkey,
+        vrt_mint: &Pubkey,
         depositor: &Keypair,
         depositor_token_account: &Pubkey,
         vault_token_account: &Pubkey,
-        depositor_lrt_token_account: &Pubkey,
+        depositor_vrt_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         mint_signer: Option<&Keypair>,
         amount: u64,
@@ -887,15 +954,15 @@ impl VaultProgramClient {
             signers.push(signer);
         }
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::mint_to(
+            &[jito_vault_sdk::sdk::mint_to(
                 &jito_vault_program::id(),
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 vault,
-                lrt_mint,
+                vrt_mint,
                 &depositor.pubkey(),
                 depositor_token_account,
                 vault_token_account,
-                depositor_lrt_token_account,
+                depositor_vrt_token_account,
                 vault_fee_token_account,
                 mint_signer.map(|s| s.pubkey()).as_ref(),
                 amount,
@@ -920,7 +987,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::add_slasher(
+            &[jito_vault_sdk::sdk::initialize_vault_ncn_slasher_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -952,7 +1019,7 @@ impl VaultProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[
-                jito_vault_sdk::initialize_vault_ncn_slasher_operator_ticket(
+                jito_vault_sdk::sdk::initialize_vault_ncn_slasher_operator_ticket(
                     &jito_vault_program::id(),
                     config,
                     vault,
@@ -994,7 +1061,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::slash(
+            &[jito_vault_sdk::sdk::slash(
                 &jito_vault_program::id(),
                 config,
                 vault,
@@ -1048,7 +1115,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         self.banks_client
@@ -1101,4 +1168,12 @@ impl VaultProgramClient {
             .await?;
         Ok(())
     }
+}
+
+pub fn assert_vault_error<T>(test_error: Result<T, TestError>, vault_error: VaultError) {
+    assert!(test_error.is_err());
+    assert_eq!(
+        test_error.err().unwrap().to_transaction_error().unwrap(),
+        TransactionError::InstructionError(0, InstructionError::Custom(vault_error as u32))
+    );
 }

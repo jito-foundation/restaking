@@ -1,12 +1,16 @@
+//! The [`VaultNcnTicket`] account tracks a vault supporting a node consensus network. It can be
+//! enabled and disabled over time by the vault NCN admin.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::slot_toggled_field::SlotToggle;
+use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for VaultNcnTicket {
     const DISCRIMINATOR: u8 = 3;
 }
 
+/// The [`VaultNcnTicket`] account tracks a vault supporting a node consensus network. It can be
+/// enabled and disabled over time by the vault NCN admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct VaultNcnTicket {
@@ -22,6 +26,7 @@ pub struct VaultNcnTicket {
     /// The slot toggle
     pub state: SlotToggle,
 
+    /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
@@ -40,6 +45,11 @@ impl VaultNcnTicket {
         }
     }
 
+    /// The seeds for the PDA
+    ///
+    /// # Arguments
+    /// * `vault` - The vault account
+    /// * `ncn` - The ncn account
     pub fn seeds(vault: &Pubkey, ncn: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"vault_ncn_ticket".to_vec(),
@@ -48,6 +58,17 @@ impl VaultNcnTicket {
         ])
     }
 
+    /// Find the program address for the PDA
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault` - The vault account
+    /// * `ncn` - The ncn account
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>>` - The seeds
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,

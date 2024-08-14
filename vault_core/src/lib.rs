@@ -1,7 +1,6 @@
 pub mod config;
 pub mod loader;
 pub mod operator_delegation;
-pub mod result;
 pub mod vault;
 pub mod vault_delegation_list;
 pub mod vault_ncn_slasher_operator_ticket;

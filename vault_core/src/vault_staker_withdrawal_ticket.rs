@@ -1,3 +1,5 @@
+//! The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
+//! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{program_error::ProgramError, pubkey::Pubkey};
@@ -6,9 +8,8 @@ impl Discriminator for VaultStakerWithdrawalTicket {
     const DISCRIMINATOR: u8 = 7;
 }
 
-/// Represents a pending withdrawal from a vault by a staker.
-/// For every withdraw ticket, there's an associated token account owned by the withdraw ticket
-/// with the staker's LRT.
+/// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
+/// For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
@@ -24,10 +25,9 @@ pub struct VaultStakerWithdrawalTicket {
     /// The amount of assets allocated for this staker's withdraw
     pub withdraw_allocation_amount: u64,
 
-    /// The amount of LRT held in the VaultStakerWithdrawalTicket token account at the time of creation
-    /// At first glance, this seems redundant, but it's necessary to prevent someone from depositing
-    /// more LRT into the token account and skipping the withdraw queue.
-    pub lrt_amount: u64,
+    /// The amount of VRT held in the VaultStakerWithdrawalTicket token account at the time of creation.
+    /// This is used to ensure the amount redeemed is the same as the amount allocated.
+    pub vrt_amount: u64,
 
     /// The slot the withdrawal was enqueued
     pub slot_unstaked: u64,
@@ -44,7 +44,7 @@ impl VaultStakerWithdrawalTicket {
         staker: Pubkey,
         base: Pubkey,
         withdraw_allocation_amount: u64,
-        lrt_amount: u64,
+        vrt_amount: u64,
         slot_unstaked: u64,
         bump: u8,
     ) -> Self {
@@ -53,7 +53,7 @@ impl VaultStakerWithdrawalTicket {
             staker,
             base,
             withdraw_allocation_amount,
-            lrt_amount,
+            vrt_amount,
             slot_unstaked,
             bump,
             reserved: [0; 7],
@@ -76,6 +76,12 @@ impl VaultStakerWithdrawalTicket {
         }
     }
 
+    /// Returns the seeds for the PDA
+    ///
+    /// # Arguments
+    /// * `vault` - The vault
+    /// * `staker` - The staker
+    /// * `base` - The base account used as a PDA seed
     pub fn seeds(vault: &Pubkey, staker: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"vault_staker_withdrawal_ticket".to_vec(),
@@ -85,6 +91,18 @@ impl VaultStakerWithdrawalTicket {
         ])
     }
 
+    /// Find the program address for the PDA
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault` - The vault
+    /// * `staker` - The staker
+    /// * `base` - The base account used as a PDA seed
+    ///
+    /// # Returns
+    /// * [`Pubkey`] - The program address
+    /// * `u8` - The bump seed
+    /// * `Vec<Vec<u8>` - The seeds used to generate the PDA
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,
