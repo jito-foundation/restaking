@@ -80,6 +80,18 @@ pub struct Vault {
     /// The slot of the last fee change
     pub last_fee_change_slot: u64,
 
+    /// the percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
+    pub epoch_withdraw_cap_bps: u64,
+
+    /// The slot when `process_update_vault` is called at the beginning of an epoch
+    pub last_slot_updated: u64,
+
+    /// The tally of assets withdrawn on that epoch, this cannot be above epoch_snapshot_amount x epoch_withdraw_cap_bps
+    pub epoch_withdraw_amount: u64,
+
+    /// The amount of assets in the vault at the time of calling `process_update_vault`
+    pub epoch_snapshot_amount: u64,
+
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
 
@@ -130,6 +142,7 @@ impl Vault {
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
+            epoch_snapshot_amount: 0,
             bump,
             reserved: [0; 11],
         }
@@ -206,6 +219,18 @@ impl Vault {
             return Err(VaultError::VaultAdminInvalid.into());
         }
         Ok(())
+    }
+
+    /// Checks to see if the vault needs updating, which is defined as the epoch of the last update
+    /// slot being less than the current epoch.
+    ///
+    /// # Returns
+    /// `true` if the vault needs updating, `false` otherwise
+    #[inline(always)]
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+        let last_updated_epoch = self.last_slot_updated.checked_div(epoch_length).unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        last_updated_epoch < current_epoch
     }
 
     // ------------------------------------------

@@ -15,6 +15,7 @@ use jito_vault_core::{
     vault_delegation_list::{UndelegateForWithdrawMethod, VaultDelegationList},
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,

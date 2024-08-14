@@ -12,7 +12,11 @@ use solana_program::{
 };
 use spl_token::state::Account;
 
-pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+pub fn process_update_vault(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    epoch_snapshot_amount: u64,
+) -> ProgramResult {
     let [config, vault_info, vault_delegation_list, vault_token_account] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -23,6 +27,14 @@ pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pr
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
+
+    // At the beginning of the epoch, vault should be updated
+    let current_slot = Clock::get()?.slot;
+    if vault.is_update_needed(current_slot, config.epoch_length) {
+        vault.last_slot_updated = current_slot;
+        vault.epoch_withdraw_amount = 0;
+        vault.epoch_snapshot_amount = epoch_snapshot_amount;
+    }
 
     let config_data = config.data.borrow();
     let config = Config::try_from_slice(&config_data)?;
