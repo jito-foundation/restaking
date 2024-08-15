@@ -25,6 +25,10 @@ pub enum VaultError {
     VaultUpdateNeeded = 2018,
     VaultIsUpdated = 2019,
     VaultUpdateIncorrectIndex = 2020,
+    VaultUpdateStateTrackerInvalid = 2021,
+    VaultSecurityOverflow = 2022,
+    VaultSlashIncomplete = 2023,
+    VaultSecurityUnderflow = 2024,
 
     VaultDelegationListOverflow = 3000,
     VaultDelegationListUnderflow = 3001,
@@ -54,10 +58,6 @@ pub enum VaultError {
     NcnVaultTicketUnslashable = 4017,
     NcnVaultSlasherTicketUnslashable = 4018,
     VaultNcnSlasherOperatorMaxSlashableExceeded = 4019,
-    VaultUpdateStateTrackerInvalid,
-    VaultSecurityOverflow,
-    VaultSlashIncomplete,
-    VaultSecurityUnderflow,
 }
 
 impl From<VaultError> for ProgramError {

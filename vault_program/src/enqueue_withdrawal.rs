@@ -109,9 +109,7 @@ pub fn process_enqueue_withdrawal(
     let fee_amount = vault.calculate_withdraw_fee(vrt_amount)?;
     let amount_to_vault_staker_withdrawal_ticket = vrt_amount
         .checked_sub(fee_amount)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
-    let amount_to_withdraw =
-        vault.calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
+        .ok_or(VaultError::VaultSecurityUnderflow)?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
@@ -137,7 +135,6 @@ pub fn process_enqueue_withdrawal(
         *vault_info.key,
         *staker.key,
         *base.key,
-        amount_to_withdraw,
         amount_to_vault_staker_withdrawal_ticket,
         Clock::get()?.slot,
         vault_staker_withdrawal_ticket_bump,
@@ -179,10 +176,16 @@ pub fn process_enqueue_withdrawal(
         ],
     )?;
 
-    vault.vrt_pending_withdrawal = vault
+    let vrt_pending_withdrawal = vault
         .vrt_pending_withdrawal
         .checked_add(amount_to_vault_staker_withdrawal_ticket)
         .ok_or(VaultError::VaultOverflow)?;
+    if vrt_pending_withdrawal > vault.vrt_supply {
+        msg!("Vault pending withdrawal exceeds total VRT");
+        return Err(VaultError::VaultOverflow.into());
+    }
+
+    vault.vrt_pending_withdrawal = vrt_pending_withdrawal;
 
     Ok(())
 }

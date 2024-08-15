@@ -162,7 +162,7 @@ mod tests {
 
         // Delegate all funds to the operator
         vault_program_client
-            .delegate(&vault_root, &operator_root.operator_pubkey, delegate_amount)
+            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, delegate_amount)
             .await
             .unwrap();
 
@@ -466,7 +466,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .delegate(&vault_root, &operator_root.operator_pubkey, 100)
+            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, 100)
             .await
             .unwrap();
 

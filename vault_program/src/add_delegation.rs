@@ -64,6 +64,10 @@ pub fn process_add_delegation(
         .tokens_deposited
         .checked_sub(vault.amount_delegated)
         .ok_or(VaultError::VaultOverflow)?;
+    msg!(
+        "Assets available for staking: {}",
+        assets_available_for_staking
+    );
     if amount > assets_available_for_staking {
         msg!("Insufficient funds in vault for delegation");
         return Err(VaultError::VaultInsufficientFunds.into());

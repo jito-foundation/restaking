@@ -485,7 +485,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn delegate(
+    pub async fn do_add_delegation(
         &mut self,
         vault_root: &VaultRoot,
         operator: &Pubkey,

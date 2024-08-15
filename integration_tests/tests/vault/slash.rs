@@ -85,6 +85,10 @@ mod tests {
             .warp_slot_incremental(2 * restaking_config.epoch_length)
             .await
             .unwrap();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+            .await
+            .unwrap();
 
         // vault -> operator active, vault -> ncn active, ncn slasher active
 
@@ -95,6 +99,10 @@ mod tests {
 
         fixture
             .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -137,17 +145,12 @@ mod tests {
             .await
             .unwrap();
 
-        // user has 99_000 because 100 bips deposit fee
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-        vault_program_client
-            .delegate(&vault_root, &operator_root.operator_pubkey, 10_000)
+            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, 10_000)
             .await
             .unwrap();
 
-        // TODO (LB): look
+        // TODO (LB): test stuff here
 
         fixture
             .create_ata(&vault.supported_mint, &slasher.pubkey())
