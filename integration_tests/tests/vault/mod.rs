@@ -1,5 +1,4 @@
 mod burn_withdrawal_ticket;
-mod update_token_metadata;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
@@ -12,3 +11,4 @@ mod set_admin;
 mod set_fees;
 mod set_secondary_admin;
 mod slash;
+mod update_token_metadata;

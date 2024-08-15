@@ -16,8 +16,9 @@ use jito_vault_core::{
 };
 use jito_vault_sdk::{
     error::VaultError,
+    inline_mpl_token_metadata,
     instruction::VaultAdminRole,
-    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list}, inline_mpl_token_metadata,
+    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list},
 };
 use log::info;
 use solana_program::{
@@ -166,9 +167,12 @@ impl VaultProgramClient {
         &mut self,
         vrt_mint: &Pubkey,
     ) -> Result<crate::helpers::token::Metadata, TestError> {
-        let metadata_pubkey =
-            inline_mpl_token_metadata::pda::find_metadata_account(vrt_mint).0;
-        let token_metadata_account = self.banks_client.get_account(metadata_pubkey).await?.unwrap();
+        let metadata_pubkey = inline_mpl_token_metadata::pda::find_metadata_account(vrt_mint).0;
+        let token_metadata_account = self
+            .banks_client
+            .get_account(metadata_pubkey)
+            .await?
+            .unwrap();
         let metadata = crate::helpers::token::Metadata::deserialize(
             &mut token_metadata_account.data.as_slice(),
         )
