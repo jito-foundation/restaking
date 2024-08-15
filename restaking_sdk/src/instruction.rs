@@ -66,23 +66,12 @@ pub enum RestakingInstruction {
     /// the NCN admin can add the operator to the NCN
     #[account(0, name = "config")]
     #[account(1, writable, name = "ncn")]
-    #[account(2, name = "operator")]
-    #[account(3, writable, name = "ncn_operator_ticket")]
-    #[account(4, name = "operator_ncn_ticket")]
-    #[account(5, signer, name = "admin")]
-    #[account(6, writable, signer, name = "payer")]
-    #[account(7, name = "system_program")]
-    InitializeNcnOperatorTicket,
-
-    /// Node operator adds support for running an NCN
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "operator")]
-    #[account(2, name = "ncn")]
-    #[account(3, writable, name = "operator_ncn_ticket")]
+    #[account(2, writable, name = "operator")]
+    #[account(3, writable, name = "ncn_operator_state")]
     #[account(4, signer, name = "admin")]
     #[account(5, writable, signer, name = "payer")]
     #[account(6, name = "system_program")]
-    InitializeOperatorNcnTicket,
+    InitializeNcnOperatorState,
 
     #[account(0, name = "config")]
     #[account(1, name = "ncn")]
@@ -102,16 +91,30 @@ pub enum RestakingInstruction {
     #[account(0, name = "config")]
     #[account(1, name = "ncn")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "ncn_operator_ticket")]
+    #[account(3, writable, name = "ncn_operator_state")]
     #[account(4, signer, name = "admin")]
-    WarmupNcnOperatorTicket,
+    NcnWarmupOperator,
 
     #[account(0, name = "config")]
     #[account(1, name = "ncn")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "ncn_operator_ticket")]
+    #[account(3, writable, name = "ncn_operator_state")]
     #[account(4, signer, name = "admin")]
-    CooldownNcnOperatorTicket,
+    NcnCooldownOperator,
+
+    #[account(0, name = "config")]
+    #[account(1, name = "ncn")]
+    #[account(2, name = "operator")]
+    #[account(3, writable, name = "ncn_operator_state")]
+    #[account(4, signer, name = "admin")]
+    OperatorWarmupNcn,
+
+    #[account(0, name = "config")]
+    #[account(1, name = "ncn")]
+    #[account(2, name = "operator")]
+    #[account(3, writable, name = "ncn_operator_state")]
+    #[account(4, signer, name = "admin")]
+    OperatorCooldownNcn,
 
     #[account(0, name = "config")]
     #[account(1, name = "ncn")]
@@ -145,21 +148,6 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "operator_vault_ticket")]
     #[account(4, signer, name = "admin")]
     CooldownOperatorVaultTicket,
-
-    #[account(0, name = "config")]
-    #[account(1, name = "operator")]
-    #[account(2, name = "ncn")]
-    #[account(3, writable, name = "operator_ncn_ticket")]
-    #[account(4, signer, name = "admin")]
-    WarmupOperatorNcnTicket,
-
-    /// Node operator removes support for running an NCN
-    #[account(0, name = "config")]
-    #[account(1, name = "operator")]
-    #[account(2, name = "ncn")]
-    #[account(3, writable, name = "operator_ncn_ticket")]
-    #[account(4, signer, name = "admin")]
-    CooldownOperatorNcnTicket,
 
     #[account(0, writable, name = "ncn")]
     #[account(1, signer, name = "old_admin")]

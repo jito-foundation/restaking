@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::{
-        config::Config, ncn::Ncn, operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
+        config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator,
     };
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -53,7 +53,7 @@ mod tests {
         // Operator adds NCN
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
             &ncn_pubkey,
@@ -147,7 +147,7 @@ mod tests {
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
         // Operator adds first NCN
-        let operator_ncn_ticket1 = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket1 = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
             &ncn_pubkey1,
@@ -167,7 +167,7 @@ mod tests {
             .unwrap();
 
         // Operator adds second NCN
-        let operator_ncn_ticket2 = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket2 = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
             &ncn_pubkey2,
@@ -257,7 +257,7 @@ mod tests {
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
             &ncn_pubkey,
@@ -339,7 +339,7 @@ mod tests {
         let payer = Keypair::new();
         fixture.transfer(&payer.pubkey(), 10.0).await.unwrap();
 
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
             &ncn_pubkey,
@@ -404,7 +404,7 @@ mod tests {
         )
         .0;
 
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &uninitialized_operator_pubkey,
             &ncn_pubkey,
@@ -466,7 +466,7 @@ mod tests {
         let uninitialized_ncn_pubkey =
             Ncn::find_program_address(&jito_restaking_program::id(), &uninitialized_ncn.pubkey()).0;
 
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_pubkey,
             &uninitialized_ncn_pubkey,

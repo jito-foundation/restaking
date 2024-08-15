@@ -3,22 +3,24 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
-impl Discriminator for OperatorNcnTicket {
+impl Discriminator for NcnOperatorState {
     const DISCRIMINATOR: u8 = 4;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
-pub struct OperatorNcnTicket {
-    /// The operator account
-    pub operator: Pubkey,
-
+pub struct NcnOperatorState {
     /// The NCN account
     pub ncn: Pubkey,
 
+    /// The operator account
+    pub operator: Pubkey,
+
     pub index: u64,
 
-    pub state: SlotToggle,
+    pub ncn_opt_in_state: SlotToggle,
+
+    pub operator_opt_in_state: SlotToggle,
 
     pub bump: u8,
 
@@ -26,13 +28,14 @@ pub struct OperatorNcnTicket {
     reserved: [u8; 7],
 }
 
-impl OperatorNcnTicket {
-    pub const fn new(operator: Pubkey, ncn: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
+impl NcnOperatorState {
+    pub const fn new(ncn: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
         Self {
-            operator,
             ncn,
+            operator,
             index,
-            state: SlotToggle::new(slot_added),
+            ncn_opt_in_state: SlotToggle::new(0),
+            operator_opt_in_state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
@@ -40,7 +43,7 @@ impl OperatorNcnTicket {
 
     pub fn seeds(operator: &Pubkey, ncn: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"operator_ncn_ticket".to_vec(),
+            b"ncn_operator_state".to_vec(),
             operator.to_bytes().to_vec(),
             ncn.to_bytes().to_vec(),
         ])

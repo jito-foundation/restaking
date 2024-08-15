@@ -12,7 +12,7 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// [`crate::RestakingInstruction::WarmupNcnOperatorTicket`]
+/// [`crate::RestakingInstruction::NcnWarmupOperator`]
 pub fn process_warmup_ncn_operator_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],

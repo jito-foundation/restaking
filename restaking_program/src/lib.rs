@@ -1,4 +1,3 @@
-mod cooldown_ncn_operator_ticket;
 mod cooldown_ncn_vault_slasher_ticket;
 mod cooldown_ncn_vault_ticket;
 mod cooldown_operator_ncn_ticket;
@@ -9,8 +8,8 @@ mod initialize_ncn_operator_ticket;
 mod initialize_ncn_vault_slasher_ticket;
 mod initialize_ncn_vault_ticket;
 mod initialize_operator;
-mod initialize_operator_ncn_ticket;
 mod initialize_operator_vault_ticket;
+mod ncn_cooldown_operator;
 mod ncn_set_admin;
 mod ncn_set_secondary_admin;
 mod ncn_withdraw_asset;
@@ -33,19 +32,18 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
-    cooldown_ncn_operator_ticket::process_cooldown_ncn_operator_ticket,
     cooldown_ncn_vault_slasher_ticket::process_cooldown_ncn_vault_slasher_ticket,
     cooldown_ncn_vault_ticket::process_cooldown_ncn_vault_ticket,
     cooldown_operator_ncn_ticket::process_cooldown_operator_ncn_ticket,
     cooldown_operator_vault_ticket::process_cooldown_operator_vault_ticket,
     initialize_config::process_initialize_config, initialize_ncn::process_initialize_ncn,
-    initialize_ncn_operator_ticket::process_initialize_ncn_operator_ticket,
+    initialize_ncn_operator_ticket::process_initialize_ncn_operator_state,
     initialize_ncn_vault_slasher_ticket::process_initialize_ncn_vault_slasher_ticket,
     initialize_ncn_vault_ticket::process_initialize_ncn_vault_ticket,
     initialize_operator::process_initialize_operator,
-    initialize_operator_ncn_ticket::process_initialize_operator_ncn_ticket,
     initialize_operator_vault_ticket::process_initialize_operator_vault_ticket,
-    ncn_set_admin::process_ncn_set_admin, ncn_set_secondary_admin::process_ncn_set_secondary_admin,
+    ncn_cooldown_operator::process_ncn_cooldown_operator, ncn_set_admin::process_ncn_set_admin,
+    ncn_set_secondary_admin::process_ncn_set_secondary_admin,
     ncn_withdraw_asset::process_ncn_withdraw_asset,
     operator_set_admin::process_set_node_operator_admin,
     operator_set_secondary_admin::process_set_operator_secondary_admin,
@@ -102,9 +100,9 @@ pub fn process_instruction(
             msg!("Instruction: InitializeNcnVaultTicket");
             process_initialize_ncn_vault_ticket(program_id, accounts)
         }
-        RestakingInstruction::InitializeNcnOperatorTicket => {
-            msg!("Instruction: InitializeNcnOperatorTicket");
-            process_initialize_ncn_operator_ticket(program_id, accounts)
+        RestakingInstruction::InitializeNcnOperatorState => {
+            msg!("Instruction: InitializeNcnOperatorState");
+            process_initialize_ncn_operator_state(program_id, accounts)
         }
         RestakingInstruction::InitializeNcnVaultSlasherTicket(max_slashable_per_epoch) => {
             msg!("Instruction: InitializeNcnVaultSlasherTicket");
@@ -113,10 +111,6 @@ pub fn process_instruction(
                 accounts,
                 max_slashable_per_epoch,
             )
-        }
-        RestakingInstruction::InitializeOperatorNcnTicket => {
-            msg!("Instruction: InitializeOperatorNcnTicket");
-            process_initialize_operator_ncn_ticket(program_id, accounts)
         }
         RestakingInstruction::InitializeOperatorVaultTicket => {
             msg!("Instruction: InitializeOperatorVaultTicket");
@@ -130,13 +124,13 @@ pub fn process_instruction(
             msg!("Instruction: CooldownNcnVaultTicket");
             process_cooldown_ncn_vault_ticket(program_id, accounts)
         }
-        RestakingInstruction::WarmupNcnOperatorTicket => {
+        RestakingInstruction::NcnWarmupOperator => {
             msg!("Instruction: WarmupNcnOperatorTicket");
             process_warmup_ncn_operator_ticket(program_id, accounts)
         }
-        RestakingInstruction::CooldownNcnOperatorTicket => {
+        RestakingInstruction::NcnCooldownOperator => {
             msg!("Instruction: CooldownNcnOperatorTicket");
-            process_cooldown_ncn_operator_ticket(program_id, accounts)
+            process_ncn_cooldown_operator(program_id, accounts)
         }
         RestakingInstruction::WarmupNcnVaultSlasherTicket => {
             msg!("Instruction: WarmupNcnVaultSlasherTicket");
@@ -154,11 +148,11 @@ pub fn process_instruction(
             msg!("Instruction: CooldownOperatorVaultTicket");
             process_cooldown_operator_vault_ticket(program_id, accounts)
         }
-        RestakingInstruction::WarmupOperatorNcnTicket => {
+        RestakingInstruction::OperatorWarmupNcn => {
             msg!("Instruction: WarmupOperatorNcnTicket");
             process_warmup_operator_ncn_ticket(program_id, accounts)
         }
-        RestakingInstruction::CooldownOperatorNcnTicket => {
+        RestakingInstruction::OperatorCooldownNcn => {
             msg!("Instruction: CooldownOperatorNcnTicket");
             process_cooldown_operator_ncn_ticket(program_id, accounts)
         }

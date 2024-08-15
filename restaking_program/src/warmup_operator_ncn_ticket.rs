@@ -3,8 +3,8 @@ use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{
     config::Config,
     loader::{load_config, load_ncn, load_operator, load_operator_ncn_ticket},
+    ncn_operator_state::NcnOperatorState,
     operator::Operator,
-    operator_ncn_ticket::OperatorNcnTicket,
 };
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
@@ -12,7 +12,7 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
-/// [`crate::RestakingInstruction::WarmupOperatorNcnTicket`]
+/// [`crate::RestakingInstruction::OperatorWarmupNcn`]
 pub fn process_warmup_operator_ncn_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -38,7 +38,7 @@ pub fn process_warmup_operator_ncn_ticket(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice(&config_data)?;
     let mut operator_ncn_ticket_data = operator_ncn_ticket.data.borrow_mut();
-    let operator_ncn_ticket = OperatorNcnTicket::try_from_slice_mut(&mut operator_ncn_ticket_data)?;
+    let operator_ncn_ticket = NcnOperatorState::try_from_slice_mut(&mut operator_ncn_ticket_data)?;
     if !operator_ncn_ticket
         .state
         .activate(Clock::get()?.slot, config.epoch_length)

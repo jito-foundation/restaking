@@ -3,7 +3,7 @@ use solana_program::program_error::ProgramError;
 #[derive(Debug)]
 pub enum RestakingError {
     NcnOperatorAdminInvalid = 1000,
-    NcnOperatorTicketFailedCooldown = 1001,
+    NcnCooldownOperatorFailed = 1001,
     NcnSlasherAdminInvalid = 1002,
     NcnVaultAdminInvalid = 1003,
     NcnAdminInvalid = 1004,

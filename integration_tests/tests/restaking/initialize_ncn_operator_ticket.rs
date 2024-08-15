@@ -2,8 +2,8 @@
 mod tests {
     use jito_jsm_core::slot_toggle::SlotToggleState;
     use jito_restaking_core::{
-        config::Config, ncn_operator_ticket::NcnOperatorTicket,
-        operator_ncn_ticket::OperatorNcnTicket,
+        config::Config, ncn_operator_state::NcnOperatorState,
+        ncn_operator_ticket::NcnOperatorTicket,
     };
     use jito_restaking_sdk::error::RestakingError;
     use solana_program::instruction::InstructionError;
@@ -126,7 +126,7 @@ mod tests {
                     &operator_root.operator_pubkey,
                 )
                 .0,
-                &OperatorNcnTicket::find_program_address(
+                &NcnOperatorState::find_program_address(
                     &jito_restaking_program::id(),
                     &operator_root.operator_pubkey,
                     &ncn_root.ncn_pubkey,
@@ -184,7 +184,7 @@ mod tests {
                     &ncn_root_2.ncn_pubkey,
                 )
                 .0,
-                &OperatorNcnTicket::find_program_address(
+                &NcnOperatorState::find_program_address(
                     &jito_restaking_program::id(),
                     &operator_root.operator_pubkey,
                     &ncn_root.ncn_pubkey,

@@ -1,13 +1,13 @@
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
-    config::Config, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket,
-    ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
-    operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
+    config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
+    ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket, operator::Operator,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_restaking_sdk::sdk::{
     cooldown_ncn_vault_ticket, cooldown_operator_ncn_ticket, initialize_config, initialize_ncn,
-    initialize_ncn_operator_ticket, initialize_ncn_vault_slasher_ticket,
+    initialize_ncn_operator_state, initialize_ncn_vault_slasher_ticket,
     initialize_ncn_vault_ticket, initialize_operator, initialize_operator_ncn_ticket,
     initialize_operator_vault_ticket,
 };
@@ -124,11 +124,11 @@ impl RestakingProgramClient {
         &mut self,
         operator: &Pubkey,
         ncn: &Pubkey,
-    ) -> TestResult<OperatorNcnTicket> {
+    ) -> TestResult<NcnOperatorState> {
         let account =
-            OperatorNcnTicket::find_program_address(&jito_restaking_program::id(), operator, ncn).0;
+            NcnOperatorState::find_program_address(&jito_restaking_program::id(), operator, ncn).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(OperatorNcnTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(NcnOperatorState::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn do_initialize_config(&mut self) -> TestResult<Keypair> {
@@ -310,7 +310,7 @@ impl RestakingProgramClient {
             operator,
         )
         .0;
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             operator,
             &ncn_root.ncn_pubkey,
@@ -334,7 +334,7 @@ impl RestakingProgramClient {
         operator_root: &OperatorRoot,
         ncn: &Pubkey,
     ) -> TestResult<()> {
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_root.operator_pubkey,
             ncn,
@@ -357,7 +357,7 @@ impl RestakingProgramClient {
         operator_root: &OperatorRoot,
         ncn: &Pubkey,
     ) -> TestResult<()> {
-        let operator_ncn_ticket = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             &operator_root.operator_pubkey,
             ncn,
@@ -498,7 +498,7 @@ impl RestakingProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         self.process_transaction(&Transaction::new_signed_with_payer(
-            &[initialize_ncn_operator_ticket(
+            &[initialize_ncn_operator_state(
                 &jito_restaking_program::id(),
                 config,
                 ncn,

@@ -3,8 +3,8 @@ use std::mem::size_of;
 use borsh::BorshDeserialize;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
-    ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket, operator_ncn_ticket::OperatorNcnTicket,
+    ncn_operator_state::NcnOperatorState, ncn_operator_ticket::NcnOperatorTicket,
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
@@ -375,7 +375,7 @@ impl VaultProgramClient {
             operator_pubkey,
         )
         .0;
-        let operator_ncn_ticket_pubkey = OperatorNcnTicket::find_program_address(
+        let operator_ncn_ticket_pubkey = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             operator_pubkey,
             &ncn_pubkey,

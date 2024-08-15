@@ -5,10 +5,10 @@ use jito_restaking_core::{
         load_ncn, load_ncn_operator_ticket, load_ncn_vault_slasher_ticket, load_ncn_vault_ticket,
         load_operator, load_operator_ncn_ticket, load_operator_vault_ticket,
     },
+    ncn_operator_state::NcnOperatorState,
     ncn_operator_ticket::NcnOperatorTicket,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket,
-    operator_ncn_ticket::OperatorNcnTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
@@ -181,7 +181,7 @@ pub fn process_slash(
 
     // The OperatorNcnTicket shall be active or cooling down to get slashed
     let operator_ncn_ticket_data = operator_ncn_ticket.data.borrow();
-    let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
+    let operator_ncn_ticket = NcnOperatorState::try_from_slice(&operator_ncn_ticket_data)?;
     if !operator_ncn_ticket
         .state
         .is_active_or_cooldown(slot, epoch_length)

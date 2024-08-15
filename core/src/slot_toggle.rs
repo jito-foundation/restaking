@@ -137,6 +137,18 @@ mod tests {
     use crate::slot_toggle::{SlotToggle, SlotToggleState};
 
     #[test]
+    fn test_slot_zero() {
+        let epoch_length = 150;
+        let toggle = SlotToggle::new(0);
+        assert_eq!(toggle.state(0, epoch_length), SlotToggleState::Inactive);
+        assert_eq!(toggle.state(10, epoch_length), SlotToggleState::Inactive);
+        assert_eq!(
+            toggle.state(epoch_length + 1, epoch_length),
+            SlotToggleState::Inactive
+        );
+    }
+
+    #[test]
     fn test_new() {
         let creation_slot = 100;
         let epoch_length = 150;
