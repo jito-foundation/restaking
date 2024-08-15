@@ -387,7 +387,7 @@ pub fn load_mpl_metadata_program(info: &AccountInfo) -> Result<(), ProgramError>
     Ok(())
 }
 
-/// Loads the account as a mpl metadta account, returning an error if it is not.
+/// Loads the account as a mpl metadata account, returning an error if it is not.
 ///
 /// # Arguments
 /// * `info` - The account to load the mpl metadata program from
