@@ -66,20 +66,27 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let vault_fee = vault.calculate_deposit_fee(amount)?;
-    let vault_deposit_amount = amount
-        .checked_sub(vault_fee)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    // The vault capacity shall not be exceeded after deposit
     let vault_token_amount_after_deposit = vault
         .tokens_deposited
-        .checked_add(vault_deposit_amount)
+        .checked_add(amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
-
-    // The vault capacity shall not be exceeded after deposit
     if vault_token_amount_after_deposit > vault.capacity {
         msg!("Amount exceeds vault capacity");
         return Err(VaultError::VaultCapacityExceeded.into());
     }
+
+    let vrt_mint_amount = vault.calculate_vrt_mint_amount(amount)?;
+    let vrt_to_fee_wallet = vault.calculate_deposit_fee(vrt_mint_amount)?;
+    let vrt_to_depositor = vrt_mint_amount
+        .checked_sub(vrt_to_fee_wallet)
+        .ok_or(VaultError::VaultUnderflow)?;
+
+    vault.vrt_supply = vault
+        .vrt_supply
+        .checked_add(vrt_mint_amount)
+        .ok_or(VaultError::VaultOverflow)?;
+    vault.tokens_deposited = vault_token_amount_after_deposit;
 
     // transfer tokens from depositor to vault
     {
@@ -99,16 +106,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
             ],
         )?;
     }
-
-    let vrt_to_depositor = vault.calculate_vrt_mint_amount(vault_deposit_amount)?;
-    let vrt_to_vault_fee_wallet = vault.calculate_vrt_mint_amount(vault_fee)?;
-
-    vault.vrt_supply = vault
-        .vrt_supply
-        .checked_add(vrt_to_depositor)
-        .and_then(|supply| supply.checked_add(vrt_to_vault_fee_wallet))
-        .ok_or(ProgramError::ArithmeticOverflow)?;
-    vault.tokens_deposited = vault_token_amount_after_deposit;
 
     let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
     vault_seeds.push(vec![vault_bump]);
@@ -142,7 +139,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
                 vault_fee_token_account.key,
                 vault_info.key,
                 &[],
-                vrt_to_vault_fee_wallet,
+                vrt_to_fee_wallet,
             )?,
             &[
                 vrt_mint.clone(),

@@ -4,7 +4,7 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for OperatorVaultTicket {
-    const DISCRIMINATOR: u8 = 6;
+    const DISCRIMINATOR: u8 = 5;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]

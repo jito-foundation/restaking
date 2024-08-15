@@ -4,10 +4,9 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::{
-    config::Config, ncn::Ncn, ncn_operator_ticket::NcnOperatorTicket,
+    config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
-    operator::Operator, operator_ncn_ticket::OperatorNcnTicket,
-    operator_vault_ticket::OperatorVaultTicket,
+    operator::Operator, operator_vault_ticket::OperatorVaultTicket,
 };
 
 /// Attempts to load the account as [`Config`], returning an error if it's not valid.
@@ -184,33 +183,33 @@ pub fn load_operator_vault_ticket(
 ///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
-pub fn load_ncn_operator_ticket(
+pub fn load_ncn_operator_state(
     program_id: &Pubkey,
-    ncn_operator_ticket: &AccountInfo,
+    ncn_operator_state: &AccountInfo,
     ncn: &AccountInfo,
     operator: &AccountInfo,
     expect_writable: bool,
 ) -> Result<(), ProgramError> {
-    if ncn_operator_ticket.owner.ne(program_id) {
-        msg!("NCN operator ticket account has an invalid owner");
+    if ncn_operator_state.owner.ne(program_id) {
+        msg!("NCNOperatorState account has an invalid owner");
         return Err(ProgramError::InvalidAccountOwner);
     }
-    if ncn_operator_ticket.data_is_empty() {
-        msg!("NCN operator ticket account data is empty");
+    if ncn_operator_state.data_is_empty() {
+        msg!("NCNOperatorState account data is empty");
         return Err(ProgramError::InvalidAccountData);
     }
-    if expect_writable && !ncn_operator_ticket.is_writable {
-        msg!("NCN operator ticket account is not writable");
+    if expect_writable && !ncn_operator_state.is_writable {
+        msg!("NCNOperatorState account is not writable");
         return Err(ProgramError::InvalidAccountData);
     }
-    if ncn_operator_ticket.data.borrow()[0].ne(&NcnOperatorTicket::DISCRIMINATOR) {
-        msg!("NCN operator ticket account discriminator is invalid");
+    if ncn_operator_state.data.borrow()[0].ne(&NcnOperatorState::DISCRIMINATOR) {
+        msg!("NCNOperatorState account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
     let expected_pubkey =
-        NcnOperatorTicket::find_program_address(program_id, ncn.key, operator.key).0;
-    if ncn_operator_ticket.key.ne(&expected_pubkey) {
-        msg!("NCN operator ticket account is not at the correct PDA");
+        NcnOperatorState::find_program_address(program_id, ncn.key, operator.key).0;
+    if ncn_operator_state.key.ne(&expected_pubkey) {
+        msg!("NCNOperatorState account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
     Ok(())
@@ -253,49 +252,6 @@ pub fn load_ncn_vault_ticket(
     let expected_pubkey = NcnVaultTicket::find_program_address(program_id, ncn.key, vault.key).0;
     if ncn_vault_ticket.key.ne(&expected_pubkey) {
         msg!("NCN vault ticket account is not at the correct PDA");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    Ok(())
-}
-
-/// Loads the account as an [`OperatorNcnTicket`] account, returning an error if it is not.
-///
-/// # Arguments
-/// * `program_id` - The program ID
-/// * `operator_ncn_ticket` - The account to load the operator NCN ticket from
-/// * `operator` - The operator account
-/// * `ncn` - The NCN account
-/// * `expect_writable` - Whether the account should be writable
-///
-/// # Returns
-/// * `Result<(), ProgramError>` - The result of the operation
-pub fn load_operator_ncn_ticket(
-    program_id: &Pubkey,
-    operator_ncn_ticket: &AccountInfo,
-    operator: &AccountInfo,
-    ncn: &AccountInfo,
-    expect_writable: bool,
-) -> Result<(), ProgramError> {
-    if operator_ncn_ticket.owner.ne(program_id) {
-        msg!("Operator NCN ticket account has an invalid owner");
-        return Err(ProgramError::InvalidAccountOwner);
-    }
-    if operator_ncn_ticket.data_is_empty() {
-        msg!("Operator NCN ticket account data is empty");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    if expect_writable && !operator_ncn_ticket.is_writable {
-        msg!("Operator NCN ticket account is not writable");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    if operator_ncn_ticket.data.borrow()[0].ne(&OperatorNcnTicket::DISCRIMINATOR) {
-        msg!("Operator NCN ticket account discriminator is invalid");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    let expected_pubkey =
-        OperatorNcnTicket::find_program_address(program_id, operator.key, ncn.key).0;
-    if operator_ncn_ticket.key.ne(&expected_pubkey) {
-        msg!("Operator NCN ticket account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
     Ok(())

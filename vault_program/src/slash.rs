@@ -2,13 +2,12 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_program};
 use jito_restaking_core::{
     loader::{
-        load_ncn, load_ncn_operator_ticket, load_ncn_vault_slasher_ticket, load_ncn_vault_ticket,
-        load_operator, load_operator_ncn_ticket, load_operator_vault_ticket,
+        load_ncn, load_ncn_operator_state, load_ncn_vault_slasher_ticket, load_ncn_vault_ticket,
+        load_operator, load_operator_vault_ticket,
     },
-    ncn_operator_ticket::NcnOperatorTicket,
+    ncn_operator_state::NcnOperatorState,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket,
-    operator_ncn_ticket::OperatorNcnTicket,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
@@ -37,7 +36,7 @@ pub fn process_slash(
     accounts: &[AccountInfo],
     slash_amount: u64,
 ) -> ProgramResult {
-    let [config, vault_info, ncn, operator, slasher, ncn_operator_ticket, operator_ncn_ticket, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_ticket, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_delegation_list, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
+    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_ticket, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_delegation_list, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -50,18 +49,11 @@ pub fn process_slash(
     load_ncn(&config.restaking_program, ncn, false)?;
     load_operator(&config.restaking_program, operator, false)?;
     // slasher
-    load_ncn_operator_ticket(
+    load_ncn_operator_state(
         &config.restaking_program,
-        ncn_operator_ticket,
+        ncn_operator_state,
         ncn,
         operator,
-        false,
-    )?;
-    load_operator_ncn_ticket(
-        &config.restaking_program,
-        operator_ncn_ticket,
-        operator,
-        ncn,
         false,
     )?;
     load_ncn_vault_ticket(
@@ -169,25 +161,21 @@ pub fn process_slash(
     }
 
     // The NcnOperatorTicket shall be active or cooling down to get slashed
-    let ncn_operator_ticket_data = ncn_operator_ticket.data.borrow();
-    let ncn_operator_ticket = NcnOperatorTicket::try_from_slice(&ncn_operator_ticket_data)?;
-    if !ncn_operator_ticket
-        .state
+    let ncn_operator_state_data = ncn_operator_state.data.borrow();
+    let ncn_operator_state = NcnOperatorState::try_from_slice(&ncn_operator_state_data)?;
+    if !ncn_operator_state
+        .ncn_opt_in_state
         .is_active_or_cooldown(slot, epoch_length)
     {
-        msg!("NCN operator ticket is not active or in cooldown");
-        return Err(VaultError::NcnOperatorTicketUnslashable.into());
+        msg!("NCN opt-in to operator is not active or in cooldown");
+        return Err(VaultError::NcnOperatorStateUnslashable.into());
     }
-
-    // The OperatorNcnTicket shall be active or cooling down to get slashed
-    let operator_ncn_ticket_data = operator_ncn_ticket.data.borrow();
-    let operator_ncn_ticket = OperatorNcnTicket::try_from_slice(&operator_ncn_ticket_data)?;
-    if !operator_ncn_ticket
-        .state
+    if !ncn_operator_state
+        .operator_opt_in_state
         .is_active_or_cooldown(slot, epoch_length)
     {
-        msg!("Operator NCN ticket is not active or in cooldown");
-        return Err(VaultError::OperatorNcnTicketUnslashable.into());
+        msg!("Operator opt-in to NCN is not active or in cooldown");
+        return Err(VaultError::NcnOperatorStateUnslashable.into());
     }
 
     // The NcnVaultSlasherTicket shall be active or cooling down to slash

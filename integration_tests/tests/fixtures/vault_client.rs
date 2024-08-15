@@ -3,9 +3,8 @@ use std::mem::size_of;
 use borsh::BorshDeserialize;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
-    ncn_operator_ticket::NcnOperatorTicket, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket, operator_ncn_ticket::OperatorNcnTicket,
-    operator_vault_ticket::OperatorVaultTicket,
+    ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
     config::Config, vault::Vault, vault_delegation_list::VaultDelegationList,
@@ -375,16 +374,10 @@ impl VaultProgramClient {
         operator_pubkey: &Pubkey,
         amount: u64,
     ) -> Result<(), TestError> {
-        let ncn_operator_ticket_pubkey = NcnOperatorTicket::find_program_address(
+        let ncn_operator_state_pubkey = NcnOperatorState::find_program_address(
             &jito_restaking_program::id(),
             ncn_pubkey,
             operator_pubkey,
-        )
-        .0;
-        let operator_ncn_ticket_pubkey = OperatorNcnTicket::find_program_address(
-            &jito_restaking_program::id(),
-            operator_pubkey,
-            &ncn_pubkey,
         )
         .0;
         let ncn_vault_ticket_pubkey = NcnVaultTicket::find_program_address(
@@ -459,8 +452,7 @@ impl VaultProgramClient {
             &ncn_pubkey,
             &operator_pubkey,
             slasher,
-            &ncn_operator_ticket_pubkey,
-            &operator_ncn_ticket_pubkey,
+            &ncn_operator_state_pubkey,
             &ncn_vault_ticket_pubkey,
             &operator_vault_ticket_pubkey,
             &vault_ncn_ticket_pubkey,
@@ -1060,8 +1052,7 @@ impl VaultProgramClient {
         ncn: &Pubkey,
         operator: &Pubkey,
         slasher: &Keypair,
-        ncn_operator_ticket: &Pubkey,
-        operator_ncn_ticket: &Pubkey,
+        ncn_operator_state: &Pubkey,
         ncn_vault_ticket: &Pubkey,
         operator_vault_ticket: &Pubkey,
         vault_ncn_ticket: &Pubkey,
@@ -1083,8 +1074,7 @@ impl VaultProgramClient {
                 ncn,
                 operator,
                 &slasher.pubkey(),
-                ncn_operator_ticket,
-                operator_ncn_ticket,
+                ncn_operator_state,
                 ncn_vault_ticket,
                 operator_vault_ticket,
                 vault_ncn_ticket,

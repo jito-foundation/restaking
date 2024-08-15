@@ -6,7 +6,7 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for NcnVaultTicket {
-    const DISCRIMINATOR: u8 = 7;
+    const DISCRIMINATOR: u8 = 6;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
