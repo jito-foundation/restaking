@@ -10,11 +10,11 @@ use jito_jsm_core::{
 };
 use jito_vault_core::{
     config::Config,
-    loader::{load_config, load_vault, load_vault_delegation_list},
+    loader::{load_config, load_vault},
     vault::Vault,
-    vault_delegation_list::{UndelegateForWithdrawMethod, VaultDelegationList},
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -31,7 +31,7 @@ use spl_token::instruction::transfer;
 /// can withdraw that excess and return it to the staker. If there's no excess, they can withdraw the
 /// amount that was set aside for withdraw.
 ///
-/// One should call the [`crate::VaultInstruction::UpdateVault`] instruction before running this instruction
+/// One should call the [`crate::VaultInstruction::CrankVaultUpdateStateTracker`] instruction before running this instruction
 /// to ensure that any rewards that were accrued are accounted for.
 pub fn process_enqueue_withdrawal(
     program_id: &Pubkey,
@@ -40,7 +40,7 @@ pub fn process_enqueue_withdrawal(
 ) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(11);
 
-    let [config, vault_info, vault_delegation_list, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
+    let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -48,7 +48,6 @@ pub fn process_enqueue_withdrawal(
 
     load_config(program_id, config, false)?;
     load_vault(program_id, vault_info, true)?;
-    load_vault_delegation_list(program_id, vault_delegation_list, vault_info, true)?;
     load_system_account(vault_staker_withdrawal_ticket, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_mut(&mut vault_data)?;
@@ -98,15 +97,12 @@ pub fn process_enqueue_withdrawal(
         }
     }
 
-    // The vault_delegation_list shall be up-to-date
     let config_data = config.data.borrow();
     let config = Config::try_from_slice(&config_data)?;
-    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
-    let vault_delegation_list =
-        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
-    if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault delegation list is not up to date");
-        return Err(ProgramError::InvalidAccountData);
+    // The vault shall be up-to-date
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
     }
 
     // Calculate the amount to undelegate for withdrawal for the user, subtracting the fee
@@ -116,8 +112,6 @@ pub fn process_enqueue_withdrawal(
         .ok_or(ProgramError::ArithmeticOverflow)?;
     let amount_to_withdraw =
         vault.calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
-    vault_delegation_list
-        .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
@@ -184,6 +178,11 @@ pub fn process_enqueue_withdrawal(
             staker.clone(),
         ],
     )?;
+
+    vault.vrt_pending_withdrawal = vault
+        .vrt_pending_withdrawal
+        .checked_add(amount_to_vault_staker_withdrawal_ticket)
+        .ok_or(VaultError::VaultOverflow)?;
 
     Ok(())
 }

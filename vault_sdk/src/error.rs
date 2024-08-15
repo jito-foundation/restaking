@@ -2,15 +2,7 @@ use solana_program::program_error::ProgramError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum VaultError {
-    OperatorDelegationTotalSecurityOverflow = 1000,
-    OperatorDelegationWithdrawableSecurityOverflow = 1001,
-    OperatorDelegationSlashExceedsTotalSecurity = 1002,
-    OperatorDelegationSlashOverflow = 1003,
-    OperatorDelegationSlashUnderflow = 1004,
-    OperatorDelegationSlashIncomplete = 1005,
-    OperatorDelegationUndelegateUnderflow = 1006,
-    OperatorDelegationUndelegateOverflow = 1007,
-    OperatorDelegationDelegateOverflow = 1008,
+    VaultSlashUnderflow = 1002,
 
     VaultMaxDelegationOverflow = 2000,
     VaultVrtEmpty = 2001,
@@ -30,6 +22,9 @@ pub enum VaultError {
     VaultFeeChangeTooSoon = 2015,
     VaultFeeBumpTooLarge = 2016,
     VaultUnderflow = 2017,
+    VaultUpdateNeeded = 2018,
+    VaultIsUpdated = 2019,
+    VaultUpdateIncorrectIndex = 2020,
 
     VaultDelegationListOverflow = 3000,
     VaultDelegationListUnderflow = 3001,
@@ -59,6 +54,10 @@ pub enum VaultError {
     NcnVaultTicketUnslashable = 4017,
     NcnVaultSlasherTicketUnslashable = 4018,
     VaultNcnSlasherOperatorMaxSlashableExceeded = 4019,
+    VaultUpdateStateTrackerInvalid,
+    VaultSecurityOverflow,
+    VaultSlashIncomplete,
+    VaultSecurityUnderflow,
 }
 
 impl From<VaultError> for ProgramError {

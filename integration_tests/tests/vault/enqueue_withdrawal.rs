@@ -199,7 +199,7 @@ mod tests {
         assert_eq!(vault_fee_account.amount, 1_000);
 
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -208,19 +208,7 @@ mod tests {
             .await
             .unwrap();
 
-        {
-            let vault_delegation_list = vault_program_client
-                .get_vault_delegation_list(&vault_root.vault_pubkey)
-                .await
-                .unwrap();
-            assert_eq!(vault_delegation_list.delegations[0].staked_amount, 100_000);
-            assert_eq!(
-                vault_delegation_list.delegations[0]
-                    .total_security()
-                    .unwrap(),
-                100_000
-            );
-        }
+        // TODO (LB): test delegation brother
 
         // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw
@@ -229,26 +217,7 @@ mod tests {
             .await
             .unwrap();
 
-        {
-            let vault_delegation_list = vault_program_client
-                .get_vault_delegation_list(&vault_root.vault_pubkey)
-                .await
-                .unwrap();
-
-            // this is 1,000 because 1% of the fee went to the vault fee account, the assets still staked
-            // are for the VRT in the fee account to unstake later
-            assert_eq!(vault_delegation_list.delegations[0].staked_amount, 1_990);
-            assert_eq!(
-                vault_delegation_list.delegations[0].enqueued_for_withdraw_amount,
-                98_010
-            );
-            assert_eq!(
-                vault_delegation_list.delegations[0]
-                    .total_security()
-                    .unwrap(),
-                100_000
-            );
-        }
+        // TODO (LB): test delegation brother
 
         let vault_staker_withdrawal_ticket = vault_program_client
             .get_vault_staker_withdrawal_ticket(
@@ -372,7 +341,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -388,7 +357,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -414,15 +383,6 @@ mod tests {
         // The actual assets to be withdrawn should be more than the VRT amount due to rewards
         assert_eq!(withdrawal_ticket.withdraw_allocation_amount, 55_000);
 
-        // Verify the vault delegation list
-        let vault_delegation_list = vault_program_client
-            .get_vault_delegation_list(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let delegation = vault_delegation_list.delegations().get(0).unwrap();
-        assert_eq!(delegation.staked_amount, 45_000);
-        assert_eq!(delegation.enqueued_for_withdraw_amount, 55_000);
-        assert_eq!(delegation.total_security().unwrap(), 100_000);
+        // TODO (LB): test delegation brother
     }
 }

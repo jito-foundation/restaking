@@ -49,6 +49,12 @@ pub fn process_warmup_vault_operator_ticket(
         return Err(VaultError::VaultOperatorAdminInvalid.into());
     }
 
+    // The Vault shall be up-to-date before warming up the operator
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     // The OperatorVaultTicket shall be active
     let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
     let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;

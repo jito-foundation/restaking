@@ -160,6 +160,11 @@ mod tests {
             .await
             .unwrap();
 
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+            .await
+            .unwrap();
+
         // Delegate all funds to the operator
         vault_program_client
             .delegate(&vault_root, &operator_root.operator_pubkey, delegate_amount)
@@ -236,7 +241,7 @@ mod tests {
         let PreparedWithdrawalTicket {
             vault_root,
             ncn_root: _,
-            operator_root: _,
+            operator_root,
             depositor,
             withdrawal_ticket_base,
             slasher: _,
@@ -263,7 +268,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -295,7 +300,7 @@ mod tests {
         let PreparedWithdrawalTicket {
             vault_root,
             ncn_root: _,
-            operator_root: _,
+            operator_root,
             depositor,
             withdrawal_ticket_base,
             slasher: _,
@@ -322,7 +327,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -358,7 +363,7 @@ mod tests {
         let PreparedWithdrawalTicket {
             vault_root,
             ncn_root: _,
-            operator_root: _,
+            operator_root,
             depositor,
             withdrawal_ticket_base,
             slasher: _,
@@ -395,7 +400,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -459,7 +464,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
         vault_program_client
@@ -477,7 +482,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -649,7 +654,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 

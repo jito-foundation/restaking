@@ -1,11 +1,12 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::loader::load_operator;
+use jito_vault_core::loader::load_vault_operator_ticket;
+use jito_vault_core::vault_operator_ticket::VaultOperatorTicket;
 use jito_vault_core::{
     config::Config,
-    loader::{load_config, load_vault, load_vault_delegation_list},
+    loader::{load_config, load_vault},
     vault::Vault,
-    vault_delegation_list::VaultDelegationList,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -18,7 +19,7 @@ pub fn process_cooldown_delegation(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let [config, vault, operator, vault_delegation_list, vault_delegation_admin] = accounts else {
+    let [config, vault, operator, vault_operator_ticket, vault_delegation_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
@@ -27,7 +28,7 @@ pub fn process_cooldown_delegation(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice(&config_data)?;
     load_operator(&config.restaking_program, operator, false)?;
-    load_vault_delegation_list(program_id, vault_delegation_list, vault, true)?;
+    load_vault_operator_ticket(program_id, vault_operator_ticket, vault, operator, true)?;
     load_signer(vault_delegation_admin, false)?;
 
     // The Vault delegation admin shall be the signer of the transaction
@@ -38,15 +39,16 @@ pub fn process_cooldown_delegation(
         return Err(VaultError::VaultDelegationAdminInvalid.into());
     }
 
-    // The vault delegation list shall be up-to-date
-    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
-    let vault_delegation_list =
-        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
-    if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault delegation list is not up to date");
-        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
+    // The Vault shall be up-to-date before removing delegation
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
     }
-    vault_delegation_list.undelegate(*operator.key, amount)?;
+
+    let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
+    let vault_operator_ticket =
+        VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
+    vault_operator_ticket.undelegate(amount)?;
 
     Ok(())
 }

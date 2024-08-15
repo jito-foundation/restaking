@@ -28,15 +28,6 @@ pub enum VaultInstruction {
     /// Initializes a vault with an already-created VRT mint
     InitializeVaultWithMint,
 
-    /// The vault_delegation_list account is too big for a single instruction, so it needs to be
-    /// called until the discriminator is set
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, signer, name = "payer")]
-    #[account(4, name = "system_program")]
-    InitializeVaultDelegationList,
-
     /// Vault adds support for an operator
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
@@ -157,16 +148,15 @@ pub enum VaultInstruction {
     /// Used when there aren't enough idle assets in the vault to cover a withdrawal
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, name = "vault_staker_withdrawal_ticket")]
-    #[account(4, writable, name = "vault_staker_withdrawal_ticket_token_account")]
-    #[account(5, writable, name = "vault_fee_token_account")]
-    #[account(6, writable, signer, name = "staker")]
-    #[account(7, writable, name = "staker_vrt_token_account")]
-    #[account(8, signer, name = "base")]
-    #[account(9, name = "token_program")]
-    #[account(10, name = "system_program")]
-    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
+    #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(3, writable, name = "vault_staker_withdrawal_ticket_token_account")]
+    #[account(4, writable, name = "vault_fee_token_account")]
+    #[account(5, writable, signer, name = "staker")]
+    #[account(6, writable, name = "staker_vrt_token_account")]
+    #[account(7, signer, name = "base")]
+    #[account(8, name = "token_program")]
+    #[account(9, name = "system_program")]
+    #[account(10, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
         amount: u64
     },
@@ -175,16 +165,15 @@ pub enum VaultInstruction {
     /// after one full epoch of being enqueued.
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, name = "vault_token_account")]
-    #[account(4, writable, name = "vrt_mint")]
-    #[account(5, writable, signer, name = "staker")]
-    #[account(6, writable, name = "staker_token_account")]
-    #[account(7, writable, name = "staker_vrt_token_account")]
-    #[account(8, writable, name = "vault_staker_withdrawal_ticket")]
-    #[account(9, writable, name = "vault_staker_withdrawal_ticket_token_account")]
-    #[account(10, name = "token_program")]
-    #[account(11, name = "system_program")]
+    #[account(2, writable, name = "vault_token_account")]
+    #[account(3, writable, name = "vrt_mint")]
+    #[account(4, writable, signer, name = "staker")]
+    #[account(5, writable, name = "staker_token_account")]
+    #[account(6, writable, name = "staker_vrt_token_account")]
+    #[account(7, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(8, writable, name = "vault_staker_withdrawal_ticket_token_account")]
+    #[account(9, name = "token_program")]
+    #[account(10, name = "system_program")]
     BurnWithdrawTicket,
 
     /// Sets the max tokens that can be deposited into the VRT
@@ -225,13 +214,12 @@ pub enum VaultInstruction {
 
     /// Delegates a token amount to a specific node operator
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, name = "operator")]
-    #[account(3, name = "vault_operator_ticket")]
-    #[account(4, writable, name = "vault_delegation_list")]
-    #[account(5, signer, name = "admin")]
-    #[account(6, writable, signer, name = "payer")]
-    #[account(7, name = "system_program")]
+    #[account(3, writable, name = "vault_operator_ticket")]
+    #[account(4, signer, name = "admin")]
+    #[account(5, writable, signer, name = "payer")]
+    #[account(6, name = "system_program")]
     AddDelegation {
         amount: u64,
     },
@@ -239,18 +227,38 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "vault_delegation_list")]
+    #[account(3, writable, name = "vault_operator_ticket")]
     #[account(4, signer, name = "admin")]
     CooldownDelegation {
         amount: u64,
     },
 
-    /// Updates the vault
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_delegation_list")]
-    #[account(3, writable, name = "vault_token_account")]
-    UpdateVault,
+    #[account(2, name = "vault_token_account")]
+    UpdateVaultBalance,
+
+    /// Starts updating the vault
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vault_update_state_tracker")]
+    #[account(3, writable, name = "payer")]
+    #[account(4, name = "system_program")]
+    InitializeVaultUpdateStateTracker,
+
+    /// Shall be called on every vault_operator_ticket
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, name = "operator")]
+    #[account(3, writable, name = "vault_operator_ticket")]
+    #[account(4, writable, name = "vault_update_state_tracker")]
+    CrankVaultUpdateStateTracker,
+
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vault_update_state_tracker")]
+    #[account(3, writable, signer, name = "payer")]
+    CloseVaultUpdateStateTracker,
 
     /// Creates token metadata for the vault LRT
     #[account(0, name = "vault")]

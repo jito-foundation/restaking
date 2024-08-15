@@ -3,9 +3,9 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::inline_mpl_token_metadata::{self, pda::find_metadata_account};
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+use crate::vault_update_state_tracker::VaultUpdateStateTracker;
 use crate::{
-    config::Config, vault::Vault, vault_delegation_list::VaultDelegationList,
-    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
@@ -169,46 +169,6 @@ pub fn load_vault_operator_ticket(
         VaultOperatorTicket::find_program_address(program_id, vault.key, operator.key).0;
     if vault_operator_ticket.key.ne(&expected_pubkey) {
         msg!("Vault operator ticket account is not at the correct PDA");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    Ok(())
-}
-
-/// Loads the [`VaultDelegationList`] account
-///
-/// # Arguments
-/// * `program_id` - The program ID
-/// * `vault_delegation_list` - The [`VaultDelegationList`] account
-/// * `vault` - The [`Vault`] account
-/// * `expect_writable` - Whether the account should be writable
-///
-/// # Returns
-/// * `Result<(), ProgramError>` - The result of the operation
-pub fn load_vault_delegation_list(
-    program_id: &Pubkey,
-    vault_delegation_list: &AccountInfo,
-    vault: &AccountInfo,
-    expect_writable: bool,
-) -> Result<(), ProgramError> {
-    if vault_delegation_list.owner.ne(program_id) {
-        msg!("Vault delegation list has an invalid owner");
-        return Err(ProgramError::InvalidAccountOwner);
-    }
-    if vault_delegation_list.data_is_empty() {
-        msg!("Vault delegation list data is empty");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    if expect_writable && !vault_delegation_list.is_writable {
-        msg!("Vault delegation list is not writable");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    if vault_delegation_list.data.borrow()[0].ne(&VaultDelegationList::DISCRIMINATOR) {
-        msg!("Vault delegation list discriminator is invalid");
-        return Err(ProgramError::InvalidAccountData);
-    }
-    let expected_pubkey = VaultDelegationList::find_program_address(program_id, vault.key).0;
-    if vault_delegation_list.key.ne(&expected_pubkey) {
-        msg!("Vault delegation list is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
     Ok(())
@@ -402,4 +362,36 @@ pub fn load_mpl_metadata(info: &AccountInfo, vrt_mint: &Pubkey) -> Result<(), Pr
     } else {
         Ok(())
     }
+}
+
+pub fn load_vault_update_state_tracker(
+    program_id: &Pubkey,
+    vault_update_delegation_ticket: &AccountInfo,
+    vault: &AccountInfo,
+    ncn_epoch: u64,
+    expect_writable: bool,
+) -> Result<(), ProgramError> {
+    if vault_update_delegation_ticket.owner.ne(program_id) {
+        msg!("Vault update delegations ticket has an invalid owner");
+        return Err(ProgramError::InvalidAccountOwner);
+    }
+    if vault_update_delegation_ticket.data_is_empty() {
+        msg!("Vault update delegations ticket data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if expect_writable && !vault_update_delegation_ticket.is_writable {
+        msg!("Vault update delegations ticket is not writable");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if vault_update_delegation_ticket.data.borrow()[0].ne(&VaultUpdateStateTracker::DISCRIMINATOR) {
+        msg!("Vault update delegations ticket discriminator is invalid");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    let expected_pubkey =
+        VaultUpdateStateTracker::find_program_address(program_id, vault.key, ncn_epoch).0;
+    if vault_update_delegation_ticket.key.ne(&expected_pubkey) {
+        msg!("Vault update delegations ticket is not at the correct PDA");
+        return Err(ProgramError::InvalidAccountData);
+    }
+    Ok(())
 }

@@ -57,6 +57,12 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         return Err(VaultError::VaultSlasherAdminInvalid.into());
     }
 
+    // The Vault shall be up-to-date before warming up the slasher
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     // The NcnVaultSlasherTicket shall be active
     let ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =

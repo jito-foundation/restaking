@@ -13,11 +13,10 @@ use jito_restaking_core::{
 use jito_vault_core::{
     config::Config,
     loader::{
-        load_config, load_vault, load_vault_delegation_list,
-        load_vault_ncn_slasher_operator_ticket, load_vault_ncn_ticket, load_vault_operator_ticket,
+        load_config, load_vault, load_vault_ncn_slasher_operator_ticket, load_vault_ncn_ticket,
+        load_vault_operator_ticket,
     },
     vault::Vault,
-    vault_delegation_list::VaultDelegationList,
     vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     vault_ncn_ticket::VaultNcnTicket,
@@ -76,7 +75,7 @@ pub fn process_slash(
         vault_operator_ticket,
         vault_info,
         operator,
-        false,
+        true,
     )?;
     load_ncn_vault_slasher_ticket(
         &config.restaking_program,
@@ -86,7 +85,6 @@ pub fn process_slash(
         slasher,
         false,
     )?;
-    load_vault_delegation_list(program_id, vault_delegation_list, vault_info, false)?;
     let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
     load_vault_ncn_slasher_operator_ticket(
         program_id,
@@ -107,13 +105,10 @@ pub fn process_slash(
     let slot = Clock::get()?.slot;
     let epoch_length = config.epoch_length;
 
-    // The vault delegation list shall not need an update
-    let mut vault_delegation_list_data = vault_delegation_list.data.borrow_mut();
-    let vault_delegation_list =
-        VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
-    if vault_delegation_list.is_update_needed(slot, epoch_length) {
-        msg!("Vault delegation list update needed");
-        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
+    // The vault shall be up-to-date before slashing
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
     }
 
     // The VaultNcnTicket shall be active or cooling down to get slashed
@@ -150,8 +145,9 @@ pub fn process_slash(
     }
 
     // The VaultOperatorTicket shall be active or cooling down to get slashed
-    let vault_operator_ticket_data = vault_operator_ticket.data.borrow();
-    let vault_operator_ticket = VaultOperatorTicket::try_from_slice(&vault_operator_ticket_data)?;
+    let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
+    let vault_operator_ticket =
+        VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
     if !vault_operator_ticket
         .state
         .is_active_or_cooldown(slot, epoch_length)
@@ -218,7 +214,7 @@ pub fn process_slash(
     }
 
     // slash and update the slashed amount
-    vault_delegation_list.slash(operator.key, slash_amount)?;
+    vault_operator_ticket.slash(slash_amount)?;
     vault_ncn_slasher_operator_ticket.slashed = vault_ncn_slasher_operator_ticket
         .slashed
         .checked_add(slash_amount)

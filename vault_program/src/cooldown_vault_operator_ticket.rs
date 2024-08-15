@@ -38,6 +38,12 @@ pub fn process_cooldown_vault_operator_ticket(
         return Err(VaultError::VaultOperatorAdminInvalid.into());
     }
 
+    // The Vault shall be up-to-date before removing the operator
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     // The VaultOperatorTicket shall be active in order to cooldown the operator
     let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
     let vault_operator_ticket =

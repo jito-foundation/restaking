@@ -1,14 +1,13 @@
-use std::mem::size_of;
-
+use crate::fixtures::{TestError, TestResult};
 use borsh::BorshDeserialize;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
 };
+use jito_vault_core::vault_update_state_tracker::VaultUpdateStateTracker;
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_delegation_list::VaultDelegationList,
-    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
@@ -17,12 +16,11 @@ use jito_vault_sdk::{
     error::VaultError,
     inline_mpl_token_metadata,
     instruction::VaultAdminRole,
-    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list},
+    sdk::{add_delegation, initialize_config, initialize_vault},
 };
 use log::info;
 use solana_program::{
     clock::Clock,
-    entrypoint::MAX_PERMITTED_DATA_INCREASE,
     native_token::sol_to_lamports,
     program_pack::Pack,
     pubkey::Pubkey,
@@ -40,8 +38,6 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
-
-use crate::fixtures::TestError;
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
@@ -95,16 +91,6 @@ impl VaultProgramClient {
             VaultOperatorTicket::find_program_address(&jito_vault_program::id(), vault, operator).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(VaultOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
-    }
-
-    pub async fn get_vault_delegation_list(
-        &mut self,
-        vault_pubkey: &Pubkey,
-    ) -> Result<VaultDelegationList, TestError> {
-        let account =
-            VaultDelegationList::find_program_address(&jito_vault_program::id(), &vault_pubkey).0;
-        let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultDelegationList::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_staker_withdrawal_ticket(
@@ -230,8 +216,6 @@ impl VaultProgramClient {
         self._airdrop(&vault_admin.pubkey(), 100.0).await?;
         self._create_token_mint(&token_mint).await?;
 
-        let config_address = Config::find_program_address(&jito_vault_program::id()).0;
-
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_pubkey,
@@ -243,36 +227,6 @@ impl VaultProgramClient {
             withdraw_fee_bps,
         )
         .await?;
-
-        let vault_delegation_list =
-            VaultDelegationList::find_program_address(&jito_vault_program::id(), &vault_pubkey).0;
-
-        let num_ixs = (8 + size_of::<VaultDelegationList>()).div_ceil(MAX_PERMITTED_DATA_INCREASE);
-        let ixs = (0..num_ixs)
-            .map(|_| {
-                initialize_vault_delegation_list(
-                    &jito_vault_program::id(),
-                    &config_address,
-                    &vault_pubkey,
-                    &vault_delegation_list,
-                    &self.payer.pubkey(),
-                )
-            })
-            .collect::<Vec<_>>();
-
-        // the max instructions + CPIs per transaction are 64
-        // each call to initialize_vault_delegation_list counts as one instruction in addition to the
-        // create_account or realloc instruction
-        for ix_chunk in ixs.chunks(32) {
-            let blockhash = self.banks_client.get_latest_blockhash().await?;
-            self._process_transaction(&Transaction::new_signed_with_payer(
-                &ix_chunk,
-                Some(&self.payer.pubkey()),
-                &[&self.payer],
-                blockhash,
-            ))
-            .await?;
-        }
 
         // for holding the backed asset in the vault
         self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
@@ -418,11 +372,6 @@ impl VaultProgramClient {
             &slasher.pubkey(),
         )
         .0;
-        let vault_delegate_list_pubkey = VaultDelegationList::find_program_address(
-            &jito_vault_program::id(),
-            &vault_root.vault_pubkey,
-        )
-        .0;
         let config = self
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
@@ -459,7 +408,6 @@ impl VaultProgramClient {
             &vault_operator_ticket,
             &ncn_slasher_ticket_pubkey,
             &vault_slasher_ticket_pubkey,
-            &vault_delegate_list_pubkey,
             &vault_ncn_slasher_operator_ticket,
             &vault_token_account,
             &slasher_token_account,
@@ -551,11 +499,6 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 &vault_root.vault_pubkey,
                 operator,
-            )
-            .0,
-            &VaultDelegationList::find_program_address(
-                &jito_vault_program::id(),
-                &vault_root.vault_pubkey,
             )
             .0,
             &vault_root.vault_admin,
@@ -765,11 +708,6 @@ impl VaultProgramClient {
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
-            &VaultDelegationList::find_program_address(
-                &jito_vault_program::id(),
-                &vault_root.vault_pubkey,
-            )
-            .0,
             &vault_staker_withdrawal_ticket,
             &vault_staker_withdrawal_ticket_token_account,
             &vault_staker_fee_token_account,
@@ -785,19 +723,132 @@ impl VaultProgramClient {
         })
     }
 
-    pub async fn do_update_vault(&mut self, vault_pubkey: &Pubkey) -> Result<(), TestError> {
+    pub async fn do_full_vault_update(
+        &mut self,
+        vault_pubkey: &Pubkey,
+        operators: &[Pubkey],
+    ) -> Result<(), TestError> {
+        let slot = self.banks_client.get_sysvar::<Clock>().await?.slot;
+
+        let config = self
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await?;
+
+        self.update_vault_balance(&vault_pubkey).await?;
+
+        let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_pubkey,
+            slot / config.epoch_length,
+        )
+        .0;
+        self.initialize_vault_update_state_tracker(&vault_pubkey, &vault_update_state_tracker)
+            .await?;
+
+        for operator in operators {
+            self.crank_vault_update_state_tracker(
+                &vault_pubkey,
+                operator,
+                &VaultOperatorTicket::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_pubkey,
+                    operator,
+                )
+                .0,
+                &vault_update_state_tracker,
+            )
+            .await?;
+        }
+
+        self.close_vault_update_state_tracker(&vault_pubkey, &vault_update_state_tracker)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn crank_vault_update_state_tracker(
+        &mut self,
+        vault: &Pubkey,
+        operator: &Pubkey,
+        vault_operator_ticket: &Pubkey,
+        vault_update_state_tracker: &Pubkey,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::crank_vault_update_state_tracker(
+                &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                vault,
+                operator,
+                vault_operator_ticket,
+                vault_update_state_tracker,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
+            blockhash,
+        ))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn update_vault_balance(&mut self, vault_pubkey: &Pubkey) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
         let vault = self.get_vault(vault_pubkey).await?;
 
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::update_vault(
+            &[jito_vault_sdk::sdk::update_vault_balance(
+                &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_pubkey,
+                &get_associated_token_address(&vault_pubkey, &vault.supported_mint),
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
+            blockhash,
+        ))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn initialize_vault_update_state_tracker(
+        &mut self,
+        vault_pubkey: &Pubkey,
+        vault_update_state_tracker: &Pubkey,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::initialize_vault_update_state_tracker(
                 &jito_vault_program::id(),
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 vault_pubkey,
-                &VaultDelegationList::find_program_address(&jito_vault_program::id(), vault_pubkey)
-                    .0,
-                &get_associated_token_address(vault_pubkey, &vault.supported_mint),
+                vault_update_state_tracker,
+                &self.payer.pubkey(),
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
+            blockhash,
+        ))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn close_vault_update_state_tracker(
+        &mut self,
+        vault_pubkey: &Pubkey,
+        vault_update_state_tracker: &Pubkey,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::close_vault_update_state_tracker(
+                &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                vault_pubkey,
+                vault_update_state_tracker,
+                &self.payer.pubkey(),
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],
@@ -810,7 +861,6 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
-        vault_delegation_list: &Pubkey,
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
@@ -825,7 +875,6 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 config,
                 vault,
-                vault_delegation_list,
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
@@ -859,11 +908,6 @@ impl VaultProgramClient {
         self.burn_withdrawal_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
-            &VaultDelegationList::find_program_address(
-                &jito_vault_program::id(),
-                &vault_root.vault_pubkey,
-            )
-            .0,
             &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
             &vault.vrt_mint,
             staker,
@@ -881,7 +925,6 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
-        vault_delegation_list: &Pubkey,
         vault_token_account: &Pubkey,
         vrt_mint: &Pubkey,
         staker: &Keypair,
@@ -896,7 +939,6 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 config,
                 vault,
-                vault_delegation_list,
                 vault_token_account,
                 vrt_mint,
                 &staker.pubkey(),
@@ -918,7 +960,6 @@ impl VaultProgramClient {
         vault: &Pubkey,
         operator: &Pubkey,
         vault_operator_ticket: &Pubkey,
-        vault_delegation_list: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
         amount: u64,
@@ -931,7 +972,6 @@ impl VaultProgramClient {
                 vault,
                 operator,
                 vault_operator_ticket,
-                vault_delegation_list,
                 &admin.pubkey(),
                 &payer.pubkey(),
                 amount,
@@ -1059,7 +1099,6 @@ impl VaultProgramClient {
         vault_operator_ticket: &Pubkey,
         ncn_vault_slasher_ticket: &Pubkey,
         vault_ncn_slasher_ticket: &Pubkey,
-        vault_delegation_list: &Pubkey,
         vault_ncn_slasher_operator_ticket: &Pubkey,
         vault_token_account: &Pubkey,
         slasher_token_account: &Pubkey,
@@ -1081,7 +1120,6 @@ impl VaultProgramClient {
                 vault_operator_ticket,
                 ncn_vault_slasher_ticket,
                 vault_ncn_slasher_ticket,
-                vault_delegation_list,
                 vault_ncn_slasher_operator_ticket,
                 vault_token_account,
                 slasher_token_account,

@@ -47,6 +47,12 @@ pub fn process_warmup_vault_ncn_ticket(
         return Err(VaultError::VaultNcnAdminInvalid.into());
     }
 
+    // The vault shall be up-to-date before warming up the NCN
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     // The NcnVaultTicket shall be active
     let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
     let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;

@@ -1,19 +1,21 @@
 mod add_delegation;
 mod burn;
 mod burn_withdrawal_ticket;
+mod close_update_state_tracker;
 mod cooldown_delegation;
 mod cooldown_vault_ncn_slasher_ticket;
 mod cooldown_vault_ncn_ticket;
 mod cooldown_vault_operator_ticket;
+mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
-mod initialize_vault_delegation_list;
 mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_ncn_slasher_ticket;
 mod initialize_vault_ncn_ticket;
 mod initialize_vault_operator_ticket;
+mod initialize_vault_update_state_tracker;
 mod initialize_vault_with_mint;
 mod mint_to;
 mod set_admin;
@@ -22,7 +24,7 @@ mod set_fees;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
-mod update_vault;
+mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
 mod warmup_vault_operator_ticket;
@@ -37,6 +39,9 @@ use solana_program::{
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
+use crate::close_update_state_tracker::process_close_vault_update_state_tracker;
+use crate::initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker;
+use crate::update_vault_balance::process_update_vault_balance;
 use crate::{
     add_delegation::process_add_delegation, burn::process_burn,
     burn_withdrawal_ticket::process_burn_withdrawal_ticket,
@@ -44,10 +49,10 @@ use crate::{
     cooldown_vault_ncn_slasher_ticket::process_cooldown_vault_ncn_slasher_ticket,
     cooldown_vault_ncn_ticket::process_cooldown_vault_ncn_ticket,
     cooldown_vault_operator_ticket::process_cooldown_vault_operator_ticket,
+    crank_vault_update_state_tracker::process_crank_vault_update_state_tracker,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
-    initialize_vault_delegation_list::process_initialize_vault_delegation_list,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_ncn_slasher_ticket::process_initialize_vault_ncn_slasher_ticket,
     initialize_vault_ncn_ticket::process_initialize_vault_ncn_ticket,
@@ -56,7 +61,6 @@ use crate::{
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
     set_fees::process_set_fees, set_secondary_admin::process_set_secondary_admin,
     slash::process_slash, update_token_metadata::process_update_token_metadata,
-    update_vault::process_update_vault,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
     warmup_vault_operator_ticket::process_warmup_vault_operator_ticket,
@@ -105,10 +109,6 @@ pub fn process_instruction(
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
-        }
-        VaultInstruction::InitializeVaultDelegationList => {
-            msg!("Instruction: InitializeVaultDelegationList");
-            process_initialize_vault_delegation_list(program_id, accounts)
         }
         VaultInstruction::InitializeVaultWithMint => {
             msg!("Instruction: InitializeVaultWithMint");
@@ -219,9 +219,21 @@ pub fn process_instruction(
             msg!("Instruction: CooldownDelegation");
             process_cooldown_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::UpdateVault => {
-            msg!("Instruction: UpdateVault");
-            process_update_vault(program_id, accounts)
+        VaultInstruction::UpdateVaultBalance => {
+            msg!("Instruction: UpdateVaultBalance");
+            process_update_vault_balance(program_id, accounts)
+        }
+        VaultInstruction::InitializeVaultUpdateStateTracker => {
+            msg!("Instruction: InitializeVaultUpdateStateTracker");
+            process_initialize_vault_update_state_tracker(program_id, accounts)
+        }
+        VaultInstruction::CrankVaultUpdateStateTracker => {
+            msg!("Instruction: CrankVaultUpdateStateTracker");
+            process_crank_vault_update_state_tracker(program_id, accounts)
+        }
+        VaultInstruction::CloseVaultUpdateStateTracker => {
+            msg!("Instruction: CloseVaultUpdateStateTracker");
+            process_close_vault_update_state_tracker(program_id, accounts)
         }
         // ------------------------------------------
         // Vault slashing
