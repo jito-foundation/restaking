@@ -1,4 +1,5 @@
 mod burn_withdrawal_ticket;
+mod update_token_metadata;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;

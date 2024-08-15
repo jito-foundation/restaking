@@ -17,7 +17,7 @@ use jito_vault_core::{
 use jito_vault_sdk::{
     error::VaultError,
     instruction::VaultAdminRole,
-    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list},
+    sdk::{add_delegation, initialize_config, initialize_vault, initialize_vault_delegation_list}, inline_mpl_token_metadata,
 };
 use log::info;
 use solana_program::{
@@ -164,9 +164,11 @@ impl VaultProgramClient {
 
     pub async fn get_token_metadata(
         &mut self,
-        account: &Pubkey,
+        vrt_mint: &Pubkey,
     ) -> Result<crate::helpers::token::Metadata, TestError> {
-        let token_metadata_account = self.banks_client.get_account(*account).await?.unwrap();
+        let metadata_pubkey =
+            inline_mpl_token_metadata::pda::find_metadata_account(vrt_mint).0;
+        let token_metadata_account = self.banks_client.get_account(metadata_pubkey).await?.unwrap();
         let metadata = crate::helpers::token::Metadata::deserialize(
             &mut token_metadata_account.data.as_slice(),
         )
@@ -1102,7 +1104,7 @@ impl VaultProgramClient {
         &mut self,
         vault: &Pubkey,
         admin: &Keypair,
-        lrt_mint: &Pubkey,
+        vrt_mint: &Pubkey,
         payer: &Keypair,
         metadata: &Pubkey,
         name: String,
@@ -1115,7 +1117,7 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 vault,
                 &admin.pubkey(),
-                lrt_mint,
+                vrt_mint,
                 &payer.pubkey(),
                 metadata,
                 name,
@@ -1124,6 +1126,33 @@ impl VaultProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn update_token_metadata(
+        &mut self,
+        vault: &Pubkey,
+        admin: &Keypair,
+        vrt_mint: &Pubkey,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::update_token_metadata(
+                &jito_vault_program::id(),
+                vault,
+                &admin.pubkey(),
+                vrt_mint,
+                name,
+                symbol,
+                uri,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &admin],
             blockhash,
         ))
         .await
