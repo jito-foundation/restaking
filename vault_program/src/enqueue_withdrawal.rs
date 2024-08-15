@@ -38,7 +38,7 @@ pub fn process_enqueue_withdrawal(
     accounts: &[AccountInfo],
     vrt_amount: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(11);
+    let (required_accounts, optional_accounts) = accounts.split_at(10);
 
     let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
         required_accounts

@@ -418,7 +418,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn vault_operator_opt_in(
+    pub async fn do_initialize_vault_operator_ticket(
         &mut self,
         vault_root: &VaultRoot,
         operator_pubkey: &Pubkey,

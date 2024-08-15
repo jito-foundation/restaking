@@ -66,7 +66,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
         let slasher = Keypair::new();

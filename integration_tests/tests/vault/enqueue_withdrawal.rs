@@ -139,12 +139,16 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
         fixture
             .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
             .await
             .unwrap();
 
@@ -197,11 +201,6 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault_fee_account.amount, 1_000);
-
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
 
         vault_program_client
             .delegate(&vault_root, &operator_root.operator_pubkey, 100_000)
@@ -298,7 +297,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 

@@ -1,5 +1,5 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_system_program};
+use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::loader::load_operator;
 use jito_vault_core::{
     config::Config,
@@ -18,8 +18,7 @@ pub fn process_add_delegation(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let [config, vault, operator, vault_operator_ticket, vault_delegation_admin, payer, system_program] =
-        accounts
+    let [config, vault, operator, vault_operator_ticket, vault_delegation_admin, payer] = accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -32,7 +31,6 @@ pub fn process_add_delegation(
     load_vault_operator_ticket(program_id, vault_operator_ticket, vault, operator, true)?;
     load_signer(vault_delegation_admin, false)?;
     load_signer(payer, true)?;
-    load_system_program(system_program)?;
 
     // The Vault delegation admin shall be the signer of the transaction
     let mut vault_data = vault.data.borrow_mut();

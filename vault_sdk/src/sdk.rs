@@ -326,12 +326,11 @@ pub fn add_delegation(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*vault, true),
+        AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new(*vault_operator_ticket, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
-        AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
         program_id: *program_id,
