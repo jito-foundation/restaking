@@ -1,4 +1,6 @@
+mod add_delegation;
 mod burn_withdrawal_ticket;
+mod close_update_state_tracker;
 mod create_token_metadata;
 mod enqueue_withdrawal;
 mod initialize_config;
