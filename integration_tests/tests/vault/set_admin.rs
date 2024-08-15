@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
-    use jito_vault_sdk::error::VaultError;
+    use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::{
@@ -74,6 +74,23 @@ mod tests {
         assert_eq!(vault.admin, vault_admin.pubkey());
 
         let new_admin = Keypair::new();
+        {
+            // Mint Burn
+            let new_admin = new_admin.pubkey();
+            vault_program_client
+                .set_secondary_admin(
+                    &config_pubkey,
+                    &vault_pubkey,
+                    &vault_admin,
+                    &new_admin,
+                    VaultAdminRole::MintBurnAdmin,
+                )
+                .await
+                .unwrap();
+
+            let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
+            assert_eq!(vault.mint_burn_admin, new_admin);
+        }
         vault_program_client
             .set_admin(&config_pubkey, &vault_pubkey, &vault_admin, &new_admin)
             .await
@@ -82,5 +99,15 @@ mod tests {
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
 
         assert_eq!(vault.admin, new_admin.pubkey());
+
+        assert_eq!(vault.delegation_admin, new_admin.pubkey());
+        assert_eq!(vault.operator_admin, new_admin.pubkey());
+        assert_eq!(vault.ncn_admin, new_admin.pubkey());
+        assert_eq!(vault.slasher_admin, new_admin.pubkey());
+        assert_eq!(vault.capacity_admin, new_admin.pubkey());
+        assert_eq!(vault.fee_wallet, new_admin.pubkey());
+        assert_eq!(vault.mint_burn_admin, new_admin.pubkey());
+        assert_eq!(vault.withdraw_admin, new_admin.pubkey());
+        assert_eq!(vault.fee_admin, new_admin.pubkey());
     }
 }
