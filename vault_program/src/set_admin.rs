@@ -28,6 +28,7 @@ pub fn process_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> Progr
         return Err(VaultError::VaultAdminInvalid.into());
     }
     vault.admin = *new_admin.key;
+    vault.update_secondary_admin(old_admin.key, new_admin.key);
 
     Ok(())
 }
