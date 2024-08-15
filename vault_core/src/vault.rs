@@ -65,8 +65,8 @@ pub struct Vault {
     /// The total number of tokens deposited
     pub tokens_deposited: u64,
 
-    /// The amount of tokens that are reserved for withdrawal
-    pub withdrawable_reserve_amount: u64,
+    /// The amount of **VRT** tokens that are reserved for withdrawal
+    pub withdrawable_vrt_reserve_amount: u64,
 
     /// Number of VaultNcnTicket accounts tracked by this vault
     pub ncn_count: u64,
@@ -123,7 +123,7 @@ impl Vault {
             vault_index,
             vrt_supply: 0,
             tokens_deposited: 0,
-            withdrawable_reserve_amount: 0,
+            withdrawable_vrt_reserve_amount: 0,
             last_fee_change_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
@@ -138,15 +138,6 @@ impl Vault {
     // ------------------------------------------
     // Asset accounting and tracking
     // ------------------------------------------
-
-    /// Calculate the maximum amount of tokens that can be delegated to operators, which
-    /// is the total amount of tokens deposited in the vault minus the amount of tokens
-    /// that are reserved for withdrawal.
-    pub fn max_delegation_amount(&self) -> Result<u64, VaultError> {
-        self.tokens_deposited
-            .checked_sub(self.withdrawable_reserve_amount)
-            .ok_or(VaultError::VaultOverflow)
-    }
 
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.

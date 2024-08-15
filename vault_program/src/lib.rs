@@ -171,9 +171,11 @@ pub fn process_instruction(
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
         }
-        VaultInstruction::BurnWithdrawTicket => {
+        VaultInstruction::BurnWithdrawTicket {
+            fail_if_not_fair_price,
+        } => {
             msg!("Instruction: BurnWithdrawTicket");
-            process_burn_withdrawal_ticket(program_id, accounts)
+            process_burn_withdrawal_ticket(program_id, accounts, fail_if_not_fair_price)
         }
         // ------------------------------------------
         // Vault-NCN operations

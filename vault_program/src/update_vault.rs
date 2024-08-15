@@ -32,15 +32,7 @@ pub fn process_update_vault(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pr
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
 
     // Update the vault delegation list
-    if let VaultDelegationUpdateSummary::Updated {
-        amount_reserved_for_withdraw,
-    } = vault_delegation_list.update(Clock::get()?.slot, config.epoch_length)?
-    {
-        vault.withdrawable_reserve_amount = vault
-            .withdrawable_reserve_amount
-            .checked_add(amount_reserved_for_withdraw)
-            .ok_or(ProgramError::InvalidAccountData)?;
-    }
+    vault_delegation_list.update(Clock::get()?.slot, config.epoch_length)?;
 
     // Update the total amount of tokens
     let vault_token_account_data = vault_token_account.data.borrow();

@@ -22,9 +22,6 @@ pub struct VaultStakerWithdrawalTicket {
     /// The base account used as a PDA seed
     pub base: Pubkey,
 
-    /// The amount of assets allocated for this staker's withdraw
-    pub withdraw_allocation_amount: u64,
-
     /// The amount of VRT held in the VaultStakerWithdrawalTicket token account at the time of creation.
     /// This is used to ensure the amount redeemed is the same as the amount allocated.
     pub vrt_amount: u64,
@@ -43,7 +40,6 @@ impl VaultStakerWithdrawalTicket {
         vault: Pubkey,
         staker: Pubkey,
         base: Pubkey,
-        withdraw_allocation_amount: u64,
         vrt_amount: u64,
         slot_unstaked: u64,
         bump: u8,
@@ -52,7 +48,6 @@ impl VaultStakerWithdrawalTicket {
             vault,
             staker,
             base,
-            withdraw_allocation_amount,
             vrt_amount,
             slot_unstaked,
             bump,

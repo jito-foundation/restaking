@@ -15,6 +15,7 @@ use jito_vault_core::{
     vault_delegation_list::{UndelegateForWithdrawMethod, VaultDelegationList},
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -90,11 +91,11 @@ pub fn process_enqueue_withdrawal(
             load_signer(burn_signer, false)?;
             if burn_signer.key.ne(&vault.mint_burn_admin) {
                 msg!("Burn signer does not match vault burn signer");
-                return Err(ProgramError::InvalidAccountData);
+                return Err(VaultError::VaultMintBurnAdminInvalid.into());
             }
         } else {
             msg!("Mint signer is required for vault mint");
-            return Err(ProgramError::InvalidAccountData);
+            return Err(VaultError::VaultMintBurnAdminInvalid.into());
         }
     }
 
@@ -106,16 +107,16 @@ pub fn process_enqueue_withdrawal(
         VaultDelegationList::try_from_slice_mut(&mut vault_delegation_list_data)?;
     if vault_delegation_list.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault delegation list is not up to date");
-        return Err(ProgramError::InvalidAccountData);
+        return Err(VaultError::VaultDelegationListUpdateNeeded.into());
     }
 
     // Calculate the amount to undelegate for withdrawal for the user, subtracting the fee
     let fee_amount = vault.calculate_withdraw_fee(vrt_amount)?;
-    let amount_to_vault_staker_withdrawal_ticket = vrt_amount
+    let vrt_amount_in_withdrawal_tickeet = vrt_amount
         .checked_sub(fee_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
     let amount_to_withdraw =
-        vault.calculate_assets_returned_amount(amount_to_vault_staker_withdrawal_ticket)?;
+        vault.calculate_assets_returned_amount(vrt_amount_in_withdrawal_tickeet)?;
     vault_delegation_list
         .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
 
@@ -143,8 +144,7 @@ pub fn process_enqueue_withdrawal(
         *vault_info.key,
         *staker.key,
         *base.key,
-        amount_to_withdraw,
-        amount_to_vault_staker_withdrawal_ticket,
+        vrt_amount_in_withdrawal_tickeet,
         Clock::get()?.slot,
         vault_staker_withdrawal_ticket_bump,
     );
@@ -158,7 +158,7 @@ pub fn process_enqueue_withdrawal(
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             &[],
-            amount_to_vault_staker_withdrawal_ticket,
+            vrt_amount_in_withdrawal_tickeet,
         )?,
         &[
             staker_vrt_token_account.clone(),
@@ -184,6 +184,11 @@ pub fn process_enqueue_withdrawal(
             staker.clone(),
         ],
     )?;
+
+    vault.withdrawable_vrt_reserve_amount = vault
+        .withdrawable_vrt_reserve_amount
+        .checked_add(vrt_amount_in_withdrawal_tickeet)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     Ok(())
 }

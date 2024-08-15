@@ -19,7 +19,7 @@ pub enum VaultDelegationUpdateSummary {
     NotUpdated,
     /// The vault delegation list was updated and the amount reserved for withdrawal
     /// is returned.
-    Updated { amount_reserved_for_withdraw: u64 },
+    Updated,
 }
 
 pub const MAX_DELEGATIONS: usize = 2048;
@@ -120,8 +120,6 @@ impl VaultDelegationList {
         let last_epoch_update = self.last_slot_updated.checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
 
-        let mut amount_reserved_for_withdraw: u64 = 0;
-
         // time should only move forward, unwrap is safe
         let epoch_diff = current_epoch.checked_sub(last_epoch_update).unwrap();
         match epoch_diff {
@@ -129,9 +127,7 @@ impl VaultDelegationList {
             1 => {
                 // enqueued -> cooling down, enqueued wiped
                 for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
-                    amount_reserved_for_withdraw = amount_reserved_for_withdraw
-                        .checked_add(delegation.update())
-                        .ok_or(VaultError::VaultDelegationListOverflow)?;
+                    delegation.update();
 
                     if delegation.is_empty() {
                         delegation.clear();
@@ -142,13 +138,8 @@ impl VaultDelegationList {
                 // max updates required are two (enqueued -> cooling down -> wiped out),
                 // so this only needs to be done twice even if >2 epochs have passed
                 for delegation in self.delegations.iter_mut().filter(|d| d.is_used == 1) {
-                    let amount_withdrawal_1 = delegation.update();
-                    let amount_withdrawal_2 = delegation.update();
-
-                    amount_reserved_for_withdraw = amount_reserved_for_withdraw
-                        .checked_add(amount_withdrawal_1)
-                        .and_then(|x| x.checked_add(amount_withdrawal_2))
-                        .ok_or(VaultError::VaultDelegationListOverflow)?;
+                    delegation.update();
+                    delegation.update();
 
                     if delegation.is_empty() {
                         delegation.clear();
@@ -159,9 +150,7 @@ impl VaultDelegationList {
 
         self.last_slot_updated = slot;
 
-        Ok(VaultDelegationUpdateSummary::Updated {
-            amount_reserved_for_withdraw,
-        })
+        Ok(VaultDelegationUpdateSummary::Updated)
     }
 
     /// Delegates an amount of stake to an operator and ensures the amount delegated doesn't
@@ -395,9 +384,7 @@ mod tests {
         // Simulate passing of one epoch
         assert_eq!(
             list.update(epoch_length, epoch_length).unwrap(),
-            VaultDelegationUpdateSummary::Updated {
-                amount_reserved_for_withdraw: 0
-            }
+            VaultDelegationUpdateSummary::Updated
         );
 
         let delegation = list.delegations().get(0).unwrap();
@@ -408,9 +395,7 @@ mod tests {
         // Simulate passing of another epoch
         assert_eq!(
             list.update(epoch_length * 2, epoch_length).unwrap(),
-            VaultDelegationUpdateSummary::Updated {
-                amount_reserved_for_withdraw: 0
-            }
+            VaultDelegationUpdateSummary::Updated
         );
 
         let delegation = list.delegations().get(0).unwrap();
@@ -433,15 +418,11 @@ mod tests {
 
         assert_eq!(
             list.update(100, 100).unwrap(),
-            VaultDelegationUpdateSummary::Updated {
-                amount_reserved_for_withdraw: 0
-            }
+            VaultDelegationUpdateSummary::Updated
         );
         assert_eq!(
             list.update(200, 100).unwrap(),
-            VaultDelegationUpdateSummary::Updated {
-                amount_reserved_for_withdraw: 200
-            }
+            VaultDelegationUpdateSummary::Updated
         );
         assert_eq!(list.total_security().unwrap(), 300);
 
@@ -825,9 +806,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             list.update(200, 100).unwrap(),
-            VaultDelegationUpdateSummary::Updated {
-                amount_reserved_for_withdraw: 25_000
-            }
+            VaultDelegationUpdateSummary::Updated
         );
 
         let delegation = list.delegations().get(0).unwrap();

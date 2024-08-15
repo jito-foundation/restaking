@@ -63,7 +63,12 @@ pub fn process_add_delegation(
         return Err(VaultError::VaultDelegationListUpdateNeeded.into());
     }
 
-    vault_delegation_list.delegate(*operator.key, amount, vault.max_delegation_amount()?)?;
+    // TODO (LB): should this be saturating sub?
+    let max_delegation_amount = vault
+        .tokens_deposited
+        .checked_sub(vault.calculate_assets_returned_amount(vault.withdrawable_vrt_reserve_amount)?)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    vault_delegation_list.delegate(*operator.key, amount, max_delegation_amount)?;
 
     Ok(())
 }

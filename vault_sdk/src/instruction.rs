@@ -185,7 +185,18 @@ pub enum VaultInstruction {
     #[account(9, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(10, name = "token_program")]
     #[account(11, name = "system_program")]
-    BurnWithdrawTicket,
+    BurnWithdrawTicket {
+        /// If set to true:
+        /// The transaction fails if the user doesn't receive fair price for the redemption
+        /// This can happen in situations where the vault doesn't have enough assets to cover the
+        /// withdrawal. The user can choose to wait until the vault has enough assets to cover the
+        /// withdrawal.
+        ///
+        /// If set to false:
+        /// If the user would not receive back fair price, they will receive back a portion of their
+        /// staked asset and any remaining VRT tokens.
+        fail_if_not_fair_price: bool
+    },
 
     /// Sets the max tokens that can be deposited into the VRT
     #[account(0, name = "config")]
