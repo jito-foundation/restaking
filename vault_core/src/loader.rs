@@ -367,7 +367,7 @@ pub fn load_vault_staker_withdrawal_ticket(
     Ok(())
 }
 
-/// Loads the account as a mpl metadta program, returning an error if it is not.
+/// Loads the account as a mpl metadata program, returning an error if it is not.
 ///
 /// # Arguments
 /// * `info` - The account to load the mpl metadata program from
