@@ -291,6 +291,45 @@ mod tests {
     use crate::vault::Vault;
 
     #[test]
+    fn test_update_secondary_admin_ok() {
+        let old_admin = Pubkey::new_unique();
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            old_admin,
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.mint_burn_admin = old_admin;
+
+        assert_eq!(vault.delegation_admin, old_admin);
+        assert_eq!(vault.operator_admin, old_admin);
+        assert_eq!(vault.ncn_admin, old_admin);
+        assert_eq!(vault.slasher_admin, old_admin);
+        assert_eq!(vault.capacity_admin, old_admin);
+        assert_eq!(vault.fee_wallet, old_admin);
+        assert_eq!(vault.mint_burn_admin, old_admin);
+        assert_eq!(vault.withdraw_admin, old_admin);
+        assert_eq!(vault.fee_admin, old_admin);
+
+        let new_admin = Pubkey::new_unique();
+        vault.update_secondary_admin(&old_admin, &new_admin);
+
+        assert_eq!(vault.delegation_admin, new_admin);
+        assert_eq!(vault.operator_admin, new_admin);
+        assert_eq!(vault.ncn_admin, new_admin);
+        assert_eq!(vault.slasher_admin, new_admin);
+        assert_eq!(vault.capacity_admin, new_admin);
+        assert_eq!(vault.fee_wallet, new_admin);
+        assert_eq!(vault.mint_burn_admin, new_admin);
+        assert_eq!(vault.withdraw_admin, new_admin);
+        assert_eq!(vault.fee_admin, new_admin);
+    }
+
+    #[test]
     fn test_deposit_ratio_simple_ok() {
         let vault = Vault::new(
             Pubkey::new_unique(),
