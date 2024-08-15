@@ -6,7 +6,7 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for NcnVaultSlasherTicket {
-    const DISCRIMINATOR: u8 = 8;
+    const DISCRIMINATOR: u8 = 7;
 }
 
 /// The NcnVaultSlasherTicket is created by the NCN and it tracks the state of a node consensus network
