@@ -105,10 +105,10 @@ mod tests {
             .await
             .unwrap();
 
-        restaking_program_client
-            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
+        // restaking_program_client
+        //     .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+        //     .await
+        //     .unwrap();
 
         fixture
             .warp_slot_incremental(2 * restaking_config.epoch_length)
@@ -116,7 +116,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
@@ -294,10 +294,10 @@ mod tests {
             .unwrap();
 
         // Setup necessary relationships
-        restaking_program_client
-            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
+        // restaking_program_client
+        //     .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
+        //     .await
+        //     .unwrap();
 
         fixture
             .warp_slot_incremental(2 * restaking_config.epoch_length)
@@ -305,7 +305,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
         restaking_program_client

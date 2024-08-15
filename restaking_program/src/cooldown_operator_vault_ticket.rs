@@ -42,7 +42,7 @@ pub fn process_cooldown_operator_vault_ticket(
     let mut operator_vault_ticket_data = operator_vault_ticket.data.borrow_mut();
     let operator_vault_ticket =
         OperatorVaultTicket::try_from_slice_mut(&mut operator_vault_ticket_data)?;
-    if operator_vault_ticket
+    if !operator_vault_ticket
         .state
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {

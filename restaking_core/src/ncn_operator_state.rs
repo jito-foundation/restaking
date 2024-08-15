@@ -16,10 +16,13 @@ pub struct NcnOperatorState {
     /// The operator account
     pub operator: Pubkey,
 
+    /// Index
     pub index: u64,
 
+    /// State of the ncn opt-ing in to the operator
     pub ncn_opt_in_state: SlotToggle,
 
+    /// State of the operator opt-ing in to the ncn
     pub operator_opt_in_state: SlotToggle,
 
     pub bump: u8,
@@ -41,20 +44,20 @@ impl NcnOperatorState {
         }
     }
 
-    pub fn seeds(operator: &Pubkey, ncn: &Pubkey) -> Vec<Vec<u8>> {
+    pub fn seeds(ncn: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"ncn_operator_state".to_vec(),
-            operator.to_bytes().to_vec(),
             ncn.to_bytes().to_vec(),
+            operator.to_bytes().to_vec(),
         ])
     }
 
     pub fn find_program_address(
         program_id: &Pubkey,
-        operator: &Pubkey,
         ncn: &Pubkey,
+        operator: &Pubkey,
     ) -> (Pubkey, u8, Vec<Vec<u8>>) {
-        let seeds = Self::seeds(operator, ncn);
+        let seeds = Self::seeds(ncn, operator);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)

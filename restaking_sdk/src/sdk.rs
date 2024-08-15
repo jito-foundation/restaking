@@ -362,30 +362,6 @@ pub fn cooldown_operator_vault_ticket(
     }
 }
 
-pub fn cooldown_operator_ncn_ticket(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    operator: &Pubkey,
-    ncn: &Pubkey,
-    operator_ncn_ticket: &Pubkey,
-    admin: &Pubkey,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*ncn, false),
-        AccountMeta::new(*operator_ncn_ticket, false),
-        AccountMeta::new_readonly(*admin, true),
-    ];
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: RestakingInstruction::OperatorCooldownNcn
-            .try_to_vec()
-            .unwrap(),
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn ncn_withdrawal_asset(
     program_id: &Pubkey,
@@ -435,6 +411,102 @@ pub fn operator_withdrawal_asset(
         program_id: *program_id,
         accounts,
         data: RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount }
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn operator_warmup_ncn(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    ncn: &Pubkey,
+    operator: &Pubkey,
+    ncn_operator_state: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new(*ncn_operator_state, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::OperatorWarmupNcn
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn operator_cooldown_ncn(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    ncn: &Pubkey,
+    operator: &Pubkey,
+    ncn_operator_state: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new(*ncn_operator_state, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::OperatorCooldownNcn
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn ncn_warmup_operator(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    ncn: &Pubkey,
+    operator: &Pubkey,
+    ncn_operator_state: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new(*ncn_operator_state, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::NcnWarmupOperator
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn ncn_cooldown_operator(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    ncn: &Pubkey,
+    operator: &Pubkey,
+    ncn_operator_state: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new(*ncn_operator_state, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::NcnCooldownOperator
             .try_to_vec()
             .unwrap(),
     }

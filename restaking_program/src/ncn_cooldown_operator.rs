@@ -1,11 +1,10 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::loader::load_ncn_operator_state;
-use jito_restaking_core::ncn_operator_state::NcnOperatorState;
 use jito_restaking_core::{
     config::Config,
-    loader::{load_config, load_ncn, load_operator},
+    loader::{load_config, load_ncn, load_ncn_operator_state, load_operator},
     ncn::Ncn,
+    ncn_operator_state::NcnOperatorState,
 };
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
@@ -47,7 +46,7 @@ pub fn process_ncn_cooldown_operator(
         .ncn_opt_in_state
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("NCN can not opt-out of operator");
+        msg!("NCN is not ready to deactivate operator");
         return Err(RestakingError::NcnCooldownOperatorFailed.into());
     }
 

@@ -59,39 +59,55 @@ mod tests {
             .await
             .unwrap();
 
-        // Setup necessary relationships
-        restaking_program_client
-            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
-            .await
-            .unwrap();
-        restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
 
         restaking_program_client
-            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
+            .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
+        restaking_program_client
+            .do_operator_warmup_ncn(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
-        vault_program_client
-            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
-
         restaking_program_client
             .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
+        restaking_program_client
+            .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
+        restaking_program_client
+            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        // create slasher w/ token account
+        let slasher = Keypair::new();
+        fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
+        fixture
+            .create_ata(&vault.supported_mint, &slasher.pubkey())
+            .await
+            .unwrap();
+
         fixture
             .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+
+        restaking_program_client
+            .do_ncn_vault_slasher_opt_in(
+                &ncn_root,
+                &vault_root.vault_pubkey,
+                &slasher.pubkey(),
+                max_slash_amount,
+            )
+            .await
+            .unwrap();
+        vault_program_client
+            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
         vault_program_client
@@ -103,9 +119,17 @@ mod tests {
             .warp_slot_incremental(2 * restaking_config.epoch_length)
             .await
             .unwrap();
+        vault_program_client
+            .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
+            .await
+            .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
+        fixture
+            .warp_slot_incremental(2 * restaking_config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -120,7 +144,6 @@ mod tests {
             .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
-
         // Mint VRT tokens to depositor
         vault_program_client
             .mint_to(
@@ -137,58 +160,9 @@ mod tests {
             .await
             .unwrap();
 
-        vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
         // Delegate all funds to the operator
         vault_program_client
             .delegate(&vault_root, &operator_root.operator_pubkey, delegate_amount)
-            .await
-            .unwrap();
-
-        // create slasher w/ token account
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
-        fixture
-            .create_ata(&vault.supported_mint, &slasher.pubkey())
-            .await
-            .unwrap();
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-
-        // do all the opt-in stuff for the slasher
-        restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
-                &ncn_root,
-                &vault_root.vault_pubkey,
-                &slasher.pubkey(),
-                max_slash_amount,
-            )
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        vault_program_client
-            .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -284,12 +258,10 @@ mod tests {
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
             .unwrap();
-
         fixture
             .warp_slot_incremental(config.epoch_length)
             .await
             .unwrap();
-
         vault_program_client
             .do_update_vault(&vault_root.vault_pubkey)
             .await
@@ -345,12 +317,10 @@ mod tests {
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
             .unwrap();
-
         fixture
             .warp_slot_incremental(2 * config.epoch_length)
             .await
             .unwrap();
-
         vault_program_client
             .do_update_vault(&vault_root.vault_pubkey)
             .await
@@ -406,12 +376,11 @@ mod tests {
         )
         .await;
 
+        // send 100 tokens to vault as rewards, increasing value of it by 10%
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        // send 100 tokens to vault as rewards, increasing value of it by 10%
         fixture
             .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
             .await
@@ -421,7 +390,6 @@ mod tests {
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
             .unwrap();
-
         fixture
             .warp_slot_incremental(2 * config.epoch_length)
             .await

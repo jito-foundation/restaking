@@ -57,8 +57,6 @@ pub fn process_warmup_ncn_vault_slasher_ticket(
         return Err(RestakingError::NcnVaultTicketNotActive.into());
     }
 
-    // TODO (LB): need to check the NcnVaultTicket state
-
     // The NcnVaultSlasherTicket shall be inactive before it can warmed up
     let mut ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow_mut();
     let ncn_vault_slasher_ticket =

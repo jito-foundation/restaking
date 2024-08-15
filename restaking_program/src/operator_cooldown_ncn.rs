@@ -2,7 +2,7 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{
     config::Config,
-    loader::{load_config, load_ncn, load_operator, load_operator_ncn_ticket},
+    loader::{load_config, load_ncn, load_ncn_operator_state, load_operator},
     ncn_operator_state::NcnOperatorState,
     operator::Operator,
 };
@@ -13,18 +13,18 @@ use solana_program::{
 };
 
 /// [`crate::RestakingInstruction::OperatorCooldownNcn`]
-pub fn process_cooldown_operator_ncn_ticket(
+pub fn process_operator_cooldown_ncn(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, operator, ncn, operator_ncn_ticket, operator_ncn_admin] = accounts else {
+    let [config, ncn, operator, ncn_operator_state, operator_ncn_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     load_config(program_id, config, false)?;
     load_operator(program_id, operator, false)?;
     load_ncn(program_id, ncn, false)?;
-    load_operator_ncn_ticket(program_id, operator_ncn_ticket, operator, ncn, true)?;
+    load_ncn_operator_state(program_id, ncn_operator_state, ncn, operator, true)?;
     load_signer(operator_ncn_admin, false)?;
 
     // The operator NCN admin shall be the signer of the transaction
@@ -38,14 +38,14 @@ pub fn process_cooldown_operator_ncn_ticket(
     // The OperatorNcnTicket shall be active before it can be cooled down
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_mut(&mut config_data)?;
-    let mut operator_ncn_ticket_data = operator_ncn_ticket.data.borrow_mut();
-    let operator_ncn_ticket = NcnOperatorState::try_from_slice_mut(&mut operator_ncn_ticket_data)?;
-    if !operator_ncn_ticket
-        .state
+    let mut ncn_operator_state_data = ncn_operator_state.data.borrow_mut();
+    let ncn_operator_state = NcnOperatorState::try_from_slice_mut(&mut ncn_operator_state_data)?;
+    if !ncn_operator_state
+        .operator_opt_in_state
         .deactivate(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("NCN is not ready to be deactivated");
-        return Err(RestakingError::OperatorNcnTicketFailedCooldown.into());
+        msg!("Operator is not ready to deactivate NCN");
+        return Err(RestakingError::OperatorCooldownNcnFailed.into());
     }
 
     Ok(())

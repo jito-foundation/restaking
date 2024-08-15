@@ -29,6 +29,7 @@ pub enum VaultError {
     VaultFeeCapExceeded = 2014,
     VaultFeeChangeTooSoon = 2015,
     VaultFeeBumpTooLarge = 2016,
+    VaultUnderflow = 2017,
 
     VaultDelegationListOverflow = 3000,
     VaultDelegationListUnderflow = 3001,
@@ -52,7 +53,7 @@ pub enum VaultError {
     VaultNcnTicketUnslashable = 4011,
     OperatorVaultTicketUnslashable = 4012,
     VaultOperatorTicketUnslashable = 4013,
-    NcnOperatorTicketUnslashable = 4014,
+    NcnOperatorStateUnslashable = 4014,
     OperatorNcnTicketUnslashable = 4015,
     VaultNcnSlasherTicketUnslashable = 4016,
     NcnVaultTicketUnslashable = 4017,

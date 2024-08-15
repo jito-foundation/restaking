@@ -10,7 +10,7 @@ pub enum RestakingError {
     NcnWithdrawAdminInvalid = 1005,
     NcnVaultSlasherTicketFailedCooldown = 1006,
     NcnVaultTicketFailedCooldown = 1007,
-    NcnOperatorTicketFailedWarmup = 1008,
+    NcnWarmupOperatorFailed = 1008,
     NcnVaultSlasherTicketFailedWarmup = 1009,
     NcnVaultTicketFailedWarmup = 1010,
     NcnVaultTicketNotActive = 1011,
@@ -19,11 +19,11 @@ pub enum RestakingError {
     OperatorVaultAdminInvalid = 2001,
     OperatorAdminInvalid = 2002,
     OperatorWithdrawAdminInvalid = 2003,
-    OperatorNcnTicketFailedCooldown = 2004,
+    OperatorCooldownNcnFailed = 2004,
     OperatorVaultTicketFailedCooldown = 2005,
-    OperatorNcnTicketFailedWarmup = 2006,
-    OperatorVaultTicketFailedWarmup = 2007,
-    OperatorNcnTicketNotActive = 2008,
+    OperatorVaultTicketFailedWarmup = 2006,
+    OperatorNcnTicketNotActive = 2007,
+    OperatorWarmupNcnFailed = 2008,
 }
 
 impl From<RestakingError> for ProgramError {

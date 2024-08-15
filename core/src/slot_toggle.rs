@@ -1,6 +1,7 @@
 //! Slot toggled state tracker, useful for activations and deactivations of certain features
 //! based on slot time.
-use std::fmt::Debug;
+
+use std::{cmp::Ordering, fmt::Debug};
 
 use bytemuck::{Pod, Zeroable};
 
@@ -112,21 +113,23 @@ impl SlotToggle {
     pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
         let current_epoch = slot.checked_div(epoch_length).unwrap();
 
-        if self.slot_added >= self.slot_removed {
-            let slot_added_epoch = self.slot_added().checked_div(epoch_length).unwrap();
-
-            if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
-                SlotToggleState::Active
-            } else {
-                SlotToggleState::WarmUp
+        match self.slot_added.cmp(&self.slot_removed) {
+            Ordering::Equal => SlotToggleState::Inactive,
+            Ordering::Less => {
+                let slot_removed_epoch = self.slot_removed.checked_div(epoch_length).unwrap();
+                if current_epoch > slot_removed_epoch {
+                    SlotToggleState::Inactive
+                } else {
+                    SlotToggleState::Cooldown
+                }
             }
-        } else {
-            let slot_removed_epoch = self.slot_removed().checked_div(epoch_length).unwrap();
-
-            if current_epoch > slot_removed_epoch.checked_add(1).unwrap() {
-                SlotToggleState::Inactive
-            } else {
-                SlotToggleState::Cooldown
+            Ordering::Greater => {
+                let slot_added_epoch = self.slot_added.checked_div(epoch_length).unwrap();
+                if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
+                    SlotToggleState::Active
+                } else {
+                    SlotToggleState::WarmUp
+                }
             }
         }
     }

@@ -5,17 +5,16 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::operator::Operator;
 use jito_restaking_core::{
-    config::Config,
     loader::{load_config, load_ncn, load_operator},
     ncn::Ncn,
     ncn_operator_state::NcnOperatorState,
+    operator::Operator,
 };
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// After an operator opts-in to an NCN, the NCN operator admin can add the operator to the NCN.
@@ -40,7 +39,7 @@ pub fn process_initialize_ncn_operator_state(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
-    // The NcnOperatorTicket shall be at the canonical PDA
+    // The NcnOperatorState shall be at the canonical PDA
     let (ncn_operator_state_pubkey, ncn_operator_state_bump, mut ncn_operator_state_seeds) =
         NcnOperatorState::find_program_address(program_id, ncn_info.key, operator.key);
     ncn_operator_state_seeds.push(vec![ncn_operator_state_bump]);

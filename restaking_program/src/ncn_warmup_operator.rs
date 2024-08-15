@@ -2,9 +2,9 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{
     config::Config,
-    loader::{load_config, load_ncn, load_ncn_operator_ticket, load_operator},
+    loader::{load_config, load_ncn, load_ncn_operator_state, load_operator},
     ncn::Ncn,
-    ncn_operator_ticket::NcnOperatorTicket,
+    ncn_operator_state::NcnOperatorState,
 };
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
@@ -13,17 +13,14 @@ use solana_program::{
 };
 
 /// [`crate::RestakingInstruction::NcnWarmupOperator`]
-pub fn process_warmup_ncn_operator_ticket(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-) -> ProgramResult {
-    let [config, ncn, operator, ncn_operator_ticket, ncn_operator_admin] = accounts else {
+pub fn process_ncn_warmup_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+    let [config, ncn, operator, ncn_operator_state, ncn_operator_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     load_config(program_id, config, false)?;
     load_ncn(program_id, ncn, false)?;
     load_operator(program_id, operator, false)?;
-    load_ncn_operator_ticket(program_id, ncn_operator_ticket, ncn, operator, true)?;
+    load_ncn_operator_state(program_id, ncn_operator_state, ncn, operator, true)?;
     load_signer(ncn_operator_admin, false)?;
 
     // The NCN operator admin shall be the signer of the transaction
@@ -37,14 +34,14 @@ pub fn process_warmup_ncn_operator_ticket(
     // The NcnOperatorTicket shall be inactive before it can warmed up
     let config_data = config.data.borrow_mut();
     let config = Config::try_from_slice(&config_data)?;
-    let mut ncn_operator_ticket_data = ncn_operator_ticket.data.borrow_mut();
-    let ncn_operator_ticket = NcnOperatorTicket::try_from_slice_mut(&mut ncn_operator_ticket_data)?;
-    if !ncn_operator_ticket
-        .state
+    let mut ncn_operator_state_data = ncn_operator_state.data.borrow_mut();
+    let ncn_operator_state = NcnOperatorState::try_from_slice_mut(&mut ncn_operator_state_data)?;
+    if !ncn_operator_state
+        .ncn_opt_in_state
         .activate(Clock::get()?.slot, config.epoch_length)
     {
-        msg!("Operator is not ready to be activated");
-        return Err(RestakingError::NcnOperatorTicketFailedWarmup.into());
+        msg!("NCN is not ready to be warmup operator");
+        return Err(RestakingError::NcnWarmupOperatorFailed.into());
     }
 
     Ok(())

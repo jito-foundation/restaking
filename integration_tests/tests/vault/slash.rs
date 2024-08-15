@@ -17,7 +17,6 @@ mod tests {
             .setup_config_and_vault(100, 100)
             .await
             .unwrap();
-
         let _restaking_config_admin = restaking_program_client
             .do_initialize_config()
             .await
@@ -34,11 +33,20 @@ mod tests {
             .await
             .unwrap();
 
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 1.0).await.unwrap();
-
+        restaking_program_client
+            .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
+        restaking_program_client
+            .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
         restaking_program_client
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        restaking_program_client
+            .do_operator_warmup_ncn(&operator_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
         restaking_program_client
@@ -51,38 +59,18 @@ mod tests {
             .await
             .unwrap();
 
+        // ncn <> operator active, operator -> vault active, ncn -> vault active
+
         vault_program_client
             .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
-
-        // NCN <-> Operator
-        // operator needs to opt-in first
-        restaking_program_client
-            .do_initialize_operator_ncn_ticket(&operator_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
-            .await
-            .unwrap();
-        restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
-            .await
-            .unwrap();
-
-        // Vault <-> Operator
-        // operator needs to opt-in first
         vault_program_client
             .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
-            .await
-            .unwrap();
-
+        let slasher = Keypair::new();
+        fixture.transfer(&slasher.pubkey(), 1.0).await.unwrap();
         restaking_program_client
             .do_ncn_vault_slasher_opt_in(
                 &ncn_root,
@@ -98,6 +86,8 @@ mod tests {
             .await
             .unwrap();
 
+        // vault -> operator active, vault -> ncn active, ncn slasher active
+
         vault_program_client
             .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
             .await
@@ -108,22 +98,24 @@ mod tests {
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
+        // vault -> ncn slasher active
+
+        vault_program_client
+            .do_update_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
 
         let depositor = Keypair::new();
         fixture.transfer(&depositor.pubkey(), 1.0).await.unwrap();
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
         fixture
             .mint_to(&vault.supported_mint, &depositor.pubkey(), 100_000)
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
         // depositor ATA for VRT
         fixture
             .create_ata(&vault.vrt_mint, &depositor.pubkey())
@@ -146,11 +138,6 @@ mod tests {
             .unwrap();
 
         // user has 99_000 because 100 bips deposit fee
-
-        vault_program_client
-            .do_update_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
         vault_program_client
             .delegate(&vault_root, &operator_root.operator_pubkey, 10_000)
             .await
