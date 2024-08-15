@@ -4,7 +4,7 @@ use jito_vault_core::{
     config::Config,
     loader::{load_config, load_vault, load_vault_delegation_list},
     vault::Vault,
-    vault_delegation_list::{VaultDelegationList, VaultDelegationUpdateSummary},
+    vault_delegation_list::VaultDelegationList,
 };
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult,

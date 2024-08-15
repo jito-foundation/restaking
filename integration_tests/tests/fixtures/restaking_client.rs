@@ -11,6 +11,7 @@ use jito_restaking_sdk::sdk::{
     initialize_ncn_vault_ticket, initialize_operator, initialize_operator_ncn_ticket,
     initialize_operator_vault_ticket,
 };
+use solana_program::hash::Hash;
 use solana_program::{native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer};
 use solana_program_test::BanksClient;
 use solana_sdk::{
@@ -31,11 +32,12 @@ pub struct NcnRoot {
 pub struct OperatorRoot {
     pub operator_pubkey: Pubkey,
     pub operator_admin: Keypair,
+    pub operator_base: Keypair,
 }
 
 pub struct RestakingProgramClient {
     banks_client: BanksClient,
-    payer: Keypair,
+    pub(crate) payer: Keypair,
 }
 
 impl RestakingProgramClient {
@@ -44,6 +46,11 @@ impl RestakingProgramClient {
             banks_client,
             payer,
         }
+    }
+
+    pub async fn latest_blockhash(&mut self) -> TestResult<Hash> {
+        let hash = self.banks_client.get_latest_blockhash().await?;
+        Ok(hash)
     }
 
     pub async fn get_ncn(&mut self, ncn: &Pubkey) -> TestResult<Ncn> {
@@ -160,6 +167,7 @@ impl RestakingProgramClient {
         Ok(OperatorRoot {
             operator_pubkey,
             operator_admin,
+            operator_base,
         })
     }
 
@@ -299,7 +307,7 @@ impl RestakingProgramClient {
         .await
     }
 
-    pub async fn ncn_operator_opt_in(
+    pub async fn do_initialize_ncn_operator_ticket(
         &mut self,
         ncn_root: &NcnRoot,
         operator: &Pubkey,
@@ -324,6 +332,29 @@ impl RestakingProgramClient {
             &ncn_operator_ticket,
             &operator_ncn_ticket,
             &ncn_root.ncn_admin,
+            &self.payer.insecure_clone(),
+        )
+        .await
+    }
+
+    pub async fn do_initialize_operator_vault_ticket(
+        &mut self,
+        operator_root: &OperatorRoot,
+        vault: &Pubkey,
+    ) -> TestResult<()> {
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &operator_root.operator_pubkey,
+            vault,
+        )
+        .0;
+
+        self.initialize_operator_vault_ticket(
+            &Config::find_program_address(&jito_restaking_program::id()).0,
+            &operator_root.operator_pubkey,
+            vault,
+            &operator_vault_ticket,
+            &operator_root.operator_admin,
             &self.payer.insecure_clone(),
         )
         .await

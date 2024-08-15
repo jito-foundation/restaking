@@ -39,7 +39,7 @@ mod tests {
     ) -> PreparedWithdrawalTicket {
         // Setup vault with initial deposit
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps)
+            .do_initialize_config_and_vault(deposit_fee_bps, withdraw_fee_bps)
             .await
             .unwrap();
         let _restaking_config_admin = restaking_program_client
@@ -69,7 +69,7 @@ mod tests {
             .await
             .unwrap();
         restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
@@ -82,7 +82,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
+            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -95,7 +95,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 

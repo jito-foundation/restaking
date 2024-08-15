@@ -1,10 +1,7 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::{
-    close_program_account,
-    loader::{
-        load_associated_token_account, load_signer, load_system_program, load_token_mint,
-        load_token_program,
-    },
+use jito_jsm_core::loader::{
+    load_associated_token_account, load_signer, load_system_program, load_token_mint,
+    load_token_program,
 };
 use jito_vault_core::{
     config::Config,
@@ -18,13 +15,9 @@ use jito_vault_core::{
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
-    sysvar::Sysvar,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
-use spl_token::{
-    instruction::{burn, close_account, transfer},
-    state::Account,
-};
+use std::cmp::min;
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
@@ -96,10 +89,10 @@ pub fn process_burn_withdrawal_ticket(
 
     // The total amount available to withdraw shall be equal to the total amount of tokens deposited
     // minus the total amount of delegated security, which includes staked and cooling down assets.
-    let total_assets_delegation = vault_delegation_list.total_security()?;
-    let assets_available_to_withdraw = vault
+    let assets_delegated = vault_delegation_list.total_security()?;
+    let assets_withdrawable = vault
         .tokens_deposited
-        .checked_sub(total_assets_delegation)
+        .checked_sub(assets_delegated)
         .ok_or(VaultError::VaultDelegationListUnderflow)?;
 
     let fair_price_redemption_amount =
@@ -107,15 +100,13 @@ pub fn process_burn_withdrawal_ticket(
 
     // if the staker wants a fair price and the redemption amount exceeds the assets available to withdraw
     // the program shall return an error
-    if fail_if_not_fair_price && fair_price_redemption_amount > assets_available_to_withdraw {
+    if fail_if_not_fair_price && fair_price_redemption_amount > assets_withdrawable {
         msg!("Redemption amount exceeds available assets. Check back later for a fair price.");
         return Err(VaultError::VaultInsufficientFunds.into());
     }
 
-    vault.withdrawable_vrt_reserve_amount = vault
-        .withdrawable_vrt_reserve_amount
-        .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    let redemption_amount = min(assets_withdrawable, fair_price_redemption_amount);
+    let
 
     // // burn the assets + close the token account + withdraw token account
     // {
@@ -244,6 +235,11 @@ pub fn process_burn_withdrawal_ticket(
     //     ],
     //     &[&seed_slices],
     // )?;
+
+    vault_delegation_list.withdrawable_vrt_reserve_amount = vault_delegation_list
+        .withdrawable_vrt_reserve_amount
+        .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     Ok(())
 }

@@ -14,7 +14,7 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(100, 100)
+            .do_initialize_config_and_vault(100, 100)
             .await
             .unwrap();
 
@@ -52,7 +52,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
+            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -67,14 +67,14 @@ mod tests {
             .await
             .unwrap();
         restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
         // Vault <-> Operator
         // operator needs to opt-in first
         vault_program_client
-            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 

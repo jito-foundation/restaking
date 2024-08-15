@@ -11,7 +11,7 @@ mod tests {
         let fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
 
-        let config_admin = vault_program_client.setup_config().await.unwrap();
+        let config_admin = vault_program_client.do_initialize_config().await.unwrap();
 
         let config = vault_program_client
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)

@@ -342,7 +342,6 @@ pub fn add_delegation(
     vault_delegation_list: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
-
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -619,6 +618,10 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawTicket.try_to_vec().unwrap(),
+        data: VaultInstruction::BurnWithdrawTicket {
+            fail_if_not_fair_price: true, // TODO (LB)
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }

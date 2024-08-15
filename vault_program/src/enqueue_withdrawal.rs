@@ -16,6 +16,8 @@ use jito_vault_core::{
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::error::VaultError;
+use solana_program::compute_units::sol_remaining_compute_units;
+use solana_program::log::sol_log_compute_units;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -39,6 +41,8 @@ pub fn process_enqueue_withdrawal(
     accounts: &[AccountInfo],
     vrt_amount: u64,
 ) -> ProgramResult {
+    msg!("cus at the beg: {:?}", sol_remaining_compute_units());
+
     let (required_accounts, optional_accounts) = accounts.split_at(11);
 
     let [config, vault_info, vault_delegation_list, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
@@ -120,6 +124,8 @@ pub fn process_enqueue_withdrawal(
     vault_delegation_list
         .undelegate_for_withdrawal(amount_to_withdraw, UndelegateForWithdrawMethod::ProRata)?;
 
+    msg!("cus at the end: {:?}", sol_remaining_compute_units());
+
     // Create the VaultStakerWithdrawalTicket account
     msg!(
         "Initializing vault staker withdraw ticket at address {}",
@@ -185,7 +191,7 @@ pub fn process_enqueue_withdrawal(
         ],
     )?;
 
-    vault.withdrawable_vrt_reserve_amount = vault
+    vault_delegation_list.withdrawable_vrt_reserve_amount = vault_delegation_list
         .withdrawable_vrt_reserve_amount
         .checked_add(vrt_amount_in_withdrawal_tickeet)
         .ok_or(ProgramError::ArithmeticOverflow)?;

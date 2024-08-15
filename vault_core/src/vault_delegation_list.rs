@@ -42,6 +42,9 @@ pub struct VaultDelegationList {
     /// Delegation information here is out of date if the last update epoch < current epoch
     pub last_slot_updated: u64,
 
+    /// The amount of VRTs pending withdrawal
+    pub withdrawable_vrt_reserve_amount: u64,
+
     /// The bump seed for the PDA
     pub bump: u8,
 

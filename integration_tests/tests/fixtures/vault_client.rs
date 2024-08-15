@@ -161,7 +161,7 @@ impl VaultProgramClient {
         Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
+    pub async fn do_initialize_config(&mut self) -> Result<Keypair, TestError> {
         let config_admin = Keypair::new();
 
         self._airdrop(&config_admin.pubkey(), 1.0).await?;
@@ -193,12 +193,12 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn setup_config_and_vault(
+    pub async fn do_initialize_config_and_vault(
         &mut self,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
-        let config_admin = self.setup_config().await?;
+        let config_admin = self.do_initialize_config().await?;
 
         let vault_base = Keypair::new();
 
@@ -271,7 +271,7 @@ impl VaultProgramClient {
         ))
     }
 
-    pub async fn vault_ncn_opt_in(
+    pub async fn do_initialize_vault_ncn_ticket(
         &mut self,
         vault_root: &VaultRoot,
         ncn: &Pubkey,
@@ -459,7 +459,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn vault_operator_opt_in(
+    pub async fn do_initialize_vault_operator_ticket(
         &mut self,
         vault_root: &VaultRoot,
         operator_pubkey: &Pubkey,

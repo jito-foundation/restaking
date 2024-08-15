@@ -12,7 +12,7 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(99, 100)
+            .do_initialize_config_and_vault(99, 100)
             .await
             .unwrap();
 
@@ -41,7 +41,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_operator_opt_in(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 

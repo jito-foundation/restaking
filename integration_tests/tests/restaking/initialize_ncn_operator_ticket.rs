@@ -53,7 +53,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
@@ -89,7 +89,7 @@ mod tests {
             setup_config_ncn_operator(&mut restaking_program_client).await;
 
         let transaction_error = restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -226,7 +226,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -268,7 +268,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -310,7 +310,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = restaking_program_client
-            .ncn_operator_opt_in(&ncn_root, &operator_root.operator_pubkey)
+            .do_initialize_ncn_operator_ticket(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap_err()
             .to_transaction_error()
