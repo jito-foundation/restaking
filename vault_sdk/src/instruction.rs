@@ -267,6 +267,10 @@ pub enum VaultInstruction {
     },
 
     /// Updates token metadata for the vault VRT
+    #[account(0, name = "vault")]
+    #[account(1, signer, name = "admin")]
+    #[account(2, writable, name = "metadata")]
+    #[account(3, name = "mpl_token_metadata_program")]
     UpdateTokenMetadata {
         name: String,
         symbol: String,
