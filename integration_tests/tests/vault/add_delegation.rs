@@ -76,8 +76,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            vault.delegation_state.total_security().unwrap(),
-            MINT_AMOUNT
+            vault.delegation_state,
+            vault_operator_delegation.delegation_state
         );
         assert_eq!(vault.tokens_deposited, MINT_AMOUNT);
     }

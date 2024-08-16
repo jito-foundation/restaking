@@ -36,11 +36,11 @@ pub struct Vault {
     /// Max capacity of tokens in the vault
     pub capacity: u64,
 
-    /// The amount of tokens that are reserved for withdrawal
-    pub vrt_pending_withdrawal: u64,
-
     /// Rolled-up stake state for all operators in the set
     pub delegation_state: DelegationState,
+
+    /// The amount of tokens that are reserved for withdrawal
+    pub vrt_pending_withdrawal: u64,
 
     // ------------------------------------------
     // Admins

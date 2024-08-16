@@ -50,11 +50,10 @@ pub fn process_cooldown_delegation(
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
 
-    // TODO (LB): rollup into vault
+    vault
+        .delegation_state
+        .undo(&vault_operator_delegation.delegation_state)?;
     if for_withdrawal {
-        vault
-            .delegation_state
-            .undo(&vault_operator_delegation.delegation_state)?;
         vault_operator_delegation
             .delegation_state
             .cooldown_for_withdrawal(amount)?;
@@ -63,6 +62,9 @@ pub fn process_cooldown_delegation(
             .delegation_state
             .cooldown(amount)?;
     }
+    vault
+        .delegation_state
+        .accumulate(&vault_operator_delegation.delegation_state)?;
 
     Ok(())
 }
