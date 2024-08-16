@@ -334,9 +334,12 @@ pub fn cooldown_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownDelegation { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::CooldownDelegation {
+            amount,
+            for_withdrawal: false, // TODO (LB)
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 

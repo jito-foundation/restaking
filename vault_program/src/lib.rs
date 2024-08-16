@@ -200,9 +200,12 @@ pub fn process_instruction(
             msg!("Instruction: AddDelegation");
             process_add_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::CooldownDelegation { amount } => {
+        VaultInstruction::CooldownDelegation {
+            amount,
+            for_withdrawal,
+        } => {
             msg!("Instruction: CooldownDelegation");
-            process_cooldown_delegation(program_id, accounts, amount)
+            process_cooldown_delegation(program_id, accounts, amount, for_withdrawal)
         }
         VaultInstruction::UpdateVaultBalance => {
             msg!("Instruction: UpdateVaultBalance");

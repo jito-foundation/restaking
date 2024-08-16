@@ -215,6 +215,7 @@ pub enum VaultInstruction {
     #[account(4, signer, name = "admin")]
     CooldownDelegation {
         amount: u64,
+        for_withdrawal: bool
     },
 
     #[account(0, name = "config")]

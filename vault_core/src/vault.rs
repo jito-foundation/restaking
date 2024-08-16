@@ -1,4 +1,5 @@
 //! The vault is responsible for holding tokens and minting VRT tokens.
+use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
@@ -38,22 +39,8 @@ pub struct Vault {
     /// The amount of tokens that are reserved for withdrawal
     pub vrt_pending_withdrawal: u64,
 
-    // ------------------------------------------
-    // Rolled-up stake stats
-    // ------------------------------------------
-    /// Total stake actively delegated inside the vault
-    /// The sum of all [`VaultOperatorDelegation::total_security`] for all operators
-    pub amount_delegated: u64,
-
-    /// Total stake enqueued for cooldown
-    /// The sum of [`VaultOperatorDelegation::enqueued_for_cooldown_amount`] AND
-    /// [`VaultOperatorDelegation::enqueued_for_withdraw_amount`] for all operators
-    pub amount_enqueued_for_cooldown: u64,
-
-    /// Total stake cooling down
-    /// The sum of [`VaultOperatorDelegation::cooling_down_amount`] AND
-    /// [`VaultOperatorDelegation::cooling_down_for_withdraw_amount`] for all operators
-    pub amount_cooling_down: u64,
+    /// Rolled-up stake state for all operators in the set
+    pub delegation_state: DelegationState,
 
     // ------------------------------------------
     // Admins
@@ -163,9 +150,7 @@ impl Vault {
             slasher_count: 0,
             bump,
             reserved: [0; 11],
-            amount_delegated: 0,
-            amount_enqueued_for_cooldown: 0,
-            amount_cooling_down: 0,
+            delegation_state: DelegationState::new(),
         }
     }
 

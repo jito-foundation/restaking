@@ -1,4 +1,5 @@
 pub mod config;
+pub mod delegation_state;
 pub mod loader;
 pub mod vault;
 pub mod vault_ncn_slasher_operator_ticket;

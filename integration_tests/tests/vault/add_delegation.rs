@@ -66,13 +66,19 @@ mod tests {
             vault_operator_delegation.operator,
             operator_roots[0].operator_pubkey
         );
-        assert_eq!(vault_operator_delegation.staked_amount, MINT_AMOUNT);
+        assert_eq!(
+            vault_operator_delegation.delegation_state.staked_amount,
+            MINT_AMOUNT
+        );
 
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.amount_delegated, MINT_AMOUNT);
+        assert_eq!(
+            vault.delegation_state.total_security().unwrap(),
+            MINT_AMOUNT
+        );
         assert_eq!(vault.tokens_deposited, MINT_AMOUNT);
     }
 }

@@ -138,7 +138,10 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.tokens_deposited, MINT_AMOUNT - MAX_SLASH_AMOUNT);
-        assert_eq!(vault.amount_delegated, DELEGATION_AMOUNT - MAX_SLASH_AMOUNT);
+        assert_eq!(
+            vault.delegation_state.total_security().unwrap(),
+            DELEGATION_AMOUNT - MAX_SLASH_AMOUNT
+        );
 
         let vault_operator_delegation = vault_program_client
             .get_vault_operator_delegation(&vault_root.vault_pubkey, &operator_root.operator_pubkey)
@@ -146,7 +149,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            vault_operator_delegation.total_security().unwrap(),
+            vault_operator_delegation
+                .delegation_state
+                .total_security()
+                .unwrap(),
             DELEGATION_AMOUNT - MAX_SLASH_AMOUNT
         );
 

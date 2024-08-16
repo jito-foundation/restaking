@@ -18,8 +18,7 @@ pub fn process_crank_vault_update_state_tracker(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault, operator, vault_operator_delegation, vault_delegations_update_ticket] =
-        accounts
+    let [config, vault, operator, vault_operator_delegation, vault_update_state_tracker] = accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -35,7 +34,7 @@ pub fn process_crank_vault_update_state_tracker(
     let ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
     load_vault_update_state_tracker(
         program_id,
-        vault_delegations_update_ticket,
+        vault_update_state_tracker,
         vault,
         ncn_epoch,
         true,
@@ -45,19 +44,18 @@ pub fn process_crank_vault_update_state_tracker(
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
 
-    let mut vault_delegations_update_ticket_data =
-        vault_delegations_update_ticket.data.borrow_mut();
-    let vault_delegations_update_ticket =
-        VaultUpdateStateTracker::try_from_slice_mut(&mut vault_delegations_update_ticket_data)?;
+    let mut vault_update_state_tracker_data = vault_update_state_tracker.data.borrow_mut();
+    let vault_update_state_tracker =
+        VaultUpdateStateTracker::try_from_slice_mut(&mut vault_update_state_tracker_data)?;
 
     // 0 is a special case
     if vault_operator_delegation.index == 0 {
-        if vault_delegations_update_ticket.last_updated_index != u64::MAX {
+        if vault_update_state_tracker.last_updated_index != u64::MAX {
             msg!("VaultUpdateStateTracker incorrect index");
             return Err(VaultError::VaultUpdateIncorrectIndex.into());
         }
     } else if vault_operator_delegation.index
-        != vault_delegations_update_ticket
+        != vault_update_state_tracker
             .last_updated_index
             .checked_add(1)
             .unwrap()
@@ -90,22 +88,10 @@ pub fn process_crank_vault_update_state_tracker(
         }
     }
 
-    vault_delegations_update_ticket.amount_delegated = vault_delegations_update_ticket
-        .amount_delegated
-        .checked_add(vault_operator_delegation.total_security()?)
-        .ok_or(VaultError::VaultDelegationUpdateOverflow)?;
-    vault_delegations_update_ticket.amount_enqueued_for_cooldown = vault_delegations_update_ticket
-        .amount_enqueued_for_cooldown
-        .checked_add(vault_operator_delegation.enqueued_for_cooldown_amount)
-        .and_then(|v| v.checked_add(vault_operator_delegation.enqueued_for_withdraw_amount))
-        .ok_or(VaultError::VaultDelegationUpdateOverflow)?;
-    vault_delegations_update_ticket.amount_cooling_down = vault_delegations_update_ticket
-        .amount_cooling_down
-        .checked_add(vault_operator_delegation.cooling_down_amount)
-        .and_then(|v| v.checked_add(vault_operator_delegation.cooling_down_for_withdraw_amount))
-        .ok_or(VaultError::VaultDelegationUpdateOverflow)?;
-
-    vault_delegations_update_ticket.last_updated_index = vault_operator_delegation.index;
+    vault_update_state_tracker
+        .delegation_state
+        .accumulate(&vault_operator_delegation.delegation_state)?;
+    vault_update_state_tracker.last_updated_index = vault_operator_delegation.index;
 
     Ok(())
 }

@@ -108,7 +108,10 @@ mod tests {
             .get_vault_operator_delegation(&vault_root.vault_pubkey, &operator_root.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault_operator_delegation.staked_amount, MINT_AMOUNT);
+        assert_eq!(
+            vault_operator_delegation.delegation_state.staked_amount,
+            MINT_AMOUNT
+        );
 
         // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw

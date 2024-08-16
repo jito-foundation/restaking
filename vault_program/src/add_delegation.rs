@@ -51,7 +51,7 @@ pub fn process_add_delegation(
     // TODO (LB): need to check withdrawable reserve amount
     let assets_available_for_staking = vault
         .tokens_deposited
-        .checked_sub(vault.amount_delegated)
+        .checked_sub(vault.delegation_state.total_security()?)
         .ok_or(VaultError::VaultOverflow)?;
     msg!(
         "Assets available for staking: {}",
@@ -65,15 +65,11 @@ pub fn process_add_delegation(
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
-    vault_operator_delegation.staked_amount = vault_operator_delegation
-        .staked_amount
-        .checked_add(amount)
-        .ok_or(VaultError::VaultOverflow)?;
 
-    vault.amount_delegated = vault
-        .amount_delegated
-        .checked_add(amount)
-        .ok_or(VaultError::VaultOverflow)?;
+    vault_operator_delegation
+        .delegation_state
+        .delegate(amount)?;
+    vault.delegation_state.delegate(amount)?;
 
     Ok(())
 }

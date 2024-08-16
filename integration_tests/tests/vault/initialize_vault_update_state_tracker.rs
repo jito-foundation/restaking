@@ -73,7 +73,13 @@ mod tests {
             slot / vault_config.epoch_length
         );
         assert_eq!(vault_update_state_tracker.last_updated_index, u64::MAX);
-        assert_eq!(vault_update_state_tracker.amount_delegated, 0);
+        assert_eq!(
+            vault_update_state_tracker
+                .delegation_state
+                .total_security()
+                .unwrap(),
+            0
+        );
     }
 
     #[tokio::test]

@@ -1,3 +1,4 @@
+use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::pubkey::Pubkey;
@@ -20,28 +21,16 @@ pub struct VaultUpdateStateTracker {
     pub last_updated_index: u64,
 
     /// The total amount delegated across all the operators in the vault
-    pub amount_delegated: u64,
-
-    /// Total stake enqueued for cooldown
-    /// The sum of [`VaultOperatorDelegation::enqueued_for_cooldown_amount`] AND
-    /// [`VaultOperatorDelegation::enqueued_for_withdraw_amount`] for all operators
-    pub amount_enqueued_for_cooldown: u64,
-
-    /// Total stake cooling down
-    /// The sum of [`VaultOperatorDelegation::cooling_down_amount`] AND
-    /// [`VaultOperatorDelegation::cooling_down_for_withdraw_amount`] for all operators
-    pub amount_cooling_down: u64,
+    pub delegation_state: DelegationState,
 }
 
 impl VaultUpdateStateTracker {
-    pub const fn new(vault: Pubkey, ncn_epoch: u64) -> Self {
+    pub fn new(vault: Pubkey, ncn_epoch: u64) -> Self {
         Self {
             vault,
             ncn_epoch,
             last_updated_index: u64::MAX,
-            amount_delegated: 0,
-            amount_enqueued_for_cooldown: 0,
-            amount_cooling_down: 0,
+            delegation_state: DelegationState::new(),
         }
     }
     /// Returns the seeds for the PDA

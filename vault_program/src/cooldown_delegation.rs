@@ -17,6 +17,7 @@ pub fn process_cooldown_delegation(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     amount: u64,
+    for_withdrawal: bool,
 ) -> ProgramResult {
     let [config, vault, operator, vault_operator_delegation, vault_delegation_admin] = accounts
     else {
@@ -48,12 +49,20 @@ pub fn process_cooldown_delegation(
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
-    vault_operator_delegation.undelegate(amount)?;
 
-    vault.amount_enqueued_for_cooldown = vault
-        .amount_enqueued_for_cooldown
-        .checked_add(amount)
-        .ok_or(VaultError::VaultOverflow)?;
+    // TODO (LB): rollup into vault
+    if for_withdrawal {
+        vault
+            .delegation_state
+            .undo(&vault_operator_delegation.delegation_state)?;
+        vault_operator_delegation
+            .delegation_state
+            .cooldown_for_withdrawal(amount)?;
+    } else {
+        vault_operator_delegation
+            .delegation_state
+            .cooldown(amount)?;
+    }
 
     Ok(())
 }
