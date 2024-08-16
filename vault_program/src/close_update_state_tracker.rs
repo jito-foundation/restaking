@@ -1,18 +1,16 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::close_program_account;
-use jito_jsm_core::loader::load_signer;
-use jito_vault_core::config::Config;
-use jito_vault_core::loader::{load_config, load_vault, load_vault_update_state_tracker};
-use jito_vault_core::vault::Vault;
-use jito_vault_core::vault_update_state_tracker::VaultUpdateStateTracker;
+use jito_jsm_core::{close_program_account, loader::load_signer};
+use jito_vault_core::{
+    config::Config,
+    loader::{load_config, load_vault, load_vault_update_state_tracker},
+    vault::Vault,
+    vault_update_state_tracker::VaultUpdateStateTracker,
+};
 use jito_vault_sdk::error::VaultError;
-use solana_program::account_info::AccountInfo;
-use solana_program::clock::Clock;
-use solana_program::entrypoint::ProgramResult;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
-use solana_program::sysvar::Sysvar;
+use solana_program::{
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
+};
 
 pub fn process_close_vault_update_state_tracker(
     program_id: &Pubkey,
@@ -47,18 +45,19 @@ pub fn process_close_vault_update_state_tracker(
 
     // The VaultUpdateStateTracker shall be up-to-date before closing
     if ncn_epoch != vault_update_state_tracker.ncn_epoch {
-        msg!("VaultUpdateStateTracker is an invalid epoch");
-        return Err(VaultError::VaultUpdateStateTrackerInvalid.into());
-    }
-    // The VaultUpdateStateTracker shall have updated every operator ticket before closing
-    if vault_update_state_tracker.last_updated_index != vault.operator_count.saturating_sub(1) {
-        msg!("VaultUpdateStateTracker is not fully updated");
-        return Err(VaultError::VaultUpdateStateTrackerInvalid.into());
+        msg!("Warning: VaultUpdateStateTracker is an invalid epoch");
+    } else {
+        // The VaultUpdateStateTracker shall have updated every operator ticket before closing
+        if vault_update_state_tracker.last_updated_index != vault.operator_count.saturating_sub(1) {
+            msg!("VaultUpdateStateTracker is not fully updated");
+            return Err(VaultError::VaultUpdateStateTrackerInvalid.into());
+        }
+        msg!("Finished updating VaultUpdateStateTracker");
+        vault.amount_delegated = vault_update_state_tracker.amount_delegated;
+        vault.last_full_state_update_slot = slot;
     }
 
-    vault.amount_delegated = vault_update_state_tracker.amount_delegated;
-    vault.last_full_state_update_slot = slot;
-
+    msg!("Closing VaultUpdateStateTracker");
     drop(vault_update_state_tracker_data);
     close_program_account(program_id, vault_update_state_tracker_info, payer)?;
 

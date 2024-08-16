@@ -27,7 +27,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 

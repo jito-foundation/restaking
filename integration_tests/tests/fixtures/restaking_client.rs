@@ -168,7 +168,7 @@ impl RestakingProgramClient {
         })
     }
 
-    pub async fn operator_vault_opt_in(
+    pub async fn do_initialize_operator_vault_ticket(
         &mut self,
         operator_root: &OperatorRoot,
         vault_pubkey: &Pubkey,

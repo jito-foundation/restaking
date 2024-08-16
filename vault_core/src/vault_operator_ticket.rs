@@ -1,13 +1,13 @@
 //! The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
 //! and disabled over time by the vault operator admin.
 
+use std::cmp::min;
+
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
 use jito_vault_sdk::error::VaultError;
-use solana_program::msg;
-use solana_program::pubkey::Pubkey;
-use std::cmp::min;
+use solana_program::{msg, pubkey::Pubkey};
 
 impl Discriminator for VaultOperatorTicket {
     const DISCRIMINATOR: u8 = 4;
@@ -286,8 +286,9 @@ impl VaultOperatorTicket {
 
 #[cfg(test)]
 mod tests {
-    use crate::vault_operator_ticket::VaultOperatorTicket;
     use solana_program::pubkey::Pubkey;
+
+    use crate::vault_operator_ticket::VaultOperatorTicket;
 
     fn new_vault_operator_ticket() -> VaultOperatorTicket {
         VaultOperatorTicket::new(Pubkey::new_unique(), Pubkey::new_unique(), 0, 0, 0)

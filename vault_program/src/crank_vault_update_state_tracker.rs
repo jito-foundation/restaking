@@ -1,18 +1,17 @@
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::loader::load_operator;
-use jito_vault_core::loader::{load_vault_operator_ticket, load_vault_update_state_tracker};
-use jito_vault_core::vault_operator_ticket::VaultOperatorTicket;
-use jito_vault_core::vault_update_state_tracker::VaultUpdateStateTracker;
 use jito_vault_core::{
     config::Config,
-    loader::{load_config, load_vault},
+    loader::{
+        load_config, load_vault, load_vault_operator_ticket, load_vault_update_state_tracker,
+    },
+    vault_operator_ticket::VaultOperatorTicket,
+    vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use jito_vault_sdk::error::VaultError;
-use solana_program::clock::Clock;
-use solana_program::sysvar::Sysvar;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
 pub fn process_crank_vault_update_state_tracker(

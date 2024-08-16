@@ -55,7 +55,7 @@ mod tests {
             .await
             .unwrap();
         restaking_program_client
-            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -66,7 +66,7 @@ mod tests {
 
         // vault -> ncn and vault -> operator
         vault_program_client
-            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
+            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
         vault_program_client
@@ -216,7 +216,7 @@ mod tests {
             .unwrap();
 
         restaking_program_client
-            .operator_vault_opt_in(&operator_root, &vault_root.vault_pubkey)
+            .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -226,7 +226,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
+            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 

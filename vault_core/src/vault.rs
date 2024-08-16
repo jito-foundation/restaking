@@ -227,7 +227,7 @@ impl Vault {
             .checked_div(epoch_length)
             .unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
-        self.operator_count > 0 && last_updated_epoch < current_epoch
+        last_updated_epoch < current_epoch
     }
 
     // ------------------------------------------

@@ -6,10 +6,10 @@ use jito_jsm_core::{
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_restaking_core::loader::{load_ncn, load_operator};
-use jito_vault_core::vault::Vault;
 use jito_vault_core::{
     config::Config,
     loader::{load_config, load_vault, load_vault_ncn_slasher_ticket},
+    vault::Vault,
     vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
 };
 use jito_vault_sdk::error::VaultError;

@@ -1,16 +1,15 @@
-use crate::fixtures::{TestError, TestResult};
 use borsh::BorshDeserialize;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
 };
-use jito_vault_core::vault_update_state_tracker::VaultUpdateStateTracker;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+    vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use jito_vault_sdk::{
     error::VaultError,
@@ -38,6 +37,8 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::{instruction::initialize_mint2, state::Mint};
+
+use crate::fixtures::{TestError, TestResult};
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
@@ -148,6 +149,18 @@ impl VaultProgramClient {
         Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
+    pub async fn get_vault_update_state_tracker(
+        &mut self,
+        vault: &Pubkey,
+        epoch: u64,
+    ) -> Result<VaultUpdateStateTracker, TestError> {
+        let account =
+            VaultUpdateStateTracker::find_program_address(&jito_vault_program::id(), vault, epoch)
+                .0;
+        let account = self.banks_client.get_account(account).await?.unwrap();
+        Ok(VaultUpdateStateTracker::try_from_slice(&mut account.data.as_slice())?.clone())
+    }
+
     pub async fn get_token_metadata(
         &mut self,
         vrt_mint: &Pubkey,
@@ -165,7 +178,7 @@ impl VaultProgramClient {
         Ok(metadata)
     }
 
-    pub async fn setup_config(&mut self) -> Result<Keypair, TestError> {
+    pub async fn do_initialize_config(&mut self) -> Result<Keypair, TestError> {
         let config_admin = Keypair::new();
 
         self._airdrop(&config_admin.pubkey(), 1.0).await?;
@@ -202,7 +215,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
-        let config_admin = self.setup_config().await?;
+        let config_admin = self.do_initialize_config().await?;
 
         let vault_base = Keypair::new();
 
@@ -243,7 +256,7 @@ impl VaultProgramClient {
         ))
     }
 
-    pub async fn vault_ncn_opt_in(
+    pub async fn do_initialize_vault_ncn_ticket(
         &mut self,
         vault_root: &VaultRoot,
         ncn: &Pubkey,

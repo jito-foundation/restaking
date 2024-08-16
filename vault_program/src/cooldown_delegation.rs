@@ -1,12 +1,11 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::loader::load_operator;
-use jito_vault_core::loader::load_vault_operator_ticket;
-use jito_vault_core::vault_operator_ticket::VaultOperatorTicket;
 use jito_vault_core::{
     config::Config,
-    loader::{load_config, load_vault},
+    loader::{load_config, load_vault, load_vault_operator_ticket},
     vault::Vault,
+    vault_operator_ticket::VaultOperatorTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{

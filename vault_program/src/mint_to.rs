@@ -2,21 +2,21 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_token_mint, load_token_program,
 };
-use jito_vault_core::config::Config;
 use jito_vault_core::{
+    config::Config,
     loader::{load_config, load_vault},
     vault::Vault,
 };
 use jito_vault_sdk::error::VaultError;
-use solana_program::clock::Clock;
-use solana_program::sysvar::Sysvar;
 use solana_program::{
     account_info::AccountInfo,
+    clock::Clock,
     entrypoint::ProgramResult,
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
+    sysvar::Sysvar,
 };
 use spl_token::instruction::{mint_to, transfer};
 

@@ -35,7 +35,7 @@ pub fn process_slash(
     accounts: &[AccountInfo],
     slash_amount: u64,
 ) -> ProgramResult {
-    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_ticket, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_delegation_list, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
+    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_ticket, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);

@@ -1,19 +1,19 @@
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::create_account;
-use jito_jsm_core::loader::{load_signer, load_system_account, load_system_program};
-use jito_vault_core::config::Config;
-use jito_vault_core::loader::{load_config, load_vault};
-use jito_vault_core::vault::Vault;
-use jito_vault_core::vault_update_state_tracker::VaultUpdateStateTracker;
+use jito_jsm_core::{
+    create_account,
+    loader::{load_signer, load_system_account, load_system_program},
+};
+use jito_vault_core::{
+    config::Config,
+    loader::{load_config, load_vault},
+    vault::Vault,
+    vault_update_state_tracker::VaultUpdateStateTracker,
+};
 use jito_vault_sdk::error::VaultError;
-use solana_program::account_info::AccountInfo;
-use solana_program::clock::Clock;
-use solana_program::entrypoint::ProgramResult;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
-use solana_program::rent::Rent;
-use solana_program::sysvar::Sysvar;
+use solana_program::{
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+};
 
 /// Instruction: [`crate::VaultInstruction::InitializeVaultUpdateDelegationsTicket`]
 /// Initializes a new [`VaultUpdateStateTracker`] account, which is used to track the delegations

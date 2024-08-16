@@ -3,12 +3,12 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::inline_mpl_token_metadata::{self, pda::find_metadata_account};
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::vault_update_state_tracker::VaultUpdateStateTracker;
 use crate::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_ticket::VaultOperatorTicket,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+    vault_update_state_tracker::VaultUpdateStateTracker,
 };
 
 /// Loads the vault [`Config`] account
