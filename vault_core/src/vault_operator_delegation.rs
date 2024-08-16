@@ -113,8 +113,19 @@ impl VaultOperatorDelegation {
         self.last_update_slot = slot;
     }
 
-    /// Slashes the operator delegation by the given amount
-    /// All buckets are slashed pro-rata based on the total security amount
+    /// Slashes the operator delegation by the given amount.
+    ///
+    /// Slashes are applied in the following order:
+    /// 1. Staked amount
+    /// 2. Enqueued for cooldown amount
+    /// 3. Cooling down amount
+    /// 4. Enqueued for withdraw amount
+    /// 5. Cooling down for withdraw amount
+    ///
+    /// The reason for this is that withdrawals are the most important to ensure that the funds are
+    /// available for withdrawal when a user's ticket matures. If any withdrawal funds are slashed,
+    /// the vault delegation manager needs to move funds around to ensure that the funds are available
+    /// for withdrawal.
     ///
     /// # Arguments
     /// * `slash_amount` - The amount to slash
