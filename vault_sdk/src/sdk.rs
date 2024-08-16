@@ -684,6 +684,7 @@ pub fn warmup_vault_ncn_ticket(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn warmup_vault_ncn_slasher_ticket(
     program_id: &Pubkey,
     config: &Pubkey,

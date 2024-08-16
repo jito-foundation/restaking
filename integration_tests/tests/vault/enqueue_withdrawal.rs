@@ -5,6 +5,7 @@ mod tests {
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
+    use crate::fixtures::vault_client::VaultStakerWithdrawalTicketRoot;
 
     #[tokio::test]
     async fn test_enqueue_withdraw_with_fee_success() {
@@ -15,13 +16,9 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
-            restaking_program_client,
-            vault_config_admin,
             vault_root,
-            restaking_config_admin,
-            ncn_root,
             operator_roots,
-            slashers_amounts,
+            ..
         } = fixture
             .setup_vault_with_ncn_and_operators(DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS, 1, &[])
             .await
@@ -82,11 +79,6 @@ mod tests {
             MINT_AMOUNT * DEPOSIT_FEE_BPS as u64 / 10_000
         );
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
         // let vault operator ticket warmup
         let config = vault_program_client
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
@@ -108,30 +100,44 @@ mod tests {
 
         let operator_root = operator_roots.first().unwrap();
         vault_program_client
-            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, 100_000)
+            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, MINT_AMOUNT)
             .await
             .unwrap();
 
-        // // TODO (LB): test delegation brother
-        //
-        // // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
-        // // 98010 tokens will be undeleged for withdraw
-        // let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-        //     .do_enqueue_withdraw(&vault_root, &depositor, 99_000)
-        //     .await
-        //     .unwrap();
-        //
-        // // TODO (LB): test delegation brother
-        //
-        // let vault_staker_withdrawal_ticket = vault_program_client
-        //     .get_vault_staker_withdrawal_ticket(
-        //         &vault_root.vault_pubkey,
-        //         &depositor.pubkey(),
-        //         &base,
-        //     )
-        //     .await
-        //     .unwrap();
-        // assert_eq!(vault_staker_withdrawal_ticket.vrt_amount, 98_010);
+        let vault_operator_delegation = vault_program_client
+            .get_vault_operator_delegation(&vault_root.vault_pubkey, &operator_root.operator_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(vault_operator_delegation.staked_amount, MINT_AMOUNT);
+
+        // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
+        // 98010 tokens will be undeleged for withdraw
+        let amount_to_dequeue = MINT_AMOUNT * (10_000 - WITHDRAW_FEE_BPS) as u64 / 10_000;
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)
+            .await
+            .unwrap();
+
+        let user_vrt_in_withdrawal_ticket =
+            amount_to_dequeue * (10_000 - WITHDRAW_FEE_BPS) as u64 / 10_000;
+        let vault_staker_withdrawal_ticket = vault_program_client
+            .get_vault_staker_withdrawal_ticket(
+                &vault_root.vault_pubkey,
+                &depositor.pubkey(),
+                &base,
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            vault_staker_withdrawal_ticket.vrt_amount,
+            user_vrt_in_withdrawal_ticket
+        );
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(vault.vrt_pending_withdrawal, user_vrt_in_withdrawal_ticket);
     }
 
     // #[tokio::test]

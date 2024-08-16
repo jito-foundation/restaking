@@ -24,7 +24,7 @@ pub struct VaultUpdateStateTracker {
 }
 
 impl VaultUpdateStateTracker {
-    pub fn new(vault: Pubkey, ncn_epoch: u64) -> Self {
+    pub const fn new(vault: Pubkey, ncn_epoch: u64) -> Self {
         Self {
             vault,
             ncn_epoch,

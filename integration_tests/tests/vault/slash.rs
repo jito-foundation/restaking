@@ -19,13 +19,12 @@ mod tests {
 
         let ConfiguredVault {
             mut vault_program_client,
-            restaking_program_client,
             vault_config_admin,
             vault_root,
-            restaking_config_admin,
             ncn_root,
             operator_roots,
             slashers_amounts,
+            ..
         } = fixture
             .setup_vault_with_ncn_and_operators(0, 0, 1, &[MAX_SLASH_AMOUNT])
             .await

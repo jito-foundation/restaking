@@ -560,6 +560,7 @@ pub fn warmup_operator_vault_ticket(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn warmup_ncn_vault_slasher_ticket(
     program_id: &Pubkey,
     config: &Pubkey,

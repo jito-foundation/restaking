@@ -34,9 +34,11 @@ impl Debug for TestBuilder {
 
 pub struct ConfiguredVault {
     pub vault_program_client: VaultProgramClient,
+    #[allow(dead_code)]
     pub restaking_program_client: RestakingProgramClient,
     pub vault_config_admin: Keypair,
     pub vault_root: VaultRoot,
+    #[allow(dead_code)]
     pub restaking_config_admin: Keypair,
     pub ncn_root: NcnRoot,
     pub operator_roots: Vec<OperatorRoot>,

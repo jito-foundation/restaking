@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::config::Config;
 
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_add_operator_ok() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
 
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
@@ -45,10 +44,5 @@ mod tests {
             operator_root.operator_pubkey
         );
         assert_eq!(vault_operator_delegation.index, 0);
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        let slot = fixture.get_current_slot().await.unwrap();
     }
 }
