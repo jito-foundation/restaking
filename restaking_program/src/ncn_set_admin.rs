@@ -26,5 +26,7 @@ pub fn process_ncn_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> P
 
     ncn.admin = *new_admin.key;
 
+    ncn.update_secondary_admin(old_admin.key, new_admin.key);
+
     Ok(())
 }
