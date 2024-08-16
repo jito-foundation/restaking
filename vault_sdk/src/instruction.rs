@@ -33,11 +33,11 @@ pub enum VaultInstruction {
     #[account(1, name = "vault")]
     #[account(2, writable, name = "operator")]
     #[account(3, name = "operator_vault_ticket")]
-    #[account(4, writable, name = "vault_operator_ticket")]
+    #[account(4, writable, name = "vault_operator_delegation")]
     #[account(5, signer, name = "admin")]
     #[account(6, writable, signer, name = "payer")]
     #[account(7, name = "system_program")]
-    InitializeVaultOperatorTicket,
+    InitializeVaultOperatorDelegation,
 
     /// Vault adds support for the NCN
     #[account(0, name = "config")]
@@ -90,22 +90,6 @@ pub enum VaultInstruction {
     #[account(3, writable, name = "vault_ncn_ticket")]
     #[account(4, signer, name = "admin")]
     CooldownVaultNcnTicket,
-
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, writable, name = "operator")]
-    #[account(3, name = "operator_vault_ticket")]
-    #[account(4, writable, name = "vault_operator_ticket")]
-    #[account(5, signer, name = "admin")]
-    WarmupVaultOperatorTicket,
-
-    /// Vault removes support for an operator
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, name = "operator")]
-    #[account(3, writable, name = "vault_operator_ticket")]
-    #[account(4, signer, name = "admin")]
-    CooldownVaultOperatorTicket,
 
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
@@ -216,7 +200,7 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "vault_operator_ticket")]
+    #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, signer, name = "admin")]
     #[account(5, writable, signer, name = "payer")]
     #[account(6, name = "system_program")]
@@ -227,7 +211,7 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "vault_operator_ticket")]
+    #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, signer, name = "admin")]
     CooldownDelegation {
         amount: u64,
@@ -246,11 +230,11 @@ pub enum VaultInstruction {
     #[account(4, name = "system_program")]
     InitializeVaultUpdateStateTracker,
 
-    /// Shall be called on every vault_operator_ticket
+    /// Shall be called on every vault_operator_delegation
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
     #[account(2, name = "operator")]
-    #[account(3, writable, name = "vault_operator_ticket")]
+    #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, writable, name = "vault_update_state_tracker")]
     CrankVaultUpdateStateTracker,
 
@@ -295,14 +279,13 @@ pub enum VaultInstruction {
     #[account(6, name = "ncn_vault_ticket")]
     #[account(7, name = "operator_vault_ticket")]
     #[account(8, name = "vault_ncn_ticket")]
-    #[account(9, name = "vault_operator_ticket")]
+    #[account(9, writable, name = "vault_operator_delegation")]
     #[account(10, name = "ncn_vault_slasher_ticket")]
     #[account(11, name = "vault_ncn_slasher_ticket")]
-    #[account(12, writable, name = "vault_delegation_list")]
-    #[account(13, writable, name = "vault_ncn_slasher_operator_ticket")]
-    #[account(14, writable, name = "vault_token_account")]
-    #[account(15, name = "slasher_token_account")]
-    #[account(16, name = "token_program")]
+    #[account(12, writable, name = "vault_ncn_slasher_operator_ticket")]
+    #[account(13, writable, name = "vault_token_account")]
+    #[account(14, name = "slasher_token_account")]
+    #[account(15, name = "token_program")]
     Slash {
         amount: u64
     },

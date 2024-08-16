@@ -118,13 +118,13 @@ pub fn cooldown_vault_ncn_ticket(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn initialize_vault_operator_ticket(
+pub fn initialize_vault_operator_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
     operator_vault_ticket: &Pubkey,
-    vault_operator_ticket: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
@@ -133,7 +133,7 @@ pub fn initialize_vault_operator_ticket(
         AccountMeta::new(*vault, false),
         AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
-        AccountMeta::new(*vault_operator_ticket, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -141,31 +141,7 @@ pub fn initialize_vault_operator_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultOperatorTicket
-            .try_to_vec()
-            .unwrap(),
-    }
-}
-
-pub fn cooldown_vault_operator_ticket(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    vault: &Pubkey,
-    operator: &Pubkey,
-    vault_operator_ticket: &Pubkey,
-    admin: &Pubkey,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*vault_operator_ticket, false),
-        AccountMeta::new_readonly(*admin, true),
-    ];
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: VaultInstruction::CooldownVaultOperatorTicket
+        data: VaultInstruction::InitializeVaultOperatorDelegation
             .try_to_vec()
             .unwrap(),
     }
@@ -319,7 +295,7 @@ pub fn add_delegation(
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
-    vault_operator_ticket: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
     amount: u64,
@@ -328,7 +304,7 @@ pub fn add_delegation(
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*vault_operator_ticket, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
     ];
@@ -369,14 +345,14 @@ pub fn crank_vault_update_state_tracker(
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
-    vault_operator_ticket: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     vault_update_state_tracker: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*vault_operator_ticket, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new(*vault_update_state_tracker, false),
     ];
     Instruction {
@@ -522,7 +498,7 @@ pub fn slash(
     ncn_vault_ticket: &Pubkey,
     operator_vault_ticket: &Pubkey,
     vault_ncn_ticket: &Pubkey,
-    vault_operator_ticket: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     ncn_vault_slasher_ticket: &Pubkey,
     vault_ncn_slasher_ticket: &Pubkey,
     vault_ncn_slasher_operator_ticket: &Pubkey,
@@ -540,7 +516,7 @@ pub fn slash(
         AccountMeta::new_readonly(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
         AccountMeta::new_readonly(*vault_ncn_ticket, false),
-        AccountMeta::new(*vault_operator_ticket, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*ncn_vault_slasher_ticket, false),
         AccountMeta::new_readonly(*vault_ncn_slasher_ticket, false),
         AccountMeta::new(*vault_ncn_slasher_operator_ticket, false),
@@ -679,6 +655,58 @@ pub fn close_vault_update_state_tracker(
         program_id: *program_id,
         accounts,
         data: VaultInstruction::CloseVaultUpdateStateTracker
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn warmup_vault_ncn_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    ncn: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
+    vault_ncn_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new(*ncn_vault_ticket, false),
+        AccountMeta::new(*vault_ncn_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::WarmupVaultNcnTicket.try_to_vec().unwrap(),
+    }
+}
+
+pub fn warmup_vault_ncn_slasher_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    ncn: &Pubkey,
+    slasher: &Pubkey,
+    ncn_slasher_ticket: &Pubkey,
+    vault_slasher_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*ncn_slasher_ticket, false),
+        AccountMeta::new(*vault_slasher_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::WarmupVaultNcnSlasherTicket
             .try_to_vec()
             .unwrap(),
     }

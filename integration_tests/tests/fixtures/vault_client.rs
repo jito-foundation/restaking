@@ -7,7 +7,7 @@ use jito_restaking_core::{
 use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
-    vault_operator_ticket::VaultOperatorTicket,
+    vault_operator_delegation::VaultOperatorDelegation,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
@@ -15,7 +15,10 @@ use jito_vault_sdk::{
     error::VaultError,
     inline_mpl_token_metadata,
     instruction::VaultAdminRole,
-    sdk::{add_delegation, initialize_config, initialize_vault},
+    sdk::{
+        add_delegation, initialize_config, initialize_vault, warmup_vault_ncn_slasher_ticket,
+        warmup_vault_ncn_ticket,
+    },
 };
 use log::info;
 use solana_program::{
@@ -83,15 +86,19 @@ impl VaultProgramClient {
         Ok(VaultNcnTicket::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
-    pub async fn get_vault_operator_ticket(
+    pub async fn get_vault_operator_delegation(
         &mut self,
         vault: &Pubkey,
         operator: &Pubkey,
-    ) -> Result<VaultOperatorTicket, TestError> {
-        let account =
-            VaultOperatorTicket::find_program_address(&jito_vault_program::id(), vault, operator).0;
+    ) -> Result<VaultOperatorDelegation, TestError> {
+        let account = VaultOperatorDelegation::find_program_address(
+            &jito_vault_program::id(),
+            vault,
+            operator,
+        )
+        .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(VaultOperatorDelegation::try_from_slice(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_staker_withdrawal_ticket(
@@ -287,6 +294,64 @@ impl VaultProgramClient {
         Ok(())
     }
 
+    pub async fn do_warmup_vault_ncn_ticket(
+        &mut self,
+        vault_root: &VaultRoot,
+        ncn: &Pubkey,
+    ) -> Result<(), TestError> {
+        let vault_ncn_ticket = VaultNcnTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &ncn,
+        )
+        .0;
+        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn,
+            &vault_root.vault_pubkey,
+        )
+        .0;
+        self.warmup_vault_ncn_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &ncn,
+            &ncn_vault_ticket,
+            &vault_ncn_ticket,
+            &vault_root.vault_admin,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn warmup_vault_ncn_ticket(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        ncn: &Pubkey,
+        ncn_vault_ticket: &Pubkey,
+        vault_ncn_ticket: &Pubkey,
+        ncn_vault_admin: &Keypair,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[warmup_vault_ncn_ticket(
+                &jito_vault_program::id(),
+                &config,
+                &vault,
+                &ncn,
+                &ncn_vault_ticket,
+                &vault_ncn_ticket,
+                &ncn_vault_admin.pubkey(),
+            )],
+            Some(&ncn_vault_admin.pubkey()),
+            &[&ncn_vault_admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn setup_vault_ncn_slasher_operator_ticket(
         &mut self,
         vault_root: &VaultRoot,
@@ -365,7 +430,7 @@ impl VaultProgramClient {
             ncn_pubkey,
         )
         .0;
-        let vault_operator_ticket = VaultOperatorTicket::find_program_address(
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
             operator_pubkey,
@@ -418,7 +483,7 @@ impl VaultProgramClient {
             &ncn_vault_ticket_pubkey,
             &operator_vault_ticket_pubkey,
             &vault_ncn_ticket_pubkey,
-            &vault_operator_ticket,
+            &vault_operator_delegation,
             &ncn_slasher_ticket_pubkey,
             &vault_slasher_ticket_pubkey,
             &vault_ncn_slasher_operator_ticket,
@@ -431,12 +496,12 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn do_initialize_vault_operator_ticket(
+    pub async fn do_initialize_vault_operator_delegation(
         &mut self,
         vault_root: &VaultRoot,
         operator_pubkey: &Pubkey,
     ) -> Result<(), TestError> {
-        let vault_operator_ticket = VaultOperatorTicket::find_program_address(
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
             &operator_pubkey,
@@ -448,12 +513,12 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
         )
         .0;
-        self.initialize_vault_operator_ticket(
+        self.initialize_vault_operator_delegation(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &operator_pubkey,
             &operator_vault_ticket,
-            &vault_operator_ticket,
+            &vault_operator_delegation,
             &vault_root.vault_admin,
             &vault_root.vault_admin,
         )
@@ -462,7 +527,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn vault_ncn_vault_slasher_opt_in(
+    pub async fn do_initialize_vault_ncn_slasher_ticket(
         &mut self,
         vault_root: &VaultRoot,
         ncn_pubkey: &Pubkey,
@@ -483,7 +548,7 @@ impl VaultProgramClient {
         )
         .0;
 
-        self.add_slasher(
+        self.initialize_vault_ncn_slasher_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &ncn_pubkey,
@@ -498,6 +563,71 @@ impl VaultProgramClient {
         Ok(())
     }
 
+    pub async fn do_warmup_vault_ncn_slasher_ticket(
+        &mut self,
+        vault_root: &VaultRoot,
+        ncn_pubkey: &Pubkey,
+        slasher: &Pubkey,
+    ) -> Result<(), TestError> {
+        let vault_slasher_ticket_pubkey = VaultNcnSlasherTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &ncn_pubkey,
+            slasher,
+        )
+        .0;
+        let ncn_slasher_ticket_pubkey = NcnVaultSlasherTicket::find_program_address(
+            &jito_restaking_program::id(),
+            &ncn_pubkey,
+            &vault_root.vault_pubkey,
+            slasher,
+        )
+        .0;
+
+        self.warmup_vault_ncn_slasher_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            &ncn_pubkey,
+            slasher,
+            &ncn_slasher_ticket_pubkey,
+            &vault_slasher_ticket_pubkey,
+            &vault_root.vault_admin,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn warmup_vault_ncn_slasher_ticket(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        ncn: &Pubkey,
+        slasher: &Pubkey,
+        ncn_vault_slasher_ticket: &Pubkey,
+        vault_ncn_slasher_ticket: &Pubkey,
+        admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[warmup_vault_ncn_slasher_ticket(
+                &jito_vault_program::id(),
+                &config,
+                &vault,
+                &ncn,
+                &slasher,
+                &ncn_vault_slasher_ticket,
+                &vault_ncn_slasher_ticket,
+                &admin.pubkey(),
+            )],
+            Some(&admin.pubkey()),
+            &[admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn do_add_delegation(
         &mut self,
         vault_root: &VaultRoot,
@@ -508,7 +638,7 @@ impl VaultProgramClient {
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             operator,
-            &VaultOperatorTicket::find_program_address(
+            &VaultOperatorDelegation::find_program_address(
                 &jito_vault_program::id(),
                 &vault_root.vault_pubkey,
                 operator,
@@ -585,25 +715,25 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn initialize_vault_operator_ticket(
+    pub async fn initialize_vault_operator_delegation(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
         operator: &Pubkey,
         operator_vault_ticket: &Pubkey,
-        vault_operator_ticket: &Pubkey,
+        vault_operator_delegation: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::initialize_vault_operator_ticket(
+            &[jito_vault_sdk::sdk::initialize_vault_operator_delegation(
                 &jito_vault_program::id(),
                 config,
                 vault,
                 operator,
                 operator_vault_ticket,
-                vault_operator_ticket,
+                vault_operator_delegation,
                 &admin.pubkey(),
                 &payer.pubkey(),
             )],
@@ -762,7 +892,7 @@ impl VaultProgramClient {
             self.crank_vault_update_state_tracker(
                 &vault_pubkey,
                 operator,
-                &VaultOperatorTicket::find_program_address(
+                &VaultOperatorDelegation::find_program_address(
                     &jito_vault_program::id(),
                     &vault_pubkey,
                     operator,
@@ -783,7 +913,7 @@ impl VaultProgramClient {
         &mut self,
         vault: &Pubkey,
         operator: &Pubkey,
-        vault_operator_ticket: &Pubkey,
+        vault_operator_delegation: &Pubkey,
         vault_update_state_tracker: &Pubkey,
     ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -794,7 +924,7 @@ impl VaultProgramClient {
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 vault,
                 operator,
-                vault_operator_ticket,
+                vault_operator_delegation,
                 vault_update_state_tracker,
             )],
             Some(&self.payer.pubkey()),
@@ -972,7 +1102,7 @@ impl VaultProgramClient {
         config: &Pubkey,
         vault: &Pubkey,
         operator: &Pubkey,
-        vault_operator_ticket: &Pubkey,
+        vault_operator_delegation: &Pubkey,
         admin: &Keypair,
         payer: &Keypair,
         amount: u64,
@@ -984,7 +1114,7 @@ impl VaultProgramClient {
                 config,
                 vault,
                 operator,
-                vault_operator_ticket,
+                vault_operator_delegation,
                 &admin.pubkey(),
                 &payer.pubkey(),
                 amount,
@@ -1034,7 +1164,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn add_slasher(
+    pub async fn initialize_vault_ncn_slasher_ticket(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -1109,7 +1239,7 @@ impl VaultProgramClient {
         ncn_vault_ticket: &Pubkey,
         operator_vault_ticket: &Pubkey,
         vault_ncn_ticket: &Pubkey,
-        vault_operator_ticket: &Pubkey,
+        vault_operator_delegation: &Pubkey,
         ncn_vault_slasher_ticket: &Pubkey,
         vault_ncn_slasher_ticket: &Pubkey,
         vault_ncn_slasher_operator_ticket: &Pubkey,
@@ -1130,7 +1260,7 @@ impl VaultProgramClient {
                 ncn_vault_ticket,
                 operator_vault_ticket,
                 vault_ncn_ticket,
-                vault_operator_ticket,
+                vault_operator_delegation,
                 ncn_vault_slasher_ticket,
                 vault_ncn_slasher_ticket,
                 vault_ncn_slasher_operator_ticket,

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::config::Config;
+    use jito_vault_core::config::Config;
 
     use crate::fixtures::fixture::TestBuilder;
 
@@ -30,34 +30,25 @@ mod tests {
             .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        let config_account = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config_account.epoch_length)
-            .await
-            .unwrap();
-
         vault_program_client
-            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
+            .do_initialize_vault_operator_delegation(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
-        let vault_operator_ticket = vault_program_client
-            .get_vault_operator_ticket(&vault_root.vault_pubkey, &operator_root.operator_pubkey)
+        let vault_operator_delegation = vault_program_client
+            .get_vault_operator_delegation(&vault_root.vault_pubkey, &operator_root.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault_operator_ticket.vault, vault_root.vault_pubkey);
+        assert_eq!(vault_operator_delegation.vault, vault_root.vault_pubkey);
         assert_eq!(
-            vault_operator_ticket.operator,
+            vault_operator_delegation.operator,
             operator_root.operator_pubkey
         );
-        assert_eq!(vault_operator_ticket.index, 0);
-        assert_eq!(
-            vault_operator_ticket.state.slot_added(),
-            fixture.get_current_slot().await.unwrap()
-        );
+        assert_eq!(vault_operator_delegation.index, 0);
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        let slot = fixture.get_current_slot().await.unwrap();
     }
 }

@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod tests {
     use crate::fixtures::fixture::TestBuilder;
-    use jito_vault_core::config::Config;
 
     struct TestState {}
 
     async fn setup_test(num_operators: u64) -> TestState {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -22,6 +21,10 @@ mod tests {
         let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
         restaking_program_client
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
@@ -47,27 +50,14 @@ mod tests {
                 .do_operator_warmup_ncn(&operator_root, &ncn_root.ncn_pubkey)
                 .await
                 .unwrap();
+            vault_program_client
+                .do_initialize_vault_operator_delegation(
+                    &vault_root,
+                    &operator_root.operator_pubkey,
+                )
+                .await
+                .unwrap();
             operator_roots.push(operator_root);
-        }
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        for operator_root in operator_roots {
-            vault_program_client
-                .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
-                .await
-                .unwrap();
-            vault_program_client
-                .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
-                .await
-                .unwrap();
         }
 
         TestState {}
@@ -77,6 +67,9 @@ mod tests {
     async fn test_crank_vault_update_state_tracker_ok() {
         let _state = setup_test(2).await;
     }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_no_operators_ok() {}
 
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_multiple_operators_ok() {

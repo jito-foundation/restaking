@@ -8,7 +8,7 @@ mod initialize_config;
 mod initialize_vault;
 mod initialize_vault_ncn_slasher_ticket;
 mod initialize_vault_ncn_ticket;
-mod initialize_vault_operator_ticket;
+mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
 mod mint_to;
 mod set_admin;

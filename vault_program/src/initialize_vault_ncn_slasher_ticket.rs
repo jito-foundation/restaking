@@ -79,18 +79,6 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         return Err(VaultError::VaultUpdateNeeded.into());
     }
 
-    // The NcnVaultSlasherTicket shall be active
-    let ncn_vault_slasher_ticket_data = ncn_slasher_ticket.data.borrow();
-    let ncn_vault_slasher_ticket =
-        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
-    if !ncn_vault_slasher_ticket
-        .state
-        .is_active(Clock::get()?.slot, config.epoch_length)
-    {
-        msg!("Slasher is not ready to be activated");
-        return Err(VaultError::NcnVaultSlasherTicketNotActive.into());
-    }
-
     msg!(
         "Initializing VaultNcnSlasherTicket at address {}",
         vault_ncn_slasher_ticket.key
@@ -107,6 +95,10 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         &vault_ncn_slasher_ticket_seeds,
     )?;
 
+    let ncn_vault_slasher_ticket_data = ncn_slasher_ticket.data.borrow();
+    let ncn_vault_slasher_ticket =
+        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
+
     let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.try_borrow_mut_data()?;
     vault_ncn_slasher_ticket_data[0] = VaultNcnSlasherTicket::DISCRIMINATOR;
     let vault_ncn_slasher_ticket =
@@ -117,7 +109,6 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         *slasher.key,
         ncn_vault_slasher_ticket.max_slashable_per_epoch,
         vault.slasher_count,
-        Clock::get()?.slot,
         vault_ncn_slasher_ticket_bump,
     );
 

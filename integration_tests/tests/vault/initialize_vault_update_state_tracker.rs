@@ -35,14 +35,13 @@ mod tests {
             .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * vault_config.epoch_length)
+        vault_program_client
+            .do_initialize_vault_operator_delegation(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
-        vault_program_client
-            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
+        fixture
+            .warp_slot_incremental(2 * vault_config.epoch_length)
             .await
             .unwrap();
 
@@ -133,14 +132,13 @@ mod tests {
             .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * vault_config.epoch_length)
+        vault_program_client
+            .do_initialize_vault_operator_delegation(&vault_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
 
-        vault_program_client
-            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
+        fixture
+            .warp_slot_incremental(2 * vault_config.epoch_length)
             .await
             .unwrap();
 

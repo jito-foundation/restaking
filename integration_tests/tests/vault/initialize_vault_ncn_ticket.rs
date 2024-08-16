@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::config::Config;
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+    use jito_vault_core::config::Config;
 
     use crate::fixtures::fixture::TestBuilder;
 
@@ -27,16 +28,6 @@ mod tests {
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        let config_account = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config_account.epoch_length)
-            .await
-            .unwrap();
-
         vault_program_client
             .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
@@ -49,9 +40,16 @@ mod tests {
         assert_eq!(vault_ncn_ticket_account.vault, vault_root.vault_pubkey);
         assert_eq!(vault_ncn_ticket_account.ncn, ncn_root.ncn_pubkey);
         assert_eq!(vault_ncn_ticket_account.index, 0);
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        let slot = fixture.get_current_slot().await.unwrap();
         assert_eq!(
-            vault_ncn_ticket_account.state.slot_added(),
-            fixture.get_current_slot().await.unwrap()
+            vault_ncn_ticket_account
+                .state
+                .state(slot, config.epoch_length),
+            SlotToggleState::Inactive
         );
     }
 }

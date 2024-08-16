@@ -5,10 +5,7 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{
-    loader::{load_ncn, load_ncn_vault_ticket},
-    ncn_vault_ticket::NcnVaultTicket,
-};
+use jito_restaking_core::loader::{load_ncn, load_ncn_vault_ticket};
 use jito_vault_core::{
     config::Config,
     loader::{load_config, load_vault},
@@ -80,16 +77,6 @@ pub fn process_initialize_vault_ncn_ticket(
     }
 
     // The NcnVaultTicket shall be active
-    let ncn_vault_data = ncn_vault_ticket.data.borrow();
-    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_data)?;
-    if !ncn_vault_ticket
-        .state
-        .is_active(Clock::get()?.slot, config.epoch_length)
-    {
-        msg!("NCN vault ticket is not active");
-        return Err(VaultError::NcnVaultTicketNotActive.into());
-    }
-
     msg!(
         "Initializing VaultNcnTicket at address {}",
         vault_ncn_ticket.key
@@ -112,7 +99,6 @@ pub fn process_initialize_vault_ncn_ticket(
         *vault_info.key,
         *ncn.key,
         vault.ncn_count,
-        Clock::get()?.slot,
         vault_ncn_ticket_bump,
     );
 

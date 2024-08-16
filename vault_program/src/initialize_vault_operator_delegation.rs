@@ -5,15 +5,12 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{
-    loader::{load_operator, load_operator_vault_ticket},
-    operator_vault_ticket::OperatorVaultTicket,
-};
+use jito_restaking_core::loader::{load_operator, load_operator_vault_ticket};
 use jito_vault_core::{
     config::Config,
     loader::{load_config, load_vault},
     vault::Vault,
-    vault_operator_ticket::VaultOperatorTicket,
+    vault_operator_delegation::VaultOperatorDelegation,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -21,12 +18,12 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
-/// Instruction: [`crate::VaultInstruction::InitializeVaultOperatorTicket`]
-pub fn process_initialize_vault_operator_ticket(
+/// Instruction: [`crate::VaultInstruction::InitializeVaultOperatorDelegation`]
+pub fn process_initialize_vault_operator_delegation(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault_info, operator, operator_vault_ticket, vault_operator_ticket, vault_operator_admin, payer, system_program] =
+    let [config, vault_info, operator, operator_vault_ticket, vault_operator_delegation, vault_operator_admin, payer, system_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -44,16 +41,19 @@ pub fn process_initialize_vault_operator_ticket(
         vault_info,
         false,
     )?;
-    load_system_account(vault_operator_ticket, true)?;
+    load_system_account(vault_operator_delegation, true)?;
     load_signer(vault_operator_admin, false)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
-    // The VaultOperatorTicket shall be at the canonical PDA
-    let (vault_operator_ticket_pubkey, vault_operator_ticket_bump, mut vault_operator_ticket_seeds) =
-        VaultOperatorTicket::find_program_address(program_id, vault_info.key, operator.key);
-    vault_operator_ticket_seeds.push(vec![vault_operator_ticket_bump]);
-    if vault_operator_ticket_pubkey.ne(vault_operator_ticket.key) {
+    // The VaultOperatorDelegation shall be at the canonical PDA
+    let (
+        vault_operator_delegation_pubkey,
+        vault_operator_delegation_bump,
+        mut vault_operator_delegation_seeds,
+    ) = VaultOperatorDelegation::find_program_address(program_id, vault_info.key, operator.key);
+    vault_operator_delegation_seeds.push(vec![vault_operator_delegation_bump]);
+    if vault_operator_delegation_pubkey.ne(vault_operator_delegation.key) {
         msg!("Vault operator ticket is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
@@ -72,43 +72,31 @@ pub fn process_initialize_vault_operator_ticket(
         return Err(VaultError::VaultUpdateNeeded.into());
     }
 
-    // The OperatorVaultTicket shall be active
-    let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
-    let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
-    if !operator_vault_ticket
-        .state
-        .is_active(Clock::get()?.slot, config.epoch_length)
-    {
-        msg!("Operator vault ticket is not active");
-        return Err(VaultError::OperatorVaultTicketNotActive.into());
-    }
-
     msg!(
-        "Initializing VaultOperatorTicket at address {}",
-        vault_operator_ticket.key
+        "Initializing VaultOperatorDelegation at address {}",
+        vault_operator_delegation.key
     );
     create_account(
         payer,
-        vault_operator_ticket,
+        vault_operator_delegation,
         system_program,
         program_id,
         &Rent::get()?,
         8_u64
-            .checked_add(size_of::<VaultOperatorTicket>() as u64)
+            .checked_add(size_of::<VaultOperatorDelegation>() as u64)
             .unwrap(),
-        &vault_operator_ticket_seeds,
+        &vault_operator_delegation_seeds,
     )?;
 
-    let mut vault_operator_ticket_data = vault_operator_ticket.try_borrow_mut_data()?;
-    vault_operator_ticket_data[0] = VaultOperatorTicket::DISCRIMINATOR;
-    let vault_operator_ticket =
-        VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
-    *vault_operator_ticket = VaultOperatorTicket::new(
+    let mut vault_operator_delegation_data = vault_operator_delegation.try_borrow_mut_data()?;
+    vault_operator_delegation_data[0] = VaultOperatorDelegation::DISCRIMINATOR;
+    let vault_operator_delegation =
+        VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
+    *vault_operator_delegation = VaultOperatorDelegation::new(
         *vault_info.key,
         *operator.key,
         vault.operator_count,
-        Clock::get()?.slot,
-        vault_operator_ticket_bump,
+        vault_operator_delegation_bump,
     );
 
     vault.operator_count = vault

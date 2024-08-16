@@ -5,7 +5,6 @@ mod close_update_state_tracker;
 mod cooldown_delegation;
 mod cooldown_vault_ncn_slasher_ticket;
 mod cooldown_vault_ncn_ticket;
-mod cooldown_vault_operator_ticket;
 mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod enqueue_withdrawal;
@@ -14,7 +13,7 @@ mod initialize_vault;
 mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_ncn_slasher_ticket;
 mod initialize_vault_ncn_ticket;
-mod initialize_vault_operator_ticket;
+mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
 mod initialize_vault_with_mint;
 mod mint_to;
@@ -27,7 +26,6 @@ mod update_token_metadata;
 mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
-mod warmup_vault_operator_ticket;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
@@ -46,7 +44,6 @@ use crate::{
     cooldown_delegation::process_cooldown_delegation,
     cooldown_vault_ncn_slasher_ticket::process_cooldown_vault_ncn_slasher_ticket,
     cooldown_vault_ncn_ticket::process_cooldown_vault_ncn_ticket,
-    cooldown_vault_operator_ticket::process_cooldown_vault_operator_ticket,
     crank_vault_update_state_tracker::process_crank_vault_update_state_tracker,
     create_token_metadata::process_create_token_metadata,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
@@ -54,7 +51,7 @@ use crate::{
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_ncn_slasher_ticket::process_initialize_vault_ncn_slasher_ticket,
     initialize_vault_ncn_ticket::process_initialize_vault_ncn_ticket,
-    initialize_vault_operator_ticket::process_initialize_vault_operator_ticket,
+    initialize_vault_operator_delegation::process_initialize_vault_operator_delegation,
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
@@ -63,7 +60,6 @@ use crate::{
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
-    warmup_vault_operator_ticket::process_warmup_vault_operator_ticket,
     withdrawal_asset::process_withdrawal_asset,
 };
 
@@ -118,9 +114,9 @@ pub fn process_instruction(
             msg!("Instruction: InitializeVaultNcnTicket");
             process_initialize_vault_ncn_ticket(program_id, accounts)
         }
-        VaultInstruction::InitializeVaultOperatorTicket => {
-            msg!("Instruction: InitializeVaultOperatorTicket");
-            process_initialize_vault_operator_ticket(program_id, accounts)
+        VaultInstruction::InitializeVaultOperatorDelegation => {
+            msg!("Instruction: InitializeVaultOperatorDelegation");
+            process_initialize_vault_operator_delegation(program_id, accounts)
         }
         VaultInstruction::InitializeVaultNcnSlasherTicket => {
             msg!("Instruction: InitializeVaultNcnSlasherTicket");
@@ -185,17 +181,6 @@ pub fn process_instruction(
         VaultInstruction::CooldownVaultNcnTicket => {
             msg!("Instruction: CooldownVaultNcnTicket");
             process_cooldown_vault_ncn_ticket(program_id, accounts)
-        }
-        // ------------------------------------------
-        // Vault-operator operations
-        // ------------------------------------------
-        VaultInstruction::WarmupVaultOperatorTicket => {
-            msg!("Instruction: WarmupVaultOperatorTicket");
-            process_warmup_vault_operator_ticket(program_id, accounts)
-        }
-        VaultInstruction::CooldownVaultOperatorTicket => {
-            msg!("Instruction: CooldownVaultOperatorTicket");
-            process_cooldown_vault_operator_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault NCN slasher operations

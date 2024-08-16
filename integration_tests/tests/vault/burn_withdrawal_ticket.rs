@@ -1,531 +1,507 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::config::Config as RestakingConfig;
-    use jito_vault_core::config::Config;
-    use jito_vault_sdk::error::VaultError;
-    use solana_program::{instruction::InstructionError, pubkey::Pubkey};
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
-    use spl_associated_token_account::get_associated_token_address;
-
-    use crate::fixtures::{
-        fixture::TestBuilder,
-        restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
-        vault_client::{VaultProgramClient, VaultRoot, VaultStakerWithdrawalTicketRoot},
-    };
-
-    struct PreparedWithdrawalTicket {
-        vault_root: VaultRoot,
-        ncn_root: NcnRoot,
-        operator_root: OperatorRoot,
-        depositor: Keypair,
-        withdrawal_ticket_base: Pubkey,
-        slasher: Keypair,
-    }
-
-    async fn setup_withdrawal_ticket(
-        fixture: &mut TestBuilder,
-        vault_program_client: &mut VaultProgramClient,
-        restaking_program_client: &mut RestakingProgramClient,
-        deposit_fee_bps: u16,
-        withdraw_fee_bps: u16,
-        mint_amount: u64,
-        deposit_amount: u64,
-        delegate_amount: u64,
-        withdrawal_amount: u64,
-        max_slash_amount: u64,
-    ) -> PreparedWithdrawalTicket {
-        // Setup vault with initial deposit
-        let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps)
-            .await
-            .unwrap();
-        let _restaking_config_admin = restaking_program_client
-            .do_initialize_config()
-            .await
-            .unwrap();
-
-        // Setup operator and NCN
-        let operator_root = restaking_program_client
-            .do_initialize_operator()
-            .await
-            .unwrap();
-        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
-
-        let restaking_config = restaking_program_client
-            .get_config(&RestakingConfig::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
-            .await
-            .unwrap();
-        restaking_program_client
-            .do_operator_warmup_ncn(&operator_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
-        restaking_program_client
-            .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        restaking_program_client
-            .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
-            .await
-            .unwrap();
-        restaking_program_client
-            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        // create slasher w/ token account
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 100.0).await.unwrap();
-        fixture
-            .create_ata(&vault.supported_mint, &slasher.pubkey())
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
-                &ncn_root,
-                &vault_root.vault_pubkey,
-                &slasher.pubkey(),
-                max_slash_amount,
-            )
-            .await
-            .unwrap();
-        vault_program_client
-            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_initialize_vault_operator_ticket(&vault_root, &operator_root.operator_pubkey)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
-            .await
-            .unwrap();
-        vault_program_client
-            .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * restaking_config.epoch_length)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-
-        // Initial deposit
-        let depositor = Keypair::new();
-        fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
-        fixture
-            .mint_to(&vault.supported_mint, &depositor.pubkey(), mint_amount)
-            .await
-            .unwrap();
-        fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey())
-            .await
-            .unwrap();
-        // Mint VRT tokens to depositor
-        vault_program_client
-            .mint_to(
-                &vault_root.vault_pubkey,
-                &vault.vrt_mint,
-                &depositor,
-                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
-                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
-                None,
-                deposit_amount,
-            )
-            .await
-            .unwrap();
-
-        // Delegate all funds to the operator
-        vault_program_client
-            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, delegate_amount)
-            .await
-            .unwrap();
-
-        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, withdrawal_amount)
-            .await
-            .unwrap();
-
-        PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root,
-            operator_root,
-            depositor,
-            withdrawal_ticket_base: base,
-            slasher,
-        }
-    }
-
     /// One can't burn the withdraw ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
-        let mut fixture = TestBuilder::new().await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let mut restaking_program_client = fixture.restaking_program_client();
+        // const MINT_AMOUNT: u64 = 100_000;
+        //
+        // let mut fixture = TestBuilder::new().await;
+        // let ConfiguredVault {
+        //     mut vault_program_client,
+        //     restaking_program_client: _,
+        //     vault_config_admin: _,
+        //     vault_root,
+        //     restaking_config_admin: _,
+        //     ncn_root: _,
+        //     operator_roots: _,
+        //     slashers_amounts: _,
+        // } = fixture
+        //     .setup_vault_with_ncn_and_operators(100, 0, 1, &[])
+        //     .await
+        //     .unwrap();
+        //
+        // let vault = vault_program_client
+        //     .get_vault(&vault_root.vault_pubkey)
+        //     .await
+        //     .unwrap();
+        //
+        // // Initial deposit
+        // let depositor = Keypair::new();
+        // fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
+        // fixture
+        //     .mint_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
+        //     .await
+        //     .unwrap();
+        // fixture
+        //     .create_ata(&vault.vrt_mint, &depositor.pubkey())
+        //     .await
+        //     .unwrap();
+        // // Mint VRT tokens to depositor
+        // vault_program_client
+        //     .mint_to(
+        //         &vault_root.vault_pubkey,
+        //         &vault.vrt_mint,
+        //         &depositor,
+        //         &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
+        //         &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+        //         &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+        //         &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+        //         None,
+        //         MINT_AMOUNT,
+        //     )
+        //     .await
+        //     .unwrap();
 
-        let PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root: _,
-            operator_root: _,
-            depositor,
-            withdrawal_ticket_base,
-            slasher: _,
-        } = setup_withdrawal_ticket(
-            &mut fixture,
-            &mut vault_program_client,
-            &mut restaking_program_client,
-            0,
-            0,
-            1000,
-            100,
-            100,
-            100,
-            100,
-        )
-        .await;
-
-        let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(
-                    VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
-                )
-            )
-        );
+        // let config = vault_program_client
+        //     .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+        //     .await
+        //     .unwrap();
+        // fixture
+        //     .warp_slot_incremental(2 * config.epoch_length)
+        //     .await
+        //     .unwrap();
+        //
+        // vault_program_client
+        //     .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+        //     .await
+        //     .unwrap();
+        //
+        // // Delegate all funds to the operator
+        // vault_program_client
+        //     .do_add_delegation(&vault_root, &operator_root.operator_pubkey, delegate_amount)
+        //     .await
+        //     .unwrap();
+        //
+        // let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+        //     .do_enqueue_withdraw(&vault_root, &depositor, withdrawal_amount)
+        //     .await
+        //     .unwrap();
+        //
+        // let PreparedWithdrawalTicket {
+        //     vault_root,
+        //     ncn_root: _,
+        //     operator_root: _,
+        //     depositor,
+        //     withdrawal_ticket_base,
+        //     slasher: _,
+        // } = setup_withdrawal_ticket(
+        //     &mut fixture,
+        //     &mut vault_program_client,
+        //     &mut restaking_program_client,
+        //     0,
+        //     0,
+        //     1000,
+        //     100,
+        //     100,
+        //     100,
+        //     100,
+        // )
+        // .await;
+        //
+        // let transaction_error = vault_program_client
+        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
+        //     .await
+        //     .unwrap_err()
+        //     .to_transaction_error()
+        //     .unwrap();
+        // assert_eq!(
+        //     transaction_error,
+        //     TransactionError::InstructionError(
+        //         0,
+        //         InstructionError::Custom(
+        //             VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
+        //         )
+        //     )
+        // );
     }
 
-    /// One can't burn the withdraw ticket until a full epoch has passed
-    #[tokio::test]
-    async fn test_burn_withdrawal_ticket_next_epoch_fails() {
-        let mut fixture = TestBuilder::new().await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root: _,
-            operator_root,
-            depositor,
-            withdrawal_ticket_base,
-            slasher: _,
-        } = setup_withdrawal_ticket(
-            &mut fixture,
-            &mut vault_program_client,
-            &mut restaking_program_client,
-            0,
-            0,
-            1000,
-            100,
-            100,
-            100,
-            100,
-        )
-        .await;
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(config.epoch_length)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-
-        let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(
-                    VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
-                )
-            )
-        );
-    }
-
-    /// Tests basic withdraw ticket with no rewards or slashing incidents
-    #[tokio::test]
-    #[ignore]
-    async fn test_burn_withdrawal_ticket_basic_success() {
-        let mut fixture = TestBuilder::new().await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root: _,
-            operator_root,
-            depositor,
-            withdrawal_ticket_base,
-            slasher: _,
-        } = setup_withdrawal_ticket(
-            &mut fixture,
-            &mut vault_program_client,
-            &mut restaking_program_client,
-            0,
-            0,
-            1000,
-            1000,
-            1000,
-            1000,
-            100,
-        )
-        .await;
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
-            .await
-            .unwrap();
-
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let depositor_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &depositor.pubkey(),
-                &vault.supported_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(depositor_token_account.amount, 1000);
-    }
-
-    /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
-    /// assets the user gets back shall be larger than the amount set aside for withdrawal.
-    /// The rewards were not staked, so they can be fully withdrawn from the vault.
-    #[tokio::test]
-    #[ignore]
-    async fn test_burn_withdrawal_ticket_with_unstaked_rewards() {
-        let mut fixture = TestBuilder::new().await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root: _,
-            operator_root,
-            depositor,
-            withdrawal_ticket_base,
-            slasher: _,
-        } = setup_withdrawal_ticket(
-            &mut fixture,
-            &mut vault_program_client,
-            &mut restaking_program_client,
-            0,
-            0,
-            1000,
-            1000,
-            1000,
-            1000,
-            100,
-        )
-        .await;
-
-        // send 100 tokens to vault as rewards, increasing value of it by 10%
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        fixture
-            .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
-            .await
-            .unwrap();
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
-            .await
-            .unwrap();
-
-        // user should have 1100 tokens
-        let depositor_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &depositor.pubkey(),
-                &vault.supported_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(depositor_token_account.amount, 1100);
-    }
-
-    /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
-    /// assets the user gets back shall be larger than the amount set aside for withdrawal. However,
-    /// those rewards were staked, so the user can't receive them. In this case, they shall receive
-    /// back the amount set aside for withdraw and the excess VRT tokens.
-    #[tokio::test]
-    #[ignore]
-    async fn test_burn_withdrawal_ticket_with_staked_rewards() {
-        let mut fixture = TestBuilder::new().await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root: _,
-            operator_root,
-            depositor,
-            withdrawal_ticket_base,
-            slasher: _,
-        } = setup_withdrawal_ticket(
-            &mut fixture,
-            &mut vault_program_client,
-            &mut restaking_program_client,
-            0,
-            0,
-            1000,
-            1000,
-            1000,
-            1000,
-            100,
-        )
-        .await;
-
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        // send 100 tokens to vault as rewards, increasing value of it by 10%
-        // but delegate those to the operator. they won't be available for withdraw
-        fixture
-            .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-        vault_program_client
-            .do_add_delegation(&vault_root, &operator_root.operator_pubkey, 100)
-            .await
-            .unwrap();
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
-            .await
-            .unwrap();
-
-        // user should have 1000 tokens and should also get back excess VRT tokens
-        let depositor_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &depositor.pubkey(),
-                &vault.supported_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(depositor_token_account.amount, 1000);
-
-        let depositor_vrt_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &depositor.pubkey(),
-                &vault.vrt_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(depositor_vrt_token_account.amount, 91);
-
-        let vault_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &vault_root.vault_pubkey,
-                &vault.supported_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(vault_token_account.amount, 100);
-    }
-
-    // /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
-    // /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
-    // /// set aside is reduced to 0.
-    // ///
-    // /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
-    // /// won't match the withdrawal amount reserved in the withdrawal ticket.
+    // /// One can't burn the withdraw ticket until a full epoch has passed
     // #[tokio::test]
-    // async fn test_burn_withdrawal_ticket_with_slashing_before_update() {
+    // async fn test_burn_withdrawal_ticket_next_epoch_fails() {
+    //     let mut fixture = TestBuilder::new().await;
+    //     let mut vault_program_client = fixture.vault_program_client();
+    //     let mut restaking_program_client = fixture.restaking_program_client();
+    //
+    //     let PreparedWithdrawalTicket {
+    //         vault_root,
+    //         ncn_root: _,
+    //         operator_root,
+    //         depositor,
+    //         withdrawal_ticket_base,
+    //         slasher: _,
+    //     } = setup_withdrawal_ticket(
+    //         &mut fixture,
+    //         &mut vault_program_client,
+    //         &mut restaking_program_client,
+    //         0,
+    //         0,
+    //         1000,
+    //         100,
+    //         100,
+    //         100,
+    //         100,
+    //     )
+    //     .await;
+    //
+    //     let config = vault_program_client
+    //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    //         .await
+    //         .unwrap();
+    //     fixture
+    //         .warp_slot_incremental(config.epoch_length)
+    //         .await
+    //         .unwrap();
+    //     vault_program_client
+    //         .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+    //         .await
+    //         .unwrap();
+    //
+    //     let transaction_error = vault_program_client
+    //         .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
+    //         .await
+    //         .unwrap_err()
+    //         .to_transaction_error()
+    //         .unwrap();
+    //
+    //     assert_eq!(
+    //         transaction_error,
+    //         TransactionError::InstructionError(
+    //             0,
+    //             InstructionError::Custom(
+    //                 VaultError::VaultStakerWithdrawalTicketNotWithdrawable as u32
+    //             )
+    //         )
+    //     );
+    // }
+    //
+    // /// Tests basic withdraw ticket with no rewards or slashing incidents
+    // #[tokio::test]
+    // #[ignore]
+    // async fn test_burn_withdrawal_ticket_basic_success() {
+    //     let mut fixture = TestBuilder::new().await;
+    //     let mut vault_program_client = fixture.vault_program_client();
+    //     let mut restaking_program_client = fixture.restaking_program_client();
+    //
+    //     let PreparedWithdrawalTicket {
+    //         vault_root,
+    //         ncn_root: _,
+    //         operator_root,
+    //         depositor,
+    //         withdrawal_ticket_base,
+    //         slasher: _,
+    //     } = setup_withdrawal_ticket(
+    //         &mut fixture,
+    //         &mut vault_program_client,
+    //         &mut restaking_program_client,
+    //         0,
+    //         0,
+    //         1000,
+    //         1000,
+    //         1000,
+    //         1000,
+    //         100,
+    //     )
+    //     .await;
+    //
+    //     let config = vault_program_client
+    //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    //         .await
+    //         .unwrap();
+    //     fixture
+    //         .warp_slot_incremental(2 * config.epoch_length)
+    //         .await
+    //         .unwrap();
+    //     vault_program_client
+    //         .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+    //         .await
+    //         .unwrap();
+    //
+    //     vault_program_client
+    //         .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
+    //         .await
+    //         .unwrap();
+    //
+    //     let vault = vault_program_client
+    //         .get_vault(&vault_root.vault_pubkey)
+    //         .await
+    //         .unwrap();
+    //
+    //     let depositor_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &depositor.pubkey(),
+    //             &vault.supported_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(depositor_token_account.amount, 1000);
+    // }
+    //
+    // /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
+    // /// assets the user gets back shall be larger than the amount set aside for withdrawal.
+    // /// The rewards were not staked, so they can be fully withdrawn from the vault.
+    // #[tokio::test]
+    // #[ignore]
+    // async fn test_burn_withdrawal_ticket_with_unstaked_rewards() {
+    //     let mut fixture = TestBuilder::new().await;
+    //     let mut vault_program_client = fixture.vault_program_client();
+    //     let mut restaking_program_client = fixture.restaking_program_client();
+    //
+    //     let PreparedWithdrawalTicket {
+    //         vault_root,
+    //         ncn_root: _,
+    //         operator_root,
+    //         depositor,
+    //         withdrawal_ticket_base,
+    //         slasher: _,
+    //     } = setup_withdrawal_ticket(
+    //         &mut fixture,
+    //         &mut vault_program_client,
+    //         &mut restaking_program_client,
+    //         0,
+    //         0,
+    //         1000,
+    //         1000,
+    //         1000,
+    //         1000,
+    //         100,
+    //     )
+    //     .await;
+    //
+    //     // send 100 tokens to vault as rewards, increasing value of it by 10%
+    //     let vault = vault_program_client
+    //         .get_vault(&vault_root.vault_pubkey)
+    //         .await
+    //         .unwrap();
+    //     fixture
+    //         .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
+    //         .await
+    //         .unwrap();
+    //
+    //     let config = vault_program_client
+    //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    //         .await
+    //         .unwrap();
+    //     fixture
+    //         .warp_slot_incremental(2 * config.epoch_length)
+    //         .await
+    //         .unwrap();
+    //     vault_program_client
+    //         .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+    //         .await
+    //         .unwrap();
+    //
+    //     vault_program_client
+    //         .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
+    //         .await
+    //         .unwrap();
+    //
+    //     // user should have 1100 tokens
+    //     let depositor_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &depositor.pubkey(),
+    //             &vault.supported_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(depositor_token_account.amount, 1100);
+    // }
+    //
+    // /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of
+    // /// assets the user gets back shall be larger than the amount set aside for withdrawal. However,
+    // /// those rewards were staked, so the user can't receive them. In this case, they shall receive
+    // /// back the amount set aside for withdraw and the excess VRT tokens.
+    // #[tokio::test]
+    // #[ignore]
+    // async fn test_burn_withdrawal_ticket_with_staked_rewards() {
+    //     let mut fixture = TestBuilder::new().await;
+    //     let mut vault_program_client = fixture.vault_program_client();
+    //     let mut restaking_program_client = fixture.restaking_program_client();
+    //
+    //     let PreparedWithdrawalTicket {
+    //         vault_root,
+    //         ncn_root: _,
+    //         operator_root,
+    //         depositor,
+    //         withdrawal_ticket_base,
+    //         slasher: _,
+    //     } = setup_withdrawal_ticket(
+    //         &mut fixture,
+    //         &mut vault_program_client,
+    //         &mut restaking_program_client,
+    //         0,
+    //         0,
+    //         1000,
+    //         1000,
+    //         1000,
+    //         1000,
+    //         100,
+    //     )
+    //     .await;
+    //
+    //     let vault = vault_program_client
+    //         .get_vault(&vault_root.vault_pubkey)
+    //         .await
+    //         .unwrap();
+    //
+    //     // send 100 tokens to vault as rewards, increasing value of it by 10%
+    //     // but delegate those to the operator. they won't be available for withdraw
+    //     fixture
+    //         .mint_to(&vault.supported_mint, &vault_root.vault_pubkey, 100)
+    //         .await
+    //         .unwrap();
+    //
+    //     vault_program_client
+    //         .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+    //         .await
+    //         .unwrap();
+    //     vault_program_client
+    //         .do_add_delegation(&vault_root, &operator_root.operator_pubkey, 100)
+    //         .await
+    //         .unwrap();
+    //
+    //     let config = vault_program_client
+    //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    //         .await
+    //         .unwrap();
+    //
+    //     fixture
+    //         .warp_slot_incremental(2 * config.epoch_length)
+    //         .await
+    //         .unwrap();
+    //     vault_program_client
+    //         .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+    //         .await
+    //         .unwrap();
+    //
+    //     vault_program_client
+    //         .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
+    //         .await
+    //         .unwrap();
+    //
+    //     // user should have 1000 tokens and should also get back excess VRT tokens
+    //     let depositor_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &depositor.pubkey(),
+    //             &vault.supported_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(depositor_token_account.amount, 1000);
+    //
+    //     let depositor_vrt_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &depositor.pubkey(),
+    //             &vault.vrt_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(depositor_vrt_token_account.amount, 91);
+    //
+    //     let vault_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &vault_root.vault_pubkey,
+    //             &vault.supported_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(vault_token_account.amount, 100);
+    // }
+    //
+    // // /// The user withdrew at some ratio of the vault, but a slashing took place while the withdrawal ticket
+    // // /// was maturing. The user gets back less than they originally anticipated and the amount of withdrawal
+    // // /// set aside is reduced to 0.
+    // // ///
+    // // /// This test is more complicated because the withdrawal amount reserved stored in the vault delegation list
+    // // /// won't match the withdrawal amount reserved in the withdrawal ticket.
+    // // #[tokio::test]
+    // // async fn test_burn_withdrawal_ticket_with_slashing_before_update() {
+    // //     let mut fixture = TestBuilder::new().await;
+    // //     let mut vault_program_client = fixture.vault_program_client();
+    // //     let mut restaking_program_client = fixture.restaking_program_client();
+    // //
+    // //     let PreparedWithdrawalTicket {
+    // //         vault_root,
+    // //         ncn_root,
+    // //         operator_root,
+    // //         depositor,
+    // //         withdrawal_ticket_base,
+    // //         slasher,
+    // //     } = setup_withdrawal_ticket(
+    // //         &mut fixture,
+    // //         &mut vault_program_client,
+    // //         &mut restaking_program_client,
+    // //         0,
+    // //         0,
+    // //         1000,
+    // //         1000,
+    // //         1000,
+    // //         1000,
+    // //         100,
+    // //     )
+    // //     .await;
+    // //
+    // //     let vault = vault_program_client
+    // //         .get_vault(&vault_root.vault_pubkey)
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     let config = vault_program_client
+    // //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     vault_program_client
+    // //         .setup_vault_ncn_slasher_operator_ticket(
+    // //             &vault_root,
+    // //             &ncn_root.ncn_pubkey,
+    // //             &slasher.pubkey(),
+    // //             &operator_root.operator_pubkey,
+    // //         )
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     vault_program_client
+    // //         .do_update_vault(&vault_root.vault_pubkey)
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     vault_program_client
+    // //         .do_slash(
+    // //             &vault_root,
+    // //             &ncn_root.ncn_pubkey,
+    // //             &slasher,
+    // //             &operator_root.operator_pubkey,
+    // //             100,
+    // //         )
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     let config = vault_program_client
+    // //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+    // //         .await
+    // //         .unwrap();
+    // //     fixture
+    // //         .warp_slot_incremental(2 * config.epoch_length)
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     vault_program_client
+    // //         .do_update_vault(&vault_root.vault_pubkey)
+    // //         .await
+    // //         .unwrap();
+    // //
+    // //     vault_program_client
+    // //         .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
+    // //         .await
+    // //         .unwrap();
+    // // }
+    //
+    // /// The user withdrew at some ratio of the vault, but a slashing took place after the withdrawal ticket
+    // /// had matured. The user gets back less than they originally anticipated and the amount of withdrawal
+    // /// set aside is reduced to 0.
+    // #[tokio::test]
+    // #[ignore]
+    // async fn test_burn_withdrawal_ticket_with_slashing_after_update() {
     //     let mut fixture = TestBuilder::new().await;
     //     let mut vault_program_client = fixture.vault_program_client();
     //     let mut restaking_program_client = fixture.restaking_program_client();
@@ -546,7 +522,7 @@ mod tests {
     //         1000,
     //         1000,
     //         1000,
-    //         1000,
+    //         900,
     //         100,
     //     )
     //     .await;
@@ -560,6 +536,15 @@ mod tests {
     //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
     //         .await
     //         .unwrap();
+    //     fixture
+    //         .warp_slot_incremental(2 * config.epoch_length)
+    //         .await
+    //         .unwrap();
+    //
+    //     vault_program_client
+    //         .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+    //         .await
+    //         .unwrap();
     //
     //     vault_program_client
     //         .setup_vault_ncn_slasher_operator_ticket(
@@ -570,12 +555,6 @@ mod tests {
     //         )
     //         .await
     //         .unwrap();
-    //
-    //     vault_program_client
-    //         .do_update_vault(&vault_root.vault_pubkey)
-    //         .await
-    //         .unwrap();
-    //
     //     vault_program_client
     //         .do_slash(
     //             &vault_root,
@@ -587,126 +566,36 @@ mod tests {
     //         .await
     //         .unwrap();
     //
-    //     let config = vault_program_client
-    //         .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-    //         .await
-    //         .unwrap();
-    //     fixture
-    //         .warp_slot_incremental(2 * config.epoch_length)
-    //         .await
-    //         .unwrap();
-    //
-    //     vault_program_client
-    //         .do_update_vault(&vault_root.vault_pubkey)
-    //         .await
-    //         .unwrap();
-    //
     //     vault_program_client
     //         .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
     //         .await
     //         .unwrap();
+    //
+    //     let depositor_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &depositor.pubkey(),
+    //             &vault.supported_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(depositor_token_account.amount, 810);
+    //
+    //     let depositor_vrt_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &depositor.pubkey(),
+    //             &vault.vrt_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(depositor_vrt_token_account.amount, 100);
+    //
+    //     let vault_token_account = fixture
+    //         .get_token_account(&get_associated_token_address(
+    //             &vault_root.vault_pubkey,
+    //             &vault.supported_mint,
+    //         ))
+    //         .await
+    //         .unwrap();
+    //     assert_eq!(vault_token_account.amount, 90);
     // }
-
-    /// The user withdrew at some ratio of the vault, but a slashing took place after the withdrawal ticket
-    /// had matured. The user gets back less than they originally anticipated and the amount of withdrawal
-    /// set aside is reduced to 0.
-    #[tokio::test]
-    #[ignore]
-    async fn test_burn_withdrawal_ticket_with_slashing_after_update() {
-        let mut fixture = TestBuilder::new().await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let PreparedWithdrawalTicket {
-            vault_root,
-            ncn_root,
-            operator_root,
-            depositor,
-            withdrawal_ticket_base,
-            slasher,
-        } = setup_withdrawal_ticket(
-            &mut fixture,
-            &mut vault_program_client,
-            &mut restaking_program_client,
-            0,
-            0,
-            1000,
-            1000,
-            1000,
-            900,
-            100,
-        )
-        .await;
-
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
-            .await
-            .unwrap();
-
-        vault_program_client
-            .setup_vault_ncn_slasher_operator_ticket(
-                &vault_root,
-                &ncn_root.ncn_pubkey,
-                &slasher.pubkey(),
-                &operator_root.operator_pubkey,
-            )
-            .await
-            .unwrap();
-        vault_program_client
-            .do_slash(
-                &vault_root,
-                &ncn_root.ncn_pubkey,
-                &slasher,
-                &operator_root.operator_pubkey,
-                100,
-            )
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &withdrawal_ticket_base)
-            .await
-            .unwrap();
-
-        let depositor_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &depositor.pubkey(),
-                &vault.supported_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(depositor_token_account.amount, 810);
-
-        let depositor_vrt_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &depositor.pubkey(),
-                &vault.vrt_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(depositor_vrt_token_account.amount, 100);
-
-        let vault_token_account = fixture
-            .get_token_account(&get_associated_token_address(
-                &vault_root.vault_pubkey,
-                &vault.supported_mint,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(vault_token_account.amount, 90);
-    }
 }

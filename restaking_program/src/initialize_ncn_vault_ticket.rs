@@ -14,8 +14,8 @@ use jito_restaking_core::{
 use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// The NCN opts-in to vaults by storing the vault in the NCN vault list. It also CPI's into
@@ -41,8 +41,6 @@ pub fn process_initialize_ncn_vault_ticket(
     load_signer(ncn_vault_admin, false)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
-
-    let slot = Clock::get()?.slot;
 
     // The NcnVaultTicket shall be at the canonical PDA
     let (ncn_vault_ticket_pubkey, ncn_vault_ticket_bump, mut ncn_vault_ticket_seeds) =
@@ -83,7 +81,6 @@ pub fn process_initialize_ncn_vault_ticket(
         *ncn_info.key,
         *vault.key,
         ncn.vault_count,
-        slot,
         ncn_vault_ticket_bump,
     );
 

@@ -1,23 +1,20 @@
-//! The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
-//! and disabled over time by the vault operator admin.
+//! The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 
 use std::cmp::min;
 
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::slot_toggle::SlotToggle;
 use jito_vault_sdk::error::VaultError;
 use solana_program::{msg, pubkey::Pubkey};
 
-impl Discriminator for VaultOperatorTicket {
+impl Discriminator for VaultOperatorDelegation {
     const DISCRIMINATOR: u8 = 4;
 }
 
-/// The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
-/// and disabled over time by the vault operator admin.
+/// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
-pub struct VaultOperatorTicket {
+pub struct VaultOperatorDelegation {
     /// The vault account
     pub vault: Pubkey,
 
@@ -47,9 +44,6 @@ pub struct VaultOperatorTicket {
     /// The index
     pub index: u64,
 
-    /// The slot toggle
-    pub state: SlotToggle,
-
     /// The bump seed for the PDA
     pub bump: u8,
 
@@ -57,14 +51,8 @@ pub struct VaultOperatorTicket {
     reserved: [u8; 7],
 }
 
-impl VaultOperatorTicket {
-    pub const fn new(
-        vault: Pubkey,
-        operator: Pubkey,
-        index: u64,
-        slot_added: u64,
-        bump: u8,
-    ) -> Self {
+impl VaultOperatorDelegation {
+    pub const fn new(vault: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             vault,
             operator,
@@ -75,7 +63,6 @@ impl VaultOperatorTicket {
             enqueued_for_withdraw_amount: 0,
             cooling_down_for_withdraw_amount: 0,
             index,
-            state: SlotToggle::new(slot_added),
             bump,
             reserved: [0; 7],
         }
@@ -255,7 +242,7 @@ impl VaultOperatorTicket {
     /// The seeds for the PDA
     pub fn seeds(vault: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"vault_operator_ticket".to_vec(),
+            b"vault_operator_delegation".to_vec(),
             vault.as_ref().to_vec(),
             operator.as_ref().to_vec(),
         ])
@@ -288,116 +275,136 @@ impl VaultOperatorTicket {
 mod tests {
     use solana_program::pubkey::Pubkey;
 
-    use crate::vault_operator_ticket::VaultOperatorTicket;
+    use crate::vault_operator_delegation::VaultOperatorDelegation;
 
-    fn new_vault_operator_ticket() -> VaultOperatorTicket {
-        VaultOperatorTicket::new(Pubkey::new_unique(), Pubkey::new_unique(), 0, 0, 0)
+    fn new_vault_operator_delegation() -> VaultOperatorDelegation {
+        VaultOperatorDelegation::new(Pubkey::new_unique(), Pubkey::new_unique(), 0, 0)
     }
 
     #[test]
     fn test_delegate() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100).unwrap();
-        assert_eq!(vault_operator_ticket.staked_amount, 100);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100);
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100).unwrap();
+        assert_eq!(vault_operator_delegation.staked_amount, 100);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100);
     }
 
     #[test]
     fn test_undelegate_with_updates() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100).unwrap();
-        vault_operator_ticket.undelegate(50).unwrap();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100).unwrap();
+        vault_operator_delegation.undelegate(50).unwrap();
 
-        assert_eq!(vault_operator_ticket.staked_amount, 50);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 50);
-        assert_eq!(vault_operator_ticket.cooling_down_amount, 0);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100);
+        assert_eq!(vault_operator_delegation.staked_amount, 50);
+        assert_eq!(vault_operator_delegation.enqueued_for_cooldown_amount, 50);
+        assert_eq!(vault_operator_delegation.cooling_down_amount, 0);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100);
 
-        vault_operator_ticket.update(0);
+        vault_operator_delegation.update(0);
 
-        assert_eq!(vault_operator_ticket.staked_amount, 50);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault_operator_ticket.cooling_down_amount, 50);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100);
+        assert_eq!(vault_operator_delegation.staked_amount, 50);
+        assert_eq!(vault_operator_delegation.enqueued_for_cooldown_amount, 0);
+        assert_eq!(vault_operator_delegation.cooling_down_amount, 50);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100);
 
-        vault_operator_ticket.update(0);
+        vault_operator_delegation.update(0);
 
-        assert_eq!(vault_operator_ticket.staked_amount, 50);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault_operator_ticket.cooling_down_amount, 0);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 50);
+        assert_eq!(vault_operator_delegation.staked_amount, 50);
+        assert_eq!(vault_operator_delegation.enqueued_for_cooldown_amount, 0);
+        assert_eq!(vault_operator_delegation.cooling_down_amount, 0);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 50);
     }
 
     #[test]
     fn test_undelegate_for_withdraw_with_updates() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100).unwrap();
-        vault_operator_ticket.undelegate_for_withdraw(50).unwrap();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100).unwrap();
+        vault_operator_delegation
+            .undelegate_for_withdraw(50)
+            .unwrap();
 
-        assert_eq!(vault_operator_ticket.staked_amount, 50);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 50);
-        assert_eq!(vault_operator_ticket.cooling_down_for_withdraw_amount, 0);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100);
+        assert_eq!(vault_operator_delegation.staked_amount, 50);
+        assert_eq!(vault_operator_delegation.enqueued_for_withdraw_amount, 50);
+        assert_eq!(
+            vault_operator_delegation.cooling_down_for_withdraw_amount,
+            0
+        );
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100);
 
-        vault_operator_ticket.update(0);
+        vault_operator_delegation.update(0);
 
-        assert_eq!(vault_operator_ticket.staked_amount, 50);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 0);
-        assert_eq!(vault_operator_ticket.cooling_down_for_withdraw_amount, 50);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100);
+        assert_eq!(vault_operator_delegation.staked_amount, 50);
+        assert_eq!(vault_operator_delegation.enqueued_for_withdraw_amount, 0);
+        assert_eq!(
+            vault_operator_delegation.cooling_down_for_withdraw_amount,
+            50
+        );
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100);
 
-        vault_operator_ticket.update(0);
+        vault_operator_delegation.update(0);
 
-        assert_eq!(vault_operator_ticket.staked_amount, 50);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 0);
-        assert_eq!(vault_operator_ticket.cooling_down_for_withdraw_amount, 0);
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 50);
+        assert_eq!(vault_operator_delegation.staked_amount, 50);
+        assert_eq!(vault_operator_delegation.enqueued_for_withdraw_amount, 0);
+        assert_eq!(
+            vault_operator_delegation.cooling_down_for_withdraw_amount,
+            0
+        );
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 50);
     }
 
     #[test]
     fn test_slashing_simple() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100_000).unwrap();
-        vault_operator_ticket.undelegate(10_000).unwrap();
-        vault_operator_ticket.slash(5_000).unwrap();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100_000).unwrap();
+        vault_operator_delegation.undelegate(10_000).unwrap();
+        vault_operator_delegation.slash(5_000).unwrap();
 
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 95_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 85_500);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 95_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 85_500);
     }
 
     #[test]
     fn test_undelegate_for_withdraw_with_cooling_down() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100_000).unwrap();
-        assert_eq!(vault_operator_ticket.staked_amount, 100_000);
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(vault_operator_delegation.staked_amount, 100_000);
 
-        vault_operator_ticket.undelegate(10_000).unwrap();
-        assert_eq!(vault_operator_ticket.staked_amount, 90_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 10_000);
+        vault_operator_delegation.undelegate(10_000).unwrap();
+        assert_eq!(vault_operator_delegation.staked_amount, 90_000);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_cooldown_amount,
+            10_000
+        );
 
-        vault_operator_ticket
+        vault_operator_delegation
             .undelegate_for_withdraw(95_000)
             .unwrap();
-        assert_eq!(vault_operator_ticket.staked_amount, 0);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 5_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 95_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 0);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_cooldown_amount,
+            5_000
+        );
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_withdraw_amount,
+            95_000
+        );
     }
 
     #[test]
     fn test_undelegate_for_withdraw_not_enough_security() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100_000).unwrap();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100_000).unwrap();
 
-        vault_operator_ticket
+        vault_operator_delegation
             .undelegate_for_withdraw(100_001)
             .unwrap_err();
 
-        let mut vault_operator_ticket = new_vault_operator_ticket();
-        vault_operator_ticket.delegate(100_000).unwrap();
-        vault_operator_ticket
+        let mut vault_operator_delegation = new_vault_operator_delegation();
+        vault_operator_delegation.delegate(100_000).unwrap();
+        vault_operator_delegation
             .undelegate_for_withdraw(50_000)
             .unwrap();
-        vault_operator_ticket
+        vault_operator_delegation
             .undelegate_for_withdraw(50_001)
             .unwrap_err();
     }
@@ -405,80 +412,101 @@ mod tests {
     /// Test pulling assets from enqueued for cooling down after staked assets are exhausted
     #[test]
     fn test_undelegate_for_withdraw_pull_from_enqueued_for_cooling_down() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
 
-        vault_operator_ticket.delegate(100_000).unwrap();
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
+        vault_operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
 
-        vault_operator_ticket.undelegate(50_000).unwrap();
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 50_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 50_000);
+        vault_operator_delegation.undelegate(50_000).unwrap();
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 50_000);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_cooldown_amount,
+            50_000
+        );
 
         // shall pull 50,000 from the staked and 10,000 from the undelegated
-        vault_operator_ticket
+        vault_operator_delegation
             .undelegate_for_withdraw(60_000)
             .unwrap();
 
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 0);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 60_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 40_000);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 0);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_withdraw_amount,
+            60_000
+        );
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_cooldown_amount,
+            40_000
+        );
     }
 
     /// Test pulling assets from cooling down after staked assets are exhausted
     #[test]
     fn test_undelegate_for_withdraw_pull_from_cooling_down() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
 
-        vault_operator_ticket.delegate(100_000).unwrap();
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
+        vault_operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
 
-        vault_operator_ticket.undelegate(50_000).unwrap();
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 50_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 50_000);
+        vault_operator_delegation.undelegate(50_000).unwrap();
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 50_000);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_cooldown_amount,
+            50_000
+        );
 
-        vault_operator_ticket.update(0);
+        vault_operator_delegation.update(0);
 
         // shall pull 50,000 from the staked and 10,000 from the undelegated
-        vault_operator_ticket
+        vault_operator_delegation
             .undelegate_for_withdraw(60_000)
             .unwrap();
 
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 0);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 60_000);
-        assert_eq!(vault_operator_ticket.cooling_down_amount, 40_000);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 0);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_withdraw_amount,
+            60_000
+        );
+        assert_eq!(vault_operator_delegation.cooling_down_amount, 40_000);
     }
 
     #[test]
     fn test_undelegate_for_withdraw_pull_from_enqueued_for_cooling_down_and_cooling_down() {
-        let mut vault_operator_ticket = new_vault_operator_ticket();
+        let mut vault_operator_delegation = new_vault_operator_delegation();
 
-        vault_operator_ticket.delegate(100_000).unwrap();
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
+        vault_operator_delegation.delegate(100_000).unwrap();
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
 
-        vault_operator_ticket.undelegate(50_000).unwrap();
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 50_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 50_000);
+        vault_operator_delegation.undelegate(50_000).unwrap();
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 50_000);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_cooldown_amount,
+            50_000
+        );
 
-        vault_operator_ticket.update(0);
+        vault_operator_delegation.update(0);
 
-        vault_operator_ticket.undelegate(10_000).unwrap();
+        vault_operator_delegation.undelegate(10_000).unwrap();
 
         // 100k total security, 40k staked, 10k in enqueued for cooling down, 50k in cooling down
 
-        vault_operator_ticket
+        vault_operator_delegation
             .undelegate_for_withdraw(60_000)
             .unwrap();
         // shall pull 40,000 from the staked, 10k from the enqueued for cooling down, and 10k from cooling down
 
-        assert_eq!(vault_operator_ticket.total_security().unwrap(), 100_000);
-        assert_eq!(vault_operator_ticket.staked_amount, 0);
-        assert_eq!(vault_operator_ticket.enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault_operator_ticket.cooling_down_amount, 40_000);
-        assert_eq!(vault_operator_ticket.enqueued_for_withdraw_amount, 60_000);
+        assert_eq!(vault_operator_delegation.total_security().unwrap(), 100_000);
+        assert_eq!(vault_operator_delegation.staked_amount, 0);
+        assert_eq!(vault_operator_delegation.enqueued_for_cooldown_amount, 0);
+        assert_eq!(vault_operator_delegation.cooling_down_amount, 40_000);
+        assert_eq!(
+            vault_operator_delegation.enqueued_for_withdraw_amount,
+            60_000
+        );
     }
 }

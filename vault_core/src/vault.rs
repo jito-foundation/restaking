@@ -87,7 +87,7 @@ pub struct Vault {
     /// Number of VaultNcnTicket accounts tracked by this vault
     pub ncn_count: u64,
 
-    /// Number of VaultOperatorTicket accounts tracked by this vault
+    /// Number of VaultOperatorDelegation accounts tracked by this vault
     pub operator_count: u64,
 
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault

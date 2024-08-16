@@ -14,13 +14,13 @@ use jito_vault_core::{
     config::Config,
     loader::{
         load_config, load_vault, load_vault_ncn_slasher_operator_ticket, load_vault_ncn_ticket,
-        load_vault_operator_ticket,
+        load_vault_operator_delegation,
     },
     vault::Vault,
     vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     vault_ncn_ticket::VaultNcnTicket,
-    vault_operator_ticket::VaultOperatorTicket,
+    vault_operator_delegation::VaultOperatorDelegation,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -35,7 +35,7 @@ pub fn process_slash(
     accounts: &[AccountInfo],
     slash_amount: u64,
 ) -> ProgramResult {
-    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_ticket, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
+    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_delegation, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -70,9 +70,9 @@ pub fn process_slash(
         false,
     )?;
     load_vault_ncn_ticket(program_id, vault_ncn_ticket, vault_info, ncn, false)?;
-    load_vault_operator_ticket(
+    load_vault_operator_delegation(
         program_id,
-        vault_operator_ticket,
+        vault_operator_delegation,
         vault_info,
         operator,
         true,
@@ -144,18 +144,6 @@ pub fn process_slash(
         return Err(VaultError::OperatorVaultTicketUnslashable.into());
     }
 
-    // The VaultOperatorTicket shall be active or cooling down to get slashed
-    let mut vault_operator_ticket_data = vault_operator_ticket.data.borrow_mut();
-    let vault_operator_ticket =
-        VaultOperatorTicket::try_from_slice_mut(&mut vault_operator_ticket_data)?;
-    if !vault_operator_ticket
-        .state
-        .is_active_or_cooldown(slot, epoch_length)
-    {
-        msg!("Vault operator ticket is not active or in cooldown");
-        return Err(VaultError::VaultOperatorTicketUnslashable.into());
-    }
-
     // The NcnOperatorTicket shall be active or cooling down to get slashed
     let ncn_operator_state_data = ncn_operator_state.data.borrow();
     let ncn_operator_state = NcnOperatorState::try_from_slice(&ncn_operator_state_data)?;
@@ -213,8 +201,12 @@ pub fn process_slash(
         return Err(VaultError::VaultNcnSlasherOperatorMaxSlashableExceeded.into());
     }
 
-    // slash and update the slashed amount
-    vault_operator_ticket.slash(slash_amount)?;
+    // The VaultOperatorDelegation shall be slashed
+    let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
+    let vault_operator_delegation =
+        VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
+    vault_operator_delegation.slash(slash_amount)?;
+
     vault_ncn_slasher_operator_ticket.slashed = vault_ncn_slasher_operator_ticket
         .slashed
         .checked_add(slash_amount)

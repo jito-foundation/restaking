@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
     use jito_restaking_core::{
         config::Config, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
         ncn_vault_ticket::NcnVaultTicket,
@@ -22,33 +23,21 @@ mod tests {
             .do_initialize_config()
             .await
             .unwrap();
-        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
-
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
             .setup_config_and_vault(0, 0)
             .await
             .unwrap();
 
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
         restaking_program_client
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 
-        // wait 2 epochs to activate the vault
-        let config = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
         let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 10.0).await.unwrap();
         restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
+            .do_initialize_ncn_vault_slasher_ticket(
                 &ncn_root,
                 &vault_root.vault_pubkey,
                 &slasher.pubkey(),
@@ -78,15 +67,20 @@ mod tests {
         assert_eq!(ticket.slasher, slasher.pubkey());
         assert_eq!(ticket.max_slashable_per_epoch, 100);
         assert_eq!(ticket.index, 0);
+        let slot = fixture.get_current_slot().await.unwrap();
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
         assert_eq!(
-            ticket.state.slot_added(),
-            fixture.get_current_slot().await.unwrap()
+            ticket.state.state(slot, config.epoch_length),
+            SlotToggleState::Inactive
         );
     }
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_slasher_ticket_bad_pda_fails() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
         let _restaking_config_admin = restaking_program_client
@@ -105,19 +99,7 @@ mod tests {
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        // wait 2 epochs to activate the vault
-        let config = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
         let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 10.0).await.unwrap();
         let transaction_error = restaking_program_client
             .initialize_ncn_vault_slasher_ticket(
                 &Config::find_program_address(&jito_restaking_program::id()).0,
@@ -211,181 +193,6 @@ mod tests {
             TransactionError::InstructionError(
                 0,
                 InstructionError::Custom(RestakingError::NcnSlasherAdminInvalid as u32)
-            )
-        );
-    }
-
-    #[tokio::test]
-    async fn test_initialize_ncn_vault_slasher_ticket_ncn_vault_ticket_warming_up_fails() {
-        let mut fixture = TestBuilder::new().await;
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let _restaking_config_admin = restaking_program_client
-            .do_initialize_config()
-            .await
-            .unwrap();
-        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
-
-        let mut vault_program_client = fixture.vault_program_client();
-        let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        // only go to warming up
-        let config = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(config.epoch_length)
-            .await
-            .unwrap();
-
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 10.0).await.unwrap();
-        let transaction_error = restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
-                &ncn_root,
-                &vault_root.vault_pubkey,
-                &slasher.pubkey(),
-                100,
-            )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(RestakingError::NcnVaultTicketNotActive as u32)
-            )
-        );
-    }
-
-    #[tokio::test]
-    async fn test_initialize_ncn_vault_slasher_ticket_ncn_vault_ticket_cooling_down_fails() {
-        let mut fixture = TestBuilder::new().await;
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let _restaking_config_admin = restaking_program_client
-            .do_initialize_config()
-            .await
-            .unwrap();
-        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
-
-        let mut vault_program_client = fixture.vault_program_client();
-        let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let config = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_cooldown_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 10.0).await.unwrap();
-        let transaction_error = restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
-                &ncn_root,
-                &vault_root.vault_pubkey,
-                &slasher.pubkey(),
-                100,
-            )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(RestakingError::NcnVaultTicketNotActive as u32)
-            )
-        );
-    }
-
-    #[tokio::test]
-    async fn test_initialize_ncn_vault_slasher_ticket_ncn_vault_ticket_inactive_fails() {
-        let mut fixture = TestBuilder::new().await;
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let _restaking_config_admin = restaking_program_client
-            .do_initialize_config()
-            .await
-            .unwrap();
-        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
-
-        let mut vault_program_client = fixture.vault_program_client();
-        let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let config = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        restaking_program_client
-            .do_cooldown_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length)
-            .await
-            .unwrap();
-
-        let slasher = Keypair::new();
-        fixture.transfer(&slasher.pubkey(), 10.0).await.unwrap();
-        let transaction_error = restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
-                &ncn_root,
-                &vault_root.vault_pubkey,
-                &slasher.pubkey(),
-                100,
-            )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(RestakingError::NcnVaultTicketNotActive as u32)
             )
         );
     }

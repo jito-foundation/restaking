@@ -6,7 +6,7 @@ impl Discriminator for VaultUpdateStateTracker {
     const DISCRIMINATOR: u8 = 9;
 }
 
-/// The [`crate::vault_operator_ticket::VaultUpdateDelegationsTicket`]
+/// The [`crate::vault_operator_delegation::VaultUpdateDelegationsTicket`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
 pub struct VaultUpdateStateTracker {

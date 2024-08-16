@@ -6,7 +6,7 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 use crate::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
-    vault_operator_ticket::VaultOperatorTicket,
+    vault_operator_delegation::VaultOperatorDelegation,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
@@ -131,43 +131,43 @@ pub fn load_vault_ncn_ticket(
     Ok(())
 }
 
-/// Loads the [`VaultOperatorTicket`] account
+/// Loads the [`VaultOperatorDelegation`] account
 ///
 /// # Arguments
 /// * `program_id` - The program ID
-/// * `vault_operator_ticket` - The [`VaultOperatorTicket`] account
+/// * `vault_operator_delegation` - The [`VaultOperatorDelegation`] account
 /// * `vault` - The vault account
 /// * `operator` - The operator account
 /// * `expect_writable` - Whether the account should be writable
 ///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
-pub fn load_vault_operator_ticket(
+pub fn load_vault_operator_delegation(
     program_id: &Pubkey,
-    vault_operator_ticket: &AccountInfo,
+    vault_operator_delegation: &AccountInfo,
     vault: &AccountInfo,
     operator: &AccountInfo,
     expect_writable: bool,
 ) -> Result<(), ProgramError> {
-    if vault_operator_ticket.owner.ne(program_id) {
+    if vault_operator_delegation.owner.ne(program_id) {
         msg!("Vault operator ticket account has an invalid owner");
         return Err(ProgramError::InvalidAccountOwner);
     }
-    if vault_operator_ticket.data_is_empty() {
+    if vault_operator_delegation.data_is_empty() {
         msg!("Vault operator ticket account data is empty");
         return Err(ProgramError::InvalidAccountData);
     }
-    if expect_writable && !vault_operator_ticket.is_writable {
+    if expect_writable && !vault_operator_delegation.is_writable {
         msg!("Vault operator ticket account is not writable");
         return Err(ProgramError::InvalidAccountData);
     }
-    if vault_operator_ticket.data.borrow()[0].ne(&VaultOperatorTicket::DISCRIMINATOR) {
+    if vault_operator_delegation.data.borrow()[0].ne(&VaultOperatorDelegation::DISCRIMINATOR) {
         msg!("Vault operator ticket account discriminator is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
     let expected_pubkey =
-        VaultOperatorTicket::find_program_address(program_id, vault.key, operator.key).0;
-    if vault_operator_ticket.key.ne(&expected_pubkey) {
+        VaultOperatorDelegation::find_program_address(program_id, vault.key, operator.key).0;
+    if vault_operator_delegation.key.ne(&expected_pubkey) {
         msg!("Vault operator ticket account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }

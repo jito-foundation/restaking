@@ -59,7 +59,6 @@ impl NcnVaultSlasherTicket {
         slasher: Pubkey,
         max_slashable_per_epoch: u64,
         index: u64,
-        slot_added: u64,
         bump: u8,
     ) -> Self {
         Self {
@@ -68,7 +67,7 @@ impl NcnVaultSlasherTicket {
             slasher,
             max_slashable_per_epoch,
             index,
-            state: SlotToggle::new(slot_added),
+            state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
