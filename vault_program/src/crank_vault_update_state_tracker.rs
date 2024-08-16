@@ -93,7 +93,18 @@ pub fn process_crank_vault_update_state_tracker(
     vault_delegations_update_ticket.amount_delegated = vault_delegations_update_ticket
         .amount_delegated
         .checked_add(vault_operator_delegation.total_security()?)
-        .ok_or(VaultError::VaultAssetsReturnedOverflow)?;
+        .ok_or(VaultError::VaultDelegationUpdateOverflow)?;
+    vault_delegations_update_ticket.amount_enqueued_for_cooldown = vault_delegations_update_ticket
+        .amount_enqueued_for_cooldown
+        .checked_add(vault_operator_delegation.enqueued_for_cooldown_amount)
+        .and_then(|v| v.checked_add(vault_operator_delegation.enqueued_for_withdraw_amount))
+        .ok_or(VaultError::VaultDelegationUpdateOverflow)?;
+    vault_delegations_update_ticket.amount_cooling_down = vault_delegations_update_ticket
+        .amount_cooling_down
+        .checked_add(vault_operator_delegation.cooling_down_amount)
+        .and_then(|v| v.checked_add(vault_operator_delegation.cooling_down_for_withdraw_amount))
+        .ok_or(VaultError::VaultDelegationUpdateOverflow)?;
+
     vault_delegations_update_ticket.last_updated_index = vault_operator_delegation.index;
 
     Ok(())

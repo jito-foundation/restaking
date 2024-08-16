@@ -41,8 +41,19 @@ pub struct Vault {
     // ------------------------------------------
     // Rolled-up stake stats
     // ------------------------------------------
-    /// Total stake active, enqueued for cooldown, and cooling down across all operators in the vault.
+    /// Total stake actively delegated inside the vault
+    /// The sum of all [`VaultOperatorDelegation::total_security`] for all operators
     pub amount_delegated: u64,
+
+    /// Total stake enqueued for cooldown
+    /// The sum of [`VaultOperatorDelegation::enqueued_for_cooldown_amount`] AND
+    /// [`VaultOperatorDelegation::enqueued_for_withdraw_amount`] for all operators
+    pub amount_enqueued_for_cooldown: u64,
+
+    /// Total stake cooling down
+    /// The sum of [`VaultOperatorDelegation::cooling_down_amount`] AND
+    /// [`VaultOperatorDelegation::cooling_down_for_withdraw_amount`] for all operators
+    pub amount_cooling_down: u64,
 
     // ------------------------------------------
     // Admins
@@ -153,6 +164,8 @@ impl Vault {
             bump,
             reserved: [0; 11],
             amount_delegated: 0,
+            amount_enqueued_for_cooldown: 0,
+            amount_cooling_down: 0,
         }
     }
 

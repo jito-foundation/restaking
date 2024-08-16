@@ -21,6 +21,7 @@ pub struct VaultOperatorDelegation {
     /// The operator account
     pub operator: Pubkey,
 
+    /// The last slot the [`VaultOperatorDelegation::update`] method was updated
     pub last_update_slot: u64,
 
     /// The amount of stake that is currently active on the operator
@@ -34,11 +35,13 @@ pub struct VaultOperatorDelegation {
     pub cooling_down_amount: u64,
 
     /// Any stake that was enqueued for withdraw in the current epoch.
-    /// These funds are earmarked for withdraw and can't be redelegated once inactive.
+    /// These funds are earmarked for withdrawal and are in the last bucket of slashed
+    /// assets.
     pub enqueued_for_withdraw_amount: u64,
 
-    /// Any stake that was enqueued for withdraw in the previous epoch,
-    /// to be available for withdrawal in the current epoch + 1
+    /// Any stake that was enqueued for withdraw in the previous epoch.
+    /// These funds are earmarked for withdrawal and are in the last bucket of slashed
+    /// assets.
     pub cooling_down_for_withdraw_amount: u64,
 
     /// The index
@@ -133,26 +136,26 @@ impl VaultOperatorDelegation {
 
         let mut remaining_slash = slash_amount;
 
-        // Helper function to calculate and apply slash based on pro-rata share
+        // Slash as much as possible from the given amount
         let mut apply_slash = |amount: &mut u64| -> Result<(), VaultError> {
             if *amount == 0 || remaining_slash == 0 {
                 return Ok(());
             }
-            let pro_rata_slash = (*amount as u128)
-                .checked_mul(slash_amount as u128)
-                .ok_or(VaultError::VaultSecurityOverflow)?
-                .div_ceil(total_security_amount as u128);
-            let actual_slash = min(pro_rata_slash as u64, min(*amount, remaining_slash));
+            let slash_amount = min(*amount, remaining_slash);
             *amount = amount
-                .checked_sub(actual_slash)
-                .ok_or(VaultError::VaultSecurityOverflow)?;
+                .checked_sub(slash_amount)
+                .ok_or(VaultError::VaultSecurityUnderflow)?;
             remaining_slash = remaining_slash
-                .checked_sub(actual_slash)
-                .ok_or(VaultError::VaultSecurityOverflow)?;
+                .checked_sub(slash_amount)
+                .ok_or(VaultError::VaultSecurityUnderflow)?;
             Ok(())
         };
 
         // Slash from each bucket
+        // Ordering for the withdrawal buckets is important to ensure that those funds are available
+        // for withdrawal. The `enqueued_for_withdraw_amount` is slashed first so that the delegation
+        // admin can set aside more in the future if needed. Also, the vault update process has a
+        // last look at moving funds around if needed.
         apply_slash(&mut self.staked_amount)?;
         apply_slash(&mut self.enqueued_for_cooldown_amount)?;
         apply_slash(&mut self.cooling_down_amount)?;
@@ -360,7 +363,7 @@ mod tests {
         vault_operator_delegation.slash(5_000).unwrap();
 
         assert_eq!(vault_operator_delegation.total_security().unwrap(), 95_000);
-        assert_eq!(vault_operator_delegation.staked_amount, 85_500);
+        assert_eq!(vault_operator_delegation.staked_amount, 85_000);
     }
 
     #[test]

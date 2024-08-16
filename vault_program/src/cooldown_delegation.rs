@@ -32,8 +32,8 @@ pub fn process_cooldown_delegation(
     load_signer(vault_delegation_admin, false)?;
 
     // The Vault delegation admin shall be the signer of the transaction
-    let vault_data = vault.data.borrow();
-    let vault = Vault::try_from_slice(&vault_data)?;
+    let mut vault_data = vault.data.borrow_mut();
+    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
     if vault.delegation_admin.ne(vault_delegation_admin.key) {
         msg!("Invalid delegation admin for vault");
         return Err(VaultError::VaultDelegationAdminInvalid.into());
@@ -49,6 +49,11 @@ pub fn process_cooldown_delegation(
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
     vault_operator_delegation.undelegate(amount)?;
+
+    vault.amount_enqueued_for_cooldown = vault
+        .amount_enqueued_for_cooldown
+        .checked_add(amount)
+        .ok_or(VaultError::VaultOverflow)?;
 
     Ok(())
 }

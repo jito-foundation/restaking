@@ -54,6 +54,9 @@ pub fn process_close_vault_update_state_tracker(
         }
         msg!("Finished updating VaultUpdateStateTracker");
         vault.amount_delegated = vault_update_state_tracker.amount_delegated;
+        vault.amount_enqueued_for_cooldown =
+            vault_update_state_tracker.amount_enqueued_for_cooldown;
+        vault.amount_cooling_down = vault_update_state_tracker.amount_cooling_down;
         vault.last_full_state_update_slot = slot;
     }
 

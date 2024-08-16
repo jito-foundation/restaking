@@ -58,6 +58,8 @@ pub enum VaultError {
     NcnVaultTicketUnslashable = 4017,
     NcnVaultSlasherTicketUnslashable = 4018,
     VaultNcnSlasherOperatorMaxSlashableExceeded = 4019,
+
+    VaultDelegationUpdateOverflow = 5000,
 }
 
 impl From<VaultError> for ProgramError {
@@ -67,6 +69,12 @@ impl From<VaultError> for ProgramError {
 }
 
 impl From<VaultError> for u64 {
+    fn from(e: VaultError) -> Self {
+        e as Self
+    }
+}
+
+impl From<VaultError> for u32 {
     fn from(e: VaultError) -> Self {
         e as Self
     }

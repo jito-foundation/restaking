@@ -327,7 +327,7 @@ pub fn cooldown_delegation(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new_readonly(*admin, true),
     ];

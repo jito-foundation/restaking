@@ -209,7 +209,7 @@ pub enum VaultInstruction {
     },
 
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, signer, name = "admin")]
