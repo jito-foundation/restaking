@@ -75,13 +75,4 @@ mod tests {
         assert_eq!(vault.amount_delegated, MINT_AMOUNT);
         assert_eq!(vault.tokens_deposited, MINT_AMOUNT);
     }
-
-    #[tokio::test]
-    async fn test_add_delegation_vault_out_of_date_fails() {}
-
-    #[tokio::test]
-    async fn test_add_delegation_wrong_admin_fails() {}
-
-    #[tokio::test]
-    async fn test_add_delegation_over_delegate_fails() {}
 }
