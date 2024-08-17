@@ -238,20 +238,21 @@ pub fn set_fees(
 
 pub fn delegate_token_account(
     program_id: &Pubkey,
+    vault: &Pubkey,
     admin: &Pubkey,
     token_mint: &Pubkey,
     token_account: &Pubkey,
-    owner: &Pubkey,
     delegate: &Pubkey,
+    token_program_id: &Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
-        AccountMeta::new_readonly(*admin, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new(*token_account, false),
-        AccountMeta::new_readonly(*owner, true),
         AccountMeta::new_readonly(*delegate, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(*token_program_id, false),
     ];
     Instruction {
         program_id: *program_id,

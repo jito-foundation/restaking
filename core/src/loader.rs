@@ -52,7 +52,8 @@ pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.key.ne(&spl_token::id()) {
+    if info.key.eq(&spl_token::id()) || info.key.eq(&spl_token_2022::id()) {
+    } else {
         msg!("Account is not the token program");
         return Err(ProgramError::IncorrectProgramId);
     }
@@ -130,7 +131,8 @@ pub fn load_associated_token_account(
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_account(token_account: &AccountInfo) -> Result<(), ProgramError> {
-    if token_account.owner.ne(&spl_token::id()) || token_account.owner.ne(&spl_token_2022::id()) {
+    if token_account.owner.eq(&spl_token::id()) || token_account.owner.eq(&spl_token_2022::id()) {
+    } else {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
     }

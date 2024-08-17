@@ -104,8 +104,30 @@ impl TestBuilder {
         mint: &Pubkey,
         to: &Pubkey,
         amount: u64,
+        token_program: &Pubkey,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
+        let mint_to_ix = if token_program.eq(&spl_token::id()) {
+            spl_token::instruction::mint_to(
+                token_program,
+                mint,
+                &get_associated_token_address(to, mint),
+                &self.context.payer.pubkey(),
+                &[],
+                amount,
+            )
+            .unwrap()
+        } else {
+            spl_token_2022::instruction::mint_to(
+                token_program,
+                mint,
+                &get_associated_token_address(to, mint),
+                &self.context.payer.pubkey(),
+                &[],
+                amount,
+            )
+            .unwrap()
+        };
         self.context
             .banks_client
             .process_transaction_with_preflight_and_commitment(
@@ -115,17 +137,9 @@ impl TestBuilder {
                             &self.context.payer.pubkey(),
                             to,
                             mint,
-                            &spl_token::id(),
+                            token_program,
                         ),
-                        spl_token::instruction::mint_to(
-                            &spl_token::id(),
-                            mint,
-                            &get_associated_token_address(to, mint),
-                            &self.context.payer.pubkey(),
-                            &[],
-                            amount,
-                        )
-                        .unwrap(),
+                        mint_to_ix,
                     ],
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],
@@ -140,6 +154,7 @@ impl TestBuilder {
         &mut self,
         mint: &Pubkey,
         owner: &Pubkey,
+        token_program: &Pubkey,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
         self.context
@@ -150,7 +165,7 @@ impl TestBuilder {
                         &self.context.payer.pubkey(),
                         owner,
                         mint,
-                        &spl_token::id(),
+                        token_program,
                     )],
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],

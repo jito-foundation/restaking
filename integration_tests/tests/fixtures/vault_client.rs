@@ -202,9 +202,9 @@ impl VaultProgramClient {
     pub async fn get_token_account(
         &mut self,
         wallet_address: &Pubkey,
-        vrt_mint: &Pubkey,
+        token_mint: &Pubkey,
     ) -> Result<TokenAccount, TestError> {
-        let ata = get_associated_token_address(wallet_address, vrt_mint);
+        let ata = get_associated_token_address(wallet_address, token_mint);
 
         let account = self.banks_client.get_account(ata).await?.unwrap();
 
@@ -277,7 +277,8 @@ impl VaultProgramClient {
         let token_mint = Keypair::new();
 
         self._airdrop(&vault_admin.pubkey(), 100.0).await?;
-        self._create_token_mint(&token_mint).await?;
+        self._create_token_mint(&token_mint, &spl_token::id())
+            .await?;
 
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -789,24 +790,28 @@ impl VaultProgramClient {
 
     pub async fn delegate_token_account(
         &mut self,
-        vrt_mint: &Pubkey,
+        vault: &Pubkey,
+        admin: &Keypair,
+        token_mint: &Pubkey,
         token_account: &Pubkey,
-        owner: &Keypair,
         delegate: &Pubkey,
+        token_program_id: &Pubkey,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::delegate_token_account(
                 &jito_vault_program::id(),
-                vrt_mint,
+                vault,
+                &admin.pubkey(),
+                token_mint,
                 token_account,
-                &owner.pubkey(),
                 delegate,
+                token_program_id,
                 amount,
             )],
-            Some(&owner.pubkey()),
-            &[owner],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &admin],
             blockhash,
         ))
         .await
@@ -1540,29 +1545,54 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn _create_token_mint(
+        &mut self,
+        mint: &Keypair,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
+        let ixs = if token_program_id.eq(&spl_token::id()) {
+            [
+                create_account(
+                    &self.payer.pubkey(),
+                    &mint.pubkey(),
+                    rent.minimum_balance(spl_token_2022::state::Mint::LEN),
+                    spl_token::state::Mint::LEN as u64,
+                    &token_program_id,
+                ),
+                spl_token::instruction::initialize_mint2(
+                    &token_program_id,
+                    &mint.pubkey(),
+                    &self.payer.pubkey(),
+                    None,
+                    9,
+                )
+                .unwrap(),
+            ]
+        } else {
+            [
+                create_account(
+                    &self.payer.pubkey(),
+                    &mint.pubkey(),
+                    rent.minimum_balance(spl_token_2022::state::Mint::LEN),
+                    spl_token_2022::state::Mint::LEN as u64,
+                    &token_program_id,
+                ),
+                spl_token_2022::instruction::initialize_mint2(
+                    &token_program_id,
+                    &mint.pubkey(),
+                    &self.payer.pubkey(),
+                    None,
+                    9,
+                )
+                .unwrap(),
+            ]
+        };
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 Transaction::new_signed_with_payer(
-                    &[
-                        create_account(
-                            &self.payer.pubkey(),
-                            &mint.pubkey(),
-                            rent.minimum_balance(Mint::LEN),
-                            Mint::LEN as u64,
-                            &spl_token::id(),
-                        ),
-                        initialize_mint2(
-                            &spl_token::id(),
-                            &mint.pubkey(),
-                            &self.payer.pubkey(),
-                            None,
-                            9,
-                        )
-                        .unwrap(),
-                    ],
+                    &ixs,
                     Some(&self.payer.pubkey()),
                     &[&self.payer, mint],
                     blockhash,

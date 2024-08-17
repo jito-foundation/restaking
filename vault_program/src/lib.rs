@@ -142,7 +142,7 @@ pub fn process_instruction(
             process_set_deposit_capacity(program_id, accounts, amount)
         }
         VaultInstruction::DelegateTokenAccount { amount } => {
-            msg!("Instruction: WithdrawalAsset");
+            msg!("Instruction: DelegateTokenAccount");
             process_delegate_token_account(program_id, accounts, amount)
         }
         VaultInstruction::SetFees {

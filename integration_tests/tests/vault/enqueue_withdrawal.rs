@@ -34,11 +34,16 @@ mod tests {
         let depositor = Keypair::new();
         fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
         fixture
-            .mint_spl_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
+            .mint_spl_to(
+                &vault.supported_mint,
+                &depositor.pubkey(),
+                MINT_AMOUNT,
+                &spl_token::id(),
+            )
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey(), &spl_token::id())
             .await
             .unwrap();
 

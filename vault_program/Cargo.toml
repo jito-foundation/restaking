@@ -32,6 +32,7 @@ solana-program = { workspace = true }
 solana-security-txt = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
+spl-token-2022 = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
