@@ -1,6 +1,4 @@
-use jito_jsm_core::loader::{
-    load_associated_token_account, load_signer, load_token_mint, load_token_program,
-};
+use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint, load_token_program};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program::invoke,
     program_error::ProgramError, pubkey::Pubkey,
@@ -12,12 +10,13 @@ pub fn process_delegate_token_account(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let [vrt_mint, token_account, owner, delegate, token_program] = accounts else {
+    let [admin, token_mint, token_account, owner, delegate, token_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_associated_token_account(token_account, owner.key, vrt_mint.key)?;
-    load_token_mint(vrt_mint)?;
+    load_signer(admin, false)?;
+    load_token_mint(token_mint)?;
+    load_token_account(token_account)?;
     load_signer(owner, false)?;
     load_token_program(token_program)?;
 

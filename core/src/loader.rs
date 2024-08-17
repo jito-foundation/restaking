@@ -122,6 +122,27 @@ pub fn load_associated_token_account(
     Ok(())
 }
 
+/// Loads the account as a token account, returning an error if it is not.
+///
+/// # Arguments
+/// * `token_account` - The account to load the token account from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
+pub fn load_token_account(token_account: &AccountInfo) -> Result<(), ProgramError> {
+    if token_account.owner.ne(&spl_token::id()) || token_account.owner.ne(&spl_token_2022::id()) {
+        msg!("Account is not owned by the token program");
+        return Err(ProgramError::InvalidAccountOwner);
+    }
+
+    if token_account.data_is_empty() {
+        msg!("Account data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    Ok(())
+}
+
 /// Loads the account as a token mint, returning an error if it is not.
 ///
 /// # Arguments
