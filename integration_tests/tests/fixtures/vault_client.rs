@@ -29,7 +29,7 @@ use solana_program::{
     rent::Rent,
     system_instruction::{create_account, transfer},
 };
-use solana_program_test::BanksClient;
+use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{
     commitment_config::CommitmentLevel,
     instruction::InstructionError,
@@ -64,6 +64,24 @@ impl VaultProgramClient {
             banks_client,
             payer,
         }
+    }
+
+    pub async fn configure_depositor(
+        &mut self,
+        vault_root: &VaultRoot,
+        depositor: &Keypair,
+        amount_to_mint: u64,
+    ) -> TestResult<()> {
+        self._airdrop(&depositor.pubkey(), 100.0).await?;
+        let vault = self.get_vault(&vault_root.vault_pubkey).await?;
+        self.create_ata(&vault.supported_mint, &depositor.pubkey())
+            .await?;
+        self.create_ata(&vault.vrt_mint, &depositor.pubkey())
+            .await?;
+        self.mint_spl_to(&vault.supported_mint, &depositor.pubkey(), amount_to_mint)
+            .await?;
+
+        Ok(())
     }
 
     pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, TestError> {
@@ -962,6 +980,35 @@ impl VaultProgramClient {
         Ok(())
     }
 
+    pub async fn do_crank_vault_update_state_tracker(
+        &mut self,
+        vault: &Pubkey,
+        operator: &Pubkey,
+    ) -> TestResult<()> {
+        let slot = self.banks_client.get_sysvar::<Clock>().await?.slot;
+        let config = self
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await?;
+        let ncn_epoch = slot / config.epoch_length;
+        self.crank_vault_update_state_tracker(
+            vault,
+            operator,
+            &VaultOperatorDelegation::find_program_address(
+                &jito_vault_program::id(),
+                vault,
+                operator,
+            )
+            .0,
+            &VaultUpdateStateTracker::find_program_address(
+                &jito_vault_program::id(),
+                vault,
+                ncn_epoch,
+            )
+            .0,
+        )
+        .await
+    }
+
     pub async fn crank_vault_update_state_tracker(
         &mut self,
         vault: &Pubkey,
@@ -1180,6 +1227,27 @@ impl VaultProgramClient {
             &[admin, payer],
             blockhash,
         ))
+        .await
+    }
+
+    pub async fn do_mint_to(
+        &mut self,
+        vault_root: &VaultRoot,
+        depositor: &Keypair,
+        amount_to_mint: u64,
+    ) -> TestResult<()> {
+        let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
+        self.mint_to(
+            &vault_root.vault_pubkey,
+            &vault.vrt_mint,
+            &depositor,
+            &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
+            &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+            &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+            &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+            None,
+            amount_to_mint,
+        )
         .await
     }
 
@@ -1468,6 +1536,43 @@ impl VaultProgramClient {
             )
             .await?;
         Ok(())
+    }
+
+    /// Mints tokens to an ATA owned by the `to` address
+    pub async fn mint_spl_to(
+        &mut self,
+        mint: &Pubkey,
+        to: &Pubkey,
+        amount: u64,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &[
+                        create_associated_token_account_idempotent(
+                            &self.payer.pubkey(),
+                            to,
+                            mint,
+                            &spl_token::id(),
+                        ),
+                        spl_token::instruction::mint_to(
+                            &spl_token::id(),
+                            mint,
+                            &get_associated_token_address(to, mint),
+                            &self.payer.pubkey(),
+                            &[],
+                            amount,
+                        )
+                        .unwrap(),
+                    ],
+                    Some(&self.payer.pubkey()),
+                    &[&self.payer],
+                    blockhash,
+                ),
+                CommitmentLevel::Processed,
+            )
+            .await
     }
 }
 

@@ -48,7 +48,10 @@ pub fn process_close_vault_update_state_tracker(
         msg!("Warning: VaultUpdateStateTracker is an invalid epoch");
     } else {
         // The VaultUpdateStateTracker shall have updated every operator ticket before closing
-        if vault_update_state_tracker.last_updated_index != vault.operator_count.saturating_sub(1) {
+        if vault.operator_count > 0
+            && vault_update_state_tracker.last_updated_index
+                != vault.operator_count.saturating_sub(1)
+        {
             msg!("VaultUpdateStateTracker is not fully updated");
             return Err(VaultError::VaultUpdateStateTrackerInvalid.into());
         }

@@ -99,7 +99,7 @@ impl TestBuilder {
     }
 
     /// Mints tokens to an ATA owned by the `to` address
-    pub async fn mint_to(
+    pub async fn mint_spl_to(
         &mut self,
         mint: &Pubkey,
         to: &Pubkey,

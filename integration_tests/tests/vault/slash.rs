@@ -37,7 +37,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .mint_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
+            .mint_spl_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
             .await
             .unwrap();
 

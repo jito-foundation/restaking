@@ -28,7 +28,7 @@ mod tests {
         let depositor = Keypair::new();
         fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
         fixture
-            .mint_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
+            .mint_spl_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
             .await
             .unwrap();
         fixture
