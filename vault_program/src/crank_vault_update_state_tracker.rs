@@ -48,9 +48,8 @@ pub fn process_crank_vault_update_state_tracker(
     let vault_update_state_tracker =
         VaultUpdateStateTracker::try_from_slice_mut(&mut vault_update_state_tracker_data)?;
 
-    // 0 is a special case
-    if vault_operator_delegation.index == 0 {
-        if vault_update_state_tracker.last_updated_index != u64::MAX {
+    if vault_update_state_tracker.last_updated_index == u64::MAX {
+        if vault_operator_delegation.index != 0 {
             msg!("VaultUpdateStateTracker incorrect index");
             return Err(VaultError::VaultUpdateIncorrectIndex.into());
         }

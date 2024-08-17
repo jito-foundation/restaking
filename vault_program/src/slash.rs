@@ -279,7 +279,7 @@ fn slash_and_update_vault(
     // undo the delegation, slash then accumulate the delegation
     vault
         .delegation_state
-        .undo(&vault_operator_delegation.delegation_state)?;
+        .subtract(&vault_operator_delegation.delegation_state)?;
     vault_operator_delegation
         .delegation_state
         .slash(slash_amount)?;

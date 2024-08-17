@@ -52,7 +52,7 @@ pub fn process_cooldown_delegation(
 
     vault
         .delegation_state
-        .undo(&vault_operator_delegation.delegation_state)?;
+        .subtract(&vault_operator_delegation.delegation_state)?;
     if for_withdrawal {
         vault_operator_delegation
             .delegation_state

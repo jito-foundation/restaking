@@ -245,7 +245,9 @@ pub enum VaultInstruction {
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_update_state_tracker")]
     #[account(3, writable, signer, name = "payer")]
-    CloseVaultUpdateStateTracker,
+    CloseVaultUpdateStateTracker {
+        ncn_epoch: u64
+    },
 
     /// Creates token metadata for the vault LRT
     #[account(0, name = "vault")]

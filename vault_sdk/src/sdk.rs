@@ -654,6 +654,7 @@ pub fn close_vault_update_state_tracker(
     vault: &Pubkey,
     vault_update_state_tracker: &Pubkey,
     payer: &Pubkey,
+    ncn_epoch: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -664,7 +665,7 @@ pub fn close_vault_update_state_tracker(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CloseVaultUpdateStateTracker
+        data: VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch }
             .try_to_vec()
             .unwrap(),
     }

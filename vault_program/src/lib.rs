@@ -219,9 +219,9 @@ pub fn process_instruction(
             msg!("Instruction: CrankVaultUpdateStateTracker");
             process_crank_vault_update_state_tracker(program_id, accounts)
         }
-        VaultInstruction::CloseVaultUpdateStateTracker => {
+        VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch } => {
             msg!("Instruction: CloseVaultUpdateStateTracker");
-            process_close_vault_update_state_tracker(program_id, accounts)
+            process_close_vault_update_state_tracker(program_id, accounts, ncn_epoch)
         }
         // ------------------------------------------
         // Vault slashing

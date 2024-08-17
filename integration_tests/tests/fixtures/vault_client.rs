@@ -69,16 +69,14 @@ impl VaultProgramClient {
     pub async fn configure_depositor(
         &mut self,
         vault_root: &VaultRoot,
-        depositor: &Keypair,
+        depositor: &Pubkey,
         amount_to_mint: u64,
     ) -> TestResult<()> {
-        self._airdrop(&depositor.pubkey(), 100.0).await?;
+        self._airdrop(depositor, 100.0).await?;
         let vault = self.get_vault(&vault_root.vault_pubkey).await?;
-        self.create_ata(&vault.supported_mint, &depositor.pubkey())
-            .await?;
-        self.create_ata(&vault.vrt_mint, &depositor.pubkey())
-            .await?;
-        self.mint_spl_to(&vault.supported_mint, &depositor.pubkey(), amount_to_mint)
+        self.create_ata(&vault.supported_mint, depositor).await?;
+        self.create_ata(&vault.vrt_mint, depositor).await?;
+        self.mint_spl_to(&vault.supported_mint, depositor, amount_to_mint)
             .await?;
 
         Ok(())
@@ -974,8 +972,12 @@ impl VaultProgramClient {
             .await?;
         }
 
-        self.close_vault_update_state_tracker(&vault_pubkey, &vault_update_state_tracker)
-            .await?;
+        self.close_vault_update_state_tracker(
+            &vault_pubkey,
+            &vault_update_state_tracker,
+            slot / config.epoch_length,
+        )
+        .await?;
 
         Ok(())
     }
@@ -1082,6 +1084,7 @@ impl VaultProgramClient {
         &mut self,
         vault_pubkey: &Pubkey,
         vault_update_state_tracker: &Pubkey,
+        ncn_epoch: u64,
     ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -1092,6 +1095,7 @@ impl VaultProgramClient {
                 vault_pubkey,
                 vault_update_state_tracker,
                 &self.payer.pubkey(),
+                ncn_epoch,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],

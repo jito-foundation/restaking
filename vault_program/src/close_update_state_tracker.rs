@@ -12,9 +12,12 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
+/// Close the VaultUpdateStateTracker
+/// Can close previous epochs to get rent back, but it shall not update the current epoch
 pub fn process_close_vault_update_state_tracker(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
+    ncn_epoch: u64,
 ) -> ProgramResult {
     let [config, vault, vault_update_state_tracker_info, payer] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -25,8 +28,6 @@ pub fn process_close_vault_update_state_tracker(
     load_config(program_id, config, false)?;
     load_vault(program_id, vault, true)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    let ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
     load_vault_update_state_tracker(
         program_id,
         vault_update_state_tracker_info,
@@ -43,9 +44,16 @@ pub fn process_close_vault_update_state_tracker(
     let vault_update_state_tracker =
         VaultUpdateStateTracker::try_from_slice_mut(&mut vault_update_state_tracker_data)?;
 
+    let config = Config::try_from_slice(&config_data)?;
+    let current_ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
+
     // The VaultUpdateStateTracker shall be up-to-date before closing
-    if ncn_epoch != vault_update_state_tracker.ncn_epoch {
-        msg!("Warning: VaultUpdateStateTracker is an invalid epoch");
+    if ncn_epoch != current_ncn_epoch {
+        msg!(
+            "Warning: VaultUpdateStateTracker is from an old epoch ({}), current epoch is {}",
+            ncn_epoch,
+            current_ncn_epoch
+        );
     } else {
         // The VaultUpdateStateTracker shall have updated every operator ticket before closing
         if vault.operator_count > 0
@@ -53,7 +61,7 @@ pub fn process_close_vault_update_state_tracker(
                 != vault.operator_count.saturating_sub(1)
         {
             msg!("VaultUpdateStateTracker is not fully updated");
-            return Err(VaultError::VaultUpdateStateTrackerInvalid.into());
+            return Err(VaultError::VaultUpdateStateNotFinishedUpdating.into());
         }
         msg!("Finished updating VaultUpdateStateTracker");
 

@@ -25,7 +25,7 @@ pub enum VaultError {
     VaultUpdateNeeded = 2018,
     VaultIsUpdated = 2019,
     VaultUpdateIncorrectIndex = 2020,
-    VaultUpdateStateTrackerInvalid = 2021,
+    VaultUpdateStateNotFinishedUpdating = 2021,
     VaultSecurityOverflow = 2022,
     VaultSlashIncomplete = 2023,
     VaultSecurityUnderflow = 2024,

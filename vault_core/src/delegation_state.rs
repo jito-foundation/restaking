@@ -29,7 +29,7 @@ pub struct DelegationState {
 }
 
 impl DelegationState {
-    pub fn undo(&mut self, other: &Self) -> Result<(), VaultError> {
+    pub fn subtract(&mut self, other: &Self) -> Result<(), VaultError> {
         self.staked_amount = self
             .staked_amount
             .checked_sub(other.staked_amount)
@@ -278,7 +278,7 @@ mod tests {
             cooling_down_for_withdraw_amount: 5,
         };
         let copy = delegation_state.clone();
-        delegation_state.undo(&copy).unwrap();
+        delegation_state.subtract(&copy).unwrap();
         assert_eq!(delegation_state, DelegationState::default());
     }
 
@@ -298,7 +298,7 @@ mod tests {
             enqueued_for_withdraw_amount: 20,
             cooling_down_for_withdraw_amount: 25,
         };
-        delegation_state_1.undo(&delegation_state_2).unwrap();
+        delegation_state_1.subtract(&delegation_state_2).unwrap();
         assert_eq!(delegation_state_1.staked_amount, 5);
         assert_eq!(delegation_state_1.enqueued_for_cooldown_amount, 10);
         assert_eq!(delegation_state_1.cooling_down_amount, 15);
