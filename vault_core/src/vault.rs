@@ -135,6 +135,54 @@ impl Vault {
         }
     }
 
+    /// Replace all secondary admins that were equal to the old admin to the new admin
+    pub fn update_secondary_admin(&mut self, old_admin: &Pubkey, new_admin: &Pubkey) {
+        if self.delegation_admin.eq(old_admin) {
+            self.delegation_admin = *new_admin;
+            msg!("Delegation admin set to {:?}", new_admin);
+        }
+
+        if self.operator_admin.eq(old_admin) {
+            self.operator_admin = *new_admin;
+            msg!("Operator admin set to {:?}", new_admin);
+        }
+
+        if self.ncn_admin.eq(old_admin) {
+            self.ncn_admin = *new_admin;
+            msg!("Ncn admin set to {:?}", new_admin);
+        }
+
+        if self.slasher_admin.eq(old_admin) {
+            self.slasher_admin = *new_admin;
+            msg!("Slasher admin set to {:?}", new_admin);
+        }
+
+        if self.capacity_admin.eq(old_admin) {
+            self.capacity_admin = *new_admin;
+            msg!("Capacity admin set to {:?}", new_admin);
+        }
+
+        if self.fee_wallet.eq(old_admin) {
+            self.fee_wallet = *new_admin;
+            msg!("Fee wallet set to {:?}", new_admin);
+        }
+
+        if self.mint_burn_admin.eq(old_admin) {
+            self.mint_burn_admin = *new_admin;
+            msg!("Mint burn admin set to {:?}", new_admin);
+        }
+
+        if self.withdraw_admin.eq(old_admin) {
+            self.withdraw_admin = *new_admin;
+            msg!("Withdraw admin set to {:?}", new_admin);
+        }
+
+        if self.fee_admin.eq(old_admin) {
+            self.fee_admin = *new_admin;
+            msg!("Fee admin set to {:?}", new_admin);
+        }
+    }
+
     // ------------------------------------------
     // Asset accounting and tracking
     // ------------------------------------------
@@ -241,6 +289,45 @@ mod tests {
     use solana_program::pubkey::Pubkey;
 
     use crate::vault::Vault;
+
+    #[test]
+    fn test_update_secondary_admin_ok() {
+        let old_admin = Pubkey::new_unique();
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            old_admin,
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.mint_burn_admin = old_admin;
+
+        assert_eq!(vault.delegation_admin, old_admin);
+        assert_eq!(vault.operator_admin, old_admin);
+        assert_eq!(vault.ncn_admin, old_admin);
+        assert_eq!(vault.slasher_admin, old_admin);
+        assert_eq!(vault.capacity_admin, old_admin);
+        assert_eq!(vault.fee_wallet, old_admin);
+        assert_eq!(vault.mint_burn_admin, old_admin);
+        assert_eq!(vault.withdraw_admin, old_admin);
+        assert_eq!(vault.fee_admin, old_admin);
+
+        let new_admin = Pubkey::new_unique();
+        vault.update_secondary_admin(&old_admin, &new_admin);
+
+        assert_eq!(vault.delegation_admin, new_admin);
+        assert_eq!(vault.operator_admin, new_admin);
+        assert_eq!(vault.ncn_admin, new_admin);
+        assert_eq!(vault.slasher_admin, new_admin);
+        assert_eq!(vault.capacity_admin, new_admin);
+        assert_eq!(vault.fee_wallet, new_admin);
+        assert_eq!(vault.mint_burn_admin, new_admin);
+        assert_eq!(vault.withdraw_admin, new_admin);
+        assert_eq!(vault.fee_admin, new_admin);
+    }
 
     #[test]
     fn test_deposit_ratio_simple_ok() {
