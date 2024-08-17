@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
 
@@ -57,5 +57,36 @@ impl VaultUpdateStateTracker {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    pub fn load(
+        program_id: &Pubkey,
+        vault_update_delegation_ticket: &AccountInfo,
+        vault: &AccountInfo,
+        ncn_epoch: u64,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if vault_update_delegation_ticket.owner.ne(program_id) {
+            msg!("Vault update delegations ticket has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if vault_update_delegation_ticket.data_is_empty() {
+            msg!("Vault update delegations ticket data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !vault_update_delegation_ticket.is_writable {
+            msg!("Vault update delegations ticket is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if vault_update_delegation_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
+            msg!("Vault update delegations ticket discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let expected_pubkey = Self::find_program_address(program_id, vault.key, ncn_epoch).0;
+        if vault_update_delegation_ticket.key.ne(&expected_pubkey) {
+            msg!("Vault update delegations ticket is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

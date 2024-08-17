@@ -84,12 +84,12 @@ impl VaultProgramClient {
 
     pub async fn get_config(&mut self, account: &Pubkey) -> Result<Config, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Config::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(Config::try_from_slice_unchecked(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault(&mut self, account: &Pubkey) -> Result<Vault, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(Vault::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(Vault::try_from_slice_unchecked(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_ncn_ticket(
@@ -99,7 +99,7 @@ impl VaultProgramClient {
     ) -> Result<VaultNcnTicket, TestError> {
         let account = VaultNcnTicket::find_program_address(&jito_vault_program::id(), vault, ncn).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultNcnTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(VaultNcnTicket::try_from_slice_unchecked(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_operator_delegation(
@@ -114,7 +114,10 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultOperatorDelegation::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(
+            VaultOperatorDelegation::try_from_slice_unchecked(&mut account.data.as_slice())?
+                .clone(),
+        )
     }
 
     pub async fn get_vault_staker_withdrawal_ticket(
@@ -131,7 +134,10 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultStakerWithdrawalTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(
+            VaultStakerWithdrawalTicket::try_from_slice_unchecked(&mut account.data.as_slice())?
+                .clone(),
+        )
     }
 
     pub async fn get_vault_ncn_slasher_ticket(
@@ -148,7 +154,7 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultNcnSlasherTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(VaultNcnSlasherTicket::try_from_slice_unchecked(&mut account.data.as_slice())?.clone())
     }
 
     pub async fn get_vault_ncn_slasher_operator_ticket(
@@ -169,7 +175,10 @@ impl VaultProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(
+            VaultNcnSlasherOperatorTicket::try_from_slice_unchecked(&mut account.data.as_slice())?
+                .clone(),
+        )
     }
 
     pub async fn get_vault_update_state_tracker(
@@ -181,7 +190,10 @@ impl VaultProgramClient {
             VaultUpdateStateTracker::find_program_address(&jito_vault_program::id(), vault, epoch)
                 .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(VaultUpdateStateTracker::try_from_slice(&mut account.data.as_slice())?.clone())
+        Ok(
+            VaultUpdateStateTracker::try_from_slice_unchecked(&mut account.data.as_slice())?
+                .clone(),
+        )
     }
 
     pub async fn get_token_metadata(

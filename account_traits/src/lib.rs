@@ -17,7 +17,7 @@ pub trait AccountDeserialize: Sized + Pod + Discriminator {
     ///
     /// # Returns
     /// * `Result<&Self, ProgramError>` - The deserialized struct as a reference or an error
-    fn try_from_slice(data: &[u8]) -> Result<&Self, ProgramError> {
+    fn try_from_slice_unchecked(data: &[u8]) -> Result<&Self, ProgramError> {
         if data.first() != Some(&Self::DISCRIMINATOR) {
             msg!(
                 "Discriminator is invalid; expected {}, got {}",
@@ -38,7 +38,7 @@ pub trait AccountDeserialize: Sized + Pod + Discriminator {
     ///
     /// # Returns
     /// * `Result<&mut Self, ProgramError>` - The deserialized struct as a reference or an error
-    fn try_from_slice_mut(data: &mut [u8]) -> Result<&mut Self, ProgramError> {
+    fn try_from_slice_unchecked_mut(data: &mut [u8]) -> Result<&mut Self, ProgramError> {
         if data.first() != Some(&Self::DISCRIMINATOR) {
             msg!(
                 "Discriminator is invalid; expected {}, got {}",

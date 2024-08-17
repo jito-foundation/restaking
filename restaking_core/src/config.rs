@@ -1,7 +1,10 @@
 //! Global configuration account for the restaking program
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, msg, program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
 /// The discriminator for the global configuration account
 impl Discriminator for Config {
@@ -66,5 +69,42 @@ impl Config {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    /// Attempts to load the account as [`Config`], returning an error if it's not valid.
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `account` - The account to load the configuration from
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    pub fn load(
+        program_id: &Pubkey,
+        account: &AccountInfo,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if account.owner.ne(program_id) {
+            msg!("Config account has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if account.data_is_empty() {
+            msg!("Config account data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !account.is_writable {
+            msg!("Config account is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
+            msg!("Config account discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if account.key.ne(&Self::find_program_address(program_id).0) {
+            msg!("Config account is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

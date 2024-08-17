@@ -1,11 +1,8 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::loader::{load_ncn, load_ncn_vault_slasher_ticket};
+use jito_restaking_core::{ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTicket};
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault, load_vault_ncn_slasher_ticket},
-    vault::Vault,
-    vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -23,12 +20,12 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_ncn(&config.restaking_program, ncn, false)?;
-    load_ncn_vault_slasher_ticket(
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    NcnVaultSlasherTicket::load(
         &config.restaking_program,
         ncn_vault_slasher_ticket,
         ncn,
@@ -36,7 +33,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         slasher,
         false,
     )?;
-    load_vault_ncn_slasher_ticket(
+    VaultNcnSlasherTicket::load(
         program_id,
         vault_ncn_slasher_ticket,
         vault,
@@ -48,7 +45,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
 
     // The Vault slasher admin shall be the signer of the transaction
     let vault_data = vault.data.borrow();
-    let vault = Vault::try_from_slice(&vault_data)?;
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
         msg!("Invalid slasher admin for vault");
         return Err(VaultError::VaultSlasherAdminInvalid.into());
@@ -63,7 +60,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
     // The VaultNcnSlasherTicket shall be ready to be activated
     let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow_mut();
     let vault_ncn_slasher_ticket =
-        VaultNcnSlasherTicket::try_from_slice_mut(&mut vault_ncn_slasher_ticket_data)?;
+        VaultNcnSlasherTicket::try_from_slice_unchecked_mut(&mut vault_ncn_slasher_ticket_data)?;
     if !vault_ncn_slasher_ticket
         .state
         .activate(Clock::get()?.slot, config.epoch_length)

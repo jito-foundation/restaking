@@ -5,13 +5,8 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::loader::{load_ncn, load_ncn_vault_ticket};
-use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault},
-    vault::Vault,
-    vault_ncn_ticket::VaultNcnTicket,
-};
+use jito_restaking_core::{ncn::Ncn, ncn_vault_ticket::NcnVaultTicket};
+use jito_vault_core::{config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -36,12 +31,12 @@ pub fn process_initialize_vault_ncn_ticket(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, true)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, true)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_ncn(&config.restaking_program, ncn, false)?;
-    load_ncn_vault_ticket(
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    NcnVaultTicket::load(
         &config.restaking_program,
         ncn_vault_ticket,
         ncn,
@@ -64,7 +59,7 @@ pub fn process_initialize_vault_ncn_ticket(
 
     // The vault NCN admin shall be the signer
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     if vault.ncn_admin.ne(vault_ncn_admin.key) {
         msg!("Invalid NCN admin for vault");
         return Err(VaultError::VaultNcnAdminInvalid.into());
@@ -94,7 +89,8 @@ pub fn process_initialize_vault_ncn_ticket(
     )?;
     let mut vault_ncn_ticket_data = vault_ncn_ticket.try_borrow_mut_data()?;
     vault_ncn_ticket_data[0] = VaultNcnTicket::DISCRIMINATOR;
-    let vault_ncn_ticket = VaultNcnTicket::try_from_slice_mut(&mut vault_ncn_ticket_data)?;
+    let vault_ncn_ticket =
+        VaultNcnTicket::try_from_slice_unchecked_mut(&mut vault_ncn_ticket_data)?;
     *vault_ncn_ticket = VaultNcnTicket::new(
         *vault_info.key,
         *ncn.key,

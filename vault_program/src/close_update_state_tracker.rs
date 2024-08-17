@@ -1,10 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::{close_program_account, loader::load_signer};
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault, load_vault_update_state_tracker},
-    vault::Vault,
-    vault_update_state_tracker::VaultUpdateStateTracker,
+    config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -25,10 +22,10 @@ pub fn process_close_vault_update_state_tracker(
 
     let slot = Clock::get()?.slot;
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault, true)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault, true)?;
     let config_data = config.data.borrow();
-    load_vault_update_state_tracker(
+    VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker_info,
         vault,
@@ -38,13 +35,14 @@ pub fn process_close_vault_update_state_tracker(
     load_signer(payer, true)?;
 
     let mut vault_data = vault.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker_info.data.borrow_mut();
-    let vault_update_state_tracker =
-        VaultUpdateStateTracker::try_from_slice_mut(&mut vault_update_state_tracker_data)?;
+    let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
+        &mut vault_update_state_tracker_data,
+    )?;
 
-    let config = Config::try_from_slice(&config_data)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     let current_ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
 
     // The VaultUpdateStateTracker shall be up-to-date before closing

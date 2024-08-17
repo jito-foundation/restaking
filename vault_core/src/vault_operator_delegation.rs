@@ -2,7 +2,7 @@
 
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
 
@@ -94,5 +94,47 @@ impl VaultOperatorDelegation {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    /// Loads the [`VaultOperatorDelegation`] account
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault_operator_delegation` - The [`VaultOperatorDelegation`] account
+    /// * `vault` - The vault account
+    /// * `operator` - The operator account
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    pub fn load(
+        program_id: &Pubkey,
+        vault_operator_delegation: &AccountInfo,
+        vault: &AccountInfo,
+        operator: &AccountInfo,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if vault_operator_delegation.owner.ne(program_id) {
+            msg!("Vault operator ticket account has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if vault_operator_delegation.data_is_empty() {
+            msg!("Vault operator ticket account data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !vault_operator_delegation.is_writable {
+            msg!("Vault operator ticket account is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if vault_operator_delegation.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
+            msg!("Vault operator ticket account discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let expected_pubkey = Self::find_program_address(program_id, vault.key, operator.key).0;
+        if vault_operator_delegation.key.ne(&expected_pubkey) {
+            msg!("Vault operator ticket account is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

@@ -7,7 +7,7 @@ use jito_jsm_core::{
         load_signer, load_system_account, load_system_program, load_token_mint, load_token_program,
     },
 };
-use jito_vault_core::{config::Config, loader::load_config, vault::Vault};
+use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke,
@@ -27,7 +27,7 @@ pub fn process_initialize_vault(
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-    load_config(program_id, config, true)?;
+    Config::load(program_id, config, true)?;
     load_system_account(vault, true)?;
     load_system_account(vrt_mint, true)?;
     load_signer(vrt_mint, true)?;
@@ -75,7 +75,7 @@ pub fn process_initialize_vault(
     }
 
     let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
 
     // Initialize vault
     {
@@ -92,7 +92,7 @@ pub fn process_initialize_vault(
 
         let mut vault_data = vault.try_borrow_mut_data()?;
         vault_data[0] = Vault::DISCRIMINATOR;
-        let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+        let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
         if deposit_fee_bps > config.fee_cap_bps || withdrawal_fee_bps > config.fee_cap_bps {
             msg!("Fee cap exceeds maximum allowed of {}", config.fee_cap_bps);

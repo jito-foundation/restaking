@@ -2,7 +2,7 @@
 //! including the admin, voter, and the number of NCN and vault accounts.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for Operator {
     const DISCRIMINATOR: u8 = 3;
@@ -103,5 +103,46 @@ impl Operator {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    /// Attempts to load the account as [`Operator`], returning an error if it's not valid.
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `account` - The account to load the operator from
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    pub fn load(
+        program_id: &Pubkey,
+        account: &AccountInfo,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if account.owner.ne(program_id) {
+            msg!("Operator account has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if account.data_is_empty() {
+            msg!("Operator account data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !account.is_writable {
+            msg!("Operator account is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
+            msg!("Operator account discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let base = Self::try_from_slice_unchecked(&account.data.borrow())?.base;
+        if account
+            .key
+            .ne(&Self::find_program_address(program_id, &base).0)
+        {
+            msg!("Operator account is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

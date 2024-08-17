@@ -2,11 +2,7 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_token_mint, load_token_program,
 };
-use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault},
-    vault::Vault,
-};
+use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
@@ -33,12 +29,12 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     load_token_mint(vrt_mint)?;
     load_signer(depositor, false)?;
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(
         depositor_token_account,
         depositor.key,
@@ -71,7 +67,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
 
     // The Vault shall be up-to-date before minting
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault update is needed");
         return Err(VaultError::VaultUpdateNeeded.into());

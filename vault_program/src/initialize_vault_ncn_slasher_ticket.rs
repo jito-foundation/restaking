@@ -5,13 +5,9 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{
-    loader::{load_config, load_ncn, load_ncn_vault_slasher_ticket},
-    ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-};
+use jito_restaking_core::{ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTicket};
 use jito_vault_core::{
-    config::Config, loader::load_vault, vault::Vault,
-    vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -30,12 +26,12 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
-    load_ncn(&config.restaking_program, ncn, false)?;
-    load_ncn_vault_slasher_ticket(
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    NcnVaultSlasherTicket::load(
         &config.restaking_program,
         ncn_slasher_ticket,
         ncn,
@@ -67,7 +63,7 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
 
     // The Vault slasher admin shall be the signer of the transaction
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     if vault.slasher_admin.ne(vault_slasher_admin.key) {
         msg!("Invalid slasher admin for vault");
         return Err(VaultError::VaultSlasherAdminInvalid.into());
@@ -97,12 +93,12 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
 
     let ncn_vault_slasher_ticket_data = ncn_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =
-        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
+        NcnVaultSlasherTicket::try_from_slice_unchecked(&ncn_vault_slasher_ticket_data)?;
 
     let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.try_borrow_mut_data()?;
     vault_ncn_slasher_ticket_data[0] = VaultNcnSlasherTicket::DISCRIMINATOR;
     let vault_ncn_slasher_ticket =
-        VaultNcnSlasherTicket::try_from_slice_mut(&mut vault_ncn_slasher_ticket_data)?;
+        VaultNcnSlasherTicket::try_from_slice_unchecked_mut(&mut vault_ncn_slasher_ticket_data)?;
     *vault_ncn_slasher_ticket = VaultNcnSlasherTicket::new(
         *vault_info.key,
         *ncn.key,
