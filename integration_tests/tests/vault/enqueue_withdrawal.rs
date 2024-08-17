@@ -142,7 +142,10 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.vrt_pending_withdrawal, user_vrt_in_withdrawal_ticket);
+        assert_eq!(
+            vault.vrt_enqueued_for_cooldown_amount,
+            user_vrt_in_withdrawal_ticket
+        );
     }
 
     // #[tokio::test]

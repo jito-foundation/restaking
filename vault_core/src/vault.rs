@@ -40,8 +40,14 @@ pub struct Vault {
     /// Rolled-up stake state for all operators in the set
     pub delegation_state: DelegationState,
 
-    /// The amount of tokens that are reserved for withdrawal
-    pub vrt_pending_withdrawal: u64,
+    /// The amount of VRT tokens in VaultStakerWithdrawalTickets enqueued for cooldown
+    pub vrt_enqueued_for_cooldown_amount: u64,
+
+    /// The amount of VRT tokens cooling down
+    pub vrt_cooling_down_amount: u64,
+
+    /// The amount of VRT tokens ready to claim
+    pub vrt_ready_to_claim_amount: u64,
 
     // ------------------------------------------
     // Admins
@@ -141,7 +147,8 @@ impl Vault {
             vault_index,
             vrt_supply: 0,
             tokens_deposited: 0,
-            vrt_pending_withdrawal: 0,
+            vrt_enqueued_for_cooldown_amount: 0,
+            vrt_cooling_down_amount: 0,
             last_fee_change_slot: 0,
             last_full_state_update_slot: 0,
             deposit_fee_bps,
@@ -152,6 +159,7 @@ impl Vault {
             bump,
             reserved: [0; 11],
             delegation_state: DelegationState::default(),
+            vrt_ready_to_claim_amount: 0,
         }
     }
 

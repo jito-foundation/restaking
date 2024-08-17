@@ -339,7 +339,9 @@ mod tests {
                 cooling_down_for_withdraw_amount: 0,
             }
         );
-        assert_eq!(vault.vrt_pending_withdrawal, 0);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount, 0);
+        assert_eq!(vault.vrt_cooling_down_amount, 0);
 
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(

@@ -84,16 +84,6 @@ pub fn process_burn_withdrawal_ticket(
         return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());
     }
 
-    msg!(
-        "vault_staker_withdrawal_ticket.vrt_amount: {:?}",
-        vault_staker_withdrawal_ticket.vrt_amount
-    );
-    msg!("vrt supply: {:?}", vault.vrt_supply);
-    msg!("tokens deposited: {:?}", vault.tokens_deposited);
-    msg!(
-        "total security: {:?}",
-        vault.delegation_state.total_security()?
-    );
     let redemption_amount =
         vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.vrt_amount)?;
     let max_withdrawable = vault
@@ -120,8 +110,8 @@ pub fn process_burn_withdrawal_ticket(
         .tokens_deposited
         .checked_sub(amount_to_withdraw)
         .ok_or(ProgramError::ArithmeticOverflow)?;
-    vault.vrt_pending_withdrawal = vault
-        .vrt_pending_withdrawal
+    vault.vrt_ready_to_claim_amount = vault
+        .vrt_ready_to_claim_amount
         .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
 

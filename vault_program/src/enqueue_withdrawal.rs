@@ -177,7 +177,7 @@ pub fn process_enqueue_withdrawal(
     )?;
 
     let vrt_pending_withdrawal = vault
-        .vrt_pending_withdrawal
+        .vrt_enqueued_for_cooldown_amount
         .checked_add(amount_to_vault_staker_withdrawal_ticket)
         .ok_or(VaultError::VaultOverflow)?;
     if vrt_pending_withdrawal > vault.vrt_supply {
@@ -185,7 +185,7 @@ pub fn process_enqueue_withdrawal(
         return Err(VaultError::VaultOverflow.into());
     }
 
-    vault.vrt_pending_withdrawal = vrt_pending_withdrawal;
+    vault.vrt_enqueued_for_cooldown_amount = vrt_pending_withdrawal;
 
     Ok(())
 }

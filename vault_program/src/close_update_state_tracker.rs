@@ -53,8 +53,17 @@ pub fn process_close_vault_update_state_tracker(
             return Err(VaultError::VaultUpdateStateTrackerInvalid.into());
         }
         msg!("Finished updating VaultUpdateStateTracker");
+
         vault.delegation_state = vault_update_state_tracker.delegation_state;
         vault.last_full_state_update_slot = slot;
+
+        // shift the VRT amounts down by one
+        vault.vrt_ready_to_claim_amount = vault
+            .vrt_ready_to_claim_amount
+            .checked_add(vault.vrt_cooling_down_amount)
+            .ok_or(VaultError::VaultOverflow)?;
+        vault.vrt_cooling_down_amount = vault.vrt_enqueued_for_cooldown_amount;
+        vault.vrt_enqueued_for_cooldown_amount = 0;
     }
 
     msg!("Closing VaultUpdateStateTracker");
