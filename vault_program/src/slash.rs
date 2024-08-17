@@ -127,12 +127,12 @@ pub fn process_slash(
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice(&vault_ncn_slasher_ticket_data)?;
     check_states_active_or_cooling_down(
-        &vault_ncn_slasher_ticket,
-        &ncn_vault_slasher_ticket,
-        &ncn_operator_state,
-        &operator_vault_ticket,
-        &vault_ncn_ticket,
-        &ncn_vault_ticket,
+        vault_ncn_slasher_ticket,
+        ncn_vault_slasher_ticket,
+        ncn_operator_state,
+        operator_vault_ticket,
+        vault_ncn_ticket,
+        ncn_vault_ticket,
         slot,
         epoch_length,
     )?;
@@ -188,6 +188,7 @@ pub fn process_slash(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn check_states_active_or_cooling_down(
     vault_ncn_slasher_ticket: &VaultNcnSlasherTicket,
     ncn_vault_slasher_ticket: &NcnVaultSlasherTicket,

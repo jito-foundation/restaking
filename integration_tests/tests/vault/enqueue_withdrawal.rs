@@ -4,8 +4,10 @@ mod tests {
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
 
-    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
-    use crate::fixtures::vault_client::VaultStakerWithdrawalTicketRoot;
+    use crate::fixtures::{
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::VaultStakerWithdrawalTicketRoot,
+    };
 
     #[tokio::test]
     async fn test_enqueue_withdraw_with_fee_success() {

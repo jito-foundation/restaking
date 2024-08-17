@@ -1,7 +1,12 @@
+use std::cmp::min;
+
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{
-    load_associated_token_account, load_signer, load_system_program, load_token_mint,
-    load_token_program,
+use jito_jsm_core::{
+    close_program_account,
+    loader::{
+        load_associated_token_account, load_signer, load_system_program, load_token_mint,
+        load_token_program,
+    },
 };
 use jito_vault_core::{
     config::Config,
@@ -12,7 +17,12 @@ use jito_vault_core::{
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
+    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
+    sysvar::Sysvar,
+};
+use spl_token::{
+    instruction::{burn, close_account, transfer},
+    state::Account,
 };
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
@@ -22,6 +32,7 @@ use solana_program::{
 pub fn process_burn_withdrawal_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
+    min_amount_out: u64,
 ) -> ProgramResult {
     let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, token_program, system_program] =
         accounts
@@ -73,172 +84,139 @@ pub fn process_burn_withdrawal_ticket(
         return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());
     }
 
-    // // find the current redemption amount and the original redemption amount in the withdrawal ticket
-    // // TODO (LB): this logic is buggy no doubt
-    // let redemption_amount =
-    //     vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.vrt_amount)?;
-    // let original_redemption_amount = vault_staker_withdrawal_ticket.withdraw_allocation_amount;
-    //
-    // let actual_withdraw_amount = if redemption_amount > original_redemption_amount {
-    //     // The program can guarantee the original redemption amount, but if the redemption amount
-    //     // is greater than the original amount, there were rewards that accrued
-    //     // to the VRT.
-    //     // The program attempts to figure out how much more of the asset can be unstaked to fulfill
-    //     // as much of the redemption amount as possible.
-    //     // Available unstaked assets is equal to:
-    //     // the amount of tokens deposited - any delegated security - the amount reserved for withdraw tickets
-    //     let tokens_deposited_in_vault = vault.tokens_deposited;
-    //     let delegated_security_in_vault = vault_delegation_list.total_security()?;
-    //     let assets_reserved_for_withdrawal_tickets = vault.withdrawable_reserve_amount;
-    //
-    //     let available_unstaked_assets = tokens_deposited_in_vault
-    //         .checked_sub(delegated_security_in_vault)
-    //         .and_then(|x| x.checked_sub(assets_reserved_for_withdrawal_tickets))
-    //         .ok_or(ProgramError::InsufficientFunds)?;
-    //
-    //     // Calculate the extra amount that can be withdrawn
-    //     let extra_amount = redemption_amount
-    //         .checked_sub(original_redemption_amount)
-    //         .ok_or(ProgramError::ArithmeticOverflow)?;
-    //
-    //     // Determine the actual amount to withdraw
-    //     original_redemption_amount
-    //         .checked_add(extra_amount.min(available_unstaked_assets))
-    //         .ok_or(ProgramError::ArithmeticOverflow)?
-    // } else {
-    //     redemption_amount
-    // };
-    //
-    // let vrt_to_burn = vault.calculate_vrt_mint_amount(actual_withdraw_amount)?;
-    // let vrt_to_burn = std::cmp::min(vrt_to_burn, vault_staker_withdrawal_ticket.vrt_amount);
-    //
-    // // burn the assets + close the token account + withdraw token account
-    // {
-    //     let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =
-    //         VaultStakerWithdrawalTicket::find_program_address(
-    //             program_id,
-    //             vault_info.key,
-    //             staker.key,
-    //             &vault_staker_withdrawal_ticket.base,
-    //         );
-    //     vault_staker_withdraw_seeds.push(vec![vault_staker_withdraw_bump]);
-    //     let seed_slices: Vec<&[u8]> = vault_staker_withdraw_seeds
-    //         .iter()
-    //         .map(|seed| seed.as_slice())
-    //         .collect();
-    //
-    //     drop(vault_staker_withdrawal_ticket_data);
-    //
-    //     // burn the VRT tokens
-    //     invoke_signed(
-    //         &burn(
-    //             &spl_token::id(),
-    //             vault_staker_withdrawal_ticket_token_account.key,
-    //             vrt_mint.key,
-    //             vault_staker_withdrawal_ticket_info.key,
-    //             &[],
-    //             vrt_to_burn,
-    //         )?,
-    //         &[
-    //             vault_staker_withdrawal_ticket_token_account.clone(),
-    //             vrt_mint.clone(),
-    //             vault_staker_withdrawal_ticket_info.clone(),
-    //         ],
-    //         &[&seed_slices],
-    //     )?;
-    //
-    //     // if there are any excess, transfer them to the staker
-    //     let vrt_token_account =
-    //         Account::unpack(&vault_staker_withdrawal_ticket_token_account.data.borrow())?;
-    //     if vrt_token_account.amount > 0 {
-    //         invoke_signed(
-    //             &transfer(
-    //                 &spl_token::id(),
-    //                 vault_staker_withdrawal_ticket_token_account.key,
-    //                 staker_vrt_token_account.key,
-    //                 vault_staker_withdrawal_ticket_info.key,
-    //                 &[],
-    //                 vrt_token_account.amount,
-    //             )?,
-    //             &[
-    //                 vault_staker_withdrawal_ticket_token_account.clone(),
-    //                 staker_vrt_token_account.clone(),
-    //                 vault_staker_withdrawal_ticket_info.clone(),
-    //             ],
-    //             &[&seed_slices],
-    //         )?;
-    //     }
-    //
-    //     // close token account
-    //     invoke_signed(
-    //         &close_account(
-    //             &spl_token::id(),
-    //             vault_staker_withdrawal_ticket_token_account.key,
-    //             staker.key,
-    //             vault_staker_withdrawal_ticket_info.key,
-    //             &[],
-    //         )?,
-    //         &[
-    //             vault_staker_withdrawal_ticket_token_account.clone(),
-    //             staker.clone(),
-    //             vault_staker_withdrawal_ticket_info.clone(),
-    //         ],
-    //         &[&seed_slices],
-    //     )?;
-    //
-    //     close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
-    // }
-    //
-    // vault.vrt_supply = vault
-    //     .vrt_supply
-    //     .checked_sub(vrt_to_burn)
-    //     .ok_or(ProgramError::ArithmeticOverflow)?;
-    // // TODO (LB): https://github.com/jito-foundation/restaking/issues/24
-    // //  If a withdraw ticket is created and there is a slashing event before the withdraw ticket
-    // //  has fully matured, the program can end up in a situation where the original_redemption_amount
-    // //  is greater than the total withdrawable_reserve_amount. This is a bug and needs to be fixed.
-    // //  see test_burn_withdrawal_ticket_with_slashing_before_update
-    // msg!(
-    //     "vault.withdrawable_reserve_amount before: {:?}",
-    //     vault.withdrawable_reserve_amount
-    // );
-    //
-    // vault.withdrawable_reserve_amount = vault
-    //     .withdrawable_reserve_amount
-    //     .checked_sub(original_redemption_amount)
-    //     .ok_or(ProgramError::ArithmeticOverflow)?;
-    //
-    // msg!(
-    //     "vault.withdrawable_reserve_amount after: {:?}",
-    //     vault.withdrawable_reserve_amount
-    // );
-    //
-    // vault.tokens_deposited = vault
-    //     .tokens_deposited
-    //     .checked_sub(actual_withdraw_amount)
-    //     .ok_or(ProgramError::InsufficientFunds)?;
-    //
-    // // transfer the assets to the staker
-    // let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-    // vault_seeds.push(vec![vault_bump]);
-    // let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
-    // drop(vault_data); // avoid double borrow
-    // invoke_signed(
-    //     &transfer(
-    //         &spl_token::id(),
-    //         vault_token_account.key,
-    //         staker_token_account.key,
-    //         vault_info.key,
-    //         &[],
-    //         actual_withdraw_amount,
-    //     )?,
-    //     &[
-    //         vault_token_account.clone(),
-    //         staker_token_account.clone(),
-    //         vault_info.clone(),
-    //     ],
-    //     &[&seed_slices],
-    // )?;
+    msg!(
+        "vault_staker_withdrawal_ticket.vrt_amount: {:?}",
+        vault_staker_withdrawal_ticket.vrt_amount
+    );
+    msg!("vrt supply: {:?}", vault.vrt_supply);
+    msg!("tokens deposited: {:?}", vault.tokens_deposited);
+    msg!(
+        "total security: {:?}",
+        vault.delegation_state.total_security()?
+    );
+    let redemption_amount =
+        vault.calculate_assets_returned_amount(vault_staker_withdrawal_ticket.vrt_amount)?;
+    let max_withdrawable = vault
+        .tokens_deposited
+        .checked_sub(vault.delegation_state.total_security()?)
+        .ok_or(VaultError::VaultUnderflow)?;
+
+    let amount_to_withdraw = min(redemption_amount, max_withdrawable);
+    if amount_to_withdraw < min_amount_out {
+        msg!(
+            "Slippage error, expected more than {} out, got {}",
+            min_amount_out,
+            amount_to_withdraw
+        );
+        return Err(VaultError::SlippageError.into());
+    }
+    let vrt_to_burn = vault.calculate_vrt_mint_amount(amount_to_withdraw)?;
+
+    vault.vrt_supply = vault
+        .vrt_supply
+        .checked_sub(vrt_to_burn)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    vault.tokens_deposited = vault
+        .tokens_deposited
+        .checked_sub(amount_to_withdraw)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    vault.vrt_pending_withdrawal = vault
+        .vrt_pending_withdrawal
+        .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    // burn the VRT tokens
+    let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =
+        VaultStakerWithdrawalTicket::find_program_address(
+            program_id,
+            vault_info.key,
+            staker.key,
+            &vault_staker_withdrawal_ticket.base,
+        );
+    vault_staker_withdraw_seeds.push(vec![vault_staker_withdraw_bump]);
+    let seed_slices: Vec<&[u8]> = vault_staker_withdraw_seeds
+        .iter()
+        .map(|seed| seed.as_slice())
+        .collect();
+    drop(vault_staker_withdrawal_ticket_data);
+    // burn the VRT tokens
+    invoke_signed(
+        &burn(
+            &spl_token::id(),
+            vault_staker_withdrawal_ticket_token_account.key,
+            vrt_mint.key,
+            vault_staker_withdrawal_ticket_info.key,
+            &[],
+            vrt_to_burn,
+        )?,
+        &[
+            vault_staker_withdrawal_ticket_token_account.clone(),
+            vrt_mint.clone(),
+            vault_staker_withdrawal_ticket_info.clone(),
+        ],
+        &[&seed_slices],
+    )?;
+
+    let vrt_token_excess_amount =
+        Account::unpack(&vault_staker_withdrawal_ticket_token_account.data.borrow())?.amount;
+    if vrt_token_excess_amount > 0 {
+        invoke_signed(
+            &transfer(
+                &spl_token::id(),
+                vault_staker_withdrawal_ticket_token_account.key,
+                staker_vrt_token_account.key,
+                vault_staker_withdrawal_ticket_info.key,
+                &[],
+                vrt_token_excess_amount,
+            )?,
+            &[
+                vault_staker_withdrawal_ticket_token_account.clone(),
+                staker_vrt_token_account.clone(),
+                vault_staker_withdrawal_ticket_info.clone(),
+            ],
+            &[&seed_slices],
+        )?;
+    }
+
+    // close token account
+    invoke_signed(
+        &close_account(
+            &spl_token::id(),
+            vault_staker_withdrawal_ticket_token_account.key,
+            staker.key,
+            vault_staker_withdrawal_ticket_info.key,
+            &[],
+        )?,
+        &[
+            vault_staker_withdrawal_ticket_token_account.clone(),
+            staker.clone(),
+            vault_staker_withdrawal_ticket_info.clone(),
+        ],
+        &[&seed_slices],
+    )?;
+    close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
+
+    // transfer the assets to the staker
+    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
+    vault_seeds.push(vec![vault_bump]);
+    let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+    drop(vault_data); // avoid double borrow
+    invoke_signed(
+        &transfer(
+            &spl_token::id(),
+            vault_token_account.key,
+            staker_token_account.key,
+            vault_info.key,
+            &[],
+            amount_to_withdraw,
+        )?,
+        &[
+            vault_token_account.clone(),
+            staker_token_account.clone(),
+            vault_info.clone(),
+        ],
+        &[&seed_slices],
+    )?;
 
     Ok(())
 }

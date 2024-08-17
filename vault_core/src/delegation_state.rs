@@ -1,9 +1,10 @@
+use std::cmp::min;
+
 use bytemuck::{Pod, Zeroable};
 use jito_vault_sdk::error::VaultError;
 use solana_program::msg;
-use std::cmp::min;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]
 #[repr(C)]
 pub struct DelegationState {
     /// The amount of stake that is currently active on the operator
@@ -28,17 +29,7 @@ pub struct DelegationState {
 }
 
 impl DelegationState {
-    pub fn new() -> Self {
-        Self {
-            staked_amount: 0,
-            enqueued_for_cooldown_amount: 0,
-            cooling_down_amount: 0,
-            enqueued_for_withdraw_amount: 0,
-            cooling_down_for_withdraw_amount: 0,
-        }
-    }
-
-    pub fn undo(&mut self, other: &DelegationState) -> Result<(), VaultError> {
+    pub fn undo(&mut self, other: &Self) -> Result<(), VaultError> {
         self.staked_amount = self
             .staked_amount
             .checked_sub(other.staked_amount)
@@ -63,7 +54,7 @@ impl DelegationState {
     }
 
     /// Used to accumulate the state of other into the state of self
-    pub fn accumulate(&mut self, other: &DelegationState) -> Result<(), VaultError> {
+    pub fn accumulate(&mut self, other: &Self) -> Result<(), VaultError> {
         self.staked_amount = self
             .staked_amount
             .checked_add(other.staked_amount)
@@ -288,7 +279,7 @@ mod tests {
         };
         let copy = delegation_state.clone();
         delegation_state.undo(&copy).unwrap();
-        assert_eq!(delegation_state, DelegationState::new());
+        assert_eq!(delegation_state, DelegationState::default());
     }
 
     #[test]
@@ -317,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_delegate() {
-        let mut delegation_state = DelegationState::new();
+        let mut delegation_state = DelegationState::default();
         delegation_state.delegate(100).unwrap();
         assert_eq!(delegation_state.staked_amount, 100);
         assert_eq!(delegation_state.total_security().unwrap(), 100);
@@ -325,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_delegate_cooling_down() {
-        let mut delegation_state = DelegationState::new();
+        let mut delegation_state = DelegationState::default();
 
         delegation_state.delegate(100).unwrap();
 
@@ -349,7 +340,7 @@ mod tests {
 
     #[test]
     fn test_delegate_cooling_down_for_withdraw() {
-        let mut delegation_state = DelegationState::new();
+        let mut delegation_state = DelegationState::default();
 
         delegation_state.delegate(100).unwrap();
 

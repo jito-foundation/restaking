@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
+
+    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
 
     #[tokio::test]
     async fn test_add_delegation_ok() {

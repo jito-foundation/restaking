@@ -1,7 +1,8 @@
-use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::pubkey::Pubkey;
+
+use crate::delegation_state::DelegationState;
 
 impl Discriminator for VaultUpdateStateTracker {
     const DISCRIMINATOR: u8 = 9;
@@ -30,7 +31,7 @@ impl VaultUpdateStateTracker {
             vault,
             ncn_epoch,
             last_updated_index: u64::MAX,
-            delegation_state: DelegationState::new(),
+            delegation_state: DelegationState::default(),
         }
     }
     /// Returns the seeds for the PDA

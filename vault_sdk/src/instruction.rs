@@ -158,7 +158,9 @@ pub enum VaultInstruction {
     #[account(8, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
-    BurnWithdrawTicket,
+    BurnWithdrawTicket {
+        min_amount_out: u64
+    },
 
     /// Sets the max tokens that can be deposited into the VRT
     #[account(0, name = "config")]

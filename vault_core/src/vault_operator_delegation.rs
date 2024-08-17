@@ -1,9 +1,10 @@
 //! The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 
-use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use solana_program::pubkey::Pubkey;
+
+use crate::delegation_state::DelegationState;
 
 impl Discriminator for VaultOperatorDelegation {
     const DISCRIMINATOR: u8 = 4;
@@ -40,7 +41,7 @@ impl VaultOperatorDelegation {
             vault,
             operator,
             last_update_slot: 0,
-            delegation_state: DelegationState::new(),
+            delegation_state: DelegationState::default(),
             index,
             bump,
             reserved: [0; 7],

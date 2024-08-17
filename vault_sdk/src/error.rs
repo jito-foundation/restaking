@@ -60,6 +60,7 @@ pub enum VaultError {
     VaultNcnSlasherOperatorMaxSlashableExceeded = 4019,
 
     VaultDelegationUpdateOverflow = 5000,
+    SlippageError,
 }
 
 impl From<VaultError> for ProgramError {

@@ -1,9 +1,10 @@
 //! The vault is responsible for holding tokens and minting VRT tokens.
-use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+
+use crate::delegation_state::DelegationState;
 
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
@@ -150,7 +151,7 @@ impl Vault {
             slasher_count: 0,
             bump,
             reserved: [0; 11],
-            delegation_state: DelegationState::new(),
+            delegation_state: DelegationState::default(),
         }
     }
 

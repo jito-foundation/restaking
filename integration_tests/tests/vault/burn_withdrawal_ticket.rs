@@ -1,12 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
-    use crate::fixtures::vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot};
-    use jito_vault_core::config::Config;
+    use jito_vault_core::{config::Config, delegation_state::DelegationState};
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::Keypair;
-    use solana_sdk::signer::Signer;
+    use solana_sdk::{signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address;
+
+    use crate::fixtures::{
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
+    };
 
     /// One can't burn the withdraw ticket until a full epoch has passed
     #[tokio::test]
@@ -88,7 +90,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
             .await;
         assert_vault_error(
             transaction_error,
@@ -192,7 +194,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
             .await;
         assert_vault_error(
             transaction_error,
@@ -203,6 +205,155 @@ mod tests {
     /// Tests basic withdraw ticket with no rewards or slashing incidents
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_basic_success() {
+        const MINT_AMOUNT: u64 = 100_000;
+
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin: _,
+            vault_root,
+            restaking_config_admin: _,
+            ncn_root: _,
+            operator_roots,
+            slashers_amounts: _,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
+        fixture
+            .mint_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        fixture
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
+            .await
+            .unwrap();
+        vault_program_client
+            .mint_to(
+                &vault_root.vault_pubkey,
+                &vault.vrt_mint,
+                &depositor,
+                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
+                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+                None,
+                MINT_AMOUNT,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        // Delegate all funds to the operator
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_cooldown_delegation(
+                &vault_root,
+                &operator_roots[0].operator_pubkey,
+                MINT_AMOUNT,
+                true,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(vault.tokens_deposited, 0);
+        assert_eq!(vault.vrt_supply, 0);
+        assert_eq!(
+            vault.delegation_state,
+            DelegationState {
+                staked_amount: 0,
+                enqueued_for_cooldown_amount: 0,
+                cooling_down_amount: 0,
+                enqueued_for_withdraw_amount: 0,
+                cooling_down_for_withdraw_amount: 0,
+            }
+        );
+        assert_eq!(vault.vrt_pending_withdrawal, 0);
+
+        let depositor_token_account = fixture
+            .get_token_account(&get_associated_token_address(
+                &depositor.pubkey(),
+                &vault.supported_mint,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(depositor_token_account.amount, MINT_AMOUNT);
+    }
+
+    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    #[tokio::test]
+    async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
@@ -306,10 +457,10 @@ mod tests {
             .await
             .unwrap();
 
-        vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
-            .await
-            .unwrap();
+        let result = vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .await;
+        assert_vault_error(result, VaultError::SlippageError);
     }
 
     // /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of

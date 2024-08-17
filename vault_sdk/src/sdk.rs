@@ -317,18 +317,22 @@ pub fn add_delegation(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn cooldown_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     amount: u64,
+    for_withdrawal: bool,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
@@ -336,7 +340,7 @@ pub fn cooldown_delegation(
         accounts,
         data: VaultInstruction::CooldownDelegation {
             amount,
-            for_withdrawal: false, // TODO (LB)
+            for_withdrawal,
         }
         .try_to_vec()
         .unwrap(),
@@ -580,6 +584,7 @@ pub fn burn_withdrawal_ticket(
     staker_vrt_token_account: &Pubkey,
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
+    min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -597,7 +602,9 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawTicket.try_to_vec().unwrap(),
+        data: VaultInstruction::BurnWithdrawTicket { min_amount_out }
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
