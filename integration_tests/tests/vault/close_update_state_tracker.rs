@@ -1,10 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
-    use crate::fixtures::vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot};
     use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
+
+    use crate::fixtures::{
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
+    };
 
     #[tokio::test]
     async fn test_close_update_state_tracker_no_operators_ok() {

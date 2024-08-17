@@ -1,11 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
-    use crate::fixtures::vault_client::assert_vault_error;
-    use jito_vault_core::config::Config;
-    use jito_vault_core::vault_operator_delegation::VaultOperatorDelegation;
+    use jito_vault_core::{config::Config, vault_operator_delegation::VaultOperatorDelegation};
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
+
+    use crate::fixtures::{
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::assert_vault_error,
+    };
 
     #[tokio::test]
     async fn test_cooldown_delegation_invalid_admin_fails() {

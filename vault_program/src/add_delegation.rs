@@ -48,15 +48,12 @@ pub fn process_add_delegation(
     }
 
     // The vault shall not over allocate assets for delegation
-    // TODO (LB): need to check withdrawable reserve amount
+    // TODO (LB): need to check withdrawable reserve amount to make sure not to over-delegate
     let assets_available_for_staking = vault
         .tokens_deposited
         .checked_sub(vault.delegation_state.total_security()?)
         .ok_or(VaultError::VaultOverflow)?;
-    msg!(
-        "Assets available for staking: {}",
-        assets_available_for_staking
-    );
+
     if amount > assets_available_for_staking {
         msg!("Insufficient funds in vault for delegation");
         return Err(VaultError::VaultInsufficientFunds.into());
