@@ -5,12 +5,8 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{
-    loader::{load_config, load_ncn, load_operator},
-    ncn::Ncn,
-    ncn_operator_state::NcnOperatorState,
-    operator::Operator,
-};
+use jito_restaking_core::config::Config;
+use jito_restaking_core::{ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator};
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -31,9 +27,9 @@ pub fn process_initialize_ncn_operator_state(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_ncn(program_id, ncn_info, true)?;
-    load_operator(program_id, operator, true)?;
+    Config::load(program_id, config, false)?;
+    Ncn::load(program_id, ncn_info, true)?;
+    Operator::load(program_id, operator, true)?;
     load_system_account(ncn_operator_state, true)?;
     load_signer(ncn_operator_admin, false)?;
     load_signer(payer, true)?;
@@ -50,7 +46,7 @@ pub fn process_initialize_ncn_operator_state(
 
     // The NCN operator admin must be the signer for adding an operator to the NCN
     let mut ncn_data = ncn_info.data.borrow_mut();
-    let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
+    let ncn = Ncn::try_from_slice_unchecked_mut(&mut ncn_data)?;
     if ncn.operator_admin.ne(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
         return Err(RestakingError::NcnOperatorAdminInvalid.into());
@@ -71,7 +67,8 @@ pub fn process_initialize_ncn_operator_state(
 
     let mut ncn_operator_state_data = ncn_operator_state.try_borrow_mut_data()?;
     ncn_operator_state_data[0] = NcnOperatorState::DISCRIMINATOR;
-    let ncn_operator_state = NcnOperatorState::try_from_slice_mut(&mut ncn_operator_state_data)?;
+    let ncn_operator_state =
+        NcnOperatorState::try_from_slice_unchecked_mut(&mut ncn_operator_state_data)?;
     *ncn_operator_state = NcnOperatorState::new(
         *ncn_info.key,
         *operator.key,
@@ -80,7 +77,7 @@ pub fn process_initialize_ncn_operator_state(
     );
 
     let mut operator_data = operator.data.borrow_mut();
-    let operator = Operator::try_from_slice_mut(&mut operator_data)?;
+    let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
 
     ncn.operator_count = ncn
         .operator_count

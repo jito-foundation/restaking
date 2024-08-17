@@ -5,12 +5,10 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::loader::{load_operator, load_operator_vault_ticket};
+use jito_restaking_core::operator::Operator;
+use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault},
-    vault::Vault,
-    vault_operator_delegation::VaultOperatorDelegation,
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -29,12 +27,12 @@ pub fn process_initialize_vault_operator_delegation(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_operator(&config.restaking_program, operator, false)?;
-    load_operator_vault_ticket(
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Operator::load(&config.restaking_program, operator, false)?;
+    OperatorVaultTicket::load(
         &config.restaking_program,
         operator_vault_ticket,
         operator,
@@ -60,7 +58,7 @@ pub fn process_initialize_vault_operator_delegation(
 
     // The vault operator admin shall be a signer on the transaction
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     if vault.operator_admin.ne(vault_operator_admin.key) {
         msg!("Invalid operator admin for vault");
         return Err(VaultError::VaultOperatorAdminInvalid.into());
@@ -91,7 +89,7 @@ pub fn process_initialize_vault_operator_delegation(
     let mut vault_operator_delegation_data = vault_operator_delegation.try_borrow_mut_data()?;
     vault_operator_delegation_data[0] = VaultOperatorDelegation::DISCRIMINATOR;
     let vault_operator_delegation =
-        VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
+        VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
     *vault_operator_delegation = VaultOperatorDelegation::new(
         *vault_info.key,
         *operator.key,

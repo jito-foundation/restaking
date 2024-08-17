@@ -1,25 +1,14 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_program};
+use jito_restaking_core::ncn::Ncn;
+use jito_restaking_core::operator::Operator;
 use jito_restaking_core::{
-    loader::{
-        load_ncn, load_ncn_operator_state, load_ncn_vault_slasher_ticket, load_ncn_vault_ticket,
-        load_operator, load_operator_vault_ticket,
-    },
-    ncn_operator_state::NcnOperatorState,
-    ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket,
-    operator_vault_ticket::OperatorVaultTicket,
+    ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
-    config::Config,
-    loader::{
-        load_config, load_vault, load_vault_ncn_slasher_operator_ticket, load_vault_ncn_ticket,
-        load_vault_operator_delegation,
-    },
-    vault::Vault,
-    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
-    vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
-    vault_ncn_ticket::VaultNcnTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_delegation::VaultOperatorDelegation,
 };
 use jito_vault_sdk::error::VaultError;
@@ -41,43 +30,43 @@ pub fn process_slash(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_ncn(&config.restaking_program, ncn, false)?;
-    load_operator(&config.restaking_program, operator, false)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    Operator::load(&config.restaking_program, operator, false)?;
     // slasher
-    load_ncn_operator_state(
+    NcnOperatorState::load(
         &config.restaking_program,
         ncn_operator_state,
         ncn,
         operator,
         false,
     )?;
-    load_ncn_vault_ticket(
+    NcnVaultTicket::load(
         &config.restaking_program,
         ncn_vault_ticket,
         ncn,
         vault_info,
         false,
     )?;
-    load_operator_vault_ticket(
+    OperatorVaultTicket::load(
         &config.restaking_program,
         operator_vault_ticket,
         operator,
         vault_info,
         false,
     )?;
-    load_vault_ncn_ticket(program_id, vault_ncn_ticket, vault_info, ncn, false)?;
-    load_vault_operator_delegation(
+    VaultNcnTicket::load(program_id, vault_ncn_ticket, vault_info, ncn, false)?;
+    VaultOperatorDelegation::load(
         program_id,
         vault_operator_delegation,
         vault_info,
         operator,
         true,
     )?;
-    load_ncn_vault_slasher_ticket(
+    NcnVaultSlasherTicket::load(
         &config.restaking_program,
         ncn_vault_slasher_ticket,
         ncn,
@@ -86,7 +75,7 @@ pub fn process_slash(
         false,
     )?;
     let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
-    load_vault_ncn_slasher_operator_ticket(
+    VaultNcnSlasherOperatorTicket::load(
         program_id,
         vault_ncn_slasher_operator_ticket,
         vault_info,
@@ -97,7 +86,7 @@ pub fn process_slash(
         true,
     )?;
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_associated_token_account(slasher_token_account, slasher.key, &vault.supported_mint)?;
     load_token_program(token_program)?;
@@ -113,19 +102,20 @@ pub fn process_slash(
 
     // All ticket states shall be active or cooling down
     let vault_ncn_ticket_data = vault_ncn_ticket.data.borrow();
-    let vault_ncn_ticket = VaultNcnTicket::try_from_slice(&vault_ncn_ticket_data)?;
+    let vault_ncn_ticket = VaultNcnTicket::try_from_slice_unchecked(&vault_ncn_ticket_data)?;
     let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
-    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
+    let ncn_vault_ticket = NcnVaultTicket::try_from_slice_unchecked(&ncn_vault_ticket_data)?;
     let operator_vault_ticket_data = operator_vault_ticket.data.borrow();
-    let operator_vault_ticket = OperatorVaultTicket::try_from_slice(&operator_vault_ticket_data)?;
+    let operator_vault_ticket =
+        OperatorVaultTicket::try_from_slice_unchecked(&operator_vault_ticket_data)?;
     let ncn_operator_state_data = ncn_operator_state.data.borrow();
-    let ncn_operator_state = NcnOperatorState::try_from_slice(&ncn_operator_state_data)?;
+    let ncn_operator_state = NcnOperatorState::try_from_slice_unchecked(&ncn_operator_state_data)?;
     let ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow();
     let ncn_vault_slasher_ticket =
-        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
+        NcnVaultSlasherTicket::try_from_slice_unchecked(&ncn_vault_slasher_ticket_data)?;
     let vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow();
     let vault_ncn_slasher_ticket =
-        VaultNcnSlasherTicket::try_from_slice(&vault_ncn_slasher_ticket_data)?;
+        VaultNcnSlasherTicket::try_from_slice_unchecked(&vault_ncn_slasher_ticket_data)?;
     check_states_active_or_cooling_down(
         vault_ncn_slasher_ticket,
         ncn_vault_slasher_ticket,
@@ -140,9 +130,10 @@ pub fn process_slash(
     // The amount slashed for this operator shall not exceed the maximum slashable amount per epoch
     let mut vault_ncn_slasher_operator_ticket_data =
         vault_ncn_slasher_operator_ticket.data.borrow_mut();
-    let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
-        &mut vault_ncn_slasher_operator_ticket_data,
-    )?;
+    let vault_ncn_slasher_operator_ticket =
+        VaultNcnSlasherOperatorTicket::try_from_slice_unchecked_mut(
+            &mut vault_ncn_slasher_operator_ticket_data,
+        )?;
     check_slashing_amount_not_exceeded(
         vault_ncn_slasher_ticket,
         vault_ncn_slasher_operator_ticket,
@@ -152,7 +143,7 @@ pub fn process_slash(
     // The VaultOperatorDelegation shall be slashed and the vault amounts shall be updated
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
-        VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
+        VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
     slash_and_update_vault(
         vault,
         vault_operator_delegation,

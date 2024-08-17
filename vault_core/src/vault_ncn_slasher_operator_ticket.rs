@@ -2,6 +2,9 @@
 //! by a slasher for a given node consensus network (NCN) and vault for a given epoch.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use solana_program::account_info::AccountInfo;
+use solana_program::msg;
+use solana_program::program_error::ProgramError;
 use solana_program::pubkey::Pubkey;
 
 impl Discriminator for VaultNcnSlasherOperatorTicket {
@@ -116,5 +119,64 @@ impl VaultNcnSlasherOperatorTicket {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    /// Loads the [`VaultNcnSlasherOperatorTicket`] account
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault_ncn_slasher_operator_ticket` - The [`VaultNcnSlasherOperatorTicket`] account
+    /// * `vault` - The [`Vault`] account
+    /// * `ncn` - The ncn account
+    /// * `slasher` - The slasher account
+    /// * `operator` - The operator account
+    /// * `ncn_epoch` - The ncn epoch
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    #[allow(clippy::too_many_arguments)]
+    pub fn load(
+        program_id: &Pubkey,
+        vault_ncn_slasher_operator_ticket: &AccountInfo,
+        vault: &AccountInfo,
+        ncn: &AccountInfo,
+        slasher: &AccountInfo,
+        operator: &AccountInfo,
+        ncn_epoch: u64,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if vault_ncn_slasher_operator_ticket.owner.ne(program_id) {
+            msg!("Vault NCN slasher operator has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if vault_ncn_slasher_operator_ticket.data_is_empty() {
+            msg!("Vault NCN slasher operator data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !vault_ncn_slasher_operator_ticket.is_writable {
+            msg!("Vault NCN slasher operator is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if vault_ncn_slasher_operator_ticket.data.borrow()[0]
+            .ne(&VaultNcnSlasherOperatorTicket::DISCRIMINATOR)
+        {
+            msg!("Vault NCN slasher operator discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let expected_pubkey = VaultNcnSlasherOperatorTicket::find_program_address(
+            program_id,
+            vault.key,
+            ncn.key,
+            slasher.key,
+            operator.key,
+            ncn_epoch,
+        )
+        .0;
+        if vault_ncn_slasher_operator_ticket.key.ne(&expected_pubkey) {
+            msg!("Vault NCN slasher operator is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

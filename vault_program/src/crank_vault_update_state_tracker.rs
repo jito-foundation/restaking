@@ -1,11 +1,8 @@
 use jito_account_traits::AccountDeserialize;
-use jito_restaking_core::loader::load_operator;
+use jito_restaking_core::operator::Operator;
+use jito_vault_core::vault::Vault;
 use jito_vault_core::{
-    config::Config,
-    loader::{
-        load_config, load_vault, load_vault_operator_delegation, load_vault_update_state_tracker,
-    },
-    vault_operator_delegation::VaultOperatorDelegation,
+    config::Config, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use jito_vault_sdk::error::VaultError;
@@ -25,14 +22,14 @@ pub fn process_crank_vault_update_state_tracker(
 
     let slot = Clock::get()?.slot;
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_operator(&config.restaking_program, operator, false)?;
-    load_vault_operator_delegation(program_id, vault_operator_delegation, vault, operator, true)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Operator::load(&config.restaking_program, operator, false)?;
+    VaultOperatorDelegation::load(program_id, vault_operator_delegation, vault, operator, true)?;
     let ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
-    load_vault_update_state_tracker(
+    VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,
         vault,
@@ -42,11 +39,12 @@ pub fn process_crank_vault_update_state_tracker(
 
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
-        VaultOperatorDelegation::try_from_slice_mut(&mut vault_operator_delegation_data)?;
+        VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.data.borrow_mut();
-    let vault_update_state_tracker =
-        VaultUpdateStateTracker::try_from_slice_mut(&mut vault_update_state_tracker_data)?;
+    let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
+        &mut vault_update_state_tracker_data,
+    )?;
 
     if vault_update_state_tracker.last_updated_index == u64::MAX {
         if vault_operator_delegation.index != 0 {

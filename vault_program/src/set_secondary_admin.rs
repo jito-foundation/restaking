@@ -1,9 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_vault_core::{
-    loader::{load_config, load_vault},
-    vault::Vault,
-};
+use jito_vault_core::config::Config;
+use jito_vault_core::vault::Vault;
 use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -20,13 +18,13 @@ pub fn process_set_secondary_admin(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault, true)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault, true)?;
     load_signer(admin, false)?;
 
     // The vault admin shall be the signer of the transaction
     let mut vault_data = vault.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     if vault.admin.ne(admin.key) {
         msg!("Invalid admin for vault");
         return Err(VaultError::VaultAdminInvalid.into());

@@ -9,10 +9,7 @@ use jito_jsm_core::{
     },
 };
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault},
-    vault::Vault,
-    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+    config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -46,11 +43,11 @@ pub fn process_enqueue_withdrawal(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, true)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, true)?;
     load_system_account(vault_staker_withdrawal_ticket, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(
         vault_staker_withdrawal_ticket_token_account,
         vault_staker_withdrawal_ticket.key,
@@ -98,7 +95,7 @@ pub fn process_enqueue_withdrawal(
     }
 
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     // The vault shall be up-to-date
     if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault update is needed");
@@ -129,8 +126,9 @@ pub fn process_enqueue_withdrawal(
     )?;
     let mut vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow_mut();
     vault_staker_withdrawal_ticket_data[0] = VaultStakerWithdrawalTicket::DISCRIMINATOR;
-    let vault_staker_withdrawal_ticket =
-        VaultStakerWithdrawalTicket::try_from_slice_mut(&mut vault_staker_withdrawal_ticket_data)?;
+    let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked_mut(
+        &mut vault_staker_withdrawal_ticket_data,
+    )?;
     *vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::new(
         *vault_info.key,
         *staker.key,

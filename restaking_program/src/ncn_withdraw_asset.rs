@@ -1,6 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_signer, load_token_program};
-use jito_restaking_core::{loader::load_ncn, ncn::Ncn};
+use jito_restaking_core::ncn::Ncn;
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
@@ -20,10 +20,10 @@ pub fn process_ncn_withdraw_asset(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_ncn(program_id, ncn_info, false)?;
+    Ncn::load(program_id, ncn_info, false)?;
     load_associated_token_account(ncn_token_account, ncn_info.key, &token_mint)?;
     let ncn_data = ncn_info.data.borrow();
-    let ncn = Ncn::try_from_slice(&ncn_data)?;
+    let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
     load_associated_token_account(
         receiver_token_account,
         &ncn.withdraw_fee_wallet,

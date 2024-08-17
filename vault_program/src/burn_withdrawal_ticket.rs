@@ -9,10 +9,7 @@ use jito_jsm_core::{
     },
 };
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault, load_vault_staker_withdrawal_ticket},
-    vault::Vault,
-    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+    config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -40,16 +37,16 @@ pub fn process_burn_withdrawal_ticket(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, true)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_token_mint(vrt_mint)?;
     load_signer(staker, false)?;
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
     load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
-    load_vault_staker_withdrawal_ticket(
+    VaultStakerWithdrawalTicket::load(
         program_id,
         vault_staker_withdrawal_ticket_info,
         vault_info,
@@ -65,7 +62,7 @@ pub fn process_burn_withdrawal_ticket(
     load_system_program(system_program)?;
 
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
 
     if vault.vrt_mint.ne(vrt_mint.key) {
         msg!("Vault VRT mint mismatch");
@@ -77,8 +74,9 @@ pub fn process_burn_withdrawal_ticket(
     }
 
     let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket_info.data.borrow();
-    let vault_staker_withdrawal_ticket =
-        VaultStakerWithdrawalTicket::try_from_slice(&vault_staker_withdrawal_ticket_data)?;
+    let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked(
+        &vault_staker_withdrawal_ticket_data,
+    )?;
     if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length)? {
         msg!("Vault staker withdrawal ticket is not withdrawable");
         return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());

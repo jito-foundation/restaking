@@ -4,6 +4,9 @@
 //! associated with the network.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use solana_program::account_info::AccountInfo;
+use solana_program::msg;
+use solana_program::program_error::ProgramError;
 use solana_program::pubkey::Pubkey;
 
 /// The NCN manages the operators, vaults, and slashers associated with a network
@@ -92,5 +95,46 @@ impl Ncn {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    /// Attempts to load the account as [`Ncn`], returning an error if it's not valid.
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `account` - The account to load the NCN from
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    pub fn load(
+        program_id: &Pubkey,
+        account: &AccountInfo,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if account.owner.ne(program_id) {
+            msg!("NCN account has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if account.data_is_empty() {
+            msg!("NCN account data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !account.is_writable {
+            msg!("NCN account is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if account.data.borrow()[0].ne(&Ncn::DISCRIMINATOR) {
+            msg!("NCN account discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let base = Ncn::try_from_slice_unchecked(&account.data.borrow())?.base;
+        if account
+            .key
+            .ne(&Ncn::find_program_address(program_id, &base).0)
+        {
+            msg!("NCN account is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

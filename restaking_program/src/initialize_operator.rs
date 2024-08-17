@@ -5,7 +5,7 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{config::Config, loader::load_config, operator::Operator};
+use jito_restaking_core::{config::Config, operator::Operator};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -17,7 +17,7 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     let [config, operator, admin, base, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-    load_config(program_id, config, true)?;
+    Config::load(program_id, config, true)?;
     load_system_account(operator, true)?;
     load_signer(admin, true)?;
     load_signer(base, false)?;
@@ -44,11 +44,11 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     )?;
 
     let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
 
     let mut operator_data = operator.try_borrow_mut_data()?;
     operator_data[0] = Operator::DISCRIMINATOR;
-    let operator = Operator::try_from_slice_mut(&mut operator_data)?;
+    let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
     *operator = Operator::new(*base.key, *admin.key, config.operator_count, operator_bump);
 
     config.operator_count = config

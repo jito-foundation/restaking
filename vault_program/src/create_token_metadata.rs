@@ -2,10 +2,7 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{
     load_signer, load_system_account, load_system_program, load_token_mint,
 };
-use jito_vault_core::{
-    loader::{load_mpl_metadata_program, load_vault},
-    vault::Vault,
-};
+use jito_vault_core::{loader::load_mpl_metadata_program, vault::Vault};
 use jito_vault_sdk::inline_mpl_token_metadata::instruction::create_metadata_accounts_v3;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program::invoke_signed,
@@ -25,7 +22,7 @@ pub fn process_create_token_metadata(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_vault(program_id, vault_info, false)?;
+    Vault::load(program_id, vault_info, false)?;
     load_signer(admin, false)?;
     load_token_mint(lrt_mint)?;
     load_signer(payer, true)?;
@@ -34,7 +31,7 @@ pub fn process_create_token_metadata(
     load_system_program(system_program)?;
 
     let vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice(&vault_data)?;
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
 
     vault.check_admin(admin)?;
 

@@ -2,7 +2,8 @@
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{program_error::ProgramError, pubkey::Pubkey};
+use solana_program::account_info::AccountInfo;
+use solana_program::{msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultStakerWithdrawalTicket {
     const DISCRIMINATOR: u8 = 7;
@@ -108,5 +109,57 @@ impl VaultStakerWithdrawalTicket {
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
+    }
+
+    /// Loads the [`VaultStakerWithdrawalTicket`] account
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `vault_staker_withdrawal_ticket` - The [`VaultStakerWithdrawalTicket`] account
+    /// * `vault` - The [`Vault`] account
+    /// * `staker` - The staker account
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    pub fn load(
+        program_id: &Pubkey,
+        vault_staker_withdrawal_ticket: &AccountInfo,
+        vault: &AccountInfo,
+        staker: &AccountInfo,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if vault_staker_withdrawal_ticket.owner.ne(program_id) {
+            msg!("Vault staker withdraw ticket has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if vault_staker_withdrawal_ticket.data_is_empty() {
+            msg!("Vault staker withdraw ticket data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !vault_staker_withdrawal_ticket.is_writable {
+            msg!("Vault staker withdraw ticket is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if vault_staker_withdrawal_ticket.data.borrow()[0]
+            .ne(&VaultStakerWithdrawalTicket::DISCRIMINATOR)
+        {
+            msg!("Vault staker withdraw ticket discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let vault_staker_withdraw_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
+        let base = VaultStakerWithdrawalTicket::try_from_slice_unchecked(
+            &vault_staker_withdraw_ticket_data,
+        )?
+        .base;
+        let expected_pubkey = VaultStakerWithdrawalTicket::find_program_address(
+            program_id, vault.key, staker.key, &base,
+        )
+        .0;
+        if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
+            msg!("Vault staker withdraw ticket is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
     }
 }

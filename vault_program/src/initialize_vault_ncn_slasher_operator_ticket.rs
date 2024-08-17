@@ -5,12 +5,11 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::loader::{load_ncn, load_operator};
+use jito_restaking_core::ncn::Ncn;
+use jito_restaking_core::operator::Operator;
+use jito_vault_core::vault_ncn_slasher_ticket::VaultNcnSlasherTicket;
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault, load_vault_ncn_slasher_ticket},
-    vault::Vault,
-    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -29,13 +28,13 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_ncn(&config.restaking_program, ncn, false)?;
-    load_operator(&config.restaking_program, operator, false)?;
-    load_vault_ncn_slasher_ticket(
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    Operator::load(&config.restaking_program, operator, false)?;
+    VaultNcnSlasherTicket::load(
         program_id,
         vault_ncn_slasher_ticket,
         vault_info,
@@ -73,7 +72,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
 
     // The vault shall be up-to-date before adding support for the NCN slasher operator
     let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice(&vault_data)?;
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault update is needed");
         return Err(VaultError::VaultUpdateNeeded.into());
@@ -98,9 +97,10 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     let mut vault_ncn_slasher_operator_ticket_data =
         vault_ncn_slasher_operator_ticket.try_borrow_mut_data()?;
     vault_ncn_slasher_operator_ticket_data[0] = VaultNcnSlasherOperatorTicket::DISCRIMINATOR;
-    let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
-        &mut vault_ncn_slasher_operator_ticket_data,
-    )?;
+    let vault_ncn_slasher_operator_ticket =
+        VaultNcnSlasherOperatorTicket::try_from_slice_unchecked_mut(
+            &mut vault_ncn_slasher_operator_ticket_data,
+        )?;
     *vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::new(
         *vault_info.key,
         *ncn.key,

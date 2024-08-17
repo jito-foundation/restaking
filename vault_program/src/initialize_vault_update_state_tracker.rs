@@ -6,10 +6,7 @@ use jito_jsm_core::{
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault},
-    vault::Vault,
-    vault_update_state_tracker::VaultUpdateStateTracker,
+    config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -27,18 +24,18 @@ pub fn process_initialize_vault_update_state_tracker(
     let [config, vault_info, vault_update_state_tracker, payer, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, true)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, true)?;
     load_system_account(vault_update_state_tracker, true)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
 
     // The vault update state tracker shall not be initialized if an update is not needed
     let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice(&vault_data)?;
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     if !vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
         msg!("Vault is up-to-date");
         return Err(VaultError::VaultIsUpdated.into());
@@ -76,8 +73,9 @@ pub fn process_initialize_vault_update_state_tracker(
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;
-    let vault_update_state_tracker =
-        VaultUpdateStateTracker::try_from_slice_mut(&mut vault_update_state_tracker_data)?;
+    let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
+        &mut vault_update_state_tracker_data,
+    )?;
     *vault_update_state_tracker = VaultUpdateStateTracker::new(*vault_info.key, ncn_epoch);
 
     Ok(())
