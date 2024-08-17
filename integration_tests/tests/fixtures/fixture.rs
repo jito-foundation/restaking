@@ -2,8 +2,7 @@ use std::fmt::{Debug, Formatter};
 
 use jito_vault_sdk::inline_mpl_token_metadata;
 use solana_program::{
-    clock::Clock, native_token::sol_to_lamports, program_pack::Pack, pubkey::Pubkey,
-    system_instruction::transfer,
+    clock::Clock, native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer,
 };
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
@@ -14,8 +13,7 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::state::Account;
-use spl_token_2022::extension::ExtensionType;
+use spl_token_2022::extension::{ExtensionType, StateWithExtensionsOwned};
 
 use crate::fixtures::{
     restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
@@ -189,14 +187,19 @@ impl TestBuilder {
     pub async fn get_token_account(
         &mut self,
         token_account: &Pubkey,
-    ) -> Result<Account, BanksClientError> {
+    ) -> Result<spl_token_2022::state::Account, BanksClientError> {
         let account = self
             .context
             .banks_client
             .get_account(*token_account)
             .await?
             .unwrap();
-        Ok(Account::unpack(&account.data).unwrap())
+
+        let account_info =
+            StateWithExtensionsOwned::<spl_token_2022::state::Account>::unpack(account.data)
+                .unwrap();
+
+        Ok(account_info.base)
     }
 
     /// Mints tokens to an ATA owned by the `to` address
@@ -291,7 +294,6 @@ impl TestBuilder {
         &mut self,
         mint: &Pubkey,
         owner: &Pubkey,
-        token_program: &Pubkey,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
         self.context
@@ -302,7 +304,7 @@ impl TestBuilder {
                         &self.context.payer.pubkey(),
                         owner,
                         mint,
-                        token_program,
+                        &spl_token::id(),
                     )],
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],

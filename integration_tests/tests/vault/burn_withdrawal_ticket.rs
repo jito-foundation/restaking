@@ -48,7 +48,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey(), &spl_token::id())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
         vault_program_client
@@ -141,7 +141,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey(), &spl_token::id())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
         vault_program_client
@@ -250,7 +250,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey(), &spl_token::id())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
         vault_program_client
@@ -406,7 +406,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey(), &spl_token::id())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
         vault_program_client

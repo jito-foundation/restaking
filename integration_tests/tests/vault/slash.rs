@@ -48,7 +48,7 @@ mod tests {
 
         // depositor ATA for VRT
         fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey(), &spl_token::id())
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
             .await
             .unwrap();
 
@@ -95,7 +95,7 @@ mod tests {
         // configure slasher and slash
         let slasher = &slashers_amounts[0].0;
         fixture
-            .create_ata(&vault.supported_mint, &slasher.pubkey(), &spl_token::id())
+            .create_ata(&vault.supported_mint, &slasher.pubkey())
             .await
             .unwrap();
         let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length;
