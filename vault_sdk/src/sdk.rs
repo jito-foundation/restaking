@@ -282,11 +282,25 @@ pub fn set_fees(
     }
 }
 
-pub fn withdrawal_asset(program_id: &Pubkey, amount: u64) -> Instruction {
+pub fn delegate_token_account(
+    program_id: &Pubkey,
+    vrt_mint: &Pubkey,
+    token_account: &Pubkey,
+    owner: &Pubkey,
+    delegate: &Pubkey,
+    amount: u64,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*vrt_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*owner, true),
+        AccountMeta::new_readonly(*delegate, false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+    ];
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
-        data: VaultInstruction::AdminWithdraw { amount }
+        accounts,
+        data: VaultInstruction::DelegateTokenAccount { amount }
             .try_to_vec()
             .unwrap(),
     }

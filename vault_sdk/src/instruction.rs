@@ -204,8 +204,13 @@ pub enum VaultInstruction {
         withdrawal_fee_bps: u16,
     },
 
-    /// Withdraws any non-backing tokens from the vault
-    AdminWithdraw {
+    /// Delegate the token account to a third party
+    #[account(0, name = "vrt_mint")]
+    #[account(1, writable, name = "token_account")]
+    #[account(2, signer, name = "owner")]
+    #[account(3, name = "delegate")]
+    #[account(4, name = "token_program")]
+    DelegateTokenAccount {
         amount: u64
     },
 

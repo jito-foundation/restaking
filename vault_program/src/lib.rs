@@ -6,6 +6,7 @@ mod cooldown_vault_ncn_slasher_ticket;
 mod cooldown_vault_ncn_ticket;
 mod cooldown_vault_operator_ticket;
 mod create_token_metadata;
+mod delegate_token_account;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
@@ -26,7 +27,6 @@ mod update_vault;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
 mod warmup_vault_operator_ticket;
-mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
 use jito_vault_sdk::instruction::VaultInstruction;
@@ -45,6 +45,7 @@ use crate::{
     cooldown_vault_ncn_ticket::process_cooldown_vault_ncn_ticket,
     cooldown_vault_operator_ticket::process_cooldown_vault_operator_ticket,
     create_token_metadata::process_create_token_metadata,
+    delegate_token_account::process_delegate_token_account,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_delegation_list::process_initialize_vault_delegation_list,
@@ -60,7 +61,6 @@ use crate::{
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
     warmup_vault_operator_ticket::process_warmup_vault_operator_ticket,
-    withdrawal_asset::process_withdrawal_asset,
 };
 
 declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
@@ -145,9 +145,9 @@ pub fn process_instruction(
             msg!("Instruction: SetDepositCapacity");
             process_set_deposit_capacity(program_id, accounts, amount)
         }
-        VaultInstruction::AdminWithdraw { amount } => {
+        VaultInstruction::DelegateTokenAccount { amount } => {
             msg!("Instruction: WithdrawalAsset");
-            process_withdrawal_asset(program_id, accounts, amount)
+            process_delegate_token_account(program_id, accounts, amount)
         }
         VaultInstruction::SetFees {
             deposit_fee_bps,

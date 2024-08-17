@@ -39,7 +39,10 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{instruction::initialize_mint2, state::Mint};
+use spl_token::{
+    instruction::initialize_mint2,
+    state::{Account as TokenAccount, Mint},
+};
 
 use crate::fixtures::TestError;
 
@@ -160,6 +163,18 @@ impl VaultProgramClient {
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
         Ok(VaultNcnSlasherOperatorTicket::try_from_slice(&mut account.data.as_slice())?.clone())
+    }
+
+    pub async fn get_token_account(
+        &mut self,
+        wallet_address: &Pubkey,
+        vrt_mint: &Pubkey,
+    ) -> Result<TokenAccount, TestError> {
+        let ata = get_associated_token_address(wallet_address, vrt_mint);
+
+        let account = self.banks_client.get_account(ata).await?.unwrap();
+
+        Ok(TokenAccount::unpack(account.data.as_slice()).unwrap())
     }
 
     pub async fn get_token_metadata(
@@ -653,6 +668,31 @@ impl VaultProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn delegate_token_account(
+        &mut self,
+        vrt_mint: &Pubkey,
+        token_account: &Pubkey,
+        owner: &Keypair,
+        delegate: &Pubkey,
+        amount: u64,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::delegate_token_account(
+                &jito_vault_program::id(),
+                vrt_mint,
+                token_account,
+                &owner.pubkey(),
+                delegate,
+                amount,
+            )],
+            Some(&owner.pubkey()),
+            &[owner],
             blockhash,
         ))
         .await
