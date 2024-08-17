@@ -4,6 +4,8 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+use crate::delegation_state::DelegationState;
+
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
 }
@@ -17,12 +19,39 @@ pub struct Vault {
     /// The base account of the VRT
     pub base: Pubkey,
 
+    // ------------------------------------------
+    // Token information and accounting
+    // ------------------------------------------
     /// Mint of the VRT token
     pub vrt_mint: Pubkey,
+
+    /// The total number of VRT in circulation
+    pub vrt_supply: u64,
 
     /// Mint of the token that is supported by the VRT
     pub supported_mint: Pubkey,
 
+    /// The total number of tokens deposited
+    pub tokens_deposited: u64,
+
+    /// Max capacity of tokens in the vault
+    pub capacity: u64,
+
+    /// Rolled-up stake state for all operators in the set
+    pub delegation_state: DelegationState,
+
+    /// The amount of VRT tokens in VaultStakerWithdrawalTickets enqueued for cooldown
+    pub vrt_enqueued_for_cooldown_amount: u64,
+
+    /// The amount of VRT tokens cooling down
+    pub vrt_cooling_down_amount: u64,
+
+    /// The amount of VRT tokens ready to claim
+    pub vrt_ready_to_claim_amount: u64,
+
+    // ------------------------------------------
+    // Admins
+    // ------------------------------------------
     /// Vault admin
     pub admin: Pubkey,
 
@@ -53,25 +82,17 @@ pub struct Vault {
     /// Optional mint signer
     pub mint_burn_admin: Pubkey,
 
-    /// Max capacity of tokens in the vault
-    pub capacity: u64,
-
+    // ------------------------------------------
+    // Indexing and counters
+    // These are helpful when one needs to iterate through all the accounts
+    // ------------------------------------------
     /// The index of the vault in the vault list
     pub vault_index: u64,
-
-    /// The total number of VRT in circulation
-    pub vrt_supply: u64,
-
-    /// The total number of tokens deposited
-    pub tokens_deposited: u64,
-
-    /// The amount of tokens that are reserved for withdrawal
-    pub withdrawable_reserve_amount: u64,
 
     /// Number of VaultNcnTicket accounts tracked by this vault
     pub ncn_count: u64,
 
-    /// Number of VaultOperatorTicket accounts tracked by this vault
+    /// Number of VaultOperatorDelegation accounts tracked by this vault
     pub operator_count: u64,
 
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault
@@ -79,6 +100,9 @@ pub struct Vault {
 
     /// The slot of the last fee change
     pub last_fee_change_slot: u64,
+
+    /// The slot of the last time the delegations were updated
+    pub last_full_state_update_slot: u64,
 
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
@@ -123,8 +147,10 @@ impl Vault {
             vault_index,
             vrt_supply: 0,
             tokens_deposited: 0,
-            withdrawable_reserve_amount: 0,
+            vrt_enqueued_for_cooldown_amount: 0,
+            vrt_cooling_down_amount: 0,
             last_fee_change_slot: 0,
+            last_full_state_update_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
             ncn_count: 0,
@@ -132,6 +158,8 @@ impl Vault {
             slasher_count: 0,
             bump,
             reserved: [0; 11],
+            delegation_state: DelegationState::default(),
+            vrt_ready_to_claim_amount: 0,
         }
     }
 
@@ -186,15 +214,6 @@ impl Vault {
     // ------------------------------------------
     // Asset accounting and tracking
     // ------------------------------------------
-
-    /// Calculate the maximum amount of tokens that can be delegated to operators, which
-    /// is the total amount of tokens deposited in the vault minus the amount of tokens
-    /// that are reserved for withdrawal.
-    pub fn max_delegation_amount(&self) -> Result<u64, VaultError> {
-        self.tokens_deposited
-            .checked_sub(self.withdrawable_reserve_amount)
-            .ok_or(VaultError::VaultOverflow)
-    }
 
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
@@ -254,6 +273,16 @@ impl Vault {
             return Err(VaultError::VaultAdminInvalid.into());
         }
         Ok(())
+    }
+
+    #[inline(always)]
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+        let last_updated_epoch = self
+            .last_full_state_update_slot
+            .checked_div(epoch_length)
+            .unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        last_updated_epoch < current_epoch
     }
 
     // ------------------------------------------

@@ -5,7 +5,6 @@ use jito_restaking_core::{
     loader::{load_config, load_ncn, load_ncn_vault_slasher_ticket, load_ncn_vault_ticket},
     ncn::Ncn,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket,
 };
 use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
@@ -45,16 +44,6 @@ pub fn process_warmup_ncn_vault_slasher_ticket(
     if ncn.slasher_admin.ne(admin.key) {
         msg!("Invalid slasher admin for NCN");
         return Err(RestakingError::NcnSlasherAdminInvalid.into());
-    }
-
-    let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
-    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
-    if !ncn_vault_ticket
-        .state
-        .is_active(Clock::get()?.slot, config.epoch_length)
-    {
-        msg!("Vault is not ready to be activated");
-        return Err(RestakingError::NcnVaultTicketNotActive.into());
     }
 
     // The NcnVaultSlasherTicket shall be inactive before it can warmed up

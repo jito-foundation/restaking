@@ -46,6 +46,12 @@ pub fn process_cooldown_vault_ncn_slasher_ticket(
         return Err(VaultError::VaultSlasherAdminInvalid.into());
     }
 
+    // The Vault shall be up-to-date before removing support for the NCN
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     // The vault slasher ticket must be active in order to cooldown the slasher
     let mut vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow_mut();
     let vault_ncn_slasher_ticket =

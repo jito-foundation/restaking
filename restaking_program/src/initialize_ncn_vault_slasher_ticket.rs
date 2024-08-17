@@ -10,13 +10,12 @@ use jito_restaking_core::{
     loader::{load_config, load_ncn, load_ncn_vault_ticket},
     ncn::Ncn,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket,
 };
 use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::loader::load_vault;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 pub fn process_initialize_ncn_vault_slasher_ticket(
@@ -40,8 +39,6 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
     load_signer(ncn_slasher_admin, false)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
-
-    let slot = Clock::get()?.slot;
 
     // The NcnVaultSlasherTicket shall be at the canonical PDA
     let (
@@ -70,13 +67,6 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
         return Err(RestakingError::NcnSlasherAdminInvalid.into());
     }
 
-    let ncn_vault_ticket_data = ncn_vault_ticket.data.borrow();
-    let ncn_vault_ticket = NcnVaultTicket::try_from_slice(&ncn_vault_ticket_data)?;
-    if !ncn_vault_ticket.state.is_active(slot, config.epoch_length) {
-        msg!("Vault ticket is not active");
-        return Err(RestakingError::NcnVaultTicketNotActive.into());
-    }
-
     msg!(
         "Initializing NcnVaultSlasherTicket at address {}",
         ncn_vault_slasher_ticket.key
@@ -102,7 +92,6 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
         *slasher.key,
         max_slashable_per_epoch,
         ncn.slasher_count,
-        slot,
         ncn_vault_slasher_ticket_bump,
     );
 

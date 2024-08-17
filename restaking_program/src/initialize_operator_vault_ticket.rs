@@ -11,8 +11,8 @@ use jito_restaking_core::{
 };
 use jito_vault_core::loader::{load_config, load_vault};
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// The node operator admin can add support for receiving delegation from a vault.
@@ -83,7 +83,6 @@ pub fn process_initialize_operator_vault_ticket(
         *operator_info.key,
         *vault.key,
         operator.vault_count,
-        Clock::get()?.slot,
         operator_vault_ticket_bump,
     );
 

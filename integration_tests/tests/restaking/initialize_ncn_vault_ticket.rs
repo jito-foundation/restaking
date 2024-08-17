@@ -1,10 +1,13 @@
 #[cfg(test)]
 mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+    use jito_restaking_core::config::Config;
+
     use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_ticket_ok() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -39,6 +42,14 @@ mod tests {
         assert_eq!(ticket.ncn, ncn_root.ncn_pubkey);
         assert_eq!(ticket.vault, vault_root.vault_pubkey);
         assert_eq!(ticket.index, 0);
-        assert_eq!(ticket.state.slot_added(), 1);
+        let slot = fixture.get_current_slot().await.unwrap();
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+        assert_eq!(
+            ticket.state.state(slot, config.epoch_length),
+            SlotToggleState::Inactive
+        );
     }
 }

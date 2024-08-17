@@ -1,9 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::{
-    loader::{load_ncn, load_ncn_vault_slasher_ticket},
-    ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-};
+use jito_restaking_core::loader::{load_ncn, load_ncn_vault_slasher_ticket};
 use jito_vault_core::{
     config::Config,
     loader::{load_config, load_vault, load_vault_ncn_slasher_ticket},
@@ -57,16 +54,10 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
         return Err(VaultError::VaultSlasherAdminInvalid.into());
     }
 
-    // The NcnVaultSlasherTicket shall be active
-    let ncn_vault_slasher_ticket_data = ncn_vault_slasher_ticket.data.borrow();
-    let ncn_vault_slasher_ticket =
-        NcnVaultSlasherTicket::try_from_slice(&ncn_vault_slasher_ticket_data)?;
-    if !ncn_vault_slasher_ticket
-        .state
-        .is_active(Clock::get()?.slot, config.epoch_length)
-    {
-        msg!("NcnVaultSlasherTicket is not active");
-        return Err(VaultError::NcnVaultSlasherTicketNotActive.into());
+    // The Vault shall be up-to-date before warming up the slasher
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
     }
 
     // The VaultNcnSlasherTicket shall be ready to be activated

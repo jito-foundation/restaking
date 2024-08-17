@@ -29,18 +29,12 @@ pub struct OperatorVaultTicket {
 }
 
 impl OperatorVaultTicket {
-    pub const fn new(
-        operator: Pubkey,
-        vault: Pubkey,
-        index: u64,
-        slot_added: u64,
-        bump: u8,
-    ) -> Self {
+    pub const fn new(operator: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             operator,
             vault,
             index,
-            state: SlotToggle::new(slot_added),
+            state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }

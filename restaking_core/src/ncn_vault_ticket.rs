@@ -29,12 +29,12 @@ pub struct NcnVaultTicket {
 }
 
 impl NcnVaultTicket {
-    pub const fn new(ncn: Pubkey, vault: Pubkey, index: u64, slot_added: u64, bump: u8) -> Self {
+    pub const fn new(ncn: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             ncn,
             vault,
             index,
-            state: SlotToggle::new(slot_added),
+            state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }

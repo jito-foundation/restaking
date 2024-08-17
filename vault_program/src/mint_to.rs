@@ -3,23 +3,26 @@ use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_token_mint, load_token_program,
 };
 use jito_vault_core::{
+    config::Config,
     loader::{load_config, load_vault},
     vault::Vault,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
+    clock::Clock,
     entrypoint::ProgramResult,
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
+    sysvar::Sysvar,
 };
 use spl_token::instruction::{mint_to, transfer};
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
-/// Note: it's strongly encouraged to call [`crate::VaultInstruction::UpdateVault`] before calling this instruction to ensure
+/// Note: it's strongly encouraged to call [`crate::VaultInstruction::CrankVaultUpdateStateTracker`] before calling this instruction to ensure
 /// the vault state is up-to-date.
 pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(9);
@@ -66,7 +69,14 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The vault capacity shall not be exceeded after deposit
+    // The Vault shall be up-to-date before minting
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice(&config_data)?;
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     let vault_token_amount_after_deposit = vault
         .tokens_deposited
         .checked_add(amount)

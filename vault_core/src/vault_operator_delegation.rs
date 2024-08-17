@@ -1,30 +1,32 @@
-//! The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
-//! and disabled over time by the vault operator admin.
+//! The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
+
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_jsm_core::slot_toggle::SlotToggle;
 use solana_program::pubkey::Pubkey;
 
-impl Discriminator for VaultOperatorTicket {
+use crate::delegation_state::DelegationState;
+
+impl Discriminator for VaultOperatorDelegation {
     const DISCRIMINATOR: u8 = 4;
 }
 
-/// The [`VaultOperatorTicket`] account tracks a vault's support for an operator. It can be enabled
-/// and disabled over time by the vault operator admin.
+/// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
 #[repr(C)]
-pub struct VaultOperatorTicket {
+pub struct VaultOperatorDelegation {
     /// The vault account
     pub vault: Pubkey,
 
     /// The operator account
     pub operator: Pubkey,
 
+    pub delegation_state: DelegationState,
+
+    /// The last slot the [`VaultOperatorDelegation::update`] method was updated
+    pub last_update_slot: u64,
+
     /// The index
     pub index: u64,
-
-    /// The slot toggle
-    pub state: SlotToggle,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -33,28 +35,40 @@ pub struct VaultOperatorTicket {
     reserved: [u8; 7],
 }
 
-impl VaultOperatorTicket {
-    pub const fn new(
-        vault: Pubkey,
-        operator: Pubkey,
-        index: u64,
-        slot_added: u64,
-        bump: u8,
-    ) -> Self {
+impl VaultOperatorDelegation {
+    pub fn new(vault: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             vault,
             operator,
+            last_update_slot: 0,
+            delegation_state: DelegationState::default(),
             index,
-            state: SlotToggle::new(slot_added),
             bump,
             reserved: [0; 7],
         }
     }
 
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+        let last_updated_epoch = self.last_update_slot.checked_div(epoch_length).unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        last_updated_epoch < current_epoch
+    }
+
+    /// Updates the state of the delegation
+    /// The cooling_down_amount becomes the enqueued_for_cooldown_amount
+    /// The enqueued_for_cooldown_amount is zeroed out
+    /// The cooling_down_for_withdraw_amount becomes the enqueued_for_withdraw_amount
+    /// The enqueued_for_withdraw_amount is zeroed out
+    #[inline(always)]
+    pub fn update(&mut self, slot: u64) {
+        self.delegation_state.update();
+        self.last_update_slot = slot;
+    }
+
     /// The seeds for the PDA
     pub fn seeds(vault: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
-            b"vault_operator_ticket".to_vec(),
+            b"vault_operator_delegation".to_vec(),
             vault.as_ref().to_vec(),
             operator.as_ref().to_vec(),
         ])

@@ -1,9 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::{
-        config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
-    };
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+    use jito_restaking_core::config::Config;
 
     use crate::fixtures::fixture::TestBuilder;
 
@@ -18,79 +16,45 @@ mod tests {
             .await
             .unwrap();
 
-        // Initialize config
-        let config_admin = Keypair::new();
-        let config = Config::find_program_address(&jito_restaking_program::id()).0;
-        fixture
-            .transfer(&config_admin.pubkey(), 10.0)
+        let _restaking_config_admin = restaking_program_client
+            .do_initialize_config()
             .await
             .unwrap();
+
+        let operator_root = restaking_program_client
+            .do_initialize_operator()
+            .await
+            .unwrap();
+
         restaking_program_client
-            .initialize_config(&config, &config_admin)
-            .await
-            .unwrap();
-
-        // Initialize NCN
-        let ncn_admin = Keypair::new();
-        let ncn_base = Keypair::new();
-        fixture.transfer(&ncn_admin.pubkey(), 10.0).await.unwrap();
-        let ncn_pubkey =
-            Ncn::find_program_address(&jito_restaking_program::id(), &ncn_base.pubkey()).0;
-        restaking_program_client
-            .initialize_ncn(&config, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap();
-
-        // Initialize operator
-        let base = Keypair::new();
-        let operator_admin = Keypair::new();
-
-        fixture
-            .transfer(&operator_admin.pubkey(), 10.0)
-            .await
-            .unwrap();
-
-        let operator_pubkey =
-            Operator::find_program_address(&jito_restaking_program::id(), &base.pubkey()).0;
-        restaking_program_client
-            .initialize_operator(&config, &operator_pubkey, &operator_admin, &base)
-            .await
-            .unwrap();
-
-        // Operator adds vault
-        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &operator_pubkey,
-            &vault_root.vault_pubkey,
-        )
-        .0;
-        restaking_program_client
-            .initialize_operator_vault_ticket(
-                &config,
-                &operator_pubkey,
-                &vault_root.vault_pubkey,
-                &operator_vault_ticket,
-                &operator_admin,
-                &operator_admin,
-            )
+            .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
 
         // Verify operator state
         let operator = restaking_program_client
-            .get_operator(&operator_pubkey)
+            .get_operator(&operator_root.operator_pubkey)
             .await
             .unwrap();
         assert_eq!(operator.vault_count, 1);
 
         // Verify operator vault ticket
         let ticket = restaking_program_client
-            .get_operator_vault_ticket(&operator_pubkey, &vault_root.vault_pubkey)
+            .get_operator_vault_ticket(&operator_root.operator_pubkey, &vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(ticket.operator, operator_pubkey);
+        assert_eq!(ticket.operator, operator_root.operator_pubkey);
         assert_eq!(ticket.vault, vault_root.vault_pubkey);
         assert_eq!(ticket.index, 0);
-        assert_eq!(ticket.state.slot_added(), 1);
+
+        let config = restaking_program_client
+            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
+            .await
+            .unwrap();
+        let slot = fixture.get_current_slot().await.unwrap();
+        assert_eq!(
+            ticket.state.state(slot, config.epoch_length),
+            SlotToggleState::Inactive
+        );
     }
 }
