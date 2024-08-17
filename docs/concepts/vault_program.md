@@ -68,8 +68,8 @@ graph TD
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     Vault[Vault]:::main
     Operator[Operator]:::main
-    VaultOperatorTicket[VaultOperatorTicket]:::ticket
-    Vault -->|Creates| VaultOperatorTicket
+    VaultOperatorDelegation[VaultOperatorDelegation]:::ticket
+    Vault -->|Creates| VaultOperatorDelegation
     Vault -.->|Opts in| Operator
 ```
 

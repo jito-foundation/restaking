@@ -4,6 +4,8 @@ use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+use crate::delegation_state::DelegationState;
+
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
 }
@@ -17,12 +19,39 @@ pub struct Vault {
     /// The base account of the VRT
     pub base: Pubkey,
 
+    // ------------------------------------------
+    // Token information and accounting
+    // ------------------------------------------
     /// Mint of the VRT token
     pub vrt_mint: Pubkey,
+
+    /// The total number of VRT in circulation
+    pub vrt_supply: u64,
 
     /// Mint of the token that is supported by the VRT
     pub supported_mint: Pubkey,
 
+    /// The total number of tokens deposited
+    pub tokens_deposited: u64,
+
+    /// Max capacity of tokens in the vault
+    pub capacity: u64,
+
+    /// Rolled-up stake state for all operators in the set
+    pub delegation_state: DelegationState,
+
+    /// The amount of VRT tokens in VaultStakerWithdrawalTickets enqueued for cooldown
+    pub vrt_enqueued_for_cooldown_amount: u64,
+
+    /// The amount of VRT tokens cooling down
+    pub vrt_cooling_down_amount: u64,
+
+    /// The amount of VRT tokens ready to claim
+    pub vrt_ready_to_claim_amount: u64,
+
+    // ------------------------------------------
+    // Admins
+    // ------------------------------------------
     /// Vault admin
     pub admin: Pubkey,
 
@@ -53,25 +82,17 @@ pub struct Vault {
     /// Optional mint signer
     pub mint_burn_admin: Pubkey,
 
-    /// Max capacity of tokens in the vault
-    pub capacity: u64,
-
+    // ------------------------------------------
+    // Indexing and counters
+    // These are helpful when one needs to iterate through all the accounts
+    // ------------------------------------------
     /// The index of the vault in the vault list
     pub vault_index: u64,
-
-    /// The total number of VRT in circulation
-    pub vrt_supply: u64,
-
-    /// The total number of tokens deposited
-    pub tokens_deposited: u64,
-
-    /// The amount of tokens that are reserved for withdrawal
-    pub withdrawable_reserve_amount: u64,
 
     /// Number of VaultNcnTicket accounts tracked by this vault
     pub ncn_count: u64,
 
-    /// Number of VaultOperatorTicket accounts tracked by this vault
+    /// Number of VaultOperatorDelegation accounts tracked by this vault
     pub operator_count: u64,
 
     /// Number of VaultNcnSlasherTicket accounts tracked by this vault
@@ -79,6 +100,9 @@ pub struct Vault {
 
     /// The slot of the last fee change
     pub last_fee_change_slot: u64,
+
+    /// The slot of the last time the delegations were updated
+    pub last_full_state_update_slot: u64,
 
     /// The deposit fee in basis points
     pub deposit_fee_bps: u16,
@@ -123,8 +147,10 @@ impl Vault {
             vault_index,
             vrt_supply: 0,
             tokens_deposited: 0,
-            withdrawable_reserve_amount: 0,
+            vrt_enqueued_for_cooldown_amount: 0,
+            vrt_cooling_down_amount: 0,
             last_fee_change_slot: 0,
+            last_full_state_update_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
             ncn_count: 0,
@@ -132,21 +158,62 @@ impl Vault {
             slasher_count: 0,
             bump,
             reserved: [0; 11],
+            delegation_state: DelegationState::default(),
+            vrt_ready_to_claim_amount: 0,
+        }
+    }
+
+    /// Replace all secondary admins that were equal to the old admin to the new admin
+    pub fn update_secondary_admin(&mut self, old_admin: &Pubkey, new_admin: &Pubkey) {
+        if self.delegation_admin.eq(old_admin) {
+            self.delegation_admin = *new_admin;
+            msg!("Delegation admin set to {:?}", new_admin);
+        }
+
+        if self.operator_admin.eq(old_admin) {
+            self.operator_admin = *new_admin;
+            msg!("Operator admin set to {:?}", new_admin);
+        }
+
+        if self.ncn_admin.eq(old_admin) {
+            self.ncn_admin = *new_admin;
+            msg!("Ncn admin set to {:?}", new_admin);
+        }
+
+        if self.slasher_admin.eq(old_admin) {
+            self.slasher_admin = *new_admin;
+            msg!("Slasher admin set to {:?}", new_admin);
+        }
+
+        if self.capacity_admin.eq(old_admin) {
+            self.capacity_admin = *new_admin;
+            msg!("Capacity admin set to {:?}", new_admin);
+        }
+
+        if self.fee_wallet.eq(old_admin) {
+            self.fee_wallet = *new_admin;
+            msg!("Fee wallet set to {:?}", new_admin);
+        }
+
+        if self.mint_burn_admin.eq(old_admin) {
+            self.mint_burn_admin = *new_admin;
+            msg!("Mint burn admin set to {:?}", new_admin);
+        }
+
+        if self.withdraw_admin.eq(old_admin) {
+            self.withdraw_admin = *new_admin;
+            msg!("Withdraw admin set to {:?}", new_admin);
+        }
+
+        if self.fee_admin.eq(old_admin) {
+            self.fee_admin = *new_admin;
+            msg!("Fee admin set to {:?}", new_admin);
         }
     }
 
     // ------------------------------------------
     // Asset accounting and tracking
     // ------------------------------------------
-
-    /// Calculate the maximum amount of tokens that can be delegated to operators, which
-    /// is the total amount of tokens deposited in the vault minus the amount of tokens
-    /// that are reserved for withdrawal.
-    pub fn max_delegation_amount(&self) -> Result<u64, VaultError> {
-        self.tokens_deposited
-            .checked_sub(self.withdrawable_reserve_amount)
-            .ok_or(VaultError::VaultOverflow)
-    }
 
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
@@ -208,6 +275,16 @@ impl Vault {
         Ok(())
     }
 
+    #[inline(always)]
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+        let last_updated_epoch = self
+            .last_full_state_update_slot
+            .checked_div(epoch_length)
+            .unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        last_updated_epoch < current_epoch
+    }
+
     // ------------------------------------------
     // Serialization & Deserialization
     // ------------------------------------------
@@ -233,6 +310,47 @@ impl Vault {
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
     }
+
+    /// Loads the [`Vault`] account
+    ///
+    /// # Arguments
+    /// * `program_id` - The program ID
+    /// * `account` - The account to load
+    /// * `expect_writable` - Whether the account should be writable
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
+    pub fn load(
+        program_id: &Pubkey,
+        account: &AccountInfo,
+        expect_writable: bool,
+    ) -> Result<(), ProgramError> {
+        if account.owner.ne(program_id) {
+            msg!("Vault account has an invalid owner");
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if account.data_is_empty() {
+            msg!("Vault account data is empty");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if expect_writable && !account.is_writable {
+            msg!("Vault account is not writable");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
+            msg!("Vault account discriminator is invalid");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let base = Self::try_from_slice_unchecked(&account.data.borrow())?.base;
+        if account
+            .key
+            .ne(&Self::find_program_address(program_id, &base).0)
+        {
+            msg!("Vault account is not at the correct PDA");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -241,6 +359,45 @@ mod tests {
     use solana_program::pubkey::Pubkey;
 
     use crate::vault::Vault;
+
+    #[test]
+    fn test_update_secondary_admin_ok() {
+        let old_admin = Pubkey::new_unique();
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            old_admin,
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.mint_burn_admin = old_admin;
+
+        assert_eq!(vault.delegation_admin, old_admin);
+        assert_eq!(vault.operator_admin, old_admin);
+        assert_eq!(vault.ncn_admin, old_admin);
+        assert_eq!(vault.slasher_admin, old_admin);
+        assert_eq!(vault.capacity_admin, old_admin);
+        assert_eq!(vault.fee_wallet, old_admin);
+        assert_eq!(vault.mint_burn_admin, old_admin);
+        assert_eq!(vault.withdraw_admin, old_admin);
+        assert_eq!(vault.fee_admin, old_admin);
+
+        let new_admin = Pubkey::new_unique();
+        vault.update_secondary_admin(&old_admin, &new_admin);
+
+        assert_eq!(vault.delegation_admin, new_admin);
+        assert_eq!(vault.operator_admin, new_admin);
+        assert_eq!(vault.ncn_admin, new_admin);
+        assert_eq!(vault.slasher_admin, new_admin);
+        assert_eq!(vault.capacity_admin, new_admin);
+        assert_eq!(vault.fee_wallet, new_admin);
+        assert_eq!(vault.mint_burn_admin, new_admin);
+        assert_eq!(vault.withdraw_admin, new_admin);
+        assert_eq!(vault.fee_admin, new_admin);
+    }
 
     #[test]
     fn test_deposit_ratio_simple_ok() {

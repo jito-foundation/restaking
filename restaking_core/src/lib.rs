@@ -1,5 +1,4 @@
 pub mod config;
-pub mod loader;
 pub mod ncn;
 pub mod ncn_operator_state;
 pub mod ncn_vault_slasher_ticket;

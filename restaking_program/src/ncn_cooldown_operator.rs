@@ -1,10 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{
-    config::Config,
-    loader::{load_config, load_ncn, load_ncn_operator_state, load_operator},
-    ncn::Ncn,
-    ncn_operator_state::NcnOperatorState,
+    config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator,
 };
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
@@ -23,15 +20,15 @@ pub fn process_ncn_cooldown_operator(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_ncn(program_id, ncn, false)?;
-    load_operator(program_id, operator, false)?;
-    load_ncn_operator_state(program_id, ncn_operator_state, ncn, operator, true)?;
+    Config::load(program_id, config, false)?;
+    Ncn::load(program_id, ncn, false)?;
+    Operator::load(program_id, operator, false)?;
+    NcnOperatorState::load(program_id, ncn_operator_state, ncn, operator, true)?;
     load_signer(ncn_operator_admin, false)?;
 
     // The NCN operator admin shall be the signer of the transaction
     let ncn_data = ncn.data.borrow();
-    let ncn = Ncn::try_from_slice(&ncn_data)?;
+    let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
     if !ncn.operator_admin.eq(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
         return Err(RestakingError::NcnOperatorAdminInvalid.into());
@@ -39,9 +36,10 @@ pub fn process_ncn_cooldown_operator(
 
     // The NcnOperatorTicket shall be active before it can be cooled down
     let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
     let mut ncn_operator_state_data = ncn_operator_state.data.borrow_mut();
-    let ncn_operator_ticket = NcnOperatorState::try_from_slice_mut(&mut ncn_operator_state_data)?;
+    let ncn_operator_ticket =
+        NcnOperatorState::try_from_slice_unchecked_mut(&mut ncn_operator_state_data)?;
     if !ncn_operator_ticket
         .ncn_opt_in_state
         .deactivate(Clock::get()?.slot, config.epoch_length)

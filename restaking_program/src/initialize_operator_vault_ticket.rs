@@ -6,13 +6,12 @@ use jito_jsm_core::{
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_restaking_core::{
-    config::Config, loader::load_operator, operator::Operator,
-    operator_vault_ticket::OperatorVaultTicket,
+    config::Config, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
 };
-use jito_vault_core::loader::{load_config, load_vault};
+use jito_vault_core::vault::Vault;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// The node operator admin can add support for receiving delegation from a vault.
@@ -30,11 +29,11 @@ pub fn process_initialize_operator_vault_ticket(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_operator(program_id, operator_info, true)?;
+    Config::load(program_id, config, false)?;
+    Operator::load(program_id, operator_info, true)?;
     let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
-    load_vault(&config.vault_program, vault, false)?;
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    Vault::load(&config.vault_program, vault, false)?;
     load_system_account(operator_vault_ticket_account, true)?;
     load_signer(operator_vault_admin, false)?;
     load_signer(payer, true)?;
@@ -53,7 +52,7 @@ pub fn process_initialize_operator_vault_ticket(
     }
 
     let mut operator_data = operator_info.data.borrow_mut();
-    let operator = Operator::try_from_slice_mut(&mut operator_data)?;
+    let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
     if operator.vault_admin.ne(operator_vault_admin.key) {
         msg!("Invalid operator vault admin");
         return Err(ProgramError::InvalidAccountData);
@@ -78,12 +77,11 @@ pub fn process_initialize_operator_vault_ticket(
         operator_vault_ticket_account.try_borrow_mut_data()?;
     operator_vault_ticket_account_data[0] = OperatorVaultTicket::DISCRIMINATOR;
     let operator_vault_ticket =
-        OperatorVaultTicket::try_from_slice_mut(&mut operator_vault_ticket_account_data)?;
+        OperatorVaultTicket::try_from_slice_unchecked_mut(&mut operator_vault_ticket_account_data)?;
     *operator_vault_ticket = OperatorVaultTicket::new(
         *operator_info.key,
         *vault.key,
         operator.vault_count,
-        Clock::get()?.slot,
         operator_vault_ticket_bump,
     );
 

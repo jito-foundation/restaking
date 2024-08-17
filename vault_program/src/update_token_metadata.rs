@@ -1,7 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_vault_core::{
-    loader::{load_mpl_metadata, load_mpl_metadata_program, load_vault},
+    loader::{load_mpl_metadata, load_mpl_metadata_program},
     vault::Vault,
 };
 use jito_vault_sdk::inline_mpl_token_metadata::{
@@ -23,12 +23,12 @@ pub fn process_update_token_metadata(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_vault(program_id, vault_info, false)?;
+    Vault::load(program_id, vault_info, false)?;
     load_signer(admin, false)?;
     load_mpl_metadata_program(mpl_token_metadata_program)?;
 
     let vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice(&vault_data)?;
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
 
     load_mpl_metadata(metadata, &vault.vrt_mint)?;
 

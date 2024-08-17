@@ -1,7 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::loader::load_config;
-use jito_vault_core::{config::Config, loader::load_vault, vault::Vault};
+use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -17,12 +16,12 @@ pub fn process_set_fees(
     let [config, vault, vault_fee_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault, false)?;
     load_signer(vault_fee_admin, false)?;
 
     let mut vault_data = vault.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
     if vault.fee_admin.ne(vault_fee_admin.key) {
         msg!("Invalid fee admin for vault");
@@ -30,7 +29,7 @@ pub fn process_set_fees(
     }
 
     let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_mut(&mut config_data)?;
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
 
     // Fees changes have a cooldown of 1 full epoch
     let current_slot = Clock::get()?.slot;

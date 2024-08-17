@@ -26,7 +26,6 @@ mod tests {
             .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
         restaking_program_client
             .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
             .await
