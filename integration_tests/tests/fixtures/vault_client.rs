@@ -39,10 +39,8 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{
-    instruction::initialize_mint2,
-    state::{Account as TokenAccount, Mint},
-};
+use spl_token::state::Account as TokenAccount;
+use spl_token_2022::extension::ExtensionType;
 
 use crate::fixtures::{TestError, TestResult};
 
@@ -1553,11 +1551,11 @@ impl VaultProgramClient {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         let ixs = if token_program_id.eq(&spl_token::id()) {
-            [
+            vec![
                 create_account(
                     &self.payer.pubkey(),
                     &mint.pubkey(),
-                    rent.minimum_balance(spl_token_2022::state::Mint::LEN),
+                    rent.minimum_balance(spl_token::state::Mint::LEN),
                     spl_token::state::Mint::LEN as u64,
                     &token_program_id,
                 ),
@@ -1571,15 +1569,25 @@ impl VaultProgramClient {
                 .unwrap(),
             ]
         } else {
-            [
+            let space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&[
+                ExtensionType::MintCloseAuthority,
+            ])
+            .unwrap();
+            vec![
                 create_account(
                     &self.payer.pubkey(),
                     &mint.pubkey(),
-                    rent.minimum_balance(spl_token_2022::state::Mint::LEN),
-                    spl_token_2022::state::Mint::LEN as u64,
+                    rent.minimum_balance(space),
+                    space as u64,
                     &token_program_id,
                 ),
-                spl_token_2022::instruction::initialize_mint2(
+                spl_token_2022::instruction::initialize_mint_close_authority(
+                    token_program_id,
+                    &mint.pubkey(),
+                    None,
+                )
+                .unwrap(),
+                spl_token_2022::instruction::initialize_mint(
                     &token_program_id,
                     &mint.pubkey(),
                     &self.payer.pubkey(),

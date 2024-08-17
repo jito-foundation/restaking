@@ -236,6 +236,7 @@ pub fn set_fees(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn delegate_token_account(
     program_id: &Pubkey,
     vault: &Pubkey,

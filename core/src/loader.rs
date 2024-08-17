@@ -1,10 +1,9 @@
 //! Loader functions for program accounts
 use solana_program::{
-    account_info::AccountInfo, msg, program_error::ProgramError, program_pack::Pack,
-    pubkey::Pubkey, system_program,
+    account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey, system_program,
 };
 use spl_associated_token_account::get_associated_token_address;
-use spl_token::state::Mint;
+use spl_token_2022::extension::StateWithExtensionsOwned;
 
 /// Loads the account as a signer, returning an error if it is not or if it is not writable while
 /// expected to be.
@@ -130,9 +129,11 @@ pub fn load_associated_token_account(
 ///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
-pub fn load_token_account(token_account: &AccountInfo) -> Result<(), ProgramError> {
-    if token_account.owner.eq(&spl_token::id()) || token_account.owner.eq(&spl_token_2022::id()) {
-    } else {
+pub fn load_token_account(
+    token_account: &AccountInfo,
+    token_program_info: &AccountInfo,
+) -> Result<(), ProgramError> {
+    if token_account.owner.ne(token_program_info.key) {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -153,7 +154,8 @@ pub fn load_token_account(token_account: &AccountInfo) -> Result<(), ProgramErro
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.owner.ne(&spl_token::id()) {
+    if info.owner.eq(&spl_token::id()) || info.owner.eq(&spl_token_2022::id()) {
+    } else {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -163,7 +165,8 @@ pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let _mint = Mint::unpack(&info.data.borrow())?;
+    let data = info.data.borrow().to_vec();
+    let _mint = StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(data);
 
     Ok(())
 }

@@ -15,6 +15,7 @@ use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use spl_token::state::Account;
+use spl_token_2022::extension::ExtensionType;
 
 use crate::fixtures::{
     restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
@@ -23,7 +24,7 @@ use crate::fixtures::{
 };
 
 pub struct TestBuilder {
-    context: ProgramTestContext,
+    pub context: ProgramTestContext,
 }
 
 impl Debug for TestBuilder {
@@ -85,6 +86,106 @@ impl TestBuilder {
             .await
     }
 
+    // https://github.com/solana-labs/solana-program-library/blob/master/stake-pool/program/tests/helpers/mod.rs#L218
+    #[allow(clippy::too_many_arguments)]
+    pub async fn create_token_account(
+        &mut self,
+        token_program_id: &Pubkey,
+        account: &Keypair,
+        pool_mint: &Pubkey,
+        owner: &Pubkey,
+        extensions: &[ExtensionType],
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.context.banks_client.get_latest_blockhash().await?;
+        let rent = self.context.banks_client.get_rent().await.unwrap();
+        let space =
+            ExtensionType::try_calculate_account_len::<spl_token_2022::state::Account>(extensions)
+                .unwrap();
+        let account_rent = rent.minimum_balance(space);
+
+        let mut instructions = vec![solana_program::system_instruction::create_account(
+            &self.context.payer.pubkey(),
+            &account.pubkey(),
+            account_rent,
+            space as u64,
+            token_program_id,
+        )];
+
+        for extension in extensions {
+            match extension {
+                ExtensionType::ImmutableOwner => instructions.push(
+                    spl_token_2022::instruction::initialize_immutable_owner(
+                        token_program_id,
+                        &account.pubkey(),
+                    )
+                    .unwrap(),
+                ),
+                ExtensionType::TransferFeeAmount
+                | ExtensionType::MemoTransfer
+                | ExtensionType::CpiGuard
+                | ExtensionType::NonTransferableAccount => (),
+                _ => unimplemented!(),
+            };
+        }
+
+        instructions.push(
+            spl_token_2022::instruction::initialize_account(
+                token_program_id,
+                &account.pubkey(),
+                pool_mint,
+                &owner,
+            )
+            .unwrap(),
+        );
+
+        let mut signers = vec![&self.context.payer, account];
+        for extension in extensions {
+            match extension {
+                ExtensionType::MemoTransfer => {
+                    signers.push(&self.context.payer);
+                    instructions.push(
+                spl_token_2022::extension::memo_transfer::instruction::enable_required_transfer_memos(
+                    token_program_id,
+                    &account.pubkey(),
+                    &self.context.payer.pubkey(),
+                    &[],
+                )
+                .unwrap()
+                )
+                }
+                ExtensionType::CpiGuard => {
+                    signers.push(&self.context.payer);
+                    instructions.push(
+                        spl_token_2022::extension::cpi_guard::instruction::enable_cpi_guard(
+                            token_program_id,
+                            &account.pubkey(),
+                            &self.context.payer.pubkey(),
+                            &[],
+                        )
+                        .unwrap(),
+                    )
+                }
+                ExtensionType::ImmutableOwner
+                | ExtensionType::TransferFeeAmount
+                | ExtensionType::NonTransferableAccount => (),
+                _ => unimplemented!(),
+            }
+        }
+
+        let transaction = Transaction::new_signed_with_payer(
+            &instructions,
+            Some(&self.context.payer.pubkey()),
+            &signers,
+            blockhash,
+        );
+
+        self.context
+            .banks_client
+            .process_transaction(transaction)
+            .await
+            .map_err(|e| e.into())
+    }
+
     pub async fn get_token_account(
         &mut self,
         token_account: &Pubkey,
@@ -107,40 +208,76 @@ impl TestBuilder {
         token_program: &Pubkey,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
+        let to_associated_address = get_associated_token_address(to, mint);
+
         let mint_to_ix = if token_program.eq(&spl_token::id()) {
-            spl_token::instruction::mint_to(
-                token_program,
-                mint,
-                &get_associated_token_address(to, mint),
-                &self.context.payer.pubkey(),
-                &[],
-                amount,
-            )
-            .unwrap()
+            vec![
+                create_associated_token_account_idempotent(
+                    &self.context.payer.pubkey(),
+                    to,
+                    mint,
+                    token_program,
+                ),
+                spl_token::instruction::mint_to(
+                    token_program,
+                    mint,
+                    &get_associated_token_address(to, mint),
+                    &self.context.payer.pubkey(),
+                    &[],
+                    amount,
+                )
+                .unwrap(),
+            ]
         } else {
-            spl_token_2022::instruction::mint_to(
+            vec![spl_token_2022::instruction::mint_to(
                 token_program,
                 mint,
-                &get_associated_token_address(to, mint),
+                &to_associated_address,
                 &self.context.payer.pubkey(),
                 &[],
                 amount,
             )
-            .unwrap()
+            .unwrap()]
         };
         self.context
             .banks_client
             .process_transaction_with_preflight_and_commitment(
                 Transaction::new_signed_with_payer(
-                    &[
-                        create_associated_token_account_idempotent(
-                            &self.context.payer.pubkey(),
-                            to,
-                            mint,
-                            token_program,
-                        ),
-                        mint_to_ix,
-                    ],
+                    &mint_to_ix,
+                    Some(&self.context.payer.pubkey()),
+                    &[&self.context.payer],
+                    blockhash,
+                ),
+                CommitmentLevel::Processed,
+            )
+            .await
+    }
+
+    /// Mints tokens to an ATA owned by the `to` address
+    pub async fn mint_spl_2022_to(
+        &mut self,
+        mint: &Pubkey,
+        token_account: &Pubkey,
+        amount: u64,
+        token_program: &Pubkey,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.context.banks_client.get_latest_blockhash().await?;
+        // let to_associated_address = get_associated_token_address(to, mint);
+
+        let mint_to_ix = vec![spl_token_2022::instruction::mint_to(
+            token_program,
+            mint,
+            &token_account,
+            &self.context.payer.pubkey(),
+            &[],
+            amount,
+        )
+        .unwrap()];
+        self.context
+            .banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &mint_to_ix,
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],
                     blockhash,

@@ -30,8 +30,7 @@ pub fn process_delegate_token_account(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    load_token_account(token_account)?;
-    // load_signer(owner, false)?;
+    load_token_account(token_account, token_program)?;
     load_token_program(token_program)?;
 
     let (vault_pubkey, vault_bump, mut vault_seeds) =
