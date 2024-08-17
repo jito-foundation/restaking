@@ -1580,6 +1580,8 @@ impl VaultProgramClient {
     }
 }
 
+#[inline(always)]
+#[track_caller]
 pub fn assert_vault_error<T>(test_error: Result<T, TestError>, vault_error: VaultError) {
     assert!(test_error.is_err());
     assert_eq!(

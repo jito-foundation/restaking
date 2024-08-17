@@ -1,6 +1,7 @@
 mod add_delegation;
 mod burn_withdrawal_ticket;
 mod close_update_state_tracker;
+mod cooldown_delegation;
 mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod enqueue_withdrawal;
@@ -10,7 +11,6 @@ mod initialize_vault_ncn_slasher_ticket;
 mod initialize_vault_ncn_ticket;
 mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
-mod mint_to;
 mod set_admin;
 mod set_fees;
 mod set_secondary_admin;
