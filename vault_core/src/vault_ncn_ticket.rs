@@ -3,10 +3,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultNcnTicket {
     const DISCRIMINATOR: u8 = 3;
@@ -113,12 +110,11 @@ impl VaultNcnTicket {
             msg!("Vault NCN ticket account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if vault_ncn_ticket.data.borrow()[0].ne(&VaultNcnTicket::DISCRIMINATOR) {
+        if vault_ncn_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Vault NCN ticket account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let expected_pubkey =
-            VaultNcnTicket::find_program_address(program_id, vault.key, ncn.key).0;
+        let expected_pubkey = Self::find_program_address(program_id, vault.key, ncn.key).0;
         if vault_ncn_ticket.key.ne(&expected_pubkey) {
             msg!("Vault NCN ticket account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

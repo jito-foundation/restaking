@@ -2,10 +2,7 @@
 
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
 
@@ -129,12 +126,11 @@ impl VaultOperatorDelegation {
             msg!("Vault operator ticket account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if vault_operator_delegation.data.borrow()[0].ne(&VaultOperatorDelegation::DISCRIMINATOR) {
+        if vault_operator_delegation.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Vault operator ticket account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let expected_pubkey =
-            VaultOperatorDelegation::find_program_address(program_id, vault.key, operator.key).0;
+        let expected_pubkey = Self::find_program_address(program_id, vault.key, operator.key).0;
         if vault_operator_delegation.key.ne(&expected_pubkey) {
             msg!("Vault operator ticket account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

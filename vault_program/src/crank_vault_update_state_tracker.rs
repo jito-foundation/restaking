@@ -1,8 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_core::operator::Operator;
-use jito_vault_core::vault::Vault;
 use jito_vault_core::{
-    config::Config, vault_operator_delegation::VaultOperatorDelegation,
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use jito_vault_sdk::error::VaultError;

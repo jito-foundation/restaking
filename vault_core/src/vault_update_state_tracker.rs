@@ -1,9 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
 
@@ -81,14 +78,11 @@ impl VaultUpdateStateTracker {
             msg!("Vault update delegations ticket is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if vault_update_delegation_ticket.data.borrow()[0]
-            .ne(&VaultUpdateStateTracker::DISCRIMINATOR)
-        {
+        if vault_update_delegation_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Vault update delegations ticket discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let expected_pubkey =
-            VaultUpdateStateTracker::find_program_address(program_id, vault.key, ncn_epoch).0;
+        let expected_pubkey = Self::find_program_address(program_id, vault.key, ncn_epoch).0;
         if vault_update_delegation_ticket.key.ne(&expected_pubkey) {
             msg!("Vault update delegations ticket is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

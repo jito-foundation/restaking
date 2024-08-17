@@ -5,10 +5,10 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::ncn::Ncn;
-use jito_restaking_core::ncn_vault_slasher_ticket::NcnVaultSlasherTicket;
-use jito_vault_core::vault::Vault;
-use jito_vault_core::{config::Config, vault_ncn_slasher_ticket::VaultNcnSlasherTicket};
+use jito_restaking_core::{ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTicket};
+use jito_vault_core::{
+    config::Config, vault::Vault, vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
+};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,

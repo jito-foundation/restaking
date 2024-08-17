@@ -1,10 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for OperatorVaultTicket {
     const DISCRIMINATOR: u8 = 5;
@@ -92,12 +89,11 @@ impl OperatorVaultTicket {
             msg!("Operator vault ticket account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if operator_vault_ticket.data.borrow()[0].ne(&OperatorVaultTicket::DISCRIMINATOR) {
+        if operator_vault_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Operator vault ticket account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let expected_pubkey =
-            OperatorVaultTicket::find_program_address(program_id, operator.key, vault.key).0;
+        let expected_pubkey = Self::find_program_address(program_id, operator.key, vault.key).0;
         if operator_vault_ticket.key.ne(&expected_pubkey) {
             msg!("Operator vault ticket account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

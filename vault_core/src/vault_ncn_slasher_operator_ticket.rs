@@ -2,10 +2,7 @@
 //! by a slasher for a given node consensus network (NCN) and vault for a given epoch.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultNcnSlasherOperatorTicket {
     const DISCRIMINATOR: u8 = 6;
@@ -158,13 +155,11 @@ impl VaultNcnSlasherOperatorTicket {
             msg!("Vault NCN slasher operator is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if vault_ncn_slasher_operator_ticket.data.borrow()[0]
-            .ne(&VaultNcnSlasherOperatorTicket::DISCRIMINATOR)
-        {
+        if vault_ncn_slasher_operator_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Vault NCN slasher operator discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let expected_pubkey = VaultNcnSlasherOperatorTicket::find_program_address(
+        let expected_pubkey = Self::find_program_address(
             program_id,
             vault.key,
             ncn.key,

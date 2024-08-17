@@ -1,10 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for NcnOperatorState {
     const DISCRIMINATOR: u8 = 4;
@@ -96,12 +93,11 @@ impl NcnOperatorState {
             msg!("NCNOperatorState account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if ncn_operator_state.data.borrow()[0].ne(&NcnOperatorState::DISCRIMINATOR) {
+        if ncn_operator_state.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("NCNOperatorState account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let expected_pubkey =
-            NcnOperatorState::find_program_address(program_id, ncn.key, operator.key).0;
+        let expected_pubkey = Self::find_program_address(program_id, ncn.key, operator.key).0;
         if ncn_operator_state.key.ne(&expected_pubkey) {
             msg!("NCNOperatorState account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

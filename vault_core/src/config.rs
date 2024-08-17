@@ -1,9 +1,10 @@
 //! The vault configuration account
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::program_error::ProgramError;
-use solana_program::{epoch_schedule::DEFAULT_SLOTS_PER_EPOCH, msg, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH, msg,
+    program_error::ProgramError, pubkey::Pubkey,
+};
 
 impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
@@ -101,11 +102,11 @@ impl Config {
             msg!("Config account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if account.data.borrow()[0].ne(&Config::DISCRIMINATOR) {
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Config account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        if account.key.ne(&Config::find_program_address(program_id).0) {
+        if account.key.ne(&Self::find_program_address(program_id).0) {
             msg!("Config account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);
         }

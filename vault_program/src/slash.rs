@@ -1,10 +1,9 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_program};
-use jito_restaking_core::ncn::Ncn;
-use jito_restaking_core::operator::Operator;
 use jito_restaking_core::{
-    ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
+    ncn::Ncn, ncn_operator_state::NcnOperatorState,
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
+    operator::Operator, operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,

@@ -5,8 +5,9 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::config::Config;
-use jito_restaking_core::{ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator};
+use jito_restaking_core::{
+    config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator,
+};
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,

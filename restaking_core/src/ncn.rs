@@ -4,10 +4,7 @@
 //! associated with the network.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 /// The NCN manages the operators, vaults, and slashers associated with a network
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
@@ -123,14 +120,14 @@ impl Ncn {
             msg!("NCN account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if account.data.borrow()[0].ne(&Ncn::DISCRIMINATOR) {
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("NCN account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let base = Ncn::try_from_slice_unchecked(&account.data.borrow())?.base;
+        let base = Self::try_from_slice_unchecked(&account.data.borrow())?.base;
         if account
             .key
-            .ne(&Ncn::find_program_address(program_id, &base).0)
+            .ne(&Self::find_program_address(program_id, &base).0)
         {
             msg!("NCN account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

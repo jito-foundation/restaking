@@ -1,7 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::ncn::Ncn;
-use jito_restaking_core::ncn_vault_ticket::NcnVaultTicket;
+use jito_restaking_core::{ncn::Ncn, ncn_vault_ticket::NcnVaultTicket};
 use jito_vault_core::{config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{

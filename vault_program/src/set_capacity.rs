@@ -1,7 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_vault_core::config::Config;
-use jito_vault_core::vault::Vault;
+use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,

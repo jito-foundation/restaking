@@ -5,8 +5,7 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::operator::Operator;
-use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
+use jito_restaking_core::{operator::Operator, operator_vault_ticket::OperatorVaultTicket};
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
 };

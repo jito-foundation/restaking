@@ -1,7 +1,8 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::operator::Operator;
-use jito_restaking_core::{config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState};
+use jito_restaking_core::{
+    config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator,
+};
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,

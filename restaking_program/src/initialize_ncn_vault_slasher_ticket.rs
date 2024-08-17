@@ -5,9 +5,9 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::ncn_vault_ticket::NcnVaultTicket;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket,
 };
 use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::vault::Vault;

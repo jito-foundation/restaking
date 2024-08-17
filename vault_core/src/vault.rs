@@ -337,14 +337,14 @@ impl Vault {
             msg!("Vault account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if account.data.borrow()[0].ne(&Vault::DISCRIMINATOR) {
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Vault account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let base = Vault::try_from_slice_unchecked(&account.data.borrow())?.base;
+        let base = Self::try_from_slice_unchecked(&account.data.borrow())?.base;
         if account
             .key
-            .ne(&Vault::find_program_address(program_id, &base).0)
+            .ne(&Self::find_program_address(program_id, &base).0)
         {
             msg!("Vault account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

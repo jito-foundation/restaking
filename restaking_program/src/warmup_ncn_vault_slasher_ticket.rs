@@ -1,8 +1,8 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::ncn_vault_ticket::NcnVaultTicket;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
+    ncn_vault_ticket::NcnVaultTicket,
 };
 use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::vault::Vault;

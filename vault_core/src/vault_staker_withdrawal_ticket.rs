@@ -2,8 +2,7 @@
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::{msg, program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultStakerWithdrawalTicket {
     const DISCRIMINATOR: u8 = 7;
@@ -141,21 +140,14 @@ impl VaultStakerWithdrawalTicket {
             msg!("Vault staker withdraw ticket is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if vault_staker_withdrawal_ticket.data.borrow()[0]
-            .ne(&VaultStakerWithdrawalTicket::DISCRIMINATOR)
-        {
+        if vault_staker_withdrawal_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Vault staker withdraw ticket discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
         let vault_staker_withdraw_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
-        let base = VaultStakerWithdrawalTicket::try_from_slice_unchecked(
-            &vault_staker_withdraw_ticket_data,
-        )?
-        .base;
-        let expected_pubkey = VaultStakerWithdrawalTicket::find_program_address(
-            program_id, vault.key, staker.key, &base,
-        )
-        .0;
+        let base = Self::try_from_slice_unchecked(&vault_staker_withdraw_ticket_data)?.base;
+        let expected_pubkey =
+            Self::find_program_address(program_id, vault.key, staker.key, &base).0;
         if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
             msg!("Vault staker withdraw ticket is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

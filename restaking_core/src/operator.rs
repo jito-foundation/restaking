@@ -2,10 +2,7 @@
 //! including the admin, voter, and the number of NCN and vault accounts.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::account_info::AccountInfo;
-use solana_program::msg;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for Operator {
     const DISCRIMINATOR: u8 = 3;
@@ -134,14 +131,14 @@ impl Operator {
             msg!("Operator account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if account.data.borrow()[0].ne(&Operator::DISCRIMINATOR) {
+        if account.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
             msg!("Operator account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let base = Operator::try_from_slice_unchecked(&account.data.borrow())?.base;
+        let base = Self::try_from_slice_unchecked(&account.data.borrow())?.base;
         if account
             .key
-            .ne(&Operator::find_program_address(program_id, &base).0)
+            .ne(&Self::find_program_address(program_id, &base).0)
         {
             msg!("Operator account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);
