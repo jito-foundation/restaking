@@ -4,9 +4,8 @@ use jito_restaking_core::operator::Operator;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
 };
-use jito_vault_sdk::error::VaultError;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
@@ -16,36 +15,33 @@ pub fn process_cooldown_delegation(
     amount: u64,
     for_withdrawal: bool,
 ) -> ProgramResult {
-    let [config, vault, operator, vault_operator_delegation, vault_delegation_admin] = accounts
+    let [config, vault_info, operator, vault_operator_delegation, vault_delegation_admin] =
+        accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault, false)?;
+    Vault::load(program_id, vault_info, false)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
     Operator::load(&config.restaking_program, operator, false)?;
-    VaultOperatorDelegation::load(program_id, vault_operator_delegation, vault, operator, true)?;
-    load_signer(vault_delegation_admin, false)?;
-
-    // The Vault delegation admin shall be the signer of the transaction
-    let mut vault_data = vault.data.borrow_mut();
-    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
-    if vault.delegation_admin.ne(vault_delegation_admin.key) {
-        msg!("Invalid delegation admin for vault");
-        return Err(VaultError::VaultDelegationAdminInvalid.into());
-    }
-
-    // The Vault shall be up-to-date before removing delegation
-    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault update is needed");
-        return Err(VaultError::VaultUpdateNeeded.into());
-    }
-
+    VaultOperatorDelegation::load(
+        program_id,
+        vault_operator_delegation,
+        vault_info,
+        operator,
+        true,
+    )?;
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
+    load_signer(vault_delegation_admin, false)?;
+
+    vault.check_delegation_admin(vault_delegation_admin.key)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
     vault
         .delegation_state

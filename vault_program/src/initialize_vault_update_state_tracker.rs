@@ -25,25 +25,17 @@ pub fn process_initialize_vault_update_state_tracker(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, false)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, true)?;
+    let vault_data = vault_info.data.borrow();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     load_system_account(vault_update_state_tracker, true)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
-    let config_data = config.data.borrow();
-    let config = Config::try_from_slice_unchecked(&config_data)?;
-
-    // The vault update state tracker shall not be initialized if an update is not needed
-    let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-    if !vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault is up-to-date");
-        return Err(VaultError::VaultIsUpdated.into());
-    }
-
-    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
-
     // The VaultUpdateStateTracker shall be at the canonical PDA
+    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
     let (
         vault_update_state_tracker_pubkey,
         vault_update_state_tracker_bump,
@@ -53,6 +45,11 @@ pub fn process_initialize_vault_update_state_tracker(
     if vault_update_state_tracker_pubkey.ne(vault_update_state_tracker.key) {
         msg!("Vault update delegations ticket is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
+    }
+
+    if !vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update state tracker is not needed");
+        return Err(VaultError::VaultIsUpdated.into());
     }
 
     msg!(
