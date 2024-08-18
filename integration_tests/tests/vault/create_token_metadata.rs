@@ -47,7 +47,7 @@ async fn test_create_token_metadata_ok() {
         .unwrap();
 
     let token_metadata = vault_program_client
-        .get_token_metadata(&metadata_pubkey)
+        .get_token_metadata(&vault.vrt_mint)
         .await
         .unwrap();
 

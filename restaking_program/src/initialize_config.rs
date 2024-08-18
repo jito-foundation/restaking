@@ -43,7 +43,7 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
 
     let mut config_data = config.try_borrow_mut_data()?;
     config_data[0] = Config::DISCRIMINATOR;
-    let config = Config::try_from_slice_mut(&mut config_data)?;
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
     *config = Config::new(*admin.key, *vault_program.key, config_bump);
 
     Ok(())

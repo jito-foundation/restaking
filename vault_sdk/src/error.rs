@@ -2,15 +2,7 @@ use solana_program::program_error::ProgramError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum VaultError {
-    OperatorDelegationTotalSecurityOverflow = 1000,
-    OperatorDelegationWithdrawableSecurityOverflow = 1001,
-    OperatorDelegationSlashExceedsTotalSecurity = 1002,
-    OperatorDelegationSlashOverflow = 1003,
-    OperatorDelegationSlashUnderflow = 1004,
-    OperatorDelegationSlashIncomplete = 1005,
-    OperatorDelegationUndelegateUnderflow = 1006,
-    OperatorDelegationUndelegateOverflow = 1007,
-    OperatorDelegationDelegateOverflow = 1008,
+    VaultSlashUnderflow = 1002,
 
     VaultMaxDelegationOverflow = 2000,
     VaultVrtEmpty = 2001,
@@ -29,6 +21,14 @@ pub enum VaultError {
     VaultFeeCapExceeded = 2014,
     VaultFeeChangeTooSoon = 2015,
     VaultFeeBumpTooLarge = 2016,
+    VaultUnderflow = 2017,
+    VaultUpdateNeeded = 2018,
+    VaultIsUpdated = 2019,
+    VaultUpdateIncorrectIndex = 2020,
+    VaultUpdateStateNotFinishedUpdating = 2021,
+    VaultSecurityOverflow = 2022,
+    VaultSlashIncomplete = 2023,
+    VaultSecurityUnderflow = 2024,
 
     VaultDelegationListOverflow = 3000,
     VaultDelegationListUnderflow = 3001,
@@ -43,21 +43,24 @@ pub enum VaultError {
     VaultNcnSlasherTicketFailedWarmup = 4002,
     VaultNcnTicketFailedCooldown = 4003,
     VaultNcnTicketFailedWarmup = 4004,
-    VaultOperatorTicketNotActive = 4005,
-    VaultOperatorTicketFailedCooldown = 4006,
-    VaultOperatorTicketFailedWarmup = 4007,
+    VaultOperatorDelegationNotActive = 4005,
+    VaultOperatorDelegationFailedCooldown = 4006,
+    VaultOperatorDelegationFailedWarmup = 4007,
     NcnVaultSlasherTicketNotActive = 4008,
     NcnVaultTicketNotActive = 4009,
     OperatorVaultTicketNotActive = 4010,
     VaultNcnTicketUnslashable = 4011,
     OperatorVaultTicketUnslashable = 4012,
-    VaultOperatorTicketUnslashable = 4013,
-    NcnOperatorTicketUnslashable = 4014,
+    VaultOperatorDelegationUnslashable = 4013,
+    NcnOperatorStateUnslashable = 4014,
     OperatorNcnTicketUnslashable = 4015,
     VaultNcnSlasherTicketUnslashable = 4016,
     NcnVaultTicketUnslashable = 4017,
     NcnVaultSlasherTicketUnslashable = 4018,
     VaultNcnSlasherOperatorMaxSlashableExceeded = 4019,
+
+    VaultDelegationUpdateOverflow = 5000,
+    SlippageError,
 }
 
 impl From<VaultError> for ProgramError {
@@ -67,6 +70,12 @@ impl From<VaultError> for ProgramError {
 }
 
 impl From<VaultError> for u64 {
+    fn from(e: VaultError) -> Self {
+        e as Self
+    }
+}
+
+impl From<VaultError> for u32 {
     fn from(e: VaultError) -> Self {
         e as Self
     }

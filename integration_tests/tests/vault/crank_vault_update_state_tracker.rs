@@ -1,0 +1,591 @@
+#[cfg(test)]
+mod tests {
+    use jito_vault_core::{
+        config::Config, delegation_state::DelegationState,
+        vault_update_state_tracker::VaultUpdateStateTracker,
+    };
+    use jito_vault_sdk::error::VaultError;
+    use solana_sdk::signature::{Keypair, Signer};
+
+    use crate::fixtures::{
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::assert_vault_error,
+    };
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_ok() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        // go to next epoch to force update
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &VaultUpdateStateTracker::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    ncn_epoch,
+                )
+                .0,
+            )
+            .await
+            .unwrap();
+
+        let vault_update_state_tracker = vault_program_client
+            .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
+            .await
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.vault, vault_root.vault_pubkey);
+        assert_eq!(vault_update_state_tracker.ncn_epoch, ncn_epoch);
+        assert_eq!(vault_update_state_tracker.last_updated_index, u64::MAX);
+        assert_eq!(
+            vault_update_state_tracker.delegation_state,
+            DelegationState::default()
+        );
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let vault_update_state_tracker = vault_program_client
+            .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
+            .await
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index, 0);
+        assert_eq!(
+            vault_update_state_tracker.delegation_state,
+            DelegationState::default()
+        );
+
+        let operator_delegation = vault_program_client
+            .get_vault_operator_delegation(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let slot = fixture.get_current_slot().await.unwrap();
+        assert_eq!(operator_delegation.vault, vault_root.vault_pubkey);
+        assert_eq!(
+            operator_delegation.operator,
+            operator_roots[0].operator_pubkey
+        );
+        assert_eq!(
+            operator_delegation.delegation_state,
+            DelegationState::default()
+        );
+        assert_eq!(operator_delegation.last_update_slot, slot);
+    }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_multiple_operators_ok() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let vault_update_state_tracker = vault_program_client
+            .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
+            .await
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index, 0);
+        assert_eq!(
+            vault_update_state_tracker.delegation_state,
+            DelegationState {
+                staked_amount: 50_000,
+                enqueued_for_cooldown_amount: 0,
+                cooling_down_amount: 0,
+                enqueued_for_withdraw_amount: 0,
+                cooling_down_for_withdraw_amount: 0,
+            }
+        );
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[1].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let vault_update_state_tracker = vault_program_client
+            .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
+            .await
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index, 1);
+        assert_eq!(
+            vault_update_state_tracker.delegation_state,
+            DelegationState {
+                staked_amount: 100_000,
+                enqueued_for_cooldown_amount: 0,
+                cooling_down_amount: 0,
+                enqueued_for_withdraw_amount: 0,
+                cooling_down_for_withdraw_amount: 0,
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_same_index_twice_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let result = vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await;
+        assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
+    }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_skip_zero_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[1].operator_pubkey,
+            )
+            .await;
+        assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
+    }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_skip_index_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 3, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[2].operator_pubkey,
+            )
+            .await;
+        assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
+    }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_partial_update_previous_epoch_ok() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000)
+            .await
+            .unwrap();
+
+        // 25k active, 25k cooling down on operator 0 and 1
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_cooldown_delegation(
+                &vault_root,
+                &operator_roots[0].operator_pubkey,
+                25_000,
+                true,
+            )
+            .await
+            .unwrap();
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_cooldown_delegation(
+                &vault_root,
+                &operator_roots[1].operator_pubkey,
+                25_000,
+                true,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        // enqueued for cool down assets are now cooling down
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        // skip index 1, advance to next epoch
+
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+
+        // cooldown assets are now inactive
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length;
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let vault_update_state_tracker = vault_program_client
+            .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
+            .await
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index, 0);
+        assert_eq!(
+            vault_update_state_tracker.delegation_state,
+            DelegationState {
+                staked_amount: 25_000,
+                enqueued_for_cooldown_amount: 0,
+                cooling_down_amount: 0,
+                enqueued_for_withdraw_amount: 0,
+                cooling_down_for_withdraw_amount: 0,
+            }
+        );
+
+        // active -> cooldown (2 epochs since last update)
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[1].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let vault_update_state_tracker = vault_program_client
+            .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
+            .await
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index, 1);
+        assert_eq!(
+            vault_update_state_tracker.delegation_state,
+            DelegationState {
+                staked_amount: 50_000,
+                enqueued_for_cooldown_amount: 0,
+                cooling_down_amount: 0,
+                enqueued_for_withdraw_amount: 0,
+                cooling_down_for_withdraw_amount: 0,
+            }
+        );
+    }
+}

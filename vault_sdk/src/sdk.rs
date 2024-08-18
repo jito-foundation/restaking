@@ -6,7 +6,7 @@ use solana_program::{
 };
 
 use crate::{
-    inline_mpl_token_metadata,
+    inline_mpl_token_metadata::{self, pda::find_metadata_account},
     instruction::{VaultAdminRole, VaultInstruction},
 };
 
@@ -60,28 +60,6 @@ pub fn initialize_vault(
         }
         .try_to_vec()
         .unwrap(),
-    }
-}
-
-pub fn initialize_vault_delegation_list(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    vault: &Pubkey,
-    vault_delegation_list: &Pubkey,
-    payer: &Pubkey,
-) -> Instruction {
-    Instruction {
-        program_id: *program_id,
-        accounts: vec![
-            AccountMeta::new_readonly(*config, false),
-            AccountMeta::new_readonly(*vault, false),
-            AccountMeta::new(*vault_delegation_list, false),
-            AccountMeta::new(*payer, true),
-            AccountMeta::new_readonly(system_program::id(), false),
-        ],
-        data: VaultInstruction::InitializeVaultDelegationList
-            .try_to_vec()
-            .unwrap(),
     }
 }
 
@@ -140,13 +118,13 @@ pub fn cooldown_vault_ncn_ticket(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn initialize_vault_operator_ticket(
+pub fn initialize_vault_operator_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
     operator_vault_ticket: &Pubkey,
-    vault_operator_ticket: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
 ) -> Instruction {
@@ -155,7 +133,7 @@ pub fn initialize_vault_operator_ticket(
         AccountMeta::new(*vault, false),
         AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
-        AccountMeta::new(*vault_operator_ticket, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
         AccountMeta::new_readonly(system_program::id(), false),
@@ -163,31 +141,7 @@ pub fn initialize_vault_operator_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultOperatorTicket
-            .try_to_vec()
-            .unwrap(),
-    }
-}
-
-pub fn cooldown_vault_operator_ticket(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    vault: &Pubkey,
-    operator: &Pubkey,
-    vault_operator_ticket: &Pubkey,
-    admin: &Pubkey,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*vault_operator_ticket, false),
-        AccountMeta::new_readonly(*admin, true),
-    ];
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: VaultInstruction::CooldownVaultOperatorTicket
+        data: VaultInstruction::InitializeVaultOperatorDelegation
             .try_to_vec()
             .unwrap(),
     }
@@ -341,22 +295,18 @@ pub fn add_delegation(
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
-    vault_operator_ticket: &Pubkey,
-    vault_delegation_list: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
-
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*vault_operator_ticket, false),
-        AccountMeta::new(*vault_delegation_list, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*payer, true),
-        AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
         program_id: *program_id,
@@ -367,48 +317,57 @@ pub fn add_delegation(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn cooldown_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
     operator: &Pubkey,
-    vault_delegation_list: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     amount: u64,
+    for_withdrawal: bool,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new(*vault_delegation_list, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownDelegation { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::CooldownDelegation {
+            amount,
+            for_withdrawal,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 
-pub fn update_vault(
+pub fn crank_vault_update_state_tracker(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    vault_delegation_list: &Pubkey,
-    vault_token_account: &Pubkey,
+    operator: &Pubkey,
+    vault_operator_delegation: &Pubkey,
+    vault_update_state_tracker: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*vault, false),
-        AccountMeta::new(*vault_delegation_list, false),
-        AccountMeta::new(*vault_token_account, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new(*vault_operator_delegation, false),
+        AccountMeta::new(*vault_update_state_tracker, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::UpdateVault.try_to_vec().unwrap(),
+        data: VaultInstruction::CrankVaultUpdateStateTracker
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -449,7 +408,7 @@ pub fn create_token_metadata(
     program_id: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
-    lrt_mint: &Pubkey,
+    vrt_mint: &Pubkey,
     payer: &Pubkey,
     metadata: &Pubkey,
     name: String,
@@ -459,7 +418,7 @@ pub fn create_token_metadata(
     let accounts = vec![
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new_readonly(*lrt_mint, false),
+        AccountMeta::new_readonly(*vrt_mint, false),
         AccountMeta::new(*payer, true),
         AccountMeta::new(*metadata, false),
         AccountMeta::new_readonly(inline_mpl_token_metadata::id(), false),
@@ -477,13 +436,25 @@ pub fn create_token_metadata(
 
 pub fn update_token_metadata(
     program_id: &Pubkey,
+    vault: &Pubkey,
+    admin: &Pubkey,
+    vrt_mint: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
+    let (metadata, _) = find_metadata_account(vrt_mint);
+
+    let accounts = vec![
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new(metadata, false),
+        AccountMeta::new_readonly(inline_mpl_token_metadata::id(), false),
+    ];
+
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
+        accounts,
         data: VaultInstruction::UpdateTokenMetadata { name, symbol, uri }
             .try_to_vec()
             .unwrap(),
@@ -530,15 +501,13 @@ pub fn slash(
     ncn: &Pubkey,
     operator: &Pubkey,
     slasher: &Pubkey,
-    ncn_operator_ticket: &Pubkey,
-    operator_ncn_ticket: &Pubkey,
+    ncn_operator_state: &Pubkey,
     ncn_vault_ticket: &Pubkey,
     operator_vault_ticket: &Pubkey,
     vault_ncn_ticket: &Pubkey,
-    vault_operator_ticket: &Pubkey,
+    vault_operator_delegation: &Pubkey,
     ncn_vault_slasher_ticket: &Pubkey,
     vault_ncn_slasher_ticket: &Pubkey,
-    vault_delegation_list: &Pubkey,
     vault_ncn_slasher_operator_ticket: &Pubkey,
     vault_token_account: &Pubkey,
     slasher_token_account: &Pubkey,
@@ -550,15 +519,13 @@ pub fn slash(
         AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new_readonly(*slasher, false),
-        AccountMeta::new_readonly(*ncn_operator_ticket, false),
-        AccountMeta::new_readonly(*operator_ncn_ticket, false),
+        AccountMeta::new_readonly(*ncn_operator_state, false),
         AccountMeta::new_readonly(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
         AccountMeta::new_readonly(*vault_ncn_ticket, false),
-        AccountMeta::new_readonly(*vault_operator_ticket, false),
+        AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*ncn_vault_slasher_ticket, false),
         AccountMeta::new_readonly(*vault_ncn_slasher_ticket, false),
-        AccountMeta::new(*vault_delegation_list, false),
         AccountMeta::new(*vault_ncn_slasher_operator_ticket, false),
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*slasher_token_account, false),
@@ -576,7 +543,6 @@ pub fn enqueue_withdraw(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    vault_delegation_list: &Pubkey,
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
@@ -588,7 +554,6 @@ pub fn enqueue_withdraw(
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new(*vault_delegation_list, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
@@ -612,7 +577,6 @@ pub fn burn_withdrawal_ticket(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
-    vault_delegation_list: &Pubkey,
     vault_token_account: &Pubkey,
     vrt_mint: &Pubkey,
     staker: &Pubkey,
@@ -620,11 +584,11 @@ pub fn burn_withdrawal_ticket(
     staker_vrt_token_account: &Pubkey,
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
+    min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
-        AccountMeta::new(*vault_delegation_list, false),
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*vrt_mint, false),
         AccountMeta::new(*staker, true),
@@ -638,6 +602,124 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawTicket.try_to_vec().unwrap(),
+        data: VaultInstruction::BurnWithdrawTicket { min_amount_out }
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn update_vault_balance(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_token_account: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*vault_token_account, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::UpdateVaultBalance.try_to_vec().unwrap(),
+    }
+}
+pub fn initialize_vault_update_state_tracker(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_update_state_tracker: &Pubkey,
+    payer: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_update_state_tracker, false),
+        AccountMeta::new(*payer, true),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::InitializeVaultUpdateStateTracker
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn close_vault_update_state_tracker(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_update_state_tracker: &Pubkey,
+    payer: &Pubkey,
+    ncn_epoch: u64,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_update_state_tracker, false),
+        AccountMeta::new(*payer, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch }
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn warmup_vault_ncn_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    ncn: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
+    vault_ncn_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new(*ncn_vault_ticket, false),
+        AccountMeta::new(*vault_ncn_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::WarmupVaultNcnTicket.try_to_vec().unwrap(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn warmup_vault_ncn_slasher_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    ncn: &Pubkey,
+    slasher: &Pubkey,
+    ncn_slasher_ticket: &Pubkey,
+    vault_slasher_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*ncn_slasher_ticket, false),
+        AccountMeta::new(*vault_slasher_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::WarmupVaultNcnSlasherTicket
+            .try_to_vec()
+            .unwrap(),
     }
 }

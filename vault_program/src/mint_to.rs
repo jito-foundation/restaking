@@ -2,24 +2,23 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_token_mint, load_token_program,
 };
-use jito_vault_core::{
-    loader::{load_config, load_vault},
-    vault::Vault,
-};
+use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
+    clock::Clock,
     entrypoint::ProgramResult,
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
+    sysvar::Sysvar,
 };
 use spl_token::instruction::{mint_to, transfer};
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
-/// Note: it's strongly encouraged to call [`crate::VaultInstruction::UpdateVault`] before calling this instruction to ensure
+/// Note: it's strongly encouraged to call [`crate::VaultInstruction::CrankVaultUpdateStateTracker`] before calling this instruction to ensure
 /// the vault state is up-to-date.
 pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(9);
@@ -30,12 +29,12 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault_info, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     load_token_mint(vrt_mint)?;
     load_signer(depositor, false)?;
     let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_mut(&mut vault_data)?;
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(
         depositor_token_account,
         depositor.key,
@@ -66,20 +65,34 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let vault_fee = vault.calculate_deposit_fee(amount)?;
-    let vault_deposit_amount = amount
-        .checked_sub(vault_fee)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    // The Vault shall be up-to-date before minting
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
+    }
+
     let vault_token_amount_after_deposit = vault
         .tokens_deposited
-        .checked_add(vault_deposit_amount)
+        .checked_add(amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
-
-    // The vault capacity shall not be exceeded after deposit
     if vault_token_amount_after_deposit > vault.capacity {
         msg!("Amount exceeds vault capacity");
         return Err(VaultError::VaultCapacityExceeded.into());
     }
+
+    let vrt_mint_amount = vault.calculate_vrt_mint_amount(amount)?;
+    let vrt_to_fee_wallet = vault.calculate_deposit_fee(vrt_mint_amount)?;
+    let vrt_to_depositor = vrt_mint_amount
+        .checked_sub(vrt_to_fee_wallet)
+        .ok_or(VaultError::VaultUnderflow)?;
+
+    vault.vrt_supply = vault
+        .vrt_supply
+        .checked_add(vrt_mint_amount)
+        .ok_or(VaultError::VaultOverflow)?;
+    vault.tokens_deposited = vault_token_amount_after_deposit;
 
     // transfer tokens from depositor to vault
     {
@@ -99,16 +112,6 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
             ],
         )?;
     }
-
-    let vrt_to_depositor = vault.calculate_vrt_mint_amount(vault_deposit_amount)?;
-    let vrt_to_vault_fee_wallet = vault.calculate_vrt_mint_amount(vault_fee)?;
-
-    vault.vrt_supply = vault
-        .vrt_supply
-        .checked_add(vrt_to_depositor)
-        .and_then(|supply| supply.checked_add(vrt_to_vault_fee_wallet))
-        .ok_or(ProgramError::ArithmeticOverflow)?;
-    vault.tokens_deposited = vault_token_amount_after_deposit;
 
     let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
     vault_seeds.push(vec![vault_bump]);
@@ -142,7 +145,7 @@ pub fn process_mint(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) 
                 vault_fee_token_account.key,
                 vault_info.key,
                 &[],
-                vrt_to_vault_fee_wallet,
+                vrt_to_fee_wallet,
             )?,
             &[
                 vrt_mint.clone(),

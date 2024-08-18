@@ -5,17 +5,12 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{
-    config::Config,
-    loader::{load_config, load_ncn},
-    ncn::Ncn,
-    ncn_vault_ticket::NcnVaultTicket,
-};
+use jito_restaking_core::{config::Config, ncn::Ncn, ncn_vault_ticket::NcnVaultTicket};
 use jito_restaking_sdk::error::RestakingError;
-use jito_vault_core::loader::load_vault;
+use jito_vault_core::vault::Vault;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// The NCN opts-in to vaults by storing the vault in the NCN vault list. It also CPI's into
@@ -32,17 +27,15 @@ pub fn process_initialize_ncn_vault_ticket(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_ncn(program_id, ncn_info, true)?;
+    Config::load(program_id, config, false)?;
+    Ncn::load(program_id, ncn_info, true)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_vault(&config.vault_program, vault, false)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Vault::load(&config.vault_program, vault, false)?;
     load_system_account(ncn_vault_ticket, true)?;
     load_signer(ncn_vault_admin, false)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
-
-    let slot = Clock::get()?.slot;
 
     // The NcnVaultTicket shall be at the canonical PDA
     let (ncn_vault_ticket_pubkey, ncn_vault_ticket_bump, mut ncn_vault_ticket_seeds) =
@@ -54,7 +47,7 @@ pub fn process_initialize_ncn_vault_ticket(
     }
 
     let mut ncn_data = ncn_info.data.borrow_mut();
-    let ncn = Ncn::try_from_slice_mut(&mut ncn_data)?;
+    let ncn = Ncn::try_from_slice_unchecked_mut(&mut ncn_data)?;
     if ncn.vault_admin.ne(ncn_vault_admin.key) {
         msg!("Invalid vault admin for NCN");
         return Err(RestakingError::NcnVaultAdminInvalid.into());
@@ -78,12 +71,12 @@ pub fn process_initialize_ncn_vault_ticket(
 
     let mut ncn_vault_ticket_data = ncn_vault_ticket.try_borrow_mut_data()?;
     ncn_vault_ticket_data[0] = NcnVaultTicket::DISCRIMINATOR;
-    let ncn_vault_ticket = NcnVaultTicket::try_from_slice_mut(&mut ncn_vault_ticket_data)?;
+    let ncn_vault_ticket =
+        NcnVaultTicket::try_from_slice_unchecked_mut(&mut ncn_vault_ticket_data)?;
     *ncn_vault_ticket = NcnVaultTicket::new(
         *ncn_info.key,
         *vault.key,
         ncn.vault_count,
-        slot,
         ncn_vault_ticket_bump,
     );
 
