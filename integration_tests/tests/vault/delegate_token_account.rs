@@ -44,13 +44,11 @@ mod tests {
                 )
                 .await
                 .unwrap();
-            let token_account = vault_program_client
-                .get_token_account(&&vault_pubkey, &random_mint.pubkey())
-                .await
-                .unwrap();
+            let ata = get_associated_token_address(&vault_pubkey, &random_mint.pubkey());
+            let token_account_acc = fixture.get_token_account(&ata).await.unwrap();
 
-            assert_eq!(token_account.amount, 100_000);
-            assert_eq!(token_account.delegate, COption::None);
+            assert_eq!(token_account_acc.amount, 100_000);
+            assert_eq!(token_account_acc.delegate, COption::None);
 
             // Delegate
             let bob = Pubkey::new_unique();
@@ -66,13 +64,10 @@ mod tests {
                 )
                 .await
                 .unwrap();
-
-            let token_account = vault_program_client
-                .get_token_account(&vault_pubkey, &random_mint.pubkey())
-                .await
-                .unwrap();
-            assert_eq!(token_account.delegate, COption::Some(bob));
-            assert_eq!(token_account.delegated_amount, 50_000);
+            let ata = get_associated_token_address(&vault_pubkey, &random_mint.pubkey());
+            let token_account_acc = fixture.get_token_account(&ata).await.unwrap();
+            assert_eq!(token_account_acc.delegate, COption::Some(bob));
+            assert_eq!(token_account_acc.delegated_amount, 50_000);
         } else {
             fixture
                 .create_token_account(

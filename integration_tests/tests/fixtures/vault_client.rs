@@ -39,7 +39,6 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::state::Account as TokenAccount;
 use spl_token_2022::extension::ExtensionType;
 
 use crate::fixtures::{TestError, TestResult};
@@ -195,18 +194,6 @@ impl VaultProgramClient {
             VaultUpdateStateTracker::try_from_slice_unchecked(&mut account.data.as_slice())?
                 .clone(),
         )
-    }
-
-    pub async fn get_token_account(
-        &mut self,
-        wallet_address: &Pubkey,
-        token_mint: &Pubkey,
-    ) -> Result<TokenAccount, TestError> {
-        let ata = get_associated_token_address(wallet_address, token_mint);
-
-        let account = self.banks_client.get_account(ata).await?.unwrap();
-
-        Ok(TokenAccount::unpack(account.data.as_slice()).unwrap())
     }
 
     pub async fn get_token_metadata(
