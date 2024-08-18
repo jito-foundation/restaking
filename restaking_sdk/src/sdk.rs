@@ -363,27 +363,28 @@ pub fn cooldown_operator_vault_ticket(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn ncn_withdrawal_asset(
+pub fn ncn_delegate_token_account(
     program_id: &Pubkey,
     ncn: &Pubkey,
-    ncn_token_account: &Pubkey,
-    receiver_token_account: &Pubkey,
     admin: &Pubkey,
+    token_mint: &Pubkey,
+    token_account: &Pubkey,
+    delegate: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*ncn, false),
-        AccountMeta::new(*ncn_token_account, false),
-        AccountMeta::new(*receiver_token_account, false),
         AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new(*token_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*delegate, false),
         AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::NcnDelegateTokenAccount { amount }
             .try_to_vec()
             .unwrap(),
     }

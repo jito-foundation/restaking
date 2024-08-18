@@ -5,9 +5,9 @@ mod tests {
     use spl_associated_token_account::get_associated_token_address;
     use test_case::test_case;
 
-    use crate::fixtures::{fixture::TestBuilder, restaking_client::OperatorRoot};
+    use crate::fixtures::{fixture::TestBuilder, restaking_client::NcnRoot};
 
-    async fn setup(token_program_id: &Pubkey) -> (TestBuilder, OperatorRoot, Keypair, Keypair) {
+    async fn setup(token_program_id: &Pubkey) -> (TestBuilder, NcnRoot, Keypair, Keypair) {
         let mut fixture = TestBuilder::new().await;
 
         let mut restaking_program_client = fixture.restaking_program_client();
@@ -16,11 +16,7 @@ mod tests {
             .do_initialize_config()
             .await
             .unwrap();
-        let _ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
-        let operator_root = restaking_program_client
-            .do_initialize_operator()
-            .await
-            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await.unwrap();
 
         let random_mint = Keypair::new();
         fixture
@@ -34,7 +30,7 @@ mod tests {
             fixture
                 .mint_spl_to(
                     &random_mint.pubkey(),
-                    &operator_root.operator_pubkey,
+                    &ncn_root.ncn_pubkey,
                     100_000,
                     &token_program_id,
                 )
@@ -46,7 +42,7 @@ mod tests {
                     &token_program_id,
                     &operator_token_account,
                     &random_mint.pubkey(),
-                    &operator_root.operator_pubkey,
+                    &ncn_root.ncn_pubkey,
                     &[],
                 )
                 .await
@@ -62,14 +58,14 @@ mod tests {
                 .unwrap();
         }
 
-        (fixture, operator_root, random_mint, operator_token_account)
+        (fixture, ncn_root, random_mint, operator_token_account)
     }
 
     #[test_case(spl_token::id(); "token")]
     #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
-    async fn test_operator_token_account_ok(token_program_id: Pubkey) {
-        let (mut fixture, operator_root, random_mint, operator_token_account) =
+    async fn test_ncn_token_account_ok(token_program_id: Pubkey) {
+        let (mut fixture, ncn_root, random_mint, operator_token_account) =
             setup(&token_program_id).await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -77,22 +73,18 @@ mod tests {
             // Delegate
             let bob = Pubkey::new_unique();
             restaking_program_client
-                .operator_delegate_token_account(
-                    &operator_root.operator_pubkey,
-                    &operator_root.operator_admin,
+                .ncn_delegate_token_account(
+                    &ncn_root.ncn_pubkey,
+                    &ncn_root.ncn_admin,
                     &random_mint.pubkey(),
-                    &get_associated_token_address(
-                        &operator_root.operator_pubkey,
-                        &random_mint.pubkey(),
-                    ),
+                    &get_associated_token_address(&ncn_root.ncn_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
                     50_000,
                 )
                 .await
                 .unwrap();
-            let ata =
-                get_associated_token_address(&operator_root.operator_pubkey, &random_mint.pubkey());
+            let ata = get_associated_token_address(&ncn_root.ncn_pubkey, &random_mint.pubkey());
             let token_account_acc = fixture.get_token_account(&ata).await.unwrap();
 
             assert_eq!(token_account_acc.delegate, COption::Some(bob));
@@ -100,9 +92,9 @@ mod tests {
         } else {
             let bob = Pubkey::new_unique();
             restaking_program_client
-                .operator_delegate_token_account(
-                    &operator_root.operator_pubkey,
-                    &operator_root.operator_admin,
+                .ncn_delegate_token_account(
+                    &ncn_root.ncn_pubkey,
+                    &ncn_root.ncn_admin,
                     &random_mint.pubkey(),
                     &operator_token_account.pubkey(),
                     &bob,

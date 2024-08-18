@@ -1,6 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
-use solana_program::pubkey::Pubkey;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
 pub enum RestakingInstruction {
@@ -172,11 +171,12 @@ pub enum RestakingInstruction {
     OperatorSetSecondaryAdmin(OperatorAdminRole),
 
     #[account(0, name = "ncn")]
-    #[account(1, writable, name = "ncn_token_account")]
-    #[account(2, writable, name = "receiver_token_account")]
-    #[account(3, signer, name = "admin")]
-    #[account(4, name = "token_program")]
-    NcnWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+    #[account(1, signer, name = "admin")]
+    #[account(2, name = "token_mint")]
+    #[account(3, writable, name = "token_account")]
+    #[account(4, name = "delegate")]
+    #[account(5, name = "token_program")]
+    NcnDelegateTokenAccount { amount: u64 },
 
     #[account(0, name = "operator")]
     #[account(1, signer, name = "admin")]

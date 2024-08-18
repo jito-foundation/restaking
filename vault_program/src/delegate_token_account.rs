@@ -5,9 +5,8 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
-// use spl_token::instruction::approve;
 
-/// Processes the set admin instruction: [`crate::VaultInstruction::DelegateTokenAccount`]
+/// Processes the delegate token account instruction: [`crate::VaultInstruction::DelegateTokenAccount`]
 ///
 /// Admin might call the instruction when the vault is airdropped or transferred tokens
 pub fn process_delegate_token_account(

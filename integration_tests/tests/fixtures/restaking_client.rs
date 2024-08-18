@@ -869,6 +869,35 @@ impl RestakingProgramClient {
         .await
     }
 
+    pub async fn ncn_delegate_token_account(
+        &mut self,
+        ncn_pubkey: &Pubkey,
+        admin: &Keypair,
+        token_mint: &Pubkey,
+        token_account: &Pubkey,
+        delegate: &Pubkey,
+        token_program_id: &Pubkey,
+        amount: u64,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::ncn_delegate_token_account(
+                &jito_restaking_program::id(),
+                ncn_pubkey,
+                &admin.pubkey(),
+                token_mint,
+                token_account,
+                delegate,
+                token_program_id,
+                amount,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn operator_delegate_token_account(
         &mut self,
         operator_pubkey: &Pubkey,
