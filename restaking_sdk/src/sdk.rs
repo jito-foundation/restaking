@@ -390,27 +390,28 @@ pub fn ncn_withdrawal_asset(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn operator_withdrawal_asset(
+pub fn operator_delegate_token_account(
     program_id: &Pubkey,
     operator: &Pubkey,
     admin: &Pubkey,
-    operator_token_account: &Pubkey,
-    receiver_token_account: &Pubkey,
+    token_mint: &Pubkey,
+    token_account: &Pubkey,
+    delegate: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new(*operator_token_account, false),
-        AccountMeta::new(*receiver_token_account, false),
+        AccountMeta::new(*token_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*delegate, false),
         AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::OperatorDelegateTokenAccount { amount }
             .try_to_vec()
             .unwrap(),
     }

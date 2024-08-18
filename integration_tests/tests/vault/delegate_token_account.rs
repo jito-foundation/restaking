@@ -23,7 +23,6 @@ mod tests {
             .await
             .unwrap();
 
-        // Initial deposit
         let random_mint = Keypair::new();
         vault_program_client
             ._create_token_mint(&random_mint, &token_program_id)
@@ -88,7 +87,7 @@ mod tests {
                     &vault_pubkey,
                     &vault_admin,
                     &random_mint.pubkey(),
-                    &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
+                    &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
                     50_000,

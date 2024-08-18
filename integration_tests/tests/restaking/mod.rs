@@ -8,4 +8,5 @@ mod initialize_operator_vault_ticket;
 mod ncn_cooldown_operator;
 mod ncn_warmup_operator;
 mod operator_cooldown_ncn;
+mod operator_delegate_token_account;
 mod operator_warmup_ncn;

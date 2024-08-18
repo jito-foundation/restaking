@@ -2,6 +2,7 @@
 //! including the admin, voter, and the number of NCN and vault accounts.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for Operator {
@@ -75,6 +76,19 @@ impl Operator {
             bump,
             reserved_space: [0; 7],
         }
+    }
+
+    /// Check admin validity and signature
+    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), ProgramError> {
+        if *admin_info.key != self.admin {
+            msg!(
+                "Incorrect admin provided, expected {}, received {}",
+                self.admin,
+                admin_info.key
+            );
+            return Err(RestakingError::OperatorAdminInvalid.into());
+        }
+        Ok(())
     }
 
     /// Returns the seeds for the PDA
