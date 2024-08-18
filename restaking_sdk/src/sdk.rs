@@ -511,3 +511,80 @@ pub fn ncn_cooldown_operator(
             .unwrap(),
     }
 }
+
+pub fn warmup_ncn_vault_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    ncn: &Pubkey,
+    vault: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*ncn_vault_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::WarmupNcnVaultTicket
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn warmup_operator_vault_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    operator: &Pubkey,
+    vault: &Pubkey,
+    operator_vault_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*operator, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*operator_vault_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::WarmupOperatorVaultTicket
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn warmup_ncn_vault_slasher_ticket(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    ncn: &Pubkey,
+    vault: &Pubkey,
+    slasher: &Pubkey,
+    ncn_vault_ticket: &Pubkey,
+    ncn_vault_slasher_ticket: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*ncn_vault_ticket, false),
+        AccountMeta::new(*ncn_vault_slasher_ticket, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::WarmupNcnVaultSlasherTicket
+            .try_to_vec()
+            .unwrap(),
+    }
+}

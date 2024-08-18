@@ -5,12 +5,12 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::loader::{load_ncn, load_operator};
+use jito_restaking_core::{ncn::Ncn, operator::Operator};
 use jito_vault_core::{
-    config::Config,
-    loader::{load_config, load_vault, load_vault_ncn_slasher_ticket},
-    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -21,22 +21,22 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault, ncn, slasher, operator, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, payer, system_program] =
+    let [config, vault_info, ncn, slasher, operator, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, payer, system_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_config(program_id, config, false)?;
-    load_vault(program_id, vault, false)?;
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault_info, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
-    load_ncn(&config.restaking_program, ncn, false)?;
-    load_operator(&config.restaking_program, operator, false)?;
-    load_vault_ncn_slasher_ticket(
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    Operator::load(&config.restaking_program, operator, false)?;
+    VaultNcnSlasherTicket::load(
         program_id,
         vault_ncn_slasher_ticket,
-        vault,
+        vault_info,
         ncn,
         slasher,
         false,
@@ -54,7 +54,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         mut vault_ncn_slasher_operator_ticket_seeds,
     ) = VaultNcnSlasherOperatorTicket::find_program_address(
         program_id,
-        vault.key,
+        vault_info.key,
         ncn.key,
         slasher.key,
         operator.key,
@@ -67,6 +67,14 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     {
         msg!("Vault NCN slasher operator ticket is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
+    }
+
+    // The vault shall be up-to-date before adding support for the NCN slasher operator
+    let vault_data = vault_info.data.borrow();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+        msg!("Vault update is needed");
+        return Err(VaultError::VaultUpdateNeeded.into());
     }
 
     msg!(
@@ -88,11 +96,12 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     let mut vault_ncn_slasher_operator_ticket_data =
         vault_ncn_slasher_operator_ticket.try_borrow_mut_data()?;
     vault_ncn_slasher_operator_ticket_data[0] = VaultNcnSlasherOperatorTicket::DISCRIMINATOR;
-    let vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::try_from_slice_mut(
-        &mut vault_ncn_slasher_operator_ticket_data,
-    )?;
+    let vault_ncn_slasher_operator_ticket =
+        VaultNcnSlasherOperatorTicket::try_from_slice_unchecked_mut(
+            &mut vault_ncn_slasher_operator_ticket_data,
+        )?;
     *vault_ncn_slasher_operator_ticket = VaultNcnSlasherOperatorTicket::new(
-        *vault.key,
+        *vault_info.key,
         *ncn.key,
         *slasher.key,
         *operator.key,

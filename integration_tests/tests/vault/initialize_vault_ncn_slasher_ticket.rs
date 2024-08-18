@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::config::Config;
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+    use jito_vault_core::config::Config;
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::fixture::TestBuilder;
@@ -28,25 +29,14 @@ mod tests {
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await
             .unwrap();
-
-        let config_account = restaking_program_client
-            .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config_account.epoch_length)
-            .await
-            .unwrap();
-
         vault_program_client
-            .vault_ncn_opt_in(&vault_root, &ncn_root.ncn_pubkey)
+            .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
 
         let slasher = Keypair::new();
         restaking_program_client
-            .do_ncn_vault_slasher_opt_in(
+            .do_initialize_ncn_vault_slasher_ticket(
                 &ncn_root,
                 &vault_root.vault_pubkey,
                 &slasher.pubkey(),
@@ -54,14 +44,12 @@ mod tests {
             )
             .await
             .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config_account.epoch_length)
-            .await
-            .unwrap();
-
         vault_program_client
-            .vault_ncn_vault_slasher_opt_in(&vault_root, &ncn_root.ncn_pubkey, &slasher.pubkey())
+            .do_initialize_vault_ncn_slasher_ticket(
+                &vault_root,
+                &ncn_root.ncn_pubkey,
+                &slasher.pubkey(),
+            )
             .await
             .unwrap();
 
@@ -78,9 +66,17 @@ mod tests {
         assert_eq!(vault_ncn_slasher.slasher, slasher.pubkey());
         assert_eq!(vault_ncn_slasher.index, 0);
         assert_eq!(vault_ncn_slasher.max_slashable_per_epoch, 100);
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
         assert_eq!(
-            vault_ncn_slasher.state.slot_added(),
-            fixture.get_current_slot().await.unwrap()
+            vault_ncn_slasher.state.state(
+                fixture.get_current_slot().await.unwrap(),
+                config.epoch_length
+            ),
+            SlotToggleState::Inactive
         );
     }
 }

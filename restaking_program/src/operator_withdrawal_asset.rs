@@ -1,6 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_signer};
-use jito_restaking_core::{loader::load_operator, operator::Operator};
+use jito_restaking_core::operator::Operator;
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
@@ -20,11 +20,11 @@ pub fn process_operator_withdrawal_asset(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_operator(program_id, operator_info, false)?;
+    Operator::load(program_id, operator_info, false)?;
     load_signer(operator_withdraw_admin, false)?;
     load_associated_token_account(operator_token_account, operator_info.key, &token_mint)?;
     let operator_data = operator_info.data.borrow();
-    let operator = Operator::try_from_slice(&operator_data)?;
+    let operator = Operator::try_from_slice_unchecked(&operator_data)?;
     load_associated_token_account(
         receiver_token_account,
         &operator.withdrawal_fee_wallet,
