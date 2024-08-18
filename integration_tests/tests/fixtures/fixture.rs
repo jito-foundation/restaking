@@ -22,7 +22,7 @@ use crate::fixtures::{
 };
 
 pub struct TestBuilder {
-    pub context: ProgramTestContext,
+    context: ProgramTestContext,
 }
 
 impl Debug for TestBuilder {
@@ -211,7 +211,6 @@ impl TestBuilder {
         token_program: &Pubkey,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
-        let to_associated_address = get_associated_token_address(to, mint);
 
         let mint_to_ix = if token_program.eq(&spl_token::id()) {
             vec![
@@ -235,47 +234,13 @@ impl TestBuilder {
             vec![spl_token_2022::instruction::mint_to(
                 token_program,
                 mint,
-                &to_associated_address,
+                &to,
                 &self.context.payer.pubkey(),
                 &[],
                 amount,
             )
             .unwrap()]
         };
-        self.context
-            .banks_client
-            .process_transaction_with_preflight_and_commitment(
-                Transaction::new_signed_with_payer(
-                    &mint_to_ix,
-                    Some(&self.context.payer.pubkey()),
-                    &[&self.context.payer],
-                    blockhash,
-                ),
-                CommitmentLevel::Processed,
-            )
-            .await
-    }
-
-    /// Mints tokens to an ATA owned by the `to` address
-    pub async fn mint_spl_2022_to(
-        &mut self,
-        mint: &Pubkey,
-        token_account: &Pubkey,
-        amount: u64,
-        token_program: &Pubkey,
-    ) -> Result<(), BanksClientError> {
-        let blockhash = self.context.banks_client.get_latest_blockhash().await?;
-        // let to_associated_address = get_associated_token_address(to, mint);
-
-        let mint_to_ix = vec![spl_token_2022::instruction::mint_to(
-            token_program,
-            mint,
-            &token_account,
-            &self.context.payer.pubkey(),
-            &[],
-            amount,
-        )
-        .unwrap()];
         self.context
             .banks_client
             .process_transaction_with_preflight_and_commitment(

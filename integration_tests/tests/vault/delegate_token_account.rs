@@ -85,7 +85,7 @@ mod tests {
                 .await
                 .unwrap();
             fixture
-                .mint_spl_2022_to(
+                .mint_spl_to(
                     &random_mint.pubkey(),
                     &vault_token_account.pubkey(),
                     100_000,
