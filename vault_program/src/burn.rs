@@ -3,13 +3,19 @@ use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_system_program, load_token_mint,
     load_token_program,
 };
-use jito_vault_core::config::Config;
-use jito_vault_core::vault::{BurnSummary, Vault};
-use solana_program::clock::Clock;
-use solana_program::program::{invoke, invoke_signed};
-use solana_program::program_error::ProgramError;
-use solana_program::sysvar::Sysvar;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use jito_vault_core::{
+    config::Config,
+    vault::{BurnSummary, Vault},
+};
+use solana_program::{
+    account_info::AccountInfo,
+    clock::Clock,
+    entrypoint::ProgramResult,
+    program::{invoke, invoke_signed},
+    program_error::ProgramError,
+    pubkey::Pubkey,
+    sysvar::Sysvar,
+};
 use spl_token::instruction::{burn, transfer};
 
 pub fn process_burn(

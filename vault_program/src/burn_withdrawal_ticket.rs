@@ -6,9 +6,10 @@ use jito_jsm_core::{
         load_token_program,
     },
 };
-use jito_vault_core::vault::BurnSummary;
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+    config::Config,
+    vault::{BurnSummary, Vault},
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
 use jito_vault_sdk::error::VaultError;
 use solana_program::{

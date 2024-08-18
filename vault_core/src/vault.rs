@@ -1,10 +1,11 @@
 //! The vault is responsible for holding tokens and minting VRT tokens.
-use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::loader::load_signer;
 use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+
+use crate::delegation_state::DelegationState;
 
 pub struct BurnSummary {
     /// How much of the VRT shall be transferred to the vault fee account
@@ -412,7 +413,7 @@ impl Vault {
                 min_amount_out,
                 vrt_to_depositor
             );
-            return Err(VaultError::SlippageError.into());
+            return Err(VaultError::SlippageError);
         }
 
         self.vrt_supply = self
@@ -456,7 +457,7 @@ impl Vault {
                 min_amount_out,
                 amount_out
             );
-            return Err(VaultError::SlippageError.into());
+            return Err(VaultError::SlippageError);
         }
 
         self.vrt_supply = self
@@ -483,7 +484,7 @@ impl Vault {
 
         if amount > assets_available_for_staking {
             msg!("Insufficient funds in vault for delegation");
-            return Err(VaultError::VaultInsufficientFunds.into());
+            return Err(VaultError::VaultInsufficientFunds);
         }
 
         self.delegation_state.delegate(amount)?;

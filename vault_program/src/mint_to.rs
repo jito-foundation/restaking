@@ -2,8 +2,10 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_token_mint, load_token_program,
 };
-use jito_vault_core::vault::MintSummary;
-use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_core::{
+    config::Config,
+    vault::{MintSummary, Vault},
+};
 use solana_program::{
     account_info::AccountInfo,
     clock::Clock,

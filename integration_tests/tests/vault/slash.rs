@@ -162,7 +162,4 @@ mod tests {
             operator_root.operator_pubkey
         );
     }
-
-    #[tokio::test]
-    async fn test_slasher_not_signer() {}
 }

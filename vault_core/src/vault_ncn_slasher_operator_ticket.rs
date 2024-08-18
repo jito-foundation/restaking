@@ -3,8 +3,10 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
-use solana_program::entrypoint::ProgramResult;
-use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
 impl Discriminator for VaultNcnSlasherOperatorTicket {
     const DISCRIMINATOR: u8 = 6;
