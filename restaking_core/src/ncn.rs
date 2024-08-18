@@ -74,6 +74,38 @@ impl Ncn {
         }
     }
 
+    /// Replace all secondary admins that were equal to the old admin to the new admin
+    ///
+    /// # Arguments
+    /// * `old_admin` - The old admin Pubkey
+    /// * `new_admin` - The new admin Pubkey
+    pub fn update_secondary_admin(&mut self, old_admin: &Pubkey, new_admin: &Pubkey) {
+        if self.operator_admin.eq(old_admin) {
+            self.operator_admin = *new_admin;
+            msg!("Operator admin set to {:?}", new_admin);
+        }
+
+        if self.vault_admin.eq(old_admin) {
+            self.vault_admin = *new_admin;
+            msg!("Vault admin set to {:?}", new_admin);
+        }
+
+        if self.slasher_admin.eq(old_admin) {
+            self.slasher_admin = *new_admin;
+            msg!("Slasher admin set to {:?}", new_admin);
+        }
+
+        if self.withdraw_admin.eq(old_admin) {
+            self.withdraw_admin = *new_admin;
+            msg!("Withdraw admin set to {:?}", new_admin);
+        }
+
+        if self.withdraw_fee_wallet.eq(old_admin) {
+            self.withdraw_fee_wallet = *new_admin;
+            msg!("Withdraw fee wallet set to {:?}", new_admin);
+        }
+    }
+
     /// Returns the seeds for the PDA
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([b"ncn".to_vec(), base.as_ref().to_vec()])
@@ -133,5 +165,33 @@ impl Ncn {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use solana_program::pubkey::Pubkey;
+
+    use super::Ncn;
+
+    #[test]
+    fn test_update_secondary_admin_ok() {
+        let old_admin = Pubkey::new_unique();
+        let mut ncn = Ncn::new(Pubkey::new_unique(), old_admin, 0, 0);
+
+        assert_eq!(ncn.operator_admin, old_admin);
+        assert_eq!(ncn.vault_admin, old_admin);
+        assert_eq!(ncn.slasher_admin, old_admin);
+        assert_eq!(ncn.withdraw_admin, old_admin);
+        assert_eq!(ncn.withdraw_fee_wallet, old_admin);
+
+        let new_admin = Pubkey::new_unique();
+        ncn.update_secondary_admin(&old_admin, &new_admin);
+
+        assert_eq!(ncn.operator_admin, new_admin);
+        assert_eq!(ncn.vault_admin, new_admin);
+        assert_eq!(ncn.slasher_admin, new_admin);
+        assert_eq!(ncn.withdraw_admin, new_admin);
+        assert_eq!(ncn.withdraw_fee_wallet, new_admin);
     }
 }
