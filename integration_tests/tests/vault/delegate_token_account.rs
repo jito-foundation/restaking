@@ -127,7 +127,7 @@ mod tests {
     #[test_case(spl_token::id(); "token")]
     #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
-    async fn test_delegate_vault_supprted_token_account_err(token_program_id: Pubkey) {
+    async fn test_delegate_vault_supported_token_account_err(token_program_id: Pubkey) {
         let (fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
             setup(&token_program_id).await;
         let mut vault_program_client = fixture.vault_program_client();

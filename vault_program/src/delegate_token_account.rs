@@ -1,5 +1,7 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint, load_token_program};
+use jito_jsm_core::loader::{
+    load_signer, load_token_2022_program, load_token_account, load_token_mint, load_token_program,
+};
 use jito_vault_core::vault::Vault;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
@@ -14,7 +16,8 @@ pub fn process_delegate_token_account(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let [vault_info, admin, token_mint, token_account, delegate, token_program] = accounts else {
+    let [vault_info, admin, token_mint, token_account, delegate, token_program_info] = accounts
+    else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
@@ -31,8 +34,20 @@ pub fn process_delegate_token_account(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    load_token_account(token_account, token_program)?;
-    load_token_program(token_program)?;
+    load_token_account(token_account, token_program_info)?;
+
+    match (*token_mint.owner, *token_account.owner) {
+        (spl_token::ID, spl_token::ID) => {
+            load_token_program(token_program_info)?;
+        }
+        (spl_token_2022::ID, spl_token_2022::ID) => {
+            load_token_2022_program(token_program_info)?;
+        }
+        _ => {
+            msg!("token_mint and token_account owner does not match");
+            return Err(ProgramError::InvalidAccountData);
+        }
+    }
 
     let (vault_pubkey, vault_bump, mut vault_seeds) =
         Vault::find_program_address(program_id, &vault.base);
@@ -40,9 +55,9 @@ pub fn process_delegate_token_account(
 
     drop(vault_data);
 
-    let ix = if token_program.key.eq(&spl_token::id()) {
+    let ix = if token_program_info.key.eq(&spl_token::id()) {
         spl_token::instruction::approve(
-            token_program.key,
+            token_program_info.key,
             token_account.key,
             delegate.key,
             &vault_pubkey,
@@ -51,7 +66,7 @@ pub fn process_delegate_token_account(
         )?
     } else {
         spl_token_2022::instruction::approve(
-            token_program.key,
+            token_program_info.key,
             token_account.key,
             delegate.key,
             &vault_pubkey,
@@ -63,7 +78,7 @@ pub fn process_delegate_token_account(
     invoke_signed(
         &ix,
         &[
-            token_program.clone(),
+            token_program_info.clone(),
             token_account.clone(),
             delegate.clone(),
             vault_info.clone(),

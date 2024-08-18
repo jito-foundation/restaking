@@ -1,8 +1,10 @@
 use jito_account_traits::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint, load_token_program};
+use jito_jsm_core::loader::{
+    load_signer, load_token_2022_program, load_token_account, load_token_mint, load_token_program,
+};
 use jito_restaking_core::ncn::Ncn;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, program::invoke_signed,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
 
@@ -30,7 +32,19 @@ pub fn process_ncn_delegate_token_account(
     ncn.check_admin(admin)?;
 
     load_token_account(token_account, token_program_info)?;
-    load_token_program(token_program_info)?;
+
+    match (*token_mint.owner, *token_account.owner) {
+        (spl_token::ID, spl_token::ID) => {
+            load_token_program(token_program_info)?;
+        }
+        (spl_token_2022::ID, spl_token_2022::ID) => {
+            load_token_2022_program(token_program_info)?;
+        }
+        _ => {
+            msg!("token_mint and token_account owner does not match");
+            return Err(ProgramError::InvalidAccountData);
+        }
+    }
 
     let mut ncn_seeds = Ncn::seeds(&ncn.base);
     ncn_seeds.push(vec![ncn.bump]);

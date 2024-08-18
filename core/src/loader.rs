@@ -43,7 +43,7 @@ pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
     Ok(())
 }
 
-/// Loads the account as the token program, returning an error if it is not.
+/// Loads the account as the `spl_token` program, returning an error if it is not.
 ///
 /// # Arguments
 /// * `info` - The account to load the token program from
@@ -51,9 +51,24 @@ pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.key.eq(&spl_token::id()) || info.key.eq(&spl_token_2022::id()) {
-    } else {
-        msg!("Account is not the token program");
+    if info.key.ne(&spl_token::id()) {
+        msg!("Account is not the spl token program");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+
+    Ok(())
+}
+
+/// Loads the account as the `spl_token_2022` program, returning an error if it is not.
+///
+/// # Arguments
+/// * `info` - The account to load the token program from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
+pub fn load_token_2022_program(info: &AccountInfo) -> Result<(), ProgramError> {
+    if info.key.ne(&spl_token_2022::id()) {
+        msg!("Account is not the spl token 2022 program");
         return Err(ProgramError::IncorrectProgramId);
     }
 
