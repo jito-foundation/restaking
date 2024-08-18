@@ -17,19 +17,14 @@ pub fn process_set_fees(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault, false)?;
-    load_signer(vault_fee_admin, false)?;
-
-    let mut vault_data = vault.data.borrow_mut();
-    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
-
-    if vault.fee_admin.ne(vault_fee_admin.key) {
-        msg!("Invalid fee admin for vault");
-        return Err(VaultError::VaultFeeAdminInvalid.into());
-    }
-
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    Vault::load(program_id, vault, false)?;
+    let mut vault_data = vault.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
+    load_signer(vault_fee_admin, false)?;
+
+    vault.check_fee_admin(vault_fee_admin.key)?;
 
     // Fees changes have a cooldown of 1 full epoch
     let current_slot = Clock::get()?.slot;

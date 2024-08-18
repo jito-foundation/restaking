@@ -155,13 +155,19 @@ pub fn process_instruction(
         // ------------------------------------------
         // Vault minting and burning
         // ------------------------------------------
-        VaultInstruction::MintTo { amount } => {
+        VaultInstruction::MintTo {
+            amount_in,
+            min_amount_out,
+        } => {
             msg!("Instruction: MintTo");
-            process_mint(program_id, accounts, amount)
+            process_mint(program_id, accounts, amount_in, min_amount_out)
         }
-        VaultInstruction::Burn { amount } => {
+        VaultInstruction::Burn {
+            amount_in,
+            min_amount_out,
+        } => {
             msg!("Instruction: Burn");
-            process_burn(program_id, accounts, amount)
+            process_burn(program_id, accounts, amount_in, min_amount_out)
         }
         VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");

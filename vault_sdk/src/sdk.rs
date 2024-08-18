@@ -159,7 +159,8 @@ pub fn mint_to(
     depositor_vrt_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
     mint_signer: Option<&Pubkey>,
-    amount: u64,
+    amount_in: u64,
+    min_amount_out: u64,
 ) -> Instruction {
     let mut accounts = vec![
         AccountMeta::new(*config, false),
@@ -178,15 +179,54 @@ pub fn mint_to(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::MintTo { amount }.try_to_vec().unwrap(),
+        data: VaultInstruction::MintTo {
+            amount_in,
+            min_amount_out,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 
-pub fn burn(program_id: &Pubkey, amount: u64) -> Instruction {
+#[allow(clippy::too_many_arguments)]
+pub fn burn(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_token_account: &Pubkey,
+    vrt_mint: &Pubkey,
+    staker: &Pubkey,
+    staker_token_account: &Pubkey,
+    staker_vrt_token_account: &Pubkey,
+    vault_fee_token_account: &Pubkey,
+    burn_signer: Option<&Pubkey>,
+    amount_in: u64,
+    min_amount_out: u64,
+) -> Instruction {
+    let mut accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_token_account, false),
+        AccountMeta::new(*vrt_mint, false),
+        AccountMeta::new(*staker, true),
+        AccountMeta::new(*staker_token_account, false),
+        AccountMeta::new(*staker_vrt_token_account, false),
+        AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(system_program::id(), false),
+    ];
+    if let Some(signer) = burn_signer {
+        accounts.push(AccountMeta::new_readonly(*signer, true));
+    }
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
-        data: VaultInstruction::Burn { amount }.try_to_vec().unwrap(),
+        accounts,
+        data: VaultInstruction::Burn {
+            amount_in,
+            min_amount_out,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 
@@ -545,7 +585,6 @@ pub fn enqueue_withdraw(
     vault: &Pubkey,
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
-    vault_fee_token_account: &Pubkey,
     staker: &Pubkey,
     staker_vrt_token_account: &Pubkey,
     base: &Pubkey,
@@ -556,7 +595,6 @@ pub fn enqueue_withdraw(
         AccountMeta::new(*vault, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
-        AccountMeta::new(*vault_fee_token_account, false),
         AccountMeta::new(*staker, true),
         AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new_readonly(*base, true),
@@ -581,9 +619,9 @@ pub fn burn_withdrawal_ticket(
     vrt_mint: &Pubkey,
     staker: &Pubkey,
     staker_token_account: &Pubkey,
-    staker_vrt_token_account: &Pubkey,
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
+    vault_fee_token_account: &Pubkey,
     min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -593,9 +631,9 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new(*vrt_mint, false),
         AccountMeta::new(*staker, true),
         AccountMeta::new(*staker_token_account, false),
-        AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
+        AccountMeta::new(*vault_fee_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
@@ -676,7 +714,6 @@ pub fn warmup_vault_ncn_ticket(
     config: &Pubkey,
     vault: &Pubkey,
     ncn: &Pubkey,
-    ncn_vault_ticket: &Pubkey,
     vault_ncn_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
@@ -684,7 +721,6 @@ pub fn warmup_vault_ncn_ticket(
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*ncn, false),
-        AccountMeta::new(*ncn_vault_ticket, false),
         AccountMeta::new(*vault_ncn_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];
@@ -702,7 +738,6 @@ pub fn warmup_vault_ncn_slasher_ticket(
     vault: &Pubkey,
     ncn: &Pubkey,
     slasher: &Pubkey,
-    ncn_slasher_ticket: &Pubkey,
     vault_slasher_ticket: &Pubkey,
     admin: &Pubkey,
 ) -> Instruction {
@@ -711,7 +746,6 @@ pub fn warmup_vault_ncn_slasher_ticket(
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*slasher, false),
-        AccountMeta::new_readonly(*ncn_slasher_ticket, false),
         AccountMeta::new(*vault_slasher_ticket, false),
         AccountMeta::new_readonly(*admin, true),
     ];

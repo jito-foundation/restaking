@@ -32,7 +32,7 @@ pub fn process_update_token_metadata(
 
     load_mpl_metadata(metadata, &vault.vrt_mint)?;
 
-    vault.check_admin(admin)?;
+    vault.check_admin(admin.key)?;
 
     let update_metadata_accounts_instruction = update_metadata_accounts_v2(
         *mpl_token_metadata_program.key,

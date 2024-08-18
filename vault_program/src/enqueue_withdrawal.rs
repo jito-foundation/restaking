@@ -35,25 +35,26 @@ pub fn process_enqueue_withdrawal(
     accounts: &[AccountInfo],
     vrt_amount: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(10);
+    let (required_accounts, optional_accounts) = accounts.split_at(9);
 
-    let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
+    let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     Config::load(program_id, config, false)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, true)?;
-    load_system_account(vault_staker_withdrawal_ticket, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
+    load_system_account(vault_staker_withdrawal_ticket, true)?;
     load_associated_token_account(
         vault_staker_withdrawal_ticket_token_account,
         vault_staker_withdrawal_ticket.key,
         &vault.vrt_mint,
     )?;
-    load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.vrt_mint)?;
     load_signer(staker, false)?;
     load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
     load_signer(base, false)?;
@@ -80,33 +81,8 @@ pub fn process_enqueue_withdrawal(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // If a Vault mint_burn_admin is present, it shall be a signer on the transaction
-    if vault.mint_burn_admin.ne(&Pubkey::default()) {
-        if let Some(burn_signer) = optional_accounts.first() {
-            load_signer(burn_signer, false)?;
-            if burn_signer.key.ne(&vault.mint_burn_admin) {
-                msg!("Burn signer does not match vault burn signer");
-                return Err(ProgramError::InvalidAccountData);
-            }
-        } else {
-            msg!("Mint signer is required for vault mint");
-            return Err(ProgramError::InvalidAccountData);
-        }
-    }
-
-    let config_data = config.data.borrow();
-    let config = Config::try_from_slice_unchecked(&config_data)?;
-    // The vault shall be up-to-date
-    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault update is needed");
-        return Err(VaultError::VaultUpdateNeeded.into());
-    }
-
-    // Calculate the amount to undelegate for withdrawal for the user, subtracting the fee
-    let fee_amount = vault.calculate_withdraw_fee(vrt_amount)?;
-    let amount_to_vault_staker_withdrawal_ticket = vrt_amount
-        .checked_sub(fee_amount)
-        .ok_or(VaultError::VaultSecurityUnderflow)?;
+    vault.check_mint_burn_admin(optional_accounts.first())?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
@@ -133,10 +109,15 @@ pub fn process_enqueue_withdrawal(
         *vault_info.key,
         *staker.key,
         *base.key,
-        amount_to_vault_staker_withdrawal_ticket,
+        vrt_amount,
         Clock::get()?.slot,
         vault_staker_withdrawal_ticket_bump,
     );
+
+    vault.vrt_enqueued_for_cooldown_amount = vault
+        .vrt_enqueued_for_cooldown_amount
+        .checked_add(vrt_amount)
+        .ok_or(VaultError::VaultOverflow)?;
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket
@@ -147,7 +128,7 @@ pub fn process_enqueue_withdrawal(
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             &[],
-            amount_to_vault_staker_withdrawal_ticket,
+            vrt_amount,
         )?,
         &[
             staker_vrt_token_account.clone(),
@@ -155,35 +136,6 @@ pub fn process_enqueue_withdrawal(
             staker.clone(),
         ],
     )?;
-
-    // Withdraw the fee from the staker's VRT account, transferring them to an ATA owned
-    // by the VaultStakerWithdrawalTicket
-    invoke(
-        &transfer(
-            &spl_token::id(),
-            staker_vrt_token_account.key,
-            vault_fee_token_account.key,
-            staker.key,
-            &[],
-            fee_amount,
-        )?,
-        &[
-            staker_vrt_token_account.clone(),
-            vault_fee_token_account.clone(),
-            staker.clone(),
-        ],
-    )?;
-
-    let vrt_pending_withdrawal = vault
-        .vrt_enqueued_for_cooldown_amount
-        .checked_add(amount_to_vault_staker_withdrawal_ticket)
-        .ok_or(VaultError::VaultOverflow)?;
-    if vrt_pending_withdrawal > vault.vrt_supply {
-        msg!("Vault pending withdrawal exceeds total VRT");
-        return Err(VaultError::VaultOverflow.into());
-    }
-
-    vault.vrt_enqueued_for_cooldown_amount = vrt_pending_withdrawal;
 
     Ok(())
 }

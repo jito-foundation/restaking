@@ -57,7 +57,7 @@ pub enum VaultError {
     VaultNcnSlasherTicketUnslashable = 4016,
     NcnVaultTicketUnslashable = 4017,
     NcnVaultSlasherTicketUnslashable = 4018,
-    VaultNcnSlasherOperatorMaxSlashableExceeded = 4019,
+    VaultMaxSlashedPerOperatorExceeded = 4019,
 
     VaultDelegationUpdateOverflow = 5000,
     SlippageError,

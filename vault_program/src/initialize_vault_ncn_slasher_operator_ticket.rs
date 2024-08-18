@@ -10,7 +10,6 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
-use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -28,9 +27,11 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     };
 
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault_info, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
+    Vault::load(program_id, vault_info, false)?;
+    let vault_data = vault_info.data.borrow();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     Ncn::load(&config.restaking_program, ncn, false)?;
     Operator::load(&config.restaking_program, operator, false)?;
     VaultNcnSlasherTicket::load(
@@ -70,12 +71,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     }
 
     // The vault shall be up-to-date before adding support for the NCN slasher operator
-    let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault update is needed");
-        return Err(VaultError::VaultUpdateNeeded.into());
-    }
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
     msg!(
         "Initializing vault NCN slasher operator ticket at address {}",

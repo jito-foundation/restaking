@@ -16,33 +16,31 @@ pub fn process_close_vault_update_state_tracker(
     accounts: &[AccountInfo],
     ncn_epoch: u64,
 ) -> ProgramResult {
-    let [config, vault, vault_update_state_tracker_info, payer] = accounts else {
+    let [config, vault_info, vault_update_state_tracker_info, payer] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     let slot = Clock::get()?.slot;
 
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault, true)?;
     let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
+    Vault::load(program_id, vault_info, true)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker_info,
-        vault,
+        vault_info,
         ncn_epoch,
         true,
     )?;
-    load_signer(payer, true)?;
-
-    let mut vault_data = vault.data.borrow_mut();
-    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
-
     let mut vault_update_state_tracker_data = vault_update_state_tracker_info.data.borrow_mut();
     let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
         &mut vault_update_state_tracker_data,
     )?;
+    load_signer(payer, true)?;
 
-    let config = Config::try_from_slice_unchecked(&config_data)?;
     let current_ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
 
     // The VaultUpdateStateTracker shall be up-to-date before closing

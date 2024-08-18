@@ -1,10 +1,24 @@
 //! The vault is responsible for holding tokens and minting VRT tokens.
+use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_jsm_core::loader::load_signer;
 use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::delegation_state::DelegationState;
+pub struct BurnSummary {
+    /// How much of the VRT shall be transferred to the vault fee account
+    pub fee_amount: u64,
+    /// How much of the staker's VRT shall be burned
+    pub burn_amount: u64,
+    /// How much of the staker's tokens shall be returned
+    pub out_amount: u64,
+}
+
+pub struct MintSummary {
+    pub vrt_to_depositor: u64,
+    pub vrt_to_fee_wallet: u64,
+}
 
 impl Discriminator for Vault {
     const DISCRIMINATOR: u8 = 2;
@@ -25,11 +39,11 @@ pub struct Vault {
     /// Mint of the VRT token
     pub vrt_mint: Pubkey,
 
-    /// The total number of VRT in circulation
-    pub vrt_supply: u64,
-
     /// Mint of the token that is supported by the VRT
     pub supported_mint: Pubkey,
+
+    /// The total number of VRT in circulation
+    pub vrt_supply: u64,
 
     /// The total number of tokens deposited
     pub tokens_deposited: u64,
@@ -163,6 +177,73 @@ impl Vault {
         }
     }
 
+    pub fn check_vrt_mint(&self, vrt_mint: &Pubkey) -> Result<(), ProgramError> {
+        if self.vrt_mint.ne(vrt_mint) {
+            msg!("Vault VRT mint does not match the provided VRT mint");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
+
+    /// Check admin validity and signature
+    #[inline(always)]
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), ProgramError> {
+        if self.admin.ne(admin) {
+            msg!("Vault admin does not match the provided admin");
+            return Err(VaultError::VaultAdminInvalid.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn check_delegation_admin(&self, delegation_admin: &Pubkey) -> Result<(), VaultError> {
+        if self.delegation_admin.ne(delegation_admin) {
+            msg!("Vault delegation admin does not match the provided delegation admin");
+            return Err(VaultError::VaultDelegationAdminInvalid);
+        }
+        Ok(())
+    }
+
+    pub fn check_operator_admin(&self, operator_admin: &Pubkey) -> Result<(), VaultError> {
+        if self.operator_admin.ne(operator_admin) {
+            msg!("Vault operator admin does not match the provided operator admin");
+            return Err(VaultError::VaultOperatorAdminInvalid);
+        }
+        Ok(())
+    }
+
+    pub fn check_ncn_admin(&self, ncn_admin: &Pubkey) -> Result<(), VaultError> {
+        if self.ncn_admin.ne(ncn_admin) {
+            msg!("Vault NCN admin does not match the provided NCN admin");
+            return Err(VaultError::VaultNcnAdminInvalid);
+        }
+        Ok(())
+    }
+
+    pub fn check_slasher_admin(&self, slasher_admin: &Pubkey) -> Result<(), VaultError> {
+        if self.slasher_admin.ne(slasher_admin) {
+            msg!("Vault slasher admin does not match the provided slasher admin");
+            return Err(VaultError::VaultSlasherAdminInvalid);
+        }
+        Ok(())
+    }
+
+    pub fn check_capacity_admin(&self, capacity_admin: &Pubkey) -> Result<(), VaultError> {
+        if self.capacity_admin.ne(capacity_admin) {
+            msg!("Vault capacity admin does not match the provided capacity admin");
+            return Err(VaultError::VaultCapacityAdminInvalid);
+        }
+        Ok(())
+    }
+
+    pub fn check_fee_admin(&self, fee_admin: &Pubkey) -> Result<(), VaultError> {
+        if self.fee_admin.ne(fee_admin) {
+            msg!("Vault fee admin does not match the provided fee admin");
+            return Err(VaultError::VaultFeeAdminInvalid);
+        }
+        Ok(())
+    }
+
     /// Replace all secondary admins that were equal to the old admin to the new admin
     pub fn update_secondary_admin(&mut self, old_admin: &Pubkey, new_admin: &Pubkey) {
         if self.delegation_admin.eq(old_admin) {
@@ -215,6 +296,49 @@ impl Vault {
     // Asset accounting and tracking
     // ------------------------------------------
 
+    #[inline(always)]
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+        let last_updated_epoch = self
+            .last_full_state_update_slot
+            .checked_div(epoch_length)
+            .unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        last_updated_epoch < current_epoch
+    }
+
+    #[inline(always)]
+    pub fn check_update_state_ok(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
+        if self.is_update_needed(slot, epoch_length) {
+            msg!("Vault update is needed");
+            return Err(VaultError::VaultUpdateNeeded.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn check_mint_burn_admin(
+        &self,
+        mint_burn_admin: Option<&AccountInfo>,
+    ) -> Result<(), ProgramError> {
+        if self.mint_burn_admin.ne(&Pubkey::default()) {
+            if let Some(burn_signer) = mint_burn_admin {
+                load_signer(burn_signer, false)?;
+                if burn_signer.key.ne(&self.mint_burn_admin) {
+                    msg!("Burn signer does not match vault burn signer");
+                    return Err(ProgramError::InvalidAccountData);
+                }
+            } else {
+                msg!("Mint signer is required for vault mint");
+                return Err(ProgramError::InvalidAccountData);
+            }
+        }
+        Ok(())
+    }
+
+    // ------------------------------------------
+    // Minting and burning
+    // ------------------------------------------
+
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
     pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
@@ -262,27 +386,109 @@ impl Vault {
         Ok(fee)
     }
 
-    /// Check admin validity and signature
-    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), ProgramError> {
-        if *admin_info.key != self.admin {
-            msg!(
-                "Incorrect admin provided, expected {}, received {}",
-                self.admin,
-                admin_info.key
-            );
-            return Err(VaultError::VaultAdminInvalid.into());
+    pub fn mint_with_fee(
+        &mut self,
+        amount_in: u64,
+        min_amount_out: u64,
+    ) -> Result<MintSummary, VaultError> {
+        let vault_token_amount_after_deposit = self
+            .tokens_deposited
+            .checked_add(amount_in)
+            .ok_or(VaultError::VaultOverflow)?;
+        if vault_token_amount_after_deposit > self.capacity {
+            msg!("Amount exceeds vault capacity");
+            return Err(VaultError::VaultCapacityExceeded);
         }
-        Ok(())
+
+        let vrt_mint_amount = self.calculate_vrt_mint_amount(amount_in)?;
+        let vrt_to_fee_wallet = self.calculate_deposit_fee(vrt_mint_amount)?;
+        let vrt_to_depositor = vrt_mint_amount
+            .checked_sub(vrt_to_fee_wallet)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        if vrt_to_depositor < min_amount_out {
+            msg!(
+                "Slippage error, expected more than {} out, got {}",
+                min_amount_out,
+                vrt_to_depositor
+            );
+            return Err(VaultError::SlippageError.into());
+        }
+
+        self.vrt_supply = self
+            .vrt_supply
+            .checked_add(vrt_mint_amount)
+            .ok_or(VaultError::VaultOverflow)?;
+        self.tokens_deposited = vault_token_amount_after_deposit;
+
+        Ok(MintSummary {
+            vrt_to_depositor,
+            vrt_to_fee_wallet,
+        })
     }
 
-    #[inline(always)]
-    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
-        let last_updated_epoch = self
-            .last_full_state_update_slot
-            .checked_div(epoch_length)
-            .unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
-        last_updated_epoch < current_epoch
+    pub fn burn_with_fee(
+        &mut self,
+        amount_in: u64,
+        min_amount_out: u64,
+    ) -> Result<BurnSummary, VaultError> {
+        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let amount_to_burn = amount_in
+            .checked_sub(fee_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+        let amount_out = self.calculate_assets_returned_amount(amount_to_burn)?;
+
+        let max_withdrawable = self
+            .tokens_deposited
+            .checked_sub(self.delegation_state.total_security()?)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        // The vault shall not be able to withdraw more than the max withdrawable amount
+        if amount_out > max_withdrawable {
+            msg!("Amount out exceeds max withdrawable amount");
+            return Err(VaultError::VaultUnderflow);
+        }
+
+        // Slippage check
+        if amount_out < min_amount_out {
+            msg!(
+                "Slippage error, expected more than {} out, got {}",
+                min_amount_out,
+                amount_out
+            );
+            return Err(VaultError::SlippageError.into());
+        }
+
+        self.vrt_supply = self
+            .vrt_supply
+            .checked_sub(amount_to_burn)
+            .ok_or(VaultError::VaultUnderflow)?;
+        self.tokens_deposited = self
+            .tokens_deposited
+            .checked_sub(amount_out)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        Ok(BurnSummary {
+            fee_amount,
+            burn_amount: amount_to_burn,
+            out_amount: amount_out,
+        })
+    }
+
+    pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
+        let assets_available_for_staking = self
+            .tokens_deposited
+            .checked_sub(self.delegation_state.total_security()?)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        if amount > assets_available_for_staking {
+            msg!("Insufficient funds in vault for delegation");
+            return Err(VaultError::VaultInsufficientFunds.into());
+        }
+
+        self.delegation_state.delegate(amount)?;
+
+        Ok(())
     }
 
     // ------------------------------------------

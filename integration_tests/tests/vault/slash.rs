@@ -5,7 +5,6 @@ mod tests {
         vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     };
     use solana_sdk::signature::{Keypair, Signer};
-    use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
 
@@ -31,34 +30,12 @@ mod tests {
             .unwrap();
 
         let depositor = Keypair::new();
-        fixture.transfer(&depositor.pubkey(), 1.0).await.unwrap();
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-        fixture
-            .mint_spl_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
-            .await
-            .unwrap();
-
-        // depositor ATA for VRT
-        fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey())
-            .await
-            .unwrap();
-
         vault_program_client
-            .mint_to(
-                &vault_root.vault_pubkey,
-                &vault.vrt_mint,
-                &depositor,
-                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
-                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
-                None,
-                MINT_AMOUNT,
-            )
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -84,6 +61,11 @@ mod tests {
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
             .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
 
@@ -180,4 +162,7 @@ mod tests {
             operator_root.operator_pubkey
         );
     }
+
+    #[tokio::test]
+    async fn test_slasher_not_signer() {}
 }
