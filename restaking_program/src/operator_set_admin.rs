@@ -33,5 +33,7 @@ pub fn process_set_node_operator_admin(
 
     operator.admin = *new_admin.key;
 
+    operator.update_secondary_admin(old_admin.key, new_admin.key);
+
     Ok(())
 }
