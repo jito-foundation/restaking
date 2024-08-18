@@ -91,6 +91,38 @@ impl Operator {
         Ok(())
     }
 
+    /// Replace all secondary admins that were equal to the old admin to the new admin
+    ///
+    /// # Arguments
+    /// * `old_admin` - The old admin Pubkey
+    /// * `new_admin` - The new admin Pubkey
+    pub fn update_secondary_admin(&mut self, old_admin: &Pubkey, new_admin: &Pubkey) {
+        if self.ncn_admin.eq(old_admin) {
+            self.ncn_admin = *new_admin;
+            msg!("NCN admin set to {:?}", new_admin);
+        }
+
+        if self.vault_admin.eq(old_admin) {
+            self.vault_admin = *new_admin;
+            msg!("Vault admin set to {:?}", new_admin);
+        }
+
+        if self.voter.eq(old_admin) {
+            self.voter = *new_admin;
+            msg!("Voter set to {:?}", new_admin);
+        }
+
+        if self.withdrawal_admin.eq(old_admin) {
+            self.withdrawal_admin = *new_admin;
+            msg!("Withdrawal admin set to {:?}", new_admin);
+        }
+
+        if self.withdrawal_fee_wallet.eq(old_admin) {
+            self.withdrawal_fee_wallet = *new_admin;
+            msg!("Withdrawal fee wallet set to {:?}", new_admin);
+        }
+    }
+
     /// Returns the seeds for the PDA
     ///
     /// # Arguments
@@ -158,5 +190,33 @@ impl Operator {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use solana_program::pubkey::Pubkey;
+
+    use crate::operator::Operator;
+
+    #[test]
+    fn test_update_secondary_admin_ok() {
+        let old_admin = Pubkey::new_unique();
+        let mut operator = Operator::new(Pubkey::new_unique(), old_admin, 0, 0);
+
+        assert_eq!(operator.ncn_admin, old_admin);
+        assert_eq!(operator.vault_admin, old_admin);
+        assert_eq!(operator.voter, old_admin);
+        assert_eq!(operator.withdrawal_admin, old_admin);
+        assert_eq!(operator.withdrawal_fee_wallet, old_admin);
+
+        let new_admin = Pubkey::new_unique();
+        operator.update_secondary_admin(&old_admin, &new_admin);
+
+        assert_eq!(operator.ncn_admin, new_admin);
+        assert_eq!(operator.vault_admin, new_admin);
+        assert_eq!(operator.voter, new_admin);
+        assert_eq!(operator.withdrawal_admin, new_admin);
+        assert_eq!(operator.withdrawal_fee_wallet, new_admin);
     }
 }
