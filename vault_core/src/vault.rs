@@ -7,6 +7,7 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 use crate::delegation_state::DelegationState;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
     /// How much of the VRT shall be transferred to the vault fee account
     pub fee_amount: u64,
@@ -16,6 +17,7 @@ pub struct BurnSummary {
     pub out_amount: u64,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct MintSummary {
     pub vrt_to_depositor: u64,
     pub vrt_to_fee_wallet: u64,
@@ -326,11 +328,11 @@ impl Vault {
                 load_signer(burn_signer, false)?;
                 if burn_signer.key.ne(&self.mint_burn_admin) {
                     msg!("Burn signer does not match vault burn signer");
-                    return Err(ProgramError::InvalidAccountData);
+                    return Err(VaultError::VaultMintBurnAdminInvalid.into());
                 }
             } else {
                 msg!("Mint signer is required for vault mint");
-                return Err(ProgramError::InvalidAccountData);
+                return Err(VaultError::VaultMintBurnAdminInvalid.into());
             }
         }
         Ok(())
@@ -343,12 +345,6 @@ impl Vault {
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
     pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
-        if self.vrt_supply == 0 {
-            return Err(VaultError::VaultVrtEmpty);
-        } else if vrt_amount > self.vrt_supply {
-            return Err(VaultError::VaultInsufficientFunds);
-        }
-
         vrt_amount
             .checked_mul(self.tokens_deposited)
             .and_then(|x| x.checked_div(self.vrt_supply))
@@ -373,8 +369,8 @@ impl Vault {
     pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = vrt_amount
             .checked_mul(self.deposit_fee_bps as u64)
-            .and_then(|x| x.checked_div(10_000))
-            .ok_or(VaultError::VaultOverflow)?;
+            .ok_or(VaultError::VaultOverflow)?
+            .div_ceil(10_000);
         Ok(fee)
     }
 
@@ -382,8 +378,8 @@ impl Vault {
     pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = vrt_amount
             .checked_mul(self.withdrawal_fee_bps as u64)
-            .and_then(|x| x.checked_div(10_000))
-            .ok_or(VaultError::VaultOverflow)?;
+            .ok_or(VaultError::VaultOverflow)?
+            .div_ceil(10_000);
         Ok(fee)
     }
 
@@ -433,11 +429,23 @@ impl Vault {
         amount_in: u64,
         min_amount_out: u64,
     ) -> Result<BurnSummary, VaultError> {
+        if amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultUnderflow);
+        }
+        if amount_in > self.vrt_supply {
+            msg!("Amount exceeds vault VRT supply");
+            return Err(VaultError::VaultInsufficientFunds);
+        }
         let fee_amount = self.calculate_withdraw_fee(amount_in)?;
         let amount_to_burn = amount_in
             .checked_sub(fee_amount)
             .ok_or(VaultError::VaultUnderflow)?;
-        let amount_out = self.calculate_assets_returned_amount(amount_to_burn)?;
+
+        let amount_out = amount_to_burn
+            .checked_mul(self.tokens_deposited)
+            .and_then(|x| x.checked_div(self.vrt_supply))
+            .ok_or(VaultError::VaultOverflow)?;
 
         let max_withdrawable = self
             .tokens_deposited
@@ -562,10 +570,15 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
-    use jito_vault_sdk::error::VaultError;
-    use solana_program::pubkey::Pubkey;
+    use std::{cell::RefCell, rc::Rc};
 
-    use crate::vault::Vault;
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
+
+    use crate::{
+        delegation_state::DelegationState,
+        vault::{BurnSummary, MintSummary, Vault},
+    };
 
     #[test]
     fn test_update_secondary_admin_ok() {
@@ -607,8 +620,8 @@ mod tests {
     }
 
     #[test]
-    fn test_deposit_ratio_simple_ok() {
-        let vault = Vault::new(
+    fn test_mint_simple_ok() {
+        let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -618,8 +631,52 @@ mod tests {
             0,
             0,
         );
-        let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
-        assert_eq!(num_minted, 100);
+        let MintSummary {
+            vrt_to_depositor,
+            vrt_to_fee_wallet,
+        } = vault.mint_with_fee(100, 100).unwrap();
+        assert_eq!(vrt_to_depositor, 100);
+        assert_eq!(vrt_to_fee_wallet, 0);
+    }
+
+    #[test]
+    fn test_mint_with_deposit_fee_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            100,
+            0,
+            0,
+        );
+        let MintSummary {
+            vrt_to_depositor,
+            vrt_to_fee_wallet,
+        } = vault.mint_with_fee(100, 99).unwrap();
+        assert_eq!(vrt_to_depositor, 99);
+        assert_eq!(vrt_to_fee_wallet, 1);
+        assert_eq!(vault.tokens_deposited, 100);
+        assert_eq!(vault.vrt_supply, 100);
+    }
+
+    #[test]
+    fn test_mint_less_than_slippage_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            100,
+            1,
+            0,
+        );
+        assert_eq!(
+            vault.mint_with_fee(100, 100),
+            Err(VaultError::SlippageError)
+        );
     }
 
     #[test]
@@ -637,12 +694,442 @@ mod tests {
         vault.tokens_deposited = 90;
         vault.vrt_supply = 100;
 
-        let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
-        assert_eq!(num_minted, 111);
+        let MintSummary {
+            vrt_to_depositor, ..
+        } = vault.mint_with_fee(100, 111).unwrap();
+        assert_eq!(vrt_to_depositor, 111);
+        assert_eq!(vault.tokens_deposited, 190);
+        assert_eq!(vault.vrt_supply, 211);
     }
 
     #[test]
-    fn test_calculate_assets_returned_amount_ok() {
+    fn test_deposit_ratio_after_reward_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 200;
+        vault.vrt_supply = 100;
+
+        let MintSummary {
+            vrt_to_depositor, ..
+        } = vault.mint_with_fee(100, 50).unwrap();
+        assert_eq!(vrt_to_depositor, 50);
+        assert_eq!(vault.tokens_deposited, 300);
+        assert_eq!(vault.vrt_supply, 150);
+    }
+
+    #[test]
+    fn test_mint_burn_no_admin() {
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
+    }
+
+    #[test]
+    fn test_mint_burn_signer_account_missing() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.mint_burn_admin = Pubkey::new_unique();
+        let err = vault.check_mint_burn_admin(None).unwrap_err();
+        assert_eq!(
+            err,
+            ProgramError::Custom(VaultError::VaultMintBurnAdminInvalid.into())
+        );
+    }
+
+    #[test]
+    fn test_mint_burn_signer_address_not_signer() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.mint_burn_admin = Pubkey::new_unique();
+
+        let mut binding_lamports = 0;
+        let lamports = Rc::new(RefCell::new(&mut binding_lamports));
+        let mut data: Vec<u8> = vec![0];
+        let data = Rc::new(RefCell::new(data.as_mut_slice()));
+        let not_signer = AccountInfo {
+            key: &vault.mint_burn_admin,
+            is_signer: false,
+            is_writable: false,
+            lamports,
+            data,
+            owner: &Pubkey::new_unique(),
+            executable: false,
+            rent_epoch: 0,
+        };
+        let err = vault.check_mint_burn_admin(Some(&not_signer)).unwrap_err();
+        assert_eq!(err, ProgramError::MissingRequiredSignature);
+    }
+
+    #[test]
+    fn test_mint_burn_signer_address_invalid() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.mint_burn_admin = Pubkey::new_unique();
+
+        let mut binding_lamports = 0;
+        let lamports = Rc::new(RefCell::new(&mut binding_lamports));
+        let mut data: Vec<u8> = vec![0];
+        let data = Rc::new(RefCell::new(data.as_mut_slice()));
+        let wrong_address_and_signer = AccountInfo {
+            key: &Pubkey::new_unique(),
+            is_signer: true,
+            is_writable: false,
+            lamports,
+            data,
+            owner: &Pubkey::new_unique(),
+            executable: false,
+            rent_epoch: 0,
+        };
+        let err = vault
+            .check_mint_burn_admin(Some(&wrong_address_and_signer))
+            .unwrap_err();
+        assert_eq!(
+            err,
+            ProgramError::Custom(VaultError::VaultMintBurnAdminInvalid.into())
+        );
+    }
+
+    #[test]
+    fn test_burn_with_fee_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            100,
+            0,
+        );
+        vault.tokens_deposited = 100;
+        vault.vrt_supply = 100;
+
+        let BurnSummary {
+            fee_amount,
+            burn_amount,
+            out_amount,
+        } = vault.burn_with_fee(100, 99).unwrap();
+        assert_eq!(fee_amount, 1);
+        assert_eq!(burn_amount, 99);
+        assert_eq!(out_amount, 99);
+    }
+
+    #[test]
+    fn test_burn_too_much_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            100,
+            0,
+        );
+        vault.tokens_deposited = 100;
+        vault.vrt_supply = 100;
+
+        assert_eq!(
+            vault.burn_with_fee(101, 100),
+            Err(VaultError::VaultInsufficientFunds)
+        );
+    }
+
+    #[test]
+    fn test_burn_zero_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            100,
+            0,
+        );
+        vault.tokens_deposited = 100;
+        vault.vrt_supply = 100;
+        assert_eq!(vault.burn_with_fee(0, 0), Err(VaultError::VaultUnderflow));
+    }
+
+    #[test]
+    fn test_burn_slippage_exceeded_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            100,
+            0,
+        );
+        vault.tokens_deposited = 100;
+        vault.vrt_supply = 100;
+        assert_eq!(
+            vault.burn_with_fee(100, 100),
+            Err(VaultError::SlippageError)
+        );
+    }
+
+    #[test]
+    fn test_burn_with_delegation_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.vrt_supply = 100;
+        vault.tokens_deposited = 100;
+
+        vault.delegation_state = DelegationState {
+            staked_amount: 10,
+            enqueued_for_cooldown_amount: 10,
+            cooling_down_amount: 10,
+            enqueued_for_withdraw_amount: 10,
+            cooling_down_for_withdraw_amount: 10,
+        };
+
+        let BurnSummary {
+            fee_amount,
+            burn_amount,
+            out_amount,
+        } = vault.burn_with_fee(50, 50).unwrap();
+        assert_eq!(fee_amount, 0);
+        assert_eq!(burn_amount, 50);
+        assert_eq!(out_amount, 50);
+        assert_eq!(vault.tokens_deposited, 50);
+        assert_eq!(vault.vrt_supply, 50);
+    }
+
+    #[test]
+    fn test_burn_more_than_withdrawable_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.vrt_supply = 100;
+        vault.tokens_deposited = 100;
+
+        vault.delegation_state = DelegationState {
+            staked_amount: 10,
+            enqueued_for_cooldown_amount: 10,
+            cooling_down_amount: 10,
+            enqueued_for_withdraw_amount: 10,
+            cooling_down_for_withdraw_amount: 10,
+        };
+
+        assert_eq!(vault.burn_with_fee(51, 50), Err(VaultError::VaultUnderflow));
+    }
+
+    #[test]
+    fn test_burn_all_delegated() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.vrt_supply = 100;
+        vault.tokens_deposited = 100;
+        vault.delegation_state = DelegationState {
+            staked_amount: 100,
+            enqueued_for_cooldown_amount: 0,
+            cooling_down_amount: 0,
+            enqueued_for_withdraw_amount: 0,
+            cooling_down_for_withdraw_amount: 0,
+        };
+
+        let result = vault.burn_with_fee(1, 0);
+        assert_eq!(result, Err(VaultError::VaultUnderflow));
+    }
+
+    #[test]
+    fn test_burn_rounding_issues() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.vrt_supply = 1_000_000;
+        vault.tokens_deposited = 1_000_000;
+
+        let result = vault.burn_with_fee(1, 0).unwrap();
+        assert_eq!(result.out_amount, 1);
+        assert_eq!(vault.tokens_deposited, 999_999);
+        assert_eq!(vault.vrt_supply, 999_999);
+    }
+
+    #[test]
+    fn test_burn_max_values() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.vrt_supply = u64::MAX;
+        vault.tokens_deposited = u64::MAX;
+
+        assert_eq!(
+            vault.burn_with_fee(u64::MAX, u64::MAX - 1).unwrap_err(),
+            VaultError::VaultOverflow
+        );
+    }
+
+    #[test]
+    fn test_burn_different_fees() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            500, // 5% withdrawal fee
+            0,
+        );
+        vault.vrt_supply = 10000;
+        vault.tokens_deposited = 10000;
+
+        let result = vault.burn_with_fee(1000, 900).unwrap();
+        assert_eq!(result.fee_amount, 50);
+        assert_eq!(result.burn_amount, 950);
+        assert_eq!(result.out_amount, 950);
+    }
+
+    #[test]
+    fn test_mint_at_max_capacity() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.capacity = 1000;
+        vault.vrt_supply = 1000;
+        vault.tokens_deposited = 900;
+
+        let result = vault.mint_with_fee(100, 111).unwrap();
+        assert_eq!(result.vrt_to_depositor, 111);
+        assert_eq!(vault.tokens_deposited, 1000);
+
+        // Attempt to mint beyond capacity
+        let result = vault.mint_with_fee(1, 1);
+        assert_eq!(result, Err(VaultError::VaultCapacityExceeded));
+    }
+
+    #[test]
+    fn test_mint_small_amounts() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1_000_000;
+        vault.vrt_supply = 1_000_000;
+
+        let result = vault.mint_with_fee(1, 1).unwrap();
+        assert_eq!(result.vrt_to_depositor, 1);
+        assert_eq!(vault.tokens_deposited, 1_000_001);
+        assert_eq!(vault.vrt_supply, 1_000_001);
+    }
+
+    #[test]
+    fn test_mint_different_fees() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            500, // 5% deposit fee
+            0,
+            0,
+        );
+
+        let result = vault.mint_with_fee(1000, 950).unwrap();
+        assert_eq!(result.vrt_to_depositor, 950);
+        assert_eq!(result.vrt_to_fee_wallet, 50);
+        assert_eq!(vault.tokens_deposited, 1000);
+        assert_eq!(vault.vrt_supply, 1000);
+    }
+
+    #[test]
+    fn test_mint_empty_vault() {
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -654,43 +1141,77 @@ mod tests {
             0,
         );
 
-        vault.vrt_supply = 100_000;
-        vault.tokens_deposited = 100_000;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(50_000).unwrap(),
-            50_000
-        );
+        let result = vault.mint_with_fee(1000, 1000).unwrap();
+        assert_eq!(result.vrt_to_depositor, 1000);
+        assert_eq!(result.vrt_to_fee_wallet, 0);
+        assert_eq!(vault.tokens_deposited, 1000);
+        assert_eq!(vault.vrt_supply, 1000);
+    }
 
-        vault.tokens_deposited = 90_000;
-        vault.vrt_supply = 100_000;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(50_000).unwrap(),
-            45_000
+    #[test]
+    fn test_mint_slippage_protection() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            100, // 1% deposit fee
+            0,
+            0,
         );
+        vault.tokens_deposited = 10000;
+        vault.vrt_supply = 10000;
 
-        vault.tokens_deposited = 110_000;
-        vault.vrt_supply = 100_000;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(50_000).unwrap(),
-            55_000
+        // Successful mint within slippage tolerance
+        let result = vault.mint_with_fee(1000, 990).unwrap();
+        assert_eq!(result.vrt_to_depositor, 990);
+
+        // Failed mint due to slippage
+        let result = vault.mint_with_fee(1000, 991);
+        assert_eq!(result, Err(VaultError::SlippageError));
+    }
+
+    #[test]
+    fn test_mint_small_fee() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            1,
+            0,
+            0,
         );
+        let MintSummary {
+            vrt_to_depositor,
+            vrt_to_fee_wallet,
+        } = vault.mint_with_fee(1, 0).unwrap();
+        assert_eq!(vrt_to_depositor, 0);
+        assert_eq!(vrt_to_fee_wallet, 1);
+    }
 
-        vault.tokens_deposited = 100;
-        vault.vrt_supply = 0;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(100),
-            Err(VaultError::VaultVrtEmpty)
+    #[test]
+    fn test_burn_small_fee() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            1,
+            0,
         );
-
-        vault.tokens_deposited = 100;
-        vault.vrt_supply = 1;
-        assert_eq!(
-            vault.calculate_assets_returned_amount(100),
-            Err(VaultError::VaultInsufficientFunds)
-        );
-
-        vault.tokens_deposited = 100;
-        vault.vrt_supply = 13;
-        assert_eq!(vault.calculate_assets_returned_amount(1).unwrap(), 7);
+        vault.mint_with_fee(1, 1).unwrap();
+        let BurnSummary {
+            fee_amount,
+            burn_amount,
+            out_amount,
+        } = vault.burn_with_fee(1, 0).unwrap();
+        assert_eq!(fee_amount, 1);
+        assert_eq!(burn_amount, 0);
+        assert_eq!(out_amount, 0);
     }
 }
