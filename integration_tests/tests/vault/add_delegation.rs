@@ -13,13 +13,26 @@ mod tests {
         const AMOUNT_IN: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let epoch_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                epoch_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -76,13 +89,26 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let epoch_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                epoch_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 

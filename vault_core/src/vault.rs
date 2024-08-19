@@ -127,11 +127,14 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     pub withdrawal_fee_bps: u16,
 
+    /// Fee for each epoch
+    pub epoch_fee_bps: u16,
+
     /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 11],
+    reserved: [u8; 9],
 }
 
 impl Vault {
@@ -144,6 +147,7 @@ impl Vault {
         base: Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        epoch_fee_bps: u16,
         bump: u8,
     ) -> Self {
         Self {
@@ -170,11 +174,12 @@ impl Vault {
             last_full_state_update_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
+            epoch_fee_bps,
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
             bump,
-            reserved: [0; 11],
+            reserved: [0; 9],
             delegation_state: DelegationState::default(),
             vrt_ready_to_claim_amount: 0,
         }
@@ -609,6 +614,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.mint_burn_admin = old_admin;
 
@@ -647,6 +653,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         let MintSummary {
             vrt_to_depositor,
@@ -665,6 +672,7 @@ mod tests {
             0,
             Pubkey::new_unique(),
             100,
+            0,
             0,
             0,
         );
@@ -689,6 +697,7 @@ mod tests {
             100,
             1,
             0,
+            0,
         );
         assert_eq!(
             vault.mint_with_fee(100, 100),
@@ -704,6 +713,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -730,6 +740,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 200;
         vault.vrt_supply = 100;
@@ -753,6 +764,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
@@ -765,6 +777,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -785,6 +798,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -817,6 +831,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -857,6 +872,7 @@ mod tests {
             0,
             100,
             0,
+            0,
         );
         vault.tokens_deposited = 100;
         vault.vrt_supply = 100;
@@ -882,6 +898,7 @@ mod tests {
             0,
             100,
             0,
+            0,
         );
         vault.tokens_deposited = 100;
         vault.vrt_supply = 100;
@@ -903,6 +920,7 @@ mod tests {
             0,
             100,
             0,
+            0,
         );
         vault.tokens_deposited = 100;
         vault.vrt_supply = 100;
@@ -919,6 +937,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             100,
+            0,
             0,
         );
         vault.tokens_deposited = 100;
@@ -937,6 +956,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -975,6 +995,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.vrt_supply = 100;
         vault.tokens_deposited = 100;
@@ -998,6 +1019,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1027,6 +1049,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.vrt_supply = 1_000_000;
         vault.tokens_deposited = 1_000_000;
@@ -1045,6 +1068,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1069,6 +1093,7 @@ mod tests {
             0,
             500, // 5% withdrawal fee
             0,
+            0,
         );
         vault.vrt_supply = 10000;
         vault.tokens_deposited = 10000;
@@ -1087,6 +1112,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1115,6 +1141,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 1_000_000;
         vault.vrt_supply = 1_000_000;
@@ -1134,6 +1161,7 @@ mod tests {
             0,
             Pubkey::new_unique(),
             500, // 5% deposit fee
+            0,
             0,
             0,
         );
@@ -1156,6 +1184,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
 
         let result = vault.mint_with_fee(1000, 1000).unwrap();
@@ -1174,6 +1203,7 @@ mod tests {
             0,
             Pubkey::new_unique(),
             100, // 1% deposit fee
+            0,
             0,
             0,
         );
@@ -1200,6 +1230,7 @@ mod tests {
             1,
             0,
             0,
+            0,
         );
         let MintSummary {
             vrt_to_depositor,
@@ -1219,6 +1250,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             1,
+            0,
             0,
         );
         vault.mint_with_fee(1, 1).unwrap();
@@ -1243,6 +1275,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 1000;
         vault.vrt_supply = 1000;
@@ -1257,6 +1290,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1277,6 +1311,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1304,6 +1339,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 1000;
         vault.vrt_supply = 1000;
@@ -1328,6 +1364,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 1000;
         vault.vrt_supply = 1000;
@@ -1347,6 +1384,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 1000;
         vault.vrt_supply = 1000;
@@ -1363,6 +1401,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1392,6 +1431,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.tokens_deposited = 1000;
         vault.vrt_supply = 1000;
@@ -1415,6 +1455,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,

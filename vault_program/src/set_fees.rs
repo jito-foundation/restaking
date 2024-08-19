@@ -10,8 +10,9 @@ use solana_program::{
 pub fn process_set_fees(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
-    deposit_fee_bps: u16,
-    withdrawal_fee_bps: u16,
+    deposit_fee_bps: Option<u16>,
+    withdrawal_fee_bps: Option<u16>,
+    epoch_fee_bps: Option<u16>,
 ) -> ProgramResult {
     let [config, vault, vault_fee_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -34,24 +35,44 @@ pub fn process_set_fees(
         config.epoch_length,
     )?;
 
-    // Check if the new fees are within the allowed limits
-    check_fee_change_ok(
-        vault.deposit_fee_bps,
-        deposit_fee_bps,
-        config.fee_cap_bps,
-        config.fee_bump_bps,
-        config.fee_rate_of_change_bps,
-    )?;
-    check_fee_change_ok(
-        vault.withdrawal_fee_bps,
-        withdrawal_fee_bps,
-        config.fee_cap_bps,
-        config.fee_bump_bps,
-        config.fee_rate_of_change_bps,
-    )?;
+    if deposit_fee_bps.is_none() && withdrawal_fee_bps.is_none() && epoch_fee_bps.is_none() {
+        msg!("No fees provided for update");
+        return Err(ProgramError::InvalidInstructionData);
+    }
 
-    vault.deposit_fee_bps = deposit_fee_bps;
-    vault.withdrawal_fee_bps = withdrawal_fee_bps;
+    if let Some(deposit_fee_bps) = deposit_fee_bps {
+        check_fee_change_ok(
+            vault.deposit_fee_bps,
+            deposit_fee_bps,
+            config.fee_cap_bps,
+            config.fee_bump_bps,
+            config.fee_rate_of_change_bps,
+        )?;
+
+        vault.deposit_fee_bps = deposit_fee_bps;
+    }
+
+    if let Some(withdrawal_fee_bps) = withdrawal_fee_bps {
+        check_fee_change_ok(
+            vault.withdrawal_fee_bps,
+            withdrawal_fee_bps,
+            config.fee_cap_bps,
+            config.fee_bump_bps,
+            config.fee_rate_of_change_bps,
+        )?;
+
+        vault.withdrawal_fee_bps = withdrawal_fee_bps;
+    }
+
+    if let Some(epoch_fee_bps) = epoch_fee_bps {
+        if epoch_fee_bps > Config::MAX_BPS {
+            msg!("Epoch fee exceeds maximum allowed of {}", Config::MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded.into());
+        }
+
+        vault.epoch_fee_bps = epoch_fee_bps;
+    }
+
     vault.last_fee_change_slot = current_slot;
 
     Ok(())
@@ -81,6 +102,7 @@ pub fn check_fee_change_ok(
     fee_rate_of_change_bps: u16,
 ) -> ProgramResult {
     let fee_delta = new_fee_bps.saturating_sub(current_fee_bps);
+    let fee_cap_bps = fee_cap_bps.min(Config::MAX_BPS);
 
     if new_fee_bps > fee_cap_bps {
         msg!("Fee exceeds maximum allowed of {}", fee_cap_bps);

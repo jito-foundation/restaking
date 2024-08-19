@@ -17,6 +17,7 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
+        let epoch_fee_bps = 101;
 
         let (
             _config_admin,
@@ -25,7 +26,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, epoch_fee_bps)
             .await
             .unwrap();
 

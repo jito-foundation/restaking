@@ -16,6 +16,12 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
         const DELEGATION_AMOUNT: u64 = 10_000;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let epoch_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![MAX_SLASH_AMOUNT];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_config_admin,
@@ -25,7 +31,13 @@ mod tests {
             slashers_amounts,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[MAX_SLASH_AMOUNT])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                epoch_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 

@@ -249,6 +249,7 @@ impl VaultProgramClient {
         &mut self,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
+        epoch_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
 
@@ -273,6 +274,7 @@ impl VaultProgramClient {
             &vault_base,
             deposit_fee_bps,
             withdraw_fee_bps,
+            epoch_fee_bps,
         )
         .await?;
 
@@ -673,6 +675,7 @@ impl VaultProgramClient {
         vault_base: &Keypair,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        epoch_fee_bps: u16,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -687,6 +690,7 @@ impl VaultProgramClient {
                 &vault_base.pubkey(),
                 deposit_fee_bps,
                 withdrawal_fee_bps,
+                epoch_fee_bps,
             )],
             Some(&vault_admin.pubkey()),
             &[&vault_admin, &vrt_mint, &vault_base],
@@ -807,8 +811,9 @@ impl VaultProgramClient {
         config: &Pubkey,
         vault: &Pubkey,
         fee_admin: &Keypair,
-        deposit_fee_bps: u16,
-        withdrawal_fee_bps: u16,
+        deposit_fee_bps: Option<u16>,
+        withdrawal_fee_bps: Option<u16>,
+        epoch_fee_bps: Option<u16>,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -819,6 +824,7 @@ impl VaultProgramClient {
                 &fee_admin.pubkey(),
                 deposit_fee_bps,
                 withdrawal_fee_bps,
+                epoch_fee_bps,
             )],
             Some(&fee_admin.pubkey()),
             &[fee_admin],
