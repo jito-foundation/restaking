@@ -1,6 +1,7 @@
 mod add_delegation;
 mod burn;
 mod burn_withdrawal_ticket;
+mod change_withdrawal_ticket_owner;
 mod close_update_state_tracker;
 mod cooldown_delegation;
 mod cooldown_vault_ncn_slasher_ticket;
@@ -40,6 +41,7 @@ use solana_security_txt::security_txt;
 use crate::{
     add_delegation::process_add_delegation, burn::process_burn,
     burn_withdrawal_ticket::process_burn_withdrawal_ticket,
+    change_withdrawal_ticket_owner::process_change_withdrawal_ticket_owner,
     close_update_state_tracker::process_close_vault_update_state_tracker,
     cooldown_delegation::process_cooldown_delegation,
     cooldown_vault_ncn_slasher_ticket::process_cooldown_vault_ncn_slasher_ticket,
@@ -172,6 +174,10 @@ pub fn process_instruction(
         VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
+        }
+        VaultInstruction::ChangeWithdrawalTicketOwner => {
+            msg!("Instruction: ChangeWithdrawalTicketOwner");
+            process_change_withdrawal_ticket_owner(program_id, accounts)
         }
         VaultInstruction::BurnWithdrawTicket { min_amount_out } => {
             msg!("Instruction: BurnWithdrawTicket");
