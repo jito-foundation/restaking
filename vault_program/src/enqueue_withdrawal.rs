@@ -83,6 +83,7 @@ pub fn process_enqueue_withdrawal(
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_withdrawal_allowd()?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
