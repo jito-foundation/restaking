@@ -39,7 +39,10 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{instruction::initialize_mint2, state::Account as SPLTokenAccount, state::Mint};
+use spl_token::{
+    instruction::initialize_mint2,
+    state::{Account as SPLTokenAccount, Mint},
+};
 
 use crate::fixtures::{TestError, TestResult};
 
