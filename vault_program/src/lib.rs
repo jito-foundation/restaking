@@ -102,9 +102,16 @@ pub fn process_instruction(
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            epoch_withdraw_cap_bps,
         } => {
             msg!("Instruction: InitializeVault");
-            process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+            process_initialize_vault(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                epoch_withdraw_cap_bps,
+            )
         }
         VaultInstruction::InitializeVaultWithMint => {
             msg!("Instruction: InitializeVaultWithMint");

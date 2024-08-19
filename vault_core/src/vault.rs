@@ -104,9 +104,6 @@ pub struct Vault {
     /// The slot of the last time the delegations were updated
     pub last_full_state_update_slot: u64,
 
-    /// the percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
-    pub epoch_withdraw_cap_bps: u64,
-
     /// The tally of assets withdrawn on that epoch, this cannot be above epoch_snapshot_amount x epoch_withdraw_cap_bps
     pub epoch_withdraw_amount: u64,
 
@@ -119,11 +116,14 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     pub withdrawal_fee_bps: u16,
 
+    /// the percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
+    pub epoch_withdraw_cap_bps: u16,
+
     /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 11],
+    reserved: [u8; 1],
 }
 
 impl Vault {
@@ -136,6 +136,7 @@ impl Vault {
         base: Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
         bump: u8,
     ) -> Self {
         Self {
@@ -165,13 +166,13 @@ impl Vault {
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
-            epoch_withdraw_cap_bps: 0,
+            epoch_withdraw_cap_bps,
             epoch_withdraw_amount: 0,
             epoch_snapshot_amount: 0,
             bump,
-            reserved: [0; 11],
             delegation_state: DelegationState::default(),
             vrt_ready_to_claim_amount: 0,
+            reserved: [0; 1],
         }
     }
 
@@ -393,6 +394,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         vault.mint_burn_admin = old_admin;
 
@@ -431,6 +433,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         let num_minted = vault.calculate_vrt_mint_amount(100).unwrap();
         assert_eq!(num_minted, 100);
@@ -444,6 +447,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -463,6 +467,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,

@@ -203,7 +203,7 @@ impl TestBuilder {
         let mut restaking_program_client = self.restaking_program_client();
 
         let (vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps, 0)
             .await?;
         let restaking_config_admin = restaking_program_client.do_initialize_config().await?;
 
