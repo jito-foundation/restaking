@@ -206,20 +206,23 @@ pub fn process_instruction(
             msg!("Instruction: AddDelegation");
             process_add_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::CooldownDelegation {
-            amount,
-            for_withdrawal,
-        } => {
+        VaultInstruction::CooldownDelegation { amount } => {
             msg!("Instruction: CooldownDelegation");
-            process_cooldown_delegation(program_id, accounts, amount, for_withdrawal)
+            process_cooldown_delegation(program_id, accounts, amount)
         }
         VaultInstruction::UpdateVaultBalance => {
             msg!("Instruction: UpdateVaultBalance");
             process_update_vault_balance(program_id, accounts)
         }
-        VaultInstruction::InitializeVaultUpdateStateTracker => {
+        VaultInstruction::InitializeVaultUpdateStateTracker {
+            withdrawal_allocation_method,
+        } => {
             msg!("Instruction: InitializeVaultUpdateStateTracker");
-            process_initialize_vault_update_state_tracker(program_id, accounts)
+            process_initialize_vault_update_state_tracker(
+                program_id,
+                accounts,
+                withdrawal_allocation_method,
+            )
         }
         VaultInstruction::CrankVaultUpdateStateTracker => {
             msg!("Instruction: CrankVaultUpdateStateTracker");

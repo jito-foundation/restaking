@@ -288,12 +288,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                MINT_AMOUNT,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -341,8 +336,6 @@ mod tests {
                 staked_amount: 0,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
@@ -444,6 +437,15 @@ mod tests {
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
             .unwrap();
+
+        let result = vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .await;
+        assert_vault_error(
+            result,
+            VaultError::VaultStakerWithdrawalTicketNotWithdrawable,
+        );
+
         fixture
             .warp_slot_incremental(config.epoch_length)
             .await
@@ -455,6 +457,14 @@ mod tests {
             )
             .await
             .unwrap();
+        let result = vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .await;
+        assert_vault_error(
+            result,
+            VaultError::VaultStakerWithdrawalTicketNotWithdrawable,
+        );
+
         fixture
             .warp_slot_incremental(config.epoch_length)
             .await
@@ -467,10 +477,28 @@ mod tests {
             .await
             .unwrap();
 
-        let result = vault_program_client
+        vault_program_client
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
-            .await;
-        assert_vault_error(result, VaultError::VaultUnderflow);
+            .await
+            .unwrap();
+        let staker_token_account = fixture
+            .get_token_account(&get_associated_token_address(
+                &depositor.pubkey(),
+                &vault.supported_mint,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(staker_token_account.amount, MINT_AMOUNT);
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(vault.tokens_deposited, 0);
+        assert_eq!(vault.vrt_supply, 0);
+        assert_eq!(vault.delegation_state, DelegationState::default());
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount, 0);
+        assert_eq!(vault.vrt_cooling_down_amount, 0);
     }
 
     // /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of

@@ -8,7 +8,7 @@ use jito_jsm_core::{
 use jito_vault_core::{
     config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use jito_vault_sdk::error::VaultError;
+use jito_vault_sdk::{error::VaultError, instruction::WithdrawalAllocationMethod};
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -20,6 +20,7 @@ use solana_program::{
 pub fn process_initialize_vault_update_state_tracker(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
+    withdrawal_allocation_method: WithdrawalAllocationMethod,
 ) -> ProgramResult {
     let [config, vault_info, vault_update_state_tracker, payer, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -68,12 +69,20 @@ pub fn process_initialize_vault_update_state_tracker(
         &vault_update_state_tracker_seeds,
     )?;
 
+    let additional_assets_need_unstaking =
+        vault.calculate_assets_needed_for_withdrawals(Clock::get()?.slot, config.epoch_length)?;
+
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;
     let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
         &mut vault_update_state_tracker_data,
     )?;
-    *vault_update_state_tracker = VaultUpdateStateTracker::new(*vault_info.key, ncn_epoch);
+    *vault_update_state_tracker = VaultUpdateStateTracker::new(
+        *vault_info.key,
+        ncn_epoch,
+        additional_assets_need_unstaking,
+        withdrawal_allocation_method as u8,
+    );
 
     Ok(())
 }
