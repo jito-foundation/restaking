@@ -655,11 +655,17 @@ pub fn update_vault_balance(
     config: &Pubkey,
     vault: &Pubkey,
     vault_token_account: &Pubkey,
+    vrt_mint: &Pubkey,
+    vault_fee_token_account: &Pubkey,
+    token_program: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*vault_token_account, false),
+        AccountMeta::new(*vrt_mint, false),
+        AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,

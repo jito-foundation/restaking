@@ -119,7 +119,7 @@ mod tests {
 
         let new_deposit_fee_bps = 100;
         let new_withdrawal_fee_bps = 101;
-        let new_epoch_fee_bps = 102;
+        let new_reward_fee_bps = 102;
 
         fixture
             .vault_program_client()
@@ -129,7 +129,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await
             .unwrap();
@@ -142,7 +142,7 @@ mod tests {
 
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_reward_fee_bps);
     }
 
     #[tokio::test]
@@ -164,7 +164,7 @@ mod tests {
 
         let new_deposit_fee_bps = 100;
         let new_withdrawal_fee_bps = 101;
-        let new_epoch_fee_bps = 102;
+        let new_reward_fee_bps = 102;
 
         let result = fixture
             .vault_program_client()
@@ -174,7 +174,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await;
 
@@ -210,7 +210,7 @@ mod tests {
 
         let new_deposit_fee_bps = 100;
         let new_withdrawal_fee_bps = 101;
-        let new_epoch_fee_bps = 102;
+        let new_reward_fee_bps = 102;
 
         // First fee change
         fixture
@@ -221,7 +221,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await
             .unwrap();
@@ -234,7 +234,7 @@ mod tests {
 
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_reward_fee_bps);
 
         // Warp again
         fixture
@@ -245,7 +245,7 @@ mod tests {
         // Second fee change
         let new_deposit_fee_bps = 101;
         let new_withdrawal_fee_bps = 102;
-        let new_epoch_fee_bps = 103;
+        let new_reward_fee_bps = 103;
 
         fixture
             .vault_program_client()
@@ -255,7 +255,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await
             .unwrap();
@@ -267,7 +267,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_reward_fee_bps);
     }
 
     #[tokio::test]
@@ -350,7 +350,7 @@ mod tests {
 
         let new_deposit_fee_bps = 100;
         let new_withdrawal_fee_bps = 101;
-        let new_epoch_fee_bps = 102;
+        let new_reward_fee_bps = 102;
 
         fixture
             .vault_program_client()
@@ -360,7 +360,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await
             .unwrap();
@@ -372,7 +372,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.reward_fee_bps, reward_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_reward_fee_bps);
     }
 
     #[tokio::test]
@@ -530,7 +530,7 @@ mod tests {
 
         let new_deposit_fee_bps = 100;
         let new_withdrawal_fee_bps = 101;
-        let new_epoch_fee_bps = 102;
+        let new_reward_fee_bps = 102;
 
         fixture
             .vault_program_client()
@@ -540,7 +540,7 @@ mod tests {
                 &new_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await
             .unwrap();
@@ -552,7 +552,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_reward_fee_bps);
     }
 
     #[tokio::test]
@@ -584,7 +584,7 @@ mod tests {
 
         let new_deposit_fee_bps = config.fee_cap_bps + 1;
         let new_withdrawal_fee_bps = config.fee_cap_bps + 1;
-        let new_epoch_fee_bps = Config::MAX_BPS + 1;
+        let new_reward_fee_bps = Config::MAX_BPS + 1;
 
         let result = fixture
             .vault_program_client()
@@ -594,7 +594,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await;
 
@@ -912,7 +912,7 @@ mod tests {
         assert_eq!(updated_vault.withdrawal_fee_bps, new_withdraw_fee_bps);
         assert_eq!(updated_vault.reward_fee_bps, reward_fee_bps);
 
-        let new_epoch_fee_bps = reward_fee_bps + 1;
+        let new_reward_fee_bps = reward_fee_bps + 1;
 
         fixture
             .warp_slot_incremental(config.epoch_length * 2)
@@ -927,7 +927,7 @@ mod tests {
                 &vault_admin,
                 None,
                 None,
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await
             .unwrap();
@@ -939,7 +939,7 @@ mod tests {
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(updated_vault.withdrawal_fee_bps, new_withdraw_fee_bps);
-        assert_eq!(updated_vault.reward_fee_bps, new_epoch_fee_bps);
+        assert_eq!(updated_vault.reward_fee_bps, new_reward_fee_bps);
     }
 
     #[tokio::test]
@@ -971,7 +971,7 @@ mod tests {
 
         let new_deposit_fee_bps = Config::MAX_BPS + 1;
         let new_withdrawal_fee_bps = Config::MAX_BPS + 1;
-        let new_epoch_fee_bps = Config::MAX_BPS + 1;
+        let new_reward_fee_bps = Config::MAX_BPS + 1;
 
         let result = fixture
             .vault_program_client()
@@ -1009,7 +1009,7 @@ mod tests {
                 &vault_admin,
                 None,
                 None,
-                Some(new_epoch_fee_bps),
+                Some(new_reward_fee_bps),
             )
             .await;
 

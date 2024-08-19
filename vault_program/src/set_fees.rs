@@ -341,9 +341,11 @@ mod tests {
 
     #[test]
     fn test_max_fee_values() {
-        let current_fee_bps = u16::MAX - 1;
-        let new_fee_bps = u16::MAX;
-        let fee_cap_bps = u16::MAX;
+        let max_fee_bps = Config::MAX_BPS;
+
+        let current_fee_bps = max_fee_bps - 1;
+        let new_fee_bps = max_fee_bps;
+        let fee_cap_bps = max_fee_bps;
         let fee_bump_bps = 10;
         let fee_rate_of_change_bps = 2500;
 
