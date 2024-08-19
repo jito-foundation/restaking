@@ -1370,4 +1370,84 @@ mod tests {
             .unwrap();
         assert_eq!(result, 0);
     }
+
+    #[test]
+    fn test_calculate_reward_fee() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            1000, //10%
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(1000).unwrap();
+
+        assert_eq!(fee, 100);
+    }
+
+    #[test]
+    fn test_calculate_negative_balance() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            1000, //10%
+            0,
+        );
+        vault.tokens_deposited = 1000;
+
+        let fee = vault.calculate_rewards_fee(0).unwrap();
+
+        assert_eq!(fee, 0);
+    }
+
+    #[test]
+    fn test_calculate_100_percent_rewards() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            10_000, //100%
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(1000).unwrap();
+
+        assert_eq!(fee, 1000);
+    }
+
+    #[test]
+    fn test_calculate_rewards_overflow() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            u16::MAX,
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(u64::MAX);
+
+        assert_eq!(fee, Err(VaultError::VaultOverflow));
+    }
 }
