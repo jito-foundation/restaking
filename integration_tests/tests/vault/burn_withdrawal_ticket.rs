@@ -18,7 +18,6 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
-        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -291,7 +290,6 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
-        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
