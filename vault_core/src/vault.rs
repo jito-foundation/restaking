@@ -347,6 +347,23 @@ impl Vault {
     // Minting and burning
     // ------------------------------------------
 
+    /// Calculate the rewards for the epoch fee. This is used in `update_vault_balance` to mint
+    /// the `fee` amount in VRTs to the `fee_wallet`.
+    pub fn calculate_rewards_epoch_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
+        let rewards = new_balance.saturating_sub(self.tokens_deposited);
+
+        if rewards == 0 {
+            return Ok(0);
+        }
+
+        let fee = rewards
+            .checked_mul(self.epoch_fee_bps as u64)
+            .ok_or(VaultError::VaultOverflow)?
+            .div_ceil(10_000);
+
+        Ok(fee)
+    }
+
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
     pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {

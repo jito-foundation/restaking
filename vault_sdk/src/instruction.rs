@@ -236,6 +236,9 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, name = "vault_token_account")]
+    #[account(3, writable, name = "vrt_mint")]
+    #[account(4, writable, name = "vault_fee_token_account")]
+    #[account(5, name = "token_program")]
     UpdateVaultBalance,
 
     /// Starts updating the vault
