@@ -78,9 +78,14 @@ pub fn process_burn_withdrawal_ticket(
         burn_amount,
         out_amount,
     } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount, min_amount_out)?;
+    vault.check_withdrawal_allowd(out_amount)?;
     vault.vrt_ready_to_claim_amount = vault
         .vrt_ready_to_claim_amount
         .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    vault.epoch_withdraw_amount = vault
+        .epoch_withdraw_amount
+        .checked_add(out_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
 
     // burn the VRT tokens

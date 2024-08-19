@@ -71,6 +71,8 @@ pub fn process_close_vault_update_state_tracker(
             .ok_or(VaultError::VaultOverflow)?;
         vault.vrt_cooling_down_amount = vault.vrt_enqueued_for_cooldown_amount;
         vault.vrt_enqueued_for_cooldown_amount = 0;
+        vault.epoch_withdraw_amount = 0;
+        vault.epoch_snapshot_amount = vault.vrt_ready_to_claim_amount;
     }
 
     msg!("Closing VaultUpdateStateTracker");
