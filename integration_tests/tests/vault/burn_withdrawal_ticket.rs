@@ -18,7 +18,7 @@ mod tests {
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
-        let epoch_fee_bps = 0;
+        let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -36,7 +36,7 @@ mod tests {
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
                 withdraw_fee_bps,
-                epoch_fee_bps,
+                reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -120,7 +120,7 @@ mod tests {
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
-        let epoch_fee_bps = 0;
+        let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -138,7 +138,7 @@ mod tests {
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
                 withdraw_fee_bps,
-                epoch_fee_bps,
+                reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -238,7 +238,7 @@ mod tests {
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
-        let epoch_fee_bps = 0;
+        let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -256,7 +256,7 @@ mod tests {
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
                 withdraw_fee_bps,
-                epoch_fee_bps,
+                reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -403,7 +403,7 @@ mod tests {
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
-        let epoch_fee_bps = 0;
+        let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -421,7 +421,7 @@ mod tests {
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
                 withdraw_fee_bps,
-                epoch_fee_bps,
+                reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
             )

@@ -128,7 +128,7 @@ pub struct Vault {
     pub withdrawal_fee_bps: u16,
 
     /// Fee for each epoch
-    pub epoch_fee_bps: u16,
+    pub reward_fee_bps: u16,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -147,7 +147,7 @@ impl Vault {
         base: Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
-        epoch_fee_bps: u16,
+        reward_fee_bps: u16,
         bump: u8,
     ) -> Self {
         Self {
@@ -174,7 +174,7 @@ impl Vault {
             last_full_state_update_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
@@ -347,9 +347,9 @@ impl Vault {
     // Minting and burning
     // ------------------------------------------
 
-    /// Calculate the rewards for the epoch fee. This is used in `update_vault_balance` to mint
+    /// Calculate the rewards fee. This is used in `update_vault_balance` to mint
     /// the `fee` amount in VRTs to the `fee_wallet`.
-    pub fn calculate_rewards_epoch_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
+    pub fn calculate_rewards_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
         let rewards = new_balance.saturating_sub(self.tokens_deposited);
 
         if rewards == 0 {
@@ -357,7 +357,7 @@ impl Vault {
         }
 
         let fee = rewards
-            .checked_mul(self.epoch_fee_bps as u64)
+            .checked_mul(self.reward_fee_bps as u64)
             .ok_or(VaultError::VaultOverflow)?
             .div_ceil(10_000);
 

@@ -23,7 +23,7 @@ pub enum VaultInstruction {
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
-        epoch_fee_bps: u16,
+        reward_fee_bps: u16,
     },
 
     /// Initializes a vault with an already-created VRT mint
@@ -189,7 +189,7 @@ pub enum VaultInstruction {
     SetFees {
         deposit_fee_bps: Option<u16>,
         withdrawal_fee_bps: Option<u16>,
-        epoch_fee_bps: Option<u16>,
+        reward_fee_bps: Option<u16>,
     },
 
     /// Withdraws any non-backing tokens from the vault

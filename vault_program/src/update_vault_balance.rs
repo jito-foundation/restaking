@@ -36,7 +36,7 @@ pub fn process_update_vault_balance(
     // Calculate rewards
     let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
-    let reward_fee = vault.calculate_rewards_epoch_fee(new_balance)?;
+    let reward_fee = vault.calculate_rewards_fee(new_balance)?;
 
     // Mint rewards
     if reward_fee > 0 {

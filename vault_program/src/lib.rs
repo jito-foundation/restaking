@@ -102,7 +102,7 @@ pub fn process_instruction(
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(
@@ -110,7 +110,7 @@ pub fn process_instruction(
                 accounts,
                 deposit_fee_bps,
                 withdrawal_fee_bps,
-                epoch_fee_bps,
+                reward_fee_bps,
             )
         }
         VaultInstruction::InitializeVaultWithMint => {
@@ -155,7 +155,7 @@ pub fn process_instruction(
         VaultInstruction::SetFees {
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         } => {
             msg!("Instruction: SetFees");
             process_set_fees(
@@ -163,7 +163,7 @@ pub fn process_instruction(
                 accounts,
                 deposit_fee_bps,
                 withdrawal_fee_bps,
-                epoch_fee_bps,
+                reward_fee_bps,
             )
         }
         // ------------------------------------------

@@ -40,7 +40,7 @@ pub fn initialize_vault(
     base: &Pubkey,
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
-    epoch_fee_bps: u16,
+    reward_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -58,7 +58,7 @@ pub fn initialize_vault(
         data: VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         }
         .try_to_vec()
         .unwrap(),
@@ -260,7 +260,7 @@ pub fn set_fees(
     admin: &Pubkey,
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
-    epoch_fee_bps: Option<u16>,
+    reward_fee_bps: Option<u16>,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -273,7 +273,7 @@ pub fn set_fees(
         data: VaultInstruction::SetFees {
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         }
         .try_to_vec()
         .unwrap(),

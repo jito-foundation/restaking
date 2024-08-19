@@ -17,12 +17,12 @@ mod tests {
         fixture: &mut TestBuilder,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
-        epoch_fee_bps: u16,
+        reward_fee_bps: u16,
     ) -> Result<(Pubkey, Pubkey, Keypair), TestError> {
         let mut vault_program_client = fixture.vault_program_client();
 
         let result = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, epoch_fee_bps)
+            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
             .await;
 
         match result {
@@ -50,13 +50,13 @@ mod tests {
 
         let deposit_fee_bps = u16::MAX;
         let withdrawal_fee_bps = u16::MAX;
-        let epoch_fee_bps = u16::MAX;
+        let reward_fee_bps = u16::MAX;
 
         let result = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await;
 
@@ -68,13 +68,13 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (_, vault_pubkey, _) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -95,13 +95,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -142,7 +142,7 @@ mod tests {
 
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.epoch_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
     }
 
     #[tokio::test]
@@ -151,13 +151,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -187,13 +187,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -234,7 +234,7 @@ mod tests {
 
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.epoch_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
 
         // Warp again
         fixture
@@ -267,7 +267,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.epoch_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
     }
 
     #[tokio::test]
@@ -276,13 +276,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, _) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -327,13 +327,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -372,7 +372,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.epoch_fee_bps, epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, reward_fee_bps);
     }
 
     #[tokio::test]
@@ -381,13 +381,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -425,13 +425,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -488,13 +488,13 @@ mod tests {
 
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
-        let epoch_fee_bps = 101;
+        let reward_fee_bps = 101;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -552,7 +552,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(vault.epoch_fee_bps, new_epoch_fee_bps);
+        assert_eq!(vault.reward_fee_bps, new_epoch_fee_bps);
     }
 
     #[tokio::test]
@@ -561,13 +561,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -607,13 +607,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -669,13 +669,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -725,13 +725,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -783,13 +783,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -806,7 +806,7 @@ mod tests {
 
         let new_deposit_fee_bps = 0;
         let new_withdrawal_fee_bps = 0;
-        let epoch_fee_bps = 0;
+        let reward_fee_bps = 0;
 
         fixture
             .vault_program_client()
@@ -816,7 +816,7 @@ mod tests {
                 &vault_admin,
                 Some(new_deposit_fee_bps),
                 Some(new_withdrawal_fee_bps),
-                Some(epoch_fee_bps),
+                Some(reward_fee_bps),
             )
             .await
             .unwrap();
@@ -828,7 +828,7 @@ mod tests {
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(updated_vault.withdrawal_fee_bps, new_withdrawal_fee_bps);
-        assert_eq!(updated_vault.epoch_fee_bps, epoch_fee_bps);
+        assert_eq!(updated_vault.reward_fee_bps, reward_fee_bps);
     }
 
     #[tokio::test]
@@ -837,13 +837,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();
@@ -881,7 +881,7 @@ mod tests {
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(updated_vault.withdrawal_fee_bps, withdrawal_fee_bps);
-        assert_eq!(updated_vault.epoch_fee_bps, epoch_fee_bps);
+        assert_eq!(updated_vault.reward_fee_bps, reward_fee_bps);
 
         let new_withdraw_fee_bps = withdrawal_fee_bps + 1;
 
@@ -910,9 +910,9 @@ mod tests {
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(updated_vault.withdrawal_fee_bps, new_withdraw_fee_bps);
-        assert_eq!(updated_vault.epoch_fee_bps, epoch_fee_bps);
+        assert_eq!(updated_vault.reward_fee_bps, reward_fee_bps);
 
-        let new_epoch_fee_bps = epoch_fee_bps + 1;
+        let new_epoch_fee_bps = reward_fee_bps + 1;
 
         fixture
             .warp_slot_incremental(config.epoch_length * 2)
@@ -939,7 +939,7 @@ mod tests {
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps, new_deposit_fee_bps);
         assert_eq!(updated_vault.withdrawal_fee_bps, new_withdraw_fee_bps);
-        assert_eq!(updated_vault.epoch_fee_bps, new_epoch_fee_bps);
+        assert_eq!(updated_vault.reward_fee_bps, new_epoch_fee_bps);
     }
 
     #[tokio::test]
@@ -948,13 +948,13 @@ mod tests {
 
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
-        let epoch_fee_bps = 300;
+        let reward_fee_bps = 300;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
-            epoch_fee_bps,
+            reward_fee_bps,
         )
         .await
         .unwrap();

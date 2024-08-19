@@ -12,7 +12,7 @@ pub fn process_set_fees(
     accounts: &[AccountInfo],
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
-    epoch_fee_bps: Option<u16>,
+    reward_fee_bps: Option<u16>,
 ) -> ProgramResult {
     let [config, vault, vault_fee_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -35,7 +35,7 @@ pub fn process_set_fees(
         config.epoch_length,
     )?;
 
-    if deposit_fee_bps.is_none() && withdrawal_fee_bps.is_none() && epoch_fee_bps.is_none() {
+    if deposit_fee_bps.is_none() && withdrawal_fee_bps.is_none() && reward_fee_bps.is_none() {
         msg!("No fees provided for update");
         return Err(ProgramError::InvalidInstructionData);
     }
@@ -64,13 +64,13 @@ pub fn process_set_fees(
         vault.withdrawal_fee_bps = withdrawal_fee_bps;
     }
 
-    if let Some(epoch_fee_bps) = epoch_fee_bps {
-        if epoch_fee_bps > Config::MAX_BPS {
+    if let Some(reward_fee_bps) = reward_fee_bps {
+        if reward_fee_bps > Config::MAX_BPS {
             msg!("Epoch fee exceeds maximum allowed of {}", Config::MAX_BPS);
             return Err(VaultError::VaultFeeCapExceeded.into());
         }
 
-        vault.epoch_fee_bps = epoch_fee_bps;
+        vault.reward_fee_bps = reward_fee_bps;
     }
 
     vault.last_fee_change_slot = current_slot;
