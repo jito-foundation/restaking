@@ -10,7 +10,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_delegation_ok() {
-        const MINT_AMOUNT: u64 = 100_000;
+        const AMOUNT_IN: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -29,12 +30,12 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT)
+            .do_mint_to(&vault_root, &depositor, AMOUNT_IN, MIN_AMOUNT_OUT)
             .await
             .unwrap();
 
         vault_program_client
-            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, AMOUNT_IN)
             .await
             .unwrap();
 
@@ -55,7 +56,7 @@ mod tests {
                 .delegation_state
                 .total_security()
                 .unwrap(),
-            MINT_AMOUNT
+            AMOUNT_IN
         );
 
         let vault = vault_program_client
@@ -66,13 +67,14 @@ mod tests {
             vault.delegation_state,
             vault_operator_delegation.delegation_state
         );
-        assert_eq!(vault.tokens_deposited, MINT_AMOUNT);
-        assert_eq!(vault.vrt_supply, MINT_AMOUNT);
+        assert_eq!(vault.tokens_deposited, AMOUNT_IN);
+        assert_eq!(vault.vrt_supply, AMOUNT_IN);
     }
 
     #[tokio::test]
     async fn test_add_delegation_over_delegate_fails() {
         const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -91,7 +93,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT)
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MIN_AMOUNT_OUT)
             .await
             .unwrap();
 

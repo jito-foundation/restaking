@@ -9,7 +9,6 @@ use jito_restaking_core::{ncn::Ncn, ncn_vault_slasher_ticket::NcnVaultSlasherTic
 use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
-use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -27,9 +26,11 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
     };
 
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault_info, false)?;
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    Vault::load(program_id, vault_info, false)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     Ncn::load(&config.restaking_program, ncn, false)?;
     NcnVaultSlasherTicket::load(
         &config.restaking_program,
@@ -61,19 +62,8 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The Vault slasher admin shall be the signer of the transaction
-    let mut vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
-    if vault.slasher_admin.ne(vault_slasher_admin.key) {
-        msg!("Invalid slasher admin for vault");
-        return Err(VaultError::VaultSlasherAdminInvalid.into());
-    }
-
-    // The Vault shall be up-to-date before adding support for the NCN slasher
-    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault update is needed");
-        return Err(VaultError::VaultUpdateNeeded.into());
-    }
+    vault.check_slasher_admin(vault_slasher_admin.key)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
     msg!(
         "Initializing VaultNcnSlasherTicket at address {}",

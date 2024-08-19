@@ -14,6 +14,7 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
         const DEPOSIT_FEE_BPS: u16 = 100;
         const WITHDRAW_FEE_BPS: u16 = 100;
+        let min_amount_out: u64 = MINT_AMOUNT * (10_000 - DEPOSIT_FEE_BPS) as u64 / 10_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -58,6 +59,7 @@ mod tests {
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 MINT_AMOUNT,
+                min_amount_out,
             )
             .await
             .unwrap();
@@ -128,8 +130,6 @@ mod tests {
             .await
             .unwrap();
 
-        let user_vrt_in_withdrawal_ticket =
-            amount_to_dequeue * (10_000 - WITHDRAW_FEE_BPS) as u64 / 10_000;
         let vault_staker_withdrawal_ticket = vault_program_client
             .get_vault_staker_withdrawal_ticket(
                 &vault_root.vault_pubkey,
@@ -138,18 +138,12 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(
-            vault_staker_withdrawal_ticket.vrt_amount,
-            user_vrt_in_withdrawal_ticket
-        );
+        assert_eq!(vault_staker_withdrawal_ticket.vrt_amount, amount_to_dequeue);
 
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(
-            vault.vrt_enqueued_for_cooldown_amount,
-            user_vrt_in_withdrawal_ticket
-        );
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, amount_to_dequeue);
     }
 }

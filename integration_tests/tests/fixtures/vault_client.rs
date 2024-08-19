@@ -334,17 +334,11 @@ impl VaultProgramClient {
             &ncn,
         )
         .0;
-        let ncn_vault_ticket = NcnVaultTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &ncn,
-            &vault_root.vault_pubkey,
-        )
-        .0;
+
         self.warmup_vault_ncn_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &ncn,
-            &ncn_vault_ticket,
             &vault_ncn_ticket,
             &vault_root.vault_admin,
         )
@@ -358,7 +352,6 @@ impl VaultProgramClient {
         config: &Pubkey,
         vault: &Pubkey,
         ncn: &Pubkey,
-        ncn_vault_ticket: &Pubkey,
         vault_ncn_ticket: &Pubkey,
         ncn_vault_admin: &Keypair,
     ) -> TestResult<()> {
@@ -370,7 +363,6 @@ impl VaultProgramClient {
                 &config,
                 &vault,
                 &ncn,
-                &ncn_vault_ticket,
                 &vault_ncn_ticket,
                 &ncn_vault_admin.pubkey(),
             )],
@@ -605,20 +597,12 @@ impl VaultProgramClient {
             slasher,
         )
         .0;
-        let ncn_slasher_ticket_pubkey = NcnVaultSlasherTicket::find_program_address(
-            &jito_restaking_program::id(),
-            &ncn_pubkey,
-            &vault_root.vault_pubkey,
-            slasher,
-        )
-        .0;
 
         self.warmup_vault_ncn_slasher_ticket(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &ncn_pubkey,
             slasher,
-            &ncn_slasher_ticket_pubkey,
             &vault_slasher_ticket_pubkey,
             &vault_root.vault_admin,
         )
@@ -633,7 +617,6 @@ impl VaultProgramClient {
         vault: &Pubkey,
         ncn: &Pubkey,
         slasher: &Pubkey,
-        ncn_vault_slasher_ticket: &Pubkey,
         vault_ncn_slasher_ticket: &Pubkey,
         admin: &Keypair,
     ) -> Result<(), TestError> {
@@ -646,7 +629,6 @@ impl VaultProgramClient {
                 &vault,
                 &ncn,
                 &slasher,
-                &ncn_vault_slasher_ticket,
                 &vault_ncn_slasher_ticket,
                 &admin.pubkey(),
             )],
@@ -903,15 +885,11 @@ impl VaultProgramClient {
         self.create_ata(&vault.vrt_mint, &vault_staker_withdrawal_ticket)
             .await?;
 
-        let vault_staker_fee_token_account =
-            get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint);
-
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &vault_staker_withdrawal_ticket,
             &vault_staker_withdrawal_ticket_token_account,
-            &vault_staker_fee_token_account,
             depositor,
             &depositor_vrt_token_account,
             &base,
@@ -1152,7 +1130,6 @@ impl VaultProgramClient {
         vault: &Pubkey,
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
-        vault_fee_token_account: &Pubkey,
         staker: &Keypair,
         staker_vrt_token_account: &Pubkey,
         base: &Keypair,
@@ -1166,7 +1143,6 @@ impl VaultProgramClient {
                 vault,
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
-                vault_fee_token_account,
                 &staker.pubkey(),
                 staker_vrt_token_account,
                 &base.pubkey(),
@@ -1202,9 +1178,9 @@ impl VaultProgramClient {
             &vault.vrt_mint,
             staker,
             &get_associated_token_address(&staker.pubkey(), &vault.supported_mint),
-            &get_associated_token_address(&staker.pubkey(), &vault.vrt_mint),
             &vault_staker_withdrawal_ticket,
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
+            &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
             min_amount_out,
         )
         .await?;
@@ -1220,9 +1196,9 @@ impl VaultProgramClient {
         vrt_mint: &Pubkey,
         staker: &Keypair,
         staker_token_account: &Pubkey,
-        staker_vrt_token_account: &Pubkey,
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
+        vault_fee_token_account: &Pubkey,
         min_amount_out: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1235,9 +1211,9 @@ impl VaultProgramClient {
                 vrt_mint,
                 &staker.pubkey(),
                 staker_token_account,
-                staker_vrt_token_account,
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
+                vault_fee_token_account,
                 min_amount_out,
             )],
             Some(&staker.pubkey()),
@@ -1280,7 +1256,8 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Keypair,
-        amount_to_mint: u64,
+        amount_in: u64,
+        min_amount_out: u64,
     ) -> TestResult<()> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         self.mint_to(
@@ -1292,7 +1269,8 @@ impl VaultProgramClient {
             &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
             None,
-            amount_to_mint,
+            amount_in,
+            min_amount_out,
         )
         .await
     }
@@ -1307,7 +1285,8 @@ impl VaultProgramClient {
         depositor_vrt_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         mint_signer: Option<&Keypair>,
-        amount: u64,
+        amount_in: u64,
+        min_amount_out: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let mut signers = vec![depositor];
@@ -1326,7 +1305,8 @@ impl VaultProgramClient {
                 depositor_vrt_token_account,
                 vault_fee_token_account,
                 mint_signer.map(|s| s.pubkey()).as_ref(),
-                amount,
+                amount_in,
+                min_amount_out,
             )],
             Some(&depositor.pubkey()),
             &signers,

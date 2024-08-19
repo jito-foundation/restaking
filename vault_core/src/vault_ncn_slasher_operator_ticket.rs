@@ -2,7 +2,11 @@
 //! by a slasher for a given node consensus network (NCN) and vault for a given epoch.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+use jito_vault_sdk::error::VaultError;
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
 impl Discriminator for VaultNcnSlasherOperatorTicket {
     const DISCRIMINATOR: u8 = 6;
@@ -59,6 +63,23 @@ impl VaultNcnSlasherOperatorTicket {
             bump,
             reserved: [0; 7],
         }
+    }
+
+    #[inline(always)]
+    pub fn check_slashing_amount_not_exceeded(
+        &self,
+        slash_amount: u64,
+        max_slashable_per_epoch: u64,
+    ) -> ProgramResult {
+        let amount_after_slash = self
+            .slashed
+            .checked_add(slash_amount)
+            .ok_or(ProgramError::ArithmeticOverflow)?;
+        if amount_after_slash > max_slashable_per_epoch {
+            msg!("Slash amount exceeds the maximum slashable amount per epoch");
+            return Err(VaultError::VaultMaxSlashedPerOperatorExceeded.into());
+        }
+        Ok(())
     }
 
     /// Returns the seeds for the PDA
