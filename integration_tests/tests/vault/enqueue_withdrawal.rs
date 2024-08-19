@@ -23,7 +23,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS, 1, &[])
+            .setup_vault_with_ncn_and_operators(DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS, 1, 1, &[])
             .await
             .unwrap();
 

@@ -27,7 +27,7 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
             .await
             .unwrap();
 
@@ -117,7 +117,7 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
             .await
             .unwrap();
 
@@ -223,7 +223,7 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
             .await
             .unwrap();
 
@@ -376,7 +376,7 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
             .await
             .unwrap();
 
@@ -471,6 +471,157 @@ mod tests {
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
             .await;
         assert_vault_error(result, VaultError::VaultUnderflow);
+    }
+
+    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    #[tokio::test]
+    async fn test_burn_withdrawal_ticket_withdrawal_exceeds_fails() {
+        const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
+        const EPOCH_WITHDRAW_CAP_BPS: u16 = 2500; // (25%)
+
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin: _,
+            vault_root,
+            restaking_config_admin: _,
+            ncn_root: _,
+            operator_roots,
+            slashers_amounts: _,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, EPOCH_WITHDRAW_CAP_BPS, 1, &[])
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
+        fixture
+            .mint_spl_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        fixture
+            .create_ata(&vault.vrt_mint, &depositor.pubkey())
+            .await
+            .unwrap();
+        vault_program_client
+            .mint_to(
+                &vault_root.vault_pubkey,
+                &vault.vrt_mint,
+                &depositor,
+                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
+                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+                None,
+                MINT_AMOUNT,
+                MIN_AMOUNT_OUT,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+        let mut vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.epoch_withdraw_cap_bps, EPOCH_WITHDRAW_CAP_BPS);
+        assert_eq!(vault.epoch_withdraw_amount, 0);
+        assert_eq!(vault.epoch_snapshot_amount, 0);
+
+        // Delegate all funds to the operator
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_cooldown_delegation(
+                &vault_root,
+                &operator_roots[0].operator_pubkey,
+                MINT_AMOUNT,
+                true,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.epoch_withdraw_cap_bps, EPOCH_WITHDRAW_CAP_BPS);
+        assert_eq!(vault.epoch_withdraw_amount, 0);
+        assert_eq!(vault.epoch_snapshot_amount, MINT_AMOUNT); // 100_000
+
+        vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.epoch_withdraw_cap_bps, EPOCH_WITHDRAW_CAP_BPS);
+        assert_eq!(vault.epoch_withdraw_amount, MINT_AMOUNT);
+        assert_eq!(vault.epoch_snapshot_amount, MINT_AMOUNT);
     }
 
     // /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of

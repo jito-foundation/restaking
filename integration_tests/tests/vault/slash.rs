@@ -25,7 +25,7 @@ mod tests {
             slashers_amounts,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[MAX_SLASH_AMOUNT])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[MAX_SLASH_AMOUNT])
             .await
             .unwrap();
 

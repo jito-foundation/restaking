@@ -21,7 +21,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
             .await
             .unwrap();
 
@@ -119,7 +119,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 2, &[])
             .await
             .unwrap();
 
@@ -224,7 +224,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 2, &[])
             .await
             .unwrap();
 
@@ -299,7 +299,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 2, &[])
             .await
             .unwrap();
 
@@ -366,7 +366,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 3, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 3, &[])
             .await
             .unwrap();
 
@@ -441,7 +441,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 1, 2, &[])
             .await
             .unwrap();
 
