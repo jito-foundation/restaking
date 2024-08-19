@@ -485,12 +485,29 @@ impl Vault {
     }
 
     pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
-        let assets_available_for_staking = self
+        if self.tokens_deposited == 0 || self.vrt_supply == 0 {
+            msg!("No tokens deposited in vault");
+            return Err(VaultError::VaultUnderflow);
+        }
+
+        // there is some protection built-in to the vault to avoid over delegating assets
+        let vrt_reserve = self
+            .vrt_cooling_down_amount
+            .checked_add(self.vrt_ready_to_claim_amount)
+            .and_then(|x| x.checked_add(self.vrt_enqueued_for_cooldown_amount))
+            .ok_or(VaultError::VaultOverflow)?;
+        let amount_to_reserve_for_vrts = vrt_reserve
+            .checked_mul(self.tokens_deposited)
+            .and_then(|x| x.checked_div(self.vrt_supply))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let amount_available_for_delegation = self
             .tokens_deposited
             .checked_sub(self.delegation_state.total_security()?)
+            .and_then(|x| x.checked_sub(amount_to_reserve_for_vrts))
             .ok_or(VaultError::VaultUnderflow)?;
 
-        if amount > assets_available_for_staking {
+        if amount > amount_available_for_delegation {
             msg!("Insufficient funds in vault for delegation");
             return Err(VaultError::VaultInsufficientFunds);
         }
@@ -1213,5 +1230,205 @@ mod tests {
         assert_eq!(fee_amount, 1);
         assert_eq!(burn_amount, 0);
         assert_eq!(out_amount, 0);
+    }
+
+    #[test]
+    fn test_delegate_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.delegate(1000).unwrap();
+    }
+
+    #[test]
+    fn test_delegate_more_than_available_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        assert_eq!(
+            vault.delegate(1001),
+            Err(VaultError::VaultInsufficientFunds)
+        );
+    }
+
+    #[test]
+    fn test_delegate_more_than_available_with_delegate_state_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.delegation_state = DelegationState {
+            staked_amount: 500,
+            enqueued_for_cooldown_amount: 200,
+            cooling_down_amount: 100,
+            enqueued_for_withdraw_amount: 100,
+            cooling_down_for_withdraw_amount: 0,
+        };
+        assert_eq!(vault.delegate(101), Err(VaultError::VaultInsufficientFunds));
+    }
+
+    #[test]
+    fn test_delegate_with_delegate_state_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.delegation_state = DelegationState {
+            staked_amount: 500,
+            enqueued_for_cooldown_amount: 200,
+            cooling_down_amount: 100,
+            enqueued_for_withdraw_amount: 100,
+            cooling_down_for_withdraw_amount: 0,
+        };
+        vault.delegate(100).unwrap();
+    }
+
+    #[test]
+    fn test_delegate_with_vrt_reserves_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.vrt_ready_to_claim_amount = 100;
+
+        vault.delegate(900).unwrap();
+    }
+
+    #[test]
+    fn test_delegate_more_than_vrt_reserves_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.vrt_ready_to_claim_amount = 100;
+
+        assert_eq!(vault.delegate(901), Err(VaultError::VaultInsufficientFunds));
+    }
+
+    #[test]
+    fn test_delegate_with_vrt_reserves_and_delegated_assets_ok() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.vrt_ready_to_claim_amount = 100;
+        vault.delegation_state = DelegationState {
+            staked_amount: 100,
+            enqueued_for_cooldown_amount: 100,
+            cooling_down_amount: 100,
+            enqueued_for_withdraw_amount: 100,
+            cooling_down_for_withdraw_amount: 100,
+        };
+
+        vault.delegate(400).unwrap();
+    }
+
+    #[test]
+    fn test_delegate_with_vrt_reserves_and_delegated_assets_too_much_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 1000;
+        vault.vrt_ready_to_claim_amount = 100;
+        vault.delegation_state = DelegationState {
+            staked_amount: 100,
+            enqueued_for_cooldown_amount: 100,
+            cooling_down_amount: 100,
+            enqueued_for_withdraw_amount: 100,
+            cooling_down_for_withdraw_amount: 100,
+        };
+
+        assert_eq!(vault.delegate(601), Err(VaultError::VaultInsufficientFunds));
+    }
+
+    #[test]
+    fn test_delegate_with_vrt_reserves_and_delegated_assets_cooling_down_fails() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+        );
+        vault.tokens_deposited = 1000;
+        vault.vrt_supply = 900;
+        vault.vrt_ready_to_claim_amount = 500;
+        vault.delegation_state = DelegationState {
+            staked_amount: 0,
+            enqueued_for_cooldown_amount: 0,
+            cooling_down_amount: 0,
+            enqueued_for_withdraw_amount: 500,
+            cooling_down_for_withdraw_amount: 400,
+        };
+        assert_eq!(vault.delegate(100), Err(VaultError::VaultUnderflow));
     }
 }
