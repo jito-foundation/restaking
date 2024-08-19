@@ -60,8 +60,24 @@ impl VaultOperatorDelegation {
     /// The cooling_down_for_withdraw_amount becomes the enqueued_for_withdraw_amount
     /// The enqueued_for_withdraw_amount is zeroed out
     #[inline(always)]
-    pub fn update(&mut self, slot: u64) {
-        self.delegation_state.update();
+    pub fn update(&mut self, slot: u64, epoch_length: u64) {
+        let last_update_epoch = self.last_update_slot.checked_div(epoch_length).unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+
+        let epoch_diff = current_epoch.checked_sub(last_update_epoch).unwrap();
+        match epoch_diff {
+            0 => {
+                // this shouldn't be possible
+            }
+            1 => {
+                self.delegation_state.update();
+            }
+            _ => {
+                // max 2 transitions needed
+                self.delegation_state.update();
+                self.delegation_state.update();
+            }
+        }
         self.last_update_slot = slot;
     }
 

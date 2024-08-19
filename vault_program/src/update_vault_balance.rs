@@ -1,11 +1,9 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_associated_token_account;
 use jito_vault_core::{config::Config, vault::Vault};
-use solana_program::clock::Clock;
-use solana_program::sysvar::Sysvar;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
-    program_pack::Pack, pubkey::Pubkey,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult,
+    program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, sysvar::Sysvar,
 };
 use spl_token::state::Account;
 
@@ -19,7 +17,7 @@ pub fn process_update_vault_balance(
 
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
-    let config = Config::try_from_slice(&config_data)?;
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;

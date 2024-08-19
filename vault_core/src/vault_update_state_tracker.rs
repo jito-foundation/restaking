@@ -1,8 +1,8 @@
+use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
-
-use crate::delegation_state::DelegationState;
 
 impl Discriminator for VaultUpdateStateTracker {
     const DISCRIMINATOR: u8 = 9;
@@ -34,6 +34,21 @@ impl VaultUpdateStateTracker {
             delegation_state: DelegationState::default(),
         }
     }
+
+    pub fn check_and_update_index(&mut self, index: u64) -> Result<(), VaultError> {
+        if self.last_updated_index == u64::MAX {
+            if index != 0 {
+                msg!("VaultUpdateStateTracker incorrect index");
+                return Err(VaultError::VaultUpdateIncorrectIndex);
+            }
+        } else if index != self.last_updated_index.checked_add(1).unwrap() {
+            msg!("VaultUpdateStateTracker incorrect index");
+            return Err(VaultError::VaultUpdateIncorrectIndex.into());
+        }
+        self.last_updated_index = index;
+        Ok(())
+    }
+
     /// Returns the seeds for the PDA
     ///
     /// # Arguments
@@ -88,5 +103,58 @@ impl VaultUpdateStateTracker {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::delegation_state::DelegationState;
+    use crate::vault_update_state_tracker::VaultUpdateStateTracker;
+    use jito_vault_sdk::error::VaultError;
+    use solana_program::pubkey::Pubkey;
+
+    #[test]
+    fn test_update_index_zero_ok() {
+        let mut vault_update_state_tracker = VaultUpdateStateTracker {
+            vault: Pubkey::new_unique(),
+            ncn_epoch: 0,
+            last_updated_index: u64::MAX,
+            delegation_state: DelegationState::default(),
+        };
+        assert!(vault_update_state_tracker.check_and_update_index(0).is_ok());
+    }
+
+    #[test]
+    fn test_update_index_skip_zero_fails() {
+        let mut vault_update_state_tracker = VaultUpdateStateTracker {
+            vault: Pubkey::new_unique(),
+            ncn_epoch: 0,
+            last_updated_index: u64::MAX,
+            delegation_state: DelegationState::default(),
+        };
+        assert_eq!(
+            vault_update_state_tracker.check_and_update_index(1),
+            Err(VaultError::VaultUpdateIncorrectIndex)
+        );
+    }
+
+    #[test]
+    fn test_update_index_skip_index_fails() {
+        let mut vault_update_state_tracker = VaultUpdateStateTracker {
+            vault: Pubkey::new_unique(),
+            ncn_epoch: 0,
+            last_updated_index: u64::MAX,
+            delegation_state: DelegationState::default(),
+        };
+        vault_update_state_tracker
+            .check_and_update_index(0)
+            .unwrap();
+        vault_update_state_tracker
+            .check_and_update_index(1)
+            .unwrap();
+        assert_eq!(
+            vault_update_state_tracker.check_and_update_index(3),
+            Err(VaultError::VaultUpdateIncorrectIndex)
+        );
     }
 }
