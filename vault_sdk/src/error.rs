@@ -29,6 +29,7 @@ pub enum VaultError {
     VaultSecurityOverflow = 2022,
     VaultSlashIncomplete = 2023,
     VaultSecurityUnderflow = 2024,
+    SlippageError = 2025,
 
     VaultDelegationListOverflow = 3000,
     VaultDelegationListUnderflow = 3001,
@@ -61,7 +62,6 @@ pub enum VaultError {
     VaultWithdrawalLimitExceeded = 4020,
 
     VaultDelegationUpdateOverflow = 5000,
-    SlippageError,
 }
 
 impl From<VaultError> for ProgramError {

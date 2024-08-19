@@ -1,5 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
+use solana_program::program_error::ProgramError;
 
 #[rustfmt::skip]
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
@@ -229,7 +230,6 @@ pub enum VaultInstruction {
     #[account(4, signer, name = "admin")]
     CooldownDelegation {
         amount: u64,
-        for_withdrawal: bool
     },
 
     #[account(0, name = "config")]
@@ -243,7 +243,7 @@ pub enum VaultInstruction {
     #[account(2, writable, name = "vault_update_state_tracker")]
     #[account(3, writable, name = "payer")]
     #[account(4, name = "system_program")]
-    InitializeVaultUpdateStateTracker,
+    InitializeVaultUpdateStateTracker { withdrawal_allocation_method: WithdrawalAllocationMethod },
 
     /// Shall be called on every vault_operator_delegation
     #[account(0, name = "config")]
@@ -319,4 +319,23 @@ pub enum VaultAdminRole {
     MintBurnAdmin,
     WithdrawAdmin,
     FeeAdmin,
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+#[repr(u8)]
+pub enum WithdrawalAllocationMethod {
+    /// During withdrawal allocation, the greedy mode will subtract assets from operator delegations
+    /// its iterating over in order to fulfill the withdrawal.
+    Greedy,
+}
+
+impl TryFrom<u8> for WithdrawalAllocationMethod {
+    type Error = ProgramError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Greedy),
+            _ => Err(ProgramError::InvalidArgument),
+        }
+    }
 }

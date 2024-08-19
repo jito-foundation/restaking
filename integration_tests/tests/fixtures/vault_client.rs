@@ -14,7 +14,7 @@ use jito_vault_core::{
 use jito_vault_sdk::{
     error::VaultError,
     inline_mpl_token_metadata,
-    instruction::VaultAdminRole,
+    instruction::{VaultAdminRole, WithdrawalAllocationMethod},
     sdk::{
         add_delegation, cooldown_delegation, initialize_config, initialize_vault,
         warmup_vault_ncn_slasher_ticket, warmup_vault_ncn_ticket,
@@ -881,7 +881,6 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         operator: &Pubkey,
         amount: u64,
-        for_withdrawal: bool,
     ) -> TestResult<()> {
         self.cooldown_delegation(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -895,7 +894,6 @@ impl VaultProgramClient {
             .0,
             &vault_root.vault_admin,
             amount,
-            for_withdrawal,
         )
         .await
     }
@@ -908,7 +906,6 @@ impl VaultProgramClient {
         vault_operator_delegation: &Pubkey,
         admin: &Keypair,
         amount: u64,
-        for_withdrawal: bool,
     ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -920,7 +917,6 @@ impl VaultProgramClient {
                 vault_operator_delegation,
                 &admin.pubkey(),
                 amount,
-                for_withdrawal,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer, admin],
@@ -939,8 +935,6 @@ impl VaultProgramClient {
         let config = self
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await?;
-
-        self.update_vault_balance(&vault_pubkey).await?;
 
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -972,6 +966,8 @@ impl VaultProgramClient {
             slot / config.epoch_length,
         )
         .await?;
+
+        self.update_vault_balance(&vault_pubkey).await?;
 
         Ok(())
     }
@@ -1065,6 +1061,7 @@ impl VaultProgramClient {
                 vault_pubkey,
                 vault_update_state_tracker,
                 &self.payer.pubkey(),
+                WithdrawalAllocationMethod::Greedy,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],

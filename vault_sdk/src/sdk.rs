@@ -7,7 +7,7 @@ use solana_program::{
 
 use crate::{
     inline_mpl_token_metadata::{self, pda::find_metadata_account},
-    instruction::{VaultAdminRole, VaultInstruction},
+    instruction::{VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
 };
 
 pub fn initialize_config(
@@ -368,7 +368,6 @@ pub fn cooldown_delegation(
     vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
     amount: u64,
-    for_withdrawal: bool,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -380,12 +379,9 @@ pub fn cooldown_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownDelegation {
-            amount,
-            for_withdrawal,
-        }
-        .try_to_vec()
-        .unwrap(),
+        data: VaultInstruction::CooldownDelegation { amount }
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -671,6 +667,7 @@ pub fn initialize_vault_update_state_tracker(
     vault: &Pubkey,
     vault_update_state_tracker: &Pubkey,
     payer: &Pubkey,
+    withdrawal_allocation_method: WithdrawalAllocationMethod,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -682,9 +679,11 @@ pub fn initialize_vault_update_state_tracker(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultUpdateStateTracker
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::InitializeVaultUpdateStateTracker {
+            withdrawal_allocation_method,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 
