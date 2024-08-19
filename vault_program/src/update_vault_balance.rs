@@ -3,8 +3,9 @@ use jito_jsm_core::loader::{load_associated_token_account, load_token_mint, load
 use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
-    program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
+    sysvar::Sysvar,
 };
 use spl_token::{instruction::mint_to, state::Account};
 
@@ -21,49 +22,52 @@ pub fn process_update_vault_balance(
     Config::load(program_id, config, false)?;
     Vault::load(program_id, vault_info, true)?;
 
-    let (new_balance, reward_fee) = {
-        let vault_data = vault_info.data.borrow();
-        let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
 
-        load_token_mint(vrt_mint)?;
-        load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
-        load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
-        load_token_program(token_program)?;
-        vault.check_vrt_mint(vrt_mint.key)?;
+    let vault_data = vault_info.data.borrow();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
 
-        // Calculate rewards
-        let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
-        let reward_fee = vault.calculate_rewards_fee(new_balance)?;
+    load_token_mint(vrt_mint)?;
+    load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
+    load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
+    load_token_program(token_program)?;
 
-        // Mint rewards
-        if reward_fee > 0 {
-            let (_, vault_bump, mut vault_seeds) =
-                Vault::find_program_address(program_id, &vault.base);
-            vault_seeds.push(vec![vault_bump]);
-            let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_vrt_mint(vrt_mint.key)?;
 
-            msg!("Minting {} VRT rewards to the fee wallet", reward_fee);
+    // Calculate rewards
+    let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
-            invoke_signed(
-                &mint_to(
-                    &spl_token::id(),
-                    vrt_mint.key,
-                    vault_fee_token_account.key,
-                    vault_info.key,
-                    &[],
-                    reward_fee,
-                )?,
-                &[
-                    vrt_mint.clone(),
-                    vault_fee_token_account.clone(),
-                    vault_info.clone(),
-                ],
-                &[&seed_slices],
-            )?;
-        }
+    let reward_fee = vault.calculate_rewards_fee(new_balance)?;
 
-        (new_balance, reward_fee)
-    };
+    // Mint rewards
+    if reward_fee > 0 {
+        let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
+        vault_seeds.push(vec![vault_bump]);
+        let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+
+        msg!("Minting {} VRT rewards to the fee wallet", reward_fee);
+
+        invoke_signed(
+            &mint_to(
+                &spl_token::id(),
+                vrt_mint.key,
+                vault_fee_token_account.key,
+                vault_info.key,
+                &[],
+                reward_fee,
+            )?,
+            &[
+                vrt_mint.clone(),
+                vault_fee_token_account.clone(),
+                vault_info.clone(),
+            ],
+            &[&seed_slices],
+        )?;
+    }
+
+    drop(vault_data);
 
     // Update state
     {

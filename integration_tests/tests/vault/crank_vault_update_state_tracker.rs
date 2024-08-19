@@ -212,8 +212,6 @@ mod tests {
                 staked_amount: 50_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
 
@@ -235,8 +233,6 @@ mod tests {
                 staked_amount: 100_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
     }
@@ -539,12 +535,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                25_000,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 25_000)
             .await
             .unwrap();
         vault_program_client
@@ -552,12 +543,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[1].operator_pubkey,
-                25_000,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[1].operator_pubkey, 25_000)
             .await
             .unwrap();
 
@@ -638,8 +624,6 @@ mod tests {
                 staked_amount: 25_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
 
@@ -662,8 +646,6 @@ mod tests {
                 staked_amount: 50_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
     }
