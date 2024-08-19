@@ -570,14 +570,15 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
-    use crate::delegation_state::DelegationState;
-    use crate::vault::{BurnSummary, MintSummary, Vault};
+    use std::{cell::RefCell, rc::Rc};
+
     use jito_vault_sdk::error::VaultError;
-    use solana_program::account_info::AccountInfo;
-    use solana_program::program_error::ProgramError;
-    use solana_program::pubkey::Pubkey;
-    use std::cell::RefCell;
-    use std::rc::Rc;
+    use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
+
+    use crate::{
+        delegation_state::DelegationState,
+        vault::{BurnSummary, MintSummary, Vault},
+    };
 
     #[test]
     fn test_update_secondary_admin_ok() {
