@@ -61,6 +61,7 @@ pub enum VaultError {
     VaultMaxSlashedPerOperatorExceeded = 4019,
 
     VaultDelegationUpdateOverflow = 5000,
+    VaultStakerWithdrawalTicketInvalidStaker,
 }
 
 impl From<VaultError> for ProgramError {

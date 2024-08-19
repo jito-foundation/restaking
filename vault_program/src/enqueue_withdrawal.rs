@@ -66,12 +66,7 @@ pub fn process_enqueue_withdrawal(
         vault_staker_withdrawal_ticket_pubkey,
         vault_staker_withdrawal_ticket_bump,
         mut vault_staker_withdrawal_ticket_seeds,
-    ) = VaultStakerWithdrawalTicket::find_program_address(
-        program_id,
-        vault_info.key,
-        staker.key,
-        base.key,
-    );
+    ) = VaultStakerWithdrawalTicket::find_program_address(program_id, vault_info.key, base.key);
     vault_staker_withdrawal_ticket_seeds.push(vec![vault_staker_withdrawal_ticket_bump]);
     if vault_staker_withdrawal_ticket
         .key

@@ -156,13 +156,20 @@ pub enum VaultInstruction {
         amount: u64
     },
 
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(3, signer, name = "old_owner")]
+    #[account(4, name = "new_owner")]
+    ChangeWithdrawalTicketOwner,
+
     /// Burns the withdraw ticket, returning funds to the staker. Withdraw tickets can be burned
     /// after one full epoch of being enqueued.
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_token_account")]
     #[account(3, writable, name = "vrt_mint")]
-    #[account(4, writable, signer, name = "staker")]
+    #[account(4, writable, name = "staker")]
     #[account(5, writable, name = "staker_token_account")]
     #[account(6, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(7, writable, name = "vault_staker_withdrawal_ticket_token_account")]
