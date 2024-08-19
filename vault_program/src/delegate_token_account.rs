@@ -28,7 +28,7 @@ pub fn process_delegate_token_account(
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
-    vault.check_admin(admin)?;
+    vault.check_admin(admin.key)?;
     if vault.supported_mint.eq(token_mint.key) {
         msg!("Invalid Token mint");
         return Err(ProgramError::InvalidAccountData);
