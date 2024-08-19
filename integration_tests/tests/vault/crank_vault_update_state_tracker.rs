@@ -31,7 +31,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -129,7 +129,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -234,7 +234,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -280,6 +280,7 @@ mod tests {
             )
             .await
             .unwrap();
+        fixture.warp_slot_incremental(1).await.unwrap();
         let result = vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
@@ -308,7 +309,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -375,7 +376,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -450,7 +451,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 

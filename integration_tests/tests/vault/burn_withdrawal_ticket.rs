@@ -14,6 +14,7 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -57,6 +58,7 @@ mod tests {
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 MINT_AMOUNT,
+                MIN_AMOUNT_OUT,
             )
             .await
             .unwrap();
@@ -102,6 +104,7 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_next_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -145,6 +148,7 @@ mod tests {
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 MINT_AMOUNT,
+                MIN_AMOUNT_OUT,
             )
             .await
             .unwrap();
@@ -206,6 +210,7 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_basic_success() {
         const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -249,6 +254,7 @@ mod tests {
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 MINT_AMOUNT,
+                MIN_AMOUNT_OUT,
             )
             .await
             .unwrap();
@@ -357,6 +363,7 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -400,6 +407,7 @@ mod tests {
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 None,
                 MINT_AMOUNT,
+                MIN_AMOUNT_OUT,
             )
             .await
             .unwrap();
@@ -462,7 +470,7 @@ mod tests {
         let result = vault_program_client
             .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
             .await;
-        assert_vault_error(result, VaultError::SlippageError);
+        assert_vault_error(result, VaultError::VaultUnderflow);
     }
 
     // /// The user withdrew at some ratio of the vault, but rewards were accrued so the amount of

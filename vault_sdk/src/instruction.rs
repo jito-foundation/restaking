@@ -79,9 +79,8 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, name = "ncn")]
-    #[account(3, name = "ncn_vault_ticket")]
-    #[account(4, writable, name = "vault_ncn_ticket")]
-    #[account(5, signer, name = "admin")]
+    #[account(3, writable, name = "vault_ncn_ticket")]
+    #[account(4, signer, name = "admin")]
     WarmupVaultNcnTicket,
 
     /// Vault removes support for an NCN
@@ -96,9 +95,8 @@ pub enum VaultInstruction {
     #[account(1, name = "vault")]
     #[account(2, name = "ncn")]
     #[account(3, name = "slasher")]
-    #[account(4, name = "ncn_slasher_ticket")]
-    #[account(5, writable, name = "vault_slasher_ticket")]
-    #[account(6, signer, name = "admin")]
+    #[account(4, writable, name = "vault_slasher_ticket")]
+    #[account(5, signer, name = "admin")]
     WarmupVaultNcnSlasherTicket,
 
     #[account(0, name = "config")]
@@ -121,12 +119,25 @@ pub enum VaultInstruction {
     #[account(8, name = "token_program")]
     #[account(9, signer, optional, name = "mint_signer", description = "Signer for minting")]
     MintTo {
-        amount: u64
+        amount_in: u64,
+        min_amount_out: u64,
     },
 
     /// Burns VRT by withdrawing tokens from the vault
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vault_token_account")]
+    #[account(3, writable, name = "vrt_mint")]
+    #[account(4, signer, name = "staker")]
+    #[account(5, writable, name = "staker_token_account")]
+    #[account(6, signer, name = "staker_vrt_token_account")]
+    #[account(7, writable, name = "vault_fee_token_account")]
+    #[account(8, name = "token_program")]
+    #[account(9, name = "system_program")]
+    #[account(10, signer, optional, name = "burn_signer", description = "Signer for burning")]
     Burn {
-        amount: u64
+        amount_in: u64,
+        min_amount_out: u64
     },
 
     /// Enqueues a withdrawal of VRT tokens
@@ -135,13 +146,12 @@ pub enum VaultInstruction {
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(3, writable, name = "vault_staker_withdrawal_ticket_token_account")]
-    #[account(4, writable, name = "vault_fee_token_account")]
-    #[account(5, writable, signer, name = "staker")]
-    #[account(6, writable, name = "staker_vrt_token_account")]
-    #[account(7, signer, name = "base")]
-    #[account(8, name = "token_program")]
-    #[account(9, name = "system_program")]
-    #[account(10, signer, optional, name = "burn_signer", description = "Signer for burning")]
+    #[account(4, writable, signer, name = "staker")]
+    #[account(5, writable, name = "staker_vrt_token_account")]
+    #[account(6, signer, name = "base")]
+    #[account(7, name = "token_program")]
+    #[account(8, name = "system_program")]
+    #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
         amount: u64
     },
@@ -154,11 +164,12 @@ pub enum VaultInstruction {
     #[account(3, writable, name = "vrt_mint")]
     #[account(4, writable, signer, name = "staker")]
     #[account(5, writable, name = "staker_token_account")]
-    #[account(6, writable, name = "staker_vrt_token_account")]
-    #[account(7, writable, name = "vault_staker_withdrawal_ticket")]
-    #[account(8, writable, name = "vault_staker_withdrawal_ticket_token_account")]
+    #[account(6, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(7, writable, name = "vault_staker_withdrawal_ticket_token_account")]
+    #[account(8, writable, name = "vault_fee_token_account")]
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
+    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
     BurnWithdrawTicket {
         min_amount_out: u64
     },

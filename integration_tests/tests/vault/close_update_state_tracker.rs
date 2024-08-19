@@ -146,7 +146,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -230,7 +230,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000)
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
             .await
             .unwrap();
 

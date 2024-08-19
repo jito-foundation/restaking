@@ -19,36 +19,27 @@ pub fn process_cooldown_vault_ncn_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault, ncn, vault_ncn_ticket, vault_ncn_admin] = accounts else {
+    let [config, vault_info, ncn, vault_ncn_ticket, vault_ncn_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
-    Ncn::load(&config.restaking_program, ncn, false)?;
-    VaultNcnTicket::load(program_id, vault_ncn_ticket, ncn, vault, true)?;
-    load_signer(vault_ncn_admin, false)?;
-
-    // The Vault NCN admin shall be the signer of the transaction
-    let vault_data = vault.data.borrow();
+    Vault::load(program_id, vault_info, false)?;
+    let vault_data = vault_info.data.borrow();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-    if vault.ncn_admin.ne(vault_ncn_admin.key) {
-        msg!("Invalid NCN admin for vault");
-        return Err(VaultError::VaultNcnAdminInvalid.into());
-    }
-
-    // The vault shall be up-to-date before removing support for the NCN
-    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault update is needed");
-        return Err(VaultError::VaultUpdateNeeded.into());
-    }
-
-    // The VaultNcnTicket must be active in order to cooldown the NCN
+    Ncn::load(&config.restaking_program, ncn, false)?;
+    VaultNcnTicket::load(program_id, vault_ncn_ticket, ncn, vault_info, true)?;
     let mut vault_ncn_ticket_data = vault_ncn_ticket.data.borrow_mut();
     let vault_ncn_ticket =
         VaultNcnTicket::try_from_slice_unchecked_mut(&mut vault_ncn_ticket_data)?;
+    load_signer(vault_ncn_admin, false)?;
+
+    vault.check_ncn_admin(vault_ncn_admin.key)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+
+    // The VaultNcnTicket must be active in order to cooldown the NCN
     if !vault_ncn_ticket
         .state
         .deactivate(Clock::get()?.slot, config.epoch_length)

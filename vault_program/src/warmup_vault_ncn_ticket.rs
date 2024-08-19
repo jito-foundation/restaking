@@ -1,6 +1,6 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_restaking_core::{ncn::Ncn, ncn_vault_ticket::NcnVaultTicket};
+use jito_restaking_core::ncn::Ncn;
 use jito_vault_core::{config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
@@ -13,7 +13,7 @@ pub fn process_warmup_vault_ncn_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault, ncn, ncn_vault_ticket, vault_ncn_ticket, vault_ncn_admin] = accounts else {
+    let [config, vault, ncn, vault_ncn_ticket, vault_ncn_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, false)?;
@@ -21,13 +21,6 @@ pub fn process_warmup_vault_ncn_ticket(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
     Ncn::load(&config.restaking_program, ncn, false)?;
-    NcnVaultTicket::load(
-        &config.restaking_program,
-        ncn_vault_ticket,
-        ncn,
-        vault,
-        false,
-    )?;
     VaultNcnTicket::load(program_id, vault_ncn_ticket, vault, ncn, true)?;
     load_signer(vault_ncn_admin, false)?;
 
@@ -40,10 +33,7 @@ pub fn process_warmup_vault_ncn_ticket(
     }
 
     // The vault shall be up-to-date before warming up the NCN
-    if vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
-        msg!("Vault update is needed");
-        return Err(VaultError::VaultUpdateNeeded.into());
-    }
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
     // The VaultNcnTicket shall be ready to be activated
     let mut vault_ncn_ticket_data = vault_ncn_ticket.data.borrow_mut();

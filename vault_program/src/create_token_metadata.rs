@@ -23,6 +23,8 @@ pub fn process_create_token_metadata(
     };
 
     Vault::load(program_id, vault_info, false)?;
+    let vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     load_signer(admin, false)?;
     load_token_mint(lrt_mint)?;
     load_signer(payer, true)?;
@@ -30,10 +32,7 @@ pub fn process_create_token_metadata(
     load_mpl_metadata_program(mpl_token_metadata_program)?;
     load_system_program(system_program)?;
 
-    let vault_data = vault_info.data.borrow_mut();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-
-    vault.check_admin(admin)?;
+    vault.check_admin(admin.key)?;
 
     let new_metadata_instruction = create_metadata_accounts_v3(
         *mpl_token_metadata_program.key,
