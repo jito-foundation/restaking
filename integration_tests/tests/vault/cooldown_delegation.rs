@@ -36,7 +36,6 @@ mod tests {
                 .0,
                 &Keypair::new(),
                 1,
-                true,
             )
             .await;
         assert_vault_error(result, VaultError::VaultDelegationAdminInvalid);
@@ -72,12 +71,7 @@ mod tests {
             .unwrap();
 
         let result = vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                50_001,
-                false,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_001)
             .await;
         assert_vault_error(result, VaultError::VaultSecurityUnderflow);
     }
@@ -122,7 +116,7 @@ mod tests {
             .unwrap();
 
         let result = vault_program_client
-            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 1, false)
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 1)
             .await;
         assert_vault_error(result, VaultError::VaultUpdateNeeded);
     }
@@ -156,12 +150,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                50_000,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
             .await
             .unwrap();
 
@@ -171,7 +160,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault.delegation_state.total_security().unwrap(), 100_000);
         assert_eq!(vault.delegation_state.staked_amount, 50_000);
-        assert_eq!(vault.delegation_state.enqueued_for_withdraw_amount, 50_000);
+        assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount, 50_000);
 
         let vault_operator_delegation = vault_program_client
             .get_vault_operator_delegation(
@@ -194,7 +183,7 @@ mod tests {
         assert_eq!(
             vault_operator_delegation
                 .delegation_state
-                .enqueued_for_withdraw_amount,
+                .enqueued_for_cooldown_amount,
             50_000
         );
     }
@@ -228,12 +217,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                50_000,
-                false,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
             .await
             .unwrap();
 

@@ -67,13 +67,13 @@ impl VaultOperatorDelegation {
         let epoch_diff = current_epoch.checked_sub(last_update_epoch).unwrap();
         match epoch_diff {
             0 => {
-                // this shouldn't be possible
+                // do nothing
             }
             1 => {
                 self.delegation_state.update();
             }
             _ => {
-                // max 2 transitions needed
+                // max 2 transitions needed (enqueued -> cooling down and cooling down -> not allocated)
                 self.delegation_state.update();
                 self.delegation_state.update();
             }

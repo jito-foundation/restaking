@@ -1,8 +1,9 @@
-use crate::delegation_state::DelegationState;
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+
+use crate::delegation_state::DelegationState;
 
 impl Discriminator for VaultUpdateStateTracker {
     const DISCRIMINATOR: u8 = 9;
@@ -21,17 +22,32 @@ pub struct VaultUpdateStateTracker {
     /// The update index of the vault
     pub last_updated_index: u64,
 
+    /// The amount of additional assets that need unstaking to fulfill VRT withdrawals
+    pub additional_assets_need_unstaking: u64,
+
     /// The total amount delegated across all the operators in the vault
     pub delegation_state: DelegationState,
+
+    pub withdrawal_allocation_method: u8,
+
+    reserved: [u8; 7],
 }
 
 impl VaultUpdateStateTracker {
-    pub fn new(vault: Pubkey, ncn_epoch: u64) -> Self {
+    pub fn new(
+        vault: Pubkey,
+        ncn_epoch: u64,
+        additional_assets_need_unstaking: u64,
+        withdrawal_allocation_method: u8,
+    ) -> Self {
         Self {
             vault,
             ncn_epoch,
+            additional_assets_need_unstaking,
             last_updated_index: u64::MAX,
             delegation_state: DelegationState::default(),
+            withdrawal_allocation_method,
+            reserved: [0; 7],
         }
     }
 
@@ -43,7 +59,7 @@ impl VaultUpdateStateTracker {
             }
         } else if index != self.last_updated_index.checked_add(1).unwrap() {
             msg!("VaultUpdateStateTracker incorrect index");
-            return Err(VaultError::VaultUpdateIncorrectIndex.into());
+            return Err(VaultError::VaultUpdateIncorrectIndex);
         }
         self.last_updated_index = index;
         Ok(())
@@ -108,30 +124,23 @@ impl VaultUpdateStateTracker {
 
 #[cfg(test)]
 mod tests {
-    use crate::delegation_state::DelegationState;
-    use crate::vault_update_state_tracker::VaultUpdateStateTracker;
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
 
+    use crate::vault_update_state_tracker::VaultUpdateStateTracker;
+
     #[test]
     fn test_update_index_zero_ok() {
-        let mut vault_update_state_tracker = VaultUpdateStateTracker {
-            vault: Pubkey::new_unique(),
-            ncn_epoch: 0,
-            last_updated_index: u64::MAX,
-            delegation_state: DelegationState::default(),
-        };
+        let mut vault_update_state_tracker =
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+
         assert!(vault_update_state_tracker.check_and_update_index(0).is_ok());
     }
 
     #[test]
     fn test_update_index_skip_zero_fails() {
-        let mut vault_update_state_tracker = VaultUpdateStateTracker {
-            vault: Pubkey::new_unique(),
-            ncn_epoch: 0,
-            last_updated_index: u64::MAX,
-            delegation_state: DelegationState::default(),
-        };
+        let mut vault_update_state_tracker =
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
         assert_eq!(
             vault_update_state_tracker.check_and_update_index(1),
             Err(VaultError::VaultUpdateIncorrectIndex)
@@ -140,12 +149,8 @@ mod tests {
 
     #[test]
     fn test_update_index_skip_index_fails() {
-        let mut vault_update_state_tracker = VaultUpdateStateTracker {
-            vault: Pubkey::new_unique(),
-            ncn_epoch: 0,
-            last_updated_index: u64::MAX,
-            delegation_state: DelegationState::default(),
-        };
+        let mut vault_update_state_tracker =
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
         vault_update_state_tracker
             .check_and_update_index(0)
             .unwrap();
