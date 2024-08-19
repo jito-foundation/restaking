@@ -1,6 +1,7 @@
 use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_mint, load_token_program};
 use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
@@ -20,20 +21,18 @@ pub fn process_update_vault_balance(
     Config::load(program_id, config, false)?;
     Vault::load(program_id, vault_info, true)?;
 
-    let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
-
-    let reward_fee = {
+    let (new_balance, reward_fee) = {
         let vault_data = vault_info.data.borrow();
         let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-        load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
 
         load_token_mint(vrt_mint)?;
-        load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
         load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
+        load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
         load_token_program(token_program)?;
         vault.check_vrt_mint(vrt_mint.key)?;
 
         // Calculate rewards
+        let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
         let reward_fee = vault.calculate_rewards_fee(new_balance)?;
 
         // Mint rewards
@@ -63,7 +62,7 @@ pub fn process_update_vault_balance(
             )?;
         }
 
-        reward_fee
+        (new_balance, reward_fee)
     };
 
     // Update state
@@ -73,7 +72,10 @@ pub fn process_update_vault_balance(
         let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
         vault.tokens_deposited = new_balance;
-        vault.vrt_supply = vault.vrt_supply.checked_add(reward_fee).unwrap();
+        vault.vrt_supply = vault
+            .vrt_supply
+            .checked_add(reward_fee)
+            .ok_or(VaultError::VaultOverflow)?;
     }
 
     Ok(())

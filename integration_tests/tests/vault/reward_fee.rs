@@ -300,9 +300,6 @@ mod tests {
             .await
             .unwrap();
 
-        println!("TOKENS DEPOSITED {}", vault.tokens_deposited);
-        println!("REWARD FEE {}", reward_fee_account.amount);
-
         assert_eq!(MINT_AMOUNT * 2, vault.tokens_deposited);
         assert_eq!(MINT_AMOUNT / 10, reward_fee_account.amount);
         assert_eq!(MINT_AMOUNT + MINT_AMOUNT / 10, vault.vrt_supply);
