@@ -1057,8 +1057,6 @@ impl VaultProgramClient {
         ))
         .await?;
 
-        println!("vault balance updated");
-
         Ok(())
     }
 
@@ -1605,7 +1603,7 @@ impl VaultProgramClient {
         Ok(SPLTokenAccount::unpack(&account.data).unwrap())
     }
 
-    pub async fn reward_vault(
+    pub async fn create_and_fund_reward_vault(
         &mut self,
         vault: &Pubkey,
         rewarder: &Keypair,

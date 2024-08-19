@@ -352,11 +352,13 @@ impl Vault {
     pub fn calculate_rewards_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
         let rewards = new_balance.saturating_sub(self.tokens_deposited);
 
-        if rewards == 0 {
+        let vrt_rewards = self.calculate_vrt_mint_amount(rewards)?;
+
+        if vrt_rewards == 0 {
             return Ok(0);
         }
 
-        let fee = rewards
+        let fee = vrt_rewards
             .checked_mul(self.reward_fee_bps as u64)
             .ok_or(VaultError::VaultOverflow)?
             .div_ceil(10_000);
