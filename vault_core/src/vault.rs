@@ -1199,7 +1199,7 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         vault.vrt_ready_to_claim_amount = 100;
 
-        assert_eq!(vault.delegate(601), Err(VaultError::VaultInsufficientFunds));
+        vault.delegate(900).unwrap();
     }
 
     #[test]
@@ -1207,17 +1207,13 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         vault.vrt_ready_to_claim_amount = 100;
 
-
-        let fee = vault.calculate_rewards_fee(1000).unwrap();
-
-        assert_eq!(fee, 100);
+        assert_eq!(vault.delegate(901), Err(VaultError::VaultInsufficientFunds));
     }
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_ok() {
         let mut vault = make_test_vault(
             0,
-            1000, //10%
             0,
             1000,
             1000,
@@ -1229,16 +1225,13 @@ mod tests {
         );
         vault.vrt_ready_to_claim_amount = 100;
 
-        let fee = vault.calculate_rewards_fee(0).unwrap();
-
-        assert_eq!(fee, 0);
+        vault.delegate(400).unwrap();
     }
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_too_much_fails() {
         let mut vault = make_test_vault(
             0,
-            10_000, //100%
             0,
             1000,
             1000,
@@ -1250,17 +1243,13 @@ mod tests {
         );
         vault.vrt_ready_to_claim_amount = 100;
 
-
-        let fee = vault.calculate_rewards_fee(1000).unwrap();
-
-        assert_eq!(fee, 1000);
+        assert_eq!(vault.delegate(601), Err(VaultError::VaultInsufficientFunds));
     }
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_cooling_down_fails() {
         let mut vault = make_test_vault(
             0,
-            u16::MAX,
             0,
             1000,
             900,
@@ -1380,5 +1369,85 @@ mod tests {
             .calculate_assets_needed_for_withdrawals(200, 100)
             .unwrap();
         assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_calculate_reward_fee() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            1000, //10%
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(1000).unwrap();
+
+        assert_eq!(fee, 100);
+    }
+
+    #[test]
+    fn test_calculate_negative_balance() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            1000, //10%
+            0,
+        );
+        vault.tokens_deposited = 1000;
+
+        let fee = vault.calculate_rewards_fee(0).unwrap();
+
+        assert_eq!(fee, 0);
+    }
+
+    #[test]
+    fn test_calculate_100_percent_rewards() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            10_000, //100%
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(1000).unwrap();
+
+        assert_eq!(fee, 1000);
+    }
+
+    #[test]
+    fn test_calculate_rewards_overflow() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            u16::MAX,
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(u64::MAX);
+
+        assert_eq!(fee, Err(VaultError::VaultOverflow));
     }
 }
