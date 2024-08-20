@@ -72,11 +72,13 @@ jobs:
       - name: Upload restaking program
         uses: actions/upload-artifact@v4
         with:
+          name: jito_restaking_program_${{ matrix.network }}.so
           path: target/sbf-solana-solana/release/jito_restaking_program_${{ matrix.network }}.so
           if-no-files-found: error
       - name: Upload vault program
         uses: actions/upload-artifact@v4
         with:
+          name: jito_vault_program_${{ matrix.network }}.so
           path: target/sbf-solana-solana/release/jito_vault_program_${{ matrix.network }}.so
           if-no-files-found: error
 
