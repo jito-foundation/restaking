@@ -143,6 +143,8 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
       - run: ls -lh
       - name: Release
         uses: softprops/action-gh-release@v2
