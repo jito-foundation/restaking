@@ -2,13 +2,14 @@
   "name": "jito-restaking",
   "version": "0.0.1",
   "description": "Jito Restaking",
-  "packageManager": "yarn@4.4.0",
   "dependencies": {
     "@kinobi-so/nodes-from-anchor": "^0.21.1",
     "@kinobi-so/renderers": "^0.21.1",
     "@kinobi-so/renderers-js-umi": "^0.21.1",
     "@kinobi-so/renderers-rust": "^0.21.1",
-    "kinobi": "^0.21.1"
+    "corepack": "^0.29.3",
+    "kinobi": "^0.21.1",
+    "yarn": "^1.22.22"
   },
   "scripts": {
     "generate-clients": "node scripts/generate-clients.js"
