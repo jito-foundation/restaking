@@ -51,10 +51,10 @@ jobs:
         network: [ mainnet-beta, testnet, localhost, devnet ]
     steps:
       - uses: actions/checkout@v4
-      - name: Load .env file
-        uses: xom9ikk/dotenv@v2.3.0
+      - uses: aarcangeli/load-dotenv@v1.0.0
         with:
-          path: .config/${{ matrix.network }}
+          path: config
+          filenames: ${{ matrix.network }}.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
@@ -109,10 +109,10 @@ jobs:
         network: [ mainnet-beta, testnet, localhost, devnet ]
     steps:
       - uses: actions/checkout@v4
-      - name: Load .env file
-        uses: xom9ikk/dotenv@v2.3.0
+      - uses: aarcangeli/load-dotenv@v1.0.0
         with:
-          path: .config/${{ matrix.network }}
+          path: config
+          filenames: ${{ matrix.network }}.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Download restaking program
         uses: actions/download-artifact@v4
