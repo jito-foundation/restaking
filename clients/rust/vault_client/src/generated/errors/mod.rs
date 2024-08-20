@@ -3,3 +3,7 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
+
+pub(crate) mod jito_vault_program;
+
+pub use self::jito_vault_program::JitoVaultProgramError;

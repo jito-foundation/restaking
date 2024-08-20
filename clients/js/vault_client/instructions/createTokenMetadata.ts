@@ -34,7 +34,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { JITO_VAULT_SDK_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const CREATE_TOKEN_METADATA_DISCRIMINATOR = 27;
@@ -44,7 +44,7 @@ export function getCreateTokenMetadataDiscriminatorBytes() {
 }
 
 export type CreateTokenMetadataInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountLrtMint extends string | IAccountMeta<string> = string,
@@ -175,7 +175,7 @@ export function getCreateTokenMetadataInstruction<
     TAccountSystemProgram
   >
 ): CreateTokenMetadataInstruction<
-  typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountVault,
   TAccountAdmin,
   TAccountLrtMint,
@@ -185,7 +185,7 @@ export function getCreateTokenMetadataInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = JITO_VAULT_SDK_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -234,7 +234,7 @@ export function getCreateTokenMetadataInstruction<
       args as CreateTokenMetadataInstructionDataArgs
     ),
   } as CreateTokenMetadataInstruction<
-    typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+    typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
     TAccountVault,
     TAccountAdmin,
     TAccountLrtMint,
@@ -248,7 +248,7 @@ export function getCreateTokenMetadataInstruction<
 }
 
 export type ParsedCreateTokenMetadataInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

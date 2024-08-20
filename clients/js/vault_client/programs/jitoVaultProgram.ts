@@ -45,10 +45,10 @@ import {
   type ParsedWarmupVaultNcnTicketInstruction,
 } from '../instructions';
 
-export const JITO_VAULT_SDK_PROGRAM_ADDRESS =
-  'F7kL131bqDJB7jKs4nhNUu3KCLwcgkiKQKyBHJfkCjWy' as Address<'F7kL131bqDJB7jKs4nhNUu3KCLwcgkiKQKyBHJfkCjWy'>;
+export const JITO_VAULT_PROGRAM_PROGRAM_ADDRESS =
+  'AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK' as Address<'AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK'>;
 
-export enum JitoVaultSdkInstruction {
+export enum JitoVaultProgramInstruction {
   InitializeConfig,
   InitializeVault,
   InitializeVaultWithMint,
@@ -81,195 +81,195 @@ export enum JitoVaultSdkInstruction {
   Slash,
 }
 
-export function identifyJitoVaultSdkInstruction(
+export function identifyJitoVaultProgramInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array
-): JitoVaultSdkInstruction {
+): JitoVaultProgramInstruction {
   const data = 'data' in instruction ? instruction.data : instruction;
   if (containsBytes(data, getU8Encoder().encode(0), 0)) {
-    return JitoVaultSdkInstruction.InitializeConfig;
+    return JitoVaultProgramInstruction.InitializeConfig;
   }
   if (containsBytes(data, getU8Encoder().encode(1), 0)) {
-    return JitoVaultSdkInstruction.InitializeVault;
+    return JitoVaultProgramInstruction.InitializeVault;
   }
   if (containsBytes(data, getU8Encoder().encode(2), 0)) {
-    return JitoVaultSdkInstruction.InitializeVaultWithMint;
+    return JitoVaultProgramInstruction.InitializeVaultWithMint;
   }
   if (containsBytes(data, getU8Encoder().encode(3), 0)) {
-    return JitoVaultSdkInstruction.InitializeVaultOperatorDelegation;
+    return JitoVaultProgramInstruction.InitializeVaultOperatorDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(4), 0)) {
-    return JitoVaultSdkInstruction.InitializeVaultNcnTicket;
+    return JitoVaultProgramInstruction.InitializeVaultNcnTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(5), 0)) {
-    return JitoVaultSdkInstruction.InitializeVaultNcnSlasherOperatorTicket;
+    return JitoVaultProgramInstruction.InitializeVaultNcnSlasherOperatorTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(6), 0)) {
-    return JitoVaultSdkInstruction.InitializeVaultNcnSlasherTicket;
+    return JitoVaultProgramInstruction.InitializeVaultNcnSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(7), 0)) {
-    return JitoVaultSdkInstruction.WarmupVaultNcnTicket;
+    return JitoVaultProgramInstruction.WarmupVaultNcnTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(8), 0)) {
-    return JitoVaultSdkInstruction.CooldownVaultNcnTicket;
+    return JitoVaultProgramInstruction.CooldownVaultNcnTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(9), 0)) {
-    return JitoVaultSdkInstruction.WarmupVaultNcnSlasherTicket;
+    return JitoVaultProgramInstruction.WarmupVaultNcnSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(10), 0)) {
-    return JitoVaultSdkInstruction.CooldownVaultNcnSlasherTicket;
+    return JitoVaultProgramInstruction.CooldownVaultNcnSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(11), 0)) {
-    return JitoVaultSdkInstruction.MintTo;
+    return JitoVaultProgramInstruction.MintTo;
   }
   if (containsBytes(data, getU8Encoder().encode(12), 0)) {
-    return JitoVaultSdkInstruction.Burn;
+    return JitoVaultProgramInstruction.Burn;
   }
   if (containsBytes(data, getU8Encoder().encode(13), 0)) {
-    return JitoVaultSdkInstruction.EnqueueWithdrawal;
+    return JitoVaultProgramInstruction.EnqueueWithdrawal;
   }
   if (containsBytes(data, getU8Encoder().encode(14), 0)) {
-    return JitoVaultSdkInstruction.ChangeWithdrawalTicketOwner;
+    return JitoVaultProgramInstruction.ChangeWithdrawalTicketOwner;
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
-    return JitoVaultSdkInstruction.BurnWithdrawTicket;
+    return JitoVaultProgramInstruction.BurnWithdrawTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(16), 0)) {
-    return JitoVaultSdkInstruction.SetDepositCapacity;
+    return JitoVaultProgramInstruction.SetDepositCapacity;
   }
   if (containsBytes(data, getU8Encoder().encode(17), 0)) {
-    return JitoVaultSdkInstruction.SetFees;
+    return JitoVaultProgramInstruction.SetFees;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoVaultSdkInstruction.AdminWithdraw;
+    return JitoVaultProgramInstruction.AdminWithdraw;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
-    return JitoVaultSdkInstruction.SetAdmin;
+    return JitoVaultProgramInstruction.SetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
-    return JitoVaultSdkInstruction.SetSecondaryAdmin;
+    return JitoVaultProgramInstruction.SetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoVaultSdkInstruction.AddDelegation;
+    return JitoVaultProgramInstruction.AddDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoVaultSdkInstruction.CooldownDelegation;
+    return JitoVaultProgramInstruction.CooldownDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
-    return JitoVaultSdkInstruction.UpdateVaultBalance;
+    return JitoVaultProgramInstruction.UpdateVaultBalance;
   }
   if (containsBytes(data, getU8Encoder().encode(24), 0)) {
-    return JitoVaultSdkInstruction.InitializeVaultUpdateStateTracker;
+    return JitoVaultProgramInstruction.InitializeVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(25), 0)) {
-    return JitoVaultSdkInstruction.CrankVaultUpdateStateTracker;
+    return JitoVaultProgramInstruction.CrankVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(26), 0)) {
-    return JitoVaultSdkInstruction.CloseVaultUpdateStateTracker;
+    return JitoVaultProgramInstruction.CloseVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(27), 0)) {
-    return JitoVaultSdkInstruction.CreateTokenMetadata;
+    return JitoVaultProgramInstruction.CreateTokenMetadata;
   }
   if (containsBytes(data, getU8Encoder().encode(28), 0)) {
-    return JitoVaultSdkInstruction.UpdateTokenMetadata;
+    return JitoVaultProgramInstruction.UpdateTokenMetadata;
   }
   if (containsBytes(data, getU8Encoder().encode(29), 0)) {
-    return JitoVaultSdkInstruction.Slash;
+    return JitoVaultProgramInstruction.Slash;
   }
   throw new Error(
-    'The provided instruction could not be identified as a jitoVaultSdk instruction.'
+    'The provided instruction could not be identified as a jitoVaultProgram instruction.'
   );
 }
 
-export type ParsedJitoVaultSdkInstruction<
-  TProgram extends string = 'F7kL131bqDJB7jKs4nhNUu3KCLwcgkiKQKyBHJfkCjWy',
+export type ParsedJitoVaultProgramInstruction<
+  TProgram extends string = 'AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK',
 > =
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeConfig;
+      instructionType: JitoVaultProgramInstruction.InitializeConfig;
     } & ParsedInitializeConfigInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVault;
+      instructionType: JitoVaultProgramInstruction.InitializeVault;
     } & ParsedInitializeVaultInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVaultWithMint;
+      instructionType: JitoVaultProgramInstruction.InitializeVaultWithMint;
     } & ParsedInitializeVaultWithMintInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVaultOperatorDelegation;
+      instructionType: JitoVaultProgramInstruction.InitializeVaultOperatorDelegation;
     } & ParsedInitializeVaultOperatorDelegationInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVaultNcnTicket;
+      instructionType: JitoVaultProgramInstruction.InitializeVaultNcnTicket;
     } & ParsedInitializeVaultNcnTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVaultNcnSlasherOperatorTicket;
+      instructionType: JitoVaultProgramInstruction.InitializeVaultNcnSlasherOperatorTicket;
     } & ParsedInitializeVaultNcnSlasherOperatorTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVaultNcnSlasherTicket;
+      instructionType: JitoVaultProgramInstruction.InitializeVaultNcnSlasherTicket;
     } & ParsedInitializeVaultNcnSlasherTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.WarmupVaultNcnTicket;
+      instructionType: JitoVaultProgramInstruction.WarmupVaultNcnTicket;
     } & ParsedWarmupVaultNcnTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.CooldownVaultNcnTicket;
+      instructionType: JitoVaultProgramInstruction.CooldownVaultNcnTicket;
     } & ParsedCooldownVaultNcnTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.WarmupVaultNcnSlasherTicket;
+      instructionType: JitoVaultProgramInstruction.WarmupVaultNcnSlasherTicket;
     } & ParsedWarmupVaultNcnSlasherTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.CooldownVaultNcnSlasherTicket;
+      instructionType: JitoVaultProgramInstruction.CooldownVaultNcnSlasherTicket;
     } & ParsedCooldownVaultNcnSlasherTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.MintTo;
+      instructionType: JitoVaultProgramInstruction.MintTo;
     } & ParsedMintToInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.Burn;
+      instructionType: JitoVaultProgramInstruction.Burn;
     } & ParsedBurnInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.EnqueueWithdrawal;
+      instructionType: JitoVaultProgramInstruction.EnqueueWithdrawal;
     } & ParsedEnqueueWithdrawalInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.ChangeWithdrawalTicketOwner;
+      instructionType: JitoVaultProgramInstruction.ChangeWithdrawalTicketOwner;
     } & ParsedChangeWithdrawalTicketOwnerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.BurnWithdrawTicket;
+      instructionType: JitoVaultProgramInstruction.BurnWithdrawTicket;
     } & ParsedBurnWithdrawTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.SetDepositCapacity;
+      instructionType: JitoVaultProgramInstruction.SetDepositCapacity;
     } & ParsedSetDepositCapacityInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.SetFees;
+      instructionType: JitoVaultProgramInstruction.SetFees;
     } & ParsedSetFeesInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.AdminWithdraw;
+      instructionType: JitoVaultProgramInstruction.AdminWithdraw;
     } & ParsedAdminWithdrawInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.SetAdmin;
+      instructionType: JitoVaultProgramInstruction.SetAdmin;
     } & ParsedSetAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.SetSecondaryAdmin;
+      instructionType: JitoVaultProgramInstruction.SetSecondaryAdmin;
     } & ParsedSetSecondaryAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.AddDelegation;
+      instructionType: JitoVaultProgramInstruction.AddDelegation;
     } & ParsedAddDelegationInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.CooldownDelegation;
+      instructionType: JitoVaultProgramInstruction.CooldownDelegation;
     } & ParsedCooldownDelegationInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.UpdateVaultBalance;
+      instructionType: JitoVaultProgramInstruction.UpdateVaultBalance;
     } & ParsedUpdateVaultBalanceInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.InitializeVaultUpdateStateTracker;
+      instructionType: JitoVaultProgramInstruction.InitializeVaultUpdateStateTracker;
     } & ParsedInitializeVaultUpdateStateTrackerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.CrankVaultUpdateStateTracker;
+      instructionType: JitoVaultProgramInstruction.CrankVaultUpdateStateTracker;
     } & ParsedCrankVaultUpdateStateTrackerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.CloseVaultUpdateStateTracker;
+      instructionType: JitoVaultProgramInstruction.CloseVaultUpdateStateTracker;
     } & ParsedCloseVaultUpdateStateTrackerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.CreateTokenMetadata;
+      instructionType: JitoVaultProgramInstruction.CreateTokenMetadata;
     } & ParsedCreateTokenMetadataInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.UpdateTokenMetadata;
+      instructionType: JitoVaultProgramInstruction.UpdateTokenMetadata;
     } & ParsedUpdateTokenMetadataInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultSdkInstruction.Slash;
+      instructionType: JitoVaultProgramInstruction.Slash;
     } & ParsedSlashInstruction<TProgram>);

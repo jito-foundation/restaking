@@ -31,7 +31,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_SDK_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR = 22;
@@ -41,7 +41,7 @@ export function getOperatorWithdrawalAssetDiscriminatorBytes() {
 }
 
 export type OperatorWithdrawalAssetInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountOperatorTokenAccount extends string | IAccountMeta<string> = string,
@@ -148,7 +148,7 @@ export function getOperatorWithdrawalAssetInstruction<
     TAccountTokenProgram
   >
 ): OperatorWithdrawalAssetInstruction<
-  typeof JITO_RESTAKING_SDK_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
   TAccountOperator,
   TAccountAdmin,
   TAccountOperatorTokenAccount,
@@ -156,7 +156,7 @@ export function getOperatorWithdrawalAssetInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_SDK_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -200,7 +200,7 @@ export function getOperatorWithdrawalAssetInstruction<
       args as OperatorWithdrawalAssetInstructionDataArgs
     ),
   } as OperatorWithdrawalAssetInstruction<
-    typeof JITO_RESTAKING_SDK_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
     TAccountOperator,
     TAccountAdmin,
     TAccountOperatorTokenAccount,
@@ -212,7 +212,7 @@ export function getOperatorWithdrawalAssetInstruction<
 }
 
 export type ParsedOperatorWithdrawalAssetInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

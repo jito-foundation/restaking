@@ -22,7 +22,7 @@ import {
   type IInstructionWithAccounts,
   type IInstructionWithData,
 } from '@solana/web3.js';
-import { JITO_VAULT_SDK_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
 
 export const INITIALIZE_VAULT_WITH_MINT_DISCRIMINATOR = 2;
 
@@ -31,7 +31,7 @@ export function getInitializeVaultWithMintDiscriminatorBytes() {
 }
 
 export type InitializeVaultWithMintInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -69,22 +69,24 @@ export type InitializeVaultWithMintInput = {};
 
 export function getInitializeVaultWithMintInstruction(
   input: InitializeVaultWithMintInput
-): InitializeVaultWithMintInstruction<typeof JITO_VAULT_SDK_PROGRAM_ADDRESS> {
+): InitializeVaultWithMintInstruction<
+  typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS
+> {
   // Program address.
-  const programAddress = JITO_VAULT_SDK_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
 
   const instruction = {
     programAddress,
     data: getInitializeVaultWithMintInstructionDataEncoder().encode({}),
   } as InitializeVaultWithMintInstruction<
-    typeof JITO_VAULT_SDK_PROGRAM_ADDRESS
+    typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS
   >;
 
   return instruction;
 }
 
 export type ParsedInitializeVaultWithMintInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
 > = {
   programAddress: Address<TProgram>;
   data: InitializeVaultWithMintInstructionData;

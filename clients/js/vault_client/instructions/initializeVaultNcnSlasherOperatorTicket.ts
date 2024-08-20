@@ -27,7 +27,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { JITO_VAULT_SDK_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INITIALIZE_VAULT_NCN_SLASHER_OPERATOR_TICKET_DISCRIMINATOR = 5;
@@ -39,7 +39,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketDiscriminatorBytes() {
 }
 
 export type InitializeVaultNcnSlasherOperatorTicketInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountNcn extends string | IAccountMeta<string> = string,
@@ -163,7 +163,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
     TAccountSystemProgram
   >
 ): InitializeVaultNcnSlasherOperatorTicketInstruction<
-  typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountNcn,
@@ -175,7 +175,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = JITO_VAULT_SDK_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -224,7 +224,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
       {}
     ),
   } as InitializeVaultNcnSlasherOperatorTicketInstruction<
-    typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+    typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountNcn,
@@ -240,7 +240,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
 }
 
 export type ParsedInitializeVaultNcnSlasherOperatorTicketInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

@@ -17,7 +17,7 @@ const jsRestakingClientDir = path.join(jsClientsDir, "restaking_client");
 const restakingRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_restaking_sdk.json")));
 const restakingKinobi = kinobi.createFromRoot(restakingRootNode);
 restakingKinobi.update(kinobi.updateProgramsVisitor({
-    assetProgram: {name: "jito_restaking_program"},
+    jitoRestakingSdk: {name: "jito_restaking_program"},
 }));
 restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClientDir, "src", "generated"), {
     formatCode: true,
@@ -33,7 +33,7 @@ const jsVaultClientDir = path.join(jsClientsDir, "vault_client");
 const vaultRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_vault_sdk.json")));
 const vaultKinobi = kinobi.createFromRoot(vaultRootNode);
 vaultKinobi.update(kinobi.updateProgramsVisitor({
-    assetProgram: {name: "jito_vault_program"},
+    jitoVaultSdk: {name: "jito_vault_program"},
 }));
 vaultKinobi.accept(renderers.renderRustVisitor(path.join(rustVaultClientDir, "src", "generated"), {
     formatCode: true,

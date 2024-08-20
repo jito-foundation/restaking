@@ -75,7 +75,7 @@ impl InitializeVaultNcnSlasherTicket {
             .unwrap();
 
         solana_program::instruction::Instruction {
-            program_id: crate::JITO_VAULT_SDK_ID,
+            program_id: crate::JITO_VAULT_PROGRAM_ID,
             accounts,
             data,
         }
@@ -369,7 +369,7 @@ impl<'a, 'b> InitializeVaultNcnSlasherTicketCpi<'a, 'b> {
             .unwrap();
 
         let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_VAULT_SDK_ID,
+            program_id: crate::JITO_VAULT_PROGRAM_ID,
             accounts,
             data,
         };

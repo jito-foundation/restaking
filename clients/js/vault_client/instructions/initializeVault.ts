@@ -30,7 +30,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { JITO_VAULT_SDK_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INITIALIZE_VAULT_DISCRIMINATOR = 1;
@@ -40,7 +40,7 @@ export function getInitializeVaultDiscriminatorBytes() {
 }
 
 export type InitializeVaultInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountVrtMint extends string | IAccountMeta<string> = string,
@@ -176,7 +176,7 @@ export function getInitializeVaultInstruction<
     TAccountTokenProgram
   >
 ): InitializeVaultInstruction<
-  typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountVrtMint,
@@ -187,7 +187,7 @@ export function getInitializeVaultInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = JITO_VAULT_SDK_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -235,7 +235,7 @@ export function getInitializeVaultInstruction<
       args as InitializeVaultInstructionDataArgs
     ),
   } as InitializeVaultInstruction<
-    typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+    typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountVrtMint,
@@ -250,7 +250,7 @@ export function getInitializeVaultInstruction<
 }
 
 export type ParsedInitializeVaultInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

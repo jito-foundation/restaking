@@ -1540,8 +1540,195 @@
       }
     }
   ],
+  "errors": [
+    {
+      "code": 1000,
+      "name": "VaultSlashUnderflow",
+      "msg": "VaultSlashUnderflow"
+    },
+    {
+      "code": 1001,
+      "name": "VaultInsufficientFunds",
+      "msg": "VaultInsufficientFunds"
+    },
+    {
+      "code": 1002,
+      "name": "VaultOverflow",
+      "msg": "VaultOverflow"
+    },
+    {
+      "code": 1003,
+      "name": "VaultOperatorAdminInvalid",
+      "msg": "VaultOperatorAdminInvalid"
+    },
+    {
+      "code": 1004,
+      "name": "VaultAdminInvalid",
+      "msg": "VaultAdminInvalid"
+    },
+    {
+      "code": 1005,
+      "name": "VaultCapacityAdminInvalid",
+      "msg": "VaultCapacityAdminInvalid"
+    },
+    {
+      "code": 1006,
+      "name": "VaultMintBurnAdminInvalid",
+      "msg": "VaultMintBurnAdminInvalid"
+    },
+    {
+      "code": 1007,
+      "name": "VaultDelegationAdminInvalid",
+      "msg": "VaultDelegationAdminInvalid"
+    },
+    {
+      "code": 1008,
+      "name": "VaultCapacityExceeded",
+      "msg": "VaultCapacityExceeded"
+    },
+    {
+      "code": 1009,
+      "name": "VaultSlasherAdminInvalid",
+      "msg": "VaultSlasherAdminInvalid"
+    },
+    {
+      "code": 1010,
+      "name": "VaultNcnAdminInvalid",
+      "msg": "VaultNcnAdminInvalid"
+    },
+    {
+      "code": 1011,
+      "name": "VaultFeeAdminInvalid",
+      "msg": "VaultFeeAdminInvalid"
+    },
+    {
+      "code": 1012,
+      "name": "VaultFeeCapExceeded",
+      "msg": "VaultFeeCapExceeded"
+    },
+    {
+      "code": 1013,
+      "name": "VaultFeeChangeTooSoon",
+      "msg": "VaultFeeChangeTooSoon"
+    },
+    {
+      "code": 1014,
+      "name": "VaultFeeBumpTooLarge",
+      "msg": "VaultFeeBumpTooLarge"
+    },
+    {
+      "code": 1015,
+      "name": "VaultUnderflow",
+      "msg": "VaultUnderflow"
+    },
+    {
+      "code": 1016,
+      "name": "VaultUpdateNeeded",
+      "msg": "VaultUpdateNeeded"
+    },
+    {
+      "code": 1017,
+      "name": "VaultIsUpdated",
+      "msg": "VaultIsUpdated"
+    },
+    {
+      "code": 1018,
+      "name": "VaultUpdateIncorrectIndex",
+      "msg": "VaultUpdateIncorrectIndex"
+    },
+    {
+      "code": 1019,
+      "name": "VaultUpdateStateNotFinishedUpdating",
+      "msg": "VaultUpdateStateNotFinishedUpdating"
+    },
+    {
+      "code": 1020,
+      "name": "VaultSecurityOverflow",
+      "msg": "VaultSecurityOverflow"
+    },
+    {
+      "code": 1021,
+      "name": "VaultSlashIncomplete",
+      "msg": "VaultSlashIncomplete"
+    },
+    {
+      "code": 1022,
+      "name": "VaultSecurityUnderflow",
+      "msg": "VaultSecurityUnderflow"
+    },
+    {
+      "code": 1023,
+      "name": "SlippageError",
+      "msg": "SlippageError"
+    },
+    {
+      "code": 1024,
+      "name": "VaultStakerWithdrawalTicketNotWithdrawable",
+      "msg": "VaultStakerWithdrawalTicketNotWithdrawable"
+    },
+    {
+      "code": 1025,
+      "name": "VaultNcnSlasherTicketFailedCooldown",
+      "msg": "VaultNcnSlasherTicketFailedCooldown"
+    },
+    {
+      "code": 1026,
+      "name": "VaultNcnSlasherTicketFailedWarmup",
+      "msg": "VaultNcnSlasherTicketFailedWarmup"
+    },
+    {
+      "code": 1027,
+      "name": "VaultNcnTicketFailedCooldown",
+      "msg": "VaultNcnTicketFailedCooldown"
+    },
+    {
+      "code": 1028,
+      "name": "VaultNcnTicketFailedWarmup",
+      "msg": "VaultNcnTicketFailedWarmup"
+    },
+    {
+      "code": 1029,
+      "name": "VaultNcnTicketUnslashable",
+      "msg": "VaultNcnTicketUnslashable"
+    },
+    {
+      "code": 1030,
+      "name": "OperatorVaultTicketUnslashable",
+      "msg": "OperatorVaultTicketUnslashable"
+    },
+    {
+      "code": 1031,
+      "name": "NcnOperatorStateUnslashable",
+      "msg": "NcnOperatorStateUnslashable"
+    },
+    {
+      "code": 1032,
+      "name": "VaultNcnSlasherTicketUnslashable",
+      "msg": "VaultNcnSlasherTicketUnslashable"
+    },
+    {
+      "code": 1033,
+      "name": "NcnVaultTicketUnslashable",
+      "msg": "NcnVaultTicketUnslashable"
+    },
+    {
+      "code": 1034,
+      "name": "NcnVaultSlasherTicketUnslashable",
+      "msg": "NcnVaultSlasherTicketUnslashable"
+    },
+    {
+      "code": 1035,
+      "name": "VaultMaxSlashedPerOperatorExceeded",
+      "msg": "VaultMaxSlashedPerOperatorExceeded"
+    },
+    {
+      "code": 1036,
+      "name": "VaultStakerWithdrawalTicketInvalidStaker",
+      "msg": "VaultStakerWithdrawalTicketInvalidStaker"
+    }
+  ],
   "metadata": {
     "origin": "shank",
-    "address": "F7kL131bqDJB7jKs4nhNUu3KCLwcgkiKQKyBHJfkCjWy"
+    "address": "AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK"
   }
 }

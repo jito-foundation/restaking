@@ -6,5 +6,5 @@
 
 use solana_program::{pubkey, pubkey::Pubkey};
 
-/// `jito_vault_sdk` program ID.
-pub const JITO_VAULT_SDK_ID: Pubkey = pubkey!("F7kL131bqDJB7jKs4nhNUu3KCLwcgkiKQKyBHJfkCjWy");
+/// `jito_vault_program` program ID.
+pub const JITO_VAULT_PROGRAM_ID: Pubkey = pubkey!("AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK");

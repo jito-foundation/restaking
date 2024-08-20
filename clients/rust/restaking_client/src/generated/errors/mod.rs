@@ -4,6 +4,6 @@
 //!
 //! <https://github.com/kinobi-so/kinobi>
 
-pub(crate) mod jito_restaking_sdk;
+pub(crate) mod jito_restaking_program;
 
-pub use self::jito_restaking_sdk::JitoRestakingSdkError;
+pub use self::jito_restaking_program::JitoRestakingProgramError;

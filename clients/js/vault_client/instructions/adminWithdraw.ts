@@ -24,7 +24,7 @@ import {
   type IInstructionWithAccounts,
   type IInstructionWithData,
 } from '@solana/web3.js';
-import { JITO_VAULT_SDK_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
 
 export const ADMIN_WITHDRAW_DISCRIMINATOR = 18;
 
@@ -33,7 +33,7 @@ export function getAdminWithdrawDiscriminatorBytes() {
 }
 
 export type AdminWithdrawInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -79,9 +79,9 @@ export type AdminWithdrawInput = {
 
 export function getAdminWithdrawInstruction(
   input: AdminWithdrawInput
-): AdminWithdrawInstruction<typeof JITO_VAULT_SDK_PROGRAM_ADDRESS> {
+): AdminWithdrawInstruction<typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS> {
   // Program address.
-  const programAddress = JITO_VAULT_SDK_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
 
   // Original args.
   const args = { ...input };
@@ -91,13 +91,13 @@ export function getAdminWithdrawInstruction(
     data: getAdminWithdrawInstructionDataEncoder().encode(
       args as AdminWithdrawInstructionDataArgs
     ),
-  } as AdminWithdrawInstruction<typeof JITO_VAULT_SDK_PROGRAM_ADDRESS>;
+  } as AdminWithdrawInstruction<typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS>;
 
   return instruction;
 }
 
 export type ParsedAdminWithdrawInstruction<
-  TProgram extends string = typeof JITO_VAULT_SDK_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
 > = {
   programAddress: Address<TProgram>;
   data: AdminWithdrawInstructionData;
