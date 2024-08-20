@@ -31,8 +31,7 @@ Expect breaking changes.**
 ```bash
 git clone https://github.com/jito-foundation/restaking.git
 cd restaking
-./b # build
-./t # test
+cargo-build-sbf
 ```
 
 ## Usage
@@ -40,7 +39,7 @@ cd restaking
 ### Building the software
 
 ```bash
-./b
+cargo-build-sbf
 ```
 
 ## Running Tests
@@ -51,13 +50,13 @@ You find the installation instructions [here](https://nexte.st/docs/installation
 ### Outside of SVM
 
 ```bash
-./t
+cargo nextest run
 ```
 
 ### Testing using the SVM environment
 
 ```bash
-./b && ./t --bpf
+cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run --all-features
 ```
 
 ## Contributing
