@@ -51,13 +51,20 @@ jobs:
         network: [ mainnet-beta, testnet, localhost, devnet ]
     steps:
       - uses: actions/checkout@v4
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2.3.0
+        with:
+          path: .config/${{ matrix.network }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Build ${{ matrix.network }}
-        run: ./b --network ${{ matrix.network }}
+        run: cargo-build-sbf
+        env:
+          RESTAKING_PROGRAM_ID: ${{ env.RESTAKING_PROGRAM_ID }}
+          VAULT_PROGRAM_ID: ${{ env.VAULT_PROGRAM_ID }}
       - name: Upload restaking program
         uses: actions/upload-artifact@v4
         with:
@@ -102,6 +109,10 @@ jobs:
         network: [ mainnet-beta, testnet, localhost, devnet ]
     steps:
       - uses: actions/checkout@v4
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2.3.0
+        with:
+          path: .config/${{ matrix.network }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Download restaking program
         uses: actions/download-artifact@v4
@@ -114,4 +125,6 @@ jobs:
           name: jito_vault_program_${{ matrix.network }}.so
           path: target/sbf-solana-solana/release/jito_vault_program.so
       - uses: taiki-e/install-action@nextest
-      - run: ./t --network ${{ matrix.network }} --bpf
+      - run: cargo nextest run --all-features
+        env:
+          SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
