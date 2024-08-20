@@ -8,17 +8,17 @@ const projectRoot = path.join(__dirname, "..");
 
 const idlDir = path.join(projectRoot, "idl");
 
-const rustRestakingModule = path.join(__dirname, "..", "restaking_client");
-const rustRestakingGeneratedDir = path.join(rustRestakingModule, "src", "generated");
+const rustClientsDir = path.join(__dirname, "..", "clients", "rust");
+const jsClientsDir = path.join(__dirname, "..", "clients", "js");
 
-const restaking_idl = require(path.join(idlDir, "jito_restaking_sdk.json"));
-const restaking_program = anchorIdl.rootNodeFromAnchor(restaking_idl);
-const restaking_kinobi = kinobi.createFromRoot(restaking_program)
-
-restaking_kinobi.update(kinobi.updateProgramsVisitor({
-    jitoRestakingSdk: {name: "jito_restaking_program"},
-}))
-
-restaking_kinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingGeneratedDir), {
-    formatCode: true, crateFolder: rustRestakingModule, deleteFolderBeforeRendering: true
+const rustRestakingClientDir = path.join(rustClientsDir, "restaking_client");
+const jsRestakingClientDir = path.join(jsClientsDir, "restaking_client");
+const restakingRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_restaking_sdk.json")));
+const restakingKinobi = kinobi.createFromRoot(restakingRootNode);
+restakingKinobi.update(kinobi.updateProgramsVisitor({
+    assetProgram: {name: "jito_restaking_program"},
 }));
+restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClientDir, "src", "generated"), {
+    formatCode: true, crateFolder: rustRestakingClientDir, deleteFolderBeforeRendering: true
+}));
+restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingClientDir), {}));

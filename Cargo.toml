@@ -4,7 +4,7 @@ members = [
     "account_traits_derive",
     "core",
     "integration_tests",
-    "restaking_client",
+    "clients/rust/restaking_client",
     "restaking_core",
     "restaking_program",
     "restaking_sdk",
