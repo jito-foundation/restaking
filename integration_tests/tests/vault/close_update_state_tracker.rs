@@ -13,12 +13,24 @@ mod tests {
     async fn test_close_update_state_tracker_no_operators_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 0;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 0, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -66,13 +78,25 @@ mod tests {
     async fn test_close_update_state_tracker_not_finished_fails() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 2, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -130,13 +154,25 @@ mod tests {
     async fn test_close_update_state_tracker_old_epoch_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 2, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -214,13 +250,25 @@ mod tests {
     async fn test_close_update_state_tracker_vrt_enqueued_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 

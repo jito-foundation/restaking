@@ -13,13 +13,25 @@ mod tests {
     async fn test_cooldown_delegation_invalid_admin_fails() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             operator_roots,
             vault_root,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -45,13 +57,25 @@ mod tests {
     async fn test_cooldown_delegation_too_much_fails() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             operator_roots,
             vault_root,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -80,13 +104,25 @@ mod tests {
     async fn test_cooldown_delegation_vault_needs_updating_fails() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             operator_roots,
             vault_root,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -125,13 +161,25 @@ mod tests {
     async fn test_cooldown_delegation_vault_withdrawal_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             operator_roots,
             vault_root,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -192,13 +240,25 @@ mod tests {
     async fn test_cooldown_delegation_vault_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             operator_roots,
             vault_root,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 

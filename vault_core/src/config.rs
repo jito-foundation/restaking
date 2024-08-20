@@ -50,6 +50,8 @@ impl Config {
     pub const DEFAULT_FEE_RATE_OF_CHANGE_BPS: u16 = 2_500; // 25%
     /// Maximum bump in fee change above the rate of change
     pub const DEFAULT_FEE_BUMP_BPS: u16 = 10; // 0.1%
+    /// 100% in basis points
+    pub const MAX_BPS: u16 = 10_000;
 
     pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
@@ -57,6 +59,7 @@ impl Config {
             restaking_program,
             epoch_length: DEFAULT_SLOTS_PER_EPOCH,
             num_vaults: 0,
+            // Cannot be higher than 100%
             fee_cap_bps: Self::DEFAULT_FEES_CAP_BPS,
             fee_rate_of_change_bps: Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS,
             fee_bump_bps: Self::DEFAULT_FEE_BUMP_BPS,

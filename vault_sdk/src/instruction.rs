@@ -24,7 +24,7 @@ pub enum VaultInstruction {
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
-        epoch_withdraw_cap_bps: u16,
+        reward_fee_bps: u16,
     },
 
     /// Initializes a vault with an already-created VRT mint
@@ -157,13 +157,20 @@ pub enum VaultInstruction {
         amount: u64
     },
 
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(3, signer, name = "old_owner")]
+    #[account(4, name = "new_owner")]
+    ChangeWithdrawalTicketOwner,
+
     /// Burns the withdraw ticket, returning funds to the staker. Withdraw tickets can be burned
     /// after one full epoch of being enqueued.
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_token_account")]
     #[account(3, writable, name = "vrt_mint")]
-    #[account(4, writable, signer, name = "staker")]
+    #[account(4, writable, name = "staker")]
     #[account(5, writable, name = "staker_token_account")]
     #[account(6, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(7, writable, name = "vault_staker_withdrawal_ticket_token_account")]
@@ -188,8 +195,9 @@ pub enum VaultInstruction {
     #[account(1, writable, name = "vault")]
     #[account(2, signer, name = "admin")]
     SetFees {
-        deposit_fee_bps: u16,
-        withdrawal_fee_bps: u16,
+        deposit_fee_bps: Option<u16>,
+        withdrawal_fee_bps: Option<u16>,
+        reward_fee_bps: Option<u16>,
     },
 
     /// Withdraws any non-backing tokens from the vault
@@ -235,6 +243,9 @@ pub enum VaultInstruction {
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, name = "vault_token_account")]
+    #[account(3, writable, name = "vrt_mint")]
+    #[account(4, writable, name = "vault_fee_token_account")]
+    #[account(5, name = "token_program")]
     UpdateVaultBalance,
 
     /// Starts updating the vault

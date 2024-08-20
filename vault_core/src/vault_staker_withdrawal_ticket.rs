@@ -2,6 +2,7 @@
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultStakerWithdrawalTicket {
@@ -55,6 +56,14 @@ impl VaultStakerWithdrawalTicket {
         }
     }
 
+    pub fn check_staker(&self, staker: &Pubkey) -> Result<(), VaultError> {
+        if self.staker.ne(staker) {
+            msg!("Staker is not the owner of the withdrawal ticket");
+            return Err(VaultError::VaultStakerWithdrawalTicketInvalidStaker);
+        }
+        Ok(())
+    }
+
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
@@ -77,11 +86,10 @@ impl VaultStakerWithdrawalTicket {
     /// * `vault` - The vault
     /// * `staker` - The staker
     /// * `base` - The base account used as a PDA seed
-    pub fn seeds(vault: &Pubkey, staker: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {
+    pub fn seeds(vault: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
             b"vault_staker_withdrawal_ticket".to_vec(),
             vault.to_bytes().to_vec(),
-            staker.to_bytes().to_vec(),
             base.to_bytes().to_vec(),
         ])
     }
@@ -101,10 +109,9 @@ impl VaultStakerWithdrawalTicket {
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,
-        staker: &Pubkey,
         base: &Pubkey,
     ) -> (Pubkey, u8, Vec<Vec<u8>>) {
-        let seeds = Self::seeds(vault, staker, base);
+        let seeds = Self::seeds(vault, base);
         let seeds_iter: Vec<_> = seeds.iter().map(|s| s.as_slice()).collect();
         let (pda, bump) = Pubkey::find_program_address(&seeds_iter, program_id);
         (pda, bump, seeds)
@@ -125,7 +132,6 @@ impl VaultStakerWithdrawalTicket {
         program_id: &Pubkey,
         vault_staker_withdrawal_ticket: &AccountInfo,
         vault: &AccountInfo,
-        staker: &AccountInfo,
         expect_writable: bool,
     ) -> Result<(), ProgramError> {
         if vault_staker_withdrawal_ticket.owner.ne(program_id) {
@@ -146,8 +152,7 @@ impl VaultStakerWithdrawalTicket {
         }
         let vault_staker_withdraw_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
         let base = Self::try_from_slice_unchecked(&vault_staker_withdraw_ticket_data)?.base;
-        let expected_pubkey =
-            Self::find_program_address(program_id, vault.key, staker.key, &base).0;
+        let expected_pubkey = Self::find_program_address(program_id, vault.key, &base).0;
         if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
             msg!("Vault staker withdraw ticket is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);

@@ -891,6 +891,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4c78c047431fee22c1a7bb92e00ad095a02a983affe4d8a72e2a2c62c1b94f3"
 
 [[package]]
+name = "const_str_to_pubkey"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "279a4314e755fb311d9e2dd6503fdc023f9c833ddceb158565b95b9323f5fd10"
+dependencies = [
+ "solana-program",
+]
+
+[[package]]
 name = "constant_time_eq"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1978,6 +1987,8 @@ name = "jito-restaking-program"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "cfg-if",
+ "const_str_to_pubkey",
  "jito-account-traits",
  "jito-jsm-core",
  "jito-restaking-core",
@@ -2028,6 +2039,8 @@ name = "jito-vault-program"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "cfg-if",
+ "const_str_to_pubkey",
  "jito-account-traits",
  "jito-jsm-core",
  "jito-restaking-core",

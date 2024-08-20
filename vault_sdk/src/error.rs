@@ -62,6 +62,7 @@ pub enum VaultError {
     VaultWithdrawalLimitExceeded = 4020,
 
     VaultDelegationUpdateOverflow = 5000,
+    VaultStakerWithdrawalTicketInvalidStaker,
 }
 
 impl From<VaultError> for ProgramError {

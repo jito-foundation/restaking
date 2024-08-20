@@ -23,6 +23,7 @@ mod warmup_ncn_vault_ticket;
 mod warmup_operator_vault_ticket;
 
 use borsh::BorshDeserialize;
+use const_str_to_pubkey::str_to_pubkey;
 use jito_restaking_sdk::instruction::RestakingInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
@@ -55,7 +56,7 @@ use crate::{
     warmup_operator_vault_ticket::process_warmup_operator_vault_ticket,
 };
 
-declare_id!("E5YF9Um1mwQWHffqaUEUwtwnhQKsbMEt33qtvjto3NDZ");
+declare_id!(str_to_pubkey(env!("RESTAKING_PROGRAM_ID")));
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
