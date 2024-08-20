@@ -300,22 +300,22 @@ impl Vault {
     // ------------------------------------------
 
     #[inline(always)]
-    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Option<bool> {
-        let last_updated_epoch = self.last_full_state_update_slot.checked_div(epoch_length)?;
-        let current_epoch = slot.checked_div(epoch_length)?;
-        Some(last_updated_epoch < current_epoch)
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+        let last_updated_epoch = self
+            .last_full_state_update_slot
+            .checked_div(epoch_length)
+            .unwrap();
+        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        last_updated_epoch < current_epoch
     }
 
     #[inline(always)]
-    pub fn check_update_state_ok(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        match self.is_update_needed(slot, epoch_length) {
-            Some(true) => {
-                msg!("Vault update is needed");
-                Err(VaultError::VaultUpdateNeeded)
-            }
-            Some(false) => Ok(()),
-            None => unreachable!(),
+    pub fn check_update_state_ok(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
+        if self.is_update_needed(slot, epoch_length) {
+            msg!("Vault update is needed");
+            return Err(VaultError::VaultUpdateNeeded.into());
         }
+        Ok(())
     }
 
     #[inline(always)]
