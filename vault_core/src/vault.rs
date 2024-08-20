@@ -1493,7 +1493,7 @@ mod tests {
     }
 
     #[test]
-    fn test_check_() {
+    fn test_check_withdrawal_allowd() {
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
