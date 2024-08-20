@@ -3,10 +3,10 @@ members = [
     "account_traits",
     "account_traits_derive",
     "cli",
-    "core",
-    "integration_tests",
     "clients/rust/restaking_client",
     "clients/rust/vault_client",
+    "core",
+    "integration_tests",
     "restaking_core",
     "restaking_program",
     "restaking_sdk",
@@ -15,7 +15,6 @@ members = [
     "vault_sdk"]
 
 resolver = "2"
-
 #[profile.release]
 #overflow-checks = true
 #lto = "fat"

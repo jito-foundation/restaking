@@ -1,17 +1,18 @@
+use std::{path::PathBuf, str::FromStr};
+
 use anyhow::anyhow;
 use clap::Parser;
 use env_logger::Env;
-use jito_restaking_cli::cli_args::{CliConfig, ProgramCommand};
-use jito_restaking_cli::restaking_handler::RestakingCliHandler;
-use jito_restaking_cli::vault_handler::VaultCliHandler;
-use jito_restaking_client::generated::programs::JITO_RESTAKING_PROGRAM_ID;
-use jito_vault_client::generated::programs::JITO_VAULT_PROGRAM_ID;
+use jito_restaking_cli::{
+    cli_args::{CliConfig, ProgramCommand},
+    restaking_handler::RestakingCliHandler,
+    vault_handler::VaultCliHandler,
+};
+use jito_restaking_client::programs::JITO_RESTAKING_PROGRAM_ID;
+use jito_vault_client::programs::JITO_VAULT_PROGRAM_ID;
 use solana_cli_config::Config;
 use solana_program::pubkey::Pubkey;
-use solana_sdk::commitment_config::CommitmentConfig;
-use solana_sdk::signature::read_keypair_file;
-use std::path::PathBuf;
-use std::str::FromStr;
+use solana_sdk::{commitment_config::CommitmentConfig, signature::read_keypair_file};
 
 #[derive(Parser)]
 #[command(author, version, about = "A CLI for managing restaking and vault operations", long_about = None)]
@@ -43,7 +44,7 @@ struct Cli {
 
 fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {
-        let config = Config::load(config_file.as_os_str().to_str().unwrap().as_ref())?;
+        let config = Config::load(config_file.as_os_str().to_str().unwrap())?;
         CliConfig {
             rpc_url: config.json_rpc_url,
             commitment: CommitmentConfig::from_str(&config.commitment)?,
@@ -55,7 +56,7 @@ fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
         let config_file = solana_cli_config::CONFIG_FILE
             .as_ref()
             .ok_or_else(|| anyhow!("unable to get config file path"))?;
-        let config = if let Ok(config) = Config::load(&config_file) {
+        if let Ok(config) = Config::load(config_file) {
             CliConfig {
                 rpc_url: config.json_rpc_url,
                 commitment: CommitmentConfig::from_str(&config.commitment)?,
@@ -68,7 +69,7 @@ fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 rpc_url: args
                     .rpc_url
                     .as_ref()
-                    .ok_or(anyhow!("RPC URL not provided"))?
+                    .ok_or_else(|| anyhow!("RPC URL not provided"))?
                     .to_string(),
                 commitment: if let Some(commitment) = &args.commitment {
                     CommitmentConfig::from_str(commitment)?
@@ -81,8 +82,7 @@ fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                     None
                 },
             }
-        };
-        config
+        }
     };
 
     Ok(cli_config)

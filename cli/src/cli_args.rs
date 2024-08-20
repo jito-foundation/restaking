@@ -1,8 +1,7 @@
-use crate::restaking_handler::RestakingCommands;
-use crate::vault_handler::VaultCommands;
 use clap::Subcommand;
-use solana_sdk::commitment_config::CommitmentConfig;
-use solana_sdk::signature::Keypair;
+use solana_sdk::{commitment_config::CommitmentConfig, signature::Keypair};
+
+use crate::{restaking_handler::RestakingCommands, vault_handler::VaultCommands};
 
 pub struct CliConfig {
     pub rpc_url: String,

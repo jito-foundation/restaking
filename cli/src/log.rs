@@ -1,8 +1,11 @@
-use chrono::Local;
-use env_logger::fmt::{Color, Formatter, Style, StyledValue};
-use env_logger::Env;
-use log::Record;
 use std::io::Write;
+
+use chrono::Local;
+use env_logger::{
+    fmt::{Color, Formatter, Style, StyledValue},
+    Env,
+};
+use log::Record;
 pub fn init_logger() {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .format(format_log_message)

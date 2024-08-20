@@ -1,5 +1,4 @@
-use solana_program::decode_error::DecodeError;
-use solana_program::program_error::ProgramError;
+use solana_program::{decode_error::DecodeError, program_error::ProgramError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]

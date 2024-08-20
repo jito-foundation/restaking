@@ -1,4 +1,3 @@
-use crate::cli_args::CliConfig;
 use anyhow::anyhow;
 use clap::Subcommand;
 use jito_account_traits::AccountDeserialize;
@@ -6,10 +5,10 @@ use jito_restaking_client::instructions::InitializeConfigBuilder;
 use jito_restaking_core::config::Config;
 use log::{debug, info};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_rpc_client::rpc_client::SerializableTransaction;
-use solana_sdk::signature::Signer;
-use solana_sdk::transaction::Transaction;
+use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
+use solana_sdk::{signature::Signer, transaction::Transaction};
+
+use crate::cli_args::CliConfig;
 
 /// The CLI handler for the restaking program
 #[derive(Subcommand)]
@@ -37,7 +36,7 @@ pub struct RestakingCliHandler {
 }
 
 impl RestakingCliHandler {
-    pub fn new(
+    pub const fn new(
         cli_config: CliConfig,
         restaking_program_id: Pubkey,
         vault_program_id: Pubkey,
@@ -64,7 +63,7 @@ impl RestakingCliHandler {
                     .cli_config
                     .keypair
                     .as_ref()
-                    .ok_or(anyhow!("No keypair"))?;
+                    .ok_or_else(|| anyhow!("No keypair"))?;
                 let rpc_client = self.get_rpc_client();
 
                 let config_address = Config::find_program_address(&self.restaking_program_id).0;
