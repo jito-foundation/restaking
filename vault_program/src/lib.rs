@@ -36,7 +36,6 @@ use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
 };
-
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
