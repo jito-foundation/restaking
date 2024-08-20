@@ -16,6 +16,7 @@ jito-account-traits = { workspace = true }
 jito-jsm-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 solana-program = { workspace = true }
+shank = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }

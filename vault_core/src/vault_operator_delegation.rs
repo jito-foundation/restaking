@@ -2,6 +2,7 @@
 
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
@@ -11,7 +12,7 @@ impl Discriminator for VaultOperatorDelegation {
 }
 
 /// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultOperatorDelegation {
     /// The vault account

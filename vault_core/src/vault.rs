@@ -3,6 +3,7 @@ use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::loader::load_signer;
 use jito_vault_sdk::error::VaultError;
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
@@ -30,7 +31,7 @@ impl Discriminator for Vault {
 /// The vault is responsible for holding tokens and minting VRT tokens
 /// based on the amount of tokens deposited.
 /// It also contains several administrative functions for features inside the vault.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Vault {
     /// The base account of the VRT

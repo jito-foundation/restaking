@@ -2,6 +2,7 @@
 //! including the admin, voter, and the number of NCN and vault accounts.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for Operator {
@@ -10,7 +11,7 @@ impl Discriminator for Operator {
 
 /// The Operator account stores global information for a particular operator
 /// including the admin, voter, and the number of NCN and vault accounts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Operator {
     /// The base pubkey used as a seed for the PDA

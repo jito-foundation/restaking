@@ -3,6 +3,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for NcnVaultSlasherTicket {
@@ -13,7 +14,7 @@ impl Discriminator for NcnVaultSlasherTicket {
 /// opting-in to a vault slasher. The NcnVaultSlasherTicket can be activated and deactivated over time.
 /// The NcnVaultSlasherTicket can slash a specific operator that's receiving delegation from a
 /// vault for a maximum amount per epoch.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct NcnVaultSlasherTicket {
     /// The NCN
