@@ -154,9 +154,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          body: |
-            # Release Notes
-            Testing 123
           files: |
             *.so
           fail_on_unmatched_files: true
