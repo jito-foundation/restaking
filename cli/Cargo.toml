@@ -12,8 +12,10 @@ readme = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+chrono = { workspace = true }
 borsh = { workspace = true }
 bytemuck = { workspace = true }
+env_logger = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
@@ -27,6 +29,7 @@ solana-cli-config = { workspace = true }
 solana-sdk = { workspace = true }
 solana-rpc-client = { workspace = true }
 jito-account-traits = { workspace = true }
+log = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }

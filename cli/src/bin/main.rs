@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use clap::Parser;
+use env_logger::Env;
 use jito_restaking_cli::cli_args::{CliConfig, ProgramCommand};
 use jito_restaking_cli::restaking_handler::RestakingCliHandler;
 use jito_restaking_cli::vault_handler::VaultCliHandler;
@@ -35,6 +36,9 @@ struct Cli {
 
     #[arg(long, global = true, help = "Keypair")]
     keypair: Option<String>,
+
+    #[arg(long, global = true, help = "Verbose mode")]
+    verbose: bool,
 }
 
 fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
@@ -86,6 +90,8 @@ fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
     let args: Cli = Cli::parse();
 
     let cli_config = get_cli_config(&args)?;

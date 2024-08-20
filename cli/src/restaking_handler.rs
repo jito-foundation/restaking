@@ -4,6 +4,7 @@ use clap::Subcommand;
 use jito_account_traits::AccountDeserialize;
 use jito_restaking_client::instructions::InitializeConfigBuilder;
 use jito_restaking_core::config::Config;
+use log::{debug, info};
 use solana_program::pubkey::Pubkey;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client::rpc_client::SerializableTransaction;
@@ -79,28 +80,29 @@ impl RestakingCliHandler {
                     &[keypair],
                     blockhash,
                 );
-                println!("Initializing restaking config parameters: {:?}", ix_builder);
-                println!(
+                info!("Initializing restaking config parameters: {:?}", ix_builder);
+                info!(
                     "Initializing restaking config transaction: {:?}",
                     tx.get_signature()
                 );
                 rpc_client.send_and_confirm_transaction(&tx).await?;
-                println!("Transaction confirmed: {:?}", tx.get_signature());
+                info!("Transaction confirmed: {:?}", tx.get_signature());
             }
             RestakingConfigActions::Get => {
                 let rpc_client = self.get_rpc_client();
 
                 let config_address = Config::find_program_address(&self.restaking_program_id).0;
-                println!(
+                debug!(
                     "Reading the restaking configuration account at address: {}",
                     config_address
                 );
 
                 let account = rpc_client.get_account(&config_address).await?;
                 let config = Config::try_from_slice_unchecked(&account.data)?;
-                println!("Restaking config");
-                println!("Address: {:?}", config_address);
-                println!("Config: {:?}", config);
+                info!(
+                    "Restaking config at address {}: {:?}",
+                    config_address, config
+                );
             }
         }
         Ok(())
