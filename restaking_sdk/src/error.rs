@@ -1,6 +1,5 @@
 use solana_program::decode_error::DecodeError;
 use solana_program::program_error::ProgramError;
-use std::fmt::Display;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

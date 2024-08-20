@@ -1,6 +1,6 @@
 [package]
 name = "jito-restaking-client"
-description = "JSM Core library"
+description = "Jito restaking program client"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
@@ -9,9 +9,14 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[features]
+serde = []
+
 [dependencies]
 borsh = { workspace = true }
 bytemuck = { workspace = true }
 solana-program = { workspace = true }
 solana-sdk = { workspace = true }
 thiserror = { workspace = true }
+num-derive = { workspace = true }
+num-traits = { workspace = true }

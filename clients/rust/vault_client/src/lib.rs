@@ -1,0 +1,3 @@
+mod generated;
+
+use generated::*;

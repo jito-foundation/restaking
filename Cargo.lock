@@ -1948,6 +1948,8 @@ version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
  "bytemuck",
+ "num-derive 0.4.2",
+ "num-traits",
  "solana-program",
  "solana-sdk",
  "thiserror",
@@ -2027,6 +2029,19 @@ dependencies = [
  "solana-sdk",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "jito-vault-client"
+version = "0.0.1"
+dependencies = [
+ "borsh 0.10.3",
+ "bytemuck",
+ "num-derive 0.4.2",
+ "num-traits",
+ "solana-program",
+ "solana-sdk",
+ "thiserror",
 ]
 
 [[package]]
