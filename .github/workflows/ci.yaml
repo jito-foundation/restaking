@@ -57,7 +57,7 @@ jobs:
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Build ${{ matrix.network }}
-        run: ./b ${{ matrix.network }}
+        run: ./b --network ${{ matrix.network }}
       - name: Upload restaking program
         uses: actions/upload-artifact@v4
         with:
