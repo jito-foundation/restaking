@@ -1,0 +1,39 @@
+[package]
+name = "jito-restaking-cli"
+description = "Jito Restaking CLI"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+anyhow = { workspace = true }
+borsh = { workspace = true }
+bytemuck = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true }
+env_logger = { workspace = true }
+jito-account-traits = { workspace = true }
+jito-restaking-client = { workspace = true }
+jito-restaking-core = { workspace = true }
+jito-vault-client = { workspace = true }
+jito-vault-core = { workspace = true }
+log = { workspace = true }
+solana-cli-config = { workspace = true }
+solana-program = { workspace = true }
+solana-rpc-client = { workspace = true }
+solana-sdk = { workspace = true }
+spl-associated-token-account = { workspace = true }
+spl-token = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+assert_matches = { workspace = true }
+
+[[bin]]
+name = "jito-restaking-cli"
+path = "src/bin/main.rs"

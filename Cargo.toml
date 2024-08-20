@@ -2,6 +2,9 @@
 members = [
     "account_traits",
     "account_traits_derive",
+    "cli",
+    "clients/rust/restaking_client",
+    "clients/rust/vault_client",
     "core",
     "integration_tests",
     "restaking_core",
@@ -33,30 +36,42 @@ edition = "2021"
 readme = "README.md"
 
 [workspace.dependencies]
+anyhow = "1.0.86"
 assert_matches = "1.5.0"
 borsh = { version = "0.10.3" }
-cfg-if = "1.0.0"
-const_str_to_pubkey = "0.1.1"
 bytemuck = { version = "1.16.3", features = ["min_const_generics"] }
-jito-jsm-core = { path = "core", version = "=0.0.1" }
-jito-vault-core = { path = "vault_core", version = "=0.0.1" }
-jito-restaking-core = { path = "restaking_core", version = "=0.0.1" }
-jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.1" }
-jito-vault-sdk = { path = "vault_sdk", version = "=0.0.1" }
-jito-vault-program = { path = "vault_program", version = "=0.0.1" }
-jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
-jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
+cfg-if = "1.0.0"
+chrono = "0.4.38"
+clap = { version = "4.5.16", features = ["derive"] }
+const_str_to_pubkey = "0.1.1"
+env_logger = "0.10.2"
 jito-account-traits = { path = "account_traits", version = "=0.0.1" }
+jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
+jito-jsm-core = { path = "core", version = "=0.0.1" }
+jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.1" }
+jito-restaking-core = { path = "restaking_core", version = "=0.0.1" }
+jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
+jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.1" }
+jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.1" }
+jito-vault-core = { path = "vault_core", version = "=0.0.1" }
+jito-vault-program = { path = "vault_program", version = "=0.0.1" }
+jito-vault-sdk = { path = "vault_sdk", version = "=0.0.1" }
+log = "0.4.22"
+matches = "0.1.10"
+num-derive = "0.4.2"
+num-traits = "0.2.19"
+proc-macro2 = "1.0.86"
+quote = "1.0.36"
+serde = { version = "^1.0", features = ["derive"] }
 shank = "0.4.2"
+solana-cli-config = "~1.18"
 solana-program = "~1.18"
 solana-program-test = "~1.18"
 solana-sdk = "~1.18"
+solana-rpc-client = "~1.18"
 solana-security-txt = "1.1.1"
-spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"] }
-thiserror = "1.0.57"
-tokio = "1.36.0"
-matches = "0.1.10"
-quote = "1.0.36"
+spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 syn = "2.0.72"
-proc-macro2 = "1.0.86"
+thiserror = "1.0.57"
+tokio = { version = "1.36.0", features = ["full"] }
