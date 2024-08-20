@@ -3,6 +3,8 @@ name: ci
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master ]
 
@@ -24,6 +26,52 @@ jobs:
           crate: cargo-audit
       - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2023-0065 --ignore RUSTSEC-2024-0344
 
+  code_gen:
+    name: code generation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+          toolchain: nightly-2024-07-25
+      - name: Set Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
+      - name: Generate kinobi IDL files
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: generate-clients
+      - name: Verify no changed files
+        uses: tj-actions/verify-changed-files@v20
+        id: verify-changed-kinobi-files
+      - name: Run step only when any of the above files change.
+        if: steps.verify-changed-kinobi-files.outputs.files_changed == 'true'
+        env:
+          CHANGED_FILES: ${{ steps.verify-changed-kinobi-files.outputs.changed_files }}
+        run: |
+          echo "Changed files: $CHANGED_FILES"
+          echo "Unexpected changes in the client files. Please run `yarn generate-clients` to regenerate the files."
+          exit 1
+      - name: Install shank from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: shank-cli
+      - name: Regenerate Shank IDL files
+        run: ./scripts/shank
+      - name: Verify no changed files
+        uses: tj-actions/verify-changed-files@v20
+        with:
+          fail-if-changed: true
+          fail-message: 'Unexpected changes in the shank IDL files. Please run `./scripts/shank` to regenerate the files.'
+
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -43,31 +91,38 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --all-features -- -D warnings -D clippy::all -D clippy::nursery -D clippy::integer_division -D clippy::arithmetic_side_effects -D clippy::style -D clippy::perf
 
-  # TODO: switch this over to verified build
   build:
     name: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: aarcangeli/load-dotenv@v1.0.0
+        with:
+          path: config
+          filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-      - name: cargo-build-sbf
+      - name: Building programs
         run: cargo-build-sbf
+        env:
+          RESTAKING_PROGRAM_ID: ${{ env.RESTAKING_PROGRAM_ID }}
+          VAULT_PROGRAM_ID: ${{ env.VAULT_PROGRAM_ID }}
       - name: Upload restaking program
         uses: actions/upload-artifact@v4
         with:
           name: jito_restaking_program.so
           path: target/sbf-solana-solana/release/jito_restaking_program.so
+          if-no-files-found: error
       - name: Upload vault program
         uses: actions/upload-artifact@v4
         with:
           name: jito_vault_program.so
           path: target/sbf-solana-solana/release/jito_vault_program.so
+          if-no-files-found: error
 
-  # coverage runs tests as a native program
   coverage:
     name: coverage
     runs-on: ubuntu-latest
@@ -81,6 +136,9 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+        env:
+          RESTAKING_PROGRAM_ID: Cnp3S1G3JaaAoFpFR3FhM94DdEF1mMBqy5vjwtDaVZLi
+          VAULT_PROGRAM_ID: 94sqeuUnjJCmwZUp8nGK7Q7o8YnHSW9Y3TcPZJY2PycN
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.5.0
         with:
@@ -95,6 +153,10 @@ jobs:
       - build
     steps:
       - uses: actions/checkout@v4
+      - uses: aarcangeli/load-dotenv@v1.0.0
+        with:
+          path: config
+          filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Download restaking program
         uses: actions/download-artifact@v4
@@ -110,3 +172,24 @@ jobs:
       - run: cargo nextest run --all-features
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
+
+  create_release:
+    name: Create Release
+    needs:
+      - build
+      - test_sbf
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - run: ls -lh
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            *.so
+          fail_on_unmatched_files: true

@@ -16,6 +16,12 @@ mod tests {
         const WITHDRAW_FEE_BPS: u16 = 100;
         let min_amount_out: u64 = MINT_AMOUNT * (10_000 - DEPOSIT_FEE_BPS) as u64 / 10_000;
 
+        let deposit_fee_bps = DEPOSIT_FEE_BPS;
+        let withdraw_fee_bps = WITHDRAW_FEE_BPS;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -23,7 +29,13 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 

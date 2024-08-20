@@ -15,13 +15,26 @@ mod tests {
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_ok() {
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -113,13 +126,26 @@ mod tests {
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_multiple_operators_ok() {
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -186,8 +212,6 @@ mod tests {
                 staked_amount: 50_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
 
@@ -209,8 +233,6 @@ mod tests {
                 staked_amount: 100_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
     }
@@ -218,13 +240,26 @@ mod tests {
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_same_index_twice_fails() {
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -293,13 +328,26 @@ mod tests {
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_skip_zero_fails() {
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -360,13 +408,26 @@ mod tests {
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_skip_index_fails() {
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 3;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 3, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -435,13 +496,26 @@ mod tests {
     #[tokio::test]
     async fn test_crank_vault_update_state_tracker_partial_update_previous_epoch_ok() {
         let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 2, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -461,12 +535,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                25_000,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 25_000)
             .await
             .unwrap();
         vault_program_client
@@ -474,12 +543,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[1].operator_pubkey,
-                25_000,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[1].operator_pubkey, 25_000)
             .await
             .unwrap();
 
@@ -560,8 +624,6 @@ mod tests {
                 staked_amount: 25_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
 
@@ -584,8 +646,6 @@ mod tests {
                 staked_amount: 50_000,
                 enqueued_for_cooldown_amount: 0,
                 cooling_down_amount: 0,
-                enqueued_for_withdraw_amount: 0,
-                cooling_down_for_withdraw_amount: 0,
             }
         );
     }

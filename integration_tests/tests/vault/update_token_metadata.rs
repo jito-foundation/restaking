@@ -12,6 +12,10 @@ async fn setup() -> (VaultProgramClient, Pubkey, Keypair) {
 
     let mut vault_program_client = fixture.vault_program_client();
 
+    let deposit_fee_bps = 99;
+    let withdrawal_fee_bps = 100;
+    let reward_fee_bps = 101;
+
     let (
         _config_admin,
         VaultRoot {
@@ -19,7 +23,7 @@ async fn setup() -> (VaultProgramClient, Pubkey, Keypair) {
             vault_admin,
         },
     ) = vault_program_client
-        .setup_config_and_vault(99, 100)
+        .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
         .await
         .unwrap();
 

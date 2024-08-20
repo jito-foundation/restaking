@@ -2,8 +2,7 @@ use jito_account_traits::AccountDeserialize;
 use jito_jsm_core::{
     close_program_account,
     loader::{
-        load_associated_token_account, load_signer, load_system_program, load_token_mint,
-        load_token_program,
+        load_associated_token_account, load_system_program, load_token_mint, load_token_program,
     },
 };
 use jito_vault_core::{
@@ -42,13 +41,12 @@ pub fn process_burn_withdrawal_ticket(
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_token_mint(vrt_mint)?;
-    load_signer(staker, false)?;
+    // staker
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
     VaultStakerWithdrawalTicket::load(
         program_id,
         vault_staker_withdrawal_ticket_info,
         vault_info,
-        staker,
         true,
     )?;
     let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket_info.data.borrow();
@@ -67,6 +65,7 @@ pub fn process_burn_withdrawal_ticket(
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault_staker_withdrawal_ticket.check_staker(staker.key)?;
 
     if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length)? {
         msg!("Vault staker withdrawal ticket is not withdrawable");
@@ -83,12 +82,10 @@ pub fn process_burn_withdrawal_ticket(
         .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
         .ok_or(ProgramError::ArithmeticOverflow)?;
 
-    // burn the VRT tokens
     let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =
         VaultStakerWithdrawalTicket::find_program_address(
             program_id,
             vault_info.key,
-            staker.key,
             &vault_staker_withdrawal_ticket.base,
         );
     vault_staker_withdraw_seeds.push(vec![vault_staker_withdraw_bump]);

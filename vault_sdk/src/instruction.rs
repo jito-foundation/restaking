@@ -1,5 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
+use solana_program::program_error::ProgramError;
 
 #[rustfmt::skip]
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
@@ -23,6 +24,7 @@ pub enum VaultInstruction {
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        reward_fee_bps: u16,
     },
 
     /// Initializes a vault with an already-created VRT mint
@@ -155,13 +157,20 @@ pub enum VaultInstruction {
         amount: u64
     },
 
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(3, signer, name = "old_owner")]
+    #[account(4, name = "new_owner")]
+    ChangeWithdrawalTicketOwner,
+
     /// Burns the withdraw ticket, returning funds to the staker. Withdraw tickets can be burned
     /// after one full epoch of being enqueued.
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "vault_token_account")]
     #[account(3, writable, name = "vrt_mint")]
-    #[account(4, writable, signer, name = "staker")]
+    #[account(4, writable, name = "staker")]
     #[account(5, writable, name = "staker_token_account")]
     #[account(6, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(7, writable, name = "vault_staker_withdrawal_ticket_token_account")]
@@ -186,8 +195,9 @@ pub enum VaultInstruction {
     #[account(1, writable, name = "vault")]
     #[account(2, signer, name = "admin")]
     SetFees {
-        deposit_fee_bps: u16,
-        withdrawal_fee_bps: u16,
+        deposit_fee_bps: Option<u16>,
+        withdrawal_fee_bps: Option<u16>,
+        reward_fee_bps: Option<u16>,
     },
 
     /// Delegate the token account to a third party
@@ -234,12 +244,14 @@ pub enum VaultInstruction {
     #[account(4, signer, name = "admin")]
     CooldownDelegation {
         amount: u64,
-        for_withdrawal: bool
     },
 
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, name = "vault_token_account")]
+    #[account(3, writable, name = "vrt_mint")]
+    #[account(4, writable, name = "vault_fee_token_account")]
+    #[account(5, name = "token_program")]
     UpdateVaultBalance,
 
     /// Starts updating the vault
@@ -248,7 +260,7 @@ pub enum VaultInstruction {
     #[account(2, writable, name = "vault_update_state_tracker")]
     #[account(3, writable, name = "payer")]
     #[account(4, name = "system_program")]
-    InitializeVaultUpdateStateTracker,
+    InitializeVaultUpdateStateTracker { withdrawal_allocation_method: WithdrawalAllocationMethod },
 
     /// Shall be called on every vault_operator_delegation
     #[account(0, name = "config")]
@@ -324,4 +336,23 @@ pub enum VaultAdminRole {
     MintBurnAdmin,
     WithdrawAdmin,
     FeeAdmin,
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+#[repr(u8)]
+pub enum WithdrawalAllocationMethod {
+    /// During withdrawal allocation, the greedy mode will subtract assets from operator delegations
+    /// its iterating over in order to fulfill the withdrawal.
+    Greedy,
+}
+
+impl TryFrom<u8> for WithdrawalAllocationMethod {
+    type Error = ProgramError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Greedy),
+            _ => Err(ProgramError::InvalidArgument),
+        }
+    }
 }

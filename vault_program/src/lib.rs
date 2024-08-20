@@ -1,6 +1,7 @@
 mod add_delegation;
 mod burn;
 mod burn_withdrawal_ticket;
+mod change_withdrawal_ticket_owner;
 mod close_update_state_tracker;
 mod cooldown_delegation;
 mod cooldown_vault_ncn_slasher_ticket;
@@ -29,6 +30,7 @@ mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
 
 use borsh::BorshDeserialize;
+use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
@@ -40,6 +42,7 @@ use solana_security_txt::security_txt;
 use crate::{
     add_delegation::process_add_delegation, burn::process_burn,
     burn_withdrawal_ticket::process_burn_withdrawal_ticket,
+    change_withdrawal_ticket_owner::process_change_withdrawal_ticket_owner,
     close_update_state_tracker::process_close_vault_update_state_tracker,
     cooldown_delegation::process_cooldown_delegation,
     cooldown_vault_ncn_slasher_ticket::process_cooldown_vault_ncn_slasher_ticket,
@@ -63,7 +66,7 @@ use crate::{
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
 };
 
-declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
+declare_id!(str_to_pubkey(env!("VAULT_PROGRAM_ID")));
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
@@ -102,9 +105,16 @@ pub fn process_instruction(
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
         } => {
             msg!("Instruction: InitializeVault");
-            process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+            process_initialize_vault(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
         }
         VaultInstruction::InitializeVaultWithMint => {
             msg!("Instruction: InitializeVaultWithMint");
@@ -148,9 +158,16 @@ pub fn process_instruction(
         VaultInstruction::SetFees {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
         } => {
             msg!("Instruction: SetFees");
-            process_set_fees(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+            process_set_fees(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
         }
         // ------------------------------------------
         // Vault minting and burning
@@ -172,6 +189,10 @@ pub fn process_instruction(
         VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
+        }
+        VaultInstruction::ChangeWithdrawalTicketOwner => {
+            msg!("Instruction: ChangeWithdrawalTicketOwner");
+            process_change_withdrawal_ticket_owner(program_id, accounts)
         }
         VaultInstruction::BurnWithdrawTicket { min_amount_out } => {
             msg!("Instruction: BurnWithdrawTicket");
@@ -206,20 +227,23 @@ pub fn process_instruction(
             msg!("Instruction: AddDelegation");
             process_add_delegation(program_id, accounts, amount)
         }
-        VaultInstruction::CooldownDelegation {
-            amount,
-            for_withdrawal,
-        } => {
+        VaultInstruction::CooldownDelegation { amount } => {
             msg!("Instruction: CooldownDelegation");
-            process_cooldown_delegation(program_id, accounts, amount, for_withdrawal)
+            process_cooldown_delegation(program_id, accounts, amount)
         }
         VaultInstruction::UpdateVaultBalance => {
             msg!("Instruction: UpdateVaultBalance");
             process_update_vault_balance(program_id, accounts)
         }
-        VaultInstruction::InitializeVaultUpdateStateTracker => {
+        VaultInstruction::InitializeVaultUpdateStateTracker {
+            withdrawal_allocation_method,
+        } => {
             msg!("Instruction: InitializeVaultUpdateStateTracker");
-            process_initialize_vault_update_state_tracker(program_id, accounts)
+            process_initialize_vault_update_state_tracker(
+                program_id,
+                accounts,
+                withdrawal_allocation_method,
+            )
         }
         VaultInstruction::CrankVaultUpdateStateTracker => {
             msg!("Instruction: CrankVaultUpdateStateTracker");

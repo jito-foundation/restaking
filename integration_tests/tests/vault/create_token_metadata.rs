@@ -19,7 +19,7 @@ async fn test_create_token_metadata_ok() {
             vault_admin,
         },
     ) = vault_program_client
-        .setup_config_and_vault(99, 100)
+        .setup_config_and_vault(99, 100, 0)
         .await
         .unwrap();
 
@@ -69,7 +69,7 @@ async fn test_wrong_admin_signed() {
             vault_admin,
         },
     ) = vault_program_client
-        .setup_config_and_vault(99, 100)
+        .setup_config_and_vault(99, 100, 0)
         .await
         .unwrap();
 

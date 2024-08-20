@@ -13,7 +13,6 @@ pub fn process_cooldown_delegation(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     amount: u64,
-    for_withdrawal: bool,
 ) -> ProgramResult {
     let [config, vault_info, operator, vault_operator_delegation, vault_delegation_admin] =
         accounts
@@ -43,21 +42,10 @@ pub fn process_cooldown_delegation(
     vault.check_delegation_admin(vault_delegation_admin.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
-    vault
+    vault_operator_delegation
         .delegation_state
-        .subtract(&vault_operator_delegation.delegation_state)?;
-    if for_withdrawal {
-        vault_operator_delegation
-            .delegation_state
-            .cooldown_for_withdrawal(amount)?;
-    } else {
-        vault_operator_delegation
-            .delegation_state
-            .cooldown(amount)?;
-    }
-    vault
-        .delegation_state
-        .accumulate(&vault_operator_delegation.delegation_state)?;
+        .cooldown(amount)?;
+    vault.delegation_state.cooldown(amount)?;
 
     Ok(())
 }
