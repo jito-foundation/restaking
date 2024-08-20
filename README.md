@@ -31,7 +31,8 @@ Expect breaking changes.**
 ```bash
 git clone https://github.com/jito-foundation/restaking.git
 cd restaking
-./b --network <localhost | testnet | devnet | mainnet-beta>
+./b # build
+./t # test
 ```
 
 ## Usage
@@ -39,7 +40,7 @@ cd restaking
 ### Building the software
 
 ```bash
-./b --network <localhost | testnet | devnet | mainnet-beta>
+./b
 ```
 
 ## Running Tests
@@ -50,13 +51,13 @@ You find the installation instructions [here](https://nexte.st/docs/installation
 ### Outside of SVM
 
 ```bash
-./t --network <localhost | testnet | devnet | mainnet-beta>
+./t
 ```
 
 ### Testing using the SVM environment
 
 ```bash
-./t --network <localhost | testnet | devnet | mainnet-beta> --bpf
+./t --bpf
 ```
 
 ## Contributing
