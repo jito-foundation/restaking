@@ -143,6 +143,7 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+      - run: ls -lh
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -153,3 +154,4 @@ jobs:
           files: |
             jito_restaking_program_*.so
             jito_vault_program_*.so
+          fail_on_unmatched_files: true
