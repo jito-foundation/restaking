@@ -1538,6 +1538,22 @@
           }
         ]
       }
+    },
+    {
+      "name": "SlotToggle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slotAdded",
+            "type": "u64"
+          },
+          {
+            "name": "slotRemoved",
+            "type": "u64"
+          }
+        ]
+      }
     }
   ],
   "errors": [
@@ -1732,6 +1748,22 @@
     "address": "AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK"
   },
   "accounts": [
+    {
+      "name": "SlotToggle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slotAdded",
+            "type": "u64"
+          },
+          {
+            "name": "slotRemoved",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "Config",
       "type": {

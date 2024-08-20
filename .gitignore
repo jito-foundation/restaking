@@ -6,6 +6,7 @@ node_modules
 test-ledger
 .idea
 docs/api
+clients
 
 .yarn
 !.yarn/patches

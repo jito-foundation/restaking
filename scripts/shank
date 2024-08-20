@@ -21,8 +21,10 @@ shank idl --crate-root "${PROJECT_ROOT}/vault_sdk" -p ${VAULT_PROGRAM_ID} -o "${
 shank idl --crate-root "${PROJECT_ROOT}/vault_core" -p ${VAULT_PROGRAM_ID} -o "${IDL_DIR}"
 shank idl --crate-root "${PROJECT_ROOT}/restaking_core" -p ${VAULT_PROGRAM_ID} -o "${IDL_DIR}"
 
+shank idl --crate-root "${PROJECT_ROOT}/core" -p ${VAULT_PROGRAM_ID} -o "${IDL_DIR}"
+
 # Merge the idl files
-echo "Merging IDL files..."
+echo "Adding accounts and appending core types to SDK files..."
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
@@ -31,44 +33,37 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Define the input files
+CORE_FILE="${IDL_DIR}/jito_jsm_core.json"
 VAULT_CORE_FILE="${IDL_DIR}/jito_vault_core.json"
 VAULT_SDK_FILE="${IDL_DIR}/jito_vault_sdk.json"
 RESTAKING_CORE_FILE="${IDL_DIR}/jito_restaking_core.json"
 RESTAKING_SDK_FILE="${IDL_DIR}/jito_restaking_sdk.json"
 
-# Extract the "accounts" array from the CORE file
+# Extract the "accounts" and "types" arrays from the files
+CORE_TYPES=$(jq '.accounts' "$CORE_FILE")
+CORE_ACCOUNTS=$(jq '.accounts // []' "$CORE_FILE")
 VAULT_ACCOUNTS=$(jq '.accounts' "$VAULT_CORE_FILE")
 RESTAKING_ACCOUNTS=$(jq '.accounts' "$RESTAKING_CORE_FILE")
 
-# Insert the "accounts" array into the SDK
-jq --argjson accounts "$VAULT_ACCOUNTS" '
-    .accounts = $accounts |
-    to_entries |
-    map(if .key == "instructions" then
-        {"accounts": $accounts} + .
-    else
-        .
-    end) |
-    from_entries
+# Add accounts and append CORE_TYPES to the "types" array in the SDK files
+jq --argjson core_accounts "$CORE_ACCOUNTS" --argjson vault_accounts "$VAULT_ACCOUNTS" --argjson core_types "$CORE_TYPES" '
+    .accounts = ($core_accounts + $vault_accounts) |
+    .types += $core_types
 ' "$VAULT_SDK_FILE" > "${VAULT_SDK_FILE}.tmp"
 
-jq --argjson accounts "$RESTAKING_ACCOUNTS" '
-    .accounts = $accounts |
-    to_entries |
-    map(if .key == "instructions" then
-        {"accounts": $accounts} + .
-    else
-        .
-    end) |
-    from_entries
+jq --argjson core_accounts "$CORE_ACCOUNTS" --argjson restaking_accounts "$RESTAKING_ACCOUNTS" --argjson core_types "$CORE_TYPES" '
+    .accounts = ($core_accounts + $restaking_accounts) |
+    .types += $core_types
 ' "$RESTAKING_SDK_FILE" > "${RESTAKING_SDK_FILE}.tmp"
 
-# Replace the original sdk file with the updated one
+# Replace the original sdk files with the updated ones
 mv "${VAULT_SDK_FILE}.tmp" "$VAULT_SDK_FILE"
 rm "${VAULT_CORE_FILE}"
 
 mv "${RESTAKING_SDK_FILE}.tmp" "$RESTAKING_SDK_FILE"
 rm "${RESTAKING_CORE_FILE}"
+
+rm "${CORE_FILE}"
 
 echo "------------------------"
 echo "All configurations processed."
