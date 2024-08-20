@@ -6,7 +6,7 @@ const renderers = require('@kinobi-so/renderers');
 // Paths.
 const projectRoot = path.join(__dirname, "..");
 
-const idlDir = path.join(projectRoot, "idl", "testnet");
+const idlDir = path.join(projectRoot, "idl");
 
 const rustRestakingModule = path.join(__dirname, "..", "restaking_client");
 const rustRestakingGeneratedDir = path.join(rustRestakingModule, "src", "generated");
