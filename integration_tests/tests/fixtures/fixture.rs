@@ -197,6 +197,7 @@ impl TestBuilder {
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
         num_operators: u16,
         slasher_amounts: &[u64],
     ) -> TestResult<ConfiguredVault> {
@@ -204,7 +205,12 @@ impl TestBuilder {
         let mut restaking_program_client = self.restaking_program_client();
 
         let (vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                epoch_withdraw_cap_bps,
+            )
             .await?;
         let restaking_config_admin = restaking_program_client.do_initialize_config().await?;
 

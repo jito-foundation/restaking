@@ -23,6 +23,7 @@ pub fn process_initialize_vault(
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
+    epoch_withdraw_cap_bps: u16,
 ) -> ProgramResult {
     let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
     else {
@@ -109,6 +110,7 @@ pub fn process_initialize_vault(
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
             vault_bump,
         );
     }

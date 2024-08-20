@@ -16,6 +16,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 0;
         let slasher_amounts = vec![];
 
@@ -28,6 +29,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -81,6 +83,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
         let slasher_amounts = vec![];
 
@@ -94,6 +97,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -157,6 +161,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
         let slasher_amounts = vec![];
 
@@ -170,6 +175,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -253,6 +259,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -266,6 +273,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )

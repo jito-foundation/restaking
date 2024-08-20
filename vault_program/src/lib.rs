@@ -106,6 +106,7 @@ pub fn process_instruction(
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(
@@ -114,6 +115,7 @@ pub fn process_instruction(
                 deposit_fee_bps,
                 withdrawal_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
             )
         }
         VaultInstruction::InitializeVaultWithMint => {

@@ -12,7 +12,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(0, 0, 0, 0)
             .await
             .unwrap();
         let vault_config = vault_program_client
@@ -87,7 +87,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(0, 0, 0, 0)
             .await
             .unwrap();
         let vault_config = vault_program_client
@@ -115,7 +115,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(0, 0, 0, 0)
             .await
             .unwrap();
         let vault_config = vault_program_client

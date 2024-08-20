@@ -41,6 +41,7 @@ pub fn initialize_vault(
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
+    epoch_withdraw_cap_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -59,6 +60,7 @@ pub fn initialize_vault(
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         }
         .try_to_vec()
         .unwrap(),

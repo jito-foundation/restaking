@@ -79,6 +79,9 @@ pub fn process_enqueue_withdrawal(
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
 
+    let amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
+    vault.check_withdrawal_allowd(amount_to_withdraw)?;
+
     // Create the VaultStakerWithdrawalTicket account
     msg!(
         "Initializing vault staker withdraw ticket at address {}",
@@ -112,6 +115,10 @@ pub fn process_enqueue_withdrawal(
     vault.vrt_enqueued_for_cooldown_amount = vault
         .vrt_enqueued_for_cooldown_amount
         .checked_add(vrt_amount)
+        .ok_or(VaultError::VaultOverflow)?;
+    vault.epoch_withdraw_amount = vault
+        .epoch_withdraw_amount
+        .checked_add(amount_to_withdraw)
         .ok_or(VaultError::VaultOverflow)?;
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned

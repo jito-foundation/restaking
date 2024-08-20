@@ -18,11 +18,17 @@ mod tests {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
     ) -> Result<(Pubkey, Pubkey, Keypair), TestError> {
         let mut vault_program_client = fixture.vault_program_client();
 
         let result = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+                epoch_withdraw_cap_bps,
+            )
             .await;
 
         match result {
@@ -51,12 +57,14 @@ mod tests {
         let deposit_fee_bps = u16::MAX;
         let withdrawal_fee_bps = u16::MAX;
         let reward_fee_bps = u16::MAX;
+        let epoch_withdraw_cap_bps = u16::MAX;
 
         let result = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await;
 
@@ -69,12 +77,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (_, vault_pubkey, _) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -96,12 +106,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -152,12 +164,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -188,12 +202,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -277,12 +293,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, _) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -328,12 +346,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -382,12 +402,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -426,12 +448,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -489,12 +513,14 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -562,12 +588,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -608,12 +636,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -670,12 +700,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -726,12 +758,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -784,12 +818,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -838,12 +874,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();
@@ -949,12 +987,14 @@ mod tests {
         let deposit_fee_bps = 100;
         let withdrawal_fee_bps = 200;
         let reward_fee_bps = 300;
+        let epoch_withdraw_cap_bps = 400;
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
         )
         .await
         .unwrap();

@@ -133,6 +133,9 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     pub withdrawal_fee_bps: u16,
 
+    /// The percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
+    pub epoch_withdraw_cap_bps: u16,
+
     /// Fee for each epoch
     pub reward_fee_bps: u16,
 
@@ -140,7 +143,7 @@ pub struct Vault {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 9],
+    reserved: [u8; 15],
 }
 
 impl Vault {
@@ -154,6 +157,7 @@ impl Vault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
         bump: u8,
     ) -> Self {
         Self {
@@ -188,10 +192,9 @@ impl Vault {
             epoch_withdraw_amount: 0,
             epoch_snapshot_amount: 0,
             bump,
-            reserved: [0; 9],
             delegation_state: DelegationState::default(),
             vrt_ready_to_claim_amount: 0,
-            reserved: [0; 1],
+            reserved: [0; 15],
         }
     }
 
@@ -361,7 +364,8 @@ impl Vault {
         let max_allowed_withdraw = self
             .epoch_snapshot_amount
             .checked_mul(self.epoch_withdraw_cap_bps as u64)
-            .ok_or(VaultError::VaultOverflow)?;
+            .ok_or(VaultError::VaultOverflow)?
+            .div_ceil(10_000);
 
         if total_withdraw_amount <= max_allowed_withdraw {
             Ok(())
@@ -745,6 +749,7 @@ mod tests {
             withdraw_fee_bps,
             0,
             0,
+            0,
         );
 
         vault.tokens_deposited = tokens_deposited;
@@ -762,6 +767,7 @@ mod tests {
             old_admin,
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -862,6 +868,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
@@ -874,6 +881,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -895,6 +903,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -928,6 +937,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1410,6 +1420,7 @@ mod tests {
             0,
             1000, //10%
             0,
+            0,
         );
         vault.tokens_deposited = 0;
 
@@ -1429,6 +1440,7 @@ mod tests {
             0,
             0,
             1000, //10%
+            0,
             0,
         );
         vault.tokens_deposited = 1000;
@@ -1450,6 +1462,7 @@ mod tests {
             0,
             10_000, //100%
             0,
+            0,
         );
         vault.tokens_deposited = 0;
 
@@ -1470,11 +1483,36 @@ mod tests {
             0,
             u16::MAX,
             0,
+            0,
         );
         vault.tokens_deposited = 0;
 
         let fee = vault.calculate_rewards_fee(u64::MAX);
 
         assert_eq!(fee, Err(VaultError::VaultOverflow));
+    }
+
+    #[test]
+    fn test_check_() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            2500,
+            0,
+        );
+        vault.epoch_withdraw_amount = 0;
+        vault.epoch_snapshot_amount = 1000;
+
+        assert!(vault.check_withdrawal_allowd(250).is_ok());
+        assert_eq!(
+            vault.check_withdrawal_allowd(251),
+            Err(VaultError::VaultWithdrawalLimitExceeded)
+        );
     }
 }
