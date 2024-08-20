@@ -50,7 +50,6 @@ export const JITO_VAULT_PROGRAM_PROGRAM_ADDRESS =
 
 export enum JitoVaultProgramAccount {
   Config,
-  SlotToggle,
   Vault,
   VaultNcnSlasherOperatorTicket,
   VaultNcnSlasherTicket,

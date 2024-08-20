@@ -1032,22 +1032,6 @@
   },
   "accounts": [
     {
-      "name": "SlotToggle",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "slotAdded",
-            "type": "u64"
-          },
-          {
-            "name": "slotRemoved",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "Config",
       "type": {
         "kind": "struct",

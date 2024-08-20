@@ -4,11 +4,11 @@
 use std::{cmp::Ordering, fmt::Debug};
 
 use bytemuck::{Pod, Zeroable};
-use shank::ShankAccount;
+use shank::ShankType;
 
 /// SlotToggle is a state tracker that allows for activation and deactivation of certain features
 /// based on slot time.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankAccount)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
 #[repr(C)]
 pub struct SlotToggle {
     /// The slot at which the feature was added

@@ -8,3 +8,4 @@
 
 export * from './ncnAdminRole';
 export * from './operatorAdminRole';
+export * from './slotToggle';

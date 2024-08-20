@@ -49,7 +49,6 @@ export enum JitoRestakingProgramAccount {
   NcnVaultTicket,
   Operator,
   OperatorVaultTicket,
-  SlotToggle,
 }
 
 export enum JitoRestakingProgramInstruction {

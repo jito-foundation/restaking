@@ -40,19 +40,19 @@ RESTAKING_CORE_FILE="${IDL_DIR}/jito_restaking_core.json"
 RESTAKING_SDK_FILE="${IDL_DIR}/jito_restaking_sdk.json"
 
 # Extract the "accounts" and "types" arrays from the files
-CORE_TYPES=$(jq '.accounts' "$CORE_FILE")
-CORE_ACCOUNTS=$(jq '.accounts // []' "$CORE_FILE")
+CORE_TYPES=$(jq '.types' "$CORE_FILE")
 VAULT_ACCOUNTS=$(jq '.accounts' "$VAULT_CORE_FILE")
+VAULT_TYPES=$(jq '.types' "$VAULT_CORE_FILE")
 RESTAKING_ACCOUNTS=$(jq '.accounts' "$RESTAKING_CORE_FILE")
 
 # Add accounts and append CORE_TYPES to the "types" array in the SDK files
-jq --argjson core_accounts "$CORE_ACCOUNTS" --argjson vault_accounts "$VAULT_ACCOUNTS" --argjson core_types "$CORE_TYPES" '
-    .accounts = ($core_accounts + $vault_accounts) |
-    .types += $core_types
+jq --argjson vault_accounts "$VAULT_ACCOUNTS" --argjson vault_types "$VAULT_TYPES" --argjson core_types "$CORE_TYPES" '
+    .accounts = ($vault_accounts) |
+    .types += ($core_types + $vault_types)
 ' "$VAULT_SDK_FILE" > "${VAULT_SDK_FILE}.tmp"
 
-jq --argjson core_accounts "$CORE_ACCOUNTS" --argjson restaking_accounts "$RESTAKING_ACCOUNTS" --argjson core_types "$CORE_TYPES" '
-    .accounts = ($core_accounts + $restaking_accounts) |
+jq --argjson restaking_accounts "$RESTAKING_ACCOUNTS" --argjson core_types "$CORE_TYPES" '
+    .accounts = ($restaking_accounts) |
     .types += $core_types
 ' "$RESTAKING_SDK_FILE" > "${RESTAKING_SDK_FILE}.tmp"
 

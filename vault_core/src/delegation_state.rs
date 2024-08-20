@@ -2,9 +2,10 @@ use std::cmp::min;
 
 use bytemuck::{Pod, Zeroable};
 use jito_vault_sdk::error::VaultError;
+use shank::ShankType;
 use solana_program::msg;
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
 #[repr(C)]
 pub struct DelegationState {
     /// The amount of stake that is currently active on the operator
