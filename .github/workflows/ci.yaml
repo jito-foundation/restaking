@@ -118,12 +118,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: jito_restaking_program_${{ matrix.network }}.so
-          path: target/sbf-solana-solana/release/jito_restaking_program.so
+          path: target/sbf-solana-solana/release
       - name: Download vault program
         uses: actions/download-artifact@v4
         with:
           name: jito_vault_program_${{ matrix.network }}.so
-          path: target/sbf-solana-solana/release/jito_vault_program.so
+          path: target/sbf-solana-solana/release
+      - run: mv target/sbf-solana-solana/release/jito_restaking_program_${{ matrix.network }}.so target/sbf-solana-solana/release/jito_restaking_program.so
+      - run: mv target/sbf-solana-solana/release/jito_vault_program_${{ matrix.network }}.so target/sbf-solana-solana/release/jito_vault_program.so
       - uses: taiki-e/install-action@nextest
       - run: cargo nextest run --all-features
         env:
