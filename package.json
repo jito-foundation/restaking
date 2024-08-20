@@ -9,7 +9,7 @@
     "@kinobi-so/renderers-rust": "^0.21.1",
     "corepack": "^0.29.3",
     "kinobi": "^0.21.1",
-    "yarn": "^1.22.22"
+    "yarn": "2.4.3"
   },
   "scripts": {
     "generate-clients": "node scripts/generate-clients.js"
