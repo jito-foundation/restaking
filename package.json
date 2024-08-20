@@ -1,0 +1,13 @@
+{
+  "name": "jito-restaking",
+  "version": "0.0.1",
+  "description": "Jito Restaking",
+  "packageManager": "yarn@4.4.0",
+  "type": "module",
+  "dependencies": {
+    "@kinobi-so/renderers": "^0.21.1"
+  },
+  "scripts": {
+    "generate-clients": "node scripts/generate-clients.js"
+  }
+}
