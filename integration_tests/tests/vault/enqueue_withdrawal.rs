@@ -158,7 +158,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_enqueue_withdraw_with_exceeded_limit_fails() {
+    async fn test_enqueue_withdraw_with_limit_exceeded_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;

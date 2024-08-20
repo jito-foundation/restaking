@@ -77,6 +77,8 @@ pub enum VaultError {
     VaultMaxSlashedPerOperatorExceeded,
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
     VaultStakerWithdrawalTicketInvalidStaker,
+    #[error("VaultWithdrawalLimitExceeded")]
+    VaultWithdrawalLimitExceeded,
 }
 
 impl From<VaultError> for ProgramError {
