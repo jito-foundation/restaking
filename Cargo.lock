@@ -1943,6 +1943,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-restaking-builder"
+version = "0.0.1"
+dependencies = [
+ "jito-restaking-core",
+ "jito-restaking-sdk",
+ "solana-program",
+ "solana-rpc-client",
+ "solana-sdk",
+ "thiserror",
+]
+
+[[package]]
+name = "jito-restaking-cli"
+version = "0.0.1"
+
+[[package]]
+name = "jito-restaking-client"
+version = "0.0.1"
+dependencies = [
+ "solana-rpc-client",
+ "solana-sdk",
+ "thiserror",
+]
+
+[[package]]
 name = "jito-restaking-core"
 version = "0.0.1"
 dependencies = [
@@ -2016,6 +2041,24 @@ dependencies = [
  "solana-sdk",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "jito-vault-builder"
+version = "0.0.1"
+dependencies = [
+ "solana-rpc-client",
+ "solana-sdk",
+ "thiserror",
+]
+
+[[package]]
+name = "jito-vault-client"
+version = "0.0.1"
+dependencies = [
+ "solana-rpc-client",
+ "solana-sdk",
+ "thiserror",
 ]
 
 [[package]]

@@ -1,0 +1,21 @@
+[package]
+name = "jito-restaking-builder"
+description = "Jito's Restaking Builder API"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+solana-rpc-client = { workspace = true }
+solana-sdk = { workspace = true }
+thiserror = { workspace = true }
+solana-program = { workspace = true }
+jito-restaking-sdk = { workspace = true }
+jito-restaking-core = { workspace = true }
+
+[dev-dependencies]
+
