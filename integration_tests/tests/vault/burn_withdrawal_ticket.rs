@@ -592,12 +592,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_cooldown_delegation(
-                &vault_root,
-                &operator_roots[0].operator_pubkey,
-                MINT_AMOUNT,
-                true,
-            )
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
             .await
             .unwrap();
 
