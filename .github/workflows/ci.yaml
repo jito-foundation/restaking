@@ -122,7 +122,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: jito_vault_program_${{ matrix.network }}.so
-      - run: mkdir target/sbf-solana-solana/release/
+      - run: mkdir -p target/sbf-solana-solana/release/
       - run: ls -lh
       - run: mv jito_restaking_program_${{ matrix.network }}.so target/sbf-solana-solana/release/jito_restaking_program.so
       - run: mv jito_vault_program_${{ matrix.network }}.so target/sbf-solana-solana/release/jito_vault_program.so
