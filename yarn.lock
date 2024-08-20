@@ -25,7 +25,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kinobi-so/nodes-from-anchor@npm:0.21.1":
+"@kinobi-so/nodes-from-anchor@npm:0.21.1, @kinobi-so/nodes-from-anchor@npm:^0.21.1":
   version: 0.21.1
   resolution: "@kinobi-so/nodes-from-anchor@npm:0.21.1"
   dependencies:
@@ -58,7 +58,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kinobi-so/renderers-js-umi@npm:0.21.5":
+"@kinobi-so/renderers-js-umi@npm:0.21.5, @kinobi-so/renderers-js-umi@npm:^0.21.1":
   version: 0.21.5
   resolution: "@kinobi-so/renderers-js-umi@npm:0.21.5"
   dependencies:
@@ -90,7 +90,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kinobi-so/renderers-rust@npm:0.21.5":
+"@kinobi-so/renderers-rust@npm:0.21.5, @kinobi-so/renderers-rust@npm:^0.21.1":
   version: 0.21.5
   resolution: "@kinobi-so/renderers-rust@npm:0.21.5"
   dependencies:
@@ -353,7 +353,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "jito-restaking@workspace:."
   dependencies:
+    "@kinobi-so/nodes-from-anchor": "npm:^0.21.1"
     "@kinobi-so/renderers": "npm:^0.21.1"
+    "@kinobi-so/renderers-js-umi": "npm:^0.21.1"
+    "@kinobi-so/renderers-rust": "npm:^0.21.1"
+    kinobi: "npm:^0.21.1"
   languageName: unknown
   linkType: soft
 
@@ -373,6 +377,18 @@ __metadata:
   version: 0.0.1
   resolution: "jsonify@npm:0.0.1"
   checksum: 10c0/7f5499cdd59a0967ed35bda48b7cec43d850bbc8fb955cdd3a1717bb0efadbe300724d5646de765bb7a99fc1c3ab06eb80d93503c6faaf99b4ff50a3326692f6
+  languageName: node
+  linkType: hard
+
+"kinobi@npm:^0.21.1":
+  version: 0.21.3
+  resolution: "kinobi@npm:0.21.3"
+  dependencies:
+    "@kinobi-so/errors": "npm:0.21.3"
+    "@kinobi-so/nodes": "npm:0.21.3"
+    "@kinobi-so/validators": "npm:0.21.3"
+    "@kinobi-so/visitors": "npm:0.21.3"
+  checksum: 10c0/36acf9ec99ba8b110205a4b7110c906ae0ffe653f8abd6209bc0e1d38ca2990b371a7a38c43d53ddbf181f8370eb9b29608e9c241cab7f56b5b52ebca54d68d5
   languageName: node
   linkType: hard
 

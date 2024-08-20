@@ -5,6 +5,7 @@ members = [
     "core",
     "integration_tests",
     "restaking_core",
+    "restaking_client",
     "restaking_program",
     "restaking_sdk",
     "vault_core",
@@ -47,7 +48,10 @@ jito-vault-program = { path = "vault_program", version = "=0.0.1" }
 jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
 jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
 jito-account-traits = { path = "account_traits", version = "=0.0.1" }
+num-derive = "0.4.2"
+num-traits = "0.2.19"
 shank = "0.4.2"
+serde = { version = "^1.0", features = ["derive"] }
 solana-program = "~1.18"
 solana-program-test = "~1.18"
 solana-sdk = "~1.18"
