@@ -10,17 +10,17 @@ VALID_NETWORKS=("mainnet-beta" "testnet" "localhost" "devnet")
 
 # Function to print usage
 print_usage() {
-    echo "Usage: $(basename "$0") <network> [additional cargo build-sbf arguments]"
+    echo "Usage: $(basename "$0") --network <network> [additional cargo build-sbf arguments]"
     echo
     echo "Build Solana program with network-specific configurations"
     echo
-    echo "Arguments:"
-    echo "  <network>               Network to build for (${VALID_NETWORKS[*]})"
+    echo "Options:"
+    echo "  --network <network>     Network to build for (${VALID_NETWORKS[*]})"
     echo "  [additional arguments]  Additional arguments passed to cargo build-sbf"
     echo
     echo "Examples:"
-    echo "  $(basename "$0") mainnet-beta"
-    echo "  $(basename "$0") testnet -- --release"
+    echo "  $(basename "$0") --network mainnet-beta"
+    echo "  $(basename "$0") --network testnet -- --release"
     echo
     echo "Environment:"
     echo "  Config files should be placed in ${CONFIG_DIR}/{network}"
@@ -32,15 +32,37 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Parse command line arguments
+NETWORK=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --network)
+            NETWORK="$2"
+            shift 2
+            ;;
+        --help)
+            print_usage
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            log "Error: Unknown option $1"
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
 # Check if network argument is provided
-if [ $# -eq 0 ]; then
+if [ -z "$NETWORK" ]; then
+    log "Error: --network option is required"
     print_usage
     exit 1
 fi
-
-# Set the network and shift arguments
-NETWORK=$1
-shift
 
 # Validate network
 if [[ ! " ${VALID_NETWORKS[*]} " =~ " ${NETWORK} " ]]; then
