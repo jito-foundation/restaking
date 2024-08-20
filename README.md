@@ -57,7 +57,7 @@ You find the installation instructions [here](https://nexte.st/docs/installation
 ### Testing using the SVM environment
 
 ```bash
-./t --bpf
+./b && ./t --bpf
 ```
 
 ## Contributing

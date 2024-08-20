@@ -97,6 +97,6 @@ log "Using VAULT_PROGRAM_ID: ${VAULT_PROGRAM_ID}"
 
 # Run cargo build-sbf with the environment variables set and pass any additional arguments
 log "Running cargo build-sbf for ${NETWORK}..."
-cargo build-sbf --features "$NETWORK" "$@"
+cargo-build-sbf --features "$NETWORK" "$@"
 
 log "Build completed successfully!"
