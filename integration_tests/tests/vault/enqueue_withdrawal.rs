@@ -251,5 +251,36 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.epoch_withdraw_amount, amount_to_dequeue);
+
+        response = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)
+            .await;
+        assert_vault_error(response, VaultError::VaultWithdrawalLimitExceeded);
+
+        fixture
+            .warp_slot_incremental(1 * config.epoch_length)
+            .await
+            .unwrap();
+
+        let operator_root_pubkeys: Vec<_> = operator_roots
+            .iter()
+            .map(|root| root.operator_pubkey)
+            .collect();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.epoch_withdraw_amount, 0);
+
+        response = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)
+            .await;
+        assert!(response.is_ok());
     }
 }
