@@ -40,6 +40,7 @@ pub fn initialize_vault(
     base: &Pubkey,
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
+    reward_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -57,6 +58,7 @@ pub fn initialize_vault(
         data: VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
         }
         .try_to_vec()
         .unwrap(),
@@ -256,8 +258,9 @@ pub fn set_fees(
     config: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
-    deposit_fee_bps: u16,
-    withdrawal_fee_bps: u16,
+    deposit_fee_bps: Option<u16>,
+    withdrawal_fee_bps: Option<u16>,
+    reward_fee_bps: Option<u16>,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -270,6 +273,7 @@ pub fn set_fees(
         data: VaultInstruction::SetFees {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
         }
         .try_to_vec()
         .unwrap(),
@@ -647,11 +651,17 @@ pub fn update_vault_balance(
     config: &Pubkey,
     vault: &Pubkey,
     vault_token_account: &Pubkey,
+    vrt_mint: &Pubkey,
+    vault_fee_token_account: &Pubkey,
+    token_program: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*vault_token_account, false),
+        AccountMeta::new(*vrt_mint, false),
+        AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
