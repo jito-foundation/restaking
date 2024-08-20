@@ -4,6 +4,19 @@ target
 **/*.rs.bk
 node_modules
 test-ledger
-.yarn
 .idea
 docs/api
+
+.yarn
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.cjs
+.pnp.loader.mjs
+
+# Swap the comments on the following lines if you don't wish to use zero-installs
+# Documentation here: https://yarnpkg.com/features/zero-installs
+!.yarn/cache
+#.pnp.*

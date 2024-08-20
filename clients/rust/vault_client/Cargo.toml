@@ -1,0 +1,23 @@
+[package]
+name = "jito-vault-client"
+description = "JSM vault program client"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[features]
+serde = []
+
+[dependencies]
+borsh = { workspace = true }
+bytemuck = { workspace = true }
+num-derive = { workspace = true }
+num-traits = { workspace = true }
+serde = { workspace = true }
+solana-program = { workspace = true }
+solana-sdk = { workspace = true }
+thiserror = { workspace = true }

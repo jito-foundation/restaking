@@ -1,29 +1,53 @@
-use solana_program::program_error::ProgramError;
+use solana_program::{decode_error::DecodeError, program_error::ProgramError};
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum RestakingError {
+    #[error("NcnOperatorAdminInvalid")]
     NcnOperatorAdminInvalid = 1000,
-    NcnCooldownOperatorFailed = 1001,
-    NcnSlasherAdminInvalid = 1002,
-    NcnVaultAdminInvalid = 1003,
-    NcnAdminInvalid = 1004,
-    NcnWithdrawAdminInvalid = 1005,
-    NcnVaultSlasherTicketFailedCooldown = 1006,
-    NcnVaultTicketFailedCooldown = 1007,
-    NcnWarmupOperatorFailed = 1008,
-    NcnVaultSlasherTicketFailedWarmup = 1009,
-    NcnVaultTicketFailedWarmup = 1010,
-    NcnVaultTicketNotActive = 1011,
+    #[error("NcnCooldownOperatorFailed")]
+    NcnCooldownOperatorFailed,
+    #[error("NcnSlasherAdminInvalid")]
+    NcnSlasherAdminInvalid,
+    #[error("NcnVaultAdminInvalid")]
+    NcnVaultAdminInvalid,
+    #[error("NcnAdminInvalid")]
+    NcnAdminInvalid,
+    #[error("NcnWithdrawAdminInvalid")]
+    NcnWithdrawAdminInvalid,
+    #[error("NcnVaultSlasherTicketFailedCooldown")]
+    NcnVaultSlasherTicketFailedCooldown,
+    #[error("NcnVaultTicketFailedCooldown")]
+    NcnVaultTicketFailedCooldown,
+    #[error("NcnWarmupOperatorFailed")]
+    NcnWarmupOperatorFailed,
+    #[error("NcnVaultSlasherTicketFailedWarmup")]
+    NcnVaultSlasherTicketFailedWarmup,
+    #[error("NcnVaultTicketFailedWarmup")]
+    NcnVaultTicketFailedWarmup,
 
+    #[error("OperatorNcnAdminInvalid")]
     OperatorNcnAdminInvalid = 2000,
-    OperatorVaultAdminInvalid = 2001,
-    OperatorAdminInvalid = 2002,
-    OperatorWithdrawAdminInvalid = 2003,
-    OperatorCooldownNcnFailed = 2004,
-    OperatorVaultTicketFailedCooldown = 2005,
-    OperatorVaultTicketFailedWarmup = 2006,
-    OperatorNcnTicketNotActive = 2007,
-    OperatorWarmupNcnFailed = 2008,
+    #[error("OperatorVaultAdminInvalid")]
+    OperatorVaultAdminInvalid,
+    #[error("OperatorAdminInvalid")]
+    OperatorAdminInvalid,
+    #[error("OperatorWithdrawAdminInvalid")]
+    OperatorWithdrawAdminInvalid,
+    #[error("OperatorCooldownNcnFailed")]
+    OperatorCooldownNcnFailed,
+    #[error("OperatorVaultTicketFailedCooldown")]
+    OperatorVaultTicketFailedCooldown,
+    #[error("OperatorVaultTicketFailedWarmup")]
+    OperatorVaultTicketFailedWarmup,
+    #[error("OperatorWarmupNcnFailed")]
+    OperatorWarmupNcnFailed,
+}
+
+impl<T> DecodeError<T> for RestakingError {
+    fn type_of() -> &'static str {
+        "jito::restaking"
+    }
 }
 
 impl From<RestakingError> for ProgramError {
