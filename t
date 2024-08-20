@@ -28,7 +28,7 @@ log() {
 
 # Parse command line arguments
 BPF_MODE=false
-NETWORK=""
+NETWORK="localhost"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
