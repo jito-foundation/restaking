@@ -33,6 +33,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+          toolchain: nightly-2024-07-25
       - name: Set Node.js 20.x
         uses: actions/setup-node@v3
         with:
@@ -50,10 +54,6 @@ jobs:
         with:
           fail-if-changed: true
           fail-message: 'Unexpected changes in the client files. Please run `yarn generate-clients` to regenerate the files.'
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
       - name: Install shank from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
