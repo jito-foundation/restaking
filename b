@@ -33,7 +33,7 @@ log() {
 }
 
 # Parse command line arguments
-NETWORK=""
+NETWORK="localhost"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
