@@ -44,7 +44,7 @@ jobs:
       - name: Install shank from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
-          crate: shank
+          crate: shank-cli
       - name: Regenerate Shank IDL files
         run: ./script/shank
       - name: Verify Changed files
