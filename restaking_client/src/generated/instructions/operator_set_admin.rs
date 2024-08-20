@@ -43,7 +43,7 @@ impl OperatorSetAdmin {
         let data = OperatorSetAdminInstructionData::new().try_to_vec().unwrap();
 
         solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_SDK_ID,
+            program_id: crate::JITO_RESTAKING_PROGRAM_ID,
             accounts,
             data,
         }
@@ -220,7 +220,7 @@ impl<'a, 'b> OperatorSetAdminCpi<'a, 'b> {
         let data = OperatorSetAdminInstructionData::new().try_to_vec().unwrap();
 
         let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_SDK_ID,
+            program_id: crate::JITO_RESTAKING_PROGRAM_ID,
             accounts,
             data,
         };

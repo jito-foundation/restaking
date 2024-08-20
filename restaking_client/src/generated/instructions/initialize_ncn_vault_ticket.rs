@@ -65,7 +65,7 @@ impl InitializeNcnVaultTicket {
             .unwrap();
 
         solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_SDK_ID,
+            program_id: crate::JITO_RESTAKING_PROGRAM_ID,
             accounts,
             data,
         }
@@ -318,7 +318,7 @@ impl<'a, 'b> InitializeNcnVaultTicketCpi<'a, 'b> {
             .unwrap();
 
         let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_SDK_ID,
+            program_id: crate::JITO_RESTAKING_PROGRAM_ID,
             accounts,
             data,
         };

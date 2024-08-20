@@ -66,7 +66,7 @@ impl InitializeNcnOperatorState {
             .unwrap();
 
         solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_SDK_ID,
+            program_id: crate::JITO_RESTAKING_PROGRAM_ID,
             accounts,
             data,
         }
@@ -321,7 +321,7 @@ impl<'a, 'b> InitializeNcnOperatorStateCpi<'a, 'b> {
             .unwrap();
 
         let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_SDK_ID,
+            program_id: crate::JITO_RESTAKING_PROGRAM_ID,
             accounts,
             data,
         };

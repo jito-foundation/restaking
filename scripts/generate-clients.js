@@ -14,8 +14,11 @@ const rustRestakingGeneratedDir = path.join(rustRestakingModule, "src", "generat
 const restaking_idl = require(path.join(idlDir, "jito_restaking_sdk.json"));
 const restaking_program = anchorIdl.rootNodeFromAnchor(restaking_idl);
 const restaking_kinobi = kinobi.createFromRoot(restaking_program)
+
+restaking_kinobi.update(kinobi.updateProgramsVisitor({
+    jitoRestakingSdk: {name: "jito_restaking_program"},
+}))
+
 restaking_kinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingGeneratedDir), {
-    formatCode: true,
-    crateFolder: rustRestakingModule,
-    deleteFolderBeforeRendering: true
+    formatCode: true, crateFolder: rustRestakingModule, deleteFolderBeforeRendering: true
 }));
