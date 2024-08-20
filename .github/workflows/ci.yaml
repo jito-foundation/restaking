@@ -54,8 +54,8 @@ jobs:
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-      - name: cargo-build-sbf
-        run: cargo-build-sbf
+      - name: Build mainnet
+        run: ./b mainnet
       - name: Upload restaking program
         uses: actions/upload-artifact@v4
         with:
@@ -107,6 +107,4 @@ jobs:
           name: jito_vault_program.so
           path: target/sbf-solana-solana/release/
       - uses: taiki-e/install-action@nextest
-      - run: cargo nextest run --all-features
-        env:
-          SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
+      - run: ./t --bpf

@@ -30,11 +30,13 @@ mod warmup_vault_ncn_ticket;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
+use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
 };
+
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
@@ -65,7 +67,7 @@ use crate::{
     withdrawal_asset::process_withdrawal_asset,
 };
 
-declare_id!("DVoKuzt4i8EAakix852XwSAYmXnECdhegB6EDtabp4dg");
+declare_id!(str_to_pubkey(env!("VAULT_PROGRAM_ID")));
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {

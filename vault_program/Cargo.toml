@@ -19,9 +19,14 @@ no-idl = []
 no-log-ix-name = []
 cpi = ["no-entrypoint"]
 default = []
+mainnet-beta = []
+testnet = []
+devnet = []
 
 [dependencies]
 borsh = { workspace = true }
+cfg-if = { workspace = true }
+const_str_to_pubkey = { workspace = true }
 jito-account-traits = { workspace = true }
 jito-jsm-core = { workspace = true }
 jito-restaking-core = { workspace = true }
