@@ -1952,6 +1952,7 @@ dependencies = [
  "serde",
  "solana-program",
  "solana-sdk",
+ "thiserror",
 ]
 
 [[package]]

@@ -59,38 +59,33 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        network: [ mainnet-beta, testnet, localhost, devnet ]
     steps:
       - uses: actions/checkout@v4
       - uses: aarcangeli/load-dotenv@v1.0.0
         with:
           path: config
-          filenames: ${{ matrix.network }}.env
+          filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-      - name: Build ${{ matrix.network }}
+      - name: Building programs
         run: cargo-build-sbf
         env:
           RESTAKING_PROGRAM_ID: ${{ env.RESTAKING_PROGRAM_ID }}
           VAULT_PROGRAM_ID: ${{ env.VAULT_PROGRAM_ID }}
-      - run: mv target/sbf-solana-solana/release/jito_restaking_program.so target/sbf-solana-solana/release/jito_restaking_program_${{ matrix.network }}.so
-      - run: mv target/sbf-solana-solana/release/jito_vault_program.so target/sbf-solana-solana/release/jito_vault_program_${{ matrix.network }}.so
       - name: Upload restaking program
         uses: actions/upload-artifact@v4
         with:
-          name: jito_restaking_program_${{ matrix.network }}.so
-          path: target/sbf-solana-solana/release/jito_restaking_program_${{ matrix.network }}.so
+          name: jito_restaking_program.so
+          path: target/sbf-solana-solana/release/jito_restaking_program.so
           if-no-files-found: error
       - name: Upload vault program
         uses: actions/upload-artifact@v4
         with:
-          name: jito_vault_program_${{ matrix.network }}.so
-          path: target/sbf-solana-solana/release/jito_vault_program_${{ matrix.network }}.so
+          name: jito_vault_program.so
+          path: target/sbf-solana-solana/release/jito_vault_program.so
           if-no-files-found: error
 
   coverage:
@@ -121,28 +116,23 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-    strategy:
-      matrix:
-        network: [ mainnet-beta, testnet, localhost, devnet ]
     steps:
       - uses: actions/checkout@v4
       - uses: aarcangeli/load-dotenv@v1.0.0
         with:
           path: config
-          filenames: ${{ matrix.network }}.env
+          filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Download restaking program
         uses: actions/download-artifact@v4
         with:
-          name: jito_restaking_program_${{ matrix.network }}.so
+          name: jito_restaking_program.so
           path: target/sbf-solana-solana/release/
       - name: Download vault program
         uses: actions/download-artifact@v4
         with:
-          name: jito_vault_program_${{ matrix.network }}.so
+          name: jito_vault_program.so
           path: target/sbf-solana-solana/release/
-      - run: mv target/sbf-solana-solana/release/jito_restaking_program_${{ matrix.network }}.so target/sbf-solana-solana/release/jito_restaking_program.so
-      - run: mv target/sbf-solana-solana/release/jito_vault_program_${{ matrix.network }}.so target/sbf-solana-solana/release/jito_vault_program.so
       - uses: taiki-e/install-action@nextest
       - run: cargo nextest run --all-features
         env:
