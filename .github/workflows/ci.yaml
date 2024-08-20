@@ -55,7 +55,7 @@ jobs:
       - name: Run step only when any of the above files change.
         if: steps.verify-changed-kinobi-files.outputs.files_changed == 'true'
         env:
-          CHANGED_FILES: ${{ steps.verify-changed-files.outputs.changed_files }}
+          CHANGED_FILES: ${{ steps.verify-changed-kinobi-files.outputs.changed_files }}
         run: |
           echo "Changed files: $CHANGED_FILES"
           echo "Unexpected changes in the client files. Please run `yarn generate-clients` to regenerate the files."
