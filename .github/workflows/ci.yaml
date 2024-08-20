@@ -3,6 +3,8 @@ name: ci
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master ]
 
@@ -130,3 +132,24 @@ jobs:
       - run: cargo nextest run --all-features
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
+
+  create_release:
+    name: Create Release
+    needs:
+      - build
+      - test_sbf
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body: |
+            # Release Notes
+            Testing 123
+          files: |
+            jito_restaking_program_*.so
+            jito_vault_program_*.so
