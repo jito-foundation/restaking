@@ -18,5 +18,57 @@ source ${CONFIG}
 shank idl --crate-root "${PROJECT_ROOT}/restaking_sdk" -p ${RESTAKING_PROGRAM_ID} -o "${IDL_DIR}"
 shank idl --crate-root "${PROJECT_ROOT}/vault_sdk" -p ${VAULT_PROGRAM_ID} -o "${IDL_DIR}"
 
+shank idl --crate-root "${PROJECT_ROOT}/vault_core" -p ${VAULT_PROGRAM_ID} -o "${IDL_DIR}"
+shank idl --crate-root "${PROJECT_ROOT}/restaking_core" -p ${VAULT_PROGRAM_ID} -o "${IDL_DIR}"
+
+# Merge the idl files
+echo "Merging IDL files..."
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "Error: jq is not installed. Please install it to run this script."
+    exit 1
+fi
+
+# Define the input files
+VAULT_CORE_FILE="${IDL_DIR}/jito_vault_core.json"
+VAULT_SDK_FILE="${IDL_DIR}/jito_vault_sdk.json"
+RESTAKING_CORE_FILE="${IDL_DIR}/jito_restaking_core.json"
+RESTAKING_SDK_FILE="${IDL_DIR}/jito_restaking_sdk.json"
+
+# Extract the "accounts" array from the CORE file
+VAULT_ACCOUNTS=$(jq '.accounts' "$VAULT_CORE_FILE")
+RESTAKING_ACCOUNTS=$(jq '.accounts' "$RESTAKING_CORE_FILE")
+
+# Insert the "accounts" array into the SDK
+jq --argjson accounts "$VAULT_ACCOUNTS" '
+    .accounts = $accounts |
+    to_entries |
+    map(if .key == "instructions" then
+        {"accounts": $accounts} + .
+    else
+        .
+    end) |
+    from_entries
+' "$VAULT_SDK_FILE" > "${VAULT_SDK_FILE}.tmp"
+
+jq --argjson accounts "$RESTAKING_ACCOUNTS" '
+    .accounts = $accounts |
+    to_entries |
+    map(if .key == "instructions" then
+        {"accounts": $accounts} + .
+    else
+        .
+    end) |
+    from_entries
+' "$RESTAKING_SDK_FILE" > "${RESTAKING_SDK_FILE}.tmp"
+
+# Replace the original sdk file with the updated one
+mv "${VAULT_SDK_FILE}.tmp" "$VAULT_SDK_FILE"
+rm "${VAULT_CORE_FILE}"
+
+mv "${RESTAKING_SDK_FILE}.tmp" "$RESTAKING_SDK_FILE"
+rm "${RESTAKING_CORE_FILE}"
+
 echo "------------------------"
 echo "All configurations processed."

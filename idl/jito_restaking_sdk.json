@@ -1013,5 +1013,344 @@
   "metadata": {
     "origin": "shank",
     "address": "2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ"
-  }
+  },
+  "accounts": [
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "vaultProgram",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncnCount",
+            "type": "u64"
+          },
+          {
+            "name": "operatorCount",
+            "type": "u64"
+          },
+          {
+            "name": "epochLength",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ncn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base",
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "operatorAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "vaultAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "slasherAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "withdrawAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "withdrawFeeWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "operatorCount",
+            "type": "u64"
+          },
+          {
+            "name": "vaultCount",
+            "type": "u64"
+          },
+          {
+            "name": "slasherCount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NcnOperatorState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "ncn",
+            "type": "publicKey"
+          },
+          {
+            "name": "operator",
+            "type": "publicKey"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "ncnOptInState",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "operatorOptInState",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NcnVaultSlasherTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "ncn",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "slasher",
+            "type": "publicKey"
+          },
+          {
+            "name": "maxSlashablePerEpoch",
+            "type": "u64"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NcnVaultTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "ncn",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Operator",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base",
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncnAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "vaultAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "withdrawalAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "withdrawalFeeWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "voter",
+            "type": "publicKey"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "ncnCount",
+            "type": "u64"
+          },
+          {
+            "name": "vaultCount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reservedSpace",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OperatorVaultTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "operator",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
 }
