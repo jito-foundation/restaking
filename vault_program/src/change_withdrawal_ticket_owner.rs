@@ -1,0 +1,31 @@
+use jito_account_traits::AccountDeserialize;
+use jito_jsm_core::loader::load_signer;
+use jito_vault_core::{
+    config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
+};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
+    pubkey::Pubkey,
+};
+
+pub fn process_change_withdrawal_ticket_owner(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
+    let [config, vault, vault_staker_withdrawal_ticket, old_owner, new_owner] = accounts else {
+        return Err(ProgramError::NotEnoughAccountKeys);
+    };
+    Config::load(program_id, config, false)?;
+    Vault::load(program_id, vault, false)?;
+    VaultStakerWithdrawalTicket::load(program_id, vault_staker_withdrawal_ticket, vault, true)?;
+    let mut vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow_mut();
+    let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked_mut(
+        &mut vault_staker_withdrawal_ticket_data,
+    )?;
+    load_signer(old_owner, false)?;
+
+    vault_staker_withdrawal_ticket.check_staker(old_owner.key)?;
+    vault_staker_withdrawal_ticket.staker = *new_owner.key;
+
+    Ok(())
+}

@@ -629,7 +629,7 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new(*vault, false),
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*vrt_mint, false),
-        AccountMeta::new(*staker, true),
+        AccountMeta::new(*staker, false),
         AccountMeta::new(*staker_token_account, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),

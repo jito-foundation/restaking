@@ -20,6 +20,8 @@ pub fn process_update_vault_balance(
     };
 
     Config::load(program_id, config, false)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, true)?;
 
     let config_data = config.data.borrow();

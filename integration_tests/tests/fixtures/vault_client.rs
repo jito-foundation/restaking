@@ -132,15 +132,15 @@ impl VaultProgramClient {
         let account = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             vault,
-            staker,
             base,
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(
+        let withdrawal_ticket =
             VaultStakerWithdrawalTicket::try_from_slice_unchecked(&mut account.data.as_slice())?
-                .clone(),
-        )
+                .clone();
+        assert_eq!(withdrawal_ticket.staker, *staker);
+        Ok(withdrawal_ticket)
     }
 
     pub async fn get_vault_ncn_slasher_ticket(
@@ -850,7 +850,6 @@ impl VaultProgramClient {
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
-            &depositor.pubkey(),
             &base.pubkey(),
         )
         .0;
@@ -1146,7 +1145,6 @@ impl VaultProgramClient {
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
-            &staker.pubkey(),
             vault_staker_withdrawal_ticket_base,
         )
         .0;
@@ -1156,7 +1154,7 @@ impl VaultProgramClient {
             &vault_root.vault_pubkey,
             &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
             &vault.vrt_mint,
-            staker,
+            &staker.pubkey(),
             &get_associated_token_address(&staker.pubkey(), &vault.supported_mint),
             &vault_staker_withdrawal_ticket,
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
@@ -1174,7 +1172,7 @@ impl VaultProgramClient {
         vault: &Pubkey,
         vault_token_account: &Pubkey,
         vrt_mint: &Pubkey,
-        staker: &Keypair,
+        staker: &Pubkey,
         staker_token_account: &Pubkey,
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
@@ -1189,15 +1187,15 @@ impl VaultProgramClient {
                 vault,
                 vault_token_account,
                 vrt_mint,
-                &staker.pubkey(),
+                &staker,
                 staker_token_account,
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
                 min_amount_out,
             )],
-            Some(&staker.pubkey()),
-            &[staker],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
             blockhash,
         ))
         .await
