@@ -123,7 +123,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: jito_vault_program_${{ matrix.network }}.so
-          path: target/sbf-solana-solana/release/jito_vault_program.so
+          path: target/sbf-solana-solana/release/
       - run: ls -lh
       - run: ls -lh target/sbf-solana-solana/release/
       - uses: taiki-e/install-action@nextest
