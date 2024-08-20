@@ -38,10 +38,8 @@ jobs:
           node-version: 18
       - name: Install Yarn
         run: npm install -g yarn
-      - name: Run install
-        uses: borales/actions-yarn@v4
-        with:
-          cmd: install
+      - name: Install Yarn
+        run: yarn install
       - name: Generate kinobi IDL files
         uses: borales/actions-yarn@v4
         with:
