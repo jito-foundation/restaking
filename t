@@ -80,7 +80,7 @@ set +a
 
 if [ "$BPF_MODE" = true ]; then
     log "Building BPF for ${NETWORK}..."
-    cargo build-sbf
+    cargo-build-sbf
 
     log "Running tests with SBF_OUT_DIR set for ${NETWORK}..."
     SBF_OUT_DIR=${SCRIPT_DIR}/target/sbf-solana-solana/release cargo nextest run
