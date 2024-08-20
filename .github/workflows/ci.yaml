@@ -152,6 +152,5 @@ jobs:
             # Release Notes
             Testing 123
           files: |
-            jito_restaking_program_*.so
-            jito_vault_program_*.so
+            *.so
           fail_on_unmatched_files: true
