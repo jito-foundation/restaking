@@ -159,7 +159,3 @@ export async function fetchAllMaybeNcn(
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeNcn(maybeAccount));
 }
-
-export function getNcnSize(): number {
-  return 264;
-}

@@ -1,7 +1,7 @@
 //! The [`VaultNcnTicket`] account tracks a vault supporting a node consensus network. It can be
 //! enabled and disabled over time by the vault NCN admin.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -22,7 +22,7 @@ pub struct VaultNcnTicket {
     pub ncn: Pubkey,
 
     /// The index
-    pub index: u64,
+    index: PodU64,
 
     /// The slot toggle
     pub state: SlotToggle,
@@ -35,15 +35,19 @@ pub struct VaultNcnTicket {
 }
 
 impl VaultNcnTicket {
-    pub const fn new(vault: Pubkey, ncn: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(vault: Pubkey, ncn: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             vault,
             ncn,
-            index,
+            index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
     }
 
     /// The seeds for the PDA

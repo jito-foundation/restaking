@@ -27,7 +27,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const COOLDOWN_OPERATOR_VAULT_TICKET_DISCRIMINATOR = 16;
@@ -37,7 +37,7 @@ export function getCooldownOperatorVaultTicketDiscriminatorBytes() {
 }
 
 export type CooldownOperatorVaultTicketInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
@@ -127,7 +127,7 @@ export function getCooldownOperatorVaultTicketInstruction<
     TAccountAdmin
   >
 ): CooldownOperatorVaultTicketInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountOperator,
   TAccountVault,
@@ -135,7 +135,7 @@ export function getCooldownOperatorVaultTicketInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -165,7 +165,7 @@ export function getCooldownOperatorVaultTicketInstruction<
     programAddress,
     data: getCooldownOperatorVaultTicketInstructionDataEncoder().encode({}),
   } as CooldownOperatorVaultTicketInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountOperator,
     TAccountVault,
@@ -177,7 +177,7 @@ export function getCooldownOperatorVaultTicketInstruction<
 }
 
 export type ParsedCooldownOperatorVaultTicketInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

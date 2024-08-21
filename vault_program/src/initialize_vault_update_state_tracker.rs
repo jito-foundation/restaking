@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -36,7 +36,10 @@ pub fn process_initialize_vault_update_state_tracker(
     load_system_program(system_program)?;
 
     // The VaultUpdateStateTracker shall be at the canonical PDA
-    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
+    let ncn_epoch = Clock::get()?
+        .slot
+        .checked_div(config.epoch_length())
+        .unwrap();
     let (
         vault_update_state_tracker_pubkey,
         vault_update_state_tracker_bump,
@@ -49,7 +52,7 @@ pub fn process_initialize_vault_update_state_tracker(
     }
 
     if vault
-        .check_update_state_ok(Clock::get()?.slot, config.epoch_length)
+        .check_update_state_ok(Clock::get()?.slot, config.epoch_length())
         .is_ok()
     {
         msg!("Vault update state tracker is not needed");
@@ -73,7 +76,7 @@ pub fn process_initialize_vault_update_state_tracker(
     )?;
 
     let additional_assets_need_unstaking =
-        vault.calculate_assets_needed_for_withdrawals(Clock::get()?.slot, config.epoch_length)?;
+        vault.calculate_assets_needed_for_withdrawals(Clock::get()?.slot, config.epoch_length())?;
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;

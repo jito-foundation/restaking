@@ -37,6 +37,13 @@ jobs:
         with:
           components: rustfmt, clippy
           toolchain: nightly-2024-07-25
+      - name: Regenerate Shank IDL files
+        run: cargo b --release -p jito-shank-cli && ./target/release/jito-shank-cli
+      - name: Verify no changed files
+        uses: tj-actions/verify-changed-files@v20
+        with:
+          fail-if-changed: true
+          fail-message: 'Unexpected changes in the shank IDL files. Please run `./target/release/jito-shank-cli` to regenerate the files.'
       - name: Set Node.js 22.x
         uses: actions/setup-node@v3
         with:
@@ -60,17 +67,6 @@ jobs:
           echo "Changed files: $CHANGED_FILES"
           echo "Unexpected changes in the client files. Please run `yarn generate-clients` to regenerate the files."
           exit 1
-      - name: Install shank from crates.io
-        uses: baptiste0928/cargo-install@v3
-        with:
-          crate: shank-cli
-      - name: Regenerate Shank IDL files
-        run: ./scripts/shank
-      - name: Verify no changed files
-        uses: tj-actions/verify-changed-files@v20
-        with:
-          fail-if-changed: true
-          fail-message: 'Unexpected changes in the shank IDL files. Please run `./scripts/shank` to regenerate the files.'
 
   lint:
     name: lint

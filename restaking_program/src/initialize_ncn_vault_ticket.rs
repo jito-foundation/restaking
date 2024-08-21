@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -76,14 +76,11 @@ pub fn process_initialize_ncn_vault_ticket(
     *ncn_vault_ticket = NcnVaultTicket::new(
         *ncn_info.key,
         *vault.key,
-        ncn.vault_count,
+        ncn.vault_count(),
         ncn_vault_ticket_bump,
     );
 
-    ncn.vault_count = ncn
-        .vault_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    ncn.increment_vault_count()?;
 
     Ok(())
 }

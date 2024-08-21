@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -63,7 +63,7 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
     }
 
     vault.check_slasher_admin(vault_slasher_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     msg!(
         "Initializing VaultNcnSlasherTicket at address {}",
@@ -93,15 +93,12 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         *vault_info.key,
         *ncn.key,
         *slasher.key,
-        ncn_vault_slasher_ticket.max_slashable_per_epoch,
-        vault.slasher_count,
+        ncn_vault_slasher_ticket.max_slashable_per_epoch(),
+        vault.slasher_count(),
         vault_ncn_slasher_ticket_bump,
     );
 
-    vault.slasher_count = vault
-        .slasher_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    vault.increment_slasher_count()?;
 
     Ok(())
 }

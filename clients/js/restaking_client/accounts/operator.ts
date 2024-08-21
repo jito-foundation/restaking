@@ -155,7 +155,3 @@ export async function fetchAllMaybeOperator(
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeOperator(maybeAccount));
 }
-
-export function getOperatorSize(): number {
-  return 256;
-}

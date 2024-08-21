@@ -163,7 +163,3 @@ export async function fetchAllMaybeVaultUpdateStateTracker(
     decodeVaultUpdateStateTracker(maybeAccount)
   );
 }
-
-export function getVaultUpdateStateTrackerSize(): number {
-  return 88;
-}

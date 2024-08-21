@@ -31,16 +31,16 @@ mod tests {
         assert_eq!(ncn.vault_admin, ncn_root.ncn_admin.pubkey());
         assert_eq!(ncn.slasher_admin, ncn_root.ncn_admin.pubkey());
         assert_eq!(ncn.withdraw_admin, ncn_root.ncn_admin.pubkey());
-        assert_eq!(ncn.index, 0);
-        assert_eq!(ncn.operator_count, 0);
-        assert_eq!(ncn.slasher_count, 0);
-        assert_eq!(ncn.vault_count, 0);
+        assert_eq!(ncn.index(), 0);
+        assert_eq!(ncn.operator_count(), 0);
+        assert_eq!(ncn.slasher_count(), 0);
+        assert_eq!(ncn.vault_count(), 0);
 
         let updated_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
             .await
             .unwrap();
-        assert_eq!(updated_config.ncn_count, 1);
+        assert_eq!(updated_config.ncn_count(), 1);
     }
 
     #[tokio::test]
@@ -161,14 +161,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(ncn1.index, 0);
-        assert_eq!(ncn2.index, 1);
+        assert_eq!(ncn1.index(), 0);
+        assert_eq!(ncn2.index(), 1);
 
         // Verify config update
         let updated_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
             .await
             .unwrap();
-        assert_eq!(updated_config.ncn_count, 2);
+        assert_eq!(updated_config.ncn_count(), 2);
     }
 }

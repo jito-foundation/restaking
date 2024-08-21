@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_signer, load_token_program};
 use jito_restaking_core::{
     ncn::Ncn, ncn_operator_state::NcnOperatorState,
@@ -101,7 +101,10 @@ pub fn process_slash(
     let vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow();
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice_unchecked(&vault_ncn_slasher_ticket_data)?;
-    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
+    let ncn_epoch = Clock::get()?
+        .slot
+        .checked_div(config.epoch_length())
+        .unwrap();
     VaultNcnSlasherOperatorTicket::load(
         program_id,
         vault_ncn_slasher_operator_ticket,
@@ -123,10 +126,10 @@ pub fn process_slash(
     load_token_program(token_program)?;
 
     let slot = Clock::get()?.slot;
-    let epoch_length = config.epoch_length;
+    let epoch_length = config.epoch_length();
 
     // The vault shall be up-to-date before slashing
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, epoch_length)?;
 
     // All ticket states shall be active or cooling down
     check_states_active_or_cooling_down(
@@ -143,7 +146,7 @@ pub fn process_slash(
     // The amount slashed for this operator shall not exceed the maximum slashable amount per epoch
     vault_ncn_slasher_operator_ticket.check_slashing_amount_not_exceeded(
         slash_amount,
-        vault_ncn_slasher_ticket.max_slashable_per_epoch,
+        vault_ncn_slasher_ticket.max_slashable_per_epoch(),
     )?;
 
     // The VaultOperatorDelegation shall be slashed and the vault amounts shall be updated
@@ -263,13 +266,7 @@ fn slash_and_update_vault(
         .delegation_state
         .accumulate(&vault_operator_delegation.delegation_state)?;
 
-    vault.tokens_deposited = vault
-        .tokens_deposited
-        .checked_sub(slash_amount)
-        .ok_or(VaultError::VaultOverflow)?;
-    vault_ncn_slasher_operator_ticket.slashed = vault_ncn_slasher_operator_ticket
-        .slashed
-        .checked_add(slash_amount)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    vault.decrement_tokens_deposited(slash_amount)?;
+    vault_ncn_slasher_operator_ticket.increment_slashed(slash_amount)?;
     Ok(())
 }

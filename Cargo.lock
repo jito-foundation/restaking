@@ -287,7 +287,7 @@ checksum = "f99daacb53b55cfd37ce14d6c9905929721137fd4c67bbab44a19802aecb622f"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
- "cargo_toml",
+ "cargo_toml 0.19.2",
  "heck 0.3.3",
  "proc-macro2",
  "quote",
@@ -981,6 +981,16 @@ dependencies = [
 
 [[package]]
 name = "cargo_toml"
+version = "0.17.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a969e13a7589e9e3e4207e153bae624ade2b5622fb4684a4923b23ec3d57719"
+dependencies = [
+ "serde",
+ "toml 0.8.12",
+]
+
+[[package]]
+name = "cargo_toml"
 version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a98356df42a2eb1bd8f1793ae4ee4de48e384dd974ce5eac8eee802edb7492be"
@@ -1476,6 +1486,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirs"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs-next"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1483,6 +1502,17 @@ checksum = "b98cf8ebf19c3d1b223e151f99a4f9f0690dca41414773390fc824184ac833e1"
 dependencies = [
  "cfg-if",
  "dirs-sys-next",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b1d1d91c932ef41c0f2663aa8b0ca0342d444d842c06914aa0a7e352d0bada6"
+dependencies = [
+ "libc",
+ "redox_users",
+ "winapi",
 ]
 
 [[package]]
@@ -1667,6 +1697,15 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
+]
+
+[[package]]
+name = "envfile"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fe7fe9d71fc403a41672475b8895d6b817cac0fe23c471e01d36f5af503008c"
+dependencies = [
+ "snailquote",
 ]
 
 [[package]]
@@ -2294,15 +2333,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
-name = "jito-account-traits"
-version = "0.0.1"
-dependencies = [
- "bytemuck",
- "jito-account-traits-derive",
- "solana-program",
-]
-
-[[package]]
 name = "jito-account-traits-derive"
 version = "0.0.1"
 dependencies = [
@@ -2312,12 +2342,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-bytemuck"
+version = "0.0.1"
+dependencies = [
+ "borsh 0.10.3",
+ "bytemuck",
+ "jito-account-traits-derive",
+ "solana-program",
+]
+
+[[package]]
 name = "jito-jsm-core"
 version = "0.0.1"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
  "bytemuck",
+ "jito-bytemuck",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -2336,7 +2377,7 @@ dependencies = [
  "chrono",
  "clap 4.5.16",
  "env_logger 0.10.2",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-restaking-client",
  "jito-restaking-core",
  "jito-vault-client",
@@ -2375,8 +2416,9 @@ dependencies = [
  "assert_matches",
  "borsh 0.10.3",
  "bytemuck",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
+ "jito-restaking-sdk",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -2389,7 +2431,7 @@ name = "jito-restaking-integration-tests"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
  "jito-restaking-program",
@@ -2416,7 +2458,7 @@ dependencies = [
  "borsh 0.10.3",
  "cfg-if",
  "const_str_to_pubkey",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
  "jito-restaking-sdk",
@@ -2446,6 +2488,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-shank-cli"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "clap 4.5.16",
+ "env_logger 0.10.2",
+ "envfile",
+ "log",
+ "shank",
+ "shank_idl",
+]
+
+[[package]]
 name = "jito-vault-client"
 version = "0.0.1"
 dependencies = [
@@ -2468,7 +2523,7 @@ dependencies = [
  "assert_matches",
  "borsh 0.10.3",
  "bytemuck",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-vault-sdk",
  "shank",
@@ -2485,7 +2540,7 @@ dependencies = [
  "borsh 0.10.3",
  "cfg-if",
  "const_str_to_pubkey",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
  "jito-vault-core",
@@ -4063,6 +4118,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "shank_idl"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b2d15f5074691d1cd7987376ffbb85bd3fd3a5a5bdd68284e0c120968cdd554"
+dependencies = [
+ "anyhow",
+ "cargo_toml 0.17.2",
+ "heck 0.3.3",
+ "serde",
+ "serde_json",
+ "shank_macro_impl",
+ "shellexpand",
+]
+
+[[package]]
 name = "shank_macro"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4115,6 +4185,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24188a676b6ae68c3b2cb3a01be17fbf7240ce009799bb56d5b1409051e78fde"
 
 [[package]]
+name = "shellexpand"
+version = "2.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ccc8076840c4da029af4f87e4e8daeb0fca6b87bbb02e10cb60b791450e11e4"
+dependencies = [
+ "dirs",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4159,6 +4238,15 @@ name = "smallvec"
 version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
+
+[[package]]
+name = "snailquote"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c10ec36e3a5cf387fd822263730434205464fbf2b1531054f2f92ee1a7ef4e"
+dependencies = [
+ "unicode_categories",
+]
 
 [[package]]
 name = "socket2"
@@ -6209,6 +6297,12 @@ name = "unicode-xid"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
+
+[[package]]
+name = "unicode_categories"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
 
 [[package]]
 name = "universal-hash"

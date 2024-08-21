@@ -4,6 +4,7 @@
 use std::{cmp::Ordering, fmt::Debug};
 
 use bytemuck::{Pod, Zeroable};
+use jito_bytemuck::types::PodU64;
 use shank::ShankType;
 
 /// SlotToggle is a state tracker that allows for activation and deactivation of certain features
@@ -12,9 +13,9 @@ use shank::ShankType;
 #[repr(C)]
 pub struct SlotToggle {
     /// The slot at which the feature was added
-    slot_added: u64,
+    slot_added: PodU64,
     /// The slot at which the feature was removed
-    slot_removed: u64,
+    slot_removed: PodU64,
 }
 
 /// The state of the SlotToggle
@@ -32,21 +33,21 @@ pub enum SlotToggleState {
 
 impl SlotToggle {
     /// Create a new SlotToggle with the given slot
-    pub const fn new(slot: u64) -> Self {
+    pub fn new(slot: u64) -> Self {
         Self {
-            slot_added: slot,
-            slot_removed: 0,
+            slot_added: PodU64::from(slot),
+            slot_removed: PodU64::from(0),
         }
     }
 
     /// Get the slot at which the feature was added
-    pub const fn slot_added(&self) -> u64 {
-        self.slot_added
+    pub fn slot_added(&self) -> u64 {
+        self.slot_added.into()
     }
 
     /// Get the slot at which the feature was removed
-    pub const fn slot_removed(&self) -> u64 {
-        self.slot_removed
+    pub fn slot_removed(&self) -> u64 {
+        self.slot_removed.into()
     }
 
     /// Activate the feature at the given slot, which can only happen if the feature is inactive.
@@ -62,7 +63,7 @@ impl SlotToggle {
     pub fn activate(&mut self, slot: u64, epoch_length: u64) -> bool {
         match self.state(slot, epoch_length) {
             SlotToggleState::Inactive => {
-                self.slot_added = slot;
+                self.slot_added = PodU64::from(slot);
                 true
             }
             _ => false,
@@ -82,7 +83,7 @@ impl SlotToggle {
     pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> bool {
         match self.state(slot, epoch_length) {
             SlotToggleState::Active => {
-                self.slot_removed = slot;
+                self.slot_removed = PodU64::from(slot);
                 true
             }
             _ => false,
@@ -114,10 +115,13 @@ impl SlotToggle {
     pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
         let current_epoch = slot.checked_div(epoch_length).unwrap();
 
-        match self.slot_added.cmp(&self.slot_removed) {
+        let slot_added: u64 = self.slot_added.into();
+        let slot_removed: u64 = self.slot_removed.into();
+
+        match slot_added.cmp(&slot_removed) {
             Ordering::Equal => SlotToggleState::Inactive,
             Ordering::Less => {
-                let slot_removed_epoch = self.slot_removed.checked_div(epoch_length).unwrap();
+                let slot_removed_epoch = slot_removed.checked_div(epoch_length).unwrap();
                 if current_epoch > slot_removed_epoch {
                     SlotToggleState::Inactive
                 } else {
@@ -125,7 +129,7 @@ impl SlotToggle {
                 }
             }
             Ordering::Greater => {
-                let slot_added_epoch = self.slot_added.checked_div(epoch_length).unwrap();
+                let slot_added_epoch = slot_added.checked_div(epoch_length).unwrap();
                 if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
                     SlotToggleState::Active
                 } else {

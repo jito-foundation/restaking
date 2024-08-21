@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -81,14 +81,11 @@ pub fn process_initialize_operator_vault_ticket(
     *operator_vault_ticket = OperatorVaultTicket::new(
         *operator_info.key,
         *vault.key,
-        operator.vault_count,
+        operator.vault_count(),
         operator_vault_ticket_bump,
     );
 
-    operator.vault_count = operator
-        .vault_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    operator.increment_vault_count()?;
 
     Ok(())
 }

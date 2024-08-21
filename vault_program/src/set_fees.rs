@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
@@ -31,8 +31,8 @@ pub fn process_set_fees(
     let current_slot = Clock::get()?.slot;
     check_fee_cooldown_ok(
         current_slot,
-        vault.last_fee_change_slot,
-        config.epoch_length,
+        vault.last_fee_change_slot(),
+        config.epoch_length(),
     )?;
 
     if deposit_fee_bps.is_none() && withdrawal_fee_bps.is_none() && reward_fee_bps.is_none() {
@@ -42,26 +42,26 @@ pub fn process_set_fees(
 
     if let Some(deposit_fee_bps) = deposit_fee_bps {
         check_fee_change_ok(
-            vault.deposit_fee_bps,
+            vault.deposit_fee_bps(),
             deposit_fee_bps,
-            config.fee_cap_bps,
-            config.fee_bump_bps,
-            config.fee_rate_of_change_bps,
+            config.fee_cap_bps(),
+            config.fee_bump_bps(),
+            config.fee_rate_of_change_bps(),
         )?;
 
-        vault.deposit_fee_bps = deposit_fee_bps;
+        vault.set_deposit_fee_bps(deposit_fee_bps);
     }
 
     if let Some(withdrawal_fee_bps) = withdrawal_fee_bps {
         check_fee_change_ok(
-            vault.withdrawal_fee_bps,
+            vault.withdrawal_fee_bps(),
             withdrawal_fee_bps,
-            config.fee_cap_bps,
-            config.fee_bump_bps,
-            config.fee_rate_of_change_bps,
+            config.fee_cap_bps(),
+            config.fee_bump_bps(),
+            config.fee_rate_of_change_bps(),
         )?;
 
-        vault.withdrawal_fee_bps = withdrawal_fee_bps;
+        vault.set_withdrawal_fee_bps(withdrawal_fee_bps);
     }
 
     if let Some(reward_fee_bps) = reward_fee_bps {
@@ -70,10 +70,10 @@ pub fn process_set_fees(
             return Err(VaultError::VaultFeeCapExceeded.into());
         }
 
-        vault.reward_fee_bps = reward_fee_bps;
+        vault.set_reward_fee_bps(reward_fee_bps);
     }
 
-    vault.last_fee_change_slot = current_slot;
+    vault.set_last_fee_change_slot(current_slot);
 
     Ok(())
 }

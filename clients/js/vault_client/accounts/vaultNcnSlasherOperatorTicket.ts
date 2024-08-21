@@ -167,7 +167,3 @@ export async function fetchAllMaybeVaultNcnSlasherOperatorTicket(
     decodeVaultNcnSlasherOperatorTicket(maybeAccount)
   );
 }
-
-export function getVaultNcnSlasherOperatorTicketSize(): number {
-  return 152;
-}

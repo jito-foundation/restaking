@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -18,7 +18,7 @@ pub struct NcnOperatorState {
     pub operator: Pubkey,
 
     /// Index
-    pub index: u64,
+    index: PodU64,
 
     /// State of the ncn opt-ing in to the operator
     pub ncn_opt_in_state: SlotToggle,
@@ -33,16 +33,20 @@ pub struct NcnOperatorState {
 }
 
 impl NcnOperatorState {
-    pub const fn new(ncn: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(ncn: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             ncn,
             operator,
-            index,
+            index: PodU64::from(index),
             ncn_opt_in_state: SlotToggle::new(0),
             operator_opt_in_state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
     }
 
     pub fn seeds(ncn: &Pubkey, operator: &Pubkey) -> Vec<Vec<u8>> {

@@ -30,8 +30,6 @@ pub struct NcnOperatorState {
 }
 
 impl NcnOperatorState {
-    pub const LEN: usize = 112;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;
@@ -63,7 +61,7 @@ impl anchor_lang::AccountSerialize for NcnOperatorState {}
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for NcnOperatorState {
     fn owner() -> Pubkey {
-        crate::JITO_RESTAKING_PROGRAM_ID
+        crate::JITO_RESTAKING_ID
     }
 }
 

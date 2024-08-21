@@ -148,7 +148,3 @@ export async function fetchAllMaybeNcnVaultTicket(
     decodeNcnVaultTicket(maybeAccount)
   );
 }
-
-export function getNcnVaultTicketSize(): number {
-  return 96;
-}

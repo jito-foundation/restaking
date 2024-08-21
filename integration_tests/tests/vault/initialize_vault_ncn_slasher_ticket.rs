@@ -64,8 +64,8 @@ mod tests {
         assert_eq!(vault_ncn_slasher.vault, vault_root.vault_pubkey);
         assert_eq!(vault_ncn_slasher.ncn, ncn_root.ncn_pubkey);
         assert_eq!(vault_ncn_slasher.slasher, slasher.pubkey());
-        assert_eq!(vault_ncn_slasher.index, 0);
-        assert_eq!(vault_ncn_slasher.max_slashable_per_epoch, 100);
+        assert_eq!(vault_ncn_slasher.index(), 0);
+        assert_eq!(vault_ncn_slasher.max_slashable_per_epoch(), 100);
         let config = vault_program_client
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
@@ -74,7 +74,7 @@ mod tests {
         assert_eq!(
             vault_ncn_slasher.state.state(
                 fixture.get_current_slot().await.unwrap(),
-                config.epoch_length
+                config.epoch_length()
             ),
             SlotToggleState::Inactive
         );

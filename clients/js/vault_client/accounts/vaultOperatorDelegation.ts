@@ -163,7 +163,3 @@ export async function fetchAllMaybeVaultOperatorDelegation(
     decodeVaultOperatorDelegation(maybeAccount)
   );
 }
-
-export function getVaultOperatorDelegationSize(): number {
-  return 112;
-}

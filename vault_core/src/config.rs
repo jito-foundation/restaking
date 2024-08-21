@@ -1,6 +1,10 @@
 //! The vault configuration account
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{
+    types::{PodU16, PodU64},
+    AccountDeserialize, Discriminator,
+};
+use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{
     account_info::AccountInfo, epoch_schedule::DEFAULT_SLOTS_PER_EPOCH, msg,
@@ -23,19 +27,19 @@ pub struct Config {
     pub restaking_program: Pubkey,
 
     /// The length of an epoch in slots
-    pub epoch_length: u64,
+    epoch_length: PodU64,
 
     /// The number of vaults managed by the program
-    pub num_vaults: u64,
+    num_vaults: PodU64,
 
     /// The fee cap in basis points ( withdraw and deposit )
-    pub fee_cap_bps: u16,
+    fee_cap_bps: PodU16,
 
     /// The maximum amount a fee can increase per epoch in basis points
-    pub fee_rate_of_change_bps: u16,
+    fee_rate_of_change_bps: PodU16,
 
     /// The amount a fee can increase above the rate of change in basis points
-    pub fee_bump_bps: u16,
+    fee_bump_bps: PodU16,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -54,19 +58,46 @@ impl Config {
     /// 100% in basis points
     pub const MAX_BPS: u16 = 10_000;
 
-    pub const fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
+    pub fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {
             admin,
             restaking_program,
-            epoch_length: DEFAULT_SLOTS_PER_EPOCH,
-            num_vaults: 0,
+            epoch_length: PodU64::from(DEFAULT_SLOTS_PER_EPOCH),
+            num_vaults: PodU64::from(0),
             // Cannot be higher than 100%
-            fee_cap_bps: Self::DEFAULT_FEES_CAP_BPS,
-            fee_rate_of_change_bps: Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS,
-            fee_bump_bps: Self::DEFAULT_FEE_BUMP_BPS,
+            fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS),
+            fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS),
+            fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
             bump,
             reserved: [0; 17],
         }
+    }
+
+    pub fn epoch_length(&self) -> u64 {
+        self.epoch_length.into()
+    }
+
+    pub fn num_vaults(&self) -> u64 {
+        self.num_vaults.into()
+    }
+
+    pub fn fee_cap_bps(&self) -> u16 {
+        self.fee_cap_bps.into()
+    }
+
+    pub fn fee_rate_of_change_bps(&self) -> u16 {
+        self.fee_rate_of_change_bps.into()
+    }
+
+    pub fn fee_bump_bps(&self) -> u16 {
+        self.fee_bump_bps.into()
+    }
+
+    pub fn increment_num_vaults(&mut self) -> Result<(), VaultError> {
+        let mut num_vaults: u64 = self.num_vaults.into();
+        num_vaults = num_vaults.checked_add(1).ok_or(VaultError::VaultOverflow)?;
+        self.num_vaults = PodU64::from(num_vaults);
+        Ok(())
     }
 
     pub fn seeds() -> Vec<Vec<u8>> {

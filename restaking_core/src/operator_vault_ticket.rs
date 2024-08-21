@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -18,7 +18,7 @@ pub struct OperatorVaultTicket {
     pub vault: Pubkey,
 
     /// The index
-    pub index: u64,
+    index: PodU64,
 
     /// The slot toggle
     pub state: SlotToggle,
@@ -30,15 +30,19 @@ pub struct OperatorVaultTicket {
 }
 
 impl OperatorVaultTicket {
-    pub const fn new(operator: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(operator: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             operator,
             vault,
-            index,
+            index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
     }
 
     pub fn seeds(operator: &Pubkey, vault: &Pubkey) -> Vec<Vec<u8>> {

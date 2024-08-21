@@ -1,7 +1,7 @@
 //! The [`VaultNcnSlasherTicket`] account tracks a vault's support for a node consensus network
 //! slasher. It can be enabled and disabled over time by the vault slasher admin.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -25,10 +25,10 @@ pub struct VaultNcnSlasherTicket {
     pub slasher: Pubkey,
 
     /// The maximum slashable per epoch per operator
-    pub max_slashable_per_epoch: u64,
+    max_slashable_per_epoch: PodU64,
 
     /// The index
-    pub index: u64,
+    index: PodU64,
 
     /// The slot toggle
     pub state: SlotToggle,
@@ -41,7 +41,7 @@ pub struct VaultNcnSlasherTicket {
 }
 
 impl VaultNcnSlasherTicket {
-    pub const fn new(
+    pub fn new(
         vault: Pubkey,
         ncn: Pubkey,
         slasher: Pubkey,
@@ -53,12 +53,20 @@ impl VaultNcnSlasherTicket {
             vault,
             ncn,
             slasher,
-            max_slashable_per_epoch,
-            index,
+            max_slashable_per_epoch: PodU64::from(max_slashable_per_epoch),
+            index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
+    }
+
+    pub fn max_slashable_per_epoch(&self) -> u64 {
+        self.max_slashable_per_epoch.into()
     }
 
     /// Returns the seeds for the PDA

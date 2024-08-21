@@ -145,7 +145,3 @@ export async function fetchAllMaybeConfig(
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeConfig(maybeAccount));
 }
-
-export function getConfigSize(): number {
-  return 104;
-}

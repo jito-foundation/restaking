@@ -28,7 +28,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INITIALIZE_VAULT_OPERATOR_DELEGATION_DISCRIMINATOR = 3;
@@ -40,7 +40,7 @@ export function getInitializeVaultOperatorDelegationDiscriminatorBytes() {
 }
 
 export type InitializeVaultOperatorDelegationInstruction<
-  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountOperator extends string | IAccountMeta<string> = string,
@@ -159,7 +159,7 @@ export function getInitializeVaultOperatorDelegationInstruction<
     TAccountSystemProgram
   >
 ): InitializeVaultOperatorDelegationInstruction<
-  typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountOperator,
@@ -170,7 +170,7 @@ export function getInitializeVaultOperatorDelegationInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -217,7 +217,7 @@ export function getInitializeVaultOperatorDelegationInstruction<
       {}
     ),
   } as InitializeVaultOperatorDelegationInstruction<
-    typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountOperator,
@@ -232,7 +232,7 @@ export function getInitializeVaultOperatorDelegationInstruction<
 }
 
 export type ParsedInitializeVaultOperatorDelegationInstruction<
-  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

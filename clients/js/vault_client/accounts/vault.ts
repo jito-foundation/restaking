@@ -239,7 +239,3 @@ export async function fetchAllMaybeVault(
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeVault(maybeAccount));
 }
-
-export function getVaultSize(): number {
-  return 552;
-}

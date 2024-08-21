@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -48,12 +48,9 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
     let mut ncn_data = ncn.try_borrow_mut_data()?;
     ncn_data[0] = Ncn::DISCRIMINATOR;
     let ncn = Ncn::try_from_slice_unchecked_mut(&mut ncn_data)?;
-    *ncn = Ncn::new(*base.key, *admin.key, config.ncn_count, ncn_bump);
+    *ncn = Ncn::new(*base.key, *admin.key, config.ncn_count(), ncn_bump);
 
-    config.ncn_count = config
-        .ncn_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    config.increment_ncn_count()?;
 
     Ok(())
 }

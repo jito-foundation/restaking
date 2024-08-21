@@ -16,7 +16,7 @@ bytemuck = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
 env_logger = { workspace = true }
-jito-account-traits = { workspace = true }
+jito-bytemuck = { workspace = true }
 jito-restaking-client = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-vault-client = { workspace = true }

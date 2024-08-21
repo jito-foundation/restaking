@@ -29,8 +29,6 @@ pub struct VaultNcnTicket {
 }
 
 impl VaultNcnTicket {
-    pub const LEN: usize = 96;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;
@@ -62,7 +60,7 @@ impl anchor_lang::AccountSerialize for VaultNcnTicket {}
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for VaultNcnTicket {
     fn owner() -> Pubkey {
-        crate::JITO_VAULT_PROGRAM_ID
+        crate::JITO_VAULT_ID
     }
 }
 

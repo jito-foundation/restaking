@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState, operator::Operator,
@@ -36,7 +36,7 @@ pub fn process_ncn_warmup_operator(program_id: &Pubkey, accounts: &[AccountInfo]
         NcnOperatorState::try_from_slice_unchecked_mut(&mut ncn_operator_state_data)?;
     if !ncn_operator_state
         .ncn_opt_in_state
-        .activate(Clock::get()?.slot, config.epoch_length)
+        .activate(Clock::get()?.slot, config.epoch_length())
     {
         msg!("NCN is not ready to be warmup operator");
         return Err(RestakingError::NcnWarmupOperatorFailed.into());
