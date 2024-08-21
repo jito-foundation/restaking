@@ -1,6 +1,7 @@
 //! Global configuration account for the restaking program
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
+use shank::ShankAccount;
 use solana_program::{
     account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -13,7 +14,7 @@ impl Discriminator for Config {
 
 /// The global configuration account for the restaking program. Manages
 /// program-wide settings and state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Config {
     /// The configuration admin

@@ -3,6 +3,7 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
+use shank::ShankAccount;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -16,7 +17,7 @@ impl Discriminator for VaultNcnSlasherOperatorTicket {
 /// by a slasher for a given node consensus network (NCN) and vault for a given epoch. It helps
 /// ensure that the operator is held accountable for their actions and that slashing conditions
 /// aren't exceeded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultNcnSlasherOperatorTicket {
     /// The vault slashed

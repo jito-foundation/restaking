@@ -41,6 +41,16 @@ import {
 export const JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS =
   '2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ' as Address<'2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ'>;
 
+export enum JitoRestakingProgramAccount {
+  Config,
+  Ncn,
+  NcnOperatorState,
+  NcnVaultSlasherTicket,
+  NcnVaultTicket,
+  Operator,
+  OperatorVaultTicket,
+}
+
 export enum JitoRestakingProgramInstruction {
   InitializeConfig,
   InitializeNcn,

@@ -48,6 +48,17 @@ import {
 export const JITO_VAULT_PROGRAM_PROGRAM_ADDRESS =
   'AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK' as Address<'AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK'>;
 
+export enum JitoVaultProgramAccount {
+  Config,
+  Vault,
+  VaultNcnSlasherOperatorTicket,
+  VaultNcnSlasherTicket,
+  VaultNcnTicket,
+  VaultOperatorDelegation,
+  VaultStakerWithdrawalTicket,
+  VaultUpdateStateTracker,
+}
+
 export enum JitoVaultProgramInstruction {
   InitializeConfig,
   InitializeVault,
