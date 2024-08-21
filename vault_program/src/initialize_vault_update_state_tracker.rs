@@ -48,7 +48,10 @@ pub fn process_initialize_vault_update_state_tracker(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    if !vault.is_update_needed(Clock::get()?.slot, config.epoch_length) {
+    if vault
+        .check_update_state_ok(Clock::get()?.slot, config.epoch_length)
+        .is_ok()
+    {
         msg!("Vault update state tracker is not needed");
         return Err(VaultError::VaultIsUpdated.into());
     }
