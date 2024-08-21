@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "name": "jito_vault_sdk",
+  "name": "jito_vault",
   "instructions": [
     {
       "name": "InitializeConfig",
@@ -1392,7 +1392,539 @@
       }
     }
   ],
+  "accounts": [
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "restakingProgram",
+            "type": "publicKey"
+          },
+          {
+            "name": "epochLength",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "numVaults",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "feeCapBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "feeRateOfChangeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "feeBumpBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                17
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base",
+            "type": "publicKey"
+          },
+          {
+            "name": "vrtMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "supportedMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vrtSupply",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "tokensDeposited",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "capacity",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "delegationState",
+            "type": {
+              "defined": "DelegationState"
+            }
+          },
+          {
+            "name": "vrtEnqueuedForCooldownAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "vrtCoolingDownAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "vrtReadyToClaimAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "delegationAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "operatorAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncnAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "slasherAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "capacityAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "feeAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "withdrawAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "feeWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "mintBurnAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "vaultIndex",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "ncnCount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "operatorCount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "slasherCount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "lastFeeChangeSlot",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "lastFullStateUpdateSlot",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "depositFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "withdrawalFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "rewardFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                9
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultNcnSlasherOperatorTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncn",
+            "type": "publicKey"
+          },
+          {
+            "name": "slasher",
+            "type": "publicKey"
+          },
+          {
+            "name": "operator",
+            "type": "publicKey"
+          },
+          {
+            "name": "epoch",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "slashed",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultNcnSlasherTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncn",
+            "type": "publicKey"
+          },
+          {
+            "name": "slasher",
+            "type": "publicKey"
+          },
+          {
+            "name": "maxSlashablePerEpoch",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "index",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultNcnTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncn",
+            "type": "publicKey"
+          },
+          {
+            "name": "index",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": "SlotToggle"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultOperatorDelegation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "operator",
+            "type": "publicKey"
+          },
+          {
+            "name": "delegationState",
+            "type": {
+              "defined": "DelegationState"
+            }
+          },
+          {
+            "name": "lastUpdateSlot",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "index",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultStakerWithdrawalTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "staker",
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "type": "publicKey"
+          },
+          {
+            "name": "vrtAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "slotUnstaked",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultUpdateStateTracker",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncnEpoch",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "lastUpdatedIndex",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "additionalAssetsNeedUnstaking",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "delegationState",
+            "type": {
+              "defined": "DelegationState"
+            }
+          },
+          {
+            "name": "withdrawalAllocationMethod",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
   "types": [
+    {
+      "name": "SlotToggle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slotAdded",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "slotRemoved",
+            "type": {
+              "defined": "PodU64"
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "CreateMetadataAccountArgsV3",
       "type": {
@@ -1535,6 +2067,32 @@
         "variants": [
           {
             "name": "Greedy"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DelegationState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stakedAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "enqueuedForCooldownAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "coolingDownAmount",
+            "type": {
+              "defined": "PodU64"
+            }
           }
         ]
       }
@@ -1725,6 +2283,21 @@
       "code": 1036,
       "name": "VaultStakerWithdrawalTicketInvalidStaker",
       "msg": "VaultStakerWithdrawalTicketInvalidStaker"
+    },
+    {
+      "code": 1037,
+      "name": "SlasherOverflow",
+      "msg": "SlasherOverflow"
+    },
+    {
+      "code": 1038,
+      "name": "NcnOverflow",
+      "msg": "NcnOverflow"
+    },
+    {
+      "code": 1039,
+      "name": "OperatorOverflow",
+      "msg": "OperatorOverflow"
     }
   ],
   "metadata": {

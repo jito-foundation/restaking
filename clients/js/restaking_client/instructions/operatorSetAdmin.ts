@@ -26,7 +26,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const OPERATOR_SET_ADMIN_DISCRIMINATOR = 19;
@@ -36,7 +36,7 @@ export function getOperatorSetAdminDiscriminatorBytes() {
 }
 
 export type OperatorSetAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountOldAdmin extends string | IAccountMeta<string> = string,
   TAccountNewAdmin extends string | IAccountMeta<string> = string,
@@ -106,13 +106,13 @@ export function getOperatorSetAdminInstruction<
     TAccountNewAdmin
   >
 ): OperatorSetAdminInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator,
   TAccountOldAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -135,7 +135,7 @@ export function getOperatorSetAdminInstruction<
     programAddress,
     data: getOperatorSetAdminInstructionDataEncoder().encode({}),
   } as OperatorSetAdminInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,
     TAccountOldAdmin,
     TAccountNewAdmin
@@ -145,7 +145,7 @@ export function getOperatorSetAdminInstruction<
 }
 
 export type ParsedOperatorSetAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

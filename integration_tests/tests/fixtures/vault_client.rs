@@ -1,5 +1,5 @@
 use borsh::BorshDeserialize;
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_restaking_core::{
     ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
@@ -406,7 +406,7 @@ impl VaultProgramClient {
                 ncn_pubkey,
                 slasher,
                 operator_pubkey,
-                clock.slot / config.epoch_length,
+                clock.slot / config.epoch_length(),
             )
             .0;
         self.initialize_vault_ncn_slasher_operator_ticket(
@@ -490,7 +490,7 @@ impl VaultProgramClient {
                 ncn_pubkey,
                 &slasher.pubkey(),
                 operator_pubkey,
-                clock.slot / config.epoch_length,
+                clock.slot / config.epoch_length(),
             )
             .0;
 
@@ -947,7 +947,7 @@ impl VaultProgramClient {
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
             &vault_pubkey,
-            slot / config.epoch_length,
+            slot / config.epoch_length(),
         )
         .0;
         self.initialize_vault_update_state_tracker(&vault_pubkey, &vault_update_state_tracker)
@@ -971,7 +971,7 @@ impl VaultProgramClient {
         self.close_vault_update_state_tracker(
             &vault_pubkey,
             &vault_update_state_tracker,
-            slot / config.epoch_length,
+            slot / config.epoch_length(),
         )
         .await?;
 
@@ -989,7 +989,7 @@ impl VaultProgramClient {
         let config = self
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await?;
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
         self.crank_vault_update_state_tracker(
             vault,
             operator,

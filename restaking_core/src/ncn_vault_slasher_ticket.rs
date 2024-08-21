@@ -1,8 +1,9 @@
 //! The NcnVaultSlasherTicket tracks the opting-in of a slasher to a particular vault.
 //! The NcnVaultSlasherTicket can be activated and deactivated over time by the NCN slasher admin.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for NcnVaultSlasherTicket {
@@ -13,7 +14,7 @@ impl Discriminator for NcnVaultSlasherTicket {
 /// opting-in to a vault slasher. The NcnVaultSlasherTicket can be activated and deactivated over time.
 /// The NcnVaultSlasherTicket can slash a specific operator that's receiving delegation from a
 /// vault for a maximum amount per epoch.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct NcnVaultSlasherTicket {
     /// The NCN
@@ -26,10 +27,10 @@ pub struct NcnVaultSlasherTicket {
     pub slasher: Pubkey,
 
     /// The max slashable funds per epoch per operator
-    pub max_slashable_per_epoch: u64,
+    max_slashable_per_epoch: PodU64,
 
     /// The index
-    pub index: u64,
+    index: PodU64,
 
     /// State of the NCN slasher
     pub state: SlotToggle,
@@ -53,7 +54,7 @@ impl NcnVaultSlasherTicket {
     /// * `index` - The index
     /// * `slot_added` - The slot at which the ticket was created
     /// * `bump` - The bump seed for the PDA
-    pub const fn new(
+    pub fn new(
         ncn: Pubkey,
         vault: Pubkey,
         slasher: Pubkey,
@@ -65,12 +66,20 @@ impl NcnVaultSlasherTicket {
             ncn,
             vault,
             slasher,
-            max_slashable_per_epoch,
-            index,
+            max_slashable_per_epoch: PodU64::from(max_slashable_per_epoch),
+            index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
+    }
+
+    pub fn max_slashable_per_epoch(&self) -> u64 {
+        self.max_slashable_per_epoch.into()
     }
 
     /// Returns the seeds for the PDA

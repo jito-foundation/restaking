@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_system_program, load_token_mint,
     load_token_program,
@@ -52,7 +52,7 @@ pub fn process_burn(
     // The vault VRT mint shall be correct
     // The vault shall not need an update
     vault.check_vrt_mint(vrt_mint.key)?;
-    vault.check_update_state_ok(clock.slot, config.epoch_length)?;
+    vault.check_update_state_ok(clock.slot, config.epoch_length())?;
     vault.check_mint_burn_admin(optional_accounts.first())?;
 
     let BurnSummary {

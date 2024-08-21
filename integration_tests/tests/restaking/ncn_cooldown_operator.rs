@@ -36,7 +36,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -53,7 +53,7 @@ mod tests {
         assert_eq!(
             ncn_operator_state.ncn_opt_in_state.state(
                 fixture.get_current_slot().await.unwrap(),
-                config.epoch_length
+                config.epoch_length()
             ),
             SlotToggleState::Cooldown
         );
@@ -89,7 +89,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -197,7 +197,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 

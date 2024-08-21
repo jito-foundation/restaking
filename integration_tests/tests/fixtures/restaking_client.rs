@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,

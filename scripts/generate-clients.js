@@ -14,11 +14,58 @@ const jsClientsDir = path.join(__dirname, "..", "clients", "js");
 // Generate the restaking client in Rust and JavaScript.
 const rustRestakingClientDir = path.join(rustClientsDir, "restaking_client");
 const jsRestakingClientDir = path.join(jsClientsDir, "restaking_client");
-const restakingRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_restaking_sdk.json")));
+const restakingRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_restaking.json")));
 const restakingKinobi = kinobi.createFromRoot(restakingRootNode);
-restakingKinobi.update(kinobi.updateProgramsVisitor({
-    jitoRestakingSdk: {name: "jito_restaking_program"},
-}));
+restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
+    {
+        // PodU64 -> u64
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU64"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u64"),
+            };
+        },
+    },
+    {
+        // PodU32 -> u32
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU32"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u32"),
+            };
+        },
+    },
+    {
+        // PodU16 -> u16
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU16"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u16"),
+            };
+        },
+    },
+]));
 restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClientDir, "src", "generated"), {
     formatCode: true,
     crateFolder: rustRestakingClientDir,
@@ -30,11 +77,58 @@ restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingCl
 // Generate the vault client in Rust and JavaScript.
 const rustVaultClientDir = path.join(rustClientsDir, "vault_client");
 const jsVaultClientDir = path.join(jsClientsDir, "vault_client");
-const vaultRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_vault_sdk.json")));
+const vaultRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_vault.json")));
 const vaultKinobi = kinobi.createFromRoot(vaultRootNode);
-vaultKinobi.update(kinobi.updateProgramsVisitor({
-    jitoVaultSdk: {name: "jito_vault_program"},
-}));
+vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
+    {
+        // PodU64 -> u64
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU64"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u64"),
+            };
+        },
+    },
+    {
+        // PodU32 -> u32
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU32"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u32"),
+            };
+        },
+    },
+    {
+        // PodU16 -> u16
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU16"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u16"),
+            };
+        },
+    },
+]));
 vaultKinobi.accept(renderers.renderRustVisitor(path.join(rustVaultClientDir, "src", "generated"), {
     formatCode: true,
     crateFolder: rustVaultClientDir,

@@ -39,7 +39,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault_ncn_ticket_account.vault, vault_root.vault_pubkey);
         assert_eq!(vault_ncn_ticket_account.ncn, ncn_root.ncn_pubkey);
-        assert_eq!(vault_ncn_ticket_account.index, 0);
+        assert_eq!(vault_ncn_ticket_account.index(), 0);
         let config = vault_program_client
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
@@ -48,7 +48,7 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length),
+                .state(slot, config.epoch_length()),
             SlotToggleState::Inactive
         );
     }

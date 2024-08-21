@@ -43,6 +43,6 @@ mod tests {
             vault_operator_delegation.operator,
             operator_root.operator_pubkey
         );
-        assert_eq!(vault_operator_delegation.index, 0);
+        assert_eq!(vault_operator_delegation.index(), 0);
     }
 }

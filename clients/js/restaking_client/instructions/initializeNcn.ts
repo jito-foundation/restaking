@@ -28,7 +28,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INITIALIZE_NCN_DISCRIMINATOR = 1;
@@ -38,7 +38,7 @@ export function getInitializeNcnDiscriminatorBytes() {
 }
 
 export type InitializeNcnInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountNcn extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
@@ -123,7 +123,7 @@ export function getInitializeNcnInstruction<
     TAccountSystemProgram
   >
 ): InitializeNcnInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountNcn,
   TAccountAdmin,
@@ -131,7 +131,7 @@ export function getInitializeNcnInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -164,7 +164,7 @@ export function getInitializeNcnInstruction<
     programAddress,
     data: getInitializeNcnInstructionDataEncoder().encode({}),
   } as InitializeNcnInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountNcn,
     TAccountAdmin,
@@ -176,7 +176,7 @@ export function getInitializeNcnInstruction<
 }
 
 export type ParsedInitializeNcnInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

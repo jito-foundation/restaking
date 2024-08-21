@@ -42,6 +42,14 @@ pub enum RestakingError {
     OperatorVaultTicketFailedWarmup,
     #[error("OperatorWarmupNcnFailed")]
     OperatorWarmupNcnFailed,
+    #[error("NcnOverflow")]
+    NcnOverflow,
+    #[error("OperatorOverflow")]
+    OperatorOverflow,
+    #[error("VaultOverflow")]
+    VaultOverflow,
+    #[error("SlasherOverflow")]
+    SlasherOverflow,
 }
 
 impl<T> DecodeError<T> for RestakingError {

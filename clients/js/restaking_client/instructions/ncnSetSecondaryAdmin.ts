@@ -27,7 +27,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 import {
   getNcnAdminRoleDecoder,
@@ -43,7 +43,7 @@ export function getNcnSetSecondaryAdminDiscriminatorBytes() {
 }
 
 export type NcnSetSecondaryAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountNewAdmin extends string | IAccountMeta<string> = string,
@@ -121,13 +121,13 @@ export function getNcnSetSecondaryAdminInstruction<
 >(
   input: NcnSetSecondaryAdminInput<TAccountNcn, TAccountAdmin, TAccountNewAdmin>
 ): NcnSetSecondaryAdminInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
   TAccountAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -155,7 +155,7 @@ export function getNcnSetSecondaryAdminInstruction<
       args as NcnSetSecondaryAdminInstructionDataArgs
     ),
   } as NcnSetSecondaryAdminInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
     TAccountAdmin,
     TAccountNewAdmin
@@ -165,7 +165,7 @@ export function getNcnSetSecondaryAdminInstruction<
 }
 
 export type ParsedNcnSetSecondaryAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

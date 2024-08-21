@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::operator::Operator;
 use jito_vault_core::{
@@ -40,7 +40,7 @@ pub fn process_cooldown_delegation(
     load_signer(vault_delegation_admin, false)?;
 
     vault.check_delegation_admin(vault_delegation_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     vault_operator_delegation
         .delegation_state

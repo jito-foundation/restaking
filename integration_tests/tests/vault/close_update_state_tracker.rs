@@ -42,12 +42,12 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
         vault_program_client
             .initialize_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
@@ -110,12 +110,12 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
         vault_program_client
             .initialize_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
@@ -198,12 +198,12 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let old_ncn_epoch = slot / config.epoch_length;
+        let old_ncn_epoch = slot / config.epoch_length();
         let old_vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
@@ -238,7 +238,7 @@ mod tests {
         // advance epoch
 
         fixture
-            .warp_slot_incremental(5 * config.epoch_length)
+            .warp_slot_incremental(5 * config.epoch_length())
             .await
             .unwrap();
 
@@ -320,12 +320,12 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 100_000);
-        assert_eq!(vault.vrt_cooling_down_amount, 0);
-        assert_eq!(vault.vrt_ready_to_claim_amount, 0);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 100_000);
+        assert_eq!(vault.vrt_cooling_down_amount(), 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
@@ -341,12 +341,12 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault.vrt_cooling_down_amount, 100_000);
-        assert_eq!(vault.vrt_ready_to_claim_amount, 0);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
+        assert_eq!(vault.vrt_cooling_down_amount(), 100_000);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         vault_program_client
@@ -357,8 +357,8 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault.vrt_cooling_down_amount, 0);
-        assert_eq!(vault.vrt_ready_to_claim_amount, 100_000);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
+        assert_eq!(vault.vrt_cooling_down_amount(), 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 100_000);
     }
 }

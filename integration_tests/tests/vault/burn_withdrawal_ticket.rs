@@ -64,7 +64,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -146,7 +146,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -174,7 +174,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         vault_program_client
@@ -274,7 +274,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         vault_program_client
@@ -285,7 +285,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         vault_program_client
@@ -305,19 +305,12 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited, 0);
-        assert_eq!(vault.vrt_supply, 0);
-        assert_eq!(
-            vault.delegation_state,
-            DelegationState {
-                staked_amount: 0,
-                enqueued_for_cooldown_amount: 0,
-                cooling_down_amount: 0,
-            }
-        );
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault.vrt_ready_to_claim_amount, 0);
-        assert_eq!(vault.vrt_cooling_down_amount, 0);
+        assert_eq!(vault.tokens_deposited(), 0);
+        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(vault.delegation_state, DelegationState::default());
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
+        assert_eq!(vault.vrt_cooling_down_amount(), 0);
 
         let depositor_token_account = fixture
             .get_token_account(&get_associated_token_address(
@@ -384,7 +377,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -421,7 +414,7 @@ mod tests {
         );
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         vault_program_client
@@ -440,7 +433,7 @@ mod tests {
         );
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         vault_program_client
@@ -467,12 +460,12 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited, 0);
-        assert_eq!(vault.vrt_supply, 0);
+        assert_eq!(vault.tokens_deposited(), 0);
+        assert_eq!(vault.vrt_supply(), 0);
         assert_eq!(vault.delegation_state, DelegationState::default());
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, 0);
-        assert_eq!(vault.vrt_ready_to_claim_amount, 0);
-        assert_eq!(vault.vrt_cooling_down_amount, 0);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
+        assert_eq!(vault.vrt_cooling_down_amount(), 0);
     }
 
     #[tokio::test]
@@ -554,7 +547,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 

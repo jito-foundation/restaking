@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -49,12 +49,14 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     let mut operator_data = operator.try_borrow_mut_data()?;
     operator_data[0] = Operator::DISCRIMINATOR;
     let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
-    *operator = Operator::new(*base.key, *admin.key, config.operator_count, operator_bump);
+    *operator = Operator::new(
+        *base.key,
+        *admin.key,
+        config.operator_count(),
+        operator_bump,
+    );
 
-    config.operator_count = config
-        .operator_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    config.increment_operator_count()?;
 
     Ok(())
 }

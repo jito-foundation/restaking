@@ -104,7 +104,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -128,7 +128,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            vault_operator_delegation.delegation_state.staked_amount,
+            vault_operator_delegation.delegation_state.staked_amount(),
             MINT_AMOUNT
         );
 
@@ -148,13 +148,16 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(vault_staker_withdrawal_ticket.vrt_amount, amount_to_dequeue);
+        assert_eq!(
+            vault_staker_withdrawal_ticket.vrt_amount(),
+            amount_to_dequeue
+        );
 
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount, amount_to_dequeue);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), amount_to_dequeue);
     }
 
     #[tokio::test]

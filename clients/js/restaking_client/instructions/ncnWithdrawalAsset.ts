@@ -31,7 +31,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const NCN_WITHDRAWAL_ASSET_DISCRIMINATOR = 21;
@@ -41,7 +41,7 @@ export function getNcnWithdrawalAssetDiscriminatorBytes() {
 }
 
 export type NcnWithdrawalAssetInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn extends string | IAccountMeta<string> = string,
   TAccountNcnTokenAccount extends string | IAccountMeta<string> = string,
   TAccountReceiverTokenAccount extends string | IAccountMeta<string> = string,
@@ -143,7 +143,7 @@ export function getNcnWithdrawalAssetInstruction<
     TAccountTokenProgram
   >
 ): NcnWithdrawalAssetInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
   TAccountNcnTokenAccount,
   TAccountReceiverTokenAccount,
@@ -151,7 +151,7 @@ export function getNcnWithdrawalAssetInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -192,7 +192,7 @@ export function getNcnWithdrawalAssetInstruction<
       args as NcnWithdrawalAssetInstructionDataArgs
     ),
   } as NcnWithdrawalAssetInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
     TAccountNcnTokenAccount,
     TAccountReceiverTokenAccount,
@@ -204,7 +204,7 @@ export function getNcnWithdrawalAssetInstruction<
 }
 
 export type ParsedNcnWithdrawalAssetInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

@@ -82,8 +82,8 @@ mod tests {
             vault.delegation_state,
             vault_operator_delegation.delegation_state
         );
-        assert_eq!(vault.tokens_deposited, AMOUNT_IN);
-        assert_eq!(vault.vrt_supply, AMOUNT_IN);
+        assert_eq!(vault.tokens_deposited(), AMOUNT_IN);
+        assert_eq!(vault.vrt_supply(), AMOUNT_IN);
     }
 
     #[tokio::test]

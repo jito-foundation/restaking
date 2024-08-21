@@ -1,12 +1,12 @@
 use std::cmp::min;
 
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_restaking_core::operator::Operator;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use jito_vault_sdk::{error::VaultError, instruction::WithdrawalAllocationMethod};
+use jito_vault_sdk::instruction::WithdrawalAllocationMethod;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -39,7 +39,7 @@ pub fn process_crank_vault_update_state_tracker(
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
-    let ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
+    let ncn_epoch = slot.checked_div(config.epoch_length()).unwrap();
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,
@@ -52,16 +52,16 @@ pub fn process_crank_vault_update_state_tracker(
         &mut vault_update_state_tracker_data,
     )?;
 
-    vault_update_state_tracker.check_and_update_index(vault_operator_delegation.index)?;
+    vault_update_state_tracker.check_and_update_index(vault_operator_delegation.index())?;
 
     match WithdrawalAllocationMethod::try_from(
         vault_update_state_tracker.withdrawal_allocation_method,
     ) {
         Ok(WithdrawalAllocationMethod::Greedy) => {
-            if vault_update_state_tracker.additional_assets_need_unstaking > 0 {
+            if vault_update_state_tracker.additional_assets_need_unstaking() > 0 {
                 let max_cooldown = min(
-                    vault_operator_delegation.delegation_state.staked_amount,
-                    vault_update_state_tracker.additional_assets_need_unstaking,
+                    vault_operator_delegation.delegation_state.staked_amount(),
+                    vault_update_state_tracker.additional_assets_need_unstaking(),
                 );
                 msg!(
                     "Force cooling down {} assets from operator {}",
@@ -71,11 +71,8 @@ pub fn process_crank_vault_update_state_tracker(
                 vault_operator_delegation
                     .delegation_state
                     .cooldown(max_cooldown)?;
-                vault_update_state_tracker.additional_assets_need_unstaking =
-                    vault_update_state_tracker
-                        .additional_assets_need_unstaking
-                        .checked_sub(max_cooldown)
-                        .ok_or(VaultError::VaultUnderflow)?;
+                vault_update_state_tracker
+                    .decrement_additional_assets_need_unstaking(max_cooldown)?;
             }
         }
         Err(e) => {
@@ -87,7 +84,7 @@ pub fn process_crank_vault_update_state_tracker(
         }
     }
 
-    vault_operator_delegation.update(slot, config.epoch_length);
+    vault_operator_delegation.update(slot, config.epoch_length());
     vault_update_state_tracker
         .delegation_state
         .accumulate(&vault_operator_delegation.delegation_state)?;

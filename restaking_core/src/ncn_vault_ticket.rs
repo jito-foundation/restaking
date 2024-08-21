@@ -1,15 +1,16 @@
 //! The NcnVaultTicket tracks the state of a node consensus network opting-in to a vault.
 //! The NcnVaultTicket can be activated and deactivated over time by the NCN vault admin.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for NcnVaultTicket {
     const DISCRIMINATOR: u8 = 6;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct NcnVaultTicket {
     /// The NCN
@@ -18,7 +19,7 @@ pub struct NcnVaultTicket {
     /// The vault account
     pub vault: Pubkey,
 
-    pub index: u64,
+    index: PodU64,
 
     pub state: SlotToggle,
 
@@ -29,15 +30,19 @@ pub struct NcnVaultTicket {
 }
 
 impl NcnVaultTicket {
-    pub const fn new(ncn: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(ncn: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             ncn,
             vault,
-            index,
+            index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
     }
 
     pub fn seeds(ncn: &Pubkey, vault: &Pubkey) -> Vec<Vec<u8>> {

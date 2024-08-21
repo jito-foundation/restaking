@@ -32,7 +32,7 @@ mod tests {
             .get_ncn(&ncn_root.ncn_pubkey)
             .await
             .unwrap();
-        assert_eq!(ncn.vault_count, 1);
+        assert_eq!(ncn.vault_count(), 1);
 
         // Verify NCN vault ticket
         let ticket = restaking_program_client
@@ -41,14 +41,14 @@ mod tests {
             .unwrap();
         assert_eq!(ticket.ncn, ncn_root.ncn_pubkey);
         assert_eq!(ticket.vault, vault_root.vault_pubkey);
-        assert_eq!(ticket.index, 0);
+        assert_eq!(ticket.index(), 0);
         let slot = fixture.get_current_slot().await.unwrap();
         let config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
             .await
             .unwrap();
         assert_eq!(
-            ticket.state.state(slot, config.epoch_length),
+            ticket.state.state(slot, config.epoch_length()),
             SlotToggleState::Inactive
         );
     }

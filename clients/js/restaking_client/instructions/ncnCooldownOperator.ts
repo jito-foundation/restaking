@@ -27,7 +27,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const NCN_COOLDOWN_OPERATOR_DISCRIMINATOR = 10;
@@ -37,7 +37,7 @@ export function getNcnCooldownOperatorDiscriminatorBytes() {
 }
 
 export type NcnCooldownOperatorInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountNcn extends string | IAccountMeta<string> = string,
   TAccountOperator extends string | IAccountMeta<string> = string,
@@ -123,7 +123,7 @@ export function getNcnCooldownOperatorInstruction<
     TAccountAdmin
   >
 ): NcnCooldownOperatorInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountNcn,
   TAccountOperator,
@@ -131,7 +131,7 @@ export function getNcnCooldownOperatorInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -161,7 +161,7 @@ export function getNcnCooldownOperatorInstruction<
     programAddress,
     data: getNcnCooldownOperatorInstructionDataEncoder().encode({}),
   } as NcnCooldownOperatorInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountNcn,
     TAccountOperator,
@@ -173,7 +173,7 @@ export function getNcnCooldownOperatorInstruction<
 }
 
 export type ParsedNcnCooldownOperatorInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

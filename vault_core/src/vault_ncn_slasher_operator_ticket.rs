@@ -1,8 +1,9 @@
 //! The [`VaultNcnSlasherOperatorTicket`] account tracks the amount an operator has been slashed
 //! by a slasher for a given node consensus network (NCN) and vault for a given epoch.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
+use shank::ShankAccount;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -16,7 +17,7 @@ impl Discriminator for VaultNcnSlasherOperatorTicket {
 /// by a slasher for a given node consensus network (NCN) and vault for a given epoch. It helps
 /// ensure that the operator is held accountable for their actions and that slashing conditions
 /// aren't exceeded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultNcnSlasherOperatorTicket {
     /// The vault slashed
@@ -32,10 +33,10 @@ pub struct VaultNcnSlasherOperatorTicket {
     pub operator: Pubkey,
 
     /// The epoch
-    pub epoch: u64,
+    epoch: PodU64,
 
     /// The amount slashed for the given epoch
-    pub slashed: u64,
+    slashed: PodU64,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -45,7 +46,7 @@ pub struct VaultNcnSlasherOperatorTicket {
 }
 
 impl VaultNcnSlasherOperatorTicket {
-    pub const fn new(
+    pub fn new(
         vault: Pubkey,
         ncn: Pubkey,
         slasher: Pubkey,
@@ -58,11 +59,28 @@ impl VaultNcnSlasherOperatorTicket {
             ncn,
             slasher,
             operator,
-            epoch,
-            slashed: 0,
+            epoch: PodU64::from(epoch),
+            slashed: PodU64::from(0),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn slashed(&self) -> u64 {
+        self.slashed.into()
+    }
+
+    pub fn epoch(&self) -> u64 {
+        self.epoch.into()
+    }
+
+    pub fn increment_slashed(&mut self, amount: u64) -> Result<(), VaultError> {
+        let slashed = self
+            .slashed()
+            .checked_add(amount)
+            .ok_or(VaultError::VaultMaxSlashedPerOperatorExceeded)?;
+        self.slashed = PodU64::from(slashed);
+        Ok(())
     }
 
     #[inline(always)]
@@ -72,7 +90,7 @@ impl VaultNcnSlasherOperatorTicket {
         max_slashable_per_epoch: u64,
     ) -> ProgramResult {
         let amount_after_slash = self
-            .slashed
+            .slashed()
             .checked_add(slash_amount)
             .ok_or(ProgramError::ArithmeticOverflow)?;
         if amount_after_slash > max_slashable_per_epoch {

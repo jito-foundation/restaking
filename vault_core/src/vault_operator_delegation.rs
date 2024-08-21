@@ -1,7 +1,8 @@
 //! The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::delegation_state::DelegationState;
@@ -11,7 +12,7 @@ impl Discriminator for VaultOperatorDelegation {
 }
 
 /// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultOperatorDelegation {
     /// The vault account
@@ -23,10 +24,10 @@ pub struct VaultOperatorDelegation {
     pub delegation_state: DelegationState,
 
     /// The last slot the [`VaultOperatorDelegation::update`] method was updated
-    pub last_update_slot: u64,
+    last_update_slot: PodU64,
 
     /// The index
-    pub index: u64,
+    index: PodU64,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -40,16 +41,24 @@ impl VaultOperatorDelegation {
         Self {
             vault,
             operator,
-            last_update_slot: 0,
+            last_update_slot: PodU64::from(0),
             delegation_state: DelegationState::default(),
-            index,
+            index: PodU64::from(index),
             bump,
             reserved: [0; 7],
         }
     }
 
+    pub fn last_update_slot(&self) -> u64 {
+        self.last_update_slot.into()
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
+    }
+
     pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
-        let last_updated_epoch = self.last_update_slot.checked_div(epoch_length).unwrap();
+        let last_updated_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
         last_updated_epoch < current_epoch
     }
@@ -61,7 +70,7 @@ impl VaultOperatorDelegation {
     /// The enqueued_for_withdraw_amount is zeroed out
     #[inline(always)]
     pub fn update(&mut self, slot: u64, epoch_length: u64) {
-        let last_update_epoch = self.last_update_slot.checked_div(epoch_length).unwrap();
+        let last_update_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
 
         let epoch_diff = current_epoch.checked_sub(last_update_epoch).unwrap();
@@ -78,7 +87,7 @@ impl VaultOperatorDelegation {
                 self.delegation_state.update();
             }
         }
-        self.last_update_slot = slot;
+        self.last_update_slot = PodU64::from(slot);
     }
 
     /// The seeds for the PDA

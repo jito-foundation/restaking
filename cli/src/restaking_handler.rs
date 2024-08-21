@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use clap::Subcommand;
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_restaking_client::instructions::InitializeConfigBuilder;
 use jito_restaking_core::config::Config;
 use log::{debug, info};

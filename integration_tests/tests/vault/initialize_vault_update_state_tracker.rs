@@ -41,7 +41,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * vault_config.epoch_length)
+            .warp_slot_incremental(2 * vault_config.epoch_length())
             .await
             .unwrap();
 
@@ -52,7 +52,7 @@ mod tests {
                 &VaultUpdateStateTracker::find_program_address(
                     &jito_vault_program::id(),
                     &vault_root.vault_pubkey,
-                    slot / vault_config.epoch_length,
+                    slot / vault_config.epoch_length(),
                 )
                 .0,
             )
@@ -62,17 +62,17 @@ mod tests {
         let vault_update_state_tracker = vault_program_client
             .get_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                slot / vault_config.epoch_length,
+                slot / vault_config.epoch_length(),
             )
             .await
             .unwrap();
 
         assert_eq!(vault_update_state_tracker.vault, vault_root.vault_pubkey);
         assert_eq!(
-            vault_update_state_tracker.ncn_epoch,
-            slot / vault_config.epoch_length
+            vault_update_state_tracker.ncn_epoch(),
+            slot / vault_config.epoch_length()
         );
-        assert_eq!(vault_update_state_tracker.last_updated_index, u64::MAX);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), u64::MAX);
         assert_eq!(
             vault_update_state_tracker
                 .delegation_state
@@ -102,7 +102,7 @@ mod tests {
                 &VaultUpdateStateTracker::find_program_address(
                     &jito_vault_program::id(),
                     &vault_root.vault_pubkey,
-                    slot / vault_config.epoch_length,
+                    slot / vault_config.epoch_length(),
                 )
                 .0,
             )
@@ -144,7 +144,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * vault_config.epoch_length)
+            .warp_slot_incremental(2 * vault_config.epoch_length())
             .await
             .unwrap();
 
@@ -155,7 +155,7 @@ mod tests {
                 &VaultUpdateStateTracker::find_program_address(
                     &jito_vault_program::id(),
                     &vault_root.vault_pubkey,
-                    slot / vault_config.epoch_length,
+                    slot / vault_config.epoch_length(),
                 )
                 .0,
             )
@@ -170,7 +170,7 @@ mod tests {
                 &VaultUpdateStateTracker::find_program_address(
                     &jito_vault_program::id(),
                     &vault_root.vault_pubkey,
-                    slot / vault_config.epoch_length,
+                    slot / vault_config.epoch_length(),
                 )
                 .0,
             )

@@ -68,7 +68,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
         let operator_root_pubkeys: Vec<_> =
@@ -89,7 +89,7 @@ mod tests {
             .create_ata(&vault.supported_mint, &slasher.pubkey())
             .await
             .unwrap();
-        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length;
+        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
         vault_program_client
             .initialize_vault_ncn_slasher_operator_ticket(
                 &Config::find_program_address(&jito_vault_program::id()).0,
@@ -133,7 +133,7 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited, MINT_AMOUNT - MAX_SLASH_AMOUNT);
+        assert_eq!(vault.tokens_deposited(), MINT_AMOUNT - MAX_SLASH_AMOUNT);
         assert_eq!(
             vault.delegation_state.total_security().unwrap(),
             DELEGATION_AMOUNT - MAX_SLASH_AMOUNT
@@ -152,7 +152,7 @@ mod tests {
             DELEGATION_AMOUNT - MAX_SLASH_AMOUNT
         );
 
-        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length;
+        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
         let vault_ncn_slasher_operator_ticket = vault_program_client
             .get_vault_ncn_slasher_operator_ticket(
                 &vault_root.vault_pubkey,
@@ -163,8 +163,8 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(vault_ncn_slasher_operator_ticket.slashed, 100);
-        assert_eq!(vault_ncn_slasher_operator_ticket.epoch, epoch);
+        assert_eq!(vault_ncn_slasher_operator_ticket.slashed(), 100);
+        assert_eq!(vault_ncn_slasher_operator_ticket.epoch(), epoch);
         assert_eq!(
             vault_ncn_slasher_operator_ticket.vault,
             vault_root.vault_pubkey

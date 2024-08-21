@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "account_traits",
     "account_traits_derive",
+    "bytemuck",
     "cli",
     "clients/rust/restaking_client",
     "clients/rust/vault_client",
@@ -10,6 +10,7 @@ members = [
     "restaking_core",
     "restaking_program",
     "restaking_sdk",
+    "shank-cli",
     "vault_core",
     "vault_program",
     "vault_sdk"]
@@ -36,6 +37,7 @@ edition = "2021"
 readme = "README.md"
 
 [workspace.dependencies]
+anchor-lang = { version = "0.30.1", features = ["idl-build"] }
 anyhow = "1.0.86"
 assert_matches = "1.5.0"
 borsh = { version = "0.10.3" }
@@ -44,8 +46,9 @@ cfg-if = "1.0.0"
 chrono = "0.4.38"
 clap = { version = "4.5.16", features = ["derive"] }
 const_str_to_pubkey = "0.1.1"
+envfile = "0.2.1"
 env_logger = "0.10.2"
-jito-account-traits = { path = "account_traits", version = "=0.0.1" }
+jito-bytemuck = { path = "bytemuck", version = "=0.0.1" }
 jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
 jito-jsm-core = { path = "core", version = "=0.0.1" }
 jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.1" }
@@ -63,7 +66,9 @@ num-traits = "0.2.19"
 proc-macro2 = "1.0.86"
 quote = "1.0.36"
 serde = { version = "^1.0", features = ["derive"] }
+serde_with = "3.9.0"
 shank = "0.4.2"
+shank_idl = "0.4.2"
 solana-cli-config = "~1.18"
 solana-program = "~1.18"
 solana-program-test = "~1.18"

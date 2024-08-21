@@ -58,7 +58,7 @@ impl WarmupVaultNcnSlasherTicket {
             .unwrap();
 
         solana_program::instruction::Instruction {
-            program_id: crate::JITO_VAULT_PROGRAM_ID,
+            program_id: crate::JITO_VAULT_ID,
             accounts,
             data,
         }
@@ -293,7 +293,7 @@ impl<'a, 'b> WarmupVaultNcnSlasherTicketCpi<'a, 'b> {
             .unwrap();
 
         let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_VAULT_PROGRAM_ID,
+            program_id: crate::JITO_VAULT_ID,
             accounts,
             data,
         };
