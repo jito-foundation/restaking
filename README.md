@@ -42,6 +42,13 @@ cargo-build-sbf
 cargo-build-sbf
 ```
 
+### Building the IDLs and client code
+
+```bash
+cargo b --release -p jito-shank-cli && ./target/release/jito-shank-cli
+yarn generate-clients
+```
+
 ## Running Tests
 
 If you haven't installed `cargo-nextest` yet, it's recommended to install it.

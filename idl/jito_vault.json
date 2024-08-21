@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "name": "jito_vault_sdk",
+  "name": "jito_vault",
   "instructions": [
     {
       "name": "InitializeConfig",
@@ -1392,406 +1392,6 @@
       }
     }
   ],
-  "types": [
-    {
-      "name": "CreateMetadataAccountArgsV3",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "data",
-            "type": {
-              "defined": "DataV2"
-            }
-          },
-          {
-            "name": "isMutable",
-            "type": "bool"
-          },
-          {
-            "name": "collectionDetails",
-            "type": {
-              "option": "u8"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "UpdateMetadataAccountArgsV2",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "data",
-            "type": {
-              "option": {
-                "defined": "DataV2"
-              }
-            }
-          },
-          {
-            "name": "updateAuthority",
-            "type": {
-              "option": "publicKey"
-            }
-          },
-          {
-            "name": "primarySaleHappened",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
-            "name": "isMutable",
-            "type": {
-              "option": "bool"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "DataV2",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "symbol",
-            "type": "string"
-          },
-          {
-            "name": "uri",
-            "type": "string"
-          },
-          {
-            "name": "sellerFeeBasisPoints",
-            "type": "u16"
-          },
-          {
-            "name": "creators",
-            "type": {
-              "option": "u8"
-            }
-          },
-          {
-            "name": "collection",
-            "type": {
-              "option": "u8"
-            }
-          },
-          {
-            "name": "uses",
-            "type": {
-              "option": "u8"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "VaultAdminRole",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "DelegationAdmin"
-          },
-          {
-            "name": "OperatorAdmin"
-          },
-          {
-            "name": "NcnAdmin"
-          },
-          {
-            "name": "SlasherAdmin"
-          },
-          {
-            "name": "CapacityAdmin"
-          },
-          {
-            "name": "FeeWallet"
-          },
-          {
-            "name": "MintBurnAdmin"
-          },
-          {
-            "name": "WithdrawAdmin"
-          },
-          {
-            "name": "FeeAdmin"
-          }
-        ]
-      }
-    },
-    {
-      "name": "WithdrawalAllocationMethod",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Greedy"
-          }
-        ]
-      }
-    },
-    {
-      "name": "SlotToggle",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "slotAdded",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "slotRemoved",
-            "type": {
-              "defined": "PodU64"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "DelegationState",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "stakedAmount",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "enqueuedForCooldownAmount",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "coolingDownAmount",
-            "type": {
-              "defined": "PodU64"
-            }
-          }
-        ]
-      }
-    }
-  ],
-  "errors": [
-    {
-      "code": 1000,
-      "name": "VaultSlashUnderflow",
-      "msg": "VaultSlashUnderflow"
-    },
-    {
-      "code": 1001,
-      "name": "VaultInsufficientFunds",
-      "msg": "VaultInsufficientFunds"
-    },
-    {
-      "code": 1002,
-      "name": "VaultOverflow",
-      "msg": "VaultOverflow"
-    },
-    {
-      "code": 1003,
-      "name": "VaultOperatorAdminInvalid",
-      "msg": "VaultOperatorAdminInvalid"
-    },
-    {
-      "code": 1004,
-      "name": "VaultAdminInvalid",
-      "msg": "VaultAdminInvalid"
-    },
-    {
-      "code": 1005,
-      "name": "VaultCapacityAdminInvalid",
-      "msg": "VaultCapacityAdminInvalid"
-    },
-    {
-      "code": 1006,
-      "name": "VaultMintBurnAdminInvalid",
-      "msg": "VaultMintBurnAdminInvalid"
-    },
-    {
-      "code": 1007,
-      "name": "VaultDelegationAdminInvalid",
-      "msg": "VaultDelegationAdminInvalid"
-    },
-    {
-      "code": 1008,
-      "name": "VaultCapacityExceeded",
-      "msg": "VaultCapacityExceeded"
-    },
-    {
-      "code": 1009,
-      "name": "VaultSlasherAdminInvalid",
-      "msg": "VaultSlasherAdminInvalid"
-    },
-    {
-      "code": 1010,
-      "name": "VaultNcnAdminInvalid",
-      "msg": "VaultNcnAdminInvalid"
-    },
-    {
-      "code": 1011,
-      "name": "VaultFeeAdminInvalid",
-      "msg": "VaultFeeAdminInvalid"
-    },
-    {
-      "code": 1012,
-      "name": "VaultFeeCapExceeded",
-      "msg": "VaultFeeCapExceeded"
-    },
-    {
-      "code": 1013,
-      "name": "VaultFeeChangeTooSoon",
-      "msg": "VaultFeeChangeTooSoon"
-    },
-    {
-      "code": 1014,
-      "name": "VaultFeeBumpTooLarge",
-      "msg": "VaultFeeBumpTooLarge"
-    },
-    {
-      "code": 1015,
-      "name": "VaultUnderflow",
-      "msg": "VaultUnderflow"
-    },
-    {
-      "code": 1016,
-      "name": "VaultUpdateNeeded",
-      "msg": "VaultUpdateNeeded"
-    },
-    {
-      "code": 1017,
-      "name": "VaultIsUpdated",
-      "msg": "VaultIsUpdated"
-    },
-    {
-      "code": 1018,
-      "name": "VaultUpdateIncorrectIndex",
-      "msg": "VaultUpdateIncorrectIndex"
-    },
-    {
-      "code": 1019,
-      "name": "VaultUpdateStateNotFinishedUpdating",
-      "msg": "VaultUpdateStateNotFinishedUpdating"
-    },
-    {
-      "code": 1020,
-      "name": "VaultSecurityOverflow",
-      "msg": "VaultSecurityOverflow"
-    },
-    {
-      "code": 1021,
-      "name": "VaultSlashIncomplete",
-      "msg": "VaultSlashIncomplete"
-    },
-    {
-      "code": 1022,
-      "name": "VaultSecurityUnderflow",
-      "msg": "VaultSecurityUnderflow"
-    },
-    {
-      "code": 1023,
-      "name": "SlippageError",
-      "msg": "SlippageError"
-    },
-    {
-      "code": 1024,
-      "name": "VaultStakerWithdrawalTicketNotWithdrawable",
-      "msg": "VaultStakerWithdrawalTicketNotWithdrawable"
-    },
-    {
-      "code": 1025,
-      "name": "VaultNcnSlasherTicketFailedCooldown",
-      "msg": "VaultNcnSlasherTicketFailedCooldown"
-    },
-    {
-      "code": 1026,
-      "name": "VaultNcnSlasherTicketFailedWarmup",
-      "msg": "VaultNcnSlasherTicketFailedWarmup"
-    },
-    {
-      "code": 1027,
-      "name": "VaultNcnTicketFailedCooldown",
-      "msg": "VaultNcnTicketFailedCooldown"
-    },
-    {
-      "code": 1028,
-      "name": "VaultNcnTicketFailedWarmup",
-      "msg": "VaultNcnTicketFailedWarmup"
-    },
-    {
-      "code": 1029,
-      "name": "VaultNcnTicketUnslashable",
-      "msg": "VaultNcnTicketUnslashable"
-    },
-    {
-      "code": 1030,
-      "name": "OperatorVaultTicketUnslashable",
-      "msg": "OperatorVaultTicketUnslashable"
-    },
-    {
-      "code": 1031,
-      "name": "NcnOperatorStateUnslashable",
-      "msg": "NcnOperatorStateUnslashable"
-    },
-    {
-      "code": 1032,
-      "name": "VaultNcnSlasherTicketUnslashable",
-      "msg": "VaultNcnSlasherTicketUnslashable"
-    },
-    {
-      "code": 1033,
-      "name": "NcnVaultTicketUnslashable",
-      "msg": "NcnVaultTicketUnslashable"
-    },
-    {
-      "code": 1034,
-      "name": "NcnVaultSlasherTicketUnslashable",
-      "msg": "NcnVaultSlasherTicketUnslashable"
-    },
-    {
-      "code": 1035,
-      "name": "VaultMaxSlashedPerOperatorExceeded",
-      "msg": "VaultMaxSlashedPerOperatorExceeded"
-    },
-    {
-      "code": 1036,
-      "name": "VaultStakerWithdrawalTicketInvalidStaker",
-      "msg": "VaultStakerWithdrawalTicketInvalidStaker"
-    },
-    {
-      "code": 1037,
-      "name": "SlasherOverflow",
-      "msg": "SlasherOverflow"
-    },
-    {
-      "code": 1038,
-      "name": "NcnOverflow",
-      "msg": "NcnOverflow"
-    },
-    {
-      "code": 1039,
-      "name": "OperatorOverflow",
-      "msg": "OperatorOverflow"
-    }
-  ],
-  "metadata": {
-    "origin": "shank",
-    "address": "AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK"
-  },
   "accounts": [
     {
       "name": "Config",
@@ -2303,5 +1903,456 @@
         ]
       }
     }
-  ]
+  ],
+  "types": [
+    {
+      "name": "SlotToggle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slotAdded",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "slotRemoved",
+            "type": {
+              "defined": "PodU64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateMetadataAccountArgsV3",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "defined": "DataV2"
+            }
+          },
+          {
+            "name": "isMutable",
+            "type": "bool"
+          },
+          {
+            "name": "collectionDetails",
+            "type": {
+              "option": "u8"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateMetadataAccountArgsV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "option": {
+                "defined": "DataV2"
+              }
+            }
+          },
+          {
+            "name": "updateAuthority",
+            "type": {
+              "option": "publicKey"
+            }
+          },
+          {
+            "name": "primarySaleHappened",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "isMutable",
+            "type": {
+              "option": "bool"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "DataV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "sellerFeeBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "creators",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "collection",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "uses",
+            "type": {
+              "option": "u8"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultAdminRole",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "DelegationAdmin"
+          },
+          {
+            "name": "OperatorAdmin"
+          },
+          {
+            "name": "NcnAdmin"
+          },
+          {
+            "name": "SlasherAdmin"
+          },
+          {
+            "name": "CapacityAdmin"
+          },
+          {
+            "name": "FeeWallet"
+          },
+          {
+            "name": "MintBurnAdmin"
+          },
+          {
+            "name": "WithdrawAdmin"
+          },
+          {
+            "name": "FeeAdmin"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalAllocationMethod",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Greedy"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DelegationState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stakedAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "enqueuedForCooldownAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "coolingDownAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PodU16",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PodU32",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PodU64",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 1000,
+      "name": "VaultSlashUnderflow",
+      "msg": "VaultSlashUnderflow"
+    },
+    {
+      "code": 1001,
+      "name": "VaultInsufficientFunds",
+      "msg": "VaultInsufficientFunds"
+    },
+    {
+      "code": 1002,
+      "name": "VaultOverflow",
+      "msg": "VaultOverflow"
+    },
+    {
+      "code": 1003,
+      "name": "VaultOperatorAdminInvalid",
+      "msg": "VaultOperatorAdminInvalid"
+    },
+    {
+      "code": 1004,
+      "name": "VaultAdminInvalid",
+      "msg": "VaultAdminInvalid"
+    },
+    {
+      "code": 1005,
+      "name": "VaultCapacityAdminInvalid",
+      "msg": "VaultCapacityAdminInvalid"
+    },
+    {
+      "code": 1006,
+      "name": "VaultMintBurnAdminInvalid",
+      "msg": "VaultMintBurnAdminInvalid"
+    },
+    {
+      "code": 1007,
+      "name": "VaultDelegationAdminInvalid",
+      "msg": "VaultDelegationAdminInvalid"
+    },
+    {
+      "code": 1008,
+      "name": "VaultCapacityExceeded",
+      "msg": "VaultCapacityExceeded"
+    },
+    {
+      "code": 1009,
+      "name": "VaultSlasherAdminInvalid",
+      "msg": "VaultSlasherAdminInvalid"
+    },
+    {
+      "code": 1010,
+      "name": "VaultNcnAdminInvalid",
+      "msg": "VaultNcnAdminInvalid"
+    },
+    {
+      "code": 1011,
+      "name": "VaultFeeAdminInvalid",
+      "msg": "VaultFeeAdminInvalid"
+    },
+    {
+      "code": 1012,
+      "name": "VaultFeeCapExceeded",
+      "msg": "VaultFeeCapExceeded"
+    },
+    {
+      "code": 1013,
+      "name": "VaultFeeChangeTooSoon",
+      "msg": "VaultFeeChangeTooSoon"
+    },
+    {
+      "code": 1014,
+      "name": "VaultFeeBumpTooLarge",
+      "msg": "VaultFeeBumpTooLarge"
+    },
+    {
+      "code": 1015,
+      "name": "VaultUnderflow",
+      "msg": "VaultUnderflow"
+    },
+    {
+      "code": 1016,
+      "name": "VaultUpdateNeeded",
+      "msg": "VaultUpdateNeeded"
+    },
+    {
+      "code": 1017,
+      "name": "VaultIsUpdated",
+      "msg": "VaultIsUpdated"
+    },
+    {
+      "code": 1018,
+      "name": "VaultUpdateIncorrectIndex",
+      "msg": "VaultUpdateIncorrectIndex"
+    },
+    {
+      "code": 1019,
+      "name": "VaultUpdateStateNotFinishedUpdating",
+      "msg": "VaultUpdateStateNotFinishedUpdating"
+    },
+    {
+      "code": 1020,
+      "name": "VaultSecurityOverflow",
+      "msg": "VaultSecurityOverflow"
+    },
+    {
+      "code": 1021,
+      "name": "VaultSlashIncomplete",
+      "msg": "VaultSlashIncomplete"
+    },
+    {
+      "code": 1022,
+      "name": "VaultSecurityUnderflow",
+      "msg": "VaultSecurityUnderflow"
+    },
+    {
+      "code": 1023,
+      "name": "SlippageError",
+      "msg": "SlippageError"
+    },
+    {
+      "code": 1024,
+      "name": "VaultStakerWithdrawalTicketNotWithdrawable",
+      "msg": "VaultStakerWithdrawalTicketNotWithdrawable"
+    },
+    {
+      "code": 1025,
+      "name": "VaultNcnSlasherTicketFailedCooldown",
+      "msg": "VaultNcnSlasherTicketFailedCooldown"
+    },
+    {
+      "code": 1026,
+      "name": "VaultNcnSlasherTicketFailedWarmup",
+      "msg": "VaultNcnSlasherTicketFailedWarmup"
+    },
+    {
+      "code": 1027,
+      "name": "VaultNcnTicketFailedCooldown",
+      "msg": "VaultNcnTicketFailedCooldown"
+    },
+    {
+      "code": 1028,
+      "name": "VaultNcnTicketFailedWarmup",
+      "msg": "VaultNcnTicketFailedWarmup"
+    },
+    {
+      "code": 1029,
+      "name": "VaultNcnTicketUnslashable",
+      "msg": "VaultNcnTicketUnslashable"
+    },
+    {
+      "code": 1030,
+      "name": "OperatorVaultTicketUnslashable",
+      "msg": "OperatorVaultTicketUnslashable"
+    },
+    {
+      "code": 1031,
+      "name": "NcnOperatorStateUnslashable",
+      "msg": "NcnOperatorStateUnslashable"
+    },
+    {
+      "code": 1032,
+      "name": "VaultNcnSlasherTicketUnslashable",
+      "msg": "VaultNcnSlasherTicketUnslashable"
+    },
+    {
+      "code": 1033,
+      "name": "NcnVaultTicketUnslashable",
+      "msg": "NcnVaultTicketUnslashable"
+    },
+    {
+      "code": 1034,
+      "name": "NcnVaultSlasherTicketUnslashable",
+      "msg": "NcnVaultSlasherTicketUnslashable"
+    },
+    {
+      "code": 1035,
+      "name": "VaultMaxSlashedPerOperatorExceeded",
+      "msg": "VaultMaxSlashedPerOperatorExceeded"
+    },
+    {
+      "code": 1036,
+      "name": "VaultStakerWithdrawalTicketInvalidStaker",
+      "msg": "VaultStakerWithdrawalTicketInvalidStaker"
+    },
+    {
+      "code": 1037,
+      "name": "SlasherOverflow",
+      "msg": "SlasherOverflow"
+    },
+    {
+      "code": 1038,
+      "name": "NcnOverflow",
+      "msg": "NcnOverflow"
+    },
+    {
+      "code": 1039,
+      "name": "OperatorOverflow",
+      "msg": "OperatorOverflow"
+    }
+  ],
+  "metadata": {
+    "origin": "shank",
+    "address": "AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK"
+  }
 }

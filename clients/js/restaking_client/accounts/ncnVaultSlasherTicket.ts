@@ -169,3 +169,7 @@ export async function fetchAllMaybeNcnVaultSlasherTicket(
     decodeNcnVaultSlasherTicket(maybeAccount)
   );
 }
+
+export function getNcnVaultSlasherTicketSize(): number {
+  return 136;
+}

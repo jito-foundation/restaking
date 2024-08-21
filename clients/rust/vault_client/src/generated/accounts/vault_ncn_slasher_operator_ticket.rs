@@ -39,6 +39,8 @@ pub struct VaultNcnSlasherOperatorTicket {
 }
 
 impl VaultNcnSlasherOperatorTicket {
+    pub const LEN: usize = 152;
+
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;
@@ -70,7 +72,7 @@ impl anchor_lang::AccountSerialize for VaultNcnSlasherOperatorTicket {}
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for VaultNcnSlasherOperatorTicket {
     fn owner() -> Pubkey {
-        crate::JITO_VAULT_PROGRAM_ID
+        crate::JITO_VAULT_ID
     }
 }
 

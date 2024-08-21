@@ -8,7 +8,7 @@ use num_derive::FromPrimitive;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
-pub enum JitoRestakingProgramError {
+pub enum JitoRestakingError {
     /// 1000 - NcnOperatorAdminInvalid
     #[error("NcnOperatorAdminInvalid")]
     NcnOperatorAdminInvalid = 0x3E8,
@@ -80,7 +80,7 @@ pub enum JitoRestakingProgramError {
     SlasherOverflow = 0x7DB,
 }
 
-impl solana_program::program_error::PrintProgramError for JitoRestakingProgramError {
+impl solana_program::program_error::PrintProgramError for JitoRestakingError {
     fn print<E>(&self) {
         solana_program::msg!(&self.to_string());
     }

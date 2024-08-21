@@ -8,7 +8,7 @@ use num_derive::FromPrimitive;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
-pub enum JitoVaultProgramError {
+pub enum JitoVaultError {
     /// 1000 - VaultSlashUnderflow
     #[error("VaultSlashUnderflow")]
     VaultSlashUnderflow = 0x3E8,
@@ -131,7 +131,7 @@ pub enum JitoVaultProgramError {
     OperatorOverflow = 0x40F,
 }
 
-impl solana_program::program_error::PrintProgramError for JitoVaultProgramError {
+impl solana_program::program_error::PrintProgramError for JitoVaultError {
     fn print<E>(&self) {
         solana_program::msg!(&self.to_string());
     }

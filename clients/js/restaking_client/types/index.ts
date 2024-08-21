@@ -8,4 +8,7 @@
 
 export * from './ncnAdminRole';
 export * from './operatorAdminRole';
+export * from './podU16';
+export * from './podU32';
+export * from './podU64';
 export * from './slotToggle';

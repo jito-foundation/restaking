@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "name": "jito_restaking_sdk",
+  "name": "jito_restaking",
   "instructions": [
     {
       "name": "InitializeConfig",
@@ -865,195 +865,6 @@
       }
     }
   ],
-  "types": [
-    {
-      "name": "NcnAdminRole",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Operator"
-          },
-          {
-            "name": "Vault"
-          },
-          {
-            "name": "Slasher"
-          },
-          {
-            "name": "Withdraw"
-          },
-          {
-            "name": "WithdrawWallet"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OperatorAdminRole",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "NcnAdmin"
-          },
-          {
-            "name": "VaultAdmin"
-          },
-          {
-            "name": "VoterAdmin"
-          },
-          {
-            "name": "WithdrawAdmin"
-          },
-          {
-            "name": "WithdrawWallet"
-          }
-        ]
-      }
-    },
-    {
-      "name": "SlotToggle",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "slotAdded",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "slotRemoved",
-            "type": {
-              "defined": "PodU64"
-            }
-          }
-        ]
-      }
-    }
-  ],
-  "errors": [
-    {
-      "code": 1000,
-      "name": "NcnOperatorAdminInvalid",
-      "msg": "NcnOperatorAdminInvalid"
-    },
-    {
-      "code": 1001,
-      "name": "NcnCooldownOperatorFailed",
-      "msg": "NcnCooldownOperatorFailed"
-    },
-    {
-      "code": 1002,
-      "name": "NcnSlasherAdminInvalid",
-      "msg": "NcnSlasherAdminInvalid"
-    },
-    {
-      "code": 1003,
-      "name": "NcnVaultAdminInvalid",
-      "msg": "NcnVaultAdminInvalid"
-    },
-    {
-      "code": 1004,
-      "name": "NcnAdminInvalid",
-      "msg": "NcnAdminInvalid"
-    },
-    {
-      "code": 1005,
-      "name": "NcnWithdrawAdminInvalid",
-      "msg": "NcnWithdrawAdminInvalid"
-    },
-    {
-      "code": 1006,
-      "name": "NcnVaultSlasherTicketFailedCooldown",
-      "msg": "NcnVaultSlasherTicketFailedCooldown"
-    },
-    {
-      "code": 1007,
-      "name": "NcnVaultTicketFailedCooldown",
-      "msg": "NcnVaultTicketFailedCooldown"
-    },
-    {
-      "code": 1008,
-      "name": "NcnWarmupOperatorFailed",
-      "msg": "NcnWarmupOperatorFailed"
-    },
-    {
-      "code": 1009,
-      "name": "NcnVaultSlasherTicketFailedWarmup",
-      "msg": "NcnVaultSlasherTicketFailedWarmup"
-    },
-    {
-      "code": 1010,
-      "name": "NcnVaultTicketFailedWarmup",
-      "msg": "NcnVaultTicketFailedWarmup"
-    },
-    {
-      "code": 2000,
-      "name": "OperatorNcnAdminInvalid",
-      "msg": "OperatorNcnAdminInvalid"
-    },
-    {
-      "code": 2001,
-      "name": "OperatorVaultAdminInvalid",
-      "msg": "OperatorVaultAdminInvalid"
-    },
-    {
-      "code": 2002,
-      "name": "OperatorAdminInvalid",
-      "msg": "OperatorAdminInvalid"
-    },
-    {
-      "code": 2003,
-      "name": "OperatorWithdrawAdminInvalid",
-      "msg": "OperatorWithdrawAdminInvalid"
-    },
-    {
-      "code": 2004,
-      "name": "OperatorCooldownNcnFailed",
-      "msg": "OperatorCooldownNcnFailed"
-    },
-    {
-      "code": 2005,
-      "name": "OperatorVaultTicketFailedCooldown",
-      "msg": "OperatorVaultTicketFailedCooldown"
-    },
-    {
-      "code": 2006,
-      "name": "OperatorVaultTicketFailedWarmup",
-      "msg": "OperatorVaultTicketFailedWarmup"
-    },
-    {
-      "code": 2007,
-      "name": "OperatorWarmupNcnFailed",
-      "msg": "OperatorWarmupNcnFailed"
-    },
-    {
-      "code": 2008,
-      "name": "NcnOverflow",
-      "msg": "NcnOverflow"
-    },
-    {
-      "code": 2009,
-      "name": "OperatorOverflow",
-      "msg": "OperatorOverflow"
-    },
-    {
-      "code": 2010,
-      "name": "VaultOverflow",
-      "msg": "VaultOverflow"
-    },
-    {
-      "code": 2011,
-      "name": "SlasherOverflow",
-      "msg": "SlasherOverflow"
-    }
-  ],
-  "metadata": {
-    "origin": "shank",
-    "address": "2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ"
-  },
   "accounts": [
     {
       "name": "Config",
@@ -1422,5 +1233,245 @@
         ]
       }
     }
-  ]
+  ],
+  "types": [
+    {
+      "name": "SlotToggle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slotAdded",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "slotRemoved",
+            "type": {
+              "defined": "PodU64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NcnAdminRole",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Operator"
+          },
+          {
+            "name": "Vault"
+          },
+          {
+            "name": "Slasher"
+          },
+          {
+            "name": "Withdraw"
+          },
+          {
+            "name": "WithdrawWallet"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OperatorAdminRole",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NcnAdmin"
+          },
+          {
+            "name": "VaultAdmin"
+          },
+          {
+            "name": "VoterAdmin"
+          },
+          {
+            "name": "WithdrawAdmin"
+          },
+          {
+            "name": "WithdrawWallet"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PodU16",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PodU32",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PodU64",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 1000,
+      "name": "NcnOperatorAdminInvalid",
+      "msg": "NcnOperatorAdminInvalid"
+    },
+    {
+      "code": 1001,
+      "name": "NcnCooldownOperatorFailed",
+      "msg": "NcnCooldownOperatorFailed"
+    },
+    {
+      "code": 1002,
+      "name": "NcnSlasherAdminInvalid",
+      "msg": "NcnSlasherAdminInvalid"
+    },
+    {
+      "code": 1003,
+      "name": "NcnVaultAdminInvalid",
+      "msg": "NcnVaultAdminInvalid"
+    },
+    {
+      "code": 1004,
+      "name": "NcnAdminInvalid",
+      "msg": "NcnAdminInvalid"
+    },
+    {
+      "code": 1005,
+      "name": "NcnWithdrawAdminInvalid",
+      "msg": "NcnWithdrawAdminInvalid"
+    },
+    {
+      "code": 1006,
+      "name": "NcnVaultSlasherTicketFailedCooldown",
+      "msg": "NcnVaultSlasherTicketFailedCooldown"
+    },
+    {
+      "code": 1007,
+      "name": "NcnVaultTicketFailedCooldown",
+      "msg": "NcnVaultTicketFailedCooldown"
+    },
+    {
+      "code": 1008,
+      "name": "NcnWarmupOperatorFailed",
+      "msg": "NcnWarmupOperatorFailed"
+    },
+    {
+      "code": 1009,
+      "name": "NcnVaultSlasherTicketFailedWarmup",
+      "msg": "NcnVaultSlasherTicketFailedWarmup"
+    },
+    {
+      "code": 1010,
+      "name": "NcnVaultTicketFailedWarmup",
+      "msg": "NcnVaultTicketFailedWarmup"
+    },
+    {
+      "code": 2000,
+      "name": "OperatorNcnAdminInvalid",
+      "msg": "OperatorNcnAdminInvalid"
+    },
+    {
+      "code": 2001,
+      "name": "OperatorVaultAdminInvalid",
+      "msg": "OperatorVaultAdminInvalid"
+    },
+    {
+      "code": 2002,
+      "name": "OperatorAdminInvalid",
+      "msg": "OperatorAdminInvalid"
+    },
+    {
+      "code": 2003,
+      "name": "OperatorWithdrawAdminInvalid",
+      "msg": "OperatorWithdrawAdminInvalid"
+    },
+    {
+      "code": 2004,
+      "name": "OperatorCooldownNcnFailed",
+      "msg": "OperatorCooldownNcnFailed"
+    },
+    {
+      "code": 2005,
+      "name": "OperatorVaultTicketFailedCooldown",
+      "msg": "OperatorVaultTicketFailedCooldown"
+    },
+    {
+      "code": 2006,
+      "name": "OperatorVaultTicketFailedWarmup",
+      "msg": "OperatorVaultTicketFailedWarmup"
+    },
+    {
+      "code": 2007,
+      "name": "OperatorWarmupNcnFailed",
+      "msg": "OperatorWarmupNcnFailed"
+    },
+    {
+      "code": 2008,
+      "name": "NcnOverflow",
+      "msg": "NcnOverflow"
+    },
+    {
+      "code": 2009,
+      "name": "OperatorOverflow",
+      "msg": "OperatorOverflow"
+    },
+    {
+      "code": 2010,
+      "name": "VaultOverflow",
+      "msg": "VaultOverflow"
+    },
+    {
+      "code": 2011,
+      "name": "SlasherOverflow",
+      "msg": "SlasherOverflow"
+    }
+  ],
+  "metadata": {
+    "origin": "shank",
+    "address": "2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ"
+  }
 }

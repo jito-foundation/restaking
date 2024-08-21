@@ -10,6 +10,7 @@ edition = { workspace = true }
 readme = { workspace = true }
 
 [dependencies]
+borsh = { workspace = true }
 bytemuck = { workspace = true }
 jito-account-traits-derive = { workspace = true }
 shank = { workspace = true }

@@ -28,7 +28,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INITIALIZE_OPERATOR_DISCRIMINATOR = 2;
@@ -38,7 +38,7 @@ export function getInitializeOperatorDiscriminatorBytes() {
 }
 
 export type InitializeOperatorInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
@@ -125,7 +125,7 @@ export function getInitializeOperatorInstruction<
     TAccountSystemProgram
   >
 ): InitializeOperatorInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountOperator,
   TAccountAdmin,
@@ -133,7 +133,7 @@ export function getInitializeOperatorInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -166,7 +166,7 @@ export function getInitializeOperatorInstruction<
     programAddress,
     data: getInitializeOperatorInstructionDataEncoder().encode({}),
   } as InitializeOperatorInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountOperator,
     TAccountAdmin,
@@ -178,7 +178,7 @@ export function getInitializeOperatorInstruction<
 }
 
 export type ParsedInitializeOperatorInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;
