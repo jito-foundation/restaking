@@ -19,6 +19,10 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -35,29 +39,21 @@ import {
 import {
   getDelegationStateDecoder,
   getDelegationStateEncoder,
-  getPodU16Decoder,
-  getPodU16Encoder,
-  getPodU64Decoder,
-  getPodU64Encoder,
   type DelegationState,
   type DelegationStateArgs,
-  type PodU16,
-  type PodU16Args,
-  type PodU64,
-  type PodU64Args,
 } from '../types';
 
 export type Vault = {
   base: Address;
   vrtMint: Address;
   supportedMint: Address;
-  vrtSupply: PodU64;
-  tokensDeposited: PodU64;
-  capacity: PodU64;
+  vrtSupply: bigint;
+  tokensDeposited: bigint;
+  capacity: bigint;
   delegationState: DelegationState;
-  vrtEnqueuedForCooldownAmount: PodU64;
-  vrtCoolingDownAmount: PodU64;
-  vrtReadyToClaimAmount: PodU64;
+  vrtEnqueuedForCooldownAmount: bigint;
+  vrtCoolingDownAmount: bigint;
+  vrtReadyToClaimAmount: bigint;
   admin: Address;
   delegationAdmin: Address;
   operatorAdmin: Address;
@@ -68,15 +64,15 @@ export type Vault = {
   withdrawAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
-  vaultIndex: PodU64;
-  ncnCount: PodU64;
-  operatorCount: PodU64;
-  slasherCount: PodU64;
-  lastFeeChangeSlot: PodU64;
-  lastFullStateUpdateSlot: PodU64;
-  depositFeeBps: PodU16;
-  withdrawalFeeBps: PodU16;
-  rewardFeeBps: PodU16;
+  vaultIndex: bigint;
+  ncnCount: bigint;
+  operatorCount: bigint;
+  slasherCount: bigint;
+  lastFeeChangeSlot: bigint;
+  lastFullStateUpdateSlot: bigint;
+  depositFeeBps: number;
+  withdrawalFeeBps: number;
+  rewardFeeBps: number;
   bump: number;
   reserved: Array<number>;
 };
@@ -85,13 +81,13 @@ export type VaultArgs = {
   base: Address;
   vrtMint: Address;
   supportedMint: Address;
-  vrtSupply: PodU64Args;
-  tokensDeposited: PodU64Args;
-  capacity: PodU64Args;
+  vrtSupply: number | bigint;
+  tokensDeposited: number | bigint;
+  capacity: number | bigint;
   delegationState: DelegationStateArgs;
-  vrtEnqueuedForCooldownAmount: PodU64Args;
-  vrtCoolingDownAmount: PodU64Args;
-  vrtReadyToClaimAmount: PodU64Args;
+  vrtEnqueuedForCooldownAmount: number | bigint;
+  vrtCoolingDownAmount: number | bigint;
+  vrtReadyToClaimAmount: number | bigint;
   admin: Address;
   delegationAdmin: Address;
   operatorAdmin: Address;
@@ -102,15 +98,15 @@ export type VaultArgs = {
   withdrawAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
-  vaultIndex: PodU64Args;
-  ncnCount: PodU64Args;
-  operatorCount: PodU64Args;
-  slasherCount: PodU64Args;
-  lastFeeChangeSlot: PodU64Args;
-  lastFullStateUpdateSlot: PodU64Args;
-  depositFeeBps: PodU16Args;
-  withdrawalFeeBps: PodU16Args;
-  rewardFeeBps: PodU16Args;
+  vaultIndex: number | bigint;
+  ncnCount: number | bigint;
+  operatorCount: number | bigint;
+  slasherCount: number | bigint;
+  lastFeeChangeSlot: number | bigint;
+  lastFullStateUpdateSlot: number | bigint;
+  depositFeeBps: number;
+  withdrawalFeeBps: number;
+  rewardFeeBps: number;
   bump: number;
   reserved: Array<number>;
 };
@@ -120,13 +116,13 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['base', getAddressEncoder()],
     ['vrtMint', getAddressEncoder()],
     ['supportedMint', getAddressEncoder()],
-    ['vrtSupply', getPodU64Encoder()],
-    ['tokensDeposited', getPodU64Encoder()],
-    ['capacity', getPodU64Encoder()],
+    ['vrtSupply', getU64Encoder()],
+    ['tokensDeposited', getU64Encoder()],
+    ['capacity', getU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
-    ['vrtEnqueuedForCooldownAmount', getPodU64Encoder()],
-    ['vrtCoolingDownAmount', getPodU64Encoder()],
-    ['vrtReadyToClaimAmount', getPodU64Encoder()],
+    ['vrtEnqueuedForCooldownAmount', getU64Encoder()],
+    ['vrtCoolingDownAmount', getU64Encoder()],
+    ['vrtReadyToClaimAmount', getU64Encoder()],
     ['admin', getAddressEncoder()],
     ['delegationAdmin', getAddressEncoder()],
     ['operatorAdmin', getAddressEncoder()],
@@ -137,15 +133,15 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['withdrawAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
-    ['vaultIndex', getPodU64Encoder()],
-    ['ncnCount', getPodU64Encoder()],
-    ['operatorCount', getPodU64Encoder()],
-    ['slasherCount', getPodU64Encoder()],
-    ['lastFeeChangeSlot', getPodU64Encoder()],
-    ['lastFullStateUpdateSlot', getPodU64Encoder()],
-    ['depositFeeBps', getPodU16Encoder()],
-    ['withdrawalFeeBps', getPodU16Encoder()],
-    ['rewardFeeBps', getPodU16Encoder()],
+    ['vaultIndex', getU64Encoder()],
+    ['ncnCount', getU64Encoder()],
+    ['operatorCount', getU64Encoder()],
+    ['slasherCount', getU64Encoder()],
+    ['lastFeeChangeSlot', getU64Encoder()],
+    ['lastFullStateUpdateSlot', getU64Encoder()],
+    ['depositFeeBps', getU16Encoder()],
+    ['withdrawalFeeBps', getU16Encoder()],
+    ['rewardFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 9 })],
   ]);
@@ -156,13 +152,13 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['base', getAddressDecoder()],
     ['vrtMint', getAddressDecoder()],
     ['supportedMint', getAddressDecoder()],
-    ['vrtSupply', getPodU64Decoder()],
-    ['tokensDeposited', getPodU64Decoder()],
-    ['capacity', getPodU64Decoder()],
+    ['vrtSupply', getU64Decoder()],
+    ['tokensDeposited', getU64Decoder()],
+    ['capacity', getU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
-    ['vrtEnqueuedForCooldownAmount', getPodU64Decoder()],
-    ['vrtCoolingDownAmount', getPodU64Decoder()],
-    ['vrtReadyToClaimAmount', getPodU64Decoder()],
+    ['vrtEnqueuedForCooldownAmount', getU64Decoder()],
+    ['vrtCoolingDownAmount', getU64Decoder()],
+    ['vrtReadyToClaimAmount', getU64Decoder()],
     ['admin', getAddressDecoder()],
     ['delegationAdmin', getAddressDecoder()],
     ['operatorAdmin', getAddressDecoder()],
@@ -173,15 +169,15 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['withdrawAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
-    ['vaultIndex', getPodU64Decoder()],
-    ['ncnCount', getPodU64Decoder()],
-    ['operatorCount', getPodU64Decoder()],
-    ['slasherCount', getPodU64Decoder()],
-    ['lastFeeChangeSlot', getPodU64Decoder()],
-    ['lastFullStateUpdateSlot', getPodU64Decoder()],
-    ['depositFeeBps', getPodU16Decoder()],
-    ['withdrawalFeeBps', getPodU16Decoder()],
-    ['rewardFeeBps', getPodU16Decoder()],
+    ['vaultIndex', getU64Decoder()],
+    ['ncnCount', getU64Decoder()],
+    ['operatorCount', getU64Decoder()],
+    ['slasherCount', getU64Decoder()],
+    ['lastFeeChangeSlot', getU64Decoder()],
+    ['lastFullStateUpdateSlot', getU64Decoder()],
+    ['depositFeeBps', getU16Decoder()],
+    ['withdrawalFeeBps', getU16Decoder()],
+    ['rewardFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 9 })],
   ]);
@@ -242,8 +238,4 @@ export async function fetchAllMaybeVault(
 ): Promise<MaybeAccount<Vault>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeVault(maybeAccount));
-}
-
-export function getVaultSize(): number {
-  return 552;
 }

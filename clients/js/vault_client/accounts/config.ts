@@ -19,6 +19,10 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -32,25 +36,15 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
-import {
-  getPodU16Decoder,
-  getPodU16Encoder,
-  getPodU64Decoder,
-  getPodU64Encoder,
-  type PodU16,
-  type PodU16Args,
-  type PodU64,
-  type PodU64Args,
-} from '../types';
 
 export type Config = {
   admin: Address;
   restakingProgram: Address;
-  epochLength: PodU64;
-  numVaults: PodU64;
-  feeCapBps: PodU16;
-  feeRateOfChangeBps: PodU16;
-  feeBumpBps: PodU16;
+  epochLength: bigint;
+  numVaults: bigint;
+  feeCapBps: number;
+  feeRateOfChangeBps: number;
+  feeBumpBps: number;
   bump: number;
   reserved: Array<number>;
 };
@@ -58,11 +52,11 @@ export type Config = {
 export type ConfigArgs = {
   admin: Address;
   restakingProgram: Address;
-  epochLength: PodU64Args;
-  numVaults: PodU64Args;
-  feeCapBps: PodU16Args;
-  feeRateOfChangeBps: PodU16Args;
-  feeBumpBps: PodU16Args;
+  epochLength: number | bigint;
+  numVaults: number | bigint;
+  feeCapBps: number;
+  feeRateOfChangeBps: number;
+  feeBumpBps: number;
   bump: number;
   reserved: Array<number>;
 };
@@ -71,11 +65,11 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
   return getStructEncoder([
     ['admin', getAddressEncoder()],
     ['restakingProgram', getAddressEncoder()],
-    ['epochLength', getPodU64Encoder()],
-    ['numVaults', getPodU64Encoder()],
-    ['feeCapBps', getPodU16Encoder()],
-    ['feeRateOfChangeBps', getPodU16Encoder()],
-    ['feeBumpBps', getPodU16Encoder()],
+    ['epochLength', getU64Encoder()],
+    ['numVaults', getU64Encoder()],
+    ['feeCapBps', getU16Encoder()],
+    ['feeRateOfChangeBps', getU16Encoder()],
+    ['feeBumpBps', getU16Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 17 })],
   ]);
@@ -85,11 +79,11 @@ export function getConfigDecoder(): Decoder<Config> {
   return getStructDecoder([
     ['admin', getAddressDecoder()],
     ['restakingProgram', getAddressDecoder()],
-    ['epochLength', getPodU64Decoder()],
-    ['numVaults', getPodU64Decoder()],
-    ['feeCapBps', getPodU16Decoder()],
-    ['feeRateOfChangeBps', getPodU16Decoder()],
-    ['feeBumpBps', getPodU16Decoder()],
+    ['epochLength', getU64Decoder()],
+    ['numVaults', getU64Decoder()],
+    ['feeCapBps', getU16Decoder()],
+    ['feeRateOfChangeBps', getU16Decoder()],
+    ['feeBumpBps', getU16Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 17 })],
   ]);
@@ -150,8 +144,4 @@ export async function fetchAllMaybeConfig(
 ): Promise<MaybeAccount<Config>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeConfig(maybeAccount));
-}
-
-export function getConfigSize(): number {
-  return 104;
 }

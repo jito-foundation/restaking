@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -33,12 +35,8 @@ import {
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
 import {
-  getPodU64Decoder,
-  getPodU64Encoder,
   getSlotToggleDecoder,
   getSlotToggleEncoder,
-  type PodU64,
-  type PodU64Args,
   type SlotToggle,
   type SlotToggleArgs,
 } from '../types';
@@ -46,7 +44,7 @@ import {
 export type VaultNcnTicket = {
   vault: Address;
   ncn: Address;
-  index: PodU64;
+  index: bigint;
   state: SlotToggle;
   bump: number;
   reserved: Array<number>;
@@ -55,7 +53,7 @@ export type VaultNcnTicket = {
 export type VaultNcnTicketArgs = {
   vault: Address;
   ncn: Address;
-  index: PodU64Args;
+  index: number | bigint;
   state: SlotToggleArgs;
   bump: number;
   reserved: Array<number>;
@@ -65,7 +63,7 @@ export function getVaultNcnTicketEncoder(): Encoder<VaultNcnTicketArgs> {
   return getStructEncoder([
     ['vault', getAddressEncoder()],
     ['ncn', getAddressEncoder()],
-    ['index', getPodU64Encoder()],
+    ['index', getU64Encoder()],
     ['state', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
@@ -76,7 +74,7 @@ export function getVaultNcnTicketDecoder(): Decoder<VaultNcnTicket> {
   return getStructDecoder([
     ['vault', getAddressDecoder()],
     ['ncn', getAddressDecoder()],
-    ['index', getPodU64Decoder()],
+    ['index', getU64Decoder()],
     ['state', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
@@ -149,8 +147,4 @@ export async function fetchAllMaybeVaultNcnTicket(
   return maybeAccounts.map((maybeAccount) =>
     decodeVaultNcnTicket(maybeAccount)
   );
-}
-
-export function getVaultNcnTicketSize(): number {
-  return 96;
 }

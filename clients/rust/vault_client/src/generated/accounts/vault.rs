@@ -7,7 +7,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
-use crate::generated::types::{DelegationState, PodU16, PodU64};
+use crate::generated::types::DelegationState;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -27,13 +27,13 @@ pub struct Vault {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub supported_mint: Pubkey,
-    pub vrt_supply: PodU64,
-    pub tokens_deposited: PodU64,
-    pub capacity: PodU64,
+    pub vrt_supply: u64,
+    pub tokens_deposited: u64,
+    pub capacity: u64,
     pub delegation_state: DelegationState,
-    pub vrt_enqueued_for_cooldown_amount: PodU64,
-    pub vrt_cooling_down_amount: PodU64,
-    pub vrt_ready_to_claim_amount: PodU64,
+    pub vrt_enqueued_for_cooldown_amount: u64,
+    pub vrt_cooling_down_amount: u64,
+    pub vrt_ready_to_claim_amount: u64,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -84,22 +84,20 @@ pub struct Vault {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub mint_burn_admin: Pubkey,
-    pub vault_index: PodU64,
-    pub ncn_count: PodU64,
-    pub operator_count: PodU64,
-    pub slasher_count: PodU64,
-    pub last_fee_change_slot: PodU64,
-    pub last_full_state_update_slot: PodU64,
-    pub deposit_fee_bps: PodU16,
-    pub withdrawal_fee_bps: PodU16,
-    pub reward_fee_bps: PodU16,
+    pub vault_index: u64,
+    pub ncn_count: u64,
+    pub operator_count: u64,
+    pub slasher_count: u64,
+    pub last_fee_change_slot: u64,
+    pub last_full_state_update_slot: u64,
+    pub deposit_fee_bps: u16,
+    pub withdrawal_fee_bps: u16,
+    pub reward_fee_bps: u16,
     pub bump: u8,
     pub reserved: [u8; 9],
 }
 
 impl Vault {
-    pub const LEN: usize = 552;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

@@ -10,42 +10,38 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   type Codec,
   type Decoder,
   type Encoder,
 } from '@solana/web3.js';
-import {
-  getPodU64Decoder,
-  getPodU64Encoder,
-  type PodU64,
-  type PodU64Args,
-} from '.';
 
 export type DelegationState = {
-  stakedAmount: PodU64;
-  enqueuedForCooldownAmount: PodU64;
-  coolingDownAmount: PodU64;
+  stakedAmount: bigint;
+  enqueuedForCooldownAmount: bigint;
+  coolingDownAmount: bigint;
 };
 
 export type DelegationStateArgs = {
-  stakedAmount: PodU64Args;
-  enqueuedForCooldownAmount: PodU64Args;
-  coolingDownAmount: PodU64Args;
+  stakedAmount: number | bigint;
+  enqueuedForCooldownAmount: number | bigint;
+  coolingDownAmount: number | bigint;
 };
 
 export function getDelegationStateEncoder(): Encoder<DelegationStateArgs> {
   return getStructEncoder([
-    ['stakedAmount', getPodU64Encoder()],
-    ['enqueuedForCooldownAmount', getPodU64Encoder()],
-    ['coolingDownAmount', getPodU64Encoder()],
+    ['stakedAmount', getU64Encoder()],
+    ['enqueuedForCooldownAmount', getU64Encoder()],
+    ['coolingDownAmount', getU64Encoder()],
   ]);
 }
 
 export function getDelegationStateDecoder(): Decoder<DelegationState> {
   return getStructDecoder([
-    ['stakedAmount', getPodU64Decoder()],
-    ['enqueuedForCooldownAmount', getPodU64Decoder()],
-    ['coolingDownAmount', getPodU64Decoder()],
+    ['stakedAmount', getU64Decoder()],
+    ['enqueuedForCooldownAmount', getU64Decoder()],
+    ['coolingDownAmount', getU64Decoder()],
   ]);
 }
 

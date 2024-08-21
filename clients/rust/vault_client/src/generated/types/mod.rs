@@ -7,16 +7,12 @@
 pub(crate) mod r#create_metadata_account_args_v3;
 pub(crate) mod r#data_v2;
 pub(crate) mod r#delegation_state;
-pub(crate) mod r#pod_u16;
-pub(crate) mod r#pod_u32;
-pub(crate) mod r#pod_u64;
 pub(crate) mod r#slot_toggle;
 pub(crate) mod r#update_metadata_account_args_v2;
 pub(crate) mod r#vault_admin_role;
 pub(crate) mod r#withdrawal_allocation_method;
 
 pub use self::{
-    r#create_metadata_account_args_v3::*, r#data_v2::*, r#delegation_state::*, r#pod_u16::*,
-    r#pod_u32::*, r#pod_u64::*, r#slot_toggle::*, r#update_metadata_account_args_v2::*,
-    r#vault_admin_role::*, r#withdrawal_allocation_method::*,
+    r#create_metadata_account_args_v3::*, r#data_v2::*, r#delegation_state::*, r#slot_toggle::*,
+    r#update_metadata_account_args_v2::*, r#vault_admin_role::*, r#withdrawal_allocation_method::*,
 };

@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -33,12 +35,8 @@ import {
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
 import {
-  getPodU64Decoder,
-  getPodU64Encoder,
   getSlotToggleDecoder,
   getSlotToggleEncoder,
-  type PodU64,
-  type PodU64Args,
   type SlotToggle,
   type SlotToggleArgs,
 } from '../types';
@@ -46,7 +44,7 @@ import {
 export type OperatorVaultTicket = {
   operator: Address;
   vault: Address;
-  index: PodU64;
+  index: bigint;
   state: SlotToggle;
   bump: number;
   reserved: Array<number>;
@@ -55,7 +53,7 @@ export type OperatorVaultTicket = {
 export type OperatorVaultTicketArgs = {
   operator: Address;
   vault: Address;
-  index: PodU64Args;
+  index: number | bigint;
   state: SlotToggleArgs;
   bump: number;
   reserved: Array<number>;
@@ -65,7 +63,7 @@ export function getOperatorVaultTicketEncoder(): Encoder<OperatorVaultTicketArgs
   return getStructEncoder([
     ['operator', getAddressEncoder()],
     ['vault', getAddressEncoder()],
-    ['index', getPodU64Encoder()],
+    ['index', getU64Encoder()],
     ['state', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
@@ -76,7 +74,7 @@ export function getOperatorVaultTicketDecoder(): Decoder<OperatorVaultTicket> {
   return getStructDecoder([
     ['operator', getAddressDecoder()],
     ['vault', getAddressDecoder()],
-    ['index', getPodU64Decoder()],
+    ['index', getU64Decoder()],
     ['state', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
@@ -160,8 +158,4 @@ export async function fetchAllMaybeOperatorVaultTicket(
   return maybeAccounts.map((maybeAccount) =>
     decodeOperatorVaultTicket(maybeAccount)
   );
-}
-
-export function getOperatorVaultTicketSize(): number {
-  return 96;
 }

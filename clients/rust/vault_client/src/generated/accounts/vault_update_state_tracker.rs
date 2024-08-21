@@ -7,7 +7,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
-use crate::generated::types::{DelegationState, PodU64};
+use crate::generated::types::DelegationState;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -17,17 +17,15 @@ pub struct VaultUpdateStateTracker {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub vault: Pubkey,
-    pub ncn_epoch: PodU64,
-    pub last_updated_index: PodU64,
-    pub additional_assets_need_unstaking: PodU64,
+    pub ncn_epoch: u64,
+    pub last_updated_index: u64,
+    pub additional_assets_need_unstaking: u64,
     pub delegation_state: DelegationState,
     pub withdrawal_allocation_method: u8,
     pub reserved: [u8; 7],
 }
 
 impl VaultUpdateStateTracker {
-    pub const LEN: usize = 88;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

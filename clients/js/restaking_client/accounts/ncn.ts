@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -32,12 +34,6 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
-import {
-  getPodU64Decoder,
-  getPodU64Encoder,
-  type PodU64,
-  type PodU64Args,
-} from '../types';
 
 export type Ncn = {
   base: Address;
@@ -47,10 +43,10 @@ export type Ncn = {
   slasherAdmin: Address;
   withdrawAdmin: Address;
   withdrawFeeWallet: Address;
-  index: PodU64;
-  operatorCount: PodU64;
-  vaultCount: PodU64;
-  slasherCount: PodU64;
+  index: bigint;
+  operatorCount: bigint;
+  vaultCount: bigint;
+  slasherCount: bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -63,10 +59,10 @@ export type NcnArgs = {
   slasherAdmin: Address;
   withdrawAdmin: Address;
   withdrawFeeWallet: Address;
-  index: PodU64Args;
-  operatorCount: PodU64Args;
-  vaultCount: PodU64Args;
-  slasherCount: PodU64Args;
+  index: number | bigint;
+  operatorCount: number | bigint;
+  vaultCount: number | bigint;
+  slasherCount: number | bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -80,10 +76,10 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['slasherAdmin', getAddressEncoder()],
     ['withdrawAdmin', getAddressEncoder()],
     ['withdrawFeeWallet', getAddressEncoder()],
-    ['index', getPodU64Encoder()],
-    ['operatorCount', getPodU64Encoder()],
-    ['vaultCount', getPodU64Encoder()],
-    ['slasherCount', getPodU64Encoder()],
+    ['index', getU64Encoder()],
+    ['operatorCount', getU64Encoder()],
+    ['vaultCount', getU64Encoder()],
+    ['slasherCount', getU64Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
   ]);
@@ -98,10 +94,10 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['slasherAdmin', getAddressDecoder()],
     ['withdrawAdmin', getAddressDecoder()],
     ['withdrawFeeWallet', getAddressDecoder()],
-    ['index', getPodU64Decoder()],
-    ['operatorCount', getPodU64Decoder()],
-    ['vaultCount', getPodU64Decoder()],
-    ['slasherCount', getPodU64Decoder()],
+    ['index', getU64Decoder()],
+    ['operatorCount', getU64Decoder()],
+    ['vaultCount', getU64Decoder()],
+    ['slasherCount', getU64Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
   ]);
@@ -162,8 +158,4 @@ export async function fetchAllMaybeNcn(
 ): Promise<MaybeAccount<Ncn>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeNcn(maybeAccount));
-}
-
-export function getNcnSize(): number {
-  return 264;
 }

@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -32,19 +34,13 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
-import {
-  getPodU64Decoder,
-  getPodU64Encoder,
-  type PodU64,
-  type PodU64Args,
-} from '../types';
 
 export type VaultStakerWithdrawalTicket = {
   vault: Address;
   staker: Address;
   base: Address;
-  vrtAmount: PodU64;
-  slotUnstaked: PodU64;
+  vrtAmount: bigint;
+  slotUnstaked: bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -53,8 +49,8 @@ export type VaultStakerWithdrawalTicketArgs = {
   vault: Address;
   staker: Address;
   base: Address;
-  vrtAmount: PodU64Args;
-  slotUnstaked: PodU64Args;
+  vrtAmount: number | bigint;
+  slotUnstaked: number | bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -64,8 +60,8 @@ export function getVaultStakerWithdrawalTicketEncoder(): Encoder<VaultStakerWith
     ['vault', getAddressEncoder()],
     ['staker', getAddressEncoder()],
     ['base', getAddressEncoder()],
-    ['vrtAmount', getPodU64Encoder()],
-    ['slotUnstaked', getPodU64Encoder()],
+    ['vrtAmount', getU64Encoder()],
+    ['slotUnstaked', getU64Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
   ]);
@@ -76,8 +72,8 @@ export function getVaultStakerWithdrawalTicketDecoder(): Decoder<VaultStakerWith
     ['vault', getAddressDecoder()],
     ['staker', getAddressDecoder()],
     ['base', getAddressDecoder()],
-    ['vrtAmount', getPodU64Decoder()],
-    ['slotUnstaked', getPodU64Decoder()],
+    ['vrtAmount', getU64Decoder()],
+    ['slotUnstaked', getU64Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
   ]);
@@ -166,8 +162,4 @@ export async function fetchAllMaybeVaultStakerWithdrawalTicket(
   return maybeAccounts.map((maybeAccount) =>
     decodeVaultStakerWithdrawalTicket(maybeAccount)
   );
-}
-
-export function getVaultStakerWithdrawalTicketSize(): number {
-  return 120;
 }

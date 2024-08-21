@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -32,20 +34,14 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
-import {
-  getPodU64Decoder,
-  getPodU64Encoder,
-  type PodU64,
-  type PodU64Args,
-} from '../types';
 
 export type VaultNcnSlasherOperatorTicket = {
   vault: Address;
   ncn: Address;
   slasher: Address;
   operator: Address;
-  epoch: PodU64;
-  slashed: PodU64;
+  epoch: bigint;
+  slashed: bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -55,8 +51,8 @@ export type VaultNcnSlasherOperatorTicketArgs = {
   ncn: Address;
   slasher: Address;
   operator: Address;
-  epoch: PodU64Args;
-  slashed: PodU64Args;
+  epoch: number | bigint;
+  slashed: number | bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -67,8 +63,8 @@ export function getVaultNcnSlasherOperatorTicketEncoder(): Encoder<VaultNcnSlash
     ['ncn', getAddressEncoder()],
     ['slasher', getAddressEncoder()],
     ['operator', getAddressEncoder()],
-    ['epoch', getPodU64Encoder()],
-    ['slashed', getPodU64Encoder()],
+    ['epoch', getU64Encoder()],
+    ['slashed', getU64Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
   ]);
@@ -80,8 +76,8 @@ export function getVaultNcnSlasherOperatorTicketDecoder(): Decoder<VaultNcnSlash
     ['ncn', getAddressDecoder()],
     ['slasher', getAddressDecoder()],
     ['operator', getAddressDecoder()],
-    ['epoch', getPodU64Decoder()],
-    ['slashed', getPodU64Decoder()],
+    ['epoch', getU64Decoder()],
+    ['slashed', getU64Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
   ]);
@@ -170,8 +166,4 @@ export async function fetchAllMaybeVaultNcnSlasherOperatorTicket(
   return maybeAccounts.map((maybeAccount) =>
     decodeVaultNcnSlasherOperatorTicket(maybeAccount)
   );
-}
-
-export function getVaultNcnSlasherOperatorTicketSize(): number {
-  return 152;
 }

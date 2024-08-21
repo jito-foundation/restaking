@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -35,20 +37,16 @@ import {
 import {
   getDelegationStateDecoder,
   getDelegationStateEncoder,
-  getPodU64Decoder,
-  getPodU64Encoder,
   type DelegationState,
   type DelegationStateArgs,
-  type PodU64,
-  type PodU64Args,
 } from '../types';
 
 export type VaultOperatorDelegation = {
   vault: Address;
   operator: Address;
   delegationState: DelegationState;
-  lastUpdateSlot: PodU64;
-  index: PodU64;
+  lastUpdateSlot: bigint;
+  index: bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -57,8 +55,8 @@ export type VaultOperatorDelegationArgs = {
   vault: Address;
   operator: Address;
   delegationState: DelegationStateArgs;
-  lastUpdateSlot: PodU64Args;
-  index: PodU64Args;
+  lastUpdateSlot: number | bigint;
+  index: number | bigint;
   bump: number;
   reserved: Array<number>;
 };
@@ -68,8 +66,8 @@ export function getVaultOperatorDelegationEncoder(): Encoder<VaultOperatorDelega
     ['vault', getAddressEncoder()],
     ['operator', getAddressEncoder()],
     ['delegationState', getDelegationStateEncoder()],
-    ['lastUpdateSlot', getPodU64Encoder()],
-    ['index', getPodU64Encoder()],
+    ['lastUpdateSlot', getU64Encoder()],
+    ['index', getU64Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
   ]);
@@ -80,8 +78,8 @@ export function getVaultOperatorDelegationDecoder(): Decoder<VaultOperatorDelega
     ['vault', getAddressDecoder()],
     ['operator', getAddressDecoder()],
     ['delegationState', getDelegationStateDecoder()],
-    ['lastUpdateSlot', getPodU64Decoder()],
-    ['index', getPodU64Decoder()],
+    ['lastUpdateSlot', getU64Decoder()],
+    ['index', getU64Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
   ]);
@@ -164,8 +162,4 @@ export async function fetchAllMaybeVaultOperatorDelegation(
   return maybeAccounts.map((maybeAccount) =>
     decodeVaultOperatorDelegation(maybeAccount)
   );
-}
-
-export function getVaultOperatorDelegationSize(): number {
-  return 112;
 }

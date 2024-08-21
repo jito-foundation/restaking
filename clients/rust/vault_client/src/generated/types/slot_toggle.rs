@@ -6,11 +6,9 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use crate::generated::types::PodU64;
-
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SlotToggle {
-    pub slot_added: PodU64,
-    pub slot_removed: PodU64,
+    pub slot_added: u64,
+    pub slot_removed: u64,
 }

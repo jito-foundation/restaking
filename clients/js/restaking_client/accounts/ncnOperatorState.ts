@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -33,12 +35,8 @@ import {
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
 import {
-  getPodU64Decoder,
-  getPodU64Encoder,
   getSlotToggleDecoder,
   getSlotToggleEncoder,
-  type PodU64,
-  type PodU64Args,
   type SlotToggle,
   type SlotToggleArgs,
 } from '../types';
@@ -46,7 +44,7 @@ import {
 export type NcnOperatorState = {
   ncn: Address;
   operator: Address;
-  index: PodU64;
+  index: bigint;
   ncnOptInState: SlotToggle;
   operatorOptInState: SlotToggle;
   bump: number;
@@ -56,7 +54,7 @@ export type NcnOperatorState = {
 export type NcnOperatorStateArgs = {
   ncn: Address;
   operator: Address;
-  index: PodU64Args;
+  index: number | bigint;
   ncnOptInState: SlotToggleArgs;
   operatorOptInState: SlotToggleArgs;
   bump: number;
@@ -67,7 +65,7 @@ export function getNcnOperatorStateEncoder(): Encoder<NcnOperatorStateArgs> {
   return getStructEncoder([
     ['ncn', getAddressEncoder()],
     ['operator', getAddressEncoder()],
-    ['index', getPodU64Encoder()],
+    ['index', getU64Encoder()],
     ['ncnOptInState', getSlotToggleEncoder()],
     ['operatorOptInState', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
@@ -79,7 +77,7 @@ export function getNcnOperatorStateDecoder(): Decoder<NcnOperatorState> {
   return getStructDecoder([
     ['ncn', getAddressDecoder()],
     ['operator', getAddressDecoder()],
-    ['index', getPodU64Decoder()],
+    ['index', getU64Decoder()],
     ['ncnOptInState', getSlotToggleDecoder()],
     ['operatorOptInState', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
@@ -158,8 +156,4 @@ export async function fetchAllMaybeNcnOperatorState(
   return maybeAccounts.map((maybeAccount) =>
     decodeNcnOperatorState(maybeAccount)
   );
-}
-
-export function getNcnOperatorStateSize(): number {
-  return 112;
 }

@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -32,19 +34,13 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
-import {
-  getPodU64Decoder,
-  getPodU64Encoder,
-  type PodU64,
-  type PodU64Args,
-} from '../types';
 
 export type Config = {
   admin: Address;
   vaultProgram: Address;
-  ncnCount: PodU64;
-  operatorCount: PodU64;
-  epochLength: PodU64;
+  ncnCount: bigint;
+  operatorCount: bigint;
+  epochLength: bigint;
   bump: number;
   reserved1: Array<number>;
 };
@@ -52,9 +48,9 @@ export type Config = {
 export type ConfigArgs = {
   admin: Address;
   vaultProgram: Address;
-  ncnCount: PodU64Args;
-  operatorCount: PodU64Args;
-  epochLength: PodU64Args;
+  ncnCount: number | bigint;
+  operatorCount: number | bigint;
+  epochLength: number | bigint;
   bump: number;
   reserved1: Array<number>;
 };
@@ -63,9 +59,9 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
   return getStructEncoder([
     ['admin', getAddressEncoder()],
     ['vaultProgram', getAddressEncoder()],
-    ['ncnCount', getPodU64Encoder()],
-    ['operatorCount', getPodU64Encoder()],
-    ['epochLength', getPodU64Encoder()],
+    ['ncnCount', getU64Encoder()],
+    ['operatorCount', getU64Encoder()],
+    ['epochLength', getU64Encoder()],
     ['bump', getU8Encoder()],
     ['reserved1', getArrayEncoder(getU8Encoder(), { size: 7 })],
   ]);
@@ -75,9 +71,9 @@ export function getConfigDecoder(): Decoder<Config> {
   return getStructDecoder([
     ['admin', getAddressDecoder()],
     ['vaultProgram', getAddressDecoder()],
-    ['ncnCount', getPodU64Decoder()],
-    ['operatorCount', getPodU64Decoder()],
-    ['epochLength', getPodU64Decoder()],
+    ['ncnCount', getU64Decoder()],
+    ['operatorCount', getU64Decoder()],
+    ['epochLength', getU64Decoder()],
     ['bump', getU8Decoder()],
     ['reserved1', getArrayDecoder(getU8Decoder(), { size: 7 })],
   ]);
@@ -138,8 +134,4 @@ export async function fetchAllMaybeConfig(
 ): Promise<MaybeAccount<Config>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeConfig(maybeAccount));
-}
-
-export function getConfigSize(): number {
-  return 96;
 }
