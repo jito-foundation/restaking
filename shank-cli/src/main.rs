@@ -1,10 +1,9 @@
+use std::{fs::File, io::Write};
+
 use anyhow::{anyhow, Result};
 use env_logger::Env;
 use log::{debug, info};
-use shank_idl::manifest::Manifest;
-use shank_idl::{extract_idl, ParseIdlOpts};
-use std::fs::File;
-use std::io::Write;
+use shank_idl::{extract_idl, manifest::Manifest, ParseIdlOpts};
 
 struct IdlConfiguration {
     program_id: String,
@@ -19,11 +18,11 @@ fn main() -> Result<()> {
     let envs = envfile::EnvFile::new(crate_root.join("config").join("program.env"))?;
     let restaking_program_id = envs
         .get("RESTAKING_PROGRAM_ID")
-        .ok_or(anyhow!("RESTAKING_PROGRAM_ID not found"))?
+        .ok_or_else(|| anyhow!("RESTAKING_PROGRAM_ID not found"))?
         .to_string();
     let vault_program_id = envs
         .get("VAULT_PROGRAM_ID")
-        .ok_or(anyhow!("VAULT_PROGRAM_ID not found"))?
+        .ok_or_else(|| anyhow!("VAULT_PROGRAM_ID not found"))?
         .to_string();
 
     let idl_configs = vec![
@@ -39,7 +38,7 @@ fn main() -> Result<()> {
             ],
         },
         IdlConfiguration {
-            program_id: vault_program_id.to_string(),
+            program_id: vault_program_id,
             name: "jito_vault",
             paths: vec![
                 "vault_sdk",
@@ -67,18 +66,20 @@ fn main() -> Result<()> {
             debug!("manifest: {:?}", manifest);
             let lib_rel_path = manifest
                 .lib_rel_path()
-                .ok_or(anyhow!("Program needs to be a lib"))?;
+                .ok_or_else(|| anyhow!("Program needs to be a lib"))?;
             debug!("lib_rel_path: {:?}", lib_rel_path);
             let lib_full_path_str = crate_root.join(path).join(lib_rel_path);
-            let lib_full_path = lib_full_path_str.to_str().ok_or(anyhow!("Invalid Path"))?;
+            let lib_full_path = lib_full_path_str
+                .to_str()
+                .ok_or_else(|| anyhow!("Invalid Path"))?;
             debug!("lib_full_path: {:?}", lib_full_path);
             // Extract IDL and convert to JSON
             let opts = ParseIdlOpts {
                 program_address_override: Some(idl.program_id.to_string()),
                 ..ParseIdlOpts::default()
             };
-            let idl =
-                extract_idl(lib_full_path, opts)?.ok_or(anyhow!("No IDL could be extracted"))?;
+            let idl = extract_idl(lib_full_path, opts)?
+                .ok_or_else(|| anyhow!("No IDL could be extracted"))?;
             idls.push(idl);
         }
 
@@ -140,17 +141,17 @@ fn main() -> Result<()> {
 //     let manifest = Manifest::from_path(&cargo_toml)?;
 //     let lib_rel_path = manifest
 //         .lib_rel_path()
-//         .ok_or(anyhow!("Program needs to be a lib"))?;
+//         .ok_or_else(||anyhow!("Program needs to be a lib"))?;
 //
 //     let lib_full_path_str = crate_root.join(lib_rel_path);
-//     let lib_full_path = lib_full_path_str.to_str().ok_or(anyhow!("Invalid Path"))?;
+//     let lib_full_path = lib_full_path_str.to_str().ok_or_else(||anyhow!("Invalid Path"))?;
 //
 //     // Extract IDL and convert to JSON
 //     let opts = ParseIdlOpts {
 //         program_address_override: program_id,
 //         ..ParseIdlOpts::default()
 //     };
-//     let idl = extract_idl(lib_full_path, opts)?.ok_or(anyhow!("No IDL could be extracted"))?;
+//     let idl = extract_idl(lib_full_path, opts)?.ok_or_else(||anyhow!("No IDL could be extracted"))?;
 //     let idl_json = idl.try_into_json()?;
 //
 //     // Write to JSON file

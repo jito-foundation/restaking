@@ -9,8 +9,8 @@ members = [
     "integration_tests",
     "restaking_core",
     "restaking_program",
-    "shank-cli",
     "restaking_sdk",
+    "shank-cli",
     "vault_core",
     "vault_program",
     "vault_sdk"]

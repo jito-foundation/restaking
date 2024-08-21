@@ -12,8 +12,8 @@ readme = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-envfile = { workspace = true }
 env_logger = { workspace = true }
+envfile = { workspace = true }
+log = { workspace = true }
 shank = { workspace = true }
 shank_idl = { workspace = true }
-log = { workspace = true }
