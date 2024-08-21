@@ -131,7 +131,7 @@ mod tests {
     #[test_case(spl_token::id(); "token")]
     #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
-    async fn test_delegate_vault_supported_token_account_err(token_program_id: Pubkey) {
+    async fn test_delegate_vault_supported_token_account_fails(token_program_id: Pubkey) {
         let (fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
             setup(&token_program_id).await;
         let mut vault_program_client = fixture.vault_program_client();
@@ -147,7 +147,7 @@ mod tests {
                     &config_pubkey,
                     &vault_pubkey,
                     &vault_admin,
-                    &&vault.supported_mint,
+                    &vault.supported_mint,
                     &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
@@ -163,7 +163,54 @@ mod tests {
                     &config_pubkey,
                     &vault_pubkey,
                     &vault_admin,
-                    &&vault.supported_mint,
+                    &vault.supported_mint,
+                    &vault_token_account.pubkey(),
+                    &bob,
+                    &token_program_id,
+                    50_000,
+                )
+                .await;
+
+            assert!(response.is_err());
+        }
+    }
+
+    #[test_case(spl_token::id(); "token")]
+    #[test_case(spl_token_2022::id(); "token-2022")]
+    #[tokio::test]
+    async fn test_delegate_vault_token_account_does_not_match_mint_fails(token_program_id: Pubkey) {
+        let (fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
+            setup(&token_program_id).await;
+        let mut vault_program_client = fixture.vault_program_client();
+
+        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
+
+        let fake_mint = Pubkey::new_unique();
+        if token_program_id.eq(&spl_token::id()) {
+            // Delegate
+            let bob = Pubkey::new_unique();
+            let response = vault_program_client
+                .delegate_token_account(
+                    &config_pubkey,
+                    &vault_pubkey,
+                    &vault_admin,
+                    &fake_mint,
+                    &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
+                    &bob,
+                    &token_program_id,
+                    50_000,
+                )
+                .await;
+
+            assert!(response.is_err());
+        } else {
+            let bob = Pubkey::new_unique();
+            let response = vault_program_client
+                .delegate_token_account(
+                    &config_pubkey,
+                    &vault_pubkey,
+                    &vault_admin,
+                    &fake_mint,
                     &vault_token_account.pubkey(),
                     &bob,
                     &token_program_id,
