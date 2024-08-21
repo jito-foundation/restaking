@@ -19,6 +19,12 @@ mod tests {
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -30,7 +36,13 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -87,6 +99,12 @@ mod tests {
     async fn test_burn_withdrawal_ticket_next_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -98,7 +116,13 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -171,6 +195,12 @@ mod tests {
     async fn test_burn_withdrawal_ticket_basic_success() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -182,7 +212,13 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -291,6 +327,12 @@ mod tests {
     async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -302,7 +344,13 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 
@@ -423,6 +471,12 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
 
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -434,7 +488,13 @@ mod tests {
             operator_roots,
             slashers_amounts: _,
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
             .await
             .unwrap();
 

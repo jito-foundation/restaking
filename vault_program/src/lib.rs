@@ -105,9 +105,16 @@ pub fn process_instruction(
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
         } => {
             msg!("Instruction: InitializeVault");
-            process_initialize_vault(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+            process_initialize_vault(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
         }
         VaultInstruction::InitializeVaultWithMint => {
             msg!("Instruction: InitializeVaultWithMint");
@@ -151,9 +158,16 @@ pub fn process_instruction(
         VaultInstruction::SetFees {
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
         } => {
             msg!("Instruction: SetFees");
-            process_set_fees(program_id, accounts, deposit_fee_bps, withdrawal_fee_bps)
+            process_set_fees(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
         }
         // ------------------------------------------
         // Vault minting and burning

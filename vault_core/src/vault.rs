@@ -127,11 +127,14 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     pub withdrawal_fee_bps: u16,
 
+    /// Fee for each epoch
+    pub reward_fee_bps: u16,
+
     /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 11],
+    reserved: [u8; 9],
 }
 
 impl Vault {
@@ -144,6 +147,7 @@ impl Vault {
         base: Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        reward_fee_bps: u16,
         bump: u8,
     ) -> Self {
         Self {
@@ -170,11 +174,12 @@ impl Vault {
             last_full_state_update_slot: 0,
             deposit_fee_bps,
             withdrawal_fee_bps,
+            reward_fee_bps,
             ncn_count: 0,
             operator_count: 0,
             slasher_count: 0,
             bump,
-            reserved: [0; 11],
+            reserved: [0; 9],
             delegation_state: DelegationState::default(),
             vrt_ready_to_claim_amount: 0,
         }
@@ -341,6 +346,25 @@ impl Vault {
     // ------------------------------------------
     // Minting and burning
     // ------------------------------------------
+
+    /// Calculate the rewards fee. This is used in `update_vault_balance` to mint
+    /// the `fee` amount in VRTs to the `fee_wallet`.
+    pub fn calculate_rewards_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
+        let rewards = new_balance.saturating_sub(self.tokens_deposited);
+
+        let vrt_rewards = self.calculate_vrt_mint_amount(rewards)?;
+
+        if vrt_rewards == 0 {
+            return Ok(0);
+        }
+
+        let fee = vrt_rewards
+            .checked_mul(self.reward_fee_bps as u64)
+            .ok_or(VaultError::VaultOverflow)?
+            .div_ceil(10_000);
+
+        Ok(fee)
+    }
 
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
@@ -693,6 +717,7 @@ mod tests {
             deposit_fee_bps,
             withdraw_fee_bps,
             0,
+            0,
         );
 
         vault.tokens_deposited = tokens_deposited;
@@ -710,6 +735,7 @@ mod tests {
             old_admin,
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -808,6 +834,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
@@ -820,6 +847,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -840,6 +868,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -872,6 +901,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1339,5 +1369,85 @@ mod tests {
             .calculate_assets_needed_for_withdrawals(200, 100)
             .unwrap();
         assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_calculate_reward_fee() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            1000, //10%
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(1000).unwrap();
+
+        assert_eq!(fee, 100);
+    }
+
+    #[test]
+    fn test_calculate_negative_balance() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            1000, //10%
+            0,
+        );
+        vault.tokens_deposited = 1000;
+
+        let fee = vault.calculate_rewards_fee(0).unwrap();
+
+        assert_eq!(fee, 0);
+    }
+
+    #[test]
+    fn test_calculate_100_percent_rewards() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            10_000, //100%
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(1000).unwrap();
+
+        assert_eq!(fee, 1000);
+    }
+
+    #[test]
+    fn test_calculate_rewards_overflow() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            u16::MAX,
+            0,
+        );
+        vault.tokens_deposited = 0;
+
+        let fee = vault.calculate_rewards_fee(u64::MAX);
+
+        assert_eq!(fee, Err(VaultError::VaultOverflow));
     }
 }

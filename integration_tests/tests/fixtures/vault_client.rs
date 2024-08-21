@@ -39,7 +39,10 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{instruction::initialize_mint2, state::Mint};
+use spl_token::{
+    instruction::initialize_mint2,
+    state::{Account as SPLTokenAccount, Mint},
+};
 
 use crate::fixtures::{TestError, TestResult};
 
@@ -249,6 +252,7 @@ impl VaultProgramClient {
         &mut self,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
+        reward_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
 
@@ -273,6 +277,7 @@ impl VaultProgramClient {
             &vault_base,
             deposit_fee_bps,
             withdraw_fee_bps,
+            reward_fee_bps,
         )
         .await?;
 
@@ -673,6 +678,7 @@ impl VaultProgramClient {
         vault_base: &Keypair,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
+        reward_fee_bps: u16,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -687,6 +693,7 @@ impl VaultProgramClient {
                 &vault_base.pubkey(),
                 deposit_fee_bps,
                 withdrawal_fee_bps,
+                reward_fee_bps,
             )],
             Some(&vault_admin.pubkey()),
             &[&vault_admin, &vrt_mint, &vault_base],
@@ -807,8 +814,9 @@ impl VaultProgramClient {
         config: &Pubkey,
         vault: &Pubkey,
         fee_admin: &Keypair,
-        deposit_fee_bps: u16,
-        withdrawal_fee_bps: u16,
+        deposit_fee_bps: Option<u16>,
+        withdrawal_fee_bps: Option<u16>,
+        reward_fee_bps: Option<u16>,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -819,6 +827,7 @@ impl VaultProgramClient {
                 &fee_admin.pubkey(),
                 deposit_fee_bps,
                 withdrawal_fee_bps,
+                reward_fee_bps,
             )],
             Some(&fee_admin.pubkey()),
             &[fee_admin],
@@ -1033,12 +1042,16 @@ impl VaultProgramClient {
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 &vault_pubkey,
                 &get_associated_token_address(&vault_pubkey, &vault.supported_mint),
+                &vault.vrt_mint,
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+                &spl_token::ID,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],
             blockhash,
         ))
         .await?;
+
         Ok(())
     }
 
@@ -1559,6 +1572,69 @@ impl VaultProgramClient {
                     ],
                     Some(&self.payer.pubkey()),
                     &[&self.payer],
+                    blockhash,
+                ),
+                CommitmentLevel::Processed,
+            )
+            .await
+    }
+
+    pub async fn get_reward_fee_token_account(
+        &mut self,
+        vault: &Pubkey,
+    ) -> Result<SPLTokenAccount, BanksClientError> {
+        let vault = self.get_vault(vault).await.unwrap();
+
+        let vault_fee_token_account =
+            get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint);
+
+        let account = self
+            .banks_client
+            .get_account(vault_fee_token_account)
+            .await
+            .unwrap()
+            .unwrap();
+
+        Ok(SPLTokenAccount::unpack(&account.data).unwrap())
+    }
+
+    pub async fn create_and_fund_reward_vault(
+        &mut self,
+        vault: &Pubkey,
+        rewarder: &Keypair,
+        amount: u64,
+    ) -> Result<(), BanksClientError> {
+        let vault_account = self.get_vault(vault).await.unwrap();
+
+        let rewarder_token_account =
+            get_associated_token_address(&rewarder.pubkey(), &vault_account.supported_mint);
+
+        let vault_token_account =
+            get_associated_token_address(&vault, &vault_account.supported_mint);
+
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &[
+                        create_associated_token_account_idempotent(
+                            &rewarder.pubkey(),
+                            &vault_token_account,
+                            &vault_account.supported_mint,
+                            &spl_token::id(),
+                        ),
+                        spl_token::instruction::transfer(
+                            &spl_token::id(),
+                            &rewarder_token_account,
+                            &vault_token_account,
+                            &rewarder.pubkey(),
+                            &[],
+                            amount,
+                        )
+                        .unwrap(),
+                    ],
+                    Some(&rewarder.pubkey()),
+                    &[&rewarder],
                     blockhash,
                 ),
                 CommitmentLevel::Processed,
