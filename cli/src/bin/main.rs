@@ -8,8 +8,8 @@ use jito_restaking_cli::{
     restaking_handler::RestakingCliHandler,
     vault_handler::VaultCliHandler,
 };
-use jito_restaking_client::programs::JITO_RESTAKING_PROGRAM_ID;
-use jito_vault_client::programs::JITO_VAULT_PROGRAM_ID;
+use jito_restaking_client::programs::JITO_RESTAKING_ID;
+use jito_vault_client::programs::JITO_VAULT_ID;
 use solana_cli_config::Config;
 use solana_program::pubkey::Pubkey;
 use solana_sdk::{commitment_config::CommitmentConfig, signature::read_keypair_file};
@@ -99,13 +99,13 @@ async fn main() -> Result<(), anyhow::Error> {
     let restaking_program_id = if let Some(restaking_program_id) = &args.restaking_program_id {
         Pubkey::from_str(restaking_program_id)?
     } else {
-        JITO_RESTAKING_PROGRAM_ID
+        JITO_RESTAKING_ID
     };
 
     let vault_program_id = if let Some(vault_program_id) = &args.vault_program_id {
         Pubkey::from_str(vault_program_id)?
     } else {
-        JITO_VAULT_PROGRAM_ID
+        JITO_VAULT_ID
     };
 
     match args.command {
