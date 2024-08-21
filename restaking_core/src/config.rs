@@ -42,6 +42,15 @@ pub struct Config {
 }
 
 impl Config {
+    /// Creates a new [`Config`].
+    ///
+    /// # Arguments
+    /// * `admin` - A `Pubkey` representing the admin's public key, which will be responsible for managing this config.
+    /// * `vault_program` - A `Pubkey` representing the jito-vault-program program id.
+    /// * `bump` - A `u8` value used for the program-derived address (PDA) bump seed, ensuring the correct PDA is generated.
+    ///
+    /// # Returns
+    /// * `Self` - Returns a new instance of the config, initialized with the provided arguments and default values.
     pub fn new(admin: Pubkey, vault_program: Pubkey, bump: u8) -> Self {
         Self {
             admin,
@@ -54,18 +63,40 @@ impl Config {
         }
     }
 
+    /// Returns the length of an epoch in slots.
+    ///
+    /// # Returns
+    /// * `u64` - The length of the epoch in slots, represented as a `u64` value.
     pub fn epoch_length(&self) -> u64 {
         self.epoch_length.into()
     }
 
+    /// Returns the number of NCNs managed by the program.
+    ///
+    /// # Returns
+    /// * `u64` - The number of NCNs managed by the program, represented as a `u64` value.
     pub fn ncn_count(&self) -> u64 {
         self.ncn_count.into()
     }
 
+    /// Returns the number of operators managed by the program.
+    ///
+    /// # Returns
+    /// * `u64` - The number of operators managed by the program, represented as a `u64` value.
     pub fn operator_count(&self) -> u64 {
         self.operator_count.into()
     }
 
+    /// Increments the count of NCNs.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
+    ///   If the increment operation causes an overflow, it returns a `RestakingError::NcnOverflow` error.
+    ///
+    /// # Errors
+    /// This function will return a `RestakingError::NcnOverflow` error in the following case:
+    /// * The `ncn_count` increment causes an overflow, meaning the count has reached the maximum value
+    ///   representable by a `u64` and cannot be safely incremented further.
     pub fn increment_ncn_count(&mut self) -> Result<(), RestakingError> {
         let ncn_count = self
             .ncn_count()
@@ -75,6 +106,16 @@ impl Config {
         Ok(())
     }
 
+    /// Increments the count of operators
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
+    ///   If the increment operation causes an overflow, it returns a `RestakingError::OperatorOverflow` error.
+    ///
+    /// # Errors
+    /// This function will return a `RestakingError::OperatorOverflow` error in the following case:
+    /// * The `operator_count` increment causes an overflow, meaning the count has reached the maximum value
+    ///   representable by a `u64` and cannot be safely incremented further.
     pub fn increment_operator_count(&mut self) -> Result<(), RestakingError> {
         let operator_count = self
             .operator_count()
@@ -93,6 +134,7 @@ impl Config {
     ///
     /// # Arguments
     /// * `program_id` - The program ID
+    ///
     /// # Returns
     /// * `Pubkey` - The program address
     /// * `u8` - The bump seed
