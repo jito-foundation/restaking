@@ -3,8 +3,6 @@
 //! account is used to manage the operators, vaults, and slashers that are
 //! associated with the network.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_restaking_sdk::error::RestakingError;
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_restaking_sdk::error::RestakingError;
 use shank::ShankAccount;
