@@ -84,7 +84,6 @@ impl TestBuilder {
             .await
     }
 
-    // https://github.com/solana-labs/solana-program-library/blob/master/stake-pool/program/tests/helpers/mod.rs#L218
     #[allow(clippy::too_many_arguments)]
     pub async fn create_token_account(
         &mut self,

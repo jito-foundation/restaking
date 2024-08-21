@@ -283,6 +283,7 @@ pub fn set_fees(
 #[allow(clippy::too_many_arguments)]
 pub fn delegate_token_account(
     program_id: &Pubkey,
+    config: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
     token_mint: &Pubkey,
@@ -292,6 +293,7 @@ pub fn delegate_token_account(
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new_readonly(*token_mint, false),

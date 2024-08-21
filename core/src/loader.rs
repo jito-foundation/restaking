@@ -3,7 +3,7 @@ use solana_program::{
     account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey, system_program,
 };
 use spl_associated_token_account::get_associated_token_address;
-use spl_token_2022::extension::StateWithExtensionsOwned;
+use spl_token_2022::extension::StateWithExtensions;
 
 /// Loads the account as a signer, returning an error if it is not or if it is not writable while
 /// expected to be.
@@ -137,17 +137,32 @@ pub fn load_associated_token_account(
     Ok(())
 }
 
-/// Loads the account as a token account, returning an error if it is not.
+/// Loads the account as a token account, ensuring it is correctly linked to the specified mint and is owned by the expected token program.
+///
+/// This function performs the following checks:
+/// 1. Verifies that the `token_account` is associated with the expected SPL Token program.
+/// 2. Checks that the `token_account` is not empty and contains valid data.
+/// 3. Confirms that the `token_account` is linked to the specified `mint`, ensuring it is the correct token account for that mint.
 ///
 /// # Arguments
 /// * `token_account` - The account to load the token account from
+/// * `mint` - The mint of the token account
+/// * `token_program_info` - The token program of the token account
 ///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
+///
+/// # Errors
+/// This function will return an error in the following cases:
+/// * `ProgramError::InvalidAccountOwner` - If the `token_account` is not owned by the expected SPL Token program.
+/// * `ProgramError::InvalidAccountData` - If the `token_account` data is empty or if the mint associated with the `token_account` does not match the provided `mint`.
 pub fn load_token_account(
     token_account: &AccountInfo,
+    mint: &Pubkey,
     token_program_info: &AccountInfo,
 ) -> Result<(), ProgramError> {
+    spl_token_2022::check_spl_token_program_account(token_account.owner)?;
+
     if token_account.owner.ne(token_program_info.key) {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
@@ -155,6 +170,17 @@ pub fn load_token_account(
 
     if token_account.data_is_empty() {
         msg!("Account data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    let data = token_account.data.borrow();
+    let token_account = StateWithExtensions::<spl_token_2022::state::Account>::unpack(&data)?;
+    if token_account.base.mint.ne(mint) {
+        msg!(
+            "The token_account has an incorrect mint, expected {}, received {}",
+            mint,
+            token_account.base.mint
+        );
         return Err(ProgramError::InvalidAccountData);
     }
 
@@ -169,8 +195,7 @@ pub fn load_token_account(
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.owner.eq(&spl_token::id()) || info.owner.eq(&spl_token_2022::id()) {
-    } else {
+    if !(info.owner.eq(&spl_token::id()) || info.owner.eq(&spl_token_2022::id())) {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -180,8 +205,7 @@ pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let data = info.data.borrow().to_vec();
-    let _mint = StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(data);
+    let _mint = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&info.data.borrow())?;
 
     Ok(())
 }

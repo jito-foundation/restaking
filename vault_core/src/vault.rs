@@ -802,7 +802,7 @@ impl Vault {
         }
 
         // there is some protection built-in to the vault to avoid over delegating assets
-        // this numer is denominated in the supported token units
+        // this number is denominated in the supported token units
         let amount_to_reserve_for_vrts = self.calculate_vrt_reserve_amount()?;
 
         let amount_available_for_delegation = self

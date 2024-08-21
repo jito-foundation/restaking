@@ -762,6 +762,7 @@ impl VaultProgramClient {
 
     pub async fn delegate_token_account(
         &mut self,
+        config: &Pubkey,
         vault: &Pubkey,
         admin: &Keypair,
         token_mint: &Pubkey,
@@ -774,6 +775,7 @@ impl VaultProgramClient {
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::delegate_token_account(
                 &jito_vault_program::id(),
+                config,
                 vault,
                 &admin.pubkey(),
                 token_mint,

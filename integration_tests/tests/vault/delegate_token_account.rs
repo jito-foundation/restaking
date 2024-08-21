@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_vault_core::config::Config;
     use solana_program::{program_option::COption, pubkey::Pubkey};
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
@@ -78,12 +79,14 @@ mod tests {
         let (mut fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
             setup(&token_program_id).await;
         let mut vault_program_client = fixture.vault_program_client();
+        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
 
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
             let bob = Pubkey::new_unique();
             vault_program_client
                 .delegate_token_account(
+                    &config_pubkey,
                     &vault_pubkey,
                     &vault_admin,
                     &random_mint.pubkey(),
@@ -103,6 +106,7 @@ mod tests {
             let bob = Pubkey::new_unique();
             vault_program_client
                 .delegate_token_account(
+                    &config_pubkey,
                     &vault_pubkey,
                     &vault_admin,
                     &random_mint.pubkey(),
@@ -133,12 +137,14 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
+        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
 
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
             let bob = Pubkey::new_unique();
             let response = vault_program_client
                 .delegate_token_account(
+                    &config_pubkey,
                     &vault_pubkey,
                     &vault_admin,
                     &&vault.supported_mint,
@@ -154,6 +160,7 @@ mod tests {
             let bob = Pubkey::new_unique();
             let response = vault_program_client
                 .delegate_token_account(
+                    &config_pubkey,
                     &vault_pubkey,
                     &vault_admin,
                     &&vault.supported_mint,

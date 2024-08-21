@@ -201,12 +201,13 @@ pub enum VaultInstruction {
     },
 
     /// Delegate the token account to a third party
-    #[account(0, signer, name = "admin")]
-    #[account(1, name = "token_mint")]
-    #[account(2, writable, name = "token_account")]
-    #[account(3, signer, name = "owner")]
-    #[account(4, name = "delegate")]
-    #[account(5, name = "token_program")]
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, signer, name = "admin")]
+    #[account(3, name = "token_mint")]
+    #[account(4, writable, name = "token_account")]
+    #[account(5, name = "delegate")]
+    #[account(6, name = "token_program")]
     DelegateTokenAccount {
         amount: u64
     },
