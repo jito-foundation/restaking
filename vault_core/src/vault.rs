@@ -126,10 +126,10 @@ pub struct Vault {
     last_full_state_update_slot: PodU64,
 
     /// The tally of assets withdrawn on that epoch, this cannot be above epoch_snapshot_amount x epoch_withdraw_cap_bps
-    pub epoch_withdraw_amount: u64,
+    epoch_withdraw_amount: PodU64,
 
     /// The amount of assets in the vault at the time of calling `process_update_vault`
-    pub epoch_snapshot_amount: u64,
+    epoch_snapshot_amount: PodU64,
 
     /// The deposit fee in basis points
     deposit_fee_bps: PodU16,
@@ -138,7 +138,7 @@ pub struct Vault {
     withdrawal_fee_bps: PodU16,
 
     /// The percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
-    pub epoch_withdraw_cap_bps: u16,
+    pub epoch_withdraw_cap_bps: PodU16,
 
     /// Fee for each epoch
     reward_fee_bps: PodU16,
@@ -187,13 +187,17 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(0),
             last_full_state_update_slot: PodU64::from(0),
+            epoch_withdraw_amount: PodU64::from(0),
+            epoch_snapshot_amount: PodU64::from(0),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             reward_fee_bps: PodU16::from(reward_fee_bps),
+            epoch_withdraw_cap_bps: PodU16::from(epoch_withdraw_cap_bps),
             ncn_count: PodU64::from(0),
             operator_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
             bump,
+            reserved: [0; 15],
             delegation_state: DelegationState::default(),
         }
     }
@@ -240,6 +244,26 @@ impl Vault {
 
     pub fn set_withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) {
         self.withdrawal_fee_bps = PodU16::from(withdrawal_fee_bps);
+    }
+
+    pub fn epoch_withdraw_amount(&self) -> u64 {
+        self.epoch_withdraw_amount.into()
+    }
+
+    pub fn set_epoch_withdraw_amount(&mut self, epoch_withdraw_amount: u64) {
+        self.epoch_withdraw_amount = PodU64::from(epoch_withdraw_amount);
+    }
+
+    pub fn epoch_snapshot_amount(&self) -> u64 {
+        self.epoch_snapshot_amount.into()
+    }
+
+    pub fn set_epoch_snapshot_amount(&mut self, epoch_snapshot_amount: u64) {
+        self.epoch_snapshot_amount = PodU64::from(epoch_snapshot_amount);
+    }
+
+    pub fn epoch_withdraw_cap_bps(&self) -> u16 {
+        self.epoch_withdraw_cap_bps.into()
     }
 
     pub fn increment_tokens_deposited(&mut self, amount: u64) -> Result<(), VaultError> {
@@ -550,12 +574,12 @@ impl Vault {
 
     pub fn check_withdrawal_allowd(&self, amount_to_withdraw: u64) -> Result<(), VaultError> {
         let total_withdraw_amount = self
-            .epoch_withdraw_amount
+            .epoch_withdraw_amount()
             .checked_add(amount_to_withdraw)
             .ok_or(VaultError::VaultOverflow)?;
         let max_allowed_withdraw = self
-            .epoch_snapshot_amount
-            .checked_mul(self.epoch_withdraw_cap_bps as u64)
+            .epoch_snapshot_amount()
+            .checked_mul(self.epoch_withdraw_cap_bps() as u64)
             .ok_or(VaultError::VaultOverflow)?
             .div_ceil(10_000);
 
@@ -1589,8 +1613,8 @@ mod tests {
             2500,
             0,
         );
-        vault.epoch_withdraw_amount = 0;
-        vault.epoch_snapshot_amount = 1000;
+        vault.set_epoch_withdraw_amount(0);
+        vault.set_epoch_snapshot_amount(1000);
 
         assert!(vault.check_withdrawal_allowd(250).is_ok());
         assert_eq!(

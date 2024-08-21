@@ -68,8 +68,8 @@ pub fn process_close_vault_update_state_tracker(
         vault.increment_vrt_ready_to_claim_amount(vault.vrt_cooling_down_amount())?;
         vault.set_vrt_cooling_down_amount(vault.vrt_enqueued_for_cooldown_amount());
         vault.set_vrt_enqueued_for_cooldown_amount(0);
-        vault.epoch_withdraw_amount = 0;
-        vault.epoch_snapshot_amount = vault.tokens_deposited;
+        vault.set_epoch_withdraw_amount(0);
+        vault.set_epoch_snapshot_amount(vault.tokens_deposited());
     }
 
     msg!("Closing VaultUpdateStateTracker");

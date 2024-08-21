@@ -210,7 +210,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -239,9 +239,9 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.epoch_withdraw_amount, 0);
-        assert_eq!(vault.epoch_snapshot_amount, MINT_AMOUNT);
-        assert_eq!(vault.epoch_withdraw_cap_bps, epoch_withdraw_cap_bps);
+        assert_eq!(vault.epoch_withdraw_amount(), 0);
+        assert_eq!(vault.epoch_snapshot_amount(), MINT_AMOUNT);
+        assert_eq!(vault.epoch_withdraw_cap_bps(), epoch_withdraw_cap_bps);
 
         let amount_to_dequeue = 25_000;
         response = vault_program_client
@@ -253,7 +253,7 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.epoch_withdraw_amount, amount_to_dequeue);
+        assert_eq!(vault.epoch_withdraw_amount(), amount_to_dequeue);
 
         response = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)
@@ -261,7 +261,7 @@ mod tests {
         assert_vault_error(response, VaultError::VaultWithdrawalLimitExceeded);
 
         fixture
-            .warp_slot_incremental(1 * config.epoch_length)
+            .warp_slot_incremental(1 * config.epoch_length())
             .await
             .unwrap();
 
@@ -279,7 +279,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.epoch_withdraw_amount, 0);
+        assert_eq!(vault.epoch_withdraw_amount(), 0);
 
         response = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)

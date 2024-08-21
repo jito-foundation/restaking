@@ -296,7 +296,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
