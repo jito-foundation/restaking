@@ -76,19 +76,6 @@ impl Ncn {
         }
     }
 
-    /// Check admin validity and signature
-    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), RestakingError> {
-        if *admin_info.key != self.admin {
-            msg!(
-                "Incorrect admin provided, expected {}, received {}",
-                self.admin,
-                admin_info.key
-            );
-            return Err(RestakingError::NcnAdminInvalid);
-        }
-        Ok(())
-    }
-
     pub fn index(&self) -> u64 {
         self.index.into()
     }
@@ -129,6 +116,35 @@ impl Ncn {
             .checked_add(1)
             .ok_or(RestakingError::SlasherOverflow)?;
         self.slasher_count = PodU64::from(slasher_count);
+        Ok(())
+    }
+
+    /// Validates the admin account and ensures it matches the expected admin.
+    ///
+    /// This function checks whether the provided `admin_info` account matches the expected admin.
+    /// It ensures that the transaction is being authorized by the correct admin account.
+    ///
+    /// # Arguments
+    /// * `admin_info` - A reference to the `AccountInfo` representing the admin account that is attempting
+    ///   to authorize the operation. The function will compare this account's public key to the expected
+    ///   admin public key stored in `self`.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the admin account is valid. Otherwise,
+    ///   returns a `RestakingError::NcnAdminInvalid` error if the admin account does not match the expected value.
+    ///
+    /// # Errors
+    /// This function will return a `RestakingError::NcnAdminInvalid` error in the following case:
+    /// * The `admin_info` account's public key does not match the expected admin public key stored in `self`.
+    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), RestakingError> {
+        if *admin_info.key != self.admin {
+            msg!(
+                "Incorrect admin provided, expected {}, received {}",
+                self.admin,
+                admin_info.key
+            );
+            return Err(RestakingError::NcnAdminInvalid);
+        }
         Ok(())
     }
 
