@@ -1,5 +1,8 @@
 //! The NcnVaultTicket tracks the state of a node consensus network opting-in to a vault.
 //! The NcnVaultTicket can be activated and deactivated over time by the NCN vault admin.
+
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;

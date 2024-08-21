@@ -1,4 +1,7 @@
 //! The vault configuration account
+
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{
     types::{PodU16, PodU64},

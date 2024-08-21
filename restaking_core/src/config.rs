@@ -1,4 +1,5 @@
 //! Global configuration account for the restaking program
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_restaking_sdk::error::RestakingError;

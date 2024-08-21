@@ -1,5 +1,8 @@
 //! The Operator account stores global information for a particular operator
 //! including the admin, voter, and the number of NCN and vault accounts.
+
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_restaking_sdk::error::RestakingError;

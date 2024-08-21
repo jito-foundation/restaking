@@ -2,6 +2,9 @@
 //! represents a network of nodes that participate in consensus. The NCN
 //! account is used to manage the operators, vaults, and slashers that are
 //! associated with the network.
+
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_restaking_sdk::error::RestakingError;

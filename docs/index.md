@@ -12,6 +12,13 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 - Staked assets are tokenized into Vault Receipt Tokens (VRT)
 - Flexible opt-in from node consensus networks, operators, and vaults for staking and slashing.
 
+### Addresses
+
+| Network | Program   | Address                                      |
+|---------|-----------|----------------------------------------------|
+| Testnet | Restaking | 2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ |
+| Testnet | Vault     | AByZUmjepqbSmpLPhr8nc28Shj5h4HYLQe1bKiiR7vYK |
+
 ## Core Concepts
 
 Understanding these core concepts will help you navigate the Jito Restaking ecosystem:
@@ -20,6 +27,10 @@ Understanding these core concepts will help you navigate the Jito Restaking ecos
 - [Restaking Program](concepts/restaking_program.md)
 - [Vault Program](concepts/vault_program.md)
 - [API](api/jito_jsm_core/index.html)
+
+## Tools
+
+- [Jito CLI](tools/cli.md)
 
 ## Advanced Topics
 
