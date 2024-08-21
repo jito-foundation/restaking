@@ -27,7 +27,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 import {
   getOperatorAdminRoleDecoder,
@@ -43,7 +43,7 @@ export function getOperatorSetSecondaryAdminDiscriminatorBytes() {
 }
 
 export type OperatorSetSecondaryAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountNewAdmin extends string | IAccountMeta<string> = string,
@@ -127,13 +127,13 @@ export function getOperatorSetSecondaryAdminInstruction<
     TAccountNewAdmin
   >
 ): OperatorSetSecondaryAdminInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator,
   TAccountAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -161,7 +161,7 @@ export function getOperatorSetSecondaryAdminInstruction<
       args as OperatorSetSecondaryAdminInstructionDataArgs
     ),
   } as OperatorSetSecondaryAdminInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,
     TAccountAdmin,
     TAccountNewAdmin
@@ -171,7 +171,7 @@ export function getOperatorSetSecondaryAdminInstruction<
 }
 
 export type ParsedOperatorSetSecondaryAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

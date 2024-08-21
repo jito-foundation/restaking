@@ -5,10 +5,13 @@
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
 use jito_restaking_sdk::error::RestakingError;
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_restaking_sdk::error::RestakingError;
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 /// The NCN manages the operators, vaults, and slashers associated with a network
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Ncn {
     /// The base account used as a PDA seed
@@ -33,16 +36,16 @@ pub struct Ncn {
     pub withdraw_fee_wallet: Pubkey,
 
     /// The index of the NCN
-    pub index: u64,
+    index: PodU64,
 
     /// Number of operator accounts associated with the NCN
-    pub operator_count: u64,
+    operator_count: PodU64,
 
     /// Number of vault accounts associated with the NCN
-    pub vault_count: u64,
+    vault_count: PodU64,
 
     /// Number of slasher accounts associated with the NCN
-    pub slasher_count: u64,
+    slasher_count: PodU64,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -57,7 +60,7 @@ impl Discriminator for Ncn {
 
 impl Ncn {
     #[allow(clippy::too_many_arguments)]
-    pub const fn new(base: Pubkey, admin: Pubkey, ncn_index: u64, bump: u8) -> Self {
+    pub fn new(base: Pubkey, admin: Pubkey, ncn_index: u64, bump: u8) -> Self {
         Self {
             base,
             admin,
@@ -66,25 +69,68 @@ impl Ncn {
             slasher_admin: admin,
             withdraw_admin: admin,
             withdraw_fee_wallet: admin,
-            index: ncn_index,
-            operator_count: 0,
-            vault_count: 0,
-            slasher_count: 0,
+            index: PodU64::from(ncn_index),
+            operator_count: PodU64::from(0),
+            vault_count: PodU64::from(0),
+            slasher_count: PodU64::from(0),
             bump,
             reserved: [0; 7],
         }
     }
 
     /// Check admin validity and signature
-    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), ProgramError> {
+    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), RestakingError> {
         if *admin_info.key != self.admin {
             msg!(
                 "Incorrect admin provided, expected {}, received {}",
                 self.admin,
                 admin_info.key
             );
-            return Err(RestakingError::NcnAdminInvalid.into());
+            return Err(RestakingError::NcnAdminInvalid);
         }
+        Ok(())
+    }
+
+    pub fn index(&self) -> u64 {
+        self.index.into()
+    }
+
+    pub fn operator_count(&self) -> u64 {
+        self.operator_count.into()
+    }
+
+    pub fn vault_count(&self) -> u64 {
+        self.vault_count.into()
+    }
+
+    pub fn slasher_count(&self) -> u64 {
+        self.slasher_count.into()
+    }
+
+    pub fn increment_operator_count(&mut self) -> Result<(), RestakingError> {
+        let mut operator_count: u64 = self.operator_count.into();
+        operator_count = operator_count
+            .checked_add(1)
+            .ok_or(RestakingError::OperatorOverflow)?;
+        self.operator_count = PodU64::from(operator_count);
+        Ok(())
+    }
+
+    pub fn increment_vault_count(&mut self) -> Result<(), RestakingError> {
+        let mut vault_count: u64 = self.vault_count.into();
+        vault_count = vault_count
+            .checked_add(1)
+            .ok_or(RestakingError::VaultOverflow)?;
+        self.vault_count = PodU64::from(vault_count);
+        Ok(())
+    }
+
+    pub fn increment_slasher_count(&mut self) -> Result<(), RestakingError> {
+        let mut slasher_count: u64 = self.slasher_count.into();
+        slasher_count = slasher_count
+            .checked_add(1)
+            .ok_or(RestakingError::SlasherOverflow)?;
+        self.slasher_count = PodU64::from(slasher_count);
         Ok(())
     }
 

@@ -26,7 +26,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const NCN_SET_ADMIN_DISCRIMINATOR = 17;
@@ -36,7 +36,7 @@ export function getNcnSetAdminDiscriminatorBytes() {
 }
 
 export type NcnSetAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn extends string | IAccountMeta<string> = string,
   TAccountOldAdmin extends string | IAccountMeta<string> = string,
   TAccountNewAdmin extends string | IAccountMeta<string> = string,
@@ -100,13 +100,13 @@ export function getNcnSetAdminInstruction<
 >(
   input: NcnSetAdminInput<TAccountNcn, TAccountOldAdmin, TAccountNewAdmin>
 ): NcnSetAdminInstruction<
-  typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
   TAccountOldAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -129,7 +129,7 @@ export function getNcnSetAdminInstruction<
     programAddress,
     data: getNcnSetAdminInstructionDataEncoder().encode({}),
   } as NcnSetAdminInstruction<
-    typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
     TAccountOldAdmin,
     TAccountNewAdmin
@@ -139,7 +139,7 @@ export function getNcnSetAdminInstruction<
 }
 
 export type ParsedNcnSetAdminInstruction<
-  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;

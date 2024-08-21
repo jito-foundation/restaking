@@ -12,6 +12,8 @@ readme = { workspace = true }
 [dependencies]
 borsh = { workspace = true }
 bytemuck = { workspace = true }
+jito-bytemuck = { workspace = true }
+shank = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }

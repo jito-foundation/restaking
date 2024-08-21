@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::operator::Operator;
 use jito_vault_core::{
@@ -45,7 +45,7 @@ pub fn process_add_delegation(
     // The Vault delegation admin shall be the signer of the transaction
     // The Vault shall be up-to-date before adding delegation
     vault.check_delegation_admin(vault_delegation_admin.key)?;
-    vault.check_update_state_ok(clock.slot, config.epoch_length)?;
+    vault.check_update_state_ok(clock.slot, config.epoch_length())?;
 
     vault.delegate(amount)?;
     vault_operator_delegation

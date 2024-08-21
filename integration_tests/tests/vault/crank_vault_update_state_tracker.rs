@@ -55,12 +55,12 @@ mod tests {
 
         // go to next epoch to force update
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
         vault_program_client
             .initialize_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
@@ -79,8 +79,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault_update_state_tracker.vault, vault_root.vault_pubkey);
-        assert_eq!(vault_update_state_tracker.ncn_epoch, ncn_epoch);
-        assert_eq!(vault_update_state_tracker.last_updated_index, u64::MAX);
+        assert_eq!(vault_update_state_tracker.ncn_epoch(), ncn_epoch);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), u64::MAX);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::default()
@@ -97,7 +97,7 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.last_updated_index, 0);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::default()
@@ -120,7 +120,7 @@ mod tests {
             operator_delegation.delegation_state,
             DelegationState::default()
         );
-        assert_eq!(operator_delegation.last_update_slot, slot);
+        assert_eq!(operator_delegation.last_update_slot(), slot);
     }
 
     #[tokio::test]
@@ -173,12 +173,12 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -205,14 +205,10 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.last_updated_index, 0);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
-            DelegationState {
-                staked_amount: 50_000,
-                enqueued_for_cooldown_amount: 0,
-                cooling_down_amount: 0,
-            }
+            DelegationState::new(50000, 0, 0)
         );
 
         vault_program_client
@@ -226,14 +222,10 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.last_updated_index, 1);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
-            DelegationState {
-                staked_amount: 100_000,
-                enqueued_for_cooldown_amount: 0,
-                cooling_down_amount: 0,
-            }
+            DelegationState::new(100000, 0, 0)
         );
     }
 
@@ -287,12 +279,12 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -375,12 +367,12 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -455,12 +447,12 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -552,14 +544,14 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         // enqueued for cool down assets are now cooling down
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -585,14 +577,14 @@ mod tests {
         // skip index 1, advance to next epoch
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
         // cooldown assets are now inactive
 
         let slot = fixture.get_current_slot().await.unwrap();
-        let ncn_epoch = slot / config.epoch_length;
+        let ncn_epoch = slot / config.epoch_length();
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
             &vault_root.vault_pubkey,
@@ -617,14 +609,10 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.last_updated_index, 0);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
-            DelegationState {
-                staked_amount: 25_000,
-                enqueued_for_cooldown_amount: 0,
-                cooling_down_amount: 0,
-            }
+            DelegationState::new(25000, 0, 0)
         );
 
         // active -> cooldown (2 epochs since last update)
@@ -639,14 +627,10 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.last_updated_index, 1);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
-            DelegationState {
-                staked_amount: 50_000,
-                enqueued_for_cooldown_amount: 0,
-                cooling_down_amount: 0,
-            }
+            DelegationState::new(50000, 0, 0)
         );
     }
 }

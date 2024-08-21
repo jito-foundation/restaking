@@ -6,4 +6,4 @@
  * @see https://github.com/kinobi-so/kinobi
  */
 
-export * from './jitoRestakingProgram';
+export * from './jitoRestaking';

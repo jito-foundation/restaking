@@ -33,9 +33,9 @@ mod tests {
         let config = restaking_program_client.get_config(&config).await.unwrap();
         assert_eq!(config.admin, config_admin.pubkey());
         assert_eq!(config.vault_program, jito_vault_program::id());
-        assert_eq!(config.ncn_count, 0);
-        assert_eq!(config.operator_count, 0);
-        assert_eq!(config.epoch_length, DEFAULT_SLOTS_PER_EPOCH);
+        assert_eq!(config.ncn_count(), 0);
+        assert_eq!(config.operator_count(), 0);
+        assert_eq!(config.epoch_length(), DEFAULT_SLOTS_PER_EPOCH);
     }
 
     #[tokio::test]

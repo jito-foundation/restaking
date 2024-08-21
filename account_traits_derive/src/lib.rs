@@ -13,19 +13,3 @@ pub fn derive_account_deserialize(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
-
-#[proc_macro_derive(ToBytes)]
-pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    let name = &input.ident;
-
-    let expanded = quote! {
-        impl ToBytes for #name {
-            fn to_bytes(&self) -> &[u8] {
-                bytemuck::bytes_of(self)
-            }
-        }
-    };
-
-    TokenStream::from(expanded)
-}

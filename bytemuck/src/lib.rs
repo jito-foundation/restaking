@@ -1,6 +1,9 @@
 //! Trait that can be used when working with Solana structs that are used as accounts.
+
+pub mod types;
+
 use bytemuck::Pod;
-pub use jito_account_traits_derive::{AccountDeserialize, ToBytes};
+pub use jito_account_traits_derive::AccountDeserialize;
 use solana_program::{msg, program_error::ProgramError};
 
 pub trait Discriminator {

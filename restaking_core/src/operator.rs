@@ -2,7 +2,6 @@
 //! including the admin, voter, and the number of NCN and vault accounts.
 use bytemuck::{Pod, Zeroable};
 use jito_account_traits::{AccountDeserialize, Discriminator};
-use jito_restaking_sdk::error::RestakingError;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for Operator {
@@ -11,7 +10,7 @@ impl Discriminator for Operator {
 
 /// The Operator account stores global information for a particular operator
 /// including the admin, voter, and the number of NCN and vault accounts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Operator {
     /// The base pubkey used as a seed for the PDA
@@ -37,15 +36,15 @@ pub struct Operator {
     pub voter: Pubkey,
 
     /// The operator index
-    pub index: u64,
+    index: PodU64,
 
     /// The number of NcnOperatorTickets associated with the operator.
     /// Helpful for indexing all available OperatorNcnTickets.
-    pub ncn_count: u64,
+    ncn_count: PodU64,
 
     /// The number of NcnVaultTickets associated with the operator.
     /// Helpful for indexing all available OperatorVaultTickets.
-    pub vault_count: u64,
+    vault_count: PodU64,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -61,7 +60,7 @@ impl Operator {
     /// * `admin` - The admin of the Operator
     /// * `index` - The index of the Operator
     /// * `bump` - The bump seed for the PDA
-    pub const fn new(base: Pubkey, admin: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(base: Pubkey, admin: Pubkey, index: u64, bump: u8) -> Self {
         Self {
             base,
             admin,
@@ -70,25 +69,12 @@ impl Operator {
             withdrawal_admin: admin,
             withdrawal_fee_wallet: admin,
             voter: admin,
-            index,
-            ncn_count: 0,
-            vault_count: 0,
+            index: PodU64::from(index),
+            ncn_count: PodU64::from(0),
+            vault_count: PodU64::from(0),
             bump,
             reserved_space: [0; 7],
         }
-    }
-
-    /// Check admin validity and signature
-    pub fn check_admin(&self, admin_info: &AccountInfo) -> Result<(), ProgramError> {
-        if *admin_info.key != self.admin {
-            msg!(
-                "Incorrect admin provided, expected {}, received {}",
-                self.admin,
-                admin_info.key
-            );
-            return Err(RestakingError::OperatorAdminInvalid.into());
-        }
-        Ok(())
     }
 
     /// Replace all secondary admins that were equal to the old admin to the new admin

@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::{
     close_program_account,
     loader::{
@@ -64,10 +64,10 @@ pub fn process_burn_withdrawal_ticket(
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault_staker_withdrawal_ticket.check_staker(staker.key)?;
 
-    if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length)? {
+    if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length())? {
         msg!("Vault staker withdrawal ticket is not withdrawable");
         return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());
     }
@@ -76,11 +76,8 @@ pub fn process_burn_withdrawal_ticket(
         fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount, min_amount_out)?;
-    vault.vrt_ready_to_claim_amount = vault
-        .vrt_ready_to_claim_amount
-        .checked_sub(vault_staker_withdrawal_ticket.vrt_amount)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount(), min_amount_out)?;
+    vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
     let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =
         VaultStakerWithdrawalTicket::find_program_address(

@@ -1,6 +1,8 @@
 //! Global configuration account for the restaking program
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_restaking_sdk::error::RestakingError;
+use shank::ShankAccount;
 use solana_program::{
     account_info::AccountInfo, clock::DEFAULT_SLOTS_PER_EPOCH, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -13,7 +15,7 @@ impl Discriminator for Config {
 
 /// The global configuration account for the restaking program. Manages
 /// program-wide settings and state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Config {
     /// The configuration admin
@@ -23,13 +25,13 @@ pub struct Config {
     pub vault_program: Pubkey,
 
     /// The number of NCN managed by the program
-    pub ncn_count: u64,
+    ncn_count: PodU64,
 
     /// The number of operators managed by the program
-    pub operator_count: u64,
+    operator_count: PodU64,
 
     /// The length of an epoch in slots
-    pub epoch_length: u64,
+    epoch_length: PodU64,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -39,16 +41,46 @@ pub struct Config {
 }
 
 impl Config {
-    pub const fn new(admin: Pubkey, vault_program: Pubkey, bump: u8) -> Self {
+    pub fn new(admin: Pubkey, vault_program: Pubkey, bump: u8) -> Self {
         Self {
             admin,
             vault_program,
-            epoch_length: DEFAULT_SLOTS_PER_EPOCH,
-            ncn_count: 0,
-            operator_count: 0,
+            epoch_length: PodU64::from(DEFAULT_SLOTS_PER_EPOCH),
+            ncn_count: PodU64::from(0),
+            operator_count: PodU64::from(0),
             bump,
             reserved_1: [0; 7],
         }
+    }
+
+    pub fn epoch_length(&self) -> u64 {
+        self.epoch_length.into()
+    }
+
+    pub fn ncn_count(&self) -> u64 {
+        self.ncn_count.into()
+    }
+
+    pub fn operator_count(&self) -> u64 {
+        self.operator_count.into()
+    }
+
+    pub fn increment_ncn_count(&mut self) -> Result<(), RestakingError> {
+        let ncn_count = self
+            .ncn_count()
+            .checked_add(1)
+            .ok_or(RestakingError::NcnOverflow)?;
+        self.ncn_count = PodU64::from(ncn_count);
+        Ok(())
+    }
+
+    pub fn increment_operator_count(&mut self) -> Result<(), RestakingError> {
+        let operator_count = self
+            .operator_count()
+            .checked_add(1)
+            .ok_or(RestakingError::OperatorOverflow)?;
+        self.operator_count = PodU64::from(operator_count);
+        Ok(())
     }
 
     /// Returns the seeds for the PDA

@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_vault_core::{config::Config, vault::Vault};
 use solana_program::{
@@ -21,7 +21,7 @@ pub fn process_set_deposit_capacity(
     load_signer(vault_capacity_admin, false)?;
 
     vault.check_capacity_admin(vault_capacity_admin.key)?;
-    vault.capacity = capacity;
+    vault.set_capacity(capacity);
 
     Ok(())
 }

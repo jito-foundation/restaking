@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -73,21 +73,15 @@ pub fn process_initialize_ncn_operator_state(
     *ncn_operator_state = NcnOperatorState::new(
         *ncn_info.key,
         *operator.key,
-        ncn.operator_count,
+        ncn.operator_count(),
         ncn_operator_state_bump,
     );
 
     let mut operator_data = operator.data.borrow_mut();
     let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
 
-    ncn.operator_count = ncn
-        .operator_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
-    operator.ncn_count = operator
-        .ncn_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    ncn.increment_operator_count()?;
+    operator.increment_ncn_count()?;
 
     Ok(())
 }

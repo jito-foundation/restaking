@@ -31,13 +31,13 @@ mod tests {
         assert_eq!(operator.voter, operator_root.operator_admin.pubkey());
         assert_eq!(operator.ncn_admin, operator_root.operator_admin.pubkey());
         assert_eq!(operator.vault_admin, operator_root.operator_admin.pubkey());
-        assert_eq!(operator.index, 0);
+        assert_eq!(operator.index(), 0);
 
         let updated_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
             .await
             .unwrap();
-        assert_eq!(updated_config.operator_count, 1);
+        assert_eq!(updated_config.operator_count(), 1);
     }
 
     #[tokio::test]
@@ -178,14 +178,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(operator1.index, 0);
-        assert_eq!(operator2.index, 1);
+        assert_eq!(operator1.index(), 0);
+        assert_eq!(operator2.index(), 1);
 
         // Verify config update
         let updated_config = restaking_program_client
             .get_config(&Config::find_program_address(&jito_restaking_program::id()).0)
             .await
             .unwrap();
-        assert_eq!(updated_config.operator_count, 2);
+        assert_eq!(updated_config.operator_count(), 2);
     }
 }

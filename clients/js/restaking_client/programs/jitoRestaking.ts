@@ -38,10 +38,20 @@ import {
   type ParsedWarmupOperatorVaultTicketInstruction,
 } from '../instructions';
 
-export const JITO_RESTAKING_PROGRAM_PROGRAM_ADDRESS =
+export const JITO_RESTAKING_PROGRAM_ADDRESS =
   '2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ' as Address<'2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ'>;
 
-export enum JitoRestakingProgramInstruction {
+export enum JitoRestakingAccount {
+  Config,
+  Ncn,
+  NcnOperatorState,
+  NcnVaultSlasherTicket,
+  NcnVaultTicket,
+  Operator,
+  OperatorVaultTicket,
+}
+
+export enum JitoRestakingInstruction {
   InitializeConfig,
   InitializeNcn,
   InitializeOperator,
@@ -67,153 +77,153 @@ export enum JitoRestakingProgramInstruction {
   OperatorWithdrawalAsset,
 }
 
-export function identifyJitoRestakingProgramInstruction(
+export function identifyJitoRestakingInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array
-): JitoRestakingProgramInstruction {
+): JitoRestakingInstruction {
   const data = 'data' in instruction ? instruction.data : instruction;
   if (containsBytes(data, getU8Encoder().encode(0), 0)) {
-    return JitoRestakingProgramInstruction.InitializeConfig;
+    return JitoRestakingInstruction.InitializeConfig;
   }
   if (containsBytes(data, getU8Encoder().encode(1), 0)) {
-    return JitoRestakingProgramInstruction.InitializeNcn;
+    return JitoRestakingInstruction.InitializeNcn;
   }
   if (containsBytes(data, getU8Encoder().encode(2), 0)) {
-    return JitoRestakingProgramInstruction.InitializeOperator;
+    return JitoRestakingInstruction.InitializeOperator;
   }
   if (containsBytes(data, getU8Encoder().encode(3), 0)) {
-    return JitoRestakingProgramInstruction.InitializeNcnVaultSlasherTicket;
+    return JitoRestakingInstruction.InitializeNcnVaultSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(4), 0)) {
-    return JitoRestakingProgramInstruction.InitializeNcnVaultTicket;
+    return JitoRestakingInstruction.InitializeNcnVaultTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(5), 0)) {
-    return JitoRestakingProgramInstruction.InitializeOperatorVaultTicket;
+    return JitoRestakingInstruction.InitializeOperatorVaultTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(6), 0)) {
-    return JitoRestakingProgramInstruction.InitializeNcnOperatorState;
+    return JitoRestakingInstruction.InitializeNcnOperatorState;
   }
   if (containsBytes(data, getU8Encoder().encode(7), 0)) {
-    return JitoRestakingProgramInstruction.WarmupNcnVaultTicket;
+    return JitoRestakingInstruction.WarmupNcnVaultTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(8), 0)) {
-    return JitoRestakingProgramInstruction.CooldownNcnVaultTicket;
+    return JitoRestakingInstruction.CooldownNcnVaultTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(9), 0)) {
-    return JitoRestakingProgramInstruction.NcnWarmupOperator;
+    return JitoRestakingInstruction.NcnWarmupOperator;
   }
   if (containsBytes(data, getU8Encoder().encode(10), 0)) {
-    return JitoRestakingProgramInstruction.NcnCooldownOperator;
+    return JitoRestakingInstruction.NcnCooldownOperator;
   }
   if (containsBytes(data, getU8Encoder().encode(11), 0)) {
-    return JitoRestakingProgramInstruction.OperatorWarmupNcn;
+    return JitoRestakingInstruction.OperatorWarmupNcn;
   }
   if (containsBytes(data, getU8Encoder().encode(12), 0)) {
-    return JitoRestakingProgramInstruction.OperatorCooldownNcn;
+    return JitoRestakingInstruction.OperatorCooldownNcn;
   }
   if (containsBytes(data, getU8Encoder().encode(13), 0)) {
-    return JitoRestakingProgramInstruction.WarmupNcnVaultSlasherTicket;
+    return JitoRestakingInstruction.WarmupNcnVaultSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(14), 0)) {
-    return JitoRestakingProgramInstruction.CooldownNcnVaultSlasherTicket;
+    return JitoRestakingInstruction.CooldownNcnVaultSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
-    return JitoRestakingProgramInstruction.WarmupOperatorVaultTicket;
+    return JitoRestakingInstruction.WarmupOperatorVaultTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(16), 0)) {
-    return JitoRestakingProgramInstruction.CooldownOperatorVaultTicket;
+    return JitoRestakingInstruction.CooldownOperatorVaultTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(17), 0)) {
-    return JitoRestakingProgramInstruction.NcnSetAdmin;
+    return JitoRestakingInstruction.NcnSetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoRestakingProgramInstruction.NcnSetSecondaryAdmin;
+    return JitoRestakingInstruction.NcnSetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
-    return JitoRestakingProgramInstruction.OperatorSetAdmin;
+    return JitoRestakingInstruction.OperatorSetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
-    return JitoRestakingProgramInstruction.OperatorSetSecondaryAdmin;
+    return JitoRestakingInstruction.OperatorSetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoRestakingProgramInstruction.NcnWithdrawalAsset;
+    return JitoRestakingInstruction.NcnWithdrawalAsset;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoRestakingProgramInstruction.OperatorWithdrawalAsset;
+    return JitoRestakingInstruction.OperatorWithdrawalAsset;
   }
   throw new Error(
-    'The provided instruction could not be identified as a jitoRestakingProgram instruction.'
+    'The provided instruction could not be identified as a jitoRestaking instruction.'
   );
 }
 
-export type ParsedJitoRestakingProgramInstruction<
+export type ParsedJitoRestakingInstruction<
   TProgram extends string = '2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ',
 > =
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeConfig;
+      instructionType: JitoRestakingInstruction.InitializeConfig;
     } & ParsedInitializeConfigInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeNcn;
+      instructionType: JitoRestakingInstruction.InitializeNcn;
     } & ParsedInitializeNcnInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeOperator;
+      instructionType: JitoRestakingInstruction.InitializeOperator;
     } & ParsedInitializeOperatorInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeNcnVaultSlasherTicket;
+      instructionType: JitoRestakingInstruction.InitializeNcnVaultSlasherTicket;
     } & ParsedInitializeNcnVaultSlasherTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeNcnVaultTicket;
+      instructionType: JitoRestakingInstruction.InitializeNcnVaultTicket;
     } & ParsedInitializeNcnVaultTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeOperatorVaultTicket;
+      instructionType: JitoRestakingInstruction.InitializeOperatorVaultTicket;
     } & ParsedInitializeOperatorVaultTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.InitializeNcnOperatorState;
+      instructionType: JitoRestakingInstruction.InitializeNcnOperatorState;
     } & ParsedInitializeNcnOperatorStateInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.WarmupNcnVaultTicket;
+      instructionType: JitoRestakingInstruction.WarmupNcnVaultTicket;
     } & ParsedWarmupNcnVaultTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.CooldownNcnVaultTicket;
+      instructionType: JitoRestakingInstruction.CooldownNcnVaultTicket;
     } & ParsedCooldownNcnVaultTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.NcnWarmupOperator;
+      instructionType: JitoRestakingInstruction.NcnWarmupOperator;
     } & ParsedNcnWarmupOperatorInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.NcnCooldownOperator;
+      instructionType: JitoRestakingInstruction.NcnCooldownOperator;
     } & ParsedNcnCooldownOperatorInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.OperatorWarmupNcn;
+      instructionType: JitoRestakingInstruction.OperatorWarmupNcn;
     } & ParsedOperatorWarmupNcnInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.OperatorCooldownNcn;
+      instructionType: JitoRestakingInstruction.OperatorCooldownNcn;
     } & ParsedOperatorCooldownNcnInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.WarmupNcnVaultSlasherTicket;
+      instructionType: JitoRestakingInstruction.WarmupNcnVaultSlasherTicket;
     } & ParsedWarmupNcnVaultSlasherTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.CooldownNcnVaultSlasherTicket;
+      instructionType: JitoRestakingInstruction.CooldownNcnVaultSlasherTicket;
     } & ParsedCooldownNcnVaultSlasherTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.WarmupOperatorVaultTicket;
+      instructionType: JitoRestakingInstruction.WarmupOperatorVaultTicket;
     } & ParsedWarmupOperatorVaultTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.CooldownOperatorVaultTicket;
+      instructionType: JitoRestakingInstruction.CooldownOperatorVaultTicket;
     } & ParsedCooldownOperatorVaultTicketInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.NcnSetAdmin;
+      instructionType: JitoRestakingInstruction.NcnSetAdmin;
     } & ParsedNcnSetAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.NcnSetSecondaryAdmin;
+      instructionType: JitoRestakingInstruction.NcnSetSecondaryAdmin;
     } & ParsedNcnSetSecondaryAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.OperatorSetAdmin;
+      instructionType: JitoRestakingInstruction.OperatorSetAdmin;
     } & ParsedOperatorSetAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.OperatorSetSecondaryAdmin;
+      instructionType: JitoRestakingInstruction.OperatorSetSecondaryAdmin;
     } & ParsedOperatorSetSecondaryAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.NcnWithdrawalAsset;
+      instructionType: JitoRestakingInstruction.NcnWithdrawalAsset;
     } & ParsedNcnWithdrawalAssetInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingProgramInstruction.OperatorWithdrawalAsset;
+      instructionType: JitoRestakingInstruction.OperatorWithdrawalAsset;
     } & ParsedOperatorWithdrawalAssetInstruction<TProgram>);

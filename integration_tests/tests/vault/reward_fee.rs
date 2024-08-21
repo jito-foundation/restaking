@@ -50,7 +50,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         let operator_root_pubkeys: Vec<_> =
@@ -70,9 +70,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT, vault.tokens_deposited);
+        assert_eq!(MINT_AMOUNT, vault.tokens_deposited());
         assert_eq!(MINT_AMOUNT / 10, reward_fee_account.amount);
-        assert_eq!(MINT_AMOUNT / 10, vault.vrt_supply);
+        assert_eq!(MINT_AMOUNT / 10, vault.vrt_supply());
     }
 
     #[tokio::test]
@@ -120,7 +120,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         let operator_root_pubkeys: Vec<_> =
@@ -140,9 +140,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT, vault.tokens_deposited);
+        assert_eq!(MINT_AMOUNT, vault.tokens_deposited());
         assert_eq!(MINT_AMOUNT, reward_fee_account.amount);
-        assert_eq!(MINT_AMOUNT, vault.vrt_supply);
+        assert_eq!(MINT_AMOUNT, vault.vrt_supply());
     }
 
     #[tokio::test]
@@ -190,7 +190,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
         let operator_root_pubkeys: Vec<_> =
@@ -210,9 +210,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT, vault.tokens_deposited);
+        assert_eq!(MINT_AMOUNT, vault.tokens_deposited());
         assert_eq!(0, reward_fee_account.amount);
-        assert_eq!(0, vault.vrt_supply);
+        assert_eq!(0, vault.vrt_supply());
     }
 
     #[tokio::test]
@@ -261,7 +261,7 @@ mod tests {
 
         // go to next epoch to force update
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
@@ -279,7 +279,7 @@ mod tests {
 
         // go to next epoch to force update
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
@@ -300,8 +300,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT * 2, vault.tokens_deposited);
+        assert_eq!(MINT_AMOUNT * 2, vault.tokens_deposited());
         assert_eq!(MINT_AMOUNT / 10, reward_fee_account.amount);
-        assert_eq!(MINT_AMOUNT + MINT_AMOUNT / 10, vault.vrt_supply);
+        assert_eq!(MINT_AMOUNT + MINT_AMOUNT / 10, vault.vrt_supply());
     }
 }

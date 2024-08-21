@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::ncn::Ncn;
 use jito_vault_core::{
@@ -41,12 +41,12 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
     load_signer(vault_slasher_admin, false)?;
 
     vault.check_slasher_admin(vault_slasher_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     // The VaultNcnSlasherTicket shall be ready to be activated
     if !vault_ncn_slasher_ticket
         .state
-        .activate(Clock::get()?.slot, config.epoch_length)
+        .activate(Clock::get()?.slot, config.epoch_length())
     {
         msg!("Slasher is not ready to be activated");
         return Err(VaultError::VaultNcnSlasherTicketFailedWarmup.into());

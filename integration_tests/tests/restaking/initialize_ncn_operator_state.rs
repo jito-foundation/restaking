@@ -38,13 +38,13 @@ mod tests {
             .get_ncn(&ncn_root.ncn_pubkey)
             .await
             .unwrap();
-        assert_eq!(ncn.operator_count, 1);
+        assert_eq!(ncn.operator_count(), 1);
 
         let operator = restaking_program_client
             .get_operator(&operator_root.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.ncn_count, 1);
+        assert_eq!(operator.ncn_count(), 1);
 
         let ncn_operator_state = restaking_program_client
             .get_ncn_operator_state(&ncn_root.ncn_pubkey, &operator_root.operator_pubkey)
@@ -53,19 +53,19 @@ mod tests {
 
         assert_eq!(ncn_operator_state.ncn, ncn_root.ncn_pubkey);
         assert_eq!(ncn_operator_state.operator, operator_root.operator_pubkey);
-        assert_eq!(ncn_operator_state.index, 0);
+        assert_eq!(ncn_operator_state.index(), 0);
 
         let slot = fixture.get_current_slot().await.unwrap();
         assert_eq!(
             ncn_operator_state
                 .ncn_opt_in_state
-                .state(slot, config.epoch_length),
+                .state(slot, config.epoch_length()),
             SlotToggleState::Inactive
         );
         assert_eq!(
             ncn_operator_state
                 .operator_opt_in_state
-                .state(slot, config.epoch_length),
+                .state(slot, config.epoch_length()),
             SlotToggleState::Inactive
         );
     }
@@ -180,19 +180,19 @@ mod tests {
             .get_ncn(&ncn_root.ncn_pubkey)
             .await
             .unwrap();
-        assert_eq!(ncn.operator_count, 2);
+        assert_eq!(ncn.operator_count(), 2);
 
         let operator_1 = restaking_program_client
             .get_operator(&operator_root_1.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator_1.ncn_count, 1);
+        assert_eq!(operator_1.ncn_count(), 1);
 
         let operator_2 = restaking_program_client
             .get_operator(&operator_root_2.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator_2.ncn_count, 1);
+        assert_eq!(operator_2.ncn_count(), 1);
     }
 
     #[tokio::test]
@@ -225,18 +225,18 @@ mod tests {
             .get_ncn(&ncn_root_1.ncn_pubkey)
             .await
             .unwrap();
-        assert_eq!(ncn_1.operator_count, 1);
+        assert_eq!(ncn_1.operator_count(), 1);
 
         let ncn_2 = restaking_program_client
             .get_ncn(&ncn_root_2.ncn_pubkey)
             .await
             .unwrap();
-        assert_eq!(ncn_2.operator_count, 1);
+        assert_eq!(ncn_2.operator_count(), 1);
 
         let operator = restaking_program_client
             .get_operator(&operator_root.operator_pubkey)
             .await
             .unwrap();
-        assert_eq!(operator.ncn_count, 2);
+        assert_eq!(operator.ncn_count(), 2);
     }
 }

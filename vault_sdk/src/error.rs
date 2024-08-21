@@ -1,4 +1,4 @@
-use solana_program::program_error::ProgramError;
+use solana_program::{decode_error::DecodeError, program_error::ProgramError};
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -77,6 +77,18 @@ pub enum VaultError {
     VaultMaxSlashedPerOperatorExceeded,
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
     VaultStakerWithdrawalTicketInvalidStaker,
+    #[error("SlasherOverflow")]
+    SlasherOverflow,
+    #[error("NcnOverflow")]
+    NcnOverflow,
+    #[error("OperatorOverflow")]
+    OperatorOverflow,
+}
+
+impl<T> DecodeError<T> for VaultError {
+    fn type_of() -> &'static str {
+        "jito::vault"
+    }
 }
 
 impl From<VaultError> for ProgramError {

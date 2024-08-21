@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{
     config::Config, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
@@ -41,7 +41,7 @@ pub fn process_cooldown_operator_vault_ticket(
         OperatorVaultTicket::try_from_slice_unchecked_mut(&mut operator_vault_ticket_data)?;
     if !operator_vault_ticket
         .state
-        .deactivate(Clock::get()?.slot, config.epoch_length)
+        .deactivate(Clock::get()?.slot, config.epoch_length())
     {
         msg!("Vault is not ready to be deactivated");
         return Err(RestakingError::OperatorVaultTicketFailedCooldown.into());

@@ -1,8 +1,9 @@
 //! The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
+use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
 impl Discriminator for VaultStakerWithdrawalTicket {
@@ -11,7 +12,7 @@ impl Discriminator for VaultStakerWithdrawalTicket {
 
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 /// For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
     /// The vault being withdrawn from
@@ -25,10 +26,10 @@ pub struct VaultStakerWithdrawalTicket {
 
     /// The amount of VRT held in the VaultStakerWithdrawalTicket token account at the time of creation.
     /// This is used to ensure the amount redeemed is the same as the amount allocated.
-    pub vrt_amount: u64,
+    vrt_amount: PodU64,
 
     /// The slot the withdrawal was enqueued
-    pub slot_unstaked: u64,
+    slot_unstaked: PodU64,
 
     /// The bump seed used to create the PDA
     pub bump: u8,
@@ -37,7 +38,7 @@ pub struct VaultStakerWithdrawalTicket {
 }
 
 impl VaultStakerWithdrawalTicket {
-    pub const fn new(
+    pub fn new(
         vault: Pubkey,
         staker: Pubkey,
         base: Pubkey,
@@ -49,11 +50,19 @@ impl VaultStakerWithdrawalTicket {
             vault,
             staker,
             base,
-            vrt_amount,
-            slot_unstaked,
+            vrt_amount: PodU64::from(vrt_amount),
+            slot_unstaked: PodU64::from(slot_unstaked),
             bump,
             reserved: [0; 7],
         }
+    }
+
+    pub fn vrt_amount(&self) -> u64 {
+        self.vrt_amount.into()
+    }
+
+    pub fn slot_unstaked(&self) -> u64 {
+        self.slot_unstaked.into()
     }
 
     pub fn check_staker(&self, staker: &Pubkey) -> Result<(), VaultError> {
@@ -68,7 +77,7 @@ impl VaultStakerWithdrawalTicket {
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
         let current_epoch = slot.checked_div(epoch_length).unwrap();
-        let epoch_unstaked = self.slot_unstaked.checked_div(epoch_length).unwrap();
+        let epoch_unstaked = self.slot_unstaked().checked_div(epoch_length).unwrap();
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)

@@ -29,7 +29,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
-import { JITO_VAULT_PROGRAM_PROGRAM_ADDRESS } from '../programs';
+import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const BURN_DISCRIMINATOR = 12;
@@ -39,7 +39,7 @@ export function getBurnDiscriminatorBytes() {
 }
 
 export type BurnInstruction<
-  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountVaultTokenAccount extends string | IAccountMeta<string> = string,
@@ -196,7 +196,7 @@ export function getBurnInstruction<
     TAccountBurnSigner
   >
 ): BurnInstruction<
-  typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountVaultTokenAccount,
@@ -210,7 +210,7 @@ export function getBurnInstruction<
   TAccountBurnSigner
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -276,7 +276,7 @@ export function getBurnInstruction<
       args as BurnInstructionDataArgs
     ),
   } as BurnInstruction<
-    typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,
@@ -294,7 +294,7 @@ export function getBurnInstruction<
 }
 
 export type ParsedBurnInstruction<
-  TProgram extends string = typeof JITO_VAULT_PROGRAM_PROGRAM_ADDRESS,
+  TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;
@@ -335,7 +335,7 @@ export function parseBurnInstruction<
   };
   const getNextOptionalAccount = () => {
     const accountMeta = getNextAccount();
-    return accountMeta.address === JITO_VAULT_PROGRAM_PROGRAM_ADDRESS
+    return accountMeta.address === JITO_VAULT_PROGRAM_ADDRESS
       ? undefined
       : accountMeta;
   };
