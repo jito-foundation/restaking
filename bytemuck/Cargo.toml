@@ -1,6 +1,6 @@
 [package]
-name = "jito-account-traits"
-description = "Jito account traits"
+name = "jito-bytemuck"
+description = "Jito bytemuck library"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
@@ -12,4 +12,5 @@ readme = { workspace = true }
 [dependencies]
 bytemuck = { workspace = true }
 jito-account-traits-derive = { workspace = true }
+shank = { workspace = true }
 solana-program = { workspace = true }

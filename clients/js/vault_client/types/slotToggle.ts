@@ -10,31 +10,32 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   type Codec,
   type Decoder,
   type Encoder,
 } from '@solana/web3.js';
+import {
+  getPodU64Decoder,
+  getPodU64Encoder,
+  type PodU64,
+  type PodU64Args,
+} from '.';
 
-export type SlotToggle = { slotAdded: bigint; slotRemoved: bigint };
+export type SlotToggle = { slotAdded: PodU64; slotRemoved: PodU64 };
 
-export type SlotToggleArgs = {
-  slotAdded: number | bigint;
-  slotRemoved: number | bigint;
-};
+export type SlotToggleArgs = { slotAdded: PodU64Args; slotRemoved: PodU64Args };
 
 export function getSlotToggleEncoder(): Encoder<SlotToggleArgs> {
   return getStructEncoder([
-    ['slotAdded', getU64Encoder()],
-    ['slotRemoved', getU64Encoder()],
+    ['slotAdded', getPodU64Encoder()],
+    ['slotRemoved', getPodU64Encoder()],
   ]);
 }
 
 export function getSlotToggleDecoder(): Decoder<SlotToggle> {
   return getStructDecoder([
-    ['slotAdded', getU64Decoder()],
-    ['slotRemoved', getU64Decoder()],
+    ['slotAdded', getPodU64Decoder()],
+    ['slotRemoved', getPodU64Decoder()],
   ]);
 }
 

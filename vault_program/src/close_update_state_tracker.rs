@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::{close_program_account, loader::load_signer};
 use jito_vault_core::{
     config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
@@ -41,7 +41,7 @@ pub fn process_close_vault_update_state_tracker(
     )?;
     load_signer(payer, true)?;
 
-    let current_ncn_epoch = slot.checked_div(config.epoch_length).unwrap();
+    let current_ncn_epoch = slot.checked_div(config.epoch_length()).unwrap();
 
     // The VaultUpdateStateTracker shall be up-to-date before closing
     if ncn_epoch != current_ncn_epoch {
@@ -52,9 +52,9 @@ pub fn process_close_vault_update_state_tracker(
         );
     } else {
         // The VaultUpdateStateTracker shall have updated every operator ticket before closing
-        if vault.operator_count > 0
-            && vault_update_state_tracker.last_updated_index
-                != vault.operator_count.saturating_sub(1)
+        if vault.operator_count() > 0
+            && vault_update_state_tracker.last_updated_index()
+                != vault.operator_count().saturating_sub(1)
         {
             msg!("VaultUpdateStateTracker is not fully updated");
             return Err(VaultError::VaultUpdateStateNotFinishedUpdating.into());
@@ -62,15 +62,12 @@ pub fn process_close_vault_update_state_tracker(
         msg!("Finished updating VaultUpdateStateTracker");
 
         vault.delegation_state = vault_update_state_tracker.delegation_state;
-        vault.last_full_state_update_slot = slot;
+        vault.set_last_full_state_update_slot(slot);
 
         // shift the VRT amounts down by one, accumulating in vrt_ready_to_claim_amount
-        vault.vrt_ready_to_claim_amount = vault
-            .vrt_ready_to_claim_amount
-            .checked_add(vault.vrt_cooling_down_amount)
-            .ok_or(VaultError::VaultOverflow)?;
-        vault.vrt_cooling_down_amount = vault.vrt_enqueued_for_cooldown_amount;
-        vault.vrt_enqueued_for_cooldown_amount = 0;
+        vault.increment_vrt_ready_to_claim_amount(vault.vrt_cooling_down_amount())?;
+        vault.set_vrt_cooling_down_amount(vault.vrt_enqueued_for_cooldown_amount());
+        vault.set_vrt_enqueued_for_cooldown_amount(0);
     }
 
     msg!("Closing VaultUpdateStateTracker");

@@ -2294,15 +2294,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
-name = "jito-account-traits"
-version = "0.0.1"
-dependencies = [
- "bytemuck",
- "jito-account-traits-derive",
- "solana-program",
-]
-
-[[package]]
 name = "jito-account-traits-derive"
 version = "0.0.1"
 dependencies = [
@@ -2312,12 +2303,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-bytemuck"
+version = "0.0.1"
+dependencies = [
+ "bytemuck",
+ "jito-account-traits-derive",
+ "shank",
+ "solana-program",
+]
+
+[[package]]
 name = "jito-jsm-core"
 version = "0.0.1"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
  "bytemuck",
+ "jito-bytemuck",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -2336,7 +2338,7 @@ dependencies = [
  "chrono",
  "clap 4.5.16",
  "env_logger 0.10.2",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-restaking-client",
  "jito-restaking-core",
  "jito-vault-client",
@@ -2375,8 +2377,9 @@ dependencies = [
  "assert_matches",
  "borsh 0.10.3",
  "bytemuck",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
+ "jito-restaking-sdk",
  "shank",
  "solana-program",
  "spl-associated-token-account",
@@ -2389,7 +2392,7 @@ name = "jito-restaking-integration-tests"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
  "jito-restaking-program",
@@ -2416,7 +2419,7 @@ dependencies = [
  "borsh 0.10.3",
  "cfg-if",
  "const_str_to_pubkey",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
  "jito-restaking-sdk",
@@ -2468,7 +2471,7 @@ dependencies = [
  "assert_matches",
  "borsh 0.10.3",
  "bytemuck",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-vault-sdk",
  "shank",
@@ -2485,7 +2488,7 @@ dependencies = [
  "borsh 0.10.3",
  "cfg-if",
  "const_str_to_pubkey",
- "jito-account-traits",
+ "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
  "jito-vault-core",

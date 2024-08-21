@@ -147,7 +147,7 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(config.epoch_length)
+            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
@@ -207,8 +207,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.delegation_state.total_security().unwrap(), 100_000);
-        assert_eq!(vault.delegation_state.staked_amount, 50_000);
-        assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount, 50_000);
+        assert_eq!(vault.delegation_state.staked_amount(), 50_000);
+        assert_eq!(
+            vault.delegation_state.enqueued_for_cooldown_amount(),
+            50_000
+        );
 
         let vault_operator_delegation = vault_program_client
             .get_vault_operator_delegation(
@@ -225,13 +228,13 @@ mod tests {
             100_000
         );
         assert_eq!(
-            vault_operator_delegation.delegation_state.staked_amount,
+            vault_operator_delegation.delegation_state.staked_amount(),
             50_000
         );
         assert_eq!(
             vault_operator_delegation
                 .delegation_state
-                .enqueued_for_cooldown_amount,
+                .enqueued_for_cooldown_amount(),
             50_000
         );
     }
@@ -286,8 +289,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.delegation_state.total_security().unwrap(), 100_000);
-        assert_eq!(vault.delegation_state.staked_amount, 50_000);
-        assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount, 50_000);
+        assert_eq!(vault.delegation_state.staked_amount(), 50_000);
+        assert_eq!(
+            vault.delegation_state.enqueued_for_cooldown_amount(),
+            50_000
+        );
 
         let vault_operator_delegation = vault_program_client
             .get_vault_operator_delegation(
@@ -304,13 +310,13 @@ mod tests {
             100_000
         );
         assert_eq!(
-            vault_operator_delegation.delegation_state.staked_amount,
+            vault_operator_delegation.delegation_state.staked_amount(),
             50_000
         );
         assert_eq!(
             vault_operator_delegation
                 .delegation_state
-                .enqueued_for_cooldown_amount,
+                .enqueued_for_cooldown_amount(),
             50_000
         );
     }

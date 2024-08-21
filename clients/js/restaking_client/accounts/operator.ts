@@ -19,8 +19,6 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -34,6 +32,12 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
+import {
+  getPodU64Decoder,
+  getPodU64Encoder,
+  type PodU64,
+  type PodU64Args,
+} from '../types';
 
 export type Operator = {
   base: Address;
@@ -43,9 +47,9 @@ export type Operator = {
   withdrawalAdmin: Address;
   withdrawalFeeWallet: Address;
   voter: Address;
-  index: bigint;
-  ncnCount: bigint;
-  vaultCount: bigint;
+  index: PodU64;
+  ncnCount: PodU64;
+  vaultCount: PodU64;
   bump: number;
   reservedSpace: Array<number>;
 };
@@ -58,9 +62,9 @@ export type OperatorArgs = {
   withdrawalAdmin: Address;
   withdrawalFeeWallet: Address;
   voter: Address;
-  index: number | bigint;
-  ncnCount: number | bigint;
-  vaultCount: number | bigint;
+  index: PodU64Args;
+  ncnCount: PodU64Args;
+  vaultCount: PodU64Args;
   bump: number;
   reservedSpace: Array<number>;
 };
@@ -74,9 +78,9 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['withdrawalAdmin', getAddressEncoder()],
     ['withdrawalFeeWallet', getAddressEncoder()],
     ['voter', getAddressEncoder()],
-    ['index', getU64Encoder()],
-    ['ncnCount', getU64Encoder()],
-    ['vaultCount', getU64Encoder()],
+    ['index', getPodU64Encoder()],
+    ['ncnCount', getPodU64Encoder()],
+    ['vaultCount', getPodU64Encoder()],
     ['bump', getU8Encoder()],
     ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 7 })],
   ]);
@@ -91,9 +95,9 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['withdrawalAdmin', getAddressDecoder()],
     ['withdrawalFeeWallet', getAddressDecoder()],
     ['voter', getAddressDecoder()],
-    ['index', getU64Decoder()],
-    ['ncnCount', getU64Decoder()],
-    ['vaultCount', getU64Decoder()],
+    ['index', getPodU64Decoder()],
+    ['ncnCount', getPodU64Decoder()],
+    ['vaultCount', getPodU64Decoder()],
     ['bump', getU8Decoder()],
     ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 7 })],
   ]);
@@ -154,8 +158,4 @@ export async function fetchAllMaybeOperator(
 ): Promise<MaybeAccount<Operator>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeOperator(maybeAccount));
-}
-
-export function getOperatorSize(): number {
-  return 256;
 }

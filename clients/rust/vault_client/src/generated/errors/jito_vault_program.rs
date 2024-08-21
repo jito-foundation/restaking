@@ -120,6 +120,15 @@ pub enum JitoVaultProgramError {
     /// 1036 - VaultStakerWithdrawalTicketInvalidStaker
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
     VaultStakerWithdrawalTicketInvalidStaker = 0x40C,
+    /// 1037 - SlasherOverflow
+    #[error("SlasherOverflow")]
+    SlasherOverflow = 0x40D,
+    /// 1038 - NcnOverflow
+    #[error("NcnOverflow")]
+    NcnOverflow = 0x40E,
+    /// 1039 - OperatorOverflow
+    #[error("OperatorOverflow")]
+    OperatorOverflow = 0x40F,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultProgramError {

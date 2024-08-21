@@ -7,7 +7,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
-use crate::generated::types::DelegationState;
+use crate::generated::types::{DelegationState, PodU64};
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -23,15 +23,13 @@ pub struct VaultOperatorDelegation {
     )]
     pub operator: Pubkey,
     pub delegation_state: DelegationState,
-    pub last_update_slot: u64,
-    pub index: u64,
+    pub last_update_slot: PodU64,
+    pub index: PodU64,
     pub bump: u8,
     pub reserved: [u8; 7],
 }
 
 impl VaultOperatorDelegation {
-    pub const LEN: usize = 112;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

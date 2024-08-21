@@ -12,13 +12,14 @@ readme = { workspace = true }
 [dependencies]
 borsh = { workspace = true }
 bytemuck = { workspace = true }
-jito-account-traits = { workspace = true }
+jito-bytemuck = { workspace = true }
 jito-jsm-core = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
+jito-restaking-sdk = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }

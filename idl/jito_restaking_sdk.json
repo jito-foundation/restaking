@@ -919,11 +919,15 @@
         "fields": [
           {
             "name": "slotAdded",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "slotRemoved",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           }
         ]
       }
@@ -1024,6 +1028,26 @@
       "code": 2007,
       "name": "OperatorWarmupNcnFailed",
       "msg": "OperatorWarmupNcnFailed"
+    },
+    {
+      "code": 2008,
+      "name": "NcnOverflow",
+      "msg": "NcnOverflow"
+    },
+    {
+      "code": 2009,
+      "name": "OperatorOverflow",
+      "msg": "OperatorOverflow"
+    },
+    {
+      "code": 2010,
+      "name": "VaultOverflow",
+      "msg": "VaultOverflow"
+    },
+    {
+      "code": 2011,
+      "name": "SlasherOverflow",
+      "msg": "SlasherOverflow"
     }
   ],
   "metadata": {
@@ -1046,15 +1070,21 @@
           },
           {
             "name": "ncnCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "operatorCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "epochLength",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "bump",
@@ -1107,19 +1137,27 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "operatorCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "vaultCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "slasherCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "bump",
@@ -1152,7 +1190,9 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "ncnOptInState",
@@ -1201,11 +1241,15 @@
           },
           {
             "name": "maxSlashablePerEpoch",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "state",
@@ -1244,7 +1288,9 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "state",
@@ -1303,15 +1349,21 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "ncnCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "vaultCount",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "bump",
@@ -1344,7 +1396,9 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": {
+              "defined": "PodU64"
+            }
           },
           {
             "name": "state",

@@ -19,8 +19,6 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -37,15 +35,19 @@ import {
 import {
   getDelegationStateDecoder,
   getDelegationStateEncoder,
+  getPodU64Decoder,
+  getPodU64Encoder,
   type DelegationState,
   type DelegationStateArgs,
+  type PodU64,
+  type PodU64Args,
 } from '../types';
 
 export type VaultUpdateStateTracker = {
   vault: Address;
-  ncnEpoch: bigint;
-  lastUpdatedIndex: bigint;
-  additionalAssetsNeedUnstaking: bigint;
+  ncnEpoch: PodU64;
+  lastUpdatedIndex: PodU64;
+  additionalAssetsNeedUnstaking: PodU64;
   delegationState: DelegationState;
   withdrawalAllocationMethod: number;
   reserved: Array<number>;
@@ -53,9 +55,9 @@ export type VaultUpdateStateTracker = {
 
 export type VaultUpdateStateTrackerArgs = {
   vault: Address;
-  ncnEpoch: number | bigint;
-  lastUpdatedIndex: number | bigint;
-  additionalAssetsNeedUnstaking: number | bigint;
+  ncnEpoch: PodU64Args;
+  lastUpdatedIndex: PodU64Args;
+  additionalAssetsNeedUnstaking: PodU64Args;
   delegationState: DelegationStateArgs;
   withdrawalAllocationMethod: number;
   reserved: Array<number>;
@@ -64,9 +66,9 @@ export type VaultUpdateStateTrackerArgs = {
 export function getVaultUpdateStateTrackerEncoder(): Encoder<VaultUpdateStateTrackerArgs> {
   return getStructEncoder([
     ['vault', getAddressEncoder()],
-    ['ncnEpoch', getU64Encoder()],
-    ['lastUpdatedIndex', getU64Encoder()],
-    ['additionalAssetsNeedUnstaking', getU64Encoder()],
+    ['ncnEpoch', getPodU64Encoder()],
+    ['lastUpdatedIndex', getPodU64Encoder()],
+    ['additionalAssetsNeedUnstaking', getPodU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
     ['withdrawalAllocationMethod', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
@@ -76,9 +78,9 @@ export function getVaultUpdateStateTrackerEncoder(): Encoder<VaultUpdateStateTra
 export function getVaultUpdateStateTrackerDecoder(): Decoder<VaultUpdateStateTracker> {
   return getStructDecoder([
     ['vault', getAddressDecoder()],
-    ['ncnEpoch', getU64Decoder()],
-    ['lastUpdatedIndex', getU64Decoder()],
-    ['additionalAssetsNeedUnstaking', getU64Decoder()],
+    ['ncnEpoch', getPodU64Decoder()],
+    ['lastUpdatedIndex', getPodU64Decoder()],
+    ['additionalAssetsNeedUnstaking', getPodU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
     ['withdrawalAllocationMethod', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
@@ -162,8 +164,4 @@ export async function fetchAllMaybeVaultUpdateStateTracker(
   return maybeAccounts.map((maybeAccount) =>
     decodeVaultUpdateStateTracker(maybeAccount)
   );
-}
-
-export function getVaultUpdateStateTrackerSize(): number {
-  return 88;
 }

@@ -7,6 +7,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
+use crate::generated::types::PodU64;
+
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VaultNcnSlasherOperatorTicket {
@@ -30,15 +32,13 @@ pub struct VaultNcnSlasherOperatorTicket {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub operator: Pubkey,
-    pub epoch: u64,
-    pub slashed: u64,
+    pub epoch: PodU64,
+    pub slashed: PodU64,
     pub bump: u8,
     pub reserved: [u8; 7],
 }
 
 impl VaultNcnSlasherOperatorTicket {
-    pub const LEN: usize = 152;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

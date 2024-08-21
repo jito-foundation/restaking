@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{
@@ -11,7 +11,6 @@ use jito_jsm_core::{
 use jito_vault_core::{
     config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
-use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -77,7 +76,7 @@ pub fn process_enqueue_withdrawal(
     }
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
@@ -109,10 +108,7 @@ pub fn process_enqueue_withdrawal(
         vault_staker_withdrawal_ticket_bump,
     );
 
-    vault.vrt_enqueued_for_cooldown_amount = vault
-        .vrt_enqueued_for_cooldown_amount
-        .checked_add(vrt_amount)
-        .ok_or(VaultError::VaultOverflow)?;
+    vault.increment_vrt_enqueued_for_cooldown_amount(vrt_amount)?;
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket

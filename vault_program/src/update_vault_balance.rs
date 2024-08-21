@@ -1,7 +1,6 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_mint, load_token_program};
 use jito_vault_core::{config::Config, vault::Vault};
-use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
@@ -33,7 +32,7 @@ pub fn process_update_vault_balance(
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_token_program(token_program)?;
 
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault.check_vrt_mint(vrt_mint.key)?;
 
     // Calculate rewards
@@ -75,11 +74,8 @@ pub fn process_update_vault_balance(
         let mut vault_data = vault_info.data.borrow_mut();
         let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
-        vault.tokens_deposited = new_balance;
-        vault.vrt_supply = vault
-            .vrt_supply
-            .checked_add(reward_fee)
-            .ok_or(VaultError::VaultOverflow)?;
+        vault.set_tokens_deposited(new_balance);
+        vault.increment_vrt_supply(reward_fee)?;
     }
 
     Ok(())

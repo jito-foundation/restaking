@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::ncn::Ncn;
 use jito_vault_core::{config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket};
@@ -37,12 +37,12 @@ pub fn process_cooldown_vault_ncn_ticket(
     load_signer(vault_ncn_admin, false)?;
 
     vault.check_ncn_admin(vault_ncn_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     // The VaultNcnTicket must be active in order to cooldown the NCN
     if !vault_ncn_ticket
         .state
-        .deactivate(Clock::get()?.slot, config.epoch_length)
+        .deactivate(Clock::get()?.slot, config.epoch_length())
     {
         msg!("NCN is not ready to be deactivated");
         return Err(VaultError::VaultNcnTicketFailedCooldown.into());

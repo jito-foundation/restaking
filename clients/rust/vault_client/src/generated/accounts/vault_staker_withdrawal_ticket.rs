@@ -7,6 +7,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
+use crate::generated::types::PodU64;
+
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VaultStakerWithdrawalTicket {
@@ -25,15 +27,13 @@ pub struct VaultStakerWithdrawalTicket {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub base: Pubkey,
-    pub vrt_amount: u64,
-    pub slot_unstaked: u64,
+    pub vrt_amount: PodU64,
+    pub slot_unstaked: PodU64,
     pub bump: u8,
     pub reserved: [u8; 7],
 }
 
 impl VaultStakerWithdrawalTicket {
-    pub const LEN: usize = 120;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

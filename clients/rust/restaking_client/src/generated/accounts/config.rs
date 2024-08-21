@@ -7,6 +7,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
+use crate::generated::types::PodU64;
+
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Config {
@@ -20,16 +22,14 @@ pub struct Config {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub vault_program: Pubkey,
-    pub ncn_count: u64,
-    pub operator_count: u64,
-    pub epoch_length: u64,
+    pub ncn_count: PodU64,
+    pub operator_count: PodU64,
+    pub epoch_length: PodU64,
     pub bump: u8,
     pub reserved1: [u8; 7],
 }
 
 impl Config {
-    pub const LEN: usize = 96;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -57,7 +57,7 @@ pub fn process_initialize_vault_operator_delegation(
     }
 
     vault.check_operator_admin(vault_operator_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     msg!(
         "Initializing VaultOperatorDelegation at address {}",
@@ -82,14 +82,11 @@ pub fn process_initialize_vault_operator_delegation(
     *vault_operator_delegation = VaultOperatorDelegation::new(
         *vault_info.key,
         *operator.key,
-        vault.operator_count,
+        vault.operator_count(),
         vault_operator_delegation_bump,
     );
 
-    vault.operator_count = vault
-        .operator_count
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    vault.increment_operator_count()?;
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{
@@ -95,8 +95,11 @@ pub fn process_initialize_vault(
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
-        if deposit_fee_bps > config.fee_cap_bps || withdrawal_fee_bps > config.fee_cap_bps {
-            msg!("Fee cap exceeds maximum allowed of {}", config.fee_cap_bps);
+        if deposit_fee_bps > config.fee_cap_bps() || withdrawal_fee_bps > config.fee_cap_bps() {
+            msg!(
+                "Fee cap exceeds maximum allowed of {}",
+                config.fee_cap_bps()
+            );
             return Err(VaultError::VaultFeeCapExceeded.into());
         }
 
@@ -104,7 +107,7 @@ pub fn process_initialize_vault(
             *vrt_mint.key,
             *mint.key,
             *admin.key,
-            config.num_vaults,
+            config.num_vaults(),
             *base.key,
             deposit_fee_bps,
             withdrawal_fee_bps,
@@ -113,10 +116,7 @@ pub fn process_initialize_vault(
         );
     }
 
-    config.num_vaults = config
-        .num_vaults
-        .checked_add(1)
-        .ok_or(ProgramError::InvalidAccountData)?;
+    config.increment_num_vaults()?;
 
     Ok(())
 }

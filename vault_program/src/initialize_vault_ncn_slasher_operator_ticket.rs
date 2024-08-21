@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
@@ -46,7 +46,10 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     load_signer(payer, false)?;
     load_system_program(system_program)?;
 
-    let ncn_epoch = Clock::get()?.slot.checked_div(config.epoch_length).unwrap();
+    let ncn_epoch = Clock::get()?
+        .slot
+        .checked_div(config.epoch_length())
+        .unwrap();
 
     // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (
@@ -71,7 +74,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     }
 
     // The vault shall be up-to-date before adding support for the NCN slasher operator
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length)?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     msg!(
         "Initializing vault NCN slasher operator ticket at address {}",

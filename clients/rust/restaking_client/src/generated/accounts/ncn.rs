@@ -7,6 +7,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
+use crate::generated::types::PodU64;
+
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ncn {
@@ -45,17 +47,15 @@ pub struct Ncn {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub withdraw_fee_wallet: Pubkey,
-    pub index: u64,
-    pub operator_count: u64,
-    pub vault_count: u64,
-    pub slasher_count: u64,
+    pub index: PodU64,
+    pub operator_count: PodU64,
+    pub vault_count: PodU64,
+    pub slasher_count: PodU64,
     pub bump: u8,
     pub reserved: [u8; 7],
 }
 
 impl Ncn {
-    pub const LEN: usize = 264;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

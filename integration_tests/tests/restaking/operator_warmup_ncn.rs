@@ -44,7 +44,7 @@ mod tests {
         assert_eq!(
             ncn_operator_state
                 .operator_opt_in_state
-                .state(slot, config.epoch_length),
+                .state(slot, config.epoch_length()),
             SlotToggleState::WarmUp
         );
     }
@@ -151,7 +151,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 
@@ -192,7 +192,7 @@ mod tests {
             .await
             .unwrap();
         fixture
-            .warp_slot_incremental(2 * config.epoch_length)
+            .warp_slot_incremental(2 * config.epoch_length())
             .await
             .unwrap();
 

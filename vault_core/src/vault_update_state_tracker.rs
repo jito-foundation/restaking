@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use jito_account_traits::{AccountDeserialize, Discriminator};
+use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -18,13 +18,13 @@ pub struct VaultUpdateStateTracker {
     pub vault: Pubkey,
 
     /// The NCN epoch for which the delegations are to be updated
-    pub ncn_epoch: u64,
+    ncn_epoch: PodU64,
 
     /// The update index of the vault
-    pub last_updated_index: u64,
+    last_updated_index: PodU64,
 
     /// The amount of additional assets that need unstaking to fulfill VRT withdrawals
-    pub additional_assets_need_unstaking: u64,
+    additional_assets_need_unstaking: PodU64,
 
     /// The total amount delegated across all the operators in the vault
     pub delegation_state: DelegationState,
@@ -43,26 +43,50 @@ impl VaultUpdateStateTracker {
     ) -> Self {
         Self {
             vault,
-            ncn_epoch,
-            additional_assets_need_unstaking,
-            last_updated_index: u64::MAX,
+            ncn_epoch: PodU64::from(ncn_epoch),
+            additional_assets_need_unstaking: PodU64::from(additional_assets_need_unstaking),
+            last_updated_index: PodU64::from(u64::MAX),
             delegation_state: DelegationState::default(),
             withdrawal_allocation_method,
             reserved: [0; 7],
         }
     }
 
+    pub fn ncn_epoch(&self) -> u64 {
+        self.ncn_epoch.into()
+    }
+
+    pub fn additional_assets_need_unstaking(&self) -> u64 {
+        self.additional_assets_need_unstaking.into()
+    }
+
+    pub fn last_updated_index(&self) -> u64 {
+        self.last_updated_index.into()
+    }
+
+    pub fn decrement_additional_assets_need_unstaking(
+        &mut self,
+        amount: u64,
+    ) -> Result<(), VaultError> {
+        let new_amount = self
+            .additional_assets_need_unstaking()
+            .checked_sub(amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+        self.additional_assets_need_unstaking = PodU64::from(new_amount);
+        Ok(())
+    }
+
     pub fn check_and_update_index(&mut self, index: u64) -> Result<(), VaultError> {
-        if self.last_updated_index == u64::MAX {
+        if self.last_updated_index() == u64::MAX {
             if index != 0 {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-        } else if index != self.last_updated_index.checked_add(1).unwrap() {
+        } else if index != self.last_updated_index().checked_add(1).unwrap() {
             msg!("VaultUpdateStateTracker incorrect index");
             return Err(VaultError::VaultUpdateIncorrectIndex);
         }
-        self.last_updated_index = index;
+        self.last_updated_index = PodU64::from(index);
         Ok(())
     }
 

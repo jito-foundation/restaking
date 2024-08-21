@@ -19,8 +19,6 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   type Account,
@@ -35,8 +33,12 @@ import {
   type MaybeEncodedAccount,
 } from '@solana/web3.js';
 import {
+  getPodU64Decoder,
+  getPodU64Encoder,
   getSlotToggleDecoder,
   getSlotToggleEncoder,
+  type PodU64,
+  type PodU64Args,
   type SlotToggle,
   type SlotToggleArgs,
 } from '../types';
@@ -45,8 +47,8 @@ export type NcnVaultSlasherTicket = {
   ncn: Address;
   vault: Address;
   slasher: Address;
-  maxSlashablePerEpoch: bigint;
-  index: bigint;
+  maxSlashablePerEpoch: PodU64;
+  index: PodU64;
   state: SlotToggle;
   bump: number;
   reserved: Array<number>;
@@ -56,8 +58,8 @@ export type NcnVaultSlasherTicketArgs = {
   ncn: Address;
   vault: Address;
   slasher: Address;
-  maxSlashablePerEpoch: number | bigint;
-  index: number | bigint;
+  maxSlashablePerEpoch: PodU64Args;
+  index: PodU64Args;
   state: SlotToggleArgs;
   bump: number;
   reserved: Array<number>;
@@ -68,8 +70,8 @@ export function getNcnVaultSlasherTicketEncoder(): Encoder<NcnVaultSlasherTicket
     ['ncn', getAddressEncoder()],
     ['vault', getAddressEncoder()],
     ['slasher', getAddressEncoder()],
-    ['maxSlashablePerEpoch', getU64Encoder()],
-    ['index', getU64Encoder()],
+    ['maxSlashablePerEpoch', getPodU64Encoder()],
+    ['index', getPodU64Encoder()],
     ['state', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
@@ -81,8 +83,8 @@ export function getNcnVaultSlasherTicketDecoder(): Decoder<NcnVaultSlasherTicket
     ['ncn', getAddressDecoder()],
     ['vault', getAddressDecoder()],
     ['slasher', getAddressDecoder()],
-    ['maxSlashablePerEpoch', getU64Decoder()],
-    ['index', getU64Decoder()],
+    ['maxSlashablePerEpoch', getPodU64Decoder()],
+    ['index', getPodU64Decoder()],
     ['state', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
@@ -166,8 +168,4 @@ export async function fetchAllMaybeNcnVaultSlasherTicket(
   return maybeAccounts.map((maybeAccount) =>
     decodeNcnVaultSlasherTicket(maybeAccount)
   );
-}
-
-export function getNcnVaultSlasherTicketSize(): number {
-  return 136;
 }

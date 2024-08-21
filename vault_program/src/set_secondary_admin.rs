@@ -1,4 +1,4 @@
-use jito_account_traits::AccountDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::instruction::VaultAdminRole;

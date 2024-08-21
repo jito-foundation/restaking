@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "account_traits",
     "account_traits_derive",
+    "bytemuck",
     "cli",
     "clients/rust/restaking_client",
     "clients/rust/vault_client",
@@ -46,7 +46,7 @@ chrono = "0.4.38"
 clap = { version = "4.5.16", features = ["derive"] }
 const_str_to_pubkey = "0.1.1"
 env_logger = "0.10.2"
-jito-account-traits = { path = "account_traits", version = "=0.0.1" }
+jito-bytemuck = { path = "bytemuck", version = "=0.0.1" }
 jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
 jito-jsm-core = { path = "core", version = "=0.0.1" }
 jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.1" }
