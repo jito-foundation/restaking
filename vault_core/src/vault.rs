@@ -556,8 +556,9 @@ impl Vault {
 
         let fee = (vrt_rewards as u128)
             .checked_mul(self.reward_fee_bps() as u128)
-            .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000) as u64;
+            .map(|x| x.div_ceil(10_000))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
 
         Ok(fee)
     }
@@ -591,8 +592,9 @@ impl Vault {
     pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.deposit_fee_bps() as u128)
-            .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000) as u64;
+            .map(|x| x.div_ceil(10_000))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
     }
 
@@ -600,8 +602,9 @@ impl Vault {
     pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
-            .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000) as u64;
+            .map(|x| x.div_ceil(10_000))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
     }
 
