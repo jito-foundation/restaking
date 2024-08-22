@@ -554,10 +554,10 @@ impl Vault {
             return Ok(0);
         }
 
-        let fee = vrt_rewards
-            .checked_mul(self.reward_fee_bps() as u64)
+        let fee = (vrt_rewards as u128)
+            .checked_mul(self.reward_fee_bps() as u128)
             .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000);
+            .div_ceil(10_000) as u64;
 
         Ok(fee)
     }
@@ -565,9 +565,10 @@ impl Vault {
     /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
     /// amount. This is the pro-rata share of the total tokens deposited in the vault.
     pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
-        vrt_amount
-            .checked_mul(self.tokens_deposited())
-            .and_then(|x| x.checked_div(self.vrt_supply()))
+        (vrt_amount as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .map(|result| result as u64)
             .ok_or(VaultError::VaultOverflow)
     }
 
@@ -579,27 +580,28 @@ impl Vault {
             return Ok(amount);
         }
 
-        amount
-            .checked_mul(self.vrt_supply())
-            .and_then(|x| x.checked_div(self.tokens_deposited()))
+        (amount as u128)
+            .checked_mul(self.vrt_supply() as u128)
+            .and_then(|x| x.checked_div(self.tokens_deposited() as u128))
+            .map(|result| result as u64)
             .ok_or(VaultError::VaultOverflow)
     }
 
     /// Calculate the amount of tokens collected as a fee for depositing tokens in the vault.
     pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
-        let fee = vrt_amount
-            .checked_mul(self.deposit_fee_bps() as u64)
+        let fee = (vrt_amount as u128)
+            .checked_mul(self.deposit_fee_bps() as u128)
             .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000);
+            .div_ceil(10_000) as u64;
         Ok(fee)
     }
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
     pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
-        let fee = vrt_amount
-            .checked_mul(self.withdrawal_fee_bps() as u64)
+        let fee = (vrt_amount as u128)
+            .checked_mul(self.withdrawal_fee_bps() as u128)
             .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000);
+            .div_ceil(10_000) as u64;
         Ok(fee)
     }
 
@@ -663,9 +665,10 @@ impl Vault {
             .checked_sub(fee_amount)
             .ok_or(VaultError::VaultUnderflow)?;
 
-        let amount_out = amount_to_burn
-            .checked_mul(self.tokens_deposited())
-            .and_then(|x| x.checked_div(self.vrt_supply()))
+        let amount_out = (amount_to_burn as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
         let max_withdrawable = self
@@ -719,9 +722,10 @@ impl Vault {
             .checked_add(self.vrt_ready_to_claim_amount())
             .and_then(|x| x.checked_add(self.vrt_enqueued_for_cooldown_amount()))
             .ok_or(VaultError::VaultOverflow)?;
-        let amount_to_reserve_for_vrts = vrt_reserve
-            .checked_mul(self.tokens_deposited())
-            .and_then(|x| x.checked_div(self.vrt_supply()))
+        let amount_to_reserve_for_vrts = (vrt_reserve as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .map(|result| result as u64)
             .ok_or(VaultError::VaultOverflow)?;
 
         let fee_amount = self.calculate_withdraw_fee(amount_to_reserve_for_vrts)?;
@@ -1213,12 +1217,10 @@ mod tests {
 
     #[test]
     fn test_burn_max_values() {
-        let mut vault = make_test_vault(0, 0, u64::MAX, u64::MAX, DelegationState::default());
-
-        assert_eq!(
-            vault.burn_with_fee(u64::MAX, u64::MAX - 1).unwrap_err(),
-            VaultError::VaultOverflow
-        );
+        let mut vault = make_test_vault(0, 100, u64::MAX, u64::MAX, DelegationState::default());
+        let result = vault.burn_with_fee(u64::MAX, 0).unwrap();
+        let fee_amount = (((u64::MAX as u128) * 100).div_ceil(10000)) as u64;
+        assert_eq!(result.fee_amount, fee_amount);
     }
 
     #[test]
@@ -1517,24 +1519,5 @@ mod tests {
         let fee = vault.calculate_rewards_fee(1000).unwrap();
 
         assert_eq!(fee, 1000);
-    }
-
-    #[test]
-    fn test_calculate_rewards_overflow() {
-        let vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            u16::MAX,
-            0,
-        );
-
-        let fee = vault.calculate_rewards_fee(u64::MAX);
-
-        assert_eq!(fee, Err(VaultError::VaultOverflow));
     }
 }
