@@ -568,7 +568,7 @@ impl Vault {
         (vrt_amount as u128)
             .checked_mul(self.tokens_deposited() as u128)
             .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .map(|result| result as u64)
+            .and_then(|result| result.try_into().ok())
             .ok_or(VaultError::VaultOverflow)
     }
 
@@ -583,7 +583,7 @@ impl Vault {
         (amount as u128)
             .checked_mul(self.vrt_supply() as u128)
             .and_then(|x| x.checked_div(self.tokens_deposited() as u128))
-            .map(|result| result as u64)
+            .and_then(|result| result.try_into().ok())
             .ok_or(VaultError::VaultOverflow)
     }
 
@@ -725,7 +725,7 @@ impl Vault {
         let amount_to_reserve_for_vrts = (vrt_reserve as u128)
             .checked_mul(self.tokens_deposited() as u128)
             .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .map(|result| result as u64)
+            .and_then(|result| result.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
         let fee_amount = self.calculate_withdraw_fee(amount_to_reserve_for_vrts)?;
