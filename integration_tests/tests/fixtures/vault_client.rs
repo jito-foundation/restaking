@@ -660,7 +660,6 @@ impl VaultProgramClient {
             )
             .0,
             &vault_root.vault_admin,
-            &vault_root.vault_admin,
             amount,
         )
         .await?;
@@ -1208,7 +1207,6 @@ impl VaultProgramClient {
         operator: &Pubkey,
         vault_operator_delegation: &Pubkey,
         admin: &Keypair,
-        payer: &Keypair,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1220,11 +1218,10 @@ impl VaultProgramClient {
                 operator,
                 vault_operator_delegation,
                 &admin.pubkey(),
-                &payer.pubkey(),
                 amount,
             )],
-            Some(&payer.pubkey()),
-            &[admin, payer],
+            Some(&admin.pubkey()),
+            &[admin],
             blockhash,
         ))
         .await
