@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type VaultUpdateStateTracker = {
+  discriminator: bigint;
   vault: Address;
   ncnEpoch: bigint;
   lastUpdatedIndex: bigint;
@@ -52,6 +53,7 @@ export type VaultUpdateStateTracker = {
 };
 
 export type VaultUpdateStateTrackerArgs = {
+  discriminator: number | bigint;
   vault: Address;
   ncnEpoch: number | bigint;
   lastUpdatedIndex: number | bigint;
@@ -63,6 +65,7 @@ export type VaultUpdateStateTrackerArgs = {
 
 export function getVaultUpdateStateTrackerEncoder(): Encoder<VaultUpdateStateTrackerArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncnEpoch', getU64Encoder()],
     ['lastUpdatedIndex', getU64Encoder()],
@@ -75,6 +78,7 @@ export function getVaultUpdateStateTrackerEncoder(): Encoder<VaultUpdateStateTra
 
 export function getVaultUpdateStateTrackerDecoder(): Decoder<VaultUpdateStateTracker> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncnEpoch', getU64Decoder()],
     ['lastUpdatedIndex', getU64Decoder()],

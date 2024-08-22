@@ -38,6 +38,7 @@ import {
 } from '@solana/web3.js';
 
 export type Config = {
+  discriminator: bigint;
   admin: Address;
   restakingProgram: Address;
   epochLength: bigint;
@@ -50,6 +51,7 @@ export type Config = {
 };
 
 export type ConfigArgs = {
+  discriminator: number | bigint;
   admin: Address;
   restakingProgram: Address;
   epochLength: number | bigint;
@@ -63,6 +65,7 @@ export type ConfigArgs = {
 
 export function getConfigEncoder(): Encoder<ConfigArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['admin', getAddressEncoder()],
     ['restakingProgram', getAddressEncoder()],
     ['epochLength', getU64Encoder()],
@@ -77,6 +80,7 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
 
 export function getConfigDecoder(): Decoder<Config> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['admin', getAddressDecoder()],
     ['restakingProgram', getAddressDecoder()],
     ['epochLength', getU64Decoder()],

@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type Ncn = {
+  discriminator: bigint;
   base: Address;
   admin: Address;
   operatorAdmin: Address;
@@ -52,6 +53,7 @@ export type Ncn = {
 };
 
 export type NcnArgs = {
+  discriminator: number | bigint;
   base: Address;
   admin: Address;
   operatorAdmin: Address;
@@ -69,6 +71,7 @@ export type NcnArgs = {
 
 export function getNcnEncoder(): Encoder<NcnArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['base', getAddressEncoder()],
     ['admin', getAddressEncoder()],
     ['operatorAdmin', getAddressEncoder()],
@@ -87,6 +90,7 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
 
 export function getNcnDecoder(): Decoder<Ncn> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['base', getAddressDecoder()],
     ['admin', getAddressDecoder()],
     ['operatorAdmin', getAddressDecoder()],

@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type VaultNcnSlasherOperatorTicket = {
+  discriminator: bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -47,6 +48,7 @@ export type VaultNcnSlasherOperatorTicket = {
 };
 
 export type VaultNcnSlasherOperatorTicketArgs = {
+  discriminator: number | bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -59,6 +61,7 @@ export type VaultNcnSlasherOperatorTicketArgs = {
 
 export function getVaultNcnSlasherOperatorTicketEncoder(): Encoder<VaultNcnSlasherOperatorTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncn', getAddressEncoder()],
     ['slasher', getAddressEncoder()],
@@ -72,6 +75,7 @@ export function getVaultNcnSlasherOperatorTicketEncoder(): Encoder<VaultNcnSlash
 
 export function getVaultNcnSlasherOperatorTicketDecoder(): Decoder<VaultNcnSlasherOperatorTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncn', getAddressDecoder()],
     ['slasher', getAddressDecoder()],

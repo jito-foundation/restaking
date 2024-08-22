@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type NcnOperatorState = {
+  discriminator: bigint;
   ncn: Address;
   operator: Address;
   index: bigint;
@@ -52,6 +53,7 @@ export type NcnOperatorState = {
 };
 
 export type NcnOperatorStateArgs = {
+  discriminator: number | bigint;
   ncn: Address;
   operator: Address;
   index: number | bigint;
@@ -63,6 +65,7 @@ export type NcnOperatorStateArgs = {
 
 export function getNcnOperatorStateEncoder(): Encoder<NcnOperatorStateArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['ncn', getAddressEncoder()],
     ['operator', getAddressEncoder()],
     ['index', getU64Encoder()],
@@ -75,6 +78,7 @@ export function getNcnOperatorStateEncoder(): Encoder<NcnOperatorStateArgs> {
 
 export function getNcnOperatorStateDecoder(): Decoder<NcnOperatorState> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['ncn', getAddressDecoder()],
     ['operator', getAddressDecoder()],
     ['index', getU64Decoder()],

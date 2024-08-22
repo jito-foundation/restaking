@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type VaultNcnSlasherTicket = {
+  discriminator: bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -53,6 +54,7 @@ export type VaultNcnSlasherTicket = {
 };
 
 export type VaultNcnSlasherTicketArgs = {
+  discriminator: number | bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -65,6 +67,7 @@ export type VaultNcnSlasherTicketArgs = {
 
 export function getVaultNcnSlasherTicketEncoder(): Encoder<VaultNcnSlasherTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncn', getAddressEncoder()],
     ['slasher', getAddressEncoder()],
@@ -78,6 +81,7 @@ export function getVaultNcnSlasherTicketEncoder(): Encoder<VaultNcnSlasherTicket
 
 export function getVaultNcnSlasherTicketDecoder(): Decoder<VaultNcnSlasherTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncn', getAddressDecoder()],
     ['slasher', getAddressDecoder()],

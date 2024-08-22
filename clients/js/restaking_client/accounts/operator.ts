@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type Operator = {
+  discriminator: bigint;
   base: Address;
   admin: Address;
   ncnAdmin: Address;
@@ -51,6 +52,7 @@ export type Operator = {
 };
 
 export type OperatorArgs = {
+  discriminator: number | bigint;
   base: Address;
   admin: Address;
   ncnAdmin: Address;
@@ -67,6 +69,7 @@ export type OperatorArgs = {
 
 export function getOperatorEncoder(): Encoder<OperatorArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['base', getAddressEncoder()],
     ['admin', getAddressEncoder()],
     ['ncnAdmin', getAddressEncoder()],
@@ -84,6 +87,7 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
 
 export function getOperatorDecoder(): Decoder<Operator> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['base', getAddressDecoder()],
     ['admin', getAddressDecoder()],
     ['ncnAdmin', getAddressDecoder()],
