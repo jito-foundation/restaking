@@ -24,18 +24,21 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 Understanding these core concepts will help you navigate the Jito Restaking ecosystem:
 
 - [Terminology](terminology.md)
-- [Restaking Program](concepts/restaking_program.md)
-- [Vault Program](concepts/vault_program.md)
-- [API](api/jito_jsm_core/index.html)
 
-## Tools
+## Restaking
 
-- [Jito CLI](tools/cli.md)
-
-## Advanced Topics
-
+- [Restaking Program Accounts](restaking/accounts.md)
 - [Building an Node Consensus Network](advanced/building_ncn.md)
-- [Building a Vault Receipt Token](advanced/building_vrt.md)
+
+## Vault
+
+- [Vault Program Accounts](vault/accounts.md)
+- [Vault Program Theory Of Operation](vault/theory_of_operation.md)
+
+## Developers
+
+- [API](api/jito_jsm_core/index.html)
+- [Jito CLI](tools/cli.md)
 
 ## License
 
