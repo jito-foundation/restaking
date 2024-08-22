@@ -24,7 +24,7 @@ Vault initialization is a crucial step in setting up the Vault Program for Jito'
 
 Vaults are initialized with several parameters that are used to configure the vault's behavior:
 - `base`: The base address of the vault. This is used to derive the vault's PDA.
-- `vrt_mint`: The mint address of the Vault Representation Token (VRT).
+- `vrt_mint`: The mint address of the Vault Receipt Token (VRT).
 - `supported_mint`: The mint address of the SPL token that the vault supports.
 - `admin`: The admin address of the vault. This is the address that will be used to manage the vault.
 - `deposit_fee_bps`: The deposit fee of the vault in basis points (bps).
