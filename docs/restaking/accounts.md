@@ -50,26 +50,9 @@ information, these tickets can store additional data like slot activated/deactiv
 
 The tickets are detailed below:
 
-#### Operator NCN Ticket
+#### NCN Operator State
 
-This ticket represents the relationship from the Operator's perspective. It is created by the Operator when it opts in
-to work with an NCN.
-
-```mermaid
-graph TD
-    classDef main fill: #f9f, stroke: #333, stroke-width: 2px;
-    classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
-    NCN[NCN]:::main
-    Operator[Operator]:::main
-    OperatorNcnTicket[OperatorNcnTicket]:::ticket
-    Operator -->|Creates| OperatorNcnTicket
-    Operator -.->|Opts in| NCN
-```
-
-#### Ncn Operator Ticket
-
-This ticket represents the relationship from the NCN's perspective. It is created by the NCN when it opts in to work
-with an Operator.
+This state represents the mutual opt-in relationship between an NCN and an Operator. The NCN initializes this state. After created, the NCN and operator can both warm-up and cooldown the state to show support for each other.
 
 ```mermaid
 graph TD
@@ -77,15 +60,16 @@ graph TD
     classDef ticket fill: #fff, stroke: #333, stroke-width: 1px;
     NCN[NCN]:::main
     Operator[Operator]:::main
-    NcnOperatorTicket[NcnOperatorTicket]:::ticket
-    NCN -->|Creates| NcnOperatorTicket
+    NcnOperatorState[NcnOperatorState]:::ticket
+    NCN -->|Creates| NcnOperatorState
     NCN -.->|Opts in| Operator
+    Operator -.->|Opts in| NCN
+    Operator -->|Updates| NcnOperatorState
 ```
 
 #### NCN Vault Ticket
 
-This ticket represents the relationship between an NCN and a Vault. It is created by both the NCN and the Vault when
-they opt in to work with each other.
+This ticket represents the relationship between an NCN and a Vault. It is created by the NCN to opt in to work with a Vault.
 
 ```mermaid
 graph TD
@@ -100,8 +84,7 @@ graph TD
 
 #### Operator Vault Ticket
 
-This ticket represents the relationship between an Operator and a Vault. It is created by both the Operator and the
-Vault when they opt in to work with each other.
+This ticket represents the relationship between an Operator and a Vault. It is created by the Operator to opt in to work with a Vault.
 
 ```mermaid
 graph TD
@@ -116,9 +99,7 @@ graph TD
 
 #### NCN Vault Slasher Ticket
 
-This ticket represents the slashing relationship between an NCN and a Vault.
-
-NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
+This ticket represents the slashing relationship between an NCN and a Vault. The NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
 
 ```mermaid
 graph TD
