@@ -87,7 +87,7 @@ impl Config {
         self.operator_count.into()
     }
 
-    /// Increments the count of NCNs.
+    /// Increments the count of NCNs by one.
     ///
     /// # Returns
     /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
@@ -106,7 +106,7 @@ impl Config {
         Ok(())
     }
 
-    /// Increments the count of operators
+    /// Increments the count of operators by one.
     ///
     /// # Returns
     /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
@@ -126,7 +126,10 @@ impl Config {
     }
 
     /// Returns the seeds for the PDA
-    pub fn seeds() -> Vec<Vec<u8>> {
+    ///
+    /// # Returns
+    /// * `Vec<Vec<u8>>` - A vector of byte vectors containing the seeds used for deriving the PDA.
+    fn seeds() -> Vec<Vec<u8>> {
         vec![b"config".to_vec()]
     }
 
