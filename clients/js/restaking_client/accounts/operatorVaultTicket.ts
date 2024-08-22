@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type OperatorVaultTicket = {
+  discriminator: bigint;
   operator: Address;
   vault: Address;
   index: bigint;
@@ -51,6 +52,7 @@ export type OperatorVaultTicket = {
 };
 
 export type OperatorVaultTicketArgs = {
+  discriminator: number | bigint;
   operator: Address;
   vault: Address;
   index: number | bigint;
@@ -61,6 +63,7 @@ export type OperatorVaultTicketArgs = {
 
 export function getOperatorVaultTicketEncoder(): Encoder<OperatorVaultTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['operator', getAddressEncoder()],
     ['vault', getAddressEncoder()],
     ['index', getU64Encoder()],
@@ -72,6 +75,7 @@ export function getOperatorVaultTicketEncoder(): Encoder<OperatorVaultTicketArgs
 
 export function getOperatorVaultTicketDecoder(): Decoder<OperatorVaultTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['operator', getAddressDecoder()],
     ['vault', getAddressDecoder()],
     ['index', getU64Decoder()],

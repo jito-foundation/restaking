@@ -65,6 +65,28 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
             };
         },
     },
+    // add 8 byte discriminator to accountNode
+    {
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "accountNode")
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "accountNode");
+
+            return {
+                ...node,
+                data: {
+                    ...node.data,
+                    fields: [
+                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        ...node.data.fields
+                    ]
+                }
+            };
+        },
+    },
 ]));
 restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClientDir, "src", "generated"), {
     formatCode: true,
@@ -125,6 +147,27 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u16"),
+            };
+        },
+    },
+    {
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "accountNode")
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "accountNode");
+
+            return {
+                ...node,
+                data: {
+                    ...node.data,
+                    fields: [
+                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        ...node.data.fields
+                    ]
+                }
             };
         },
     },
