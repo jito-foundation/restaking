@@ -60,7 +60,16 @@ impl Discriminator for Ncn {
 }
 
 impl Ncn {
-    #[allow(clippy::too_many_arguments)]
+    /// Creates a new [`Ncn`].
+    ///
+    /// # Arguments
+    /// * `base` - A `Pubkey` representing the base account used as a seed for deriving the PDA.
+    /// * `admin` - A `Pubkey` representing the admin's public key.
+    /// * `ncn_index` - A `u64` value representing the index of this NCN.
+    /// * `bump` - A `u8` value used for the program-derived address (PDA) bump seed, ensuring the correct PDA is generated.
+    ///
+    /// # Returns
+    /// * `Self` - Returns a new instance of the NCN.
     pub fn new(base: Pubkey, admin: Pubkey, ncn_index: u64, bump: u8) -> Self {
         Self {
             base,
@@ -79,22 +88,45 @@ impl Ncn {
         }
     }
 
+    /// Returns the index of the NCN.
+    ///
+    /// # Returns
+    /// * `u64` - The index of the NCN.
     pub fn index(&self) -> u64 {
         self.index.into()
     }
 
+    /// Returns the count of operator accounts associated with the NCN.
+    ///
+    /// # Returns
+    /// * `u64` - The number of operator accounts.
     pub fn operator_count(&self) -> u64 {
         self.operator_count.into()
     }
 
+    /// Returns the count of vault accounts associated with the NCN.
+    ///
+    /// # Returns
+    /// * `u64` - The number of vault accounts.
     pub fn vault_count(&self) -> u64 {
         self.vault_count.into()
     }
 
+    /// Returns the count of slasher accounts associated with the NCN.
+    ///
+    /// # Returns
+    /// * `u64` - The number of slasher accounts associated with the NCN.
     pub fn slasher_count(&self) -> u64 {
         self.slasher_count.into()
     }
 
+    /// Increments the count of operator accounts associated with the NCN by one.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
+    ///
+    /// # Errors
+    /// If the increment operation causes an overflow, it returns a [`jito_restaking_sdk::error::RestakingError`] error.
     pub fn increment_operator_count(&mut self) -> Result<(), RestakingError> {
         let mut operator_count: u64 = self.operator_count.into();
         operator_count = operator_count
@@ -104,6 +136,13 @@ impl Ncn {
         Ok(())
     }
 
+    /// Increments the count of vault accounts associated with the NCN by one.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
+    ///
+    /// # Errors
+    /// If the increment operation causes an overflow, it returns a [`jito_restaking_sdk::error::RestakingError`] error.
     pub fn increment_vault_count(&mut self) -> Result<(), RestakingError> {
         let mut vault_count: u64 = self.vault_count.into();
         vault_count = vault_count
@@ -113,6 +152,13 @@ impl Ncn {
         Ok(())
     }
 
+    /// Increments the count of slasher accounts associated with the NCN by one.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the increment is successful.
+    ///
+    /// # Errors
+    /// If the increment operation causes an overflow, it returns a [`jito_restaking_sdk::error::RestakingError`] error.
     pub fn increment_slasher_count(&mut self) -> Result<(), RestakingError> {
         let mut slasher_count: u64 = self.slasher_count.into();
         slasher_count = slasher_count
