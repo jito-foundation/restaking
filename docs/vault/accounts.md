@@ -1,42 +1,12 @@
 ---
-title: Vault Program
+title: Vault Program Accounts
 ---
 
-## About the program
+## 1. About the program
 
-The vault program manages the vault receipt tokens (VRTs) and associated deposits.
-The program stores deposited funds and handles the minting and burning of tokenized stake.
+The vault program manages the vault receipt tokens (VRTs) and associated deposits. The program stores deposited funds and handles the minting and burning of tokenized stake.
 
-The vault program allows users to do the following:
-
-- Create VRTs (staked assets)
-- Deposit assets and receive VRTs in return
-- Burn VRTs to withdraw assets
-- Manage delegations to operators
-- Handle slashing events
-
-The vault program stores user funds and is responsible for the issuance and redemption of VRTs.
-Funds do not leave the program under any conditions unless they are withdrawn by the user or a slashing takes place.
-
-## Vault
-
-Vaults are the core entities that manage deposits, withdrawals, and VRT minting/burning.
-
-Several operations can be performed with a vault:
-
-- Initialize a new vault with specific parameters
-- Add and remove support for operators
-- Add and remove support for NCNs
-- Manage delegations to operators
-- Process deposits and withdrawals
-- Handle slashing events
-
-## Vault receipt token (VRT)
-
-VRTs are a receipt token representing a user's pro-rata share of assets in the vault.
-They are minted when users deposit and burned when users withdraw.
-
-## Relationships
+## 2. Relationships
 
 The vault program interacts with other entities in the Jito Restaking protocol:
 
@@ -44,10 +14,9 @@ The vault program interacts with other entities in the Jito Restaking protocol:
 - NCN: The vault interacts with NCN for slashing and other protocol-specific operations
 - Users: Deposit assets and receive VRTs, or burn VRTs to withdraw assets
 
-The vault program uses similar ticket structures as the restaking program to manage these relationships, ensuring mutual
-opt-in from all parties involved. Those tickets include:
+Below is a diagram of the relationships between the entities:
 
-#### Vault NCN Ticket
+### 2.0.1. Vault NCN Ticket
 
 ```mermaid
 graph TD
@@ -60,7 +29,7 @@ graph TD
     Vault -.->|Opts in| Ncn
 ```
 
-#### Vault Operator Ticket
+### 2.0.2. Vault Operator Delegation
 
 ```mermaid
 graph TD
@@ -73,7 +42,7 @@ graph TD
     Vault -.->|Opts in| Operator
 ```
 
-#### Vault NCN Slasher Ticket
+### 2.0.3. Vault NCN Slasher Ticket
 
 ```mermaid
 graph TD
@@ -85,7 +54,7 @@ graph TD
     Vault -.->|Recognizes and copies from| NcnVaultSlasherTicket
 ```
 
-#### Vault NCN Slasher Operator Ticket
+### 2.0.4. Vault NCN Slasher Operator Ticket
 
 ```mermaid
 graph TD
@@ -102,26 +71,7 @@ graph TD
     Vault -.->|Tracks slashing of| Operator
 ```
 
-## Delegations
-
-The vault program manages delegations to operators. This involves:
-
-- Adding new delegations to operators
-- Removing delegations from operators
-- Updating delegations at epoch boundaries
-
-Delegations are stored in the VaultDelegationList.
-
-## Slashing
-
-The vault program handles slashing events, which may occur if an operator misbehaves. This includes:
-
-- Processing slash instructions from authorized slashers
-- Adjusting the vault's total assets and individual delegations
-- Ensuring the integrity of the VRT exchange rate
-- Respects the maximum slashing conditions set by the NCN
-
-## Tracking State
+## 3. Tracking State
 
 State in these programs is spread out across many accounts.
 To reason about the state of stake at any given time, one can reference the chart below.

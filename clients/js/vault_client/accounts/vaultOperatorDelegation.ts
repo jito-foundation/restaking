@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type VaultOperatorDelegation = {
+  discriminator: bigint;
   vault: Address;
   operator: Address;
   delegationState: DelegationState;
@@ -52,6 +53,7 @@ export type VaultOperatorDelegation = {
 };
 
 export type VaultOperatorDelegationArgs = {
+  discriminator: number | bigint;
   vault: Address;
   operator: Address;
   delegationState: DelegationStateArgs;
@@ -63,6 +65,7 @@ export type VaultOperatorDelegationArgs = {
 
 export function getVaultOperatorDelegationEncoder(): Encoder<VaultOperatorDelegationArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['operator', getAddressEncoder()],
     ['delegationState', getDelegationStateEncoder()],
@@ -75,6 +78,7 @@ export function getVaultOperatorDelegationEncoder(): Encoder<VaultOperatorDelega
 
 export function getVaultOperatorDelegationDecoder(): Decoder<VaultOperatorDelegation> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['operator', getAddressDecoder()],
     ['delegationState', getDelegationStateDecoder()],

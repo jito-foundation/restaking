@@ -1,5 +1,6 @@
 //! The NcnVaultSlasherTicket tracks the opting-in of a slasher to a particular vault.
 //! The NcnVaultSlasherTicket can be activated and deactivated over time by the NCN slasher admin.
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
