@@ -572,6 +572,18 @@ impl Vault {
         Ok(())
     }
 
+    /// Checks if a withdrawal is allowed based on the current vault limits.
+    ///
+    /// # Arguments
+    /// * `amount_to_withdraw` - A `u64` representing the amount of tokens that is requested to be withdrawn.
+    ///
+    /// # Returns
+    /// * `Result<(), VaultError>` - Returns `Ok(())` if the withdrawal is within the allowed limit.
+    ///
+    /// # Errors
+    /// This function can return the following errors:
+    /// * [`jito_vault_sdk::error::VaultError::VaultOverflow`] - If any arithmetic operation (addition or multiplication) results in an overflow.
+    /// * [`jito_vault_sdk::error::VaultError::VaultWithdrawalLimitExceeded`] - If the requested withdrawal exceeds the allowed limit for the epoch.
     pub fn check_withdrawal_allowd(&self, amount_to_withdraw: u64) -> Result<(), VaultError> {
         let total_withdraw_amount = self
             .epoch_withdraw_amount()

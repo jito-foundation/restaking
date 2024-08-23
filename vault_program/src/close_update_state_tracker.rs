@@ -69,7 +69,12 @@ pub fn process_close_vault_update_state_tracker(
         vault.set_vrt_cooling_down_amount(vault.vrt_enqueued_for_cooldown_amount());
         vault.set_vrt_enqueued_for_cooldown_amount(0);
         vault.set_epoch_withdraw_amount(0);
-        vault.set_epoch_snapshot_amount(vault.tokens_deposited());
+
+        let max_withdrawable = vault
+            .tokens_deposited()
+            .checked_sub(vault.delegation_state.total_security()?)
+            .ok_or(VaultError::VaultUnderflow)?;
+        vault.set_epoch_snapshot_amount(max_withdrawable);
     }
 
     msg!("Closing VaultUpdateStateTracker");
