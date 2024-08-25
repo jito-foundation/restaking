@@ -13,15 +13,9 @@ use crate::generated::types::SlotToggle;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnVaultTicket {
     pub discriminator: u64,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
+
     pub ncn: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
+
     pub vault: Pubkey,
     pub index: u64,
     pub state: SlotToggle,

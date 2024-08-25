@@ -8,6 +8,7 @@ use solana_program::msg;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DelegationState {
     /// The amount of stake that is currently active on the operator
     staked_amount: PodU64,

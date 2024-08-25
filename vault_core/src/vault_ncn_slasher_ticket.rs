@@ -13,15 +13,19 @@ impl Discriminator for VaultNcnSlasherTicket {
 /// The [`VaultNcnSlasherTicket`] account tracks a vault's support for a node consensus network
 /// slasher. It can be enabled and disabled over time by the vault slasher admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct VaultNcnSlasherTicket {
     /// The vault
+
     pub vault: Pubkey,
 
     /// The NCN
+
     pub ncn: Pubkey,
 
     /// The slasher
+
     pub slasher: Pubkey,
 
     /// The maximum slashable per epoch per operator

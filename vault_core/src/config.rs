@@ -21,12 +21,15 @@ impl Discriminator for Config {
 /// The vault configuration account for the vault program.
 /// Manages program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct Config {
     /// The configuration admin
+
     pub admin: Pubkey,
 
     /// The approved restaking program for this vault
+
     pub restaking_program: Pubkey,
 
     /// The length of an epoch in slots

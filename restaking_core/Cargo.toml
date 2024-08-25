@@ -9,6 +9,10 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
 [dependencies]
 borsh = { workspace = true }
 bytemuck = { workspace = true }
@@ -20,6 +24,7 @@ solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }

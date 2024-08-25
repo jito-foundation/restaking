@@ -34,10 +34,38 @@ macro_rules! impl_int_conversion {
     };
 }
 
+/// Macro for implementing optional serde serialize and deserialize for Pod* types
+#[macro_export]
+macro_rules! impl_pod_serde {
+    ($P:ty, $I:ty) => {
+        #[cfg(feature = "serde")]
+        impl serde::Serialize for $P {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <$I>::from(self).serialize(serializer)
+            }
+        }
+
+        #[cfg(feature = "serde")]
+        impl<'de> serde::Deserialize<'de> for $P {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                let value = <$I>::deserialize(deserializer)?;
+                Ok(Self::from(value))
+            }
+        }
+    };
+}
+
 #[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq)]
 #[repr(transparent)]
 pub struct PodU16([u8; 2]);
 impl_int_conversion!(PodU16, u16);
+impl_pod_serde!(PodU16, u16);
 
 impl Debug for PodU16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -50,6 +78,7 @@ impl Debug for PodU16 {
 #[repr(transparent)]
 pub struct PodU32([u8; 4]);
 impl_int_conversion!(PodU32, u32);
+impl_pod_serde!(PodU32, u32);
 
 impl Debug for PodU32 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -58,6 +87,7 @@ impl Debug for PodU32 {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq)]
 #[repr(transparent)]
 pub struct PodU64([u8; 8]);

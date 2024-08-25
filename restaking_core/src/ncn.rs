@@ -14,6 +14,7 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 /// The NCN manages the operators, vaults, and slashers associated with a network
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ncn {
     /// The base account used as a PDA seed
     pub base: Pubkey,

@@ -17,6 +17,7 @@ impl Discriminator for Operator {
 /// including the admin, voter, and the number of NCN and vault accounts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Operator {
     /// The base pubkey used as a seed for the PDA
     pub base: Pubkey,
@@ -38,6 +39,7 @@ pub struct Operator {
 
     /// The voter pubkey can be used as the voter for signing transactions for interacting
     /// with various NCN programs. NCNs can also opt for their own signing infrastructure.
+
     pub voter: Pubkey,
 
     /// The operator index

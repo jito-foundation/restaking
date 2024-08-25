@@ -8,7 +8,6 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
 };
-
 impl Discriminator for VaultNcnSlasherOperatorTicket {
     const DISCRIMINATOR: u8 = 6;
 }
@@ -18,18 +17,23 @@ impl Discriminator for VaultNcnSlasherOperatorTicket {
 /// ensure that the operator is held accountable for their actions and that slashing conditions
 /// aren't exceeded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct VaultNcnSlasherOperatorTicket {
     /// The vault slashed
+
     pub vault: Pubkey,
 
     /// The node consensus network slashed
+
     pub ncn: Pubkey,
 
     /// The slasher
+
     pub slasher: Pubkey,
 
     /// The operator
+
     pub operator: Pubkey,
 
     /// The epoch

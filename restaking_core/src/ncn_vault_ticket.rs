@@ -9,17 +9,21 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+
 impl Discriminator for NcnVaultTicket {
     const DISCRIMINATOR: u8 = 6;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnVaultTicket {
     /// The NCN
+
     pub ncn: Pubkey,
 
     /// The vault account
+
     pub vault: Pubkey,
 
     index: PodU64,

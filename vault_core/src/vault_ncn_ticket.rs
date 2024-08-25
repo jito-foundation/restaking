@@ -13,12 +13,15 @@ impl Discriminator for VaultNcnTicket {
 /// The [`VaultNcnTicket`] account tracks a vault supporting a node consensus network. It can be
 /// enabled and disabled over time by the vault NCN admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct VaultNcnTicket {
     /// The vault account
+
     pub vault: Pubkey,
 
     /// The ncn account
+
     pub ncn: Pubkey,
 
     /// The index

@@ -8,7 +8,6 @@ use jito_jsm_core::loader::load_signer;
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
-
 use crate::delegation_state::DelegationState;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -35,18 +34,22 @@ impl Discriminator for Vault {
 /// based on the amount of tokens deposited.
 /// It also contains several administrative functions for features inside the vault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct Vault {
     /// The base account of the VRT
+
     pub base: Pubkey,
 
     // ------------------------------------------
     // Token information and accounting
     // ------------------------------------------
     /// Mint of the VRT token
+
     pub vrt_mint: Pubkey,
 
     /// Mint of the token that is supported by the VRT
+
     pub supported_mint: Pubkey,
 
     /// The total number of VRT in circulation
@@ -74,33 +77,43 @@ pub struct Vault {
     // Admins
     // ------------------------------------------
     /// Vault admin
+
     pub admin: Pubkey,
 
     /// The delegation admin responsible for adding and removing delegations from operators.
+
     pub delegation_admin: Pubkey,
 
     /// The operator admin responsible for adding and removing operators.
+
     pub operator_admin: Pubkey,
 
     /// The node consensus network admin responsible for adding and removing support for NCNs.
+
     pub ncn_admin: Pubkey,
 
     /// The admin responsible for adding and removing slashers.
+
     pub slasher_admin: Pubkey,
 
     /// The admin responsible for setting the capacity
+
     pub capacity_admin: Pubkey,
 
     /// The admin responsible for setting the fees
+
     pub fee_admin: Pubkey,
 
     /// The admin responsible for withdrawing tokens
+
     pub withdraw_admin: Pubkey,
 
     /// Fee wallet account
+
     pub fee_wallet: Pubkey,
 
     /// Optional mint signer
+
     pub mint_burn_admin: Pubkey,
 
     // ------------------------------------------

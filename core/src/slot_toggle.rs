@@ -11,6 +11,7 @@ use shank::ShankType;
 /// based on slot time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SlotToggle {
     /// The slot at which the feature was added
     slot_added: PodU64,

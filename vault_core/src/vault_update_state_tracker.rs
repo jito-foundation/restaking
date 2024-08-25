@@ -3,7 +3,6 @@ use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
-
 use crate::delegation_state::DelegationState;
 
 impl Discriminator for VaultUpdateStateTracker {
@@ -13,6 +12,7 @@ impl Discriminator for VaultUpdateStateTracker {
 /// The [`crate::vault_operator_delegation::VaultUpdateDelegationsTicket`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VaultUpdateStateTracker {
     /// The vault associated with this update ticket
     pub vault: Pubkey,

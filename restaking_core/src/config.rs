@@ -18,6 +18,7 @@ impl Discriminator for Config {
 /// program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Config {
     /// The configuration admin
     pub admin: Pubkey,

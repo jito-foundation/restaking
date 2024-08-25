@@ -9,8 +9,13 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
 [dependencies]
 borsh = { workspace = true }
 bytemuck = { workspace = true }
 jito-account-traits-derive = { workspace = true }
+serde = { workspace = true, optional = true }
 solana-program = { workspace = true }

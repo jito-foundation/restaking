@@ -13,15 +13,19 @@ impl Discriminator for VaultStakerWithdrawalTicket {
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 /// For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
     /// The vault being withdrawn from
+
     pub vault: Pubkey,
 
     /// The staker withdrawing from the vault
+
     pub staker: Pubkey,
 
     /// The base account used as a PDA seed
+
     pub base: Pubkey,
 
     /// The amount of VRT held in the VaultStakerWithdrawalTicket token account at the time of creation.

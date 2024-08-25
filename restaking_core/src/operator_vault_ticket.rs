@@ -12,11 +12,14 @@ impl Discriminator for OperatorVaultTicket {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OperatorVaultTicket {
     /// The operator account
+
     pub operator: Pubkey,
 
     /// The vault account
+
     pub vault: Pubkey,
 
     /// The index

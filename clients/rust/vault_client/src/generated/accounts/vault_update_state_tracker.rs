@@ -13,10 +13,7 @@ use crate::generated::types::DelegationState;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VaultUpdateStateTracker {
     pub discriminator: u64,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
+
     pub vault: Pubkey,
     pub ncn_epoch: u64,
     pub last_updated_index: u64,

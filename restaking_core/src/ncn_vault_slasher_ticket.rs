@@ -7,6 +7,7 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+
 impl Discriminator for NcnVaultSlasherTicket {
     const DISCRIMINATOR: u8 = 7;
 }
@@ -17,14 +18,18 @@ impl Discriminator for NcnVaultSlasherTicket {
 /// vault for a maximum amount per epoch.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnVaultSlasherTicket {
     /// The NCN
+
     pub ncn: Pubkey,
 
     /// The vault account this slasher can slash
+
     pub vault: Pubkey,
 
     /// The slasher signer
+
     pub slasher: Pubkey,
 
     /// The max slashable funds per epoch per operator
