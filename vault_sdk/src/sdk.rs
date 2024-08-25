@@ -766,3 +766,23 @@ pub fn warmup_vault_ncn_slasher_ticket(
             .unwrap(),
     }
 }
+
+pub fn withdraw_excess_lamports(
+    program_id: &Pubkey,
+    source_info: &Pubkey,
+    destination_info: &Pubkey,
+    admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*source_info, false),
+        AccountMeta::new(*destination_info, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::WithdrawExcessLamports
+            .try_to_vec()
+            .unwrap(),
+    }
+}

@@ -317,6 +317,12 @@ pub enum VaultInstruction {
     Slash {
         amount: u64
     },
+
+    /// Withdraw Excess Lamports
+    #[account(0, writable, name = "source")]
+    #[account(1, writable, name = "destination")]
+    #[account(2, signer, name = "admin")]
+    WithdrawExcessLamports,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]

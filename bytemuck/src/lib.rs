@@ -22,11 +22,18 @@ pub trait AccountDeserialize: Sized + Pod + Discriminator {
     /// * `Result<&Self, ProgramError>` - The deserialized struct as a reference or an error
     fn try_from_slice_unchecked(data: &[u8]) -> Result<&Self, ProgramError> {
         if data.first() != Some(&Self::DISCRIMINATOR) {
-            msg!(
-                "Discriminator is invalid; expected {}, got {}",
-                Self::DISCRIMINATOR,
-                data.first().unwrap()
-            );
+            match data.first() {
+                Some(first) => {
+                    msg!(
+                        "Discriminator is invalid; expected {}, got {}",
+                        Self::DISCRIMINATOR,
+                        first
+                    );
+                }
+                None => {
+                    msg!("Discriminator is invalid; expected {}", Self::DISCRIMINATOR,);
+                }
+            }
             return Err(ProgramError::InvalidAccountData);
         }
         bytemuck::try_from_bytes(&data[8..]).map_err(|_| ProgramError::InvalidAccountData)
@@ -43,11 +50,18 @@ pub trait AccountDeserialize: Sized + Pod + Discriminator {
     /// * `Result<&mut Self, ProgramError>` - The deserialized struct as a reference or an error
     fn try_from_slice_unchecked_mut(data: &mut [u8]) -> Result<&mut Self, ProgramError> {
         if data.first() != Some(&Self::DISCRIMINATOR) {
-            msg!(
-                "Discriminator is invalid; expected {}, got {}",
-                Self::DISCRIMINATOR,
-                data.first().unwrap()
-            );
+            match data.first() {
+                Some(first) => {
+                    msg!(
+                        "Discriminator is invalid; expected {}, got {}",
+                        Self::DISCRIMINATOR,
+                        first
+                    );
+                }
+                None => {
+                    msg!("Discriminator is invalid; expected {}", Self::DISCRIMINATOR,);
+                }
+            }
             return Err(ProgramError::InvalidAccountData);
         }
         bytemuck::try_from_bytes_mut(&mut data[8..]).map_err(|_| ProgramError::InvalidAccountData)

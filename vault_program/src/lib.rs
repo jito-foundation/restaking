@@ -27,6 +27,7 @@ mod update_token_metadata;
 mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
+mod withdraw_excess_lamports;
 mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
@@ -63,6 +64,7 @@ use crate::{
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
+    withdraw_excess_lamports::process_withdraw_excess_lamports,
     withdrawal_asset::process_withdrawal_asset,
 };
 
@@ -270,6 +272,11 @@ pub fn process_instruction(
         VaultInstruction::UpdateTokenMetadata { name, symbol, uri } => {
             msg!("Instruction: UpdateTokenMetadata");
             process_update_token_metadata(program_id, accounts, name, symbol, uri)
+        }
+
+        VaultInstruction::WithdrawExcessLamports => {
+            msg!("Instruction: WithdrawExcessLamports");
+            process_withdraw_excess_lamports(program_id, accounts)
         }
     }
 }

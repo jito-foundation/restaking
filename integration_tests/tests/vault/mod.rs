@@ -17,3 +17,4 @@ mod set_fees;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
+mod withdraw_excess_lamports;

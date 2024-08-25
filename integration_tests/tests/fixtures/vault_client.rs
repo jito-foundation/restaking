@@ -1462,6 +1462,27 @@ impl VaultProgramClient {
         .await
     }
 
+    pub async fn withdraw_excess_lamports(
+        &mut self,
+        vault: &Pubkey,
+        dest_info: &Pubkey,
+        admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::withdraw_excess_lamports(
+                &jito_vault_program::id(),
+                vault,
+                dest_info,
+                &admin.pubkey(),
+            )],
+            Some(&admin.pubkey()),
+            &[&admin],
+            blockhash,
+        ))
+        .await
+    }
+
     async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(

@@ -85,6 +85,15 @@ impl TestBuilder {
             .await
     }
 
+    pub async fn get_account(
+        &mut self,
+        account: &Pubkey,
+    ) -> Result<Option<solana_sdk::account::Account>, BanksClientError> {
+        let account = self.context.banks_client.get_account(*account).await?;
+
+        Ok(account)
+    }
+
     pub async fn get_token_account(
         &mut self,
         token_account: &Pubkey,

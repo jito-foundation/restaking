@@ -83,6 +83,8 @@ pub enum VaultError {
     NcnOverflow,
     #[error("OperatorOverflow")]
     OperatorOverflow,
+    #[error("NotRentExempt")]
+    NotRentExempt,
 }
 
 impl<T> DecodeError<T> for VaultError {
