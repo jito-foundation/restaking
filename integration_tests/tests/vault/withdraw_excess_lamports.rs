@@ -40,14 +40,14 @@ async fn test_success_withdraw_excess_lamports() {
     let mut vault_program_client = fixture.vault_program_client();
 
     let alice = Keypair::new();
-    let expected_amount = 100.0;
+    let expected_amount = 100;
 
     let mut before_vault_lamports = 0;
     if let Some(before_vault) = fixture.get_account(&vault_pubkey).await.unwrap() {
         before_vault_lamports = before_vault.lamports();
     }
     fixture
-        .transfer(&vault_pubkey, expected_amount)
+        .transfer(&vault_pubkey, expected_amount as f64)
         .await
         .unwrap();
 
@@ -68,7 +68,7 @@ async fn test_success_withdraw_excess_lamports() {
     }
 
     if let Some(alice_account) = fixture.get_account(&alice.pubkey()).await.unwrap() {
-        assert_eq!(alice_account.lamports(), 100 * LAMPORTS_PER_SOL);
+        assert_eq!(alice_account.lamports(), expected_amount * LAMPORTS_PER_SOL);
     }
 }
 
@@ -78,21 +78,21 @@ async fn test_wrong_admin_signed_fail() {
     let mut vault_program_client = fixture.vault_program_client();
 
     let alice = Keypair::new();
-    let expected_amount = 100.0;
+    let expected_amount = 100;
 
     let mut before_vault_lamports = 0;
     if let Some(before_vault) = fixture.get_account(&vault_pubkey).await.unwrap() {
         before_vault_lamports = before_vault.lamports();
     }
     fixture
-        .transfer(&vault_pubkey, expected_amount)
+        .transfer(&vault_pubkey, expected_amount as f64)
         .await
         .unwrap();
 
     if let Some(after_vault) = fixture.get_account(&vault_pubkey).await.unwrap() {
         assert_eq!(
             after_vault.lamports(),
-            before_vault_lamports + expected_amount as u64 * LAMPORTS_PER_SOL
+            before_vault_lamports + expected_amount * LAMPORTS_PER_SOL
         );
     }
 

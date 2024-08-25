@@ -36,14 +36,14 @@ async fn test_success_withdraw_excess_lamports() {
     // NCN
     {
         let alice = Keypair::new();
-        let expected_amount = 100.0;
+        let expected_amount = 100;
 
         let mut before_ncn_lamports = 0;
         if let Some(before_ncn) = fixture.get_account(&ncn_root.ncn_pubkey).await.unwrap() {
             before_ncn_lamports = before_ncn.lamports();
         }
         fixture
-            .transfer(&ncn_root.ncn_pubkey, expected_amount)
+            .transfer(&ncn_root.ncn_pubkey, expected_amount as f64)
             .await
             .unwrap();
 
@@ -67,14 +67,14 @@ async fn test_success_withdraw_excess_lamports() {
         assert_eq!(before_ncn_lamports, after_ncn.lamports());
 
         if let Some(alice_account) = fixture.get_account(&alice.pubkey()).await.unwrap() {
-            assert_eq!(alice_account.lamports(), 100 * LAMPORTS_PER_SOL);
+            assert_eq!(alice_account.lamports(), expected_amount * LAMPORTS_PER_SOL);
         }
     }
 
     // Operator
     {
         let bob = Keypair::new();
-        let expected_amount = 100.0;
+        let expected_amount = 100;
 
         let mut before_operator_lamports = 0;
         if let Some(before_operator) = fixture
@@ -85,7 +85,7 @@ async fn test_success_withdraw_excess_lamports() {
             before_operator_lamports = before_operator.lamports();
         }
         fixture
-            .transfer(&operator_root.operator_pubkey, expected_amount)
+            .transfer(&operator_root.operator_pubkey, expected_amount as f64)
             .await
             .unwrap();
 
@@ -117,7 +117,7 @@ async fn test_success_withdraw_excess_lamports() {
         assert_eq!(before_operator_lamports, after_operator.lamports());
 
         if let Some(bob_account) = fixture.get_account(&bob.pubkey()).await.unwrap() {
-            assert_eq!(bob_account.lamports(), 100 * LAMPORTS_PER_SOL);
+            assert_eq!(bob_account.lamports(), expected_amount * LAMPORTS_PER_SOL);
         }
     }
 }
