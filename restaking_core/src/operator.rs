@@ -144,6 +144,25 @@ impl Operator {
         }
     }
 
+    /// Validates the admin account by checking if it matches the expected admin.
+    ///
+    /// # Arguments
+    /// * `admin` - A reference to the `Pubkey` representing the public key of the admin attempting to authorize
+    ///   the operation. The function compares this key to the expected admin public key stored in `self`.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the provided admin key matches the expected admin.
+    ///   
+    /// # Errors
+    /// Otherwise, returns a [`jito_restaking_sdk::error::RestakingError::NcnAdminInvalid`] error if the keys do not match.
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), RestakingError> {
+        if self.admin.ne(admin) {
+            msg!("Operator admin does not match the provided admin");
+            return Err(RestakingError::OperatorAdminInvalid);
+        }
+        Ok(())
+    }
+
     /// Returns the seeds for the PDA
     ///
     /// # Arguments

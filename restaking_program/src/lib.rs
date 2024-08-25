@@ -21,6 +21,7 @@ mod operator_withdrawal_asset;
 mod warmup_ncn_vault_slasher_ticket;
 mod warmup_ncn_vault_ticket;
 mod warmup_operator_vault_ticket;
+mod withdraw_excess_lamports;
 
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
@@ -54,6 +55,7 @@ use crate::{
     warmup_ncn_vault_slasher_ticket::process_warmup_ncn_vault_slasher_ticket,
     warmup_ncn_vault_ticket::process_warmup_ncn_vault_ticket,
     warmup_operator_vault_ticket::process_warmup_operator_vault_ticket,
+    withdraw_excess_lamports::process_withdraw_excess_lamports,
 };
 
 declare_id!(str_to_pubkey(env!("RESTAKING_PROGRAM_ID")));
@@ -180,6 +182,10 @@ pub fn process_instruction(
         RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: OperatorWithdrawalAsset");
             process_operator_withdrawal_asset(program_id, accounts, token_mint, amount)
+        }
+        RestakingInstruction::WithdrawExcessLamports => {
+            msg!("Instruction: WithdrawExcessLamports");
+            process_withdraw_excess_lamports(program_id, accounts)
         }
     }
 }

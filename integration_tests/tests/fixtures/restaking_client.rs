@@ -914,6 +914,28 @@ impl RestakingProgramClient {
         .await
     }
 
+    pub async fn withdraw_excess_lamports(
+        &mut self,
+        vault: &Pubkey,
+        dest_info: &Pubkey,
+        admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::withdraw_excess_lamports(
+                &jito_restaking_program::id(),
+                vault,
+                dest_info,
+                &admin.pubkey(),
+            )],
+            Some(&admin.pubkey()),
+            &[admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn process_transaction(&mut self, tx: &Transaction) -> TestResult<()> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(

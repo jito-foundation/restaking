@@ -184,6 +184,12 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "receiver_token_account")]
     #[account(4, name = "token_program")]
     OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+
+    /// Withdraw Excess Lamports
+    #[account(0, writable, name = "source")]
+    #[account(1, writable, name = "destination")]
+    #[account(2, signer, name = "admin")]
+    WithdrawExcessLamports,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]

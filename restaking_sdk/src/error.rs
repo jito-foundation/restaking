@@ -50,6 +50,9 @@ pub enum RestakingError {
     VaultOverflow,
     #[error("SlasherOverflow")]
     SlasherOverflow,
+
+    #[error("NotRentExempt")]
+    NotRentExempt,
 }
 
 impl<T> DecodeError<T> for RestakingError {

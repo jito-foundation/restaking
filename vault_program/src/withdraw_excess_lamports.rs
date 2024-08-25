@@ -23,7 +23,6 @@ pub fn process_withdraw_excess_lamports(
     let source_data = source_info.data.borrow();
     if let Ok(vault) = Vault::try_from_slice_unchecked(&source_data) {
         vault.check_admin(admin.key)?;
-        // validation
     } else {
         msg!("Source info can not be deserialized");
         return Err(ProgramError::InvalidAccountData);
