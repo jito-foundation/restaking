@@ -42,7 +42,7 @@ pub struct VaultNcnSlasherOperatorTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultNcnSlasherOperatorTicket {
@@ -62,7 +62,7 @@ impl VaultNcnSlasherOperatorTicket {
             epoch: PodU64::from(epoch),
             slashed: PodU64::from(0),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -212,5 +212,25 @@ impl VaultNcnSlasherOperatorTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vault_ncn_slasher_operator_ticket_no_padding() {
+        let vault_ncn_slasher_operator_ticket_size =
+            std::mem::size_of::<VaultNcnSlasherOperatorTicket>();
+        let sum_of_fields = size_of::<Pubkey>() + // vault
+            size_of::<Pubkey>() + // ncn
+            size_of::<Pubkey>() + // slasher
+            size_of::<Pubkey>() + // operator
+            size_of::<PodU64>() + // epoch
+            size_of::<PodU64>() + // slashed
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(vault_ncn_slasher_operator_ticket_size, sum_of_fields);
     }
 }

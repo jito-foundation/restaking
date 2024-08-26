@@ -31,7 +31,7 @@ pub struct NcnOperatorState {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl NcnOperatorState {
@@ -43,7 +43,7 @@ impl NcnOperatorState {
             ncn_opt_in_state: SlotToggle::new(0),
             operator_opt_in_state: SlotToggle::new(0),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -110,5 +110,23 @@ impl NcnOperatorState {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ncn_operator_state_no_padding() {
+        let ncn_operator_state_size = std::mem::size_of::<NcnOperatorState>();
+        let sum_of_fields = size_of::<Pubkey>() + // ncn
+            size_of::<Pubkey>() + // operator
+            size_of::<PodU64>() + // index
+            size_of::<SlotToggle>() + // ncn_opt_in_state
+            size_of::<SlotToggle>() + // operator_opt_in_state
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(ncn_operator_state_size, sum_of_fields);
     }
 }

@@ -48,7 +48,7 @@ pub struct Config {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 17],
+    reserved: [u8; 263],
 }
 
 impl Config {
@@ -72,7 +72,7 @@ impl Config {
             fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS),
             fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
             bump,
-            reserved: [0; 17],
+            reserved: [0; 263],
         }
     }
 
@@ -149,5 +149,25 @@ impl Config {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_no_padding() {
+        let config_size = std::mem::size_of::<Config>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // admin
+            std::mem::size_of::<Pubkey>() + // restaking_program
+            std::mem::size_of::<PodU64>() + // epoch_length
+            std::mem::size_of::<PodU64>() + // num_vaults
+            std::mem::size_of::<PodU16>() + // fee_cap_bps
+            std::mem::size_of::<PodU16>() + // fee_rate_of_change_bps
+            std::mem::size_of::<PodU16>() + // fee_bump_bps
+            std::mem::size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(config_size, sum_of_fields);
     }
 }
