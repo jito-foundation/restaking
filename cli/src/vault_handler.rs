@@ -2,8 +2,11 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_vault_client::instructions::{InitializeConfigBuilder, InitializeVaultBuilder};
+use jito_vault_client::instructions::{
+    CreateTokenMetadataBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
+};
 use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
 use solana_account_decoder::UiAccountEncoding;
 use solana_program::pubkey::Pubkey;
@@ -74,6 +77,15 @@ impl VaultCliHandler {
             VaultCommands::Vault {
                 action: VaultActions::List,
             } => self.list_vaults().await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::CreateTokenMetadata {
+                        vault,
+                        name,
+                        symbol,
+                        uri,
+                    },
+            } => self.create_token_metadata(vault, name, symbol, uri).await,
         }
     }
 
@@ -210,5 +222,67 @@ impl VaultCliHandler {
 
     fn get_rpc_client(&self) -> RpcClient {
         RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
+    }
+
+    async fn create_token_metadata(
+        &self,
+        vault: String,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let vault_pubkey = Pubkey::from_str(&vault)?;
+
+        let rpc_client = self.get_rpc_client();
+        let vault_account = rpc_client.get_account(&vault_pubkey).await?;
+        let vault = Vault::try_from_slice_unchecked(&vault_account.data)?;
+
+        let metadata = Pubkey::find_program_address(
+            &[
+                b"metadata",
+                inline_mpl_token_metadata::id().as_ref(),
+                vault.vrt_mint.as_ref(),
+            ],
+            &inline_mpl_token_metadata::id(),
+        )
+        .0;
+
+        let ix = CreateTokenMetadataBuilder::new()
+            .vault(vault_pubkey)
+            .admin(keypair.pubkey())
+            .vrt_mint(vault.vrt_mint)
+            .payer(keypair.pubkey())
+            .metadata(metadata)
+            .name(name)
+            .symbol(symbol)
+            .uri(uri)
+            .instruction();
+
+        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            recent_blockhash,
+        );
+
+        info!(
+            "Creating token metadata transaction: {:?}",
+            tx.get_signature()
+        );
+        let simulation = rpc_client.simulate_transaction(&tx).await?;
+        info!("Simulation result: {:?}", simulation);
+        rpc_client
+            .send_and_confirm_transaction(&tx)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
     }
 }

@@ -34,6 +34,17 @@ pub enum VaultActions {
         /// The decimals of the token
         decimals: u8,
     },
+    /// Creates token metadata for the vault's LRT token
+    CreateTokenMetadata {
+        /// The vault pubkey
+        vault: String,
+        /// The name of the token
+        name: String,
+        /// The symbol of the token
+        symbol: String,
+        /// The URI for the token metadata
+        uri: String,
+    },
     /// Gets a vault
     Get {
         /// The vault pubkey

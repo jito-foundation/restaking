@@ -22,6 +22,7 @@ jito-restaking-client = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-vault-client = { workspace = true }
 jito-vault-core = { workspace = true }
+jito-vault-sdk = { workspace = true }
 log = { workspace = true }
 solana-account-decoder = { workspace = true }
 solana-cli-config = { workspace = true }
