@@ -19,11 +19,9 @@ impl Discriminator for NcnVaultTicket {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnVaultTicket {
     /// The NCN
-
     pub ncn: Pubkey,
 
     /// The vault account
-
     pub vault: Pubkey,
 
     index: PodU64,

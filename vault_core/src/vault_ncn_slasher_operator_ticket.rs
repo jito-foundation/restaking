@@ -21,19 +21,15 @@ impl Discriminator for VaultNcnSlasherOperatorTicket {
 #[repr(C)]
 pub struct VaultNcnSlasherOperatorTicket {
     /// The vault slashed
-
     pub vault: Pubkey,
 
     /// The node consensus network slashed
-
     pub ncn: Pubkey,
 
     /// The slasher
-
     pub slasher: Pubkey,
 
     /// The operator
-
     pub operator: Pubkey,
 
     /// The epoch

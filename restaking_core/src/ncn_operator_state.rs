@@ -15,7 +15,6 @@ impl Discriminator for NcnOperatorState {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnOperatorState {
     /// The NCN account
-
     pub ncn: Pubkey,
 
     /// The operator account

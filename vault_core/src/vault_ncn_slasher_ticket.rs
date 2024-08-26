@@ -17,15 +17,12 @@ impl Discriminator for VaultNcnSlasherTicket {
 #[repr(C)]
 pub struct VaultNcnSlasherTicket {
     /// The vault
-
     pub vault: Pubkey,
 
     /// The NCN
-
     pub ncn: Pubkey,
 
     /// The slasher
-
     pub slasher: Pubkey,
 
     /// The maximum slashable per epoch per operator

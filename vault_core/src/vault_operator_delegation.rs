@@ -16,11 +16,9 @@ impl Discriminator for VaultOperatorDelegation {
 #[repr(C)]
 pub struct VaultOperatorDelegation {
     /// The vault account
-
     pub vault: Pubkey,
 
     /// The operator account
-
     pub operator: Pubkey,
 
     pub delegation_state: DelegationState,

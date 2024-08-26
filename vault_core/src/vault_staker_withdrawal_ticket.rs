@@ -17,15 +17,12 @@ impl Discriminator for VaultStakerWithdrawalTicket {
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
     /// The vault being withdrawn from
-
     pub vault: Pubkey,
 
     /// The staker withdrawing from the vault
-
     pub staker: Pubkey,
 
     /// The base account used as a PDA seed
-
     pub base: Pubkey,
 
     /// The amount of VRT held in the VaultStakerWithdrawalTicket token account at the time of creation.

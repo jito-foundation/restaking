@@ -21,15 +21,12 @@ impl Discriminator for NcnVaultSlasherTicket {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnVaultSlasherTicket {
     /// The NCN
-
     pub ncn: Pubkey,
 
     /// The vault account this slasher can slash
-
     pub vault: Pubkey,
 
     /// The slasher signer
-
     pub slasher: Pubkey,
 
     /// The max slashable funds per epoch per operator

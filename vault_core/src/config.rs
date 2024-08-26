@@ -25,11 +25,9 @@ impl Discriminator for Config {
 #[repr(C)]
 pub struct Config {
     /// The configuration admin
-
     pub admin: Pubkey,
 
     /// The approved restaking program for this vault
-
     pub restaking_program: Pubkey,
 
     /// The length of an epoch in slots

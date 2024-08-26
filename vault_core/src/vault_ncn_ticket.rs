@@ -17,11 +17,9 @@ impl Discriminator for VaultNcnTicket {
 #[repr(C)]
 pub struct VaultNcnTicket {
     /// The vault account
-
     pub vault: Pubkey,
 
     /// The ncn account
-
     pub ncn: Pubkey,
 
     /// The index
