@@ -27,7 +27,8 @@ pub struct NcnOperatorState {
     pub ncn_opt_in_state: SlotToggle,
     pub operator_opt_in_state: SlotToggle,
     pub bump: u8,
-    pub reserved: [u8; 7],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 263],
 }
 
 impl NcnOperatorState {

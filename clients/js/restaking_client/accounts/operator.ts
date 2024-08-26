@@ -81,7 +81,7 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['ncnCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -99,7 +99,7 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['ncnCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

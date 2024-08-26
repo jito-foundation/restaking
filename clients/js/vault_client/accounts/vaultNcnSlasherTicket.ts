@@ -75,7 +75,7 @@ export function getVaultNcnSlasherTicketEncoder(): Encoder<VaultNcnSlasherTicket
     ['index', getU64Encoder()],
     ['state', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -89,7 +89,7 @@ export function getVaultNcnSlasherTicketDecoder(): Decoder<VaultNcnSlasherTicket
     ['index', getU64Decoder()],
     ['state', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

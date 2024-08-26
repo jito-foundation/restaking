@@ -8,6 +8,10 @@
 
 import {
   combineCodec,
+  fixDecoderSize,
+  fixEncoderSize,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -15,19 +19,26 @@ import {
   type Codec,
   type Decoder,
   type Encoder,
+  type ReadonlyUint8Array,
 } from '@solana/web3.js';
 
-export type SlotToggle = { slotAdded: bigint; slotRemoved: bigint };
+export type SlotToggle = {
+  slotAdded: bigint;
+  slotRemoved: bigint;
+  reserved: ReadonlyUint8Array;
+};
 
 export type SlotToggleArgs = {
   slotAdded: number | bigint;
   slotRemoved: number | bigint;
+  reserved: ReadonlyUint8Array;
 };
 
 export function getSlotToggleEncoder(): Encoder<SlotToggleArgs> {
   return getStructEncoder([
     ['slotAdded', getU64Encoder()],
     ['slotRemoved', getU64Encoder()],
+    ['reserved', fixEncoderSize(getBytesEncoder(), 32)],
   ]);
 }
 
@@ -35,6 +46,7 @@ export function getSlotToggleDecoder(): Decoder<SlotToggle> {
   return getStructDecoder([
     ['slotAdded', getU64Decoder()],
     ['slotRemoved', getU64Decoder()],
+    ['reserved', fixDecoderSize(getBytesDecoder(), 32)],
   ]);
 }
 

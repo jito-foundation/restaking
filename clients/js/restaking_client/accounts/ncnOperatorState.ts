@@ -72,7 +72,7 @@ export function getNcnOperatorStateEncoder(): Encoder<NcnOperatorStateArgs> {
     ['ncnOptInState', getSlotToggleEncoder()],
     ['operatorOptInState', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -85,7 +85,7 @@ export function getNcnOperatorStateDecoder(): Decoder<NcnOperatorState> {
     ['ncnOptInState', getSlotToggleDecoder()],
     ['operatorOptInState', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

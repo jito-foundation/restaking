@@ -146,7 +146,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['withdrawalFeeBps', getU16Encoder()],
     ['rewardFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 9 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -183,7 +183,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['withdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 9 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 
