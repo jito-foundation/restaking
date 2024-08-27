@@ -250,8 +250,18 @@ impl Vault {
         self.epoch_withdraw_amount.into()
     }
 
-    pub fn set_epoch_withdraw_amount(&mut self, epoch_withdraw_amount: u64) {
+    pub fn clear_epoch_withdraw_amount(&mut self) {
+        self.epoch_withdraw_amount = PodU64::from(0);
+    }
+
+    pub fn increment_epoch_withdraw_amount(&mut self, amount: u64) -> Result<(), VaultError> {
+        let mut epoch_withdraw_amount: u64 = self.epoch_withdraw_amount.into();
+        epoch_withdraw_amount = epoch_withdraw_amount
+            .checked_add(amount)
+            .ok_or(VaultError::VaultOverflow)?;
         self.epoch_withdraw_amount = PodU64::from(epoch_withdraw_amount);
+
+        Ok(())
     }
 
     pub fn epoch_snapshot_amount(&self) -> u64 {
@@ -574,8 +584,8 @@ impl Vault {
 
     /// Checks if a withdrawal is allowed based on the current vault limits.
     ///
-    /// # Arguments
-    /// * `amount_to_withdraw` - A `u64` representing the amount of tokens that is requested to be withdrawn.
+    /// If both `epoch_snapshot_amount` and `last_full_state_update_slot` are zero, this indicates that the vault has not yet recorded any withdrawals or state updates for the current epoch.
+    /// In this scenario, any withdrawal amount up to the total `max_withdrawable` tokens is allowed because the vault is effectively in an initial state.
     ///
     /// # Returns
     /// * `Result<(), VaultError>` - Returns `Ok(())` if the withdrawal is within the allowed limit.
@@ -584,21 +594,33 @@ impl Vault {
     /// This function can return the following errors:
     /// * [`jito_vault_sdk::error::VaultError::VaultOverflow`] - If any arithmetic operation (addition or multiplication) results in an overflow.
     /// * [`jito_vault_sdk::error::VaultError::VaultWithdrawalLimitExceeded`] - If the requested withdrawal exceeds the allowed limit for the epoch.
-    pub fn check_withdrawal_allowd(&self, amount_to_withdraw: u64) -> Result<(), VaultError> {
-        let total_withdraw_amount = self
-            .epoch_withdraw_amount()
-            .checked_add(amount_to_withdraw)
-            .ok_or(VaultError::VaultOverflow)?;
-        let max_allowed_withdraw = self
-            .epoch_snapshot_amount()
-            .checked_mul(self.epoch_withdraw_cap_bps() as u64)
-            .ok_or(VaultError::VaultOverflow)?
-            .div_ceil(10_000);
+    pub fn check_withdrawal_allowed(&self, amount_to_withdraw: u64) -> Result<(), VaultError> {
+        let epoch_snapshot_amount: u64 = self.epoch_snapshot_amount();
+        let last_full_state_update_slot: u64 = self.last_full_state_update_slot();
+        let max_withdrawable = self.tokens_deposited();
 
-        if total_withdraw_amount <= max_allowed_withdraw {
+        if epoch_snapshot_amount == 0
+            && last_full_state_update_slot == 0
+            && amount_to_withdraw <= max_withdrawable
+        {
             Ok(())
         } else {
-            Err(VaultError::VaultWithdrawalLimitExceeded)
+            let total_withdraw_amount = self
+                .epoch_withdraw_amount()
+                .checked_add(amount_to_withdraw)
+                .ok_or(VaultError::VaultOverflow)?;
+            let max_allowed_withdraw = self
+                .epoch_snapshot_amount()
+                .checked_mul(self.epoch_withdraw_cap_bps() as u64)
+                .ok_or(VaultError::VaultOverflow)?
+                .div_ceil(10_000);
+
+            if total_withdraw_amount <= max_allowed_withdraw {
+                Ok(())
+            } else {
+                msg!("VaultWithdrawalLimitExceeded: epoch_snap_shot_amount: {}, last_full_state_update_slot: {}, amount_to_withdraw: {}, max_withdrawable: {}", epoch_snapshot_amount, last_full_state_update_slot, amount_to_withdraw, max_withdrawable);
+                Err(VaultError::VaultWithdrawalLimitExceeded)
+            }
         }
     }
 
@@ -1030,6 +1052,9 @@ mod tests {
             std::mem::size_of::<PodU16>() + // deposit_fee_bps
             std::mem::size_of::<PodU16>() + // withdrawal_fee_bps
             std::mem::size_of::<PodU16>() + // reward_fee_bps
+            std::mem::size_of::<PodU64>() + // epoch_withdraw_amount
+            std::mem::size_of::<PodU64>() + // epoch_snapshot_amount
+            std::mem::size_of::<PodU16>() + // epoch_withdraw_cap_bps
             1 + // bump
             263; // reserved
 
@@ -1636,7 +1661,7 @@ mod tests {
     }
 
     #[test]
-    fn test_check_withdrawal_allowd() {
+    fn test_check_withdrawal_allowed() {
         let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -1649,12 +1674,12 @@ mod tests {
             2500,
             0,
         );
-        vault.set_epoch_withdraw_amount(0);
+        vault.clear_epoch_withdraw_amount();
         vault.set_epoch_snapshot_amount(1000);
 
-        assert!(vault.check_withdrawal_allowd(250).is_ok());
+        assert!(vault.check_withdrawal_allowed(250).is_ok());
         assert_eq!(
-            vault.check_withdrawal_allowd(251),
+            vault.check_withdrawal_allowed(251),
             Err(VaultError::VaultWithdrawalLimitExceeded)
         );
     }

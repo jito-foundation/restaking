@@ -243,19 +243,18 @@ mod tests {
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
             .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length())
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_full_vault_update(
-                &vault_root.vault_pubkey,
-                &[operator_roots[0].operator_pubkey],
-            )
-            .await
-            .unwrap();
+        // fixture
+        //     .warp_slot_incremental(2 * config.epoch_length())
+        //     .await
+        //     .unwrap();
+        //
+        // vault_program_client
+        //     .do_full_vault_update(
+        //         &vault_root.vault_pubkey,
+        //         &[operator_roots[0].operator_pubkey],
+        //     )
+        //     .await
+        //     .unwrap();
 
         // Delegate all funds to the operator
         vault_program_client
@@ -510,30 +509,6 @@ mod tests {
             .unwrap();
         vault_program_client
             .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
-            .await
-            .unwrap();
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length())
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_full_vault_update(
-                &vault_root.vault_pubkey,
-                &[operator_roots[0].operator_pubkey],
-            )
-            .await
-            .unwrap();
-
-        // Delegate all funds to the operator
-        vault_program_client
-            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
             .await
             .unwrap();
 

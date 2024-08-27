@@ -290,24 +290,6 @@ mod tests {
             .await
             .unwrap();
 
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length())
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_full_vault_update(
-                &vault_root.vault_pubkey,
-                &[operator_roots[0].operator_pubkey],
-            )
-            .await
-            .unwrap();
-
         vault_program_client
             .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 100_000)
             .await
@@ -324,6 +306,10 @@ mod tests {
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
 
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
         fixture
             .warp_slot_incremental(config.epoch_length())
             .await

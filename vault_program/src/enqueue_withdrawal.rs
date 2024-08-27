@@ -11,7 +11,6 @@ use jito_jsm_core::{
 use jito_vault_core::{
     config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
-use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -80,7 +79,7 @@ pub fn process_enqueue_withdrawal(
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     let amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
-    vault.check_withdrawal_allowd(amount_to_withdraw)?;
+    vault.check_withdrawal_allowed(amount_to_withdraw)?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
@@ -113,12 +112,8 @@ pub fn process_enqueue_withdrawal(
     );
 
     vault.increment_vrt_enqueued_for_cooldown_amount(vrt_amount)?;
-    vault.set_epoch_withdraw_amount(
-        vault
-            .epoch_withdraw_amount()
-            .checked_add(amount_to_withdraw)
-            .ok_or(VaultError::VaultOverflow)?,
-    );
+    vault.increment_epoch_withdraw_amount(amount_to_withdraw)?;
+
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket
     invoke(

@@ -18,7 +18,7 @@ mod tests {
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
         let reward_fee_bps = 101;
-        let epoch_withdraw_cap_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
         let (
             _config_admin,
