@@ -2499,6 +2499,7 @@ name = "jito-restaking-sdk"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
+ "jito-events",
  "shank",
  "solana-program",
  "solana-program-test",

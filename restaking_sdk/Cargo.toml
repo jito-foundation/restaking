@@ -11,6 +11,7 @@ readme = { workspace = true }
 
 [dependencies]
 borsh = { workspace = true }
+jito-events = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 thiserror = { workspace = true }
