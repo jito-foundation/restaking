@@ -184,6 +184,10 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "receiver_token_account")]
     #[account(4, name = "token_program")]
     OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+
+    /// Logs a message to the blockchain
+    #[account(0, signer, name = "log")]
+    Log(Vec<u8>),
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]

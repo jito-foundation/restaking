@@ -8,6 +8,7 @@ mod initialize_ncn_vault_slasher_ticket;
 mod initialize_ncn_vault_ticket;
 mod initialize_operator;
 mod initialize_operator_vault_ticket;
+mod log;
 mod ncn_cooldown_operator;
 mod ncn_set_admin;
 mod ncn_set_secondary_admin;
@@ -41,7 +42,7 @@ use crate::{
     initialize_ncn_vault_slasher_ticket::process_initialize_ncn_vault_slasher_ticket,
     initialize_ncn_vault_ticket::process_initialize_ncn_vault_ticket,
     initialize_operator::process_initialize_operator,
-    initialize_operator_vault_ticket::process_initialize_operator_vault_ticket,
+    initialize_operator_vault_ticket::process_initialize_operator_vault_ticket, log::process_log,
     ncn_cooldown_operator::process_ncn_cooldown_operator, ncn_set_admin::process_ncn_set_admin,
     ncn_set_secondary_admin::process_ncn_set_secondary_admin,
     ncn_warmup_operator::process_ncn_warmup_operator,
@@ -180,6 +181,10 @@ pub fn process_instruction(
         RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: OperatorWithdrawalAsset");
             process_operator_withdrawal_asset(program_id, accounts, token_mint, amount)
+        }
+        RestakingInstruction::Log(message) => {
+            msg!("Instruction: Log");
+            process_log(program_id, accounts, message)
         }
     }
 }
