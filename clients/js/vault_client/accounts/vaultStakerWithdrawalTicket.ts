@@ -66,7 +66,7 @@ export function getVaultStakerWithdrawalTicketEncoder(): Encoder<VaultStakerWith
     ['vrtAmount', getU64Encoder()],
     ['slotUnstaked', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -79,7 +79,7 @@ export function getVaultStakerWithdrawalTicketDecoder(): Decoder<VaultStakerWith
     ['vrtAmount', getU64Decoder()],
     ['slotUnstaked', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

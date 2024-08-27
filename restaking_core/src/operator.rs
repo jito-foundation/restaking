@@ -55,7 +55,7 @@ pub struct Operator {
     pub bump: u8,
 
     /// Reserved space
-    pub reserved_space: [u8; 7],
+    reserved_space: [u8; 263],
 }
 
 impl Operator {
@@ -78,7 +78,7 @@ impl Operator {
             ncn_count: PodU64::from(0),
             vault_count: PodU64::from(0),
             bump,
-            reserved_space: [0; 7],
+            reserved_space: [0; 263],
         }
     }
 
@@ -216,9 +216,28 @@ impl Operator {
 
 #[cfg(test)]
 mod tests {
+    use jito_bytemuck::types::PodU64;
     use solana_program::pubkey::Pubkey;
 
     use crate::operator::Operator;
+
+    #[test]
+    fn test_operator_no_padding() {
+        let operator_size = std::mem::size_of::<Operator>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // base
+            std::mem::size_of::<Pubkey>() + // admin
+            std::mem::size_of::<Pubkey>() + // ncn_admin
+            std::mem::size_of::<Pubkey>() + // vault_admin
+            std::mem::size_of::<Pubkey>() + // withdrawal_admin
+            std::mem::size_of::<Pubkey>() + // withdrawal_fee_wallet
+            std::mem::size_of::<Pubkey>() + // voter
+            std::mem::size_of::<PodU64>() + // index
+            std::mem::size_of::<PodU64>() + // ncn_count
+            std::mem::size_of::<PodU64>() + // vault_count
+            std::mem::size_of::<u8>() + // bump
+            263; // reserved_space
+        assert_eq!(operator_size, sum_of_fields);
+    }
 
     #[test]
     fn test_update_secondary_admin_ok() {

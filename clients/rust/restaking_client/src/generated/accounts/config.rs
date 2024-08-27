@@ -25,7 +25,8 @@ pub struct Config {
     pub operator_count: u64,
     pub epoch_length: u64,
     pub bump: u8,
-    pub reserved1: [u8; 7],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved1: [u8; 263],
 }
 
 impl Config {

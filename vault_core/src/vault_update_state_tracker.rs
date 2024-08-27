@@ -31,7 +31,7 @@ pub struct VaultUpdateStateTracker {
 
     pub withdrawal_allocation_method: u8,
 
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultUpdateStateTracker {
@@ -48,7 +48,7 @@ impl VaultUpdateStateTracker {
             last_updated_index: PodU64::from(u64::MAX),
             delegation_state: DelegationState::default(),
             withdrawal_allocation_method,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -149,10 +149,26 @@ impl VaultUpdateStateTracker {
 
 #[cfg(test)]
 mod tests {
+    use jito_bytemuck::types::PodU64;
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
 
-    use crate::vault_update_state_tracker::VaultUpdateStateTracker;
+    use crate::{
+        delegation_state::DelegationState, vault_update_state_tracker::VaultUpdateStateTracker,
+    };
+
+    #[test]
+    fn test_vault_update_state_tracker_sno_padding() {
+        let vault_update_state_tracker_size = std::mem::size_of::<VaultUpdateStateTracker>();
+        let sum_of_fields = size_of::<Pubkey>() + // vault
+            size_of::<PodU64>() + // ncn_epoch
+            size_of::<PodU64>() + // last_updated_index
+            size_of::<PodU64>() + // additional_assets_need_unstaking
+            size_of::<DelegationState>() + // delegation_state
+            size_of::<u8>() + // withdrawal_allocation_method
+            263; // reserved
+        assert_eq!(vault_update_state_tracker_size, sum_of_fields);
+    }
 
     #[test]
     fn test_update_index_zero_ok() {

@@ -72,7 +72,7 @@ export function getVaultUpdateStateTrackerEncoder(): Encoder<VaultUpdateStateTra
     ['additionalAssetsNeedUnstaking', getU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
     ['withdrawalAllocationMethod', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -85,7 +85,7 @@ export function getVaultUpdateStateTrackerDecoder(): Decoder<VaultUpdateStateTra
     ['additionalAssetsNeedUnstaking', getU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
     ['withdrawalAllocationMethod', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 
