@@ -33,7 +33,7 @@ pub struct VaultOperatorDelegation {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultOperatorDelegation {
@@ -45,7 +45,7 @@ impl VaultOperatorDelegation {
             delegation_state: DelegationState::default(),
             index: PodU64::from(index),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -161,5 +161,23 @@ impl VaultOperatorDelegation {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vault_operator_delegation_no_padding() {
+        let vault_operator_delegation_size = std::mem::size_of::<VaultOperatorDelegation>();
+        let sum_of_fields = size_of::<Pubkey>() + // vault
+            size_of::<Pubkey>() + // operator
+            size_of::<DelegationState>() + // delegation_state
+            size_of::<PodU64>() + // last_update_slot
+            size_of::<PodU64>() + // index
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(vault_operator_delegation_size, sum_of_fields);
     }
 }

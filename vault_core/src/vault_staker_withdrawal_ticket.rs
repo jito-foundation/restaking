@@ -34,7 +34,7 @@ pub struct VaultStakerWithdrawalTicket {
     /// The bump seed used to create the PDA
     pub bump: u8,
 
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultStakerWithdrawalTicket {
@@ -53,7 +53,7 @@ impl VaultStakerWithdrawalTicket {
             vrt_amount: PodU64::from(vrt_amount),
             slot_unstaked: PodU64::from(slot_unstaked),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -167,5 +167,24 @@ impl VaultStakerWithdrawalTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vault_staker_withdrawal_ticket_no_padding() {
+        let vault_staker_withdrawal_ticket_size =
+            std::mem::size_of::<VaultStakerWithdrawalTicket>();
+        let sum_of_fields = size_of::<Pubkey>() + // vault
+            size_of::<Pubkey>() + // staker
+            size_of::<Pubkey>() + // base
+            size_of::<PodU64>() + // vrt_amount
+            size_of::<PodU64>() + // slot_unstaked
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(vault_staker_withdrawal_ticket_size, sum_of_fields);
     }
 }

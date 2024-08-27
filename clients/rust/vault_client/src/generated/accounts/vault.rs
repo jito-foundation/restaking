@@ -95,7 +95,8 @@ pub struct Vault {
     pub withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
     pub bump: u8,
-    pub reserved: [u8; 9],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 263],
 }
 
 impl Vault {

@@ -66,7 +66,7 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
     ['operatorCount', getU64Encoder()],
     ['epochLength', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved1', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved1', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -79,7 +79,7 @@ export function getConfigDecoder(): Decoder<Config> {
     ['operatorCount', getU64Decoder()],
     ['epochLength', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved1', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved1', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

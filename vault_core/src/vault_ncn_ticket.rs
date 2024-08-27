@@ -31,7 +31,7 @@ pub struct VaultNcnTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultNcnTicket {
@@ -42,7 +42,7 @@ impl VaultNcnTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -125,5 +125,22 @@ impl VaultNcnTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vault_ncn_ticket_no_padding() {
+        let vault_ncn_ticket_size = std::mem::size_of::<VaultNcnTicket>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // vault
+            std::mem::size_of::<Pubkey>() + // ncn
+            std::mem::size_of::<PodU64>() + // index
+            std::mem::size_of::<SlotToggle>() + // state
+            std::mem::size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(vault_ncn_ticket_size, sum_of_fields);
     }
 }

@@ -38,7 +38,7 @@ pub struct Config {
     pub bump: u8,
 
     /// Reserved space
-    reserved_1: [u8; 7],
+    reserved_1: [u8; 263],
 }
 
 impl Config {
@@ -50,7 +50,7 @@ impl Config {
             ncn_count: PodU64::from(0),
             operator_count: PodU64::from(0),
             bump,
-            reserved_1: [0; 7],
+            reserved_1: [0; 263],
         }
     }
 
@@ -139,5 +139,23 @@ impl Config {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_no_padding() {
+        let config_size = std::mem::size_of::<Config>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // admin
+            std::mem::size_of::<Pubkey>() + // vault_program
+            std::mem::size_of::<PodU64>() + // ncn_count
+            std::mem::size_of::<PodU64>() + // operator_count
+            std::mem::size_of::<PodU64>() + // epoch_length
+            std::mem::size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(config_size, sum_of_fields);
     }
 }
