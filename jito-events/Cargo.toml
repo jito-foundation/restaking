@@ -1,6 +1,6 @@
 [package]
-name = "jito-bytemuck"
-description = "Jito bytemuck library"
+name = "jito-events"
+description = "Jito events library"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
@@ -10,6 +10,9 @@ edition = { workspace = true }
 readme = { workspace = true }
 
 [dependencies]
-bytemuck = { workspace = true }
-jito-account-traits-derive = { workspace = true }
+borsh = { workspace = true }
 solana-program = { workspace = true }
+jito-events-derive = { workspace  = true }
+
+[dev-dependencies]
+bytemuck = { workspace = true }

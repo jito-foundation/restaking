@@ -2345,10 +2345,28 @@ dependencies = [
 name = "jito-bytemuck"
 version = "0.0.1"
 dependencies = [
- "borsh 0.10.3",
  "bytemuck",
  "jito-account-traits-derive",
  "solana-program",
+]
+
+[[package]]
+name = "jito-events"
+version = "0.0.1"
+dependencies = [
+ "borsh 0.10.3",
+ "bytemuck",
+ "jito-events-derive",
+ "solana-program",
+]
+
+[[package]]
+name = "jito-events-derive"
+version = "0.0.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
 ]
 
 [[package]]

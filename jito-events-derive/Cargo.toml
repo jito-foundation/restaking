@@ -1,6 +1,6 @@
 [package]
-name = "jito-bytemuck"
-description = "Jito bytemuck library"
+name = "jito-events-derive"
+description = "Derive macro for Jito events"
 version = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
@@ -9,7 +9,10 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[lib]
+proc-macro = true
+
 [dependencies]
-bytemuck = { workspace = true }
-jito-account-traits-derive = { workspace = true }
-solana-program = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }
