@@ -246,14 +246,26 @@ impl Vault {
         self.withdrawal_fee_bps = PodU16::from(withdrawal_fee_bps);
     }
 
+    /// Retrieves the current total amount withdrawn for the epoch.
+    ///
+    /// # Returns
+    /// * `u64` - The total amount of tokens withdrawn in the current epoch.
     pub fn epoch_withdraw_amount(&self) -> u64 {
         self.epoch_withdraw_amount.into()
     }
 
+    /// Resets the total amount withdrawn for the epoch to zero.
     pub fn clear_epoch_withdraw_amount(&mut self) {
         self.epoch_withdraw_amount = PodU64::from(0);
     }
 
+    /// Increases the total amount withdrawn for the epoch by a specified amount.
+    ///
+    /// # Returns
+    /// * `Result<(), VaultError>` - Returns `Ok(())` if the amount is successfully added.
+    ///
+    /// # Errors
+    /// * [`VaultError::VaultOverflow`] - If adding the specified amount causes an overflow.
     pub fn increment_epoch_withdraw_amount(&mut self, amount: u64) -> Result<(), VaultError> {
         let mut epoch_withdraw_amount: u64 = self.epoch_withdraw_amount.into();
         epoch_withdraw_amount = epoch_withdraw_amount
@@ -264,14 +276,26 @@ impl Vault {
         Ok(())
     }
 
+    /// Retrieves the snapshot of the total amount available for withdrawal at the start of the epoch.
+    ///
+    /// # Returns
+    /// * `u64` - The amount of tokens available for withdrawal at the start of the current epoch.
     pub fn epoch_snapshot_amount(&self) -> u64 {
         self.epoch_snapshot_amount.into()
     }
 
+    /// Sets the snapshot amount for the current epoch.
     pub fn set_epoch_snapshot_amount(&mut self, epoch_snapshot_amount: u64) {
         self.epoch_snapshot_amount = PodU64::from(epoch_snapshot_amount);
     }
 
+    /// Retrieves the withdrawal cap for the epoch as basis points (bps).
+    ///
+    /// The cap is expressed as a percentage of the `epoch_snapshot_amount`,
+    /// where 10,000 bps equals 100%.
+    ///
+    /// # Returns
+    /// * `u16` - The withdrawal cap in basis points for the current epoch.
     pub fn epoch_withdraw_cap_bps(&self) -> u16 {
         self.epoch_withdraw_cap_bps.into()
     }
