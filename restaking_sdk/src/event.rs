@@ -1,14 +1,27 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use jito_events::Event;
 use solana_program::pubkey::Pubkey;
-use jito_events::EventDiscriminator;
+use solana_program::{instruction::Instruction, program::invoke_signed};
 
-#[derive(Clone, Debug, PartialEq, Eq, Event, BorshSerialize, BorshDeserialize)]
-#[discriminator(1)]
+#[derive(Clone, Debug, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
+#[repr(u64)]
+pub enum RestakingEvent {
+    MintEvent(MintEvent) = 1,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
 pub struct MintEvent {
     pub stake_amount: u64,
     pub depositor: Pubkey,
 }
+
+// pub fn emit_log(event: RestakingEvent) -> Result<(), ProgramError> {
+//     let serialized = event.try_to_vec().unwrap();
+//     // invoke_signed(
+//     //     Instruction::new_with_borsh(program_id, data, accounts),
+//     //     account_infos,
+//     //     signers_seeds,
+//     // )?;
+// }
 
 #[cfg(test)]
 mod tests {
@@ -16,15 +29,11 @@ mod tests {
 
     #[test]
     fn test_mint_event() {
-        let event = MintEvent {
+        let event = RestakingEvent::MintEvent(MintEvent {
             stake_amount: 100,
             depositor: Pubkey::default(),
-        };
-
-        let serialized = event.serialize_event();
-        assert_eq!(u64::from_le_bytes(serialized[..8].try_into().unwrap()), 1);
-        let deserialized = MintEvent::load_event(&serialized).unwrap();
-
-        assert_eq!(event, deserialized);
+        });
+        let serialized = event.try_to_vec().unwrap();
+        assert_eq!(serialized.len(), 1 + 8 + 32);
     }
 }

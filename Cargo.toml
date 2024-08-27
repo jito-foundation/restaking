@@ -14,8 +14,6 @@ members = [
     "vault_core",
     "vault_program",
     "vault_sdk",
-    "jito-events",
-    "jito-events-derive",
 ]
 
 resolver = "2"
@@ -51,8 +49,6 @@ clap = { version = "4.5.16", features = ["derive"] }
 const_str_to_pubkey = "0.1.1"
 envfile = "0.2.1"
 env_logger = "0.10.2"
-jito-events = { path = "jito-events", version = "=0.0.1" }
-jito-events-derive = { path = "jito-events-derive", version = "=0.0.1" }
 jito-bytemuck = { path = "bytemuck", version = "=0.0.1" }
 jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
 jito-jsm-core = { path = "core", version = "=0.0.1" }

@@ -2351,25 +2351,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jito-events"
-version = "0.0.1"
-dependencies = [
- "borsh 0.10.3",
- "bytemuck",
- "jito-events-derive",
- "solana-program",
-]
-
-[[package]]
-name = "jito-events-derive"
-version = "0.0.1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.72",
-]
-
-[[package]]
 name = "jito-jsm-core"
 version = "0.0.1"
 dependencies = [
@@ -2499,7 +2480,6 @@ name = "jito-restaking-sdk"
 version = "0.0.1"
 dependencies = [
  "borsh 0.10.3",
- "jito-events",
  "shank",
  "solana-program",
  "solana-program-test",
