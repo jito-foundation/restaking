@@ -777,21 +777,11 @@
       }
     },
     {
-      "name": "NcnWithdrawalAsset",
+      "name": "NcnDelegateTokenAccount",
       "accounts": [
         {
           "name": "ncn",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "ncnTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "receiverTokenAccount",
-          "isMut": true,
           "isSigner": false
         },
         {
@@ -800,16 +790,27 @@
           "isSigner": true
         },
         {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         }
       ],
       "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
         {
           "name": "amount",
           "type": "u64"
@@ -821,7 +822,7 @@
       }
     },
     {
-      "name": "OperatorWithdrawalAsset",
+      "name": "OperatorDelegateTokenAccount",
       "accounts": [
         {
           "name": "operator",
@@ -834,13 +835,18 @@
           "isSigner": true
         },
         {
-          "name": "operatorTokenAccount",
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "receiverTokenAccount",
-          "isMut": true,
+          "name": "delegate",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -850,10 +856,6 @@
         }
       ],
       "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
         {
           "name": "amount",
           "type": "u64"

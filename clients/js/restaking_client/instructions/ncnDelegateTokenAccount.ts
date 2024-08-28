@@ -8,8 +8,6 @@
 
 import {
   combineCodec,
-  getAddressDecoder,
-  getAddressEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -34,18 +32,19 @@ import {
 import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR = 22;
+export const NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 21;
 
-export function getOperatorWithdrawalAssetDiscriminatorBytes() {
-  return getU8Encoder().encode(OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR);
+export function getNcnDelegateTokenAccountDiscriminatorBytes() {
+  return getU8Encoder().encode(NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR);
 }
 
-export type OperatorWithdrawalAssetInstruction<
+export type NcnDelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
-  TAccountOperator extends string | IAccountMeta<string> = string,
+  TAccountNcn extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountOperatorTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountReceiverTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountTokenMint extends string | IAccountMeta<string> = string,
+  TAccountTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountDelegate extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
@@ -54,19 +53,20 @@ export type OperatorWithdrawalAssetInstruction<
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
-      TAccountOperator extends string
-        ? ReadonlyAccount<TAccountOperator>
-        : TAccountOperator,
+      TAccountNcn extends string ? ReadonlyAccount<TAccountNcn> : TAccountNcn,
       TAccountAdmin extends string
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountOperatorTokenAccount extends string
-        ? WritableAccount<TAccountOperatorTokenAccount>
-        : TAccountOperatorTokenAccount,
-      TAccountReceiverTokenAccount extends string
-        ? WritableAccount<TAccountReceiverTokenAccount>
-        : TAccountReceiverTokenAccount,
+      TAccountTokenMint extends string
+        ? ReadonlyAccount<TAccountTokenMint>
+        : TAccountTokenMint,
+      TAccountTokenAccount extends string
+        ? WritableAccount<TAccountTokenAccount>
+        : TAccountTokenAccount,
+      TAccountDelegate extends string
+        ? ReadonlyAccount<TAccountDelegate>
+        : TAccountDelegate,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
@@ -74,85 +74,85 @@ export type OperatorWithdrawalAssetInstruction<
     ]
   >;
 
-export type OperatorWithdrawalAssetInstructionData = {
+export type NcnDelegateTokenAccountInstructionData = {
   discriminator: number;
-  tokenMint: Address;
   amount: bigint;
 };
 
-export type OperatorWithdrawalAssetInstructionDataArgs = {
-  tokenMint: Address;
+export type NcnDelegateTokenAccountInstructionDataArgs = {
   amount: number | bigint;
 };
 
-export function getOperatorWithdrawalAssetInstructionDataEncoder(): Encoder<OperatorWithdrawalAssetInstructionDataArgs> {
+export function getNcnDelegateTokenAccountInstructionDataEncoder(): Encoder<NcnDelegateTokenAccountInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['tokenMint', getAddressEncoder()],
       ['amount', getU64Encoder()],
     ]),
     (value) => ({
       ...value,
-      discriminator: OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR,
+      discriminator: NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR,
     })
   );
 }
 
-export function getOperatorWithdrawalAssetInstructionDataDecoder(): Decoder<OperatorWithdrawalAssetInstructionData> {
+export function getNcnDelegateTokenAccountInstructionDataDecoder(): Decoder<NcnDelegateTokenAccountInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['tokenMint', getAddressDecoder()],
     ['amount', getU64Decoder()],
   ]);
 }
 
-export function getOperatorWithdrawalAssetInstructionDataCodec(): Codec<
-  OperatorWithdrawalAssetInstructionDataArgs,
-  OperatorWithdrawalAssetInstructionData
+export function getNcnDelegateTokenAccountInstructionDataCodec(): Codec<
+  NcnDelegateTokenAccountInstructionDataArgs,
+  NcnDelegateTokenAccountInstructionData
 > {
   return combineCodec(
-    getOperatorWithdrawalAssetInstructionDataEncoder(),
-    getOperatorWithdrawalAssetInstructionDataDecoder()
+    getNcnDelegateTokenAccountInstructionDataEncoder(),
+    getNcnDelegateTokenAccountInstructionDataDecoder()
   );
 }
 
-export type OperatorWithdrawalAssetInput<
-  TAccountOperator extends string = string,
+export type NcnDelegateTokenAccountInput<
+  TAccountNcn extends string = string,
   TAccountAdmin extends string = string,
-  TAccountOperatorTokenAccount extends string = string,
-  TAccountReceiverTokenAccount extends string = string,
+  TAccountTokenMint extends string = string,
+  TAccountTokenAccount extends string = string,
+  TAccountDelegate extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
-  operator: Address<TAccountOperator>;
+  ncn: Address<TAccountNcn>;
   admin: TransactionSigner<TAccountAdmin>;
-  operatorTokenAccount: Address<TAccountOperatorTokenAccount>;
-  receiverTokenAccount: Address<TAccountReceiverTokenAccount>;
+  tokenMint: Address<TAccountTokenMint>;
+  tokenAccount: Address<TAccountTokenAccount>;
+  delegate: Address<TAccountDelegate>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  tokenMint: OperatorWithdrawalAssetInstructionDataArgs['tokenMint'];
-  amount: OperatorWithdrawalAssetInstructionDataArgs['amount'];
+  amount: NcnDelegateTokenAccountInstructionDataArgs['amount'];
 };
 
-export function getOperatorWithdrawalAssetInstruction<
-  TAccountOperator extends string,
+export function getNcnDelegateTokenAccountInstruction<
+  TAccountNcn extends string,
   TAccountAdmin extends string,
-  TAccountOperatorTokenAccount extends string,
-  TAccountReceiverTokenAccount extends string,
+  TAccountTokenMint extends string,
+  TAccountTokenAccount extends string,
+  TAccountDelegate extends string,
   TAccountTokenProgram extends string,
 >(
-  input: OperatorWithdrawalAssetInput<
-    TAccountOperator,
+  input: NcnDelegateTokenAccountInput<
+    TAccountNcn,
     TAccountAdmin,
-    TAccountOperatorTokenAccount,
-    TAccountReceiverTokenAccount,
+    TAccountTokenMint,
+    TAccountTokenAccount,
+    TAccountDelegate,
     TAccountTokenProgram
   >
-): OperatorWithdrawalAssetInstruction<
+): NcnDelegateTokenAccountInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
-  TAccountOperator,
+  TAccountNcn,
   TAccountAdmin,
-  TAccountOperatorTokenAccount,
-  TAccountReceiverTokenAccount,
+  TAccountTokenMint,
+  TAccountTokenAccount,
+  TAccountDelegate,
   TAccountTokenProgram
 > {
   // Program address.
@@ -160,16 +160,11 @@ export function getOperatorWithdrawalAssetInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    operator: { value: input.operator ?? null, isWritable: false },
+    ncn: { value: input.ncn ?? null, isWritable: false },
     admin: { value: input.admin ?? null, isWritable: false },
-    operatorTokenAccount: {
-      value: input.operatorTokenAccount ?? null,
-      isWritable: true,
-    },
-    receiverTokenAccount: {
-      value: input.receiverTokenAccount ?? null,
-      isWritable: true,
-    },
+    tokenMint: { value: input.tokenMint ?? null, isWritable: false },
+    tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -189,52 +184,55 @@ export function getOperatorWithdrawalAssetInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.operator),
+      getAccountMeta(accounts.ncn),
       getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.operatorTokenAccount),
-      getAccountMeta(accounts.receiverTokenAccount),
+      getAccountMeta(accounts.tokenMint),
+      getAccountMeta(accounts.tokenAccount),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getOperatorWithdrawalAssetInstructionDataEncoder().encode(
-      args as OperatorWithdrawalAssetInstructionDataArgs
+    data: getNcnDelegateTokenAccountInstructionDataEncoder().encode(
+      args as NcnDelegateTokenAccountInstructionDataArgs
     ),
-  } as OperatorWithdrawalAssetInstruction<
+  } as NcnDelegateTokenAccountInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
-    TAccountOperator,
+    TAccountNcn,
     TAccountAdmin,
-    TAccountOperatorTokenAccount,
-    TAccountReceiverTokenAccount,
+    TAccountTokenMint,
+    TAccountTokenAccount,
+    TAccountDelegate,
     TAccountTokenProgram
   >;
 
   return instruction;
 }
 
-export type ParsedOperatorWithdrawalAssetInstruction<
+export type ParsedNcnDelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    operator: TAccountMetas[0];
+    ncn: TAccountMetas[0];
     admin: TAccountMetas[1];
-    operatorTokenAccount: TAccountMetas[2];
-    receiverTokenAccount: TAccountMetas[3];
-    tokenProgram: TAccountMetas[4];
+    tokenMint: TAccountMetas[2];
+    tokenAccount: TAccountMetas[3];
+    delegate: TAccountMetas[4];
+    tokenProgram: TAccountMetas[5];
   };
-  data: OperatorWithdrawalAssetInstructionData;
+  data: NcnDelegateTokenAccountInstructionData;
 };
 
-export function parseOperatorWithdrawalAssetInstruction<
+export function parseNcnDelegateTokenAccountInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedOperatorWithdrawalAssetInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+): ParsedNcnDelegateTokenAccountInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -247,13 +245,14 @@ export function parseOperatorWithdrawalAssetInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      operator: getNextAccount(),
+      ncn: getNextAccount(),
       admin: getNextAccount(),
-      operatorTokenAccount: getNextAccount(),
-      receiverTokenAccount: getNextAccount(),
+      tokenMint: getNextAccount(),
+      tokenAccount: getNextAccount(),
+      delegate: getNextAccount(),
       tokenProgram: getNextAccount(),
     },
-    data: getOperatorWithdrawalAssetInstructionDataDecoder().decode(
+    data: getNcnDelegateTokenAccountInstructionDataDecoder().decode(
       instruction.data
     ),
   };
