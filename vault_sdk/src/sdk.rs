@@ -333,7 +333,6 @@ pub fn set_secondary_admin(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn add_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
@@ -341,7 +340,6 @@ pub fn add_delegation(
     operator: &Pubkey,
     vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
-    payer: &Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -350,7 +348,6 @@ pub fn add_delegation(
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new(*payer, true),
     ];
     Instruction {
         program_id: *program_id,

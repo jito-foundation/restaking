@@ -982,11 +982,6 @@
           "isSigner": true
         },
         {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false

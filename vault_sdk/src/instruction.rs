@@ -225,8 +225,7 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, signer, name = "admin")]
-    #[account(5, writable, signer, name = "payer")]
-    #[account(6, name = "system_program")]
+    #[account(5, name = "system_program")]
     AddDelegation {
         amount: u64,
     },

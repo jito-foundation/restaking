@@ -28,7 +28,6 @@ import {
   type ReadonlySignerAccount,
   type TransactionSigner,
   type WritableAccount,
-  type WritableSignerAccount,
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
@@ -48,7 +47,6 @@ export type AddDelegationInstruction<
     | string
     | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountPayer extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
@@ -73,10 +71,6 @@ export type AddDelegationInstruction<
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountPayer extends string
-        ? WritableSignerAccount<TAccountPayer> &
-            IAccountSignerMeta<TAccountPayer>
-        : TAccountPayer,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
@@ -124,7 +118,6 @@ export type AddDelegationInput<
   TAccountOperator extends string = string,
   TAccountVaultOperatorDelegation extends string = string,
   TAccountAdmin extends string = string,
-  TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
@@ -132,7 +125,6 @@ export type AddDelegationInput<
   operator: Address<TAccountOperator>;
   vaultOperatorDelegation: Address<TAccountVaultOperatorDelegation>;
   admin: TransactionSigner<TAccountAdmin>;
-  payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   amount: AddDelegationInstructionDataArgs['amount'];
 };
@@ -143,7 +135,6 @@ export function getAddDelegationInstruction<
   TAccountOperator extends string,
   TAccountVaultOperatorDelegation extends string,
   TAccountAdmin extends string,
-  TAccountPayer extends string,
   TAccountSystemProgram extends string,
 >(
   input: AddDelegationInput<
@@ -152,7 +143,6 @@ export function getAddDelegationInstruction<
     TAccountOperator,
     TAccountVaultOperatorDelegation,
     TAccountAdmin,
-    TAccountPayer,
     TAccountSystemProgram
   >
 ): AddDelegationInstruction<
@@ -162,7 +152,6 @@ export function getAddDelegationInstruction<
   TAccountOperator,
   TAccountVaultOperatorDelegation,
   TAccountAdmin,
-  TAccountPayer,
   TAccountSystemProgram
 > {
   // Program address.
@@ -178,7 +167,6 @@ export function getAddDelegationInstruction<
       isWritable: true,
     },
     admin: { value: input.admin ?? null, isWritable: false },
-    payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -203,7 +191,6 @@ export function getAddDelegationInstruction<
       getAccountMeta(accounts.operator),
       getAccountMeta(accounts.vaultOperatorDelegation),
       getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
@@ -217,7 +204,6 @@ export function getAddDelegationInstruction<
     TAccountOperator,
     TAccountVaultOperatorDelegation,
     TAccountAdmin,
-    TAccountPayer,
     TAccountSystemProgram
   >;
 
@@ -235,8 +221,7 @@ export type ParsedAddDelegationInstruction<
     operator: TAccountMetas[2];
     vaultOperatorDelegation: TAccountMetas[3];
     admin: TAccountMetas[4];
-    payer: TAccountMetas[5];
-    systemProgram: TAccountMetas[6];
+    systemProgram: TAccountMetas[5];
   };
   data: AddDelegationInstructionData;
 };
@@ -249,7 +234,7 @@ export function parseAddDelegationInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedAddDelegationInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -267,7 +252,6 @@ export function parseAddDelegationInstruction<
       operator: getNextAccount(),
       vaultOperatorDelegation: getNextAccount(),
       admin: getNextAccount(),
-      payer: getNextAccount(),
       systemProgram: getNextAccount(),
     },
     data: getAddDelegationInstructionDataDecoder().decode(instruction.data),
