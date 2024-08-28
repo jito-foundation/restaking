@@ -16,7 +16,7 @@
   resolved "https://registry.npmjs.org/@kinobi-so/node-types/-/node-types-0.21.3.tgz"
   integrity sha512-3F/XKTgxPWM8sHM+8OwMV9Lgbq67Asa9yzj5yTtm0vqr7j1ROb6GMNWdTv3ZuHEdMR/csjPOGY+MONDOkA29xQ==
 
-"@kinobi-so/nodes-from-anchor@^0.21.1", "@kinobi-so/nodes-from-anchor@0.21.1":
+"@kinobi-so/nodes-from-anchor@0.21.1", "@kinobi-so/nodes-from-anchor@^0.21.1":
   version "0.21.1"
   resolved "https://registry.npmjs.org/@kinobi-so/nodes-from-anchor/-/nodes-from-anchor-0.21.1.tgz"
   integrity sha512-yJimfb593+qSKAYr6KbmiWRU/hTT49PfBRw1DENW48DgAwCjOS+1nlQjmXV/dglGF7JmYBo3ZcEtu5nYUwr/Eg==
@@ -43,7 +43,7 @@
     "@kinobi-so/nodes" "0.21.3"
     "@kinobi-so/visitors-core" "0.21.3"
 
-"@kinobi-so/renderers-js-umi@^0.21.1", "@kinobi-so/renderers-js-umi@0.21.5":
+"@kinobi-so/renderers-js-umi@0.21.5", "@kinobi-so/renderers-js-umi@^0.21.1":
   version "0.21.5"
   resolved "https://registry.npmjs.org/@kinobi-so/renderers-js-umi/-/renderers-js-umi-0.21.5.tgz"
   integrity sha512-kN4jIm86j6Umf/ephiX9SZDV4zUCVKr0hiUrSejnNvVTosOfm3s9nQq/GzCxSVNMRhkEehy6jahlJ3O2si6jJQ==
@@ -71,7 +71,7 @@
     nunjucks "^3.2.4"
     prettier "^3.3.3"
 
-"@kinobi-so/renderers-rust@^0.21.1", "@kinobi-so/renderers-rust@0.21.5":
+"@kinobi-so/renderers-rust@0.21.5", "@kinobi-so/renderers-rust@^0.21.1":
   version "0.21.5"
   resolved "https://registry.npmjs.org/@kinobi-so/renderers-rust/-/renderers-rust-0.21.5.tgz"
   integrity sha512-dLrfp1rMlVvS4ubrcbXgPbJ8P6kMU0AcokbZQxDSDCv/TKCTG+SaS0IROKmd5z+3cxgMdBUY74GETbPlaiwGFw==
@@ -218,11 +218,6 @@ es-errors@^1.3.0:
   resolved "https://registry.npmjs.org/es-errors/-/es-errors-1.3.0.tgz"
   integrity sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==
 
-fastestsmallesttextencoderdecoder@^1.0.22:
-  version "1.0.22"
-  resolved "https://registry.npmjs.org/fastestsmallesttextencoderdecoder/-/fastestsmallesttextencoderdecoder-1.0.22.tgz"
-  integrity sha512-Pb8d48e+oIuY4MaM64Cd7OW1gt4nxCHs7/ddPPZ/Ic3sg8yVGM7O9wDvZ7us6ScaUupzM+pfBolwtYhN1IxBIw==
-
 function-bind@^1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/function-bind/-/function-bind-1.1.2.tgz"
@@ -330,11 +325,6 @@ set-function-length@^1.2.1:
     get-intrinsic "^1.2.4"
     gopd "^1.0.1"
     has-property-descriptors "^1.0.2"
-
-typescript@>=5:
-  version "5.5.4"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-5.5.4.tgz"
-  integrity sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==
 
 yarn@2.4.3:
   version "2.4.3"
