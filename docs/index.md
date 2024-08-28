@@ -28,6 +28,7 @@ Understanding these core concepts will help you navigate the Jito Restaking ecos
 ## Restaking
 
 - [Restaking Program Accounts](restaking/accounts.md)
+- [Restaking Program Theory Of Operation](restaking/theory_of_operation.md)
 - [Building an Node Consensus Network](advanced/building_ncn.md)
 
 ## Vault
