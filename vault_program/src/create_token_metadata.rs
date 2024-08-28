@@ -26,7 +26,7 @@ pub fn process_create_token_metadata(
 
     Vault::load(program_id, vault_info, false)?;
     let vault_data = vault_info.data.borrow_mut();
-    let vault: &Vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     load_signer(admin, false)?;
     load_token_mint(vrt_mint)?;
     load_signer(payer, true)?;
