@@ -1,58 +1,44 @@
 ---
-title: Restaking Program
+title: Restaking Program Accounts
 ---
 
-### About the program
+# 1. About the program
 
 The restaking program acts as a registry for NCNs, operators, and relationships between NCNs, operators, and vaults.
 
-It allows users to do the following:
-
-- Registers NCN, operators, and their configurations.
-- Stores relationships between NCN, operators, and vaults.
-
 The restaking program does not store any funds; it is purely used as a registry and relationship manager between
-entities in the system.
+entities in the system. All of the accounts detailed below can be found in the `jito-restaking-core` crate.
 
-### Node Consensus Network (NCN)
+# 2. Accounts
 
-NCN are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
-other services that require a staking mechanism for security.
+## 2.1. NCN (Node Consensus Network) Account
 
-NCN can be registered through the restaking program.
+The NCN account stores information about a Node Consensus Network.
 
-There are several things one can do after registering an NCN:
+Key details:
+- Represents services that provide infrastructure to the network (e.g., validators, oracles, keepers)
+- Stores configuration data for the NCN
+- Manages relationships with operators and vaults
+- Tracks supported slashers
 
-- Add and remove support for operators participating in the NCN operator set.
-- Add and remove support for vaults
-- Add and remove support for slashers
-- Withdraw funds sent to the NCN from rewards, airdrops, and other sources.
+### 2.1.1. Operator Account
 
-### Operator
+The Operator account stores information about entities responsible for running NCN software.
 
-Operators are entities responsible for running NCN software.
+Key details:
+- Stores operator configuration data
+- Manages relationships with NCNs and vaults
+- Stores voter keys
 
-Operators can register through the restaking program and configure several variables:
+## 2.2. NcnOperatorState Account
 
-- Add and remove support for vaults
-- Add and remove support for NCN
-- Change voter keys
-- Withdraw funds sent to the operator from rewards, airdrops, and other sources.
+This account represents the mutual opt-in relationship between an NCN and an Operator.
 
-### Relationships
-
-The Jito Restaking protocol requires mutual opt-in from all parties entering stake agreements: vaults, operators, and
-NCNs.
-
-It leverages the concept of entity tickets, which are PDAs representing opt-in from one party to another. These tickets
-are created on-chain and can be used to track relationships between NCN, operators, and vaults. In addition to entity
-information, these tickets can store additional data like slot activated/deactivated, slashing conditions, and more.
-
-The tickets are detailed below:
-
-#### NCN Operator State
-
-This state represents the mutual opt-in relationship between an NCN and an Operator. The NCN initializes this state. After created, the NCN and operator can both warm-up and cooldown the state to show support for each other.
+Key details:
+- Created by the NCN
+- Stores the current state of the relationship (e.g., warm-up, active, cool-down)
+- The Operator `ncn_admin` can opt-in and opt-out of an NCN at any time.
+- The NCN `operator_admin` can opt-in and opt-out of an Operator at any time.
 
 ```mermaid
 graph TD
@@ -67,9 +53,14 @@ graph TD
     Operator -->|Updates| NcnOperatorState
 ```
 
-#### NCN Vault Ticket
+## 2.3. NcnVaultTicket Account
 
-This ticket represents the relationship between an NCN and a Vault. It is created by the NCN to opt in to work with a Vault.
+This account represents the relationship between an NCN and a Vault.
+
+Key details:
+- Created by the NCN
+- Indicates the NCN's opt-in to work with a specific Vault
+- The NCN `vault_admin` can opt-in and opt-out of a Vault at any time.
 
 ```mermaid
 graph TD
@@ -82,9 +73,14 @@ graph TD
     NCN -.->|Opts in| Vault
 ```
 
-#### Operator Vault Ticket
+## 2.4. OperatorVaultTicket Account
 
-This ticket represents the relationship between an Operator and a Vault. It is created by the Operator to opt in to work with a Vault.
+This account represents the relationship between an Operator and a Vault.
+
+Key details:
+- Created by the Operator
+- Indicates the Operator's opt-in to work with a specific Vault
+- The Operator `vault_admin` can opt-in and opt-out of a Vault at any time.
 
 ```mermaid
 graph TD
@@ -97,9 +93,14 @@ graph TD
     Operator -.->|Opts in| Vault
 ```
 
-#### NCN Vault Slasher Ticket
+## 2.5. NCNVaultSlasherTicket Account
 
-This ticket represents the slashing relationship between an NCN and a Vault. The NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
+This account represents the slashing relationship between an NCN and a Vault.
+
+Key details:
+- Created by the NCN
+- Allows registered slashers to potentially slash the Vault under appropriate conditions
+- The NCN `slasher_admin` can opt-in and opt-out of a Vault at any time.
 
 ```mermaid
 graph TD
