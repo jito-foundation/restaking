@@ -16,7 +16,8 @@ use jito_vault_sdk::{
     inline_mpl_token_metadata,
     instruction::{VaultAdminRole, WithdrawalAllocationMethod},
     sdk::{
-        add_delegation, cooldown_delegation, initialize_config, initialize_vault, set_deposit_capacity, warmup_vault_ncn_slasher_ticket, warmup_vault_ncn_ticket
+        add_delegation, cooldown_delegation, initialize_config, initialize_vault,
+        set_deposit_capacity, warmup_vault_ncn_slasher_ticket, warmup_vault_ncn_ticket,
     },
 };
 use log::info;
