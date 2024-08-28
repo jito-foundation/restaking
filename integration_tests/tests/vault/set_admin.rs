@@ -44,7 +44,7 @@ mod tests {
 
         let bad_admin = Keypair::new();
         vault_program_client
-            ._airdrop(&bad_admin.pubkey(), 10.0)
+            .airdrop(&bad_admin.pubkey(), 10.0)
             .await
             .unwrap();
 
