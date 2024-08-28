@@ -63,25 +63,14 @@ pub fn process_ncn_delegate_token_account(
 
     drop(ncn_data);
 
-    let ix = if token_program_info.key.eq(&spl_token::id()) {
-        spl_token::instruction::approve(
-            token_program_info.key,
-            token_account.key,
-            delegate.key,
-            ncn_info.key,
-            &[],
-            amount,
-        )?
-    } else {
-        spl_token_2022::instruction::approve(
-            token_program_info.key,
-            token_account.key,
-            delegate.key,
-            ncn_info.key,
-            &[],
-            amount,
-        )?
-    };
+    let ix = spl_token_2022::instruction::approve(
+        token_program_info.key,
+        token_account.key,
+        delegate.key,
+        ncn_info.key,
+        &[],
+        amount,
+    )?;
 
     invoke_signed(
         &ix,

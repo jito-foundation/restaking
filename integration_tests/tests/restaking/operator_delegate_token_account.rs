@@ -25,7 +25,7 @@ mod tests {
         let random_mint = Keypair::new();
         fixture
             .vault_program_client()
-            ._create_token_mint(&random_mint, &token_program_id)
+            .create_token_mint(&random_mint, &token_program_id)
             .await
             .unwrap();
 
