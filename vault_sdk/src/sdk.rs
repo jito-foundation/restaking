@@ -6,7 +6,7 @@ use solana_program::{
 };
 
 use crate::{
-    inline_mpl_token_metadata::{self, pda::find_metadata_account},
+    inline_mpl_token_metadata::{self},
     instruction::{VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
 };
 
@@ -474,21 +474,22 @@ pub fn create_token_metadata(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_token_metadata(
     program_id: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
     vrt_mint: &Pubkey,
+    metadata: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
-    let (metadata, _) = find_metadata_account(vrt_mint);
-
     let accounts = vec![
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new(metadata, false),
+        AccountMeta::new(*vrt_mint, false),
+        AccountMeta::new(*metadata, false),
         AccountMeta::new_readonly(inline_mpl_token_metadata::id(), false),
     ];
 

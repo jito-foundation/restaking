@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_sdk::{error::VaultError, inline_mpl_token_metadata};
-    use solana_sdk::{instruction::InstructionError, pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::TransactionError};
+    use solana_sdk::{
+        instruction::InstructionError, pubkey::Pubkey, signature::Keypair, signer::Signer,
+        transaction::TransactionError,
+    };
 
     use crate::fixtures::{
         fixture::TestBuilder,
@@ -77,7 +80,10 @@ mod tests {
             .unwrap();
 
         let random_mint = Keypair::new();
-        vault_program_client.create_token_mint(&random_mint).await.unwrap();
+        vault_program_client
+            .create_token_mint(&random_mint)
+            .await
+            .unwrap();
 
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
 
@@ -148,7 +154,6 @@ mod tests {
             TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
         );
     }
-
 
     #[tokio::test]
     async fn test_wrong_admin_signed() {

@@ -12,6 +12,8 @@ pub struct UpdateTokenMetadata {
 
     pub admin: solana_program::pubkey::Pubkey,
 
+    pub vrt_mint: solana_program::pubkey::Pubkey,
+
     pub metadata: solana_program::pubkey::Pubkey,
 
     pub mpl_token_metadata_program: solana_program::pubkey::Pubkey,
@@ -30,12 +32,16 @@ impl UpdateTokenMetadata {
         args: UpdateTokenMetadataInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.vrt_mint,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.metadata,
@@ -91,12 +97,14 @@ pub struct UpdateTokenMetadataInstructionArgs {
 ///
 ///   0. `[]` vault
 ///   1. `[signer]` admin
-///   2. `[writable]` metadata
-///   3. `[optional]` mpl_token_metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
+///   2. `[]` vrt_mint
+///   3. `[writable]` metadata
+///   4. `[optional]` mpl_token_metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
 #[derive(Clone, Debug, Default)]
 pub struct UpdateTokenMetadataBuilder {
     vault: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
+    vrt_mint: Option<solana_program::pubkey::Pubkey>,
     metadata: Option<solana_program::pubkey::Pubkey>,
     mpl_token_metadata_program: Option<solana_program::pubkey::Pubkey>,
     name: Option<String>,
@@ -117,6 +125,11 @@ impl UpdateTokenMetadataBuilder {
     #[inline(always)]
     pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
         self.admin = Some(admin);
+        self
+    }
+    #[inline(always)]
+    pub fn vrt_mint(&mut self, vrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
@@ -171,6 +184,7 @@ impl UpdateTokenMetadataBuilder {
         let accounts = UpdateTokenMetadata {
             vault: self.vault.expect("vault is not set"),
             admin: self.admin.expect("admin is not set"),
+            vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
             metadata: self.metadata.expect("metadata is not set"),
             mpl_token_metadata_program: self.mpl_token_metadata_program.unwrap_or(
                 solana_program::pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
@@ -192,6 +206,8 @@ pub struct UpdateTokenMetadataCpiAccounts<'a, 'b> {
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub metadata: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub mpl_token_metadata_program: &'b solana_program::account_info::AccountInfo<'a>,
@@ -205,6 +221,8 @@ pub struct UpdateTokenMetadataCpi<'a, 'b> {
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub metadata: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -223,6 +241,7 @@ impl<'a, 'b> UpdateTokenMetadataCpi<'a, 'b> {
             __program: program,
             vault: accounts.vault,
             admin: accounts.admin,
+            vrt_mint: accounts.vrt_mint,
             metadata: accounts.metadata,
             mpl_token_metadata_program: accounts.mpl_token_metadata_program,
             __args: args,
@@ -261,7 +280,7 @@ impl<'a, 'b> UpdateTokenMetadataCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.vault.key,
             false,
@@ -269,6 +288,10 @@ impl<'a, 'b> UpdateTokenMetadataCpi<'a, 'b> {
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.admin.key,
             true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.vrt_mint.key,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.metadata.key,
@@ -296,10 +319,11 @@ impl<'a, 'b> UpdateTokenMetadataCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(4 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.admin.clone());
+        account_infos.push(self.vrt_mint.clone());
         account_infos.push(self.metadata.clone());
         account_infos.push(self.mpl_token_metadata_program.clone());
         remaining_accounts
@@ -320,8 +344,9 @@ impl<'a, 'b> UpdateTokenMetadataCpi<'a, 'b> {
 ///
 ///   0. `[]` vault
 ///   1. `[signer]` admin
-///   2. `[writable]` metadata
-///   3. `[]` mpl_token_metadata_program
+///   2. `[]` vrt_mint
+///   3. `[writable]` metadata
+///   4. `[]` mpl_token_metadata_program
 #[derive(Clone, Debug)]
 pub struct UpdateTokenMetadataCpiBuilder<'a, 'b> {
     instruction: Box<UpdateTokenMetadataCpiBuilderInstruction<'a, 'b>>,
@@ -333,6 +358,7 @@ impl<'a, 'b> UpdateTokenMetadataCpiBuilder<'a, 'b> {
             __program: program,
             vault: None,
             admin: None,
+            vrt_mint: None,
             metadata: None,
             mpl_token_metadata_program: None,
             name: None,
@@ -350,6 +376,14 @@ impl<'a, 'b> UpdateTokenMetadataCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.admin = Some(admin);
+        self
+    }
+    #[inline(always)]
+    pub fn vrt_mint(
+        &mut self,
+        vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
@@ -436,6 +470,8 @@ impl<'a, 'b> UpdateTokenMetadataCpiBuilder<'a, 'b> {
 
             admin: self.instruction.admin.expect("admin is not set"),
 
+            vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
+
             metadata: self.instruction.metadata.expect("metadata is not set"),
 
             mpl_token_metadata_program: self
@@ -456,6 +492,7 @@ struct UpdateTokenMetadataCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     metadata: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     mpl_token_metadata_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     name: Option<String>,

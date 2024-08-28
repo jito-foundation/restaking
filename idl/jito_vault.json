@@ -1267,6 +1267,11 @@
           "isSigner": true
         },
         {
+          "name": "vrtMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "metadata",
           "isMut": true,
           "isSigner": false
