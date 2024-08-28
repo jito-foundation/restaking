@@ -4,19 +4,29 @@ title: Vault Program Accounts
 
 ## 1. About the program
 
-The vault program manages the vault receipt tokens (VRTs) and associated deposits. The program stores deposited funds and handles the minting and burning of tokenized stake.
+The vault program manages the vault receipt tokens (VRTs) and associated deposits. The program stores deposited funds and handles the minting and burning of tokenized stake. It also manages the vault's stake in an NCN, including delegation and slashing.
 
-## 2. Relationships
+## 2. Accounts
 
-The vault program interacts with other entities in the Jito Restaking protocol:
+All accounts for the vault program are defined in the [jito-vault-core](https://github.com/jito-foundation/restaking/tree/master/vault_core/src) crate.
 
-- Operators: The vault delegates to operators and manages these relationships
-- NCN: The vault interacts with NCN for slashing and other protocol-specific operations
-- Users: Deposit assets and receive VRTs, or burn VRTs to withdraw assets
+More information about the theory of operation can be found in the [theory of operation](./theory_of_operation.md) section.
 
-Below is a diagram of the relationships between the entities:
+### 2.1. Config
 
-### 2.0.1. Vault NCN Ticket
+The configuration account is a global account that is used to configure the vault program. It is used to set the restaking program and other program-wide settings. It also keeps track of the number of vaults, fee caps, and other program-wide settings. The number of vaults is used to programs can programmatically iterate through all vaults in the program.
+
+### 2.2. Vault
+
+The Vault account is a central component of the vault program, responsible for managing token deposits, VRT minting and burning, and delegation states. It contains several administrative pubkeys and other vault-wide settings.
+
+### 2.3. VaultNcnTicket
+
+- VaultNcnTicket is created by the vault to signify support (or lack of) for a given NCN.
+- VaultNcnTicket is activated through a warmup process.
+- VaultNcnTicket is deactivated through a cooldown process.
+- VaultNcnTicket is used to track the state of the vault's support for a given NCN.
+- Only the Vault ncn_admin pubkey can modify the VaultNcnTicket account.
 
 ```mermaid
 graph TD
@@ -29,7 +39,12 @@ graph TD
     Vault -.->|Opts in| Ncn
 ```
 
-### 2.0.2. Vault Operator Delegation
+### 2.4. VaultOperatorDelegation
+
+- VaultOperatorDelegation account is created by the vault to signify that the vault has delegated its stake to a given operator.
+- Only the Vault operator_admin pubkey can create the VaultOperatorDelegation account.
+- The Vault delegation_admin pubkey can modify the VaultOperatorDelegation account.
+- The VaultOperatorDelegation account is used to track the state of the vault's delegation to a given operator.
 
 ```mermaid
 graph TD
@@ -42,7 +57,11 @@ graph TD
     Vault -.->|Opts in| Operator
 ```
 
-### 2.0.3. Vault NCN Slasher Ticket
+### 2.5. VaultNcnSlasherTicket
+
+- VaultNcnSlasherTicket is created by the vault to signify that the vault has opted-in to a given slasher.
+- Only the Vault ncn_admin pubkey can modify the VaultNcnSlasherTicket account.
+- The VaultNcnSlasherTicket account is used to track the state of the vault's opt-in to a given slasher.
 
 ```mermaid
 graph TD
@@ -54,7 +73,9 @@ graph TD
     Vault -.->|Recognizes and copies from| NcnVaultSlasherTicket
 ```
 
-### 2.0.4. Vault NCN Slasher Operator Ticket
+### 2.6. VaultNcnSlasherOperatorTicket
+
+- VaultNcnSlasherOperatorTicket is created by the vault to track slashings for a given vault, ncn, slasher, operator, epoch pair.
 
 ```mermaid
 graph TD
@@ -70,6 +91,15 @@ graph TD
     Vault -.->|Tracks slashing by| Slasher
     Vault -.->|Tracks slashing of| Operator
 ```
+
+### 2.7. VaultStakerWithdrawalTicket
+
+- VaultStakerWithdrawalTicket is created by the vault to track the withdrawal of a given staker.
+- Stakers create the VaultStakerWithdrawalTicket account when they initiate a withdrawal.
+
+### 2.8. VaultUpdateStateTracker
+
+- VaultUpdateStateTracker is created by the vault during epoch updates to aggregate stake information of the `VaultOperatorDelegation` accounts.
 
 ## 3. Tracking State
 
