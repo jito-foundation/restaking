@@ -72,7 +72,7 @@ export function getVaultOperatorDelegationEncoder(): Encoder<VaultOperatorDelega
     ['lastUpdateSlot', getU64Encoder()],
     ['index', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -85,7 +85,7 @@ export function getVaultOperatorDelegationDecoder(): Decoder<VaultOperatorDelega
     ['lastUpdateSlot', getU64Decoder()],
     ['index', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

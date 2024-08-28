@@ -74,7 +74,7 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
     ['feeRateOfChangeBps', getU16Encoder()],
     ['feeBumpBps', getU16Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 17 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
@@ -89,7 +89,7 @@ export function getConfigDecoder(): Decoder<Config> {
     ['feeRateOfChangeBps', getU16Decoder()],
     ['feeBumpBps', getU16Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 17 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

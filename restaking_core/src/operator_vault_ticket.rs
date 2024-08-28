@@ -28,18 +28,18 @@ pub struct OperatorVaultTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl OperatorVaultTicket {
-    pub fn new(operator: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(operator: Pubkey, vault: Pubkey, index: u64, bump: u8, slot: u64) -> Self {
         Self {
             operator,
             vault,
             index: PodU64::from(index),
-            state: SlotToggle::new(0),
+            state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -106,5 +106,35 @@ impl OperatorVaultTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+
+    use super::*;
+
+    #[test]
+    fn test_operator_vault_ticket_no_padding() {
+        let operator_vault_ticket_size = std::mem::size_of::<OperatorVaultTicket>();
+        let sum_of_fields = size_of::<Pubkey>() + // operator
+            size_of::<Pubkey>() + // vault
+            size_of::<PodU64>() + // index
+            size_of::<SlotToggle>() + // state
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(operator_vault_ticket_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_operator_vault_ticket_inactive_on_creation() {
+        let slot = 1;
+        let operator_vault_ticket =
+            OperatorVaultTicket::new(Pubkey::default(), Pubkey::default(), 0, 0, slot);
+        assert_eq!(
+            operator_vault_ticket.state.state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
     }
 }

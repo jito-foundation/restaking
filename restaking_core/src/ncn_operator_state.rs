@@ -31,19 +31,19 @@ pub struct NcnOperatorState {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl NcnOperatorState {
-    pub fn new(ncn: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(ncn: Pubkey, operator: Pubkey, index: u64, bump: u8, slot: u64) -> Self {
         Self {
             ncn,
             operator,
             index: PodU64::from(index),
-            ncn_opt_in_state: SlotToggle::new(0),
-            operator_opt_in_state: SlotToggle::new(0),
+            ncn_opt_in_state: SlotToggle::new(slot),
+            operator_opt_in_state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -110,5 +110,42 @@ impl NcnOperatorState {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+
+    use super::*;
+
+    #[test]
+    fn test_ncn_operator_state_no_padding() {
+        let ncn_operator_state_size = std::mem::size_of::<NcnOperatorState>();
+        let sum_of_fields = size_of::<Pubkey>() + // ncn
+            size_of::<Pubkey>() + // operator
+            size_of::<PodU64>() + // index
+            size_of::<SlotToggle>() + // ncn_opt_in_state
+            size_of::<SlotToggle>() + // operator_opt_in_state
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(ncn_operator_state_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_ncn_operator_state_inactive_on_creation() {
+        let slot = 1;
+        let ncn_operator_state =
+            NcnOperatorState::new(Pubkey::default(), Pubkey::default(), 0, 0, slot);
+        assert_eq!(
+            ncn_operator_state.ncn_opt_in_state.state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
+        assert_eq!(
+            ncn_operator_state
+                .operator_opt_in_state
+                .state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
     }
 }

@@ -15,7 +15,7 @@ pub fn process_set_deposit_capacity(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, false)?;
-    Vault::load(program_id, vault, false)?;
+    Vault::load(program_id, vault, true)?;
     let mut vault_data = vault.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_signer(vault_capacity_admin, false)?;

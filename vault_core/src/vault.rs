@@ -138,7 +138,7 @@ pub struct Vault {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 9],
+    reserved: [u8; 263],
 }
 
 impl Vault {
@@ -184,8 +184,8 @@ impl Vault {
             operator_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
             bump,
-            reserved: [0; 9],
             delegation_state: DelegationState::default(),
+            reserved: [0; 263],
         }
     }
 
@@ -900,6 +900,7 @@ impl Vault {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
+    use jito_bytemuck::types::{PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
     use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 
@@ -931,6 +932,44 @@ mod tests {
         vault.set_vrt_supply(vrt_supply);
         vault.delegation_state = delegation_state;
         vault
+    }
+
+    #[test]
+    fn test_vault_no_padding() {
+        let vault_size = std::mem::size_of::<Vault>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // base
+            std::mem::size_of::<Pubkey>() + // vrt_mint
+            std::mem::size_of::<Pubkey>() + // supported_mint
+            std::mem::size_of::<PodU64>() + // vrt_supply
+            std::mem::size_of::<PodU64>() + // tokens_deposited
+            std::mem::size_of::<PodU64>() + // capacity
+            std::mem::size_of::<DelegationState>() + // delegation_state
+            std::mem::size_of::<PodU64>() + // vrt_enqueued_for_cooldown_amount
+            std::mem::size_of::<PodU64>() + // vrt_cooling_down_amount
+            std::mem::size_of::<PodU64>() + // vrt_ready_to_claim_amount
+            std::mem::size_of::<Pubkey>() + // admin
+            std::mem::size_of::<Pubkey>() + // delegation_admin
+            std::mem::size_of::<Pubkey>() + // operator_admin
+            std::mem::size_of::<Pubkey>() + // ncn_admin
+            std::mem::size_of::<Pubkey>() + // slasher_admin
+            std::mem::size_of::<Pubkey>() + // capacity_admin
+            std::mem::size_of::<Pubkey>() + // fee_admin
+            std::mem::size_of::<Pubkey>() + // withdraw_admin
+            std::mem::size_of::<Pubkey>() + // fee_wallet
+            std::mem::size_of::<Pubkey>() + // mint_burn_admin
+            std::mem::size_of::<PodU64>() + // vault_index
+            std::mem::size_of::<PodU64>() + // ncn_count
+            std::mem::size_of::<PodU64>() + // operator_count
+            std::mem::size_of::<PodU64>() + // slasher_count
+            std::mem::size_of::<PodU64>() + // last_fee_change_slot
+            std::mem::size_of::<PodU64>() + // last_full_state_update_slot
+            std::mem::size_of::<PodU16>() + // deposit_fee_bps
+            std::mem::size_of::<PodU16>() + // withdrawal_fee_bps
+            std::mem::size_of::<PodU16>() + // reward_fee_bps
+            1 + // bump
+            263; // reserved
+
+        assert_eq!(vault_size, sum_of_fields);
     }
 
     #[test]

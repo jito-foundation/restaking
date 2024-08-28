@@ -40,7 +40,7 @@ pub struct NcnVaultSlasherTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl NcnVaultSlasherTicket {
@@ -62,6 +62,7 @@ impl NcnVaultSlasherTicket {
         max_slashable_per_epoch: u64,
         index: u64,
         bump: u8,
+        slot: u64,
     ) -> Self {
         Self {
             ncn,
@@ -69,9 +70,9 @@ impl NcnVaultSlasherTicket {
             slasher,
             max_slashable_per_epoch: PodU64::from(max_slashable_per_epoch),
             index: PodU64::from(index),
-            state: SlotToggle::new(0),
+            state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -168,5 +169,44 @@ impl NcnVaultSlasherTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+
+    use super::*;
+
+    #[test]
+    fn test_ncn_vault_slasher_ticket_no_padding() {
+        let ncn_vault_slasher_ticket_size = std::mem::size_of::<NcnVaultSlasherTicket>();
+        let sum_of_fields = size_of::<Pubkey>() + // ncn
+            size_of::<Pubkey>() + // vault
+            size_of::<Pubkey>() + // slasher
+            size_of::<PodU64>() + // max_slashable_per_epoch
+            size_of::<PodU64>() + // index
+            size_of::<SlotToggle>() + // state
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(ncn_vault_slasher_ticket_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_ncn_vault_slasher_ticket_inactive_on_creation() {
+        let slot = 1;
+        let ncn_vault_slasher_ticket = NcnVaultSlasherTicket::new(
+            Pubkey::default(),
+            Pubkey::default(),
+            Pubkey::default(),
+            0,
+            0,
+            0,
+            slot,
+        );
+        assert_eq!(
+            ncn_vault_slasher_ticket.state.state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
     }
 }

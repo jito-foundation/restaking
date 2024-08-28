@@ -214,12 +214,14 @@ impl TestBuilder {
         restaking_program_client
             .do_initialize_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await?;
+        self.warp_slot_incremental(1).await.unwrap();
         restaking_program_client
             .do_warmup_ncn_vault_ticket(&ncn_root, &vault_root.vault_pubkey)
             .await?;
         vault_program_client
             .do_initialize_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await?;
+        self.warp_slot_incremental(1).await.unwrap();
         vault_program_client
             .do_warmup_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await?;
@@ -232,6 +234,7 @@ impl TestBuilder {
             restaking_program_client
                 .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
                 .await?;
+            self.warp_slot_incremental(1).await.unwrap();
             restaking_program_client
                 .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
                 .await?;
@@ -243,6 +246,7 @@ impl TestBuilder {
             restaking_program_client
                 .do_initialize_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
                 .await?;
+            self.warp_slot_incremental(1).await.unwrap();
             restaking_program_client
                 .do_warmup_operator_vault_ticket(&operator_root, &vault_root.vault_pubkey)
                 .await?;
@@ -269,6 +273,7 @@ impl TestBuilder {
                     *amount,
                 )
                 .await?;
+            self.warp_slot_incremental(1).await.unwrap();
             restaking_program_client
                 .do_warmup_ncn_vault_slasher_ticket(
                     &ncn_root,
@@ -284,7 +289,7 @@ impl TestBuilder {
                     &slasher.pubkey(),
                 )
                 .await?;
-
+            self.warp_slot_incremental(1).await.unwrap();
             vault_program_client
                 .do_warmup_vault_ncn_slasher_ticket(
                     &vault_root,

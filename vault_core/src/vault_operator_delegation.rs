@@ -33,19 +33,19 @@ pub struct VaultOperatorDelegation {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultOperatorDelegation {
-    pub fn new(vault: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(vault: Pubkey, operator: Pubkey, index: u64, bump: u8, slot: u64) -> Self {
         Self {
             vault,
             operator,
-            last_update_slot: PodU64::from(0),
+            last_update_slot: PodU64::from(slot),
             delegation_state: DelegationState::default(),
             index: PodU64::from(index),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -161,5 +161,140 @@ impl VaultOperatorDelegation {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vault_operator_delegation_no_padding() {
+        let vault_operator_delegation_size = std::mem::size_of::<VaultOperatorDelegation>();
+        let sum_of_fields = size_of::<Pubkey>() + // vault
+            size_of::<Pubkey>() + // operator
+            size_of::<DelegationState>() + // delegation_state
+            size_of::<PodU64>() + // last_update_slot
+            size_of::<PodU64>() + // index
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(vault_operator_delegation_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_vault_operator_delegation_update_single_epoch_ok() {
+        let mut vault_operator_delegation =
+            VaultOperatorDelegation::new(Pubkey::default(), Pubkey::default(), 0, 0, 0);
+
+        vault_operator_delegation
+            .delegation_state
+            .delegate(100)
+            .unwrap();
+        vault_operator_delegation
+            .delegation_state
+            .cooldown(50)
+            .unwrap();
+        vault_operator_delegation.update(100, 100);
+        assert_eq!(
+            vault_operator_delegation.delegation_state.staked_amount(),
+            50
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .enqueued_for_cooldown_amount(),
+            0
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .cooling_down_amount(),
+            50
+        );
+    }
+
+    #[test]
+    fn test_vault_operator_delegation_update_multiple_epochs_ok() {
+        let mut vault_operator_delegation =
+            VaultOperatorDelegation::new(Pubkey::default(), Pubkey::default(), 0, 0, 0);
+
+        vault_operator_delegation
+            .delegation_state
+            .delegate(100)
+            .unwrap();
+        vault_operator_delegation
+            .delegation_state
+            .cooldown(50)
+            .unwrap();
+        vault_operator_delegation.update(200, 100);
+        assert_eq!(
+            vault_operator_delegation.delegation_state.staked_amount(),
+            50
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .enqueued_for_cooldown_amount(),
+            0
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .cooling_down_amount(),
+            0
+        );
+    }
+
+    #[test]
+    fn test_vault_operator_delegation_update_same_epoch_ok() {
+        let mut vault_operator_delegation =
+            VaultOperatorDelegation::new(Pubkey::default(), Pubkey::default(), 0, 0, 500);
+
+        vault_operator_delegation
+            .delegation_state
+            .delegate(100)
+            .unwrap();
+        vault_operator_delegation
+            .delegation_state
+            .cooldown(50)
+            .unwrap();
+
+        vault_operator_delegation.update(599, 100);
+        assert_eq!(
+            vault_operator_delegation.delegation_state.staked_amount(),
+            50
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .enqueued_for_cooldown_amount(),
+            50
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .cooling_down_amount(),
+            0
+        );
+        assert_eq!(vault_operator_delegation.last_update_slot(), 599);
+
+        vault_operator_delegation.update(600, 100);
+        assert_eq!(
+            vault_operator_delegation.delegation_state.staked_amount(),
+            50
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .enqueued_for_cooldown_amount(),
+            0
+        );
+        assert_eq!(
+            vault_operator_delegation
+                .delegation_state
+                .cooling_down_amount(),
+            50
+        );
+        assert_eq!(vault_operator_delegation.last_update_slot(), 600);
     }
 }

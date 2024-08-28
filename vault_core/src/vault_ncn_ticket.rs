@@ -31,18 +31,18 @@ pub struct VaultNcnTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl VaultNcnTicket {
-    pub fn new(vault: Pubkey, ncn: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(vault: Pubkey, ncn: Pubkey, index: u64, bump: u8, slot: u64) -> Self {
         Self {
             vault,
             ncn,
             index: PodU64::from(index),
-            state: SlotToggle::new(0),
+            state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -125,5 +125,35 @@ impl VaultNcnTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+
+    use super::*;
+
+    #[test]
+    fn test_vault_ncn_ticket_no_padding() {
+        let vault_ncn_ticket_size = std::mem::size_of::<VaultNcnTicket>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // vault
+            std::mem::size_of::<Pubkey>() + // ncn
+            std::mem::size_of::<PodU64>() + // index
+            std::mem::size_of::<SlotToggle>() + // state
+            std::mem::size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(vault_ncn_ticket_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_vault_ncn_ticket_inactive_on_creation() {
+        let slot = 1;
+        let vault_ncn_ticket =
+            VaultNcnTicket::new(Pubkey::default(), Pubkey::default(), slot, 0, slot);
+        assert_eq!(
+            vault_ncn_ticket.state.state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
     }
 }
