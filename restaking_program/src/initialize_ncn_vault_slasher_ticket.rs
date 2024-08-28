@@ -12,8 +12,8 @@ use jito_restaking_core::{
 use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::vault::Vault;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 pub fn process_initialize_ncn_vault_slasher_ticket(
@@ -91,6 +91,7 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
         max_slashable_per_epoch,
         ncn.slasher_count(),
         ncn_vault_slasher_ticket_bump,
+        Clock::get()?.slot,
     );
 
     ncn.increment_slasher_count()?;

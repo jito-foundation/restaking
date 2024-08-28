@@ -48,6 +48,7 @@ impl VaultNcnSlasherTicket {
         max_slashable_per_epoch: u64,
         index: u64,
         bump: u8,
+        slot: u64,
     ) -> Self {
         Self {
             vault,
@@ -55,7 +56,7 @@ impl VaultNcnSlasherTicket {
             slasher,
             max_slashable_per_epoch: PodU64::from(max_slashable_per_epoch),
             index: PodU64::from(index),
-            state: SlotToggle::new(0),
+            state: SlotToggle::new(slot),
             bump,
             reserved: [0; 263],
         }
@@ -156,6 +157,8 @@ impl VaultNcnSlasherTicket {
 
 #[cfg(test)]
 mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+
     use super::*;
 
     #[test]
@@ -170,5 +173,23 @@ mod tests {
             size_of::<u8>() + // bump
             263; // reserved
         assert_eq!(vault_ncn_slasher_ticket_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_vault_ncn_slasher_ticket_inactive_on_creation() {
+        let slot = 1;
+        let vault_ncn_slasher_ticket = VaultNcnSlasherTicket::new(
+            Pubkey::default(),
+            Pubkey::default(),
+            Pubkey::default(),
+            0,
+            0,
+            0,
+            slot,
+        );
+        assert_eq!(
+            vault_ncn_slasher_ticket.state.state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
     }
 }

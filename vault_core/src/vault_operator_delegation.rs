@@ -37,11 +37,11 @@ pub struct VaultOperatorDelegation {
 }
 
 impl VaultOperatorDelegation {
-    pub fn new(vault: Pubkey, operator: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(vault: Pubkey, operator: Pubkey, index: u64, bump: u8, slot: u64) -> Self {
         Self {
             vault,
             operator,
-            last_update_slot: PodU64::from(0),
+            last_update_slot: PodU64::from(slot),
             delegation_state: DelegationState::default(),
             index: PodU64::from(index),
             bump,

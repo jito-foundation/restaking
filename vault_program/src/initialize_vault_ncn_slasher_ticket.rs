@@ -62,8 +62,10 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    let slot = Clock::get()?.slot;
+
     vault.check_slasher_admin(vault_slasher_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_update_state_ok(slot, config.epoch_length())?;
 
     msg!(
         "Initializing VaultNcnSlasherTicket at address {}",
@@ -96,6 +98,7 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         ncn_vault_slasher_ticket.max_slashable_per_epoch(),
         vault.slasher_count(),
         vault_ncn_slasher_ticket_bump,
+        slot,
     );
 
     vault.increment_slasher_count()?;
