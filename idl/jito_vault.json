@@ -1209,7 +1209,7 @@
           "isSigner": true
         },
         {
-          "name": "lrtMint",
+          "name": "vrtMint",
           "isMut": false,
           "isSigner": false
         },
