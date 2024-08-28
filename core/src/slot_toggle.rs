@@ -68,6 +68,8 @@ impl SlotToggle {
         match self.state(slot, epoch_length) {
             SlotToggleState::Inactive => {
                 if self.slot_added() == slot {
+                    // this should only be possible if the feature is being activated for the first time
+                    // and the slot is the same as the slot it was created at
                     false
                 } else {
                     self.slot_added = PodU64::from(slot);
