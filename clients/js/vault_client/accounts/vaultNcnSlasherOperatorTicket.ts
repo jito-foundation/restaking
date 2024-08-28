@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type VaultNcnSlasherOperatorTicket = {
+  discriminator: bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -47,6 +48,7 @@ export type VaultNcnSlasherOperatorTicket = {
 };
 
 export type VaultNcnSlasherOperatorTicketArgs = {
+  discriminator: number | bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -59,6 +61,7 @@ export type VaultNcnSlasherOperatorTicketArgs = {
 
 export function getVaultNcnSlasherOperatorTicketEncoder(): Encoder<VaultNcnSlasherOperatorTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncn', getAddressEncoder()],
     ['slasher', getAddressEncoder()],
@@ -66,12 +69,13 @@ export function getVaultNcnSlasherOperatorTicketEncoder(): Encoder<VaultNcnSlash
     ['epoch', getU64Encoder()],
     ['slashed', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getVaultNcnSlasherOperatorTicketDecoder(): Decoder<VaultNcnSlasherOperatorTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncn', getAddressDecoder()],
     ['slasher', getAddressDecoder()],
@@ -79,7 +83,7 @@ export function getVaultNcnSlasherOperatorTicketDecoder(): Decoder<VaultNcnSlash
     ['epoch', getU64Decoder()],
     ['slashed', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

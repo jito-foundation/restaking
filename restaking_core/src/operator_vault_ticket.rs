@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
@@ -26,7 +28,7 @@ pub struct OperatorVaultTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl OperatorVaultTicket {
@@ -37,7 +39,7 @@ impl OperatorVaultTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -104,5 +106,22 @@ impl OperatorVaultTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_operator_vault_ticket_no_padding() {
+        let operator_vault_ticket_size = std::mem::size_of::<OperatorVaultTicket>();
+        let sum_of_fields = size_of::<Pubkey>() + // operator
+            size_of::<Pubkey>() + // vault
+            size_of::<PodU64>() + // index
+            size_of::<SlotToggle>() + // state
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(operator_vault_ticket_size, sum_of_fields);
     }
 }

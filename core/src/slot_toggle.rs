@@ -16,6 +16,8 @@ pub struct SlotToggle {
     slot_added: PodU64,
     /// The slot at which the feature was removed
     slot_removed: PodU64,
+
+    reserved: [u8; 32],
 }
 
 /// The state of the SlotToggle
@@ -37,6 +39,7 @@ impl SlotToggle {
         Self {
             slot_added: PodU64::from(slot),
             slot_removed: PodU64::from(0),
+            reserved: [0; 32],
         }
     }
 
@@ -142,7 +145,18 @@ impl SlotToggle {
 
 #[cfg(test)]
 mod tests {
+    use jito_bytemuck::types::PodU64;
+
     use crate::slot_toggle::{SlotToggle, SlotToggleState};
+
+    #[test]
+    fn test_slot_toggle_no_padding() {
+        let slot_toggle_size = std::mem::size_of::<SlotToggle>();
+        let sum_of_fields = size_of::<PodU64>() + // slot_added
+            size_of::<PodU64>() + // slot_removed
+            32; // reserved
+        assert_eq!(slot_toggle_size, sum_of_fields);
+    }
 
     #[test]
     fn test_slot_zero() {

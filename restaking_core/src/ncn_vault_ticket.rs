@@ -1,5 +1,8 @@
 //! The NcnVaultTicket tracks the state of a node consensus network opting-in to a vault.
 //! The NcnVaultTicket can be activated and deactivated over time by the NCN vault admin.
+
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::slot_toggle::SlotToggle;
@@ -26,7 +29,7 @@ pub struct NcnVaultTicket {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl NcnVaultTicket {
@@ -37,7 +40,7 @@ impl NcnVaultTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(0),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -104,5 +107,22 @@ impl NcnVaultTicket {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ncn_vault_ticket_no_padding() {
+        let ncn_vault_ticket_size = std::mem::size_of::<NcnVaultTicket>();
+        let sum_of_fields = size_of::<Pubkey>() + // ncn
+            size_of::<Pubkey>() + // vault
+            size_of::<PodU64>() + // index
+            size_of::<SlotToggle>() + // state
+            size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(ncn_vault_ticket_size, sum_of_fields);
     }
 }

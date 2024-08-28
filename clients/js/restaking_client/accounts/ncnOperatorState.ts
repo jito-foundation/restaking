@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type NcnOperatorState = {
+  discriminator: bigint;
   ncn: Address;
   operator: Address;
   index: bigint;
@@ -52,6 +53,7 @@ export type NcnOperatorState = {
 };
 
 export type NcnOperatorStateArgs = {
+  discriminator: number | bigint;
   ncn: Address;
   operator: Address;
   index: number | bigint;
@@ -63,25 +65,27 @@ export type NcnOperatorStateArgs = {
 
 export function getNcnOperatorStateEncoder(): Encoder<NcnOperatorStateArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['ncn', getAddressEncoder()],
     ['operator', getAddressEncoder()],
     ['index', getU64Encoder()],
     ['ncnOptInState', getSlotToggleEncoder()],
     ['operatorOptInState', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getNcnOperatorStateDecoder(): Decoder<NcnOperatorState> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['ncn', getAddressDecoder()],
     ['operator', getAddressDecoder()],
     ['index', getU64Decoder()],
     ['ncnOptInState', getSlotToggleDecoder()],
     ['operatorOptInState', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

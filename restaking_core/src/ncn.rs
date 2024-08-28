@@ -2,6 +2,9 @@
 //! represents a network of nodes that participate in consensus. The NCN
 //! account is used to manage the operators, vaults, and slashers that are
 //! associated with the network.
+
+use std::fmt::Debug;
+
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_restaking_sdk::error::RestakingError;
@@ -49,7 +52,7 @@ pub struct Ncn {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 7],
+    reserved: [u8; 263],
 }
 
 impl Discriminator for Ncn {
@@ -72,7 +75,7 @@ impl Ncn {
             vault_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
             bump,
-            reserved: [0; 7],
+            reserved: [0; 263],
         }
     }
 
@@ -244,9 +247,29 @@ impl Ncn {
 
 #[cfg(test)]
 mod tests {
+    use jito_bytemuck::types::PodU64;
     use solana_program::pubkey::Pubkey;
 
     use super::Ncn;
+
+    #[test]
+    fn test_ncn_no_padding() {
+        let ncn_size = std::mem::size_of::<Ncn>();
+        let sum_of_fields = std::mem::size_of::<Pubkey>() + // base
+            std::mem::size_of::<Pubkey>() + // admin
+            std::mem::size_of::<Pubkey>() + // operator_admin
+            std::mem::size_of::<Pubkey>() + // vault_admin
+            std::mem::size_of::<Pubkey>() + // slasher_admin
+            std::mem::size_of::<Pubkey>() + // withdraw_admin
+            std::mem::size_of::<Pubkey>() + // withdraw_fee_wallet
+            std::mem::size_of::<PodU64>() + // index
+            std::mem::size_of::<PodU64>() + // operator_count
+            std::mem::size_of::<PodU64>() + // vault_count
+            std::mem::size_of::<PodU64>() + // slasher_count
+            std::mem::size_of::<u8>() + // bump
+            263; // reserved
+        assert_eq!(ncn_size, sum_of_fields);
+    }
 
     #[test]
     fn test_update_secondary_admin_ok() {

@@ -11,4 +11,5 @@ use borsh::{BorshDeserialize, BorshSerialize};
 pub struct SlotToggle {
     pub slot_added: u64,
     pub slot_removed: u64,
+    pub reserved: [u8; 32],
 }

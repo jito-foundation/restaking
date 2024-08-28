@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::{cmp::min, fmt::Debug};
 
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::types::PodU64;
@@ -6,7 +6,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankType;
 use solana_program::msg;
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
 #[repr(C)]
 pub struct DelegationState {
     /// The amount of stake that is currently active on the operator
@@ -18,6 +18,19 @@ pub struct DelegationState {
     /// Any stake that was deactivated in the previous epoch,
     /// to be available for re-delegation in the current epoch + 1
     cooling_down_amount: PodU64,
+
+    reserved: [u8; 256],
+}
+
+impl Default for DelegationState {
+    fn default() -> Self {
+        Self {
+            staked_amount: PodU64::from(0),
+            enqueued_for_cooldown_amount: PodU64::from(0),
+            cooling_down_amount: PodU64::from(0),
+            reserved: [0; 256],
+        }
+    }
 }
 
 impl DelegationState {
@@ -30,6 +43,7 @@ impl DelegationState {
             staked_amount: PodU64::from(staked_amount),
             enqueued_for_cooldown_amount: PodU64::from(enqueued_for_cooldown_amount),
             cooling_down_amount: PodU64::from(cooling_down_amount),
+            reserved: [0; 256],
         }
     }
 
@@ -202,7 +216,19 @@ impl DelegationState {
 
 #[cfg(test)]
 mod tests {
+    use jito_bytemuck::types::PodU64;
+
     use crate::delegation_state::DelegationState;
+
+    #[test]
+    fn test_delegation_state_no_padding() {
+        let delegation_state_size = std::mem::size_of::<DelegationState>();
+        let sum_of_fields = size_of::<PodU64>() // staked_amount
+         + size_of::<PodU64>() // enqueued_for_cooldown_amount
+         + size_of::<PodU64>() // cooling_down_amount
+         + 256; // reserved
+        assert_eq!(delegation_state_size, sum_of_fields);
+    }
 
     #[test]
     fn test_undo_self_zeroes() {

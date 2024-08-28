@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type Ncn = {
+  discriminator: bigint;
   base: Address;
   admin: Address;
   operatorAdmin: Address;
@@ -52,6 +53,7 @@ export type Ncn = {
 };
 
 export type NcnArgs = {
+  discriminator: number | bigint;
   base: Address;
   admin: Address;
   operatorAdmin: Address;
@@ -69,6 +71,7 @@ export type NcnArgs = {
 
 export function getNcnEncoder(): Encoder<NcnArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['base', getAddressEncoder()],
     ['admin', getAddressEncoder()],
     ['operatorAdmin', getAddressEncoder()],
@@ -81,12 +84,13 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['vaultCount', getU64Encoder()],
     ['slasherCount', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getNcnDecoder(): Decoder<Ncn> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['base', getAddressDecoder()],
     ['admin', getAddressDecoder()],
     ['operatorAdmin', getAddressDecoder()],
@@ -99,7 +103,7 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['vaultCount', getU64Decoder()],
     ['slasherCount', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

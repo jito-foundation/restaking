@@ -10,6 +10,7 @@ use solana_program::pubkey::Pubkey;
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Config {
+    pub discriminator: u64,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -26,7 +27,8 @@ pub struct Config {
     pub fee_rate_of_change_bps: u16,
     pub fee_bump_bps: u16,
     pub bump: u8,
-    pub reserved: [u8; 17],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 263],
 }
 
 impl Config {

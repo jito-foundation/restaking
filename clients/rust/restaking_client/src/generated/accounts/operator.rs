@@ -10,6 +10,7 @@ use solana_program::pubkey::Pubkey;
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Operator {
+    pub discriminator: u64,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -49,7 +50,8 @@ pub struct Operator {
     pub ncn_count: u64,
     pub vault_count: u64,
     pub bump: u8,
-    pub reserved_space: [u8; 7],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved_space: [u8; 263],
 }
 
 impl Operator {

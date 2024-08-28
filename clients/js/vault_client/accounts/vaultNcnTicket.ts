@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type VaultNcnTicket = {
+  discriminator: bigint;
   vault: Address;
   ncn: Address;
   index: bigint;
@@ -51,6 +52,7 @@ export type VaultNcnTicket = {
 };
 
 export type VaultNcnTicketArgs = {
+  discriminator: number | bigint;
   vault: Address;
   ncn: Address;
   index: number | bigint;
@@ -61,23 +63,25 @@ export type VaultNcnTicketArgs = {
 
 export function getVaultNcnTicketEncoder(): Encoder<VaultNcnTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncn', getAddressEncoder()],
     ['index', getU64Encoder()],
     ['state', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getVaultNcnTicketDecoder(): Decoder<VaultNcnTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncn', getAddressDecoder()],
     ['index', getU64Decoder()],
     ['state', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

@@ -12,6 +12,7 @@ use crate::generated::types::DelegationState;
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VaultUpdateStateTracker {
+    pub discriminator: u64,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -22,7 +23,8 @@ pub struct VaultUpdateStateTracker {
     pub additional_assets_need_unstaking: u64,
     pub delegation_state: DelegationState,
     pub withdrawal_allocation_method: u8,
-    pub reserved: [u8; 7],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 263],
 }
 
 impl VaultUpdateStateTracker {

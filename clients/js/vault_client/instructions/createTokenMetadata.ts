@@ -47,7 +47,7 @@ export type CreateTokenMetadataInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountLrtMint extends string | IAccountMeta<string> = string,
+  TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
   TAccountMetadata extends string | IAccountMeta<string> = string,
   TAccountMplTokenMetadataProgram extends
@@ -68,9 +68,9 @@ export type CreateTokenMetadataInstruction<
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountLrtMint extends string
-        ? ReadonlyAccount<TAccountLrtMint>
-        : TAccountLrtMint,
+      TAccountVrtMint extends string
+        ? ReadonlyAccount<TAccountVrtMint>
+        : TAccountVrtMint,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
             IAccountSignerMeta<TAccountPayer>
@@ -138,7 +138,7 @@ export function getCreateTokenMetadataInstructionDataCodec(): Codec<
 export type CreateTokenMetadataInput<
   TAccountVault extends string = string,
   TAccountAdmin extends string = string,
-  TAccountLrtMint extends string = string,
+  TAccountVrtMint extends string = string,
   TAccountPayer extends string = string,
   TAccountMetadata extends string = string,
   TAccountMplTokenMetadataProgram extends string = string,
@@ -146,7 +146,7 @@ export type CreateTokenMetadataInput<
 > = {
   vault: Address<TAccountVault>;
   admin: TransactionSigner<TAccountAdmin>;
-  lrtMint: Address<TAccountLrtMint>;
+  vrtMint: Address<TAccountVrtMint>;
   payer: TransactionSigner<TAccountPayer>;
   metadata: Address<TAccountMetadata>;
   mplTokenMetadataProgram?: Address<TAccountMplTokenMetadataProgram>;
@@ -159,7 +159,7 @@ export type CreateTokenMetadataInput<
 export function getCreateTokenMetadataInstruction<
   TAccountVault extends string,
   TAccountAdmin extends string,
-  TAccountLrtMint extends string,
+  TAccountVrtMint extends string,
   TAccountPayer extends string,
   TAccountMetadata extends string,
   TAccountMplTokenMetadataProgram extends string,
@@ -168,7 +168,7 @@ export function getCreateTokenMetadataInstruction<
   input: CreateTokenMetadataInput<
     TAccountVault,
     TAccountAdmin,
-    TAccountLrtMint,
+    TAccountVrtMint,
     TAccountPayer,
     TAccountMetadata,
     TAccountMplTokenMetadataProgram,
@@ -178,7 +178,7 @@ export function getCreateTokenMetadataInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountVault,
   TAccountAdmin,
-  TAccountLrtMint,
+  TAccountVrtMint,
   TAccountPayer,
   TAccountMetadata,
   TAccountMplTokenMetadataProgram,
@@ -191,7 +191,7 @@ export function getCreateTokenMetadataInstruction<
   const originalAccounts = {
     vault: { value: input.vault ?? null, isWritable: false },
     admin: { value: input.admin ?? null, isWritable: false },
-    lrtMint: { value: input.lrtMint ?? null, isWritable: false },
+    vrtMint: { value: input.vrtMint ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     metadata: { value: input.metadata ?? null, isWritable: true },
     mplTokenMetadataProgram: {
@@ -223,7 +223,7 @@ export function getCreateTokenMetadataInstruction<
     accounts: [
       getAccountMeta(accounts.vault),
       getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.lrtMint),
+      getAccountMeta(accounts.vrtMint),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.metadata),
       getAccountMeta(accounts.mplTokenMetadataProgram),
@@ -237,7 +237,7 @@ export function getCreateTokenMetadataInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountVault,
     TAccountAdmin,
-    TAccountLrtMint,
+    TAccountVrtMint,
     TAccountPayer,
     TAccountMetadata,
     TAccountMplTokenMetadataProgram,
@@ -255,7 +255,7 @@ export type ParsedCreateTokenMetadataInstruction<
   accounts: {
     vault: TAccountMetas[0];
     admin: TAccountMetas[1];
-    lrtMint: TAccountMetas[2];
+    vrtMint: TAccountMetas[2];
     payer: TAccountMetas[3];
     metadata: TAccountMetas[4];
     mplTokenMetadataProgram: TAccountMetas[5];
@@ -287,7 +287,7 @@ export function parseCreateTokenMetadataInstruction<
     accounts: {
       vault: getNextAccount(),
       admin: getNextAccount(),
-      lrtMint: getNextAccount(),
+      vrtMint: getNextAccount(),
       payer: getNextAccount(),
       metadata: getNextAccount(),
       mplTokenMetadataProgram: getNextAccount(),

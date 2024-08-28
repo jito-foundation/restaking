@@ -279,10 +279,10 @@ pub enum VaultInstruction {
         ncn_epoch: u64
     },
 
-    /// Creates token metadata for the vault LRT
+    /// Creates token metadata for the vault VRT
     #[account(0, name = "vault")]
     #[account(1, signer, name = "admin")]
-    #[account(2, name = "lrt_mint")]
+    #[account(2, name = "vrt_mint")]
     #[account(3, writable, signer, name = "payer")]
     #[account(4, writable, name = "metadata")]
     #[account(5, name = "mpl_token_metadata_program")]
@@ -296,8 +296,9 @@ pub enum VaultInstruction {
     /// Updates token metadata for the vault VRT
     #[account(0, name = "vault")]
     #[account(1, signer, name = "admin")]
-    #[account(2, writable, name = "metadata")]
-    #[account(3, name = "mpl_token_metadata_program")]
+    #[account(2, name = "vrt_mint")]
+    #[account(3, writable, name = "metadata")]
+    #[account(4, name = "mpl_token_metadata_program")]
     UpdateTokenMetadata {
         name: String,
         symbol: String,

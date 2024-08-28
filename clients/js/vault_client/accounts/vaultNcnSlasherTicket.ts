@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type VaultNcnSlasherTicket = {
+  discriminator: bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -53,6 +54,7 @@ export type VaultNcnSlasherTicket = {
 };
 
 export type VaultNcnSlasherTicketArgs = {
+  discriminator: number | bigint;
   vault: Address;
   ncn: Address;
   slasher: Address;
@@ -65,6 +67,7 @@ export type VaultNcnSlasherTicketArgs = {
 
 export function getVaultNcnSlasherTicketEncoder(): Encoder<VaultNcnSlasherTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncn', getAddressEncoder()],
     ['slasher', getAddressEncoder()],
@@ -72,12 +75,13 @@ export function getVaultNcnSlasherTicketEncoder(): Encoder<VaultNcnSlasherTicket
     ['index', getU64Encoder()],
     ['state', getSlotToggleEncoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getVaultNcnSlasherTicketDecoder(): Decoder<VaultNcnSlasherTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncn', getAddressDecoder()],
     ['slasher', getAddressDecoder()],
@@ -85,7 +89,7 @@ export function getVaultNcnSlasherTicketDecoder(): Decoder<VaultNcnSlasherTicket
     ['index', getU64Decoder()],
     ['state', getSlotToggleDecoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

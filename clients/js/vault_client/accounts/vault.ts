@@ -44,6 +44,7 @@ import {
 } from '../types';
 
 export type Vault = {
+  discriminator: bigint;
   base: Address;
   vrtMint: Address;
   supportedMint: Address;
@@ -78,6 +79,7 @@ export type Vault = {
 };
 
 export type VaultArgs = {
+  discriminator: number | bigint;
   base: Address;
   vrtMint: Address;
   supportedMint: Address;
@@ -113,6 +115,7 @@ export type VaultArgs = {
 
 export function getVaultEncoder(): Encoder<VaultArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['base', getAddressEncoder()],
     ['vrtMint', getAddressEncoder()],
     ['supportedMint', getAddressEncoder()],
@@ -143,12 +146,13 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['withdrawalFeeBps', getU16Encoder()],
     ['rewardFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 9 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getVaultDecoder(): Decoder<Vault> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['base', getAddressDecoder()],
     ['vrtMint', getAddressDecoder()],
     ['supportedMint', getAddressDecoder()],
@@ -179,7 +183,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['withdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 9 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

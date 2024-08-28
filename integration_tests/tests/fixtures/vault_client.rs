@@ -17,7 +17,7 @@ use jito_vault_sdk::{
     instruction::{VaultAdminRole, WithdrawalAllocationMethod},
     sdk::{
         add_delegation, cooldown_delegation, initialize_config, initialize_vault,
-        warmup_vault_ncn_slasher_ticket, warmup_vault_ncn_ticket,
+        set_deposit_capacity, warmup_vault_ncn_slasher_ticket, warmup_vault_ncn_ticket,
     },
 };
 use log::info;
@@ -73,7 +73,7 @@ impl VaultProgramClient {
         depositor: &Pubkey,
         amount_to_mint: u64,
     ) -> TestResult<()> {
-        self._airdrop(depositor, 100.0).await?;
+        self.airdrop(depositor, 100.0).await?;
         let vault = self.get_vault(&vault_root.vault_pubkey).await?;
         self.create_ata(&vault.supported_mint, depositor).await?;
         self.create_ata(&vault.vrt_mint, depositor).await?;
@@ -217,7 +217,7 @@ impl VaultProgramClient {
     pub async fn do_initialize_config(&mut self) -> Result<Keypair, TestError> {
         let config_admin = Keypair::new();
 
-        self._airdrop(&config_admin.pubkey(), 1.0).await?;
+        self.airdrop(&config_admin.pubkey(), 1.0).await?;
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
         self.initialize_config(&config_pubkey, &config_admin)
@@ -264,8 +264,7 @@ impl VaultProgramClient {
         let token_mint = Keypair::new();
 
         self._airdrop(&vault_admin.pubkey(), 100.0).await?;
-        self._create_token_mint(&token_mint, &spl_token::id())
-            .await?;
+        self._create_token_mint(&token_mint).await?;
 
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -324,6 +323,30 @@ impl VaultProgramClient {
         .await?;
 
         Ok(())
+    }
+
+    pub async fn set_capacity(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        admin: &Keypair,
+        capacity: u64,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[set_deposit_capacity(
+                &jito_vault_program::id(),
+                &config,
+                &vault,
+                &admin.pubkey(),
+                capacity,
+            )],
+            Some(&admin.pubkey()),
+            &[&admin],
+            blockhash,
+        ))
+        .await
     }
 
     pub async fn do_warmup_vault_ncn_ticket(
@@ -1470,6 +1493,7 @@ impl VaultProgramClient {
         vault: &Pubkey,
         admin: &Keypair,
         vrt_mint: &Pubkey,
+        metadata: &Pubkey,
         name: String,
         symbol: String,
         uri: String,
@@ -1481,6 +1505,7 @@ impl VaultProgramClient {
                 vault,
                 &admin.pubkey(),
                 vrt_mint,
+                metadata,
                 name,
                 symbol,
                 uri,
@@ -1502,7 +1527,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn _airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), TestError> {
+    pub async fn airdrop(&mut self, to: &Pubkey, sol: f64) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
@@ -1518,11 +1543,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn _create_token_mint(
-        &mut self,
-        mint: &Keypair,
-        token_program_id: &Pubkey,
-    ) -> Result<(), TestError> {
+    pub async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         let ixs = if token_program_id.eq(&spl_token::id()) {

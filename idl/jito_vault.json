@@ -1209,7 +1209,7 @@
           "isSigner": true
         },
         {
-          "name": "lrtMint",
+          "name": "vrtMint",
           "isMut": false,
           "isSigner": false
         },
@@ -1265,6 +1265,11 @@
           "name": "admin",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "vrtMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "metadata",
@@ -1445,7 +1450,7 @@
             "type": {
               "array": [
                 "u8",
-                17
+                263
               ]
             }
           }
@@ -1614,7 +1619,7 @@
             "type": {
               "array": [
                 "u8",
-                9
+                263
               ]
             }
           }
@@ -1663,7 +1668,7 @@
             "type": {
               "array": [
                 "u8",
-                7
+                263
               ]
             }
           }
@@ -1714,7 +1719,7 @@
             "type": {
               "array": [
                 "u8",
-                7
+                263
               ]
             }
           }
@@ -1755,7 +1760,7 @@
             "type": {
               "array": [
                 "u8",
-                7
+                263
               ]
             }
           }
@@ -1802,7 +1807,7 @@
             "type": {
               "array": [
                 "u8",
-                7
+                263
               ]
             }
           }
@@ -1847,7 +1852,7 @@
             "type": {
               "array": [
                 "u8",
-                7
+                263
               ]
             }
           }
@@ -1896,7 +1901,7 @@
             "type": {
               "array": [
                 "u8",
-                7
+                263
               ]
             }
           }
@@ -1920,6 +1925,15 @@
             "name": "slotRemoved",
             "type": {
               "defined": "PodU64"
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
             }
           }
         ]
@@ -2092,6 +2106,15 @@
             "name": "coolingDownAmount",
             "type": {
               "defined": "PodU64"
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                256
+              ]
             }
           }
         ]

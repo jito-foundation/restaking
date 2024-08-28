@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type Operator = {
+  discriminator: bigint;
   base: Address;
   admin: Address;
   ncnAdmin: Address;
@@ -51,6 +52,7 @@ export type Operator = {
 };
 
 export type OperatorArgs = {
+  discriminator: number | bigint;
   base: Address;
   admin: Address;
   ncnAdmin: Address;
@@ -67,6 +69,7 @@ export type OperatorArgs = {
 
 export function getOperatorEncoder(): Encoder<OperatorArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['base', getAddressEncoder()],
     ['admin', getAddressEncoder()],
     ['ncnAdmin', getAddressEncoder()],
@@ -78,12 +81,13 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['ncnCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getOperatorDecoder(): Decoder<Operator> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['base', getAddressDecoder()],
     ['admin', getAddressDecoder()],
     ['ncnAdmin', getAddressDecoder()],
@@ -95,7 +99,7 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['ncnCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type Config = {
+  discriminator: bigint;
   admin: Address;
   vaultProgram: Address;
   ncnCount: bigint;
@@ -46,6 +47,7 @@ export type Config = {
 };
 
 export type ConfigArgs = {
+  discriminator: number | bigint;
   admin: Address;
   vaultProgram: Address;
   ncnCount: number | bigint;
@@ -57,25 +59,27 @@ export type ConfigArgs = {
 
 export function getConfigEncoder(): Encoder<ConfigArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['admin', getAddressEncoder()],
     ['vaultProgram', getAddressEncoder()],
     ['ncnCount', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
     ['epochLength', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved1', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved1', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getConfigDecoder(): Decoder<Config> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['admin', getAddressDecoder()],
     ['vaultProgram', getAddressDecoder()],
     ['ncnCount', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
     ['epochLength', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved1', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved1', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

@@ -12,6 +12,7 @@ use crate::generated::types::SlotToggle;
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnVaultSlasherTicket {
+    pub discriminator: u64,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -31,7 +32,8 @@ pub struct NcnVaultSlasherTicket {
     pub index: u64,
     pub state: SlotToggle,
     pub bump: u8,
-    pub reserved: [u8; 7],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 263],
 }
 
 impl NcnVaultSlasherTicket {

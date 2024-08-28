@@ -10,6 +10,7 @@ use solana_program::pubkey::Pubkey;
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VaultStakerWithdrawalTicket {
+    pub discriminator: u64,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -28,7 +29,8 @@ pub struct VaultStakerWithdrawalTicket {
     pub vrt_amount: u64,
     pub slot_unstaked: u64,
     pub bump: u8,
-    pub reserved: [u8; 7],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 263],
 }
 
 impl VaultStakerWithdrawalTicket {

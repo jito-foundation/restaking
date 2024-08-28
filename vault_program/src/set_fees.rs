@@ -20,7 +20,7 @@ pub fn process_set_fees(
     Config::load(program_id, config, false)?;
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
-    Vault::load(program_id, vault, false)?;
+    Vault::load(program_id, vault, true)?;
     let mut vault_data = vault.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_signer(vault_fee_admin, false)?;
@@ -110,9 +110,10 @@ pub fn check_fee_change_ok(
     }
 
     if fee_delta > fee_bump_bps {
-        let deposit_percentage_increase_bps = (fee_delta as u64)
+        let deposit_percentage_increase_bps: u64 = (fee_delta as u128)
             .checked_mul(10000)
-            .and_then(|product| product.checked_div(current_fee_bps as u64))
+            .and_then(|product| product.checked_div(current_fee_bps as u128))
+            .and_then(|result| result.try_into().ok())
             .unwrap_or(u64::MAX); // Divide by zero should result in max value
 
         if deposit_percentage_increase_bps > fee_rate_of_change_bps as u64 {

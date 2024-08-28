@@ -42,6 +42,7 @@ import {
 } from '../types';
 
 export type VaultOperatorDelegation = {
+  discriminator: bigint;
   vault: Address;
   operator: Address;
   delegationState: DelegationState;
@@ -52,6 +53,7 @@ export type VaultOperatorDelegation = {
 };
 
 export type VaultOperatorDelegationArgs = {
+  discriminator: number | bigint;
   vault: Address;
   operator: Address;
   delegationState: DelegationStateArgs;
@@ -63,25 +65,27 @@ export type VaultOperatorDelegationArgs = {
 
 export function getVaultOperatorDelegationEncoder(): Encoder<VaultOperatorDelegationArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['operator', getAddressEncoder()],
     ['delegationState', getDelegationStateEncoder()],
     ['lastUpdateSlot', getU64Encoder()],
     ['index', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getVaultOperatorDelegationDecoder(): Decoder<VaultOperatorDelegation> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['operator', getAddressDecoder()],
     ['delegationState', getDelegationStateDecoder()],
     ['lastUpdateSlot', getU64Decoder()],
     ['index', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 

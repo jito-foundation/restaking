@@ -14,6 +14,7 @@ mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
 mod reward_fee;
 mod set_admin;
+mod set_capacity;
 mod set_fees;
 mod set_secondary_admin;
 mod slash;

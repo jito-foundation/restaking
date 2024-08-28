@@ -36,6 +36,7 @@ import {
 } from '@solana/web3.js';
 
 export type VaultStakerWithdrawalTicket = {
+  discriminator: bigint;
   vault: Address;
   staker: Address;
   base: Address;
@@ -46,6 +47,7 @@ export type VaultStakerWithdrawalTicket = {
 };
 
 export type VaultStakerWithdrawalTicketArgs = {
+  discriminator: number | bigint;
   vault: Address;
   staker: Address;
   base: Address;
@@ -57,25 +59,27 @@ export type VaultStakerWithdrawalTicketArgs = {
 
 export function getVaultStakerWithdrawalTicketEncoder(): Encoder<VaultStakerWithdrawalTicketArgs> {
   return getStructEncoder([
+    ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['staker', getAddressEncoder()],
     ['base', getAddressEncoder()],
     ['vrtAmount', getU64Encoder()],
     ['slotUnstaked', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 7 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
 
 export function getVaultStakerWithdrawalTicketDecoder(): Decoder<VaultStakerWithdrawalTicket> {
   return getStructDecoder([
+    ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['staker', getAddressDecoder()],
     ['base', getAddressDecoder()],
     ['vrtAmount', getU64Decoder()],
     ['slotUnstaked', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 7 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }
 
