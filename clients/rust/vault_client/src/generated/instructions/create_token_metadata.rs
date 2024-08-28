@@ -12,7 +12,7 @@ pub struct CreateTokenMetadata {
 
     pub admin: solana_program::pubkey::Pubkey,
 
-    pub lrt_mint: solana_program::pubkey::Pubkey,
+    pub vrt_mint: solana_program::pubkey::Pubkey,
 
     pub payer: solana_program::pubkey::Pubkey,
 
@@ -44,7 +44,7 @@ impl CreateTokenMetadata {
             self.admin, true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.lrt_mint,
+            self.vrt_mint,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -108,7 +108,7 @@ pub struct CreateTokenMetadataInstructionArgs {
 ///
 ///   0. `[]` vault
 ///   1. `[signer]` admin
-///   2. `[]` lrt_mint
+///   2. `[]` vrt_mint
 ///   3. `[writable, signer]` payer
 ///   4. `[writable]` metadata
 ///   5. `[optional]` mpl_token_metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
@@ -117,7 +117,7 @@ pub struct CreateTokenMetadataInstructionArgs {
 pub struct CreateTokenMetadataBuilder {
     vault: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
-    lrt_mint: Option<solana_program::pubkey::Pubkey>,
+    vrt_mint: Option<solana_program::pubkey::Pubkey>,
     payer: Option<solana_program::pubkey::Pubkey>,
     metadata: Option<solana_program::pubkey::Pubkey>,
     mpl_token_metadata_program: Option<solana_program::pubkey::Pubkey>,
@@ -143,8 +143,8 @@ impl CreateTokenMetadataBuilder {
         self
     }
     #[inline(always)]
-    pub fn lrt_mint(&mut self, lrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.lrt_mint = Some(lrt_mint);
+    pub fn vrt_mint(&mut self, vrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
@@ -210,7 +210,7 @@ impl CreateTokenMetadataBuilder {
         let accounts = CreateTokenMetadata {
             vault: self.vault.expect("vault is not set"),
             admin: self.admin.expect("admin is not set"),
-            lrt_mint: self.lrt_mint.expect("lrt_mint is not set"),
+            vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
             payer: self.payer.expect("payer is not set"),
             metadata: self.metadata.expect("metadata is not set"),
             mpl_token_metadata_program: self.mpl_token_metadata_program.unwrap_or(
@@ -236,7 +236,7 @@ pub struct CreateTokenMetadataCpiAccounts<'a, 'b> {
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub lrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub payer: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -256,7 +256,7 @@ pub struct CreateTokenMetadataCpi<'a, 'b> {
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub lrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub payer: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -279,7 +279,7 @@ impl<'a, 'b> CreateTokenMetadataCpi<'a, 'b> {
             __program: program,
             vault: accounts.vault,
             admin: accounts.admin,
-            lrt_mint: accounts.lrt_mint,
+            vrt_mint: accounts.vrt_mint,
             payer: accounts.payer,
             metadata: accounts.metadata,
             mpl_token_metadata_program: accounts.mpl_token_metadata_program,
@@ -330,7 +330,7 @@ impl<'a, 'b> CreateTokenMetadataCpi<'a, 'b> {
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.lrt_mint.key,
+            *self.vrt_mint.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -371,7 +371,7 @@ impl<'a, 'b> CreateTokenMetadataCpi<'a, 'b> {
         account_infos.push(self.__program.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.admin.clone());
-        account_infos.push(self.lrt_mint.clone());
+        account_infos.push(self.vrt_mint.clone());
         account_infos.push(self.payer.clone());
         account_infos.push(self.metadata.clone());
         account_infos.push(self.mpl_token_metadata_program.clone());
@@ -394,7 +394,7 @@ impl<'a, 'b> CreateTokenMetadataCpi<'a, 'b> {
 ///
 ///   0. `[]` vault
 ///   1. `[signer]` admin
-///   2. `[]` lrt_mint
+///   2. `[]` vrt_mint
 ///   3. `[writable, signer]` payer
 ///   4. `[writable]` metadata
 ///   5. `[]` mpl_token_metadata_program
@@ -410,7 +410,7 @@ impl<'a, 'b> CreateTokenMetadataCpiBuilder<'a, 'b> {
             __program: program,
             vault: None,
             admin: None,
-            lrt_mint: None,
+            vrt_mint: None,
             payer: None,
             metadata: None,
             mpl_token_metadata_program: None,
@@ -433,11 +433,11 @@ impl<'a, 'b> CreateTokenMetadataCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn lrt_mint(
+    pub fn vrt_mint(
         &mut self,
-        lrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+        vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.lrt_mint = Some(lrt_mint);
+        self.instruction.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
@@ -537,7 +537,7 @@ impl<'a, 'b> CreateTokenMetadataCpiBuilder<'a, 'b> {
 
             admin: self.instruction.admin.expect("admin is not set"),
 
-            lrt_mint: self.instruction.lrt_mint.expect("lrt_mint is not set"),
+            vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
 
             payer: self.instruction.payer.expect("payer is not set"),
 
@@ -566,7 +566,7 @@ struct CreateTokenMetadataCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    lrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     metadata: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     mpl_token_metadata_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,

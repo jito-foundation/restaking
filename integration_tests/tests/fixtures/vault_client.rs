@@ -266,7 +266,7 @@ impl VaultProgramClient {
         let token_mint = Keypair::new();
 
         self._airdrop(&vault_admin.pubkey(), 100.0).await?;
-        self._create_token_mint(&token_mint).await?;
+        self.create_token_mint(&token_mint).await?;
 
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -1440,6 +1440,7 @@ impl VaultProgramClient {
         vault: &Pubkey,
         admin: &Keypair,
         vrt_mint: &Pubkey,
+        metadata: &Pubkey,
         name: String,
         symbol: String,
         uri: String,
@@ -1451,6 +1452,7 @@ impl VaultProgramClient {
                 vault,
                 &admin.pubkey(),
                 vrt_mint,
+                metadata,
                 name,
                 symbol,
                 uri,
@@ -1488,7 +1490,7 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn _create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         self.banks_client

@@ -46,6 +46,7 @@ export type UpdateTokenMetadataInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
+  TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountMetadata extends string | IAccountMeta<string> = string,
   TAccountMplTokenMetadataProgram extends
     | string
@@ -62,6 +63,9 @@ export type UpdateTokenMetadataInstruction<
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
+      TAccountVrtMint extends string
+        ? ReadonlyAccount<TAccountVrtMint>
+        : TAccountVrtMint,
       TAccountMetadata extends string
         ? WritableAccount<TAccountMetadata>
         : TAccountMetadata,
@@ -122,11 +126,13 @@ export function getUpdateTokenMetadataInstructionDataCodec(): Codec<
 export type UpdateTokenMetadataInput<
   TAccountVault extends string = string,
   TAccountAdmin extends string = string,
+  TAccountVrtMint extends string = string,
   TAccountMetadata extends string = string,
   TAccountMplTokenMetadataProgram extends string = string,
 > = {
   vault: Address<TAccountVault>;
   admin: TransactionSigner<TAccountAdmin>;
+  vrtMint: Address<TAccountVrtMint>;
   metadata: Address<TAccountMetadata>;
   mplTokenMetadataProgram?: Address<TAccountMplTokenMetadataProgram>;
   name: UpdateTokenMetadataInstructionDataArgs['name'];
@@ -137,12 +143,14 @@ export type UpdateTokenMetadataInput<
 export function getUpdateTokenMetadataInstruction<
   TAccountVault extends string,
   TAccountAdmin extends string,
+  TAccountVrtMint extends string,
   TAccountMetadata extends string,
   TAccountMplTokenMetadataProgram extends string,
 >(
   input: UpdateTokenMetadataInput<
     TAccountVault,
     TAccountAdmin,
+    TAccountVrtMint,
     TAccountMetadata,
     TAccountMplTokenMetadataProgram
   >
@@ -150,6 +158,7 @@ export function getUpdateTokenMetadataInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountVault,
   TAccountAdmin,
+  TAccountVrtMint,
   TAccountMetadata,
   TAccountMplTokenMetadataProgram
 > {
@@ -160,6 +169,7 @@ export function getUpdateTokenMetadataInstruction<
   const originalAccounts = {
     vault: { value: input.vault ?? null, isWritable: false },
     admin: { value: input.admin ?? null, isWritable: false },
+    vrtMint: { value: input.vrtMint ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
     mplTokenMetadataProgram: {
       value: input.mplTokenMetadataProgram ?? null,
@@ -185,6 +195,7 @@ export function getUpdateTokenMetadataInstruction<
     accounts: [
       getAccountMeta(accounts.vault),
       getAccountMeta(accounts.admin),
+      getAccountMeta(accounts.vrtMint),
       getAccountMeta(accounts.metadata),
       getAccountMeta(accounts.mplTokenMetadataProgram),
     ],
@@ -196,6 +207,7 @@ export function getUpdateTokenMetadataInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountVault,
     TAccountAdmin,
+    TAccountVrtMint,
     TAccountMetadata,
     TAccountMplTokenMetadataProgram
   >;
@@ -211,8 +223,9 @@ export type ParsedUpdateTokenMetadataInstruction<
   accounts: {
     vault: TAccountMetas[0];
     admin: TAccountMetas[1];
-    metadata: TAccountMetas[2];
-    mplTokenMetadataProgram: TAccountMetas[3];
+    vrtMint: TAccountMetas[2];
+    metadata: TAccountMetas[3];
+    mplTokenMetadataProgram: TAccountMetas[4];
   };
   data: UpdateTokenMetadataInstructionData;
 };
@@ -225,7 +238,7 @@ export function parseUpdateTokenMetadataInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedUpdateTokenMetadataInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+  if (instruction.accounts.length < 5) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -240,6 +253,7 @@ export function parseUpdateTokenMetadataInstruction<
     accounts: {
       vault: getNextAccount(),
       admin: getNextAccount(),
+      vrtMint: getNextAccount(),
       metadata: getNextAccount(),
       mplTokenMetadataProgram: getNextAccount(),
     },

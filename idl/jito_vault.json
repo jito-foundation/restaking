@@ -1209,7 +1209,7 @@
           "isSigner": true
         },
         {
-          "name": "lrtMint",
+          "name": "vrtMint",
           "isMut": false,
           "isSigner": false
         },
@@ -1265,6 +1265,11 @@
           "name": "admin",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "vrtMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "metadata",
