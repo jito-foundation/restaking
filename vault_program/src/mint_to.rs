@@ -38,7 +38,7 @@ pub fn process_mint(
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
-    Vault::load(program_id, vault_info, false)?;
+    Vault::load(program_id, vault_info, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_token_mint(vrt_mint)?;
