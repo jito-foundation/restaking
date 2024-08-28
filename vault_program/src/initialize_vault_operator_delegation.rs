@@ -56,8 +56,10 @@ pub fn process_initialize_vault_operator_delegation(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    let slot = Clock::get()?.slot;
+
     vault.check_operator_admin(vault_operator_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_update_state_ok(slot, config.epoch_length())?;
 
     msg!(
         "Initializing VaultOperatorDelegation at address {}",
@@ -84,6 +86,7 @@ pub fn process_initialize_vault_operator_delegation(
         *operator.key,
         vault.operator_count(),
         vault_operator_delegation_bump,
+        slot,
     );
 
     vault.increment_operator_count()?;

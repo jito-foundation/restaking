@@ -10,8 +10,8 @@ use jito_restaking_core::{
 };
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// After an operator opts-in to an NCN, the NCN operator admin can add the operator to the NCN.
@@ -75,6 +75,7 @@ pub fn process_initialize_ncn_operator_state(
         *operator.key,
         ncn.operator_count(),
         ncn_operator_state_bump,
+        Clock::get()?.slot,
     );
 
     let mut operator_data = operator.data.borrow_mut();
