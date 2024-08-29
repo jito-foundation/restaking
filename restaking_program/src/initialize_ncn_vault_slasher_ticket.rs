@@ -29,8 +29,8 @@ pub fn process_initialize_ncn_vault_slasher_ticket(
 
     Config::load(program_id, config, false)?;
     Ncn::load(program_id, ncn_info, true)?;
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(&config.vault_program, vault, false)?;
     NcnVaultTicket::load(program_id, ncn_vault_ticket, ncn_info, vault, false)?;
     load_system_account(ncn_vault_slasher_ticket, true)?;
