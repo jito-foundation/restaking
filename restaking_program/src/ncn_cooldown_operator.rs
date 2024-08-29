@@ -35,8 +35,8 @@ pub fn process_ncn_cooldown_operator(
     }
 
     // The NcnOperatorTicket shall be active before it can be cooled down
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     let mut ncn_operator_state_data = ncn_operator_state.data.borrow_mut();
     let ncn_operator_ticket =
         NcnOperatorState::try_from_slice_unchecked_mut(&mut ncn_operator_state_data)?;

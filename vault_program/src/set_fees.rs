@@ -26,8 +26,8 @@ pub fn process_set_fees(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, false)?;
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault, true)?;
     let mut vault_data = vault.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;

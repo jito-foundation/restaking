@@ -31,8 +31,8 @@ pub fn process_initialize_operator_vault_ticket(
 
     Config::load(program_id, config, false)?;
     Operator::load(program_id, operator_info, true)?;
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(&config.vault_program, vault, false)?;
     load_system_account(operator_vault_ticket_account, true)?;
     load_signer(operator_vault_admin, false)?;
