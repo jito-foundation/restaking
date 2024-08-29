@@ -58,8 +58,6 @@ impl Config {
     pub const DEFAULT_FEE_RATE_OF_CHANGE_BPS: u16 = 2_500; // 25%
     /// Maximum bump in fee change above the rate of change
     pub const DEFAULT_FEE_BUMP_BPS: u16 = 10; // 0.1%
-    /// 100% in basis points
-    pub const MAX_BPS: u16 = 10_000;
 
     pub fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
         Self {

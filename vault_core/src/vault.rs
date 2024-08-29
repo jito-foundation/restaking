@@ -531,7 +531,7 @@ impl Vault {
     // Fees
     // ------------------------------------------
 
-    /// Fees can be changed at most one per epoch.
+    /// Fees can be changed at most one per epoch, and a **full** epoch must pass before a fee can be changed again.
     #[inline(always)]
     pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
         let current_epoch = slot.checked_div(epoch_length).unwrap();
@@ -540,7 +540,7 @@ impl Vault {
             .checked_div(epoch_length)
             .unwrap();
 
-        if current_epoch <= last_fee_change_epoch {
+        if current_epoch <= last_fee_change_epoch.checked_add(1).unwrap() {
             msg!("Fee changes are only allowed once per epoch");
             return Err(VaultError::VaultFeeChangeTooSoon);
         }
@@ -558,8 +558,7 @@ impl Vault {
         if withdrawal_fee_bps > MAX_FEE_BPS {
             msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_FEE_BPS);
             return Err(VaultError::VaultFeeCapExceeded);
-        }
-        if withdrawal_fee_bps > deposit_withdrawal_fee_cap_bps {
+        } else if withdrawal_fee_bps > deposit_withdrawal_fee_cap_bps {
             msg!(
                 "Withdrawal fee exceeds maximum allowed of {}",
                 deposit_withdrawal_fee_cap_bps
@@ -587,8 +586,7 @@ impl Vault {
         if deposit_fee_bps > MAX_FEE_BPS {
             msg!("Deposit fee exceeds maximum allowed of {}", MAX_FEE_BPS);
             return Err(VaultError::VaultFeeCapExceeded);
-        }
-        if deposit_fee_bps > deposit_withdrawal_fee_cap_bps {
+        } else if deposit_fee_bps > deposit_withdrawal_fee_cap_bps {
             msg!(
                 "Deposit fee exceeds maximum allowed of {}",
                 deposit_withdrawal_fee_cap_bps
@@ -634,7 +632,7 @@ impl Vault {
 
         if fee_delta > fee_bump_bps {
             let deposit_percentage_increase_bps: u64 = (fee_delta as u128)
-                .checked_mul(10000)
+                .checked_mul(MAX_FEE_BPS as u128)
                 .and_then(|product| product.checked_div(current_fee_bps as u128))
                 .and_then(|result| result.try_into().ok())
                 .unwrap_or(u64::MAX); // Divide by zero should result in max value
@@ -669,7 +667,7 @@ impl Vault {
 
         let fee = (vrt_rewards as u128)
             .checked_mul(self.reward_fee_bps() as u128)
-            .map(|x| x.div_ceil(10_000))
+            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
@@ -705,7 +703,7 @@ impl Vault {
     pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.deposit_fee_bps() as u128)
-            .map(|x| x.div_ceil(10_000))
+            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
@@ -715,7 +713,7 @@ impl Vault {
     pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
-            .map(|x| x.div_ceil(10_000))
+            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
@@ -1698,14 +1696,14 @@ mod tests {
     fn test_fee_change_in_next_epoch() {
         let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
-        assert_eq!(vault.check_can_modify_fees(101, 100), Ok(()));
+        assert_eq!(vault.check_can_modify_fees(101, 100), Err(VaultError::VaultFeeChangeTooSoon));
     }
 
     #[test]
     fn test_fee_change_at_epoch_boundary() {
         let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
-        assert_eq!(vault.check_can_modify_fees(100, 100), Ok(()));
+        assert_eq!(vault.check_can_modify_fees(100, 100), Err(VaultError::VaultFeeChangeTooSoon));
     }
 
     #[test]

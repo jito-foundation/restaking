@@ -11,6 +11,7 @@ use solana_program::{
 /// Specification:
 /// - The fee can only be changed by the vault fee admin. The vault fee admin must sign the transaction.
 /// - The fees can only be changed at most once per epoch.
+/// - The fees can be changed the epoch after one full epoch has passed since the last fee change.
 /// - The Vault last_fee_change_slot shall be updated to the current slot only if any fees were updated.
 /// - The transaction shall fail if no fees are provided to update.
 /// - The transaction shall fail if any of the fees exceed 10_000 bps.

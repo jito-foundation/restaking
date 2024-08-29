@@ -7,7 +7,7 @@ use jito_jsm_core::{
         load_signer, load_system_account, load_system_program, load_token_mint, load_token_program,
     },
 };
-use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_core::{config::Config, vault::Vault, MAX_FEE_BPS};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke,
@@ -97,6 +97,7 @@ pub fn process_initialize_vault(
 
         if deposit_fee_bps > config.deposit_withdrawal_fee_cap_bps()
             || withdrawal_fee_bps > config.deposit_withdrawal_fee_cap_bps()
+            || reward_fee_bps > MAX_FEE_BPS
         {
             msg!(
                 "Fee cap exceeds maximum allowed of {}",

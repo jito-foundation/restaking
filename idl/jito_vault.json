@@ -1419,7 +1419,7 @@
             }
           },
           {
-            "name": "feeCapBps",
+            "name": "depositWithdrawalFeeCapBps",
             "type": {
               "defined": "PodU16"
             }
