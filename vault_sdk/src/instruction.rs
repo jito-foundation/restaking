@@ -32,7 +32,7 @@ pub enum VaultInstruction {
 
     /// Vault adds support for an operator
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "operator")]
     #[account(3, name = "operator_vault_ticket")]
     #[account(4, writable, name = "vault_operator_delegation")]
