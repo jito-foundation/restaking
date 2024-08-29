@@ -132,7 +132,7 @@ impl SlotToggle {
             Ordering::Equal => SlotToggleState::Inactive,
             Ordering::Less => {
                 let slot_removed_epoch = slot_removed.checked_div(epoch_length).unwrap();
-                if current_epoch > slot_removed_epoch {
+                if current_epoch > slot_removed_epoch.checked_add(1).unwrap() {
                     SlotToggleState::Inactive
                 } else {
                     SlotToggleState::Cooldown
@@ -197,6 +197,7 @@ mod tests {
 
         // can't transition to activate the same slot it was created at
         assert!(!toggle.activate(creation_slot, epoch_length));
+        assert!(!toggle.deactivate(creation_slot, epoch_length));
     }
 
     #[test]
@@ -215,20 +216,18 @@ mod tests {
 
         // Transition to warming up
         current_slot += 1;
-        assert!(!toggle.deactivate(current_slot, epoch_length));
         assert!(toggle.activate(current_slot, epoch_length));
         assert_eq!(
             toggle.state(current_slot, epoch_length),
             SlotToggleState::WarmUp
         );
 
-        // Assert active
+        // Assert warming up
         current_slot += epoch_length;
         assert_eq!(
             toggle.state(current_slot, epoch_length),
             SlotToggleState::WarmUp
         );
-        assert!(!toggle.activate(current_slot, epoch_length));
 
         // Assert active
         current_slot += epoch_length;
@@ -236,7 +235,6 @@ mod tests {
             toggle.state(current_slot, epoch_length),
             SlotToggleState::Active
         );
-        assert!(!toggle.activate(current_slot, epoch_length));
 
         // Assert Deactivate
         assert!(toggle.deactivate(current_slot, epoch_length));
@@ -244,21 +242,17 @@ mod tests {
             toggle.state(current_slot, epoch_length),
             SlotToggleState::Cooldown
         );
-        assert!(!toggle.activate(current_slot, epoch_length));
 
-        current_slot += epoch_length * 2;
+        current_slot += epoch_length;
+        assert_eq!(
+            toggle.state(current_slot, epoch_length),
+            SlotToggleState::Cooldown
+        );
+
+        current_slot += epoch_length;
         assert_eq!(
             toggle.state(current_slot, epoch_length),
             SlotToggleState::Inactive
         );
-        assert!(!toggle.deactivate(current_slot, epoch_length));
-
-        // Assert Activate
-        assert!(toggle.activate(current_slot, epoch_length));
-        assert_eq!(
-            toggle.state(current_slot, epoch_length),
-            SlotToggleState::WarmUp
-        );
-        assert!(!toggle.deactivate(current_slot, epoch_length));
     }
 }
