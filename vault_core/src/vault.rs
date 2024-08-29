@@ -1696,14 +1696,20 @@ mod tests {
     fn test_fee_change_in_next_epoch() {
         let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
-        assert_eq!(vault.check_can_modify_fees(101, 100), Err(VaultError::VaultFeeChangeTooSoon));
+        assert_eq!(
+            vault.check_can_modify_fees(101, 100),
+            Err(VaultError::VaultFeeChangeTooSoon)
+        );
     }
 
     #[test]
     fn test_fee_change_at_epoch_boundary() {
         let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
-        assert_eq!(vault.check_can_modify_fees(100, 100), Err(VaultError::VaultFeeChangeTooSoon));
+        assert_eq!(
+            vault.check_can_modify_fees(100, 100),
+            Err(VaultError::VaultFeeChangeTooSoon)
+        );
     }
 
     #[test]

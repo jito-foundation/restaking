@@ -29,6 +29,9 @@ pub fn process_initialize_vault(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, true)?;
+    let mut config_data = config.data.borrow_mut();
+    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+
     load_system_account(vault, true)?;
     load_system_account(vrt_mint, true)?;
     load_signer(vrt_mint, true)?;
@@ -45,6 +48,17 @@ pub fn process_initialize_vault(
     if vault.key.ne(&vault_pubkey) {
         msg!("Vault account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
+    }
+
+    if deposit_fee_bps > config.deposit_withdrawal_fee_cap_bps()
+        || withdrawal_fee_bps > config.deposit_withdrawal_fee_cap_bps()
+        || reward_fee_bps > MAX_FEE_BPS
+    {
+        msg!(
+            "Fee cap exceeds maximum allowed of {}",
+            config.deposit_withdrawal_fee_cap_bps()
+        );
+        return Err(VaultError::VaultFeeCapExceeded.into());
     }
 
     let rent = Rent::get()?;
@@ -75,9 +89,6 @@ pub fn process_initialize_vault(
         )?;
     }
 
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
-
     // Initialize vault
     {
         msg!("Initializing vault at address {}", vault.key);
@@ -94,17 +105,6 @@ pub fn process_initialize_vault(
         let mut vault_data = vault.try_borrow_mut_data()?;
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
-
-        if deposit_fee_bps > config.deposit_withdrawal_fee_cap_bps()
-            || withdrawal_fee_bps > config.deposit_withdrawal_fee_cap_bps()
-            || reward_fee_bps > MAX_FEE_BPS
-        {
-            msg!(
-                "Fee cap exceeds maximum allowed of {}",
-                config.deposit_withdrawal_fee_cap_bps()
-            );
-            return Err(VaultError::VaultFeeCapExceeded.into());
-        }
 
         *vault = Vault::new(
             *vrt_mint.key,
