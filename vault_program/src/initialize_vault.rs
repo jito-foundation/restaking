@@ -95,10 +95,12 @@ pub fn process_initialize_vault(
         vault_data[0] = Vault::DISCRIMINATOR;
         let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
-        if deposit_fee_bps > config.fee_cap_bps() || withdrawal_fee_bps > config.fee_cap_bps() {
+        if deposit_fee_bps > config.deposit_withdrawal_fee_cap_bps()
+            || withdrawal_fee_bps > config.deposit_withdrawal_fee_cap_bps()
+        {
             msg!(
                 "Fee cap exceeds maximum allowed of {}",
-                config.fee_cap_bps()
+                config.deposit_withdrawal_fee_cap_bps()
             );
             return Err(VaultError::VaultFeeCapExceeded.into());
         }

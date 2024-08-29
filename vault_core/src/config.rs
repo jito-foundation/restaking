@@ -36,7 +36,7 @@ pub struct Config {
     num_vaults: PodU64,
 
     /// The fee cap in basis points ( withdraw and deposit )
-    fee_cap_bps: PodU16,
+    deposit_withdrawal_fee_cap_bps: PodU16,
 
     /// The maximum amount a fee can increase per epoch in basis points
     fee_rate_of_change_bps: PodU16,
@@ -68,7 +68,7 @@ impl Config {
             epoch_length: PodU64::from(DEFAULT_SLOTS_PER_EPOCH),
             num_vaults: PodU64::from(0),
             // Cannot be higher than 100%
-            fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS),
+            deposit_withdrawal_fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS),
             fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS),
             fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
             bump,
@@ -84,8 +84,8 @@ impl Config {
         self.num_vaults.into()
     }
 
-    pub fn fee_cap_bps(&self) -> u16 {
-        self.fee_cap_bps.into()
+    pub fn deposit_withdrawal_fee_cap_bps(&self) -> u16 {
+        self.deposit_withdrawal_fee_cap_bps.into()
     }
 
     pub fn fee_rate_of_change_bps(&self) -> u16 {

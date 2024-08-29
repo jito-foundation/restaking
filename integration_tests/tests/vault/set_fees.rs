@@ -582,8 +582,8 @@ mod tests {
             .await
             .unwrap();
 
-        let new_deposit_fee_bps = config.fee_cap_bps() + 1;
-        let new_withdrawal_fee_bps = config.fee_cap_bps() + 1;
+        let new_deposit_fee_bps = config.deposit_withdrawal_fee_cap_bps() + 1;
+        let new_withdrawal_fee_bps = config.deposit_withdrawal_fee_cap_bps() + 1;
         let new_reward_fee_bps = Config::MAX_BPS + 1;
 
         let result = fixture
