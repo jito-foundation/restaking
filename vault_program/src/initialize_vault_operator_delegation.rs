@@ -52,7 +52,7 @@ pub fn process_initialize_vault_operator_delegation(
     ) = VaultOperatorDelegation::find_program_address(program_id, vault_info.key, operator.key);
     vault_operator_delegation_seeds.push(vec![vault_operator_delegation_bump]);
     if vault_operator_delegation_pubkey.ne(vault_operator_delegation.key) {
-        msg!("Vault operator ticket is not at the correct PDA");
+        msg!("Vault operator delegation is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
 
