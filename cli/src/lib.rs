@@ -1,4 +1,13 @@
-pub mod cli_args;
+use solana_sdk::{commitment_config::CommitmentConfig, signature::Keypair};
+
 pub mod log;
 pub mod restaking_handler;
 pub mod vault_handler;
+
+pub struct CliConfig {
+    pub rpc_url: String,
+
+    pub commitment: CommitmentConfig,
+
+    pub keypair: Option<Keypair>,
+}

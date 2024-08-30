@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use clap::Subcommand;
 use jito_bytemuck::{AccountDeserialize, Discriminator};
+use jito_restaking_cli_args::vault::{ConfigActions, VaultActions, VaultCommands};
 use jito_vault_client::instructions::{InitializeConfigBuilder, InitializeVaultBuilder};
 use jito_vault_core::{config::Config, vault::Vault};
 use log::{debug, info};
@@ -18,48 +18,7 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::cli_args::CliConfig;
-
-#[derive(Subcommand)]
-pub enum VaultCommands {
-    Config {
-        #[command(subcommand)]
-        action: ConfigActions,
-    },
-    Vault {
-        #[command(subcommand)]
-        action: VaultActions,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum ConfigActions {
-    Initialize,
-    Get,
-}
-
-/// Vault commands
-#[derive(Subcommand)]
-pub enum VaultActions {
-    /// Initializes the vault
-    Initialize {
-        /// The token which is allowed to be deposited into the vault
-        token_mint: String,
-        /// The deposit fee in bips
-        deposit_fee_bps: u16,
-        /// The withdrawal fee in bips
-        withdrawal_fee_bps: u16,
-        /// The reward fee in bips
-        reward_fee_bps: u16,
-    },
-    /// Gets a vault
-    Get {
-        /// The vault pubkey
-        pubkey: String,
-    },
-    /// List all vaults
-    List,
-}
+use crate::CliConfig;
 
 pub struct VaultCliHandler {
     cli_config: CliConfig,
@@ -95,6 +54,7 @@ impl VaultCliHandler {
                         deposit_fee_bps,
                         withdrawal_fee_bps,
                         reward_fee_bps,
+                        decimals,
                     },
             } => {
                 self.initialize_vault(
@@ -102,6 +62,7 @@ impl VaultCliHandler {
                     deposit_fee_bps,
                     withdrawal_fee_bps,
                     reward_fee_bps,
+                    decimals,
                 )
                 .await
             }
@@ -167,6 +128,7 @@ impl VaultCliHandler {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        decimals: u8,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
         let keypair = self
@@ -191,7 +153,8 @@ impl VaultCliHandler {
             .base(base.pubkey())
             .deposit_fee_bps(deposit_fee_bps)
             .withdrawal_fee_bps(withdrawal_fee_bps)
-            .reward_fee_bps(reward_fee_bps);
+            .reward_fee_bps(reward_fee_bps)
+            .decimals(decimals);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(

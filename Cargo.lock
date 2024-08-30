@@ -1096,6 +1096,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap-markdown"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ebc67e6266e14f8b31541c2f204724fa2ac7ad5c17d6f5908fbb92a60f42cff"
+dependencies = [
+ "clap 4.5.16",
+]
+
+[[package]]
 name = "clap_builder"
 version = "4.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2372,6 +2381,36 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "assert_matches",
+ "borsh 0.10.3",
+ "bytemuck",
+ "chrono",
+ "clap 4.5.16",
+ "clap-markdown",
+ "env_logger 0.10.2",
+ "jito-bytemuck",
+ "jito-restaking-cli-args",
+ "jito-restaking-client",
+ "jito-restaking-core",
+ "jito-vault-client",
+ "jito-vault-core",
+ "log",
+ "solana-account-decoder",
+ "solana-cli-config",
+ "solana-program",
+ "solana-rpc-client",
+ "solana-rpc-client-api",
+ "solana-sdk",
+ "spl-associated-token-account",
+ "spl-token",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "jito-restaking-cli-args"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
  "borsh 0.10.3",
  "bytemuck",
  "chrono",
