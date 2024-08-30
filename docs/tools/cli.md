@@ -1,36 +1,36 @@
-# Command-Line Help for `jito-restaking-cli-args`
+# Command-Line Help for `jito-restaking-cli`
 
-This document contains the help content for the `jito-restaking-cli-args` command-line program.
+This document contains the help content for the `jito-restaking-cli` command-line program.
 
 **Command Overview:**
 
-* [`jito-restaking-cli-args`↴](#jito-restaking-cli-args)
-* [`jito-restaking-cli-args restaking`↴](#jito-restaking-cli-args-restaking)
-* [`jito-restaking-cli-args restaking config`↴](#jito-restaking-cli-args-restaking-config)
-* [`jito-restaking-cli-args restaking config initialize`↴](#jito-restaking-cli-args-restaking-config-initialize)
-* [`jito-restaking-cli-args restaking config get`↴](#jito-restaking-cli-args-restaking-config-get)
-* [`jito-restaking-cli-args restaking ncn`↴](#jito-restaking-cli-args-restaking-ncn)
-* [`jito-restaking-cli-args restaking ncn initialize`↴](#jito-restaking-cli-args-restaking-ncn-initialize)
-* [`jito-restaking-cli-args restaking ncn get`↴](#jito-restaking-cli-args-restaking-ncn-get)
-* [`jito-restaking-cli-args restaking ncn list`↴](#jito-restaking-cli-args-restaking-ncn-list)
-* [`jito-restaking-cli-args restaking operator`↴](#jito-restaking-cli-args-restaking-operator)
-* [`jito-restaking-cli-args restaking operator initialize`↴](#jito-restaking-cli-args-restaking-operator-initialize)
-* [`jito-restaking-cli-args restaking operator get`↴](#jito-restaking-cli-args-restaking-operator-get)
-* [`jito-restaking-cli-args restaking operator list`↴](#jito-restaking-cli-args-restaking-operator-list)
-* [`jito-restaking-cli-args vault`↴](#jito-restaking-cli-args-vault)
-* [`jito-restaking-cli-args vault config`↴](#jito-restaking-cli-args-vault-config)
-* [`jito-restaking-cli-args vault config initialize`↴](#jito-restaking-cli-args-vault-config-initialize)
-* [`jito-restaking-cli-args vault config get`↴](#jito-restaking-cli-args-vault-config-get)
-* [`jito-restaking-cli-args vault vault`↴](#jito-restaking-cli-args-vault-vault)
-* [`jito-restaking-cli-args vault vault initialize`↴](#jito-restaking-cli-args-vault-vault-initialize)
-* [`jito-restaking-cli-args vault vault get`↴](#jito-restaking-cli-args-vault-vault-get)
-* [`jito-restaking-cli-args vault vault list`↴](#jito-restaking-cli-args-vault-vault-list)
+* [`jito-restaking-cli`↴](#jito-restaking-cli)
+* [`jito-restaking-cli restaking`↴](#jito-restaking-cli-restaking)
+* [`jito-restaking-cli restaking config`↴](#jito-restaking-cli-restaking-config)
+* [`jito-restaking-cli restaking config initialize`↴](#jito-restaking-cli-restaking-config-initialize)
+* [`jito-restaking-cli restaking config get`↴](#jito-restaking-cli-restaking-config-get)
+* [`jito-restaking-cli restaking ncn`↴](#jito-restaking-cli-restaking-ncn)
+* [`jito-restaking-cli restaking ncn initialize`↴](#jito-restaking-cli-restaking-ncn-initialize)
+* [`jito-restaking-cli restaking ncn get`↴](#jito-restaking-cli-restaking-ncn-get)
+* [`jito-restaking-cli restaking ncn list`↴](#jito-restaking-cli-restaking-ncn-list)
+* [`jito-restaking-cli restaking operator`↴](#jito-restaking-cli-restaking-operator)
+* [`jito-restaking-cli restaking operator initialize`↴](#jito-restaking-cli-restaking-operator-initialize)
+* [`jito-restaking-cli restaking operator get`↴](#jito-restaking-cli-restaking-operator-get)
+* [`jito-restaking-cli restaking operator list`↴](#jito-restaking-cli-restaking-operator-list)
+* [`jito-restaking-cli vault`↴](#jito-restaking-cli-vault)
+* [`jito-restaking-cli vault config`↴](#jito-restaking-cli-vault-config)
+* [`jito-restaking-cli vault config initialize`↴](#jito-restaking-cli-vault-config-initialize)
+* [`jito-restaking-cli vault config get`↴](#jito-restaking-cli-vault-config-get)
+* [`jito-restaking-cli vault vault`↴](#jito-restaking-cli-vault-vault)
+* [`jito-restaking-cli vault vault initialize`↴](#jito-restaking-cli-vault-vault-initialize)
+* [`jito-restaking-cli vault vault get`↴](#jito-restaking-cli-vault-vault-get)
+* [`jito-restaking-cli vault vault list`↴](#jito-restaking-cli-vault-vault-list)
 
-## `jito-restaking-cli-args`
+## `jito-restaking-cli`
 
 A CLI for managing restaking and vault operations
 
-**Usage:** `jito-restaking-cli-args [OPTIONS] [COMMAND]`
+**Usage:** `jito-restaking-cli [OPTIONS] [COMMAND]`
 
 ###### **Subcommands:**
 
@@ -49,11 +49,11 @@ A CLI for managing restaking and vault operations
 
 
 
-## `jito-restaking-cli-args restaking`
+## `jito-restaking-cli restaking`
 
 Restaking program commands
 
-**Usage:** `jito-restaking-cli-args restaking <COMMAND>`
+**Usage:** `jito-restaking-cli restaking <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -63,11 +63,11 @@ Restaking program commands
 
 
 
-## `jito-restaking-cli-args restaking config`
+## `jito-restaking-cli restaking config`
 
 Initialize, get, and set the config struct
 
-**Usage:** `jito-restaking-cli-args restaking config <COMMAND>`
+**Usage:** `jito-restaking-cli restaking config <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -76,25 +76,25 @@ Initialize, get, and set the config struct
 
 
 
-## `jito-restaking-cli-args restaking config initialize`
+## `jito-restaking-cli restaking config initialize`
 
 Initialize the config
 
-**Usage:** `jito-restaking-cli-args restaking config initialize`
+**Usage:** `jito-restaking-cli restaking config initialize`
 
 
 
-## `jito-restaking-cli-args restaking config get`
+## `jito-restaking-cli restaking config get`
 
 Get the config
 
-**Usage:** `jito-restaking-cli-args restaking config get`
+**Usage:** `jito-restaking-cli restaking config get`
 
 
 
-## `jito-restaking-cli-args restaking ncn`
+## `jito-restaking-cli restaking ncn`
 
-**Usage:** `jito-restaking-cli-args restaking ncn <COMMAND>`
+**Usage:** `jito-restaking-cli restaking ncn <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -104,19 +104,19 @@ Get the config
 
 
 
-## `jito-restaking-cli-args restaking ncn initialize`
+## `jito-restaking-cli restaking ncn initialize`
 
 Initialize NCN
 
-**Usage:** `jito-restaking-cli-args restaking ncn initialize`
+**Usage:** `jito-restaking-cli restaking ncn initialize`
 
 
 
-## `jito-restaking-cli-args restaking ncn get`
+## `jito-restaking-cli restaking ncn get`
 
 Get NCN
 
-**Usage:** `jito-restaking-cli-args restaking ncn get <PUBKEY>`
+**Usage:** `jito-restaking-cli restaking ncn get <PUBKEY>`
 
 ###### **Arguments:**
 
@@ -124,17 +124,17 @@ Get NCN
 
 
 
-## `jito-restaking-cli-args restaking ncn list`
+## `jito-restaking-cli restaking ncn list`
 
 List all NCNs
 
-**Usage:** `jito-restaking-cli-args restaking ncn list`
+**Usage:** `jito-restaking-cli restaking ncn list`
 
 
 
-## `jito-restaking-cli-args restaking operator`
+## `jito-restaking-cli restaking operator`
 
-**Usage:** `jito-restaking-cli-args restaking operator <COMMAND>`
+**Usage:** `jito-restaking-cli restaking operator <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -144,19 +144,19 @@ List all NCNs
 
 
 
-## `jito-restaking-cli-args restaking operator initialize`
+## `jito-restaking-cli restaking operator initialize`
 
 Initialize Operator
 
-**Usage:** `jito-restaking-cli-args restaking operator initialize`
+**Usage:** `jito-restaking-cli restaking operator initialize`
 
 
 
-## `jito-restaking-cli-args restaking operator get`
+## `jito-restaking-cli restaking operator get`
 
 Get operator
 
-**Usage:** `jito-restaking-cli-args restaking operator get <PUBKEY>`
+**Usage:** `jito-restaking-cli restaking operator get <PUBKEY>`
 
 ###### **Arguments:**
 
@@ -164,19 +164,19 @@ Get operator
 
 
 
-## `jito-restaking-cli-args restaking operator list`
+## `jito-restaking-cli restaking operator list`
 
 List all operators
 
-**Usage:** `jito-restaking-cli-args restaking operator list`
+**Usage:** `jito-restaking-cli restaking operator list`
 
 
 
-## `jito-restaking-cli-args vault`
+## `jito-restaking-cli vault`
 
 Vault program commands
 
-**Usage:** `jito-restaking-cli-args vault <COMMAND>`
+**Usage:** `jito-restaking-cli vault <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -185,9 +185,9 @@ Vault program commands
 
 
 
-## `jito-restaking-cli-args vault config`
+## `jito-restaking-cli vault config`
 
-**Usage:** `jito-restaking-cli-args vault config <COMMAND>`
+**Usage:** `jito-restaking-cli vault config <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -196,23 +196,23 @@ Vault program commands
 
 
 
-## `jito-restaking-cli-args vault config initialize`
+## `jito-restaking-cli vault config initialize`
 
-**Usage:** `jito-restaking-cli-args vault config initialize`
-
-
-
-## `jito-restaking-cli-args vault config get`
-
-**Usage:** `jito-restaking-cli-args vault config get`
+**Usage:** `jito-restaking-cli vault config initialize`
 
 
 
-## `jito-restaking-cli-args vault vault`
+## `jito-restaking-cli vault config get`
+
+**Usage:** `jito-restaking-cli vault config get`
+
+
+
+## `jito-restaking-cli vault vault`
 
 Vault commands
 
-**Usage:** `jito-restaking-cli-args vault vault <COMMAND>`
+**Usage:** `jito-restaking-cli vault vault <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -222,11 +222,11 @@ Vault commands
 
 
 
-## `jito-restaking-cli-args vault vault initialize`
+## `jito-restaking-cli vault vault initialize`
 
 Initializes the vault
 
-**Usage:** `jito-restaking-cli-args vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>`
 
 ###### **Arguments:**
 
@@ -238,11 +238,11 @@ Initializes the vault
 
 
 
-## `jito-restaking-cli-args vault vault get`
+## `jito-restaking-cli vault vault get`
 
 Gets a vault
 
-**Usage:** `jito-restaking-cli-args vault vault get <PUBKEY>`
+**Usage:** `jito-restaking-cli vault vault get <PUBKEY>`
 
 ###### **Arguments:**
 
@@ -250,11 +250,11 @@ Gets a vault
 
 
 
-## `jito-restaking-cli-args vault vault list`
+## `jito-restaking-cli vault vault list`
 
 List all vaults
 
-**Usage:** `jito-restaking-cli-args vault vault list`
+**Usage:** `jito-restaking-cli vault vault list`
 
 
 

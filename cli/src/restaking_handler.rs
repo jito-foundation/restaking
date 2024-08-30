@@ -2,9 +2,6 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_restaking_cli_args::restaking::{
-    ConfigActions, NcnActions, OperatorActions, RestakingCommands,
-};
 use jito_restaking_client::instructions::{
     InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
 };
@@ -22,7 +19,10 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::CliConfig;
+use crate::{
+    restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
+    CliConfig,
+};
 
 pub struct RestakingCliHandler {
     cli_config: CliConfig,

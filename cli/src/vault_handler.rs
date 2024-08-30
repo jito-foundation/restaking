@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_restaking_cli_args::vault::{ConfigActions, VaultActions, VaultCommands};
 use jito_vault_client::instructions::{InitializeConfigBuilder, InitializeVaultBuilder};
 use jito_vault_core::{config::Config, vault::Vault};
 use log::{debug, info};
@@ -18,7 +17,10 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::CliConfig;
+use crate::{
+    vault::{ConfigActions, VaultActions, VaultCommands},
+    CliConfig,
+};
 
 pub struct VaultCliHandler {
     cli_config: CliConfig,

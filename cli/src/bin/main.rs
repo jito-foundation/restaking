@@ -4,14 +4,14 @@ use anyhow::anyhow;
 use clap::Parser;
 use env_logger::Env;
 use jito_restaking_cli::{
-    restaking_handler::RestakingCliHandler, vault_handler::VaultCliHandler, CliConfig,
+    cli_args::{Cli, ProgramCommand}, restaking_handler::RestakingCliHandler, vault_handler::VaultCliHandler, CliConfig
 };
-use jito_restaking_cli_args::cli_args::{Cli, ProgramCommand};
 use jito_restaking_client::programs::JITO_RESTAKING_ID;
 use jito_vault_client::programs::JITO_VAULT_ID;
 use solana_cli_config::Config;
 use solana_program::pubkey::Pubkey;
 use solana_sdk::{commitment_config::CommitmentConfig, signature::read_keypair_file};
+
 
 pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {
