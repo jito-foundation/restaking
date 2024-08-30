@@ -27,6 +27,7 @@ jobs:
       - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2023-0065 --ignore RUSTSEC-2024-0344
 
   code_gen:
+    # cargo b -r && ./target/release/jito-restaking-cli --markdown-help > ./docs/tools/cli.md && ./target/release/jito-shank-cli && yarn generate-clients && cargo b -r
     name: code generation
     runs-on: ubuntu-latest
     steps:
@@ -37,8 +38,17 @@ jobs:
         with:
           components: rustfmt, clippy
           toolchain: nightly-2024-07-25
+      - name: cargo build
+        run: cargo b -r
+      - name: Generate the CLI markdown
+        run: ./target/release/jito-restaking-cli --markdown-help > ./docs/tools/cli.md
+      - name: Verify no CLI files changes
+        uses: tj-actions/verify-changed-files@v20
+        with:
+          fail-if-changed: true
+          fail-message: 'Unexpected changes in the CLI files. Please run `./target/release/jito-restaking-cli --markdown-help > ./docs/tools/cli.md` to regenerate the files.'
       - name: Regenerate Shank IDL files
-        run: cargo b --release -p jito-shank-cli && ./target/release/jito-shank-cli
+        run: ./target/release/jito-shank-cli
       - name: Verify no changed files
         uses: tj-actions/verify-changed-files@v20
         with:

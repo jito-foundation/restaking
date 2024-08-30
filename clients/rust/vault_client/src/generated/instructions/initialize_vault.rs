@@ -104,6 +104,7 @@ pub struct InitializeVaultInstructionArgs {
     pub deposit_fee_bps: u16,
     pub withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
+    pub decimals: u8,
 }
 
 /// Instruction builder for `InitializeVault`.
@@ -131,6 +132,7 @@ pub struct InitializeVaultBuilder {
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
+    decimals: Option<u8>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -195,6 +197,11 @@ impl InitializeVaultBuilder {
         self.reward_fee_bps = Some(reward_fee_bps);
         self
     }
+    #[inline(always)]
+    pub fn decimals(&mut self, decimals: u8) -> &mut Self {
+        self.decimals = Some(decimals);
+        self
+    }
     /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -242,6 +249,7 @@ impl InitializeVaultBuilder {
                 .reward_fee_bps
                 .clone()
                 .expect("reward_fee_bps is not set"),
+            decimals: self.decimals.clone().expect("decimals is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -446,6 +454,7 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
             deposit_fee_bps: None,
             withdrawal_fee_bps: None,
             reward_fee_bps: None,
+            decimals: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -520,6 +529,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
         self.instruction.reward_fee_bps = Some(reward_fee_bps);
         self
     }
+    #[inline(always)]
+    pub fn decimals(&mut self, decimals: u8) -> &mut Self {
+        self.instruction.decimals = Some(decimals);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -577,6 +591,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
                 .reward_fee_bps
                 .clone()
                 .expect("reward_fee_bps is not set"),
+            decimals: self
+                .instruction
+                .decimals
+                .clone()
+                .expect("decimals is not set"),
         };
         let instruction = InitializeVaultCpi {
             __program: self.instruction.__program,
@@ -625,6 +644,7 @@ struct InitializeVaultCpiBuilderInstruction<'a, 'b> {
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
+    decimals: Option<u8>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

@@ -25,6 +25,7 @@ pub enum VaultInstruction {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        decimals: u8,
     },
 
     /// Initializes a vault with an already-created VRT mint

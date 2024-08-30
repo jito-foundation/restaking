@@ -23,6 +23,7 @@ pub fn process_initialize_vault(
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
+    decimals: u8,
 ) -> ProgramResult {
     let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
     else {
@@ -83,7 +84,7 @@ pub fn process_initialize_vault(
                 vrt_mint.key,
                 vault.key,
                 None,
-                9,
+                decimals,
             )?,
             &[vrt_mint.clone()],
         )?;
