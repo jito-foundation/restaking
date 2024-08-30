@@ -37,8 +37,6 @@ pub struct Operator {
     /// with various NCN programs. NCNs can also opt for their own signing infrastructure.
     pub voter: Pubkey,
 
-    /// The withdrawal fee wallet where withdrawn funds are sent
-    // pub withdrawal_fee_wallet: Pubkey,
     /// Reserved space
     reserved_1: [u8; 32],
 
@@ -74,7 +72,6 @@ impl Operator {
             ncn_admin: admin,
             vault_admin: admin,
             delegate_admin: admin,
-            // withdrawal_fee_wallet: admin,
             reserved_1: [0; 32],
             voter: admin,
             index: PodU64::from(index),
@@ -275,7 +272,6 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // ncn_admin
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // delegate_admin
-            // std::mem::size_of::<Pubkey>() + // withdrawal_fee_wallet
             32 + // reserved_space
             std::mem::size_of::<Pubkey>() + // voter
             std::mem::size_of::<PodU64>() + // index
@@ -295,7 +291,6 @@ mod tests {
         assert_eq!(operator.vault_admin, old_admin);
         assert_eq!(operator.voter, old_admin);
         assert_eq!(operator.delegate_admin, old_admin);
-        // assert_eq!(operator.withdrawal_fee_wallet, old_admin);
 
         let new_admin = Pubkey::new_unique();
         operator.update_secondary_admin(&old_admin, &new_admin);
@@ -304,6 +299,5 @@ mod tests {
         assert_eq!(operator.vault_admin, new_admin);
         assert_eq!(operator.voter, new_admin);
         assert_eq!(operator.delegate_admin, new_admin);
-        // assert_eq!(operator.withdrawal_fee_wallet, new_admin);
     }
 }

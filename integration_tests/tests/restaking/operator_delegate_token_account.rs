@@ -1,11 +1,15 @@
 #[cfg(test)]
 mod tests {
+    use jito_restaking_sdk::error::RestakingError;
     use solana_program::{program_option::COption, pubkey::Pubkey};
     use solana_sdk::{signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address;
     use test_case::test_case;
 
-    use crate::fixtures::{fixture::TestBuilder, restaking_client::OperatorRoot};
+    use crate::fixtures::{
+        fixture::TestBuilder,
+        restaking_client::{assert_restaking_error, OperatorRoot},
+    };
 
     async fn setup(token_program_id: &Pubkey) -> (TestBuilder, OperatorRoot, Keypair, Keypair) {
         let mut fixture = TestBuilder::new().await;
@@ -73,9 +77,9 @@ mod tests {
             setup(&token_program_id).await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
+        let bob = Pubkey::new_unique();
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
-            let bob = Pubkey::new_unique();
             restaking_program_client
                 .operator_delegate_token_account(
                     &operator_root.operator_pubkey,
@@ -98,7 +102,6 @@ mod tests {
             assert_eq!(token_account_acc.delegate, COption::Some(bob));
             assert_eq!(token_account_acc.delegated_amount, 50_000);
         } else {
-            let bob = Pubkey::new_unique();
             restaking_program_client
                 .operator_delegate_token_account(
                     &operator_root.operator_pubkey,
@@ -119,6 +122,51 @@ mod tests {
 
             assert_eq!(vault_token_acc.delegate, COption::Some(bob));
             assert_eq!(vault_token_acc.delegated_amount, 50_000);
+        }
+    }
+
+    #[test_case(spl_token::id(); "token")]
+    #[test_case(spl_token_2022::id(); "token-2022")]
+    #[tokio::test]
+    async fn test_operator_token_account_wrong_delegate_admin_fails(token_program_id: Pubkey) {
+        let (fixture, operator_root, random_mint, operator_token_account) =
+            setup(&token_program_id).await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        let wrong_delegate_admin = Keypair::new();
+        let bob = Pubkey::new_unique();
+        if token_program_id.eq(&spl_token::id()) {
+            // Delegate
+            let response = restaking_program_client
+                .operator_delegate_token_account(
+                    &operator_root.operator_pubkey,
+                    &wrong_delegate_admin,
+                    &random_mint.pubkey(),
+                    &get_associated_token_address(
+                        &operator_root.operator_pubkey,
+                        &random_mint.pubkey(),
+                    ),
+                    &bob,
+                    &token_program_id,
+                    50_000,
+                )
+                .await;
+
+            assert_restaking_error(response, RestakingError::OperatorDelegateAdminInvalid);
+        } else {
+            let response = restaking_program_client
+                .operator_delegate_token_account(
+                    &operator_root.operator_pubkey,
+                    &wrong_delegate_admin,
+                    &random_mint.pubkey(),
+                    &operator_token_account.pubkey(),
+                    &bob,
+                    &token_program_id,
+                    50_000,
+                )
+                .await;
+
+            assert_restaking_error(response, RestakingError::OperatorDelegateAdminInvalid);
         }
     }
 }

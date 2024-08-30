@@ -366,7 +366,7 @@ pub fn cooldown_operator_vault_ticket(
 pub fn ncn_delegate_token_account(
     program_id: &Pubkey,
     ncn: &Pubkey,
-    admin: &Pubkey,
+    delegate_admin: &Pubkey,
     token_mint: &Pubkey,
     token_account: &Pubkey,
     delegate: &Pubkey,
@@ -375,7 +375,7 @@ pub fn ncn_delegate_token_account(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*ncn, false),
-        AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*delegate_admin, true),
         AccountMeta::new(*token_mint, false),
         AccountMeta::new(*token_account, false),
         AccountMeta::new_readonly(*delegate, false),
@@ -394,7 +394,7 @@ pub fn ncn_delegate_token_account(
 pub fn operator_delegate_token_account(
     program_id: &Pubkey,
     operator: &Pubkey,
-    admin: &Pubkey,
+    delegate_admin: &Pubkey,
     token_mint: &Pubkey,
     token_account: &Pubkey,
     delegate: &Pubkey,
@@ -403,7 +403,7 @@ pub fn operator_delegate_token_account(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*delegate_admin, true),
         AccountMeta::new(*token_mint, false),
         AccountMeta::new(*token_account, false),
         AccountMeta::new_readonly(*delegate, false),

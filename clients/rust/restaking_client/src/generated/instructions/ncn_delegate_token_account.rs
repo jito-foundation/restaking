@@ -10,7 +10,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 pub struct NcnDelegateTokenAccount {
     pub ncn: solana_program::pubkey::Pubkey,
 
-    pub admin: solana_program::pubkey::Pubkey,
+    pub delegate_admin: solana_program::pubkey::Pubkey,
 
     pub token_mint: solana_program::pubkey::Pubkey,
 
@@ -39,7 +39,8 @@ impl NcnDelegateTokenAccount {
             self.ncn, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.admin, true,
+            self.delegate_admin,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.token_mint,
@@ -100,7 +101,7 @@ pub struct NcnDelegateTokenAccountInstructionArgs {
 /// ### Accounts:
 ///
 ///   0. `[]` ncn
-///   1. `[signer]` admin
+///   1. `[signer]` delegate_admin
 ///   2. `[]` token_mint
 ///   3. `[writable]` token_account
 ///   4. `[]` delegate
@@ -108,7 +109,7 @@ pub struct NcnDelegateTokenAccountInstructionArgs {
 #[derive(Clone, Debug, Default)]
 pub struct NcnDelegateTokenAccountBuilder {
     ncn: Option<solana_program::pubkey::Pubkey>,
-    admin: Option<solana_program::pubkey::Pubkey>,
+    delegate_admin: Option<solana_program::pubkey::Pubkey>,
     token_mint: Option<solana_program::pubkey::Pubkey>,
     token_account: Option<solana_program::pubkey::Pubkey>,
     delegate: Option<solana_program::pubkey::Pubkey>,
@@ -127,8 +128,8 @@ impl NcnDelegateTokenAccountBuilder {
         self
     }
     #[inline(always)]
-    pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.admin = Some(admin);
+    pub fn delegate_admin(&mut self, delegate_admin: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.delegate_admin = Some(delegate_admin);
         self
     }
     #[inline(always)]
@@ -179,7 +180,7 @@ impl NcnDelegateTokenAccountBuilder {
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
         let accounts = NcnDelegateTokenAccount {
             ncn: self.ncn.expect("ncn is not set"),
-            admin: self.admin.expect("admin is not set"),
+            delegate_admin: self.delegate_admin.expect("delegate_admin is not set"),
             token_mint: self.token_mint.expect("token_mint is not set"),
             token_account: self.token_account.expect("token_account is not set"),
             delegate: self.delegate.expect("delegate is not set"),
@@ -199,7 +200,7 @@ impl NcnDelegateTokenAccountBuilder {
 pub struct NcnDelegateTokenAccountCpiAccounts<'a, 'b> {
     pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+    pub delegate_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -217,7 +218,7 @@ pub struct NcnDelegateTokenAccountCpi<'a, 'b> {
 
     pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+    pub delegate_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -239,7 +240,7 @@ impl<'a, 'b> NcnDelegateTokenAccountCpi<'a, 'b> {
         Self {
             __program: program,
             ncn: accounts.ncn,
-            admin: accounts.admin,
+            delegate_admin: accounts.delegate_admin,
             token_mint: accounts.token_mint,
             token_account: accounts.token_account,
             delegate: accounts.delegate,
@@ -286,7 +287,7 @@ impl<'a, 'b> NcnDelegateTokenAccountCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.admin.key,
+            *self.delegate_admin.key,
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -326,7 +327,7 @@ impl<'a, 'b> NcnDelegateTokenAccountCpi<'a, 'b> {
         let mut account_infos = Vec::with_capacity(6 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.ncn.clone());
-        account_infos.push(self.admin.clone());
+        account_infos.push(self.delegate_admin.clone());
         account_infos.push(self.token_mint.clone());
         account_infos.push(self.token_account.clone());
         account_infos.push(self.delegate.clone());
@@ -348,7 +349,7 @@ impl<'a, 'b> NcnDelegateTokenAccountCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[]` ncn
-///   1. `[signer]` admin
+///   1. `[signer]` delegate_admin
 ///   2. `[]` token_mint
 ///   3. `[writable]` token_account
 ///   4. `[]` delegate
@@ -363,7 +364,7 @@ impl<'a, 'b> NcnDelegateTokenAccountCpiBuilder<'a, 'b> {
         let instruction = Box::new(NcnDelegateTokenAccountCpiBuilderInstruction {
             __program: program,
             ncn: None,
-            admin: None,
+            delegate_admin: None,
             token_mint: None,
             token_account: None,
             delegate: None,
@@ -379,8 +380,11 @@ impl<'a, 'b> NcnDelegateTokenAccountCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.admin = Some(admin);
+    pub fn delegate_admin(
+        &mut self,
+        delegate_admin: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.delegate_admin = Some(delegate_admin);
         self
     }
     #[inline(always)]
@@ -469,7 +473,10 @@ impl<'a, 'b> NcnDelegateTokenAccountCpiBuilder<'a, 'b> {
 
             ncn: self.instruction.ncn.expect("ncn is not set"),
 
-            admin: self.instruction.admin.expect("admin is not set"),
+            delegate_admin: self
+                .instruction
+                .delegate_admin
+                .expect("delegate_admin is not set"),
 
             token_mint: self.instruction.token_mint.expect("token_mint is not set"),
 
@@ -497,7 +504,7 @@ impl<'a, 'b> NcnDelegateTokenAccountCpiBuilder<'a, 'b> {
 struct NcnDelegateTokenAccountCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     ncn: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    delegate_admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     delegate: Option<&'b solana_program::account_info::AccountInfo<'a>>,

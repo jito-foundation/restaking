@@ -785,7 +785,7 @@
           "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "delegateAdmin",
           "isMut": false,
           "isSigner": true
         },
@@ -830,7 +830,7 @@
           "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "delegateAdmin",
           "isMut": false,
           "isSigner": true
         },

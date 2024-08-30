@@ -39,9 +39,7 @@ pub fn process_ncn_set_secondary_admin(
         }
         NcnAdminRole::Delegate => {
             ncn.delegate_admin = *new_admin.key;
-        } // NcnAdminRole::WithdrawWallet => {
-          //     ncn.withdraw_fee_wallet = *new_admin.key;
-          // }
+        }
     }
 
     Ok(())

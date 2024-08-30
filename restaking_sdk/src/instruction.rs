@@ -171,7 +171,7 @@ pub enum RestakingInstruction {
     OperatorSetSecondaryAdmin(OperatorAdminRole),
 
     #[account(0, name = "ncn")]
-    #[account(1, signer, name = "admin")]
+    #[account(1, signer, name = "delegate_admin")]
     #[account(2, name = "token_mint")]
     #[account(3, writable, name = "token_account")]
     #[account(4, name = "delegate")]
@@ -179,7 +179,7 @@ pub enum RestakingInstruction {
     NcnDelegateTokenAccount { amount: u64 },
 
     #[account(0, name = "operator")]
-    #[account(1, signer, name = "admin")]
+    #[account(1, signer, name = "delegate_admin")]
     #[account(2, name = "token_mint")]
     #[account(3, writable, name = "token_account")]
     #[account(4, name = "delegate")]

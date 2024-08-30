@@ -890,7 +890,7 @@
           "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "delegateAssetAdmin",
           "isMut": false,
           "isSigner": true
         },

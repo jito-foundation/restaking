@@ -41,7 +41,7 @@ export function getOperatorDelegateTokenAccountDiscriminatorBytes() {
 export type OperatorDelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator extends string | IAccountMeta<string> = string,
-  TAccountAdmin extends string | IAccountMeta<string> = string,
+  TAccountDelegateAdmin extends string | IAccountMeta<string> = string,
   TAccountTokenMint extends string | IAccountMeta<string> = string,
   TAccountTokenAccount extends string | IAccountMeta<string> = string,
   TAccountDelegate extends string | IAccountMeta<string> = string,
@@ -56,10 +56,10 @@ export type OperatorDelegateTokenAccountInstruction<
       TAccountOperator extends string
         ? ReadonlyAccount<TAccountOperator>
         : TAccountOperator,
-      TAccountAdmin extends string
-        ? ReadonlySignerAccount<TAccountAdmin> &
-            IAccountSignerMeta<TAccountAdmin>
-        : TAccountAdmin,
+      TAccountDelegateAdmin extends string
+        ? ReadonlySignerAccount<TAccountDelegateAdmin> &
+            IAccountSignerMeta<TAccountDelegateAdmin>
+        : TAccountDelegateAdmin,
       TAccountTokenMint extends string
         ? ReadonlyAccount<TAccountTokenMint>
         : TAccountTokenMint,
@@ -117,14 +117,14 @@ export function getOperatorDelegateTokenAccountInstructionDataCodec(): Codec<
 
 export type OperatorDelegateTokenAccountInput<
   TAccountOperator extends string = string,
-  TAccountAdmin extends string = string,
+  TAccountDelegateAdmin extends string = string,
   TAccountTokenMint extends string = string,
   TAccountTokenAccount extends string = string,
   TAccountDelegate extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   operator: Address<TAccountOperator>;
-  admin: TransactionSigner<TAccountAdmin>;
+  delegateAdmin: TransactionSigner<TAccountDelegateAdmin>;
   tokenMint: Address<TAccountTokenMint>;
   tokenAccount: Address<TAccountTokenAccount>;
   delegate: Address<TAccountDelegate>;
@@ -134,7 +134,7 @@ export type OperatorDelegateTokenAccountInput<
 
 export function getOperatorDelegateTokenAccountInstruction<
   TAccountOperator extends string,
-  TAccountAdmin extends string,
+  TAccountDelegateAdmin extends string,
   TAccountTokenMint extends string,
   TAccountTokenAccount extends string,
   TAccountDelegate extends string,
@@ -142,7 +142,7 @@ export function getOperatorDelegateTokenAccountInstruction<
 >(
   input: OperatorDelegateTokenAccountInput<
     TAccountOperator,
-    TAccountAdmin,
+    TAccountDelegateAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
     TAccountDelegate,
@@ -151,7 +151,7 @@ export function getOperatorDelegateTokenAccountInstruction<
 ): OperatorDelegateTokenAccountInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator,
-  TAccountAdmin,
+  TAccountDelegateAdmin,
   TAccountTokenMint,
   TAccountTokenAccount,
   TAccountDelegate,
@@ -163,7 +163,7 @@ export function getOperatorDelegateTokenAccountInstruction<
   // Original accounts.
   const originalAccounts = {
     operator: { value: input.operator ?? null, isWritable: false },
-    admin: { value: input.admin ?? null, isWritable: false },
+    delegateAdmin: { value: input.delegateAdmin ?? null, isWritable: false },
     tokenMint: { value: input.tokenMint ?? null, isWritable: false },
     tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
     delegate: { value: input.delegate ?? null, isWritable: false },
@@ -187,7 +187,7 @@ export function getOperatorDelegateTokenAccountInstruction<
   const instruction = {
     accounts: [
       getAccountMeta(accounts.operator),
-      getAccountMeta(accounts.admin),
+      getAccountMeta(accounts.delegateAdmin),
       getAccountMeta(accounts.tokenMint),
       getAccountMeta(accounts.tokenAccount),
       getAccountMeta(accounts.delegate),
@@ -200,7 +200,7 @@ export function getOperatorDelegateTokenAccountInstruction<
   } as OperatorDelegateTokenAccountInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,
-    TAccountAdmin,
+    TAccountDelegateAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
     TAccountDelegate,
@@ -217,7 +217,7 @@ export type ParsedOperatorDelegateTokenAccountInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     operator: TAccountMetas[0];
-    admin: TAccountMetas[1];
+    delegateAdmin: TAccountMetas[1];
     tokenMint: TAccountMetas[2];
     tokenAccount: TAccountMetas[3];
     delegate: TAccountMetas[4];
@@ -248,7 +248,7 @@ export function parseOperatorDelegateTokenAccountInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       operator: getNextAccount(),
-      admin: getNextAccount(),
+      delegateAdmin: getNextAccount(),
       tokenMint: getNextAccount(),
       tokenAccount: getNextAccount(),
       delegate: getNextAccount(),

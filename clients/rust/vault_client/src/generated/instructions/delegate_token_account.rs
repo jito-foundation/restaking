@@ -12,7 +12,7 @@ pub struct DelegateTokenAccount {
 
     pub vault: solana_program::pubkey::Pubkey,
 
-    pub admin: solana_program::pubkey::Pubkey,
+    pub delegate_asset_admin: solana_program::pubkey::Pubkey,
 
     pub token_mint: solana_program::pubkey::Pubkey,
 
@@ -45,7 +45,8 @@ impl DelegateTokenAccount {
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.admin, true,
+            self.delegate_asset_admin,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.token_mint,
@@ -107,7 +108,7 @@ pub struct DelegateTokenAccountInstructionArgs {
 ///
 ///   0. `[]` config
 ///   1. `[]` vault
-///   2. `[signer]` admin
+///   2. `[signer]` delegate_asset_admin
 ///   3. `[]` token_mint
 ///   4. `[writable]` token_account
 ///   5. `[]` delegate
@@ -116,7 +117,7 @@ pub struct DelegateTokenAccountInstructionArgs {
 pub struct DelegateTokenAccountBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
-    admin: Option<solana_program::pubkey::Pubkey>,
+    delegate_asset_admin: Option<solana_program::pubkey::Pubkey>,
     token_mint: Option<solana_program::pubkey::Pubkey>,
     token_account: Option<solana_program::pubkey::Pubkey>,
     delegate: Option<solana_program::pubkey::Pubkey>,
@@ -140,8 +141,11 @@ impl DelegateTokenAccountBuilder {
         self
     }
     #[inline(always)]
-    pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.admin = Some(admin);
+    pub fn delegate_asset_admin(
+        &mut self,
+        delegate_asset_admin: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.delegate_asset_admin = Some(delegate_asset_admin);
         self
     }
     #[inline(always)]
@@ -193,7 +197,9 @@ impl DelegateTokenAccountBuilder {
         let accounts = DelegateTokenAccount {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
-            admin: self.admin.expect("admin is not set"),
+            delegate_asset_admin: self
+                .delegate_asset_admin
+                .expect("delegate_asset_admin is not set"),
             token_mint: self.token_mint.expect("token_mint is not set"),
             token_account: self.token_account.expect("token_account is not set"),
             delegate: self.delegate.expect("delegate is not set"),
@@ -215,7 +221,7 @@ pub struct DelegateTokenAccountCpiAccounts<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+    pub delegate_asset_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -235,7 +241,7 @@ pub struct DelegateTokenAccountCpi<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+    pub delegate_asset_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -258,7 +264,7 @@ impl<'a, 'b> DelegateTokenAccountCpi<'a, 'b> {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
-            admin: accounts.admin,
+            delegate_asset_admin: accounts.delegate_asset_admin,
             token_mint: accounts.token_mint,
             token_account: accounts.token_account,
             delegate: accounts.delegate,
@@ -309,7 +315,7 @@ impl<'a, 'b> DelegateTokenAccountCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.admin.key,
+            *self.delegate_asset_admin.key,
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -350,7 +356,7 @@ impl<'a, 'b> DelegateTokenAccountCpi<'a, 'b> {
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
-        account_infos.push(self.admin.clone());
+        account_infos.push(self.delegate_asset_admin.clone());
         account_infos.push(self.token_mint.clone());
         account_infos.push(self.token_account.clone());
         account_infos.push(self.delegate.clone());
@@ -373,7 +379,7 @@ impl<'a, 'b> DelegateTokenAccountCpi<'a, 'b> {
 ///
 ///   0. `[]` config
 ///   1. `[]` vault
-///   2. `[signer]` admin
+///   2. `[signer]` delegate_asset_admin
 ///   3. `[]` token_mint
 ///   4. `[writable]` token_account
 ///   5. `[]` delegate
@@ -389,7 +395,7 @@ impl<'a, 'b> DelegateTokenAccountCpiBuilder<'a, 'b> {
             __program: program,
             config: None,
             vault: None,
-            admin: None,
+            delegate_asset_admin: None,
             token_mint: None,
             token_account: None,
             delegate: None,
@@ -413,8 +419,11 @@ impl<'a, 'b> DelegateTokenAccountCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.admin = Some(admin);
+    pub fn delegate_asset_admin(
+        &mut self,
+        delegate_asset_admin: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.delegate_asset_admin = Some(delegate_asset_admin);
         self
     }
     #[inline(always)]
@@ -505,7 +514,10 @@ impl<'a, 'b> DelegateTokenAccountCpiBuilder<'a, 'b> {
 
             vault: self.instruction.vault.expect("vault is not set"),
 
-            admin: self.instruction.admin.expect("admin is not set"),
+            delegate_asset_admin: self
+                .instruction
+                .delegate_asset_admin
+                .expect("delegate_asset_admin is not set"),
 
             token_mint: self.instruction.token_mint.expect("token_mint is not set"),
 
@@ -534,7 +546,7 @@ struct DelegateTokenAccountCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    delegate_asset_admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     delegate: Option<&'b solana_program::account_info::AccountInfo<'a>>,

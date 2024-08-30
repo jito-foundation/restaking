@@ -204,7 +204,7 @@ pub enum VaultInstruction {
     /// Delegate the token account to a third party
     #[account(0, name = "config")]
     #[account(1, name = "vault")]
-    #[account(2, signer, name = "admin")]
+    #[account(2, signer, name = "delegate_asset_admin")]
     #[account(3, name = "token_mint")]
     #[account(4, writable, name = "token_account")]
     #[account(5, name = "delegate")]

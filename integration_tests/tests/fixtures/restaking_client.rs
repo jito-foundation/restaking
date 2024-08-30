@@ -917,7 +917,7 @@ impl RestakingProgramClient {
     pub async fn ncn_delegate_token_account(
         &mut self,
         ncn_pubkey: &Pubkey,
-        admin: &Keypair,
+        delegate_admin: &Keypair,
         token_mint: &Pubkey,
         token_account: &Pubkey,
         delegate: &Pubkey,
@@ -929,7 +929,7 @@ impl RestakingProgramClient {
             &[jito_restaking_sdk::sdk::ncn_delegate_token_account(
                 &jito_restaking_program::id(),
                 ncn_pubkey,
-                &admin.pubkey(),
+                &delegate_admin.pubkey(),
                 token_mint,
                 token_account,
                 delegate,
@@ -937,7 +937,7 @@ impl RestakingProgramClient {
                 amount,
             )],
             Some(&self.payer.pubkey()),
-            &[&self.payer, &admin],
+            &[&self.payer, &delegate_admin],
             blockhash,
         ))
         .await
@@ -946,7 +946,7 @@ impl RestakingProgramClient {
     pub async fn operator_delegate_token_account(
         &mut self,
         operator_pubkey: &Pubkey,
-        admin: &Keypair,
+        delegate_admin: &Keypair,
         token_mint: &Pubkey,
         token_account: &Pubkey,
         delegate: &Pubkey,
@@ -958,7 +958,7 @@ impl RestakingProgramClient {
             &[jito_restaking_sdk::sdk::operator_delegate_token_account(
                 &jito_restaking_program::id(),
                 operator_pubkey,
-                &admin.pubkey(),
+                &delegate_admin.pubkey(),
                 token_mint,
                 token_account,
                 delegate,
@@ -966,7 +966,7 @@ impl RestakingProgramClient {
                 amount,
             )],
             Some(&self.payer.pubkey()),
-            &[&self.payer, &admin],
+            &[&self.payer, &delegate_admin],
             blockhash,
         ))
         .await

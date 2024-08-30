@@ -812,7 +812,7 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
-        admin: &Keypair,
+        delegate_asset_admin: &Keypair,
         token_mint: &Pubkey,
         token_account: &Pubkey,
         delegate: &Pubkey,
@@ -825,7 +825,7 @@ impl VaultProgramClient {
                 &jito_vault_program::id(),
                 config,
                 vault,
-                &admin.pubkey(),
+                &delegate_asset_admin.pubkey(),
                 token_mint,
                 token_account,
                 delegate,
@@ -833,7 +833,7 @@ impl VaultProgramClient {
                 amount,
             )],
             Some(&self.payer.pubkey()),
-            &[&self.payer, &admin],
+            &[&self.payer, &delegate_asset_admin],
             blockhash,
         ))
         .await

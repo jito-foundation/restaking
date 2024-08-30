@@ -42,7 +42,7 @@ export type DelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
-  TAccountAdmin extends string | IAccountMeta<string> = string,
+  TAccountDelegateAssetAdmin extends string | IAccountMeta<string> = string,
   TAccountTokenMint extends string | IAccountMeta<string> = string,
   TAccountTokenAccount extends string | IAccountMeta<string> = string,
   TAccountDelegate extends string | IAccountMeta<string> = string,
@@ -60,10 +60,10 @@ export type DelegateTokenAccountInstruction<
       TAccountVault extends string
         ? ReadonlyAccount<TAccountVault>
         : TAccountVault,
-      TAccountAdmin extends string
-        ? ReadonlySignerAccount<TAccountAdmin> &
-            IAccountSignerMeta<TAccountAdmin>
-        : TAccountAdmin,
+      TAccountDelegateAssetAdmin extends string
+        ? ReadonlySignerAccount<TAccountDelegateAssetAdmin> &
+            IAccountSignerMeta<TAccountDelegateAssetAdmin>
+        : TAccountDelegateAssetAdmin,
       TAccountTokenMint extends string
         ? ReadonlyAccount<TAccountTokenMint>
         : TAccountTokenMint,
@@ -122,7 +122,7 @@ export function getDelegateTokenAccountInstructionDataCodec(): Codec<
 export type DelegateTokenAccountInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
-  TAccountAdmin extends string = string,
+  TAccountDelegateAssetAdmin extends string = string,
   TAccountTokenMint extends string = string,
   TAccountTokenAccount extends string = string,
   TAccountDelegate extends string = string,
@@ -130,7 +130,7 @@ export type DelegateTokenAccountInput<
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
-  admin: TransactionSigner<TAccountAdmin>;
+  delegateAssetAdmin: TransactionSigner<TAccountDelegateAssetAdmin>;
   tokenMint: Address<TAccountTokenMint>;
   tokenAccount: Address<TAccountTokenAccount>;
   delegate: Address<TAccountDelegate>;
@@ -141,7 +141,7 @@ export type DelegateTokenAccountInput<
 export function getDelegateTokenAccountInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
-  TAccountAdmin extends string,
+  TAccountDelegateAssetAdmin extends string,
   TAccountTokenMint extends string,
   TAccountTokenAccount extends string,
   TAccountDelegate extends string,
@@ -150,7 +150,7 @@ export function getDelegateTokenAccountInstruction<
   input: DelegateTokenAccountInput<
     TAccountConfig,
     TAccountVault,
-    TAccountAdmin,
+    TAccountDelegateAssetAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
     TAccountDelegate,
@@ -160,7 +160,7 @@ export function getDelegateTokenAccountInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
-  TAccountAdmin,
+  TAccountDelegateAssetAdmin,
   TAccountTokenMint,
   TAccountTokenAccount,
   TAccountDelegate,
@@ -173,7 +173,10 @@ export function getDelegateTokenAccountInstruction<
   const originalAccounts = {
     config: { value: input.config ?? null, isWritable: false },
     vault: { value: input.vault ?? null, isWritable: false },
-    admin: { value: input.admin ?? null, isWritable: false },
+    delegateAssetAdmin: {
+      value: input.delegateAssetAdmin ?? null,
+      isWritable: false,
+    },
     tokenMint: { value: input.tokenMint ?? null, isWritable: false },
     tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
     delegate: { value: input.delegate ?? null, isWritable: false },
@@ -198,7 +201,7 @@ export function getDelegateTokenAccountInstruction<
     accounts: [
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.vault),
-      getAccountMeta(accounts.admin),
+      getAccountMeta(accounts.delegateAssetAdmin),
       getAccountMeta(accounts.tokenMint),
       getAccountMeta(accounts.tokenAccount),
       getAccountMeta(accounts.delegate),
@@ -212,7 +215,7 @@ export function getDelegateTokenAccountInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
-    TAccountAdmin,
+    TAccountDelegateAssetAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
     TAccountDelegate,
@@ -230,7 +233,7 @@ export type ParsedDelegateTokenAccountInstruction<
   accounts: {
     config: TAccountMetas[0];
     vault: TAccountMetas[1];
-    admin: TAccountMetas[2];
+    delegateAssetAdmin: TAccountMetas[2];
     tokenMint: TAccountMetas[3];
     tokenAccount: TAccountMetas[4];
     delegate: TAccountMetas[5];
@@ -262,7 +265,7 @@ export function parseDelegateTokenAccountInstruction<
     accounts: {
       config: getNextAccount(),
       vault: getNextAccount(),
-      admin: getNextAccount(),
+      delegateAssetAdmin: getNextAccount(),
       tokenMint: getNextAccount(),
       tokenAccount: getNextAccount(),
       delegate: getNextAccount(),

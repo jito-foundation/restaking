@@ -41,7 +41,7 @@ export function getNcnDelegateTokenAccountDiscriminatorBytes() {
 export type NcnDelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn extends string | IAccountMeta<string> = string,
-  TAccountAdmin extends string | IAccountMeta<string> = string,
+  TAccountDelegateAdmin extends string | IAccountMeta<string> = string,
   TAccountTokenMint extends string | IAccountMeta<string> = string,
   TAccountTokenAccount extends string | IAccountMeta<string> = string,
   TAccountDelegate extends string | IAccountMeta<string> = string,
@@ -54,10 +54,10 @@ export type NcnDelegateTokenAccountInstruction<
   IInstructionWithAccounts<
     [
       TAccountNcn extends string ? ReadonlyAccount<TAccountNcn> : TAccountNcn,
-      TAccountAdmin extends string
-        ? ReadonlySignerAccount<TAccountAdmin> &
-            IAccountSignerMeta<TAccountAdmin>
-        : TAccountAdmin,
+      TAccountDelegateAdmin extends string
+        ? ReadonlySignerAccount<TAccountDelegateAdmin> &
+            IAccountSignerMeta<TAccountDelegateAdmin>
+        : TAccountDelegateAdmin,
       TAccountTokenMint extends string
         ? ReadonlyAccount<TAccountTokenMint>
         : TAccountTokenMint,
@@ -115,14 +115,14 @@ export function getNcnDelegateTokenAccountInstructionDataCodec(): Codec<
 
 export type NcnDelegateTokenAccountInput<
   TAccountNcn extends string = string,
-  TAccountAdmin extends string = string,
+  TAccountDelegateAdmin extends string = string,
   TAccountTokenMint extends string = string,
   TAccountTokenAccount extends string = string,
   TAccountDelegate extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   ncn: Address<TAccountNcn>;
-  admin: TransactionSigner<TAccountAdmin>;
+  delegateAdmin: TransactionSigner<TAccountDelegateAdmin>;
   tokenMint: Address<TAccountTokenMint>;
   tokenAccount: Address<TAccountTokenAccount>;
   delegate: Address<TAccountDelegate>;
@@ -132,7 +132,7 @@ export type NcnDelegateTokenAccountInput<
 
 export function getNcnDelegateTokenAccountInstruction<
   TAccountNcn extends string,
-  TAccountAdmin extends string,
+  TAccountDelegateAdmin extends string,
   TAccountTokenMint extends string,
   TAccountTokenAccount extends string,
   TAccountDelegate extends string,
@@ -140,7 +140,7 @@ export function getNcnDelegateTokenAccountInstruction<
 >(
   input: NcnDelegateTokenAccountInput<
     TAccountNcn,
-    TAccountAdmin,
+    TAccountDelegateAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
     TAccountDelegate,
@@ -149,7 +149,7 @@ export function getNcnDelegateTokenAccountInstruction<
 ): NcnDelegateTokenAccountInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
-  TAccountAdmin,
+  TAccountDelegateAdmin,
   TAccountTokenMint,
   TAccountTokenAccount,
   TAccountDelegate,
@@ -161,7 +161,7 @@ export function getNcnDelegateTokenAccountInstruction<
   // Original accounts.
   const originalAccounts = {
     ncn: { value: input.ncn ?? null, isWritable: false },
-    admin: { value: input.admin ?? null, isWritable: false },
+    delegateAdmin: { value: input.delegateAdmin ?? null, isWritable: false },
     tokenMint: { value: input.tokenMint ?? null, isWritable: false },
     tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
     delegate: { value: input.delegate ?? null, isWritable: false },
@@ -185,7 +185,7 @@ export function getNcnDelegateTokenAccountInstruction<
   const instruction = {
     accounts: [
       getAccountMeta(accounts.ncn),
-      getAccountMeta(accounts.admin),
+      getAccountMeta(accounts.delegateAdmin),
       getAccountMeta(accounts.tokenMint),
       getAccountMeta(accounts.tokenAccount),
       getAccountMeta(accounts.delegate),
@@ -198,7 +198,7 @@ export function getNcnDelegateTokenAccountInstruction<
   } as NcnDelegateTokenAccountInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
-    TAccountAdmin,
+    TAccountDelegateAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
     TAccountDelegate,
@@ -215,7 +215,7 @@ export type ParsedNcnDelegateTokenAccountInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     ncn: TAccountMetas[0];
-    admin: TAccountMetas[1];
+    delegateAdmin: TAccountMetas[1];
     tokenMint: TAccountMetas[2];
     tokenAccount: TAccountMetas[3];
     delegate: TAccountMetas[4];
@@ -246,7 +246,7 @@ export function parseNcnDelegateTokenAccountInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       ncn: getNextAccount(),
-      admin: getNextAccount(),
+      delegateAdmin: getNextAccount(),
       tokenMint: getNextAccount(),
       tokenAccount: getNextAccount(),
       delegate: getNextAccount(),

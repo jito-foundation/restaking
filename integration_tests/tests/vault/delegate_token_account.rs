@@ -1,12 +1,16 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
+    use jito_vault_sdk::error::VaultError;
     use solana_program::{program_option::COption, pubkey::Pubkey};
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
     use test_case::test_case;
 
-    use crate::fixtures::{fixture::TestBuilder, vault_client::VaultRoot};
+    use crate::fixtures::{
+        fixture::TestBuilder,
+        vault_client::{assert_vault_error, VaultRoot},
+    };
 
     async fn setup(token_program_id: &Pubkey) -> (TestBuilder, Pubkey, Keypair, Keypair, Keypair) {
         let mut fixture = TestBuilder::new().await;
@@ -81,9 +85,9 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
 
+        let bob = Pubkey::new_unique();
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
-            let bob = Pubkey::new_unique();
             vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
@@ -103,7 +107,6 @@ mod tests {
             assert_eq!(token_account_acc.delegate, COption::Some(bob));
             assert_eq!(token_account_acc.delegated_amount, 50_000);
         } else {
-            let bob = Pubkey::new_unique();
             vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
@@ -131,7 +134,52 @@ mod tests {
     #[test_case(spl_token::id(); "token")]
     #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
-    async fn test_delegate_vault_supported_token_account_fails(token_program_id: Pubkey) {
+    async fn test_delegate_vault_wrong_delegate_asset_admin_fails(token_program_id: Pubkey) {
+        let (fixture, vault_pubkey, _vault_admin, random_mint, vault_token_account) =
+            setup(&token_program_id).await;
+        let mut vault_program_client = fixture.vault_program_client();
+        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
+
+        let wrong_delegate_asset_admin = Keypair::new();
+        let bob = Pubkey::new_unique();
+        if token_program_id.eq(&spl_token::id()) {
+            // Delegate
+            let response = vault_program_client
+                .delegate_token_account(
+                    &config_pubkey,
+                    &vault_pubkey,
+                    &wrong_delegate_asset_admin,
+                    &random_mint.pubkey(),
+                    &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
+                    &bob,
+                    &token_program_id,
+                    50_000,
+                )
+                .await;
+
+            assert_vault_error(response, VaultError::VaultDelegateAssetAdminInvalid);
+        } else {
+            let response = vault_program_client
+                .delegate_token_account(
+                    &config_pubkey,
+                    &vault_pubkey,
+                    &wrong_delegate_asset_admin,
+                    &random_mint.pubkey(),
+                    &vault_token_account.pubkey(),
+                    &bob,
+                    &token_program_id,
+                    50_000,
+                )
+                .await;
+
+            assert_vault_error(response, VaultError::VaultDelegateAssetAdminInvalid);
+        }
+    }
+
+    #[test_case(spl_token::id(); "token")]
+    #[test_case(spl_token_2022::id(); "token-2022")]
+    #[tokio::test]
+    async fn test_delegate_vault_account_supported_token_account_fails(token_program_id: Pubkey) {
         let (fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
             setup(&token_program_id).await;
         let mut vault_program_client = fixture.vault_program_client();
@@ -139,9 +187,9 @@ mod tests {
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
 
+        let bob = Pubkey::new_unique();
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
-            let bob = Pubkey::new_unique();
             let response = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
@@ -157,7 +205,6 @@ mod tests {
 
             assert!(response.is_err());
         } else {
-            let bob = Pubkey::new_unique();
             let response = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
@@ -186,9 +233,9 @@ mod tests {
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
 
         let fake_mint = Pubkey::new_unique();
+        let bob = Pubkey::new_unique();
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
-            let bob = Pubkey::new_unique();
             let response = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
@@ -204,7 +251,6 @@ mod tests {
 
             assert!(response.is_err());
         } else {
-            let bob = Pubkey::new_unique();
             let response = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
