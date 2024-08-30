@@ -294,6 +294,18 @@ mod tests {
     #[test]
     fn test_delegate_zero() {
         let mut delegation_state = DelegationState::default();
-        assert_eq!(delegation_state.delegate(0), Err(VaultError::VaultDelegationZero));
+        assert_eq!(
+            delegation_state.delegate(0),
+            Err(VaultError::VaultDelegationZero)
+        );
+    }
+
+    #[test]
+    fn test_cooldown_zero() {
+        let mut delegation_state = DelegationState::new(100, 0, 0);
+        assert_eq!(
+            delegation_state.cooldown(0),
+            Err(VaultError::VaultCooldownZero)
+        );
     }
 }

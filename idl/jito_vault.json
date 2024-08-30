@@ -2316,6 +2316,31 @@
       "code": 1039,
       "name": "OperatorOverflow",
       "msg": "OperatorOverflow"
+    },
+    {
+      "code": 1040,
+      "name": "VaultDelegationZero",
+      "msg": "VaultDelegationZero"
+    },
+    {
+      "code": 1041,
+      "name": "VaultCooldownZero",
+      "msg": "VaultCooldownZero"
+    },
+    {
+      "code": 1042,
+      "name": "VaultBurnZero",
+      "msg": "VaultBurnZero"
+    },
+    {
+      "code": 1043,
+      "name": "VaultEnqueueWithdrawalAmountZero",
+      "msg": "VaultEnqueueWithdrawalAmountZero"
+    },
+    {
+      "code": 1044,
+      "name": "VaultMintZero",
+      "msg": "VaultMintZero"
     }
   ],
   "metadata": {

@@ -514,7 +514,8 @@ impl Vault {
     ) -> Result<(), VaultError> {
         if self.mint_burn_admin.ne(&Pubkey::default()) {
             if let Some(burn_signer) = mint_burn_admin {
-                load_signer(burn_signer, false).map_err(|_| VaultError::VaultMintBurnAdminInvalid)?;
+                load_signer(burn_signer, false)
+                    .map_err(|_| VaultError::VaultMintBurnAdminInvalid)?;
                 if burn_signer.key.ne(&self.mint_burn_admin) {
                     msg!("Burn signer does not match vault burn signer");
                     return Err(VaultError::VaultMintBurnAdminInvalid);
@@ -1210,10 +1211,7 @@ mod tests {
         );
         vault.mint_burn_admin = Pubkey::new_unique();
         let err = vault.check_mint_burn_admin(None).unwrap_err();
-        assert_eq!(
-            err,
-            VaultError::VaultMintBurnAdminInvalid
-        );
+        assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
     }
 
     #[test]
@@ -1281,10 +1279,7 @@ mod tests {
         let err = vault
             .check_mint_burn_admin(Some(&wrong_address_and_signer))
             .unwrap_err();
-        assert_eq!(
-            err,
-            VaultError::VaultMintBurnAdminInvalid
-        );
+        assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
     }
 
     #[test]

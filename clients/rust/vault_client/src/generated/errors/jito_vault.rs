@@ -129,6 +129,21 @@ pub enum JitoVaultError {
     /// 1039 - OperatorOverflow
     #[error("OperatorOverflow")]
     OperatorOverflow = 0x40F,
+    /// 1040 - VaultDelegationZero
+    #[error("VaultDelegationZero")]
+    VaultDelegationZero = 0x410,
+    /// 1041 - VaultCooldownZero
+    #[error("VaultCooldownZero")]
+    VaultCooldownZero = 0x411,
+    /// 1042 - VaultBurnZero
+    #[error("VaultBurnZero")]
+    VaultBurnZero = 0x412,
+    /// 1043 - VaultEnqueueWithdrawalAmountZero
+    #[error("VaultEnqueueWithdrawalAmountZero")]
+    VaultEnqueueWithdrawalAmountZero = 0x413,
+    /// 1044 - VaultMintZero
+    #[error("VaultMintZero")]
+    VaultMintZero = 0x414,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {
