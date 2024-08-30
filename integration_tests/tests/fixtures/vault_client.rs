@@ -1,3 +1,5 @@
+use std::{fmt, fmt::Debug};
+
 use borsh::BorshDeserialize;
 use jito_bytemuck::AccountDeserialize;
 use jito_restaking_core::{
@@ -47,6 +49,16 @@ use crate::fixtures::{TestError, TestResult};
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
     pub vault_admin: Keypair,
+}
+
+impl Debug for VaultRoot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "VaultRoot {{ vault_pubkey: {}, vault_admin: {:?} }}",
+            self.vault_pubkey, self.vault_admin
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -253,7 +265,19 @@ impl VaultProgramClient {
         reward_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
+        let vault_root = self
+            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps)
+            .await?;
 
+        Ok((config_admin, vault_root))
+    }
+
+    pub async fn do_initialize_vault(
+        &mut self,
+        deposit_fee_bps: u16,
+        withdraw_fee_bps: u16,
+        reward_fee_bps: u16,
+    ) -> Result<VaultRoot, TestError> {
         let vault_base = Keypair::new();
 
         let vault_pubkey =
@@ -286,13 +310,10 @@ impl VaultProgramClient {
         self.create_ata(&vrt_mint.pubkey(), &vault_admin.pubkey())
             .await?;
 
-        Ok((
-            config_admin,
-            VaultRoot {
-                vault_admin,
-                vault_pubkey,
-            },
-        ))
+        Ok(VaultRoot {
+            vault_admin,
+            vault_pubkey,
+        })
     }
 
     pub async fn do_initialize_vault_ncn_ticket(
@@ -682,7 +703,6 @@ impl VaultProgramClient {
                 operator,
             )
             .0,
-            &vault_root.vault_admin,
             &vault_root.vault_admin,
             amount,
         )
@@ -1262,7 +1282,6 @@ impl VaultProgramClient {
         operator: &Pubkey,
         vault_operator_delegation: &Pubkey,
         admin: &Keypair,
-        payer: &Keypair,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1274,11 +1293,10 @@ impl VaultProgramClient {
                 operator,
                 vault_operator_delegation,
                 &admin.pubkey(),
-                &payer.pubkey(),
                 amount,
             )],
-            Some(&payer.pubkey()),
-            &[admin, payer],
+            Some(&admin.pubkey()),
+            &[admin],
             blockhash,
         ))
         .await

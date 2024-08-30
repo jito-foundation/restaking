@@ -58,8 +58,10 @@ pub fn process_initialize_vault_ncn_ticket(
         return Err(ProgramError::InvalidAccountData);
     }
 
+    let slot = Clock::get()?.slot;
+
     vault.check_ncn_admin(vault_ncn_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_update_state_ok(slot, config.epoch_length())?;
 
     // The NcnVaultTicket shall be active
     msg!(
@@ -86,6 +88,7 @@ pub fn process_initialize_vault_ncn_ticket(
         *ncn.key,
         vault.ncn_count(),
         vault_ncn_ticket_bump,
+        slot,
     );
 
     vault.increment_ncn_count()?;

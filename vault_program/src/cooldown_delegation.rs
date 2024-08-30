@@ -9,6 +9,15 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
+/// Cools down a delegation
+///
+/// Specification:
+/// - The amount to cooldown shall be greater than zero
+/// - The vault shall be up-to-date
+/// - The vault delegation admin shall be a signer on the transaction
+/// - The assets enqueued for cooldown shall be subtracted from the staked amount and added to the
+///   enqueued for cooldown amount
+/// - The vault shall be updated to reflect the cooldown amount and the delegation state shall match the sum of all operator delegations
 pub fn process_cooldown_delegation(
     program_id: &Pubkey,
     accounts: &[AccountInfo],

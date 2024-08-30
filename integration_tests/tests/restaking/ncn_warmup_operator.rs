@@ -26,7 +26,7 @@ mod tests {
             .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
+        fixture.warp_slot_incremental(1).await.unwrap();
         restaking_program_client
             .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
             .await
@@ -51,7 +51,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_ncn_warmup_operator_wrong_admin_fails() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
         let _config_admin = restaking_program_client
@@ -68,7 +68,7 @@ mod tests {
             .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
+        fixture.warp_slot_incremental(1).await.unwrap();
         let result = restaking_program_client
             .ncn_warmup_operator(
                 &Config::find_program_address(&jito_restaking_program::id()).0,
@@ -105,7 +105,7 @@ mod tests {
             .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
+        fixture.warp_slot_incremental(1).await.unwrap();
         restaking_program_client
             .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
             .await
@@ -140,7 +140,7 @@ mod tests {
             .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
+        fixture.warp_slot_incremental(1).await.unwrap();
         restaking_program_client
             .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
             .await
@@ -181,7 +181,7 @@ mod tests {
             .do_initialize_ncn_operator_state(&ncn_root, &operator_root.operator_pubkey)
             .await
             .unwrap();
-
+        fixture.warp_slot_incremental(1).await.unwrap();
         restaking_program_client
             .do_ncn_warmup_operator(&ncn_root, &operator_root.operator_pubkey)
             .await

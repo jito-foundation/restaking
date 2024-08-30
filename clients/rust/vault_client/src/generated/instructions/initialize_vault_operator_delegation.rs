@@ -39,7 +39,7 @@ impl InitializeVaultOperatorDelegation {
             self.config,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -99,7 +99,7 @@ impl Default for InitializeVaultOperatorDelegationInstructionData {
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[]` vault
+///   1. `[writable]` vault
 ///   2. `[writable]` operator
 ///   3. `[]` operator_vault_ticket
 ///   4. `[writable]` vault_operator_delegation
@@ -307,7 +307,7 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
             *self.config.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault.key,
             false,
         ));
@@ -378,7 +378,7 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[]` vault
+///   1. `[writable]` vault
 ///   2. `[writable]` operator
 ///   3. `[]` operator_vault_ticket
 ///   4. `[writable]` vault_operator_delegation

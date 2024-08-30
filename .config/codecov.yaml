@@ -1,4 +1,0 @@
-# Ignore generated files
-ignore:
-  - "clients/js"
-  - "clients/rust"

@@ -23,7 +23,7 @@ pub struct Config {
     pub restaking_program: Pubkey,
     pub epoch_length: u64,
     pub num_vaults: u64,
-    pub fee_cap_bps: u16,
+    pub deposit_withdrawal_fee_cap_bps: u16,
     pub fee_rate_of_change_bps: u16,
     pub fee_bump_bps: u16,
     pub bump: u8,

@@ -28,7 +28,7 @@ pub fn process_initialize_vault_operator_delegation(
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
-    Vault::load(program_id, vault_info, false)?;
+    Vault::load(program_id, vault_info, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     Operator::load(&config.restaking_program, operator, false)?;
@@ -52,12 +52,14 @@ pub fn process_initialize_vault_operator_delegation(
     ) = VaultOperatorDelegation::find_program_address(program_id, vault_info.key, operator.key);
     vault_operator_delegation_seeds.push(vec![vault_operator_delegation_bump]);
     if vault_operator_delegation_pubkey.ne(vault_operator_delegation.key) {
-        msg!("Vault operator ticket is not at the correct PDA");
+        msg!("Vault operator delegation is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
 
+    let slot = Clock::get()?.slot;
+
     vault.check_operator_admin(vault_operator_admin.key)?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_update_state_ok(slot, config.epoch_length())?;
 
     msg!(
         "Initializing VaultOperatorDelegation at address {}",
@@ -84,6 +86,7 @@ pub fn process_initialize_vault_operator_delegation(
         *operator.key,
         vault.operator_count(),
         vault_operator_delegation_bump,
+        slot,
     );
 
     vault.increment_operator_count()?;

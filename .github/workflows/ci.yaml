@@ -141,6 +141,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: jito-foundation/restaking
           fail_ci_if_error: true
+          codecov_yml_path: codecov.yaml
 
   test_sbf:
     name: cargo test

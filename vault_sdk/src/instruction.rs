@@ -32,7 +32,7 @@ pub enum VaultInstruction {
 
     /// Vault adds support for an operator
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, writable, name = "operator")]
     #[account(3, name = "operator_vault_ticket")]
     #[account(4, writable, name = "vault_operator_delegation")]
@@ -232,8 +232,7 @@ pub enum VaultInstruction {
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, signer, name = "admin")]
-    #[account(5, writable, signer, name = "payer")]
-    #[account(6, name = "system_program")]
+    #[account(5, name = "system_program")]
     AddDelegation {
         amount: u64,
     },
