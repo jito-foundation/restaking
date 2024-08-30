@@ -192,8 +192,7 @@ pub enum NcnAdminRole {
     Operator,
     Vault,
     Slasher,
-    Withdraw,
-    WithdrawWallet,
+    Delegate,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -201,6 +200,5 @@ pub enum OperatorAdminRole {
     NcnAdmin,
     VaultAdmin,
     VoterAdmin,
-    WithdrawAdmin,
-    WithdrawWallet,
+    DelegateAdmin,
 }

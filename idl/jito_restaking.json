@@ -941,12 +941,17 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawAdmin",
+            "name": "delegateAdmin",
             "type": "publicKey"
           },
           {
-            "name": "withdrawFeeWallet",
-            "type": "publicKey"
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "index",
@@ -1149,16 +1154,21 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawalAdmin",
-            "type": "publicKey"
-          },
-          {
-            "name": "withdrawalFeeWallet",
+            "name": "delegateAdmin",
             "type": "publicKey"
           },
           {
             "name": "voter",
             "type": "publicKey"
+          },
+          {
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "index",
@@ -1281,10 +1291,7 @@
             "name": "Slasher"
           },
           {
-            "name": "Withdraw"
-          },
-          {
-            "name": "WithdrawWallet"
+            "name": "Delegate"
           }
         ]
       }
@@ -1304,10 +1311,7 @@
             "name": "VoterAdmin"
           },
           {
-            "name": "WithdrawAdmin"
-          },
-          {
-            "name": "WithdrawWallet"
+            "name": "DelegateAdmin"
           }
         ]
       }
@@ -1341,8 +1345,8 @@
     },
     {
       "code": 1005,
-      "name": "NcnWithdrawAdminInvalid",
-      "msg": "NcnWithdrawAdminInvalid"
+      "name": "NcnDelegateAdminInvalid",
+      "msg": "NcnDelegateAdminInvalid"
     },
     {
       "code": 1006,
@@ -1386,8 +1390,8 @@
     },
     {
       "code": 2003,
-      "name": "OperatorWithdrawAdminInvalid",
-      "msg": "OperatorWithdrawAdminInvalid"
+      "name": "OperatorDelegateAdminInvalid",
+      "msg": "OperatorDelegateAdminInvalid"
     },
     {
       "code": 2004,

@@ -174,11 +174,11 @@ pub fn process_instruction(
             process_set_operator_secondary_admin(program_id, accounts, role)
         }
         RestakingInstruction::NcnDelegateTokenAccount { amount } => {
-            msg!("Instruction: NcnWithdrawalAsset");
+            msg!("Instruction: NcnDelegateTokenAccount");
             process_ncn_delegate_token_account(program_id, accounts, amount)
         }
         RestakingInstruction::OperatorDelegateTokenAccount { amount } => {
-            msg!("Instruction: DelegateTokenAccount");
+            msg!("Instruction: OperatorDelegateTokenAccount");
             process_operator_delegate_token_account(program_id, accounts, amount)
         }
     }

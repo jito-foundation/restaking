@@ -146,6 +146,7 @@ pub fn load_associated_token_account(
 ///
 /// # Arguments
 /// * `token_account` - The account to load the token account from
+/// * `owner` - The owner of the token account
 /// * `mint` - The mint of the token account
 /// * `token_program_info` - The token program of the token account
 ///
@@ -158,6 +159,7 @@ pub fn load_associated_token_account(
 /// * `ProgramError::InvalidAccountData` - If the `token_account` data is empty or if the mint associated with the `token_account` does not match the provided `mint`.
 pub fn load_token_account(
     token_account: &AccountInfo,
+    owner: &Pubkey,
     mint: &Pubkey,
     token_program_info: &AccountInfo,
 ) -> Result<(), ProgramError> {
@@ -175,6 +177,15 @@ pub fn load_token_account(
 
     let data = token_account.data.borrow();
     let token_account = StateWithExtensions::<spl_token_2022::state::Account>::unpack(&data)?;
+    if token_account.base.owner.ne(owner) {
+        msg!(
+            "The token_account has an incorrect owner, expected {}, received {}",
+            owner,
+            token_account.base.owner
+        );
+        return Err(ProgramError::InvalidAccountData);
+    }
+
     if token_account.base.mint.ne(mint) {
         msg!(
             "The token_account has an incorrect mint, expected {}, received {}",

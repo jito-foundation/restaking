@@ -335,7 +335,7 @@ pub enum VaultAdminRole {
     CapacityAdmin,
     FeeWallet,
     MintBurnAdmin,
-    WithdrawAdmin,
+    DelegateAssetAdmin,
     FeeAdmin,
 }
 

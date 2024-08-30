@@ -11,7 +11,7 @@ use solana_program::{
 /// Processes the delegate token account instruction: [`crate::VaultInstruction::DelegateTokenAccount`]
 ///
 /// This instruction handles the delegation of a token account to a specified delegate.
-/// The vault admin might call this instruction when the vault receives tokens through an airdrop
+/// The vault delegate_asset_admin might call this instruction when the vault receives tokens through an airdrop
 /// or a transfer, and the admin needs to delegate authority over these tokens to another account.
 ///
 /// # Arguments
@@ -26,7 +26,7 @@ pub fn process_delegate_token_account(
     accounts: &[AccountInfo],
     amount: u64,
 ) -> ProgramResult {
-    let [config, vault_info, admin, token_mint, token_account, delegate, token_program_info] =
+    let [config, vault_info, delegate_asset_admin, token_mint, token_account, delegate, token_program_info] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -34,9 +34,14 @@ pub fn process_delegate_token_account(
 
     Config::load(program_id, config, false)?;
     Vault::load(program_id, vault_info, false)?;
-    load_signer(admin, false)?;
+    load_signer(delegate_asset_admin, false)?;
     load_token_mint(token_mint)?;
-    load_token_account(token_account, token_mint.key, token_program_info)?;
+    load_token_account(
+        token_account,
+        vault_info.key,
+        token_mint.key,
+        token_program_info,
+    )?;
 
     match (*token_mint.owner, *token_account.owner) {
         (spl_token::ID, spl_token::ID) => {
@@ -58,8 +63,8 @@ pub fn process_delegate_token_account(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // The Vault admin shall be the signer of the transaction
-    vault.check_admin(admin.key)?;
+    // The Vault delegate_asset_admin shall be the signer of the transaction
+    vault.check_delegate_asset_admin(delegate_asset_admin.key)?;
 
     let (vault_pubkey, vault_bump, mut vault_seeds) =
         Vault::find_program_address(program_id, &vault.base);
