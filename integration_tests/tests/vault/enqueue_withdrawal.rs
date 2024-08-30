@@ -1,7 +1,12 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use jito_vault_sdk::error::VaultError;
+    use solana_sdk::{
+        instruction::InstructionError,
+        signature::{Keypair, Signer},
+        transaction::TransactionError,
+    };
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{
@@ -45,29 +50,12 @@ mod tests {
             .unwrap();
 
         let depositor = Keypair::new();
-        fixture.transfer(&depositor.pubkey(), 100.0).await.unwrap();
-        fixture
-            .mint_spl_to(&vault.supported_mint, &depositor.pubkey(), MINT_AMOUNT)
-            .await
-            .unwrap();
-        fixture
-            .create_ata(&vault.vrt_mint, &depositor.pubkey())
-            .await
-            .unwrap();
-
         vault_program_client
-            .mint_to(
-                &vault_root.vault_pubkey,
-                &vault.vrt_mint,
-                &depositor,
-                &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
-                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-                &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
-                None,
-                MINT_AMOUNT,
-                min_amount_out,
-            )
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -155,5 +143,62 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), amount_to_dequeue);
+    }
+
+    #[tokio::test]
+    async fn test_enqueue_withdraw_zero_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 0, 1, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100, 100)
+            .await
+            .unwrap();
+
+        // let vault operator ticket warmup
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+
+        let operator_root_pubkeys: Vec<_> = operator_roots
+            .iter()
+            .map(|root| root.operator_pubkey)
+            .collect();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        let err = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, 0)
+            .await
+            .unwrap_err()
+            .to_transaction_error()
+            .unwrap();
+        assert_eq!(
+            err,
+            TransactionError::InstructionError(
+                0,
+                InstructionError::Custom(VaultError::VaultEnqueueWithdrawalAmountZero as u32)
+            )
+        );
     }
 }

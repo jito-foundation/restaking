@@ -188,6 +188,11 @@ impl DelegationState {
     /// Cools down stake by subtracting it from the staked amount and adding it to the enqueued
     /// cooldown amount
     pub fn cooldown(&mut self, amount: u64) -> Result<(), VaultError> {
+        if amount == 0 {
+            msg!("Cooldown amount is zero");
+            return Err(VaultError::VaultCooldownZero);
+        }
+
         let mut staked_amount: u64 = self.staked_amount.into();
         staked_amount = staked_amount
             .checked_sub(amount)
@@ -205,6 +210,11 @@ impl DelegationState {
 
     /// Delegates assets to the operator
     pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
+        if amount == 0 {
+            msg!("Delegation amount is zero");
+            return Err(VaultError::VaultDelegationZero);
+        }
+
         let mut staked_amount: u64 = self.staked_amount.into();
         staked_amount = staked_amount
             .checked_add(amount)
@@ -217,6 +227,7 @@ impl DelegationState {
 #[cfg(test)]
 mod tests {
     use jito_bytemuck::types::PodU64;
+    use jito_vault_sdk::error::VaultError;
 
     use crate::delegation_state::DelegationState;
 
@@ -278,5 +289,23 @@ mod tests {
         assert_eq!(delegation_state.enqueued_for_cooldown_amount(), 0);
         assert_eq!(delegation_state.cooling_down_amount(), 0);
         assert_eq!(delegation_state.total_security().unwrap(), 50);
+    }
+
+    #[test]
+    fn test_delegate_zero() {
+        let mut delegation_state = DelegationState::default();
+        assert_eq!(
+            delegation_state.delegate(0),
+            Err(VaultError::VaultDelegationZero)
+        );
+    }
+
+    #[test]
+    fn test_cooldown_zero() {
+        let mut delegation_state = DelegationState::new(100, 0, 0);
+        assert_eq!(
+            delegation_state.cooldown(0),
+            Err(VaultError::VaultCooldownZero)
+        );
     }
 }
