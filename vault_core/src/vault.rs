@@ -511,17 +511,17 @@ impl Vault {
     pub fn check_mint_burn_admin(
         &self,
         mint_burn_admin: Option<&AccountInfo>,
-    ) -> Result<(), ProgramError> {
+    ) -> Result<(), VaultError> {
         if self.mint_burn_admin.ne(&Pubkey::default()) {
             if let Some(burn_signer) = mint_burn_admin {
-                load_signer(burn_signer, false)?;
+                load_signer(burn_signer, false).map_err(|_| VaultError::VaultMintBurnAdminInvalid)?;
                 if burn_signer.key.ne(&self.mint_burn_admin) {
                     msg!("Burn signer does not match vault burn signer");
-                    return Err(VaultError::VaultMintBurnAdminInvalid.into());
+                    return Err(VaultError::VaultMintBurnAdminInvalid);
                 }
             } else {
                 msg!("Mint signer is required for vault mint");
-                return Err(VaultError::VaultMintBurnAdminInvalid.into());
+                return Err(VaultError::VaultMintBurnAdminInvalid);
             }
         }
         Ok(())
@@ -674,20 +674,10 @@ impl Vault {
         Ok(fee)
     }
 
-    /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
-    /// amount. This is the pro-rata share of the total tokens deposited in the vault.
-    pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
-        (vrt_amount as u128)
-            .checked_mul(self.tokens_deposited() as u128)
-            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .and_then(|result| result.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)
-    }
-
     /// Calculate the amount of VRT tokens to mint based on the amount of tokens deposited in the vault.
     /// If no tokens have been deposited, the amount is equal to the amount passed in.
     /// Otherwise, the amount is calculated as the pro-rata share of the total VRT supply.
-    pub fn calculate_vrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
+    fn calculate_vrt_mint_amount(&self, amount: u64) -> Result<u64, VaultError> {
         if self.tokens_deposited() == 0 {
             return Ok(amount);
         }
@@ -700,7 +690,7 @@ impl Vault {
     }
 
     /// Calculate the amount of tokens collected as a fee for depositing tokens in the vault.
-    pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+    fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.deposit_fee_bps() as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
@@ -710,7 +700,7 @@ impl Vault {
     }
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
-    pub fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+    fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
@@ -724,6 +714,11 @@ impl Vault {
         amount_in: u64,
         min_amount_out: u64,
     ) -> Result<MintSummary, VaultError> {
+        if amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultMintZero);
+        }
+
         let vault_token_amount_after_deposit = self
             .tokens_deposited()
             .checked_add(amount_in)
@@ -768,12 +763,12 @@ impl Vault {
     ) -> Result<BurnSummary, VaultError> {
         if amount_in == 0 {
             msg!("Amount in is zero");
-            return Err(VaultError::VaultUnderflow);
-        }
-        if amount_in > self.vrt_supply() {
+            return Err(VaultError::VaultBurnZero);
+        } else if amount_in > self.vrt_supply() {
             msg!("Amount exceeds vault VRT supply");
             return Err(VaultError::VaultInsufficientFunds);
         }
+
         let fee_amount = self.calculate_withdraw_fee(amount_in)?;
         let amount_to_burn = amount_in
             .checked_sub(fee_amount)
@@ -914,7 +909,10 @@ impl Vault {
     }
 
     pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
-        if self.tokens_deposited() == 0 || self.vrt_supply() == 0 {
+        if amount == 0 {
+            msg!("Delegation amount is zero");
+            return Err(VaultError::VaultDelegationZero);
+        } else if self.tokens_deposited() == 0 || self.vrt_supply() == 0 {
             msg!("No tokens deposited in vault");
             return Err(VaultError::VaultUnderflow);
         }
@@ -1013,7 +1011,7 @@ mod tests {
 
     use jito_bytemuck::types::{PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
-    use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
+    use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
     use crate::{
         delegation_state::DelegationState,
@@ -1214,7 +1212,7 @@ mod tests {
         let err = vault.check_mint_burn_admin(None).unwrap_err();
         assert_eq!(
             err,
-            ProgramError::Custom(VaultError::VaultMintBurnAdminInvalid.into())
+            VaultError::VaultMintBurnAdminInvalid
         );
     }
 
@@ -1248,7 +1246,7 @@ mod tests {
             rent_epoch: 0,
         };
         let err = vault.check_mint_burn_admin(Some(&not_signer)).unwrap_err();
-        assert_eq!(err, ProgramError::MissingRequiredSignature);
+        assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
     }
 
     #[test]
@@ -1285,7 +1283,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err,
-            ProgramError::Custom(VaultError::VaultMintBurnAdminInvalid.into())
+            VaultError::VaultMintBurnAdminInvalid
         );
     }
 
@@ -1316,7 +1314,7 @@ mod tests {
     #[test]
     fn test_burn_zero_fails() {
         let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
-        assert_eq!(vault.burn_with_fee(0, 0), Err(VaultError::VaultUnderflow));
+        assert_eq!(vault.burn_with_fee(0, 0), Err(VaultError::VaultBurnZero));
     }
 
     #[test]
@@ -1954,5 +1952,23 @@ mod tests {
             fee_rate_of_change_bps
         )
         .is_err());
+    }
+
+    #[test]
+    fn test_delegation_too_small() {
+        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        assert_eq!(vault.delegate(0), Err(VaultError::VaultDelegationZero));
+    }
+
+    #[test]
+    fn test_mint_with_fee_zero_amount() {
+        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        assert_eq!(vault.mint_with_fee(0, 0), Err(VaultError::VaultMintZero));
+    }
+
+    #[test]
+    fn test_burn_with_fee_zero_amount() {
+        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        assert_eq!(vault.burn_with_fee(0, 0), Err(VaultError::VaultBurnZero));
     }
 }

@@ -83,6 +83,16 @@ pub enum VaultError {
     NcnOverflow,
     #[error("OperatorOverflow")]
     OperatorOverflow,
+    #[error("VaultDelegationZero")]
+    VaultDelegationZero,
+    #[error("VaultCooldownZero")]
+    VaultCooldownZero,
+    #[error("VaultBurnZero")]
+    VaultBurnZero,
+    #[error("VaultEnqueueWithdrawalAmountZero")]
+    VaultEnqueueWithdrawalAmountZero,
+    #[error("VaultMintZero")]
+    VaultMintZero,
 }
 
 impl<T> DecodeError<T> for VaultError {
