@@ -190,7 +190,7 @@ impl DelegationState {
     pub fn cooldown(&mut self, amount: u64) -> Result<(), VaultError> {
         if amount == 0 {
             msg!("Cooldown amount is zero");
-            return Err(VaultError::VaultDelegationZero);
+            return Err(VaultError::VaultCooldownZero);
         }
 
         let mut staked_amount: u64 = self.staked_amount.into();
