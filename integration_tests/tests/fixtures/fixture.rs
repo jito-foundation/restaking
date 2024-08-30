@@ -14,7 +14,7 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::state::Account;
+use spl_token::state::{Account, Mint};
 
 use crate::fixtures::{
     restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
@@ -96,6 +96,16 @@ impl TestBuilder {
             .await?
             .unwrap();
         Ok(Account::unpack(&account.data).unwrap())
+    }
+
+    pub async fn get_token_mint(&mut self, token_mint: &Pubkey) -> Result<Mint, BanksClientError> {
+        let account = self
+            .context
+            .banks_client
+            .get_account(*token_mint)
+            .await?
+            .unwrap();
+        Ok(Mint::unpack(&account.data).unwrap())
     }
 
     /// Mints tokens to an ATA owned by the `to` address

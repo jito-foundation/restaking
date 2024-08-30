@@ -11,7 +11,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_vault_ok() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -43,6 +43,9 @@ mod tests {
         assert_eq!(vault.ncn_count(), 0);
         assert_eq!(vault.operator_count(), 0);
         assert_eq!(vault.slasher_count(), 0);
+
+        let token_mint = fixture.get_token_mint(&vault.vrt_mint).await.unwrap();
+        assert_eq!(token_mint.decimals, 9);
     }
 
     #[tokio::test]
@@ -59,7 +62,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(10001, 100, 100)
+            .do_initialize_vault(10001, 100, 100, 9)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -73,7 +76,7 @@ mod tests {
         );
 
         let err = vault_program_client
-            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0)
+            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -101,7 +104,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(100, 10001, 100)
+            .do_initialize_vault(100, 10001, 100, 9)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -115,7 +118,7 @@ mod tests {
         );
 
         let err = vault_program_client
-            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0)
+            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 9)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -138,7 +141,7 @@ mod tests {
         vault_program_client.do_initialize_config().await.unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(0, 0, 10001)
+            .do_initialize_vault(0, 0, 10001, 9)
             .await
             .unwrap_err()
             .to_transaction_error()

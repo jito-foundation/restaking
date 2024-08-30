@@ -268,7 +268,7 @@ impl VaultProgramClient {
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
         let vault_root = self
-            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps)
+            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps, 9)
             .await?;
 
         Ok((config_admin, vault_root))
@@ -279,6 +279,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
+        decimals: u8,
     ) -> Result<VaultRoot, TestError> {
         let vault_base = Keypair::new();
 
@@ -302,6 +303,7 @@ impl VaultProgramClient {
             deposit_fee_bps,
             withdraw_fee_bps,
             reward_fee_bps,
+            decimals,
         )
         .await?;
 
@@ -723,6 +725,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        decimals: u8,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -738,6 +741,7 @@ impl VaultProgramClient {
                 deposit_fee_bps,
                 withdrawal_fee_bps,
                 reward_fee_bps,
+                decimals,
             )],
             Some(&vault_admin.pubkey()),
             &[&vault_admin, &vrt_mint, &vault_base],
