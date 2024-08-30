@@ -88,6 +88,10 @@
         {
           "name": "rewardFeeBps",
           "type": "u16"
+        },
+        {
+          "name": "decimals",
+          "type": "u8"
         }
       ],
       "discriminant": {
