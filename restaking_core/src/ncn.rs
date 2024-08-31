@@ -135,7 +135,7 @@ impl Ncn {
     /// This function will return a [`jito_restaking_sdk::error::RestakingError::NcnAdminInvalid`] error in the following case:
     /// * The `admin_info` account's public key does not match the expected admin public key stored in `self`.
     pub fn check_admin(&self, admin: &Pubkey) -> Result<(), RestakingError> {
-        if *admin != self.admin {
+        if self.admin.ne(admin) {
             msg!(
                 "Incorrect admin provided, expected {}, received {}",
                 self.admin,
@@ -159,7 +159,7 @@ impl Ncn {
     /// This function will return a [`jito_restaking_sdk::error::RestakingError::NcnDelegateAdminInvalid`] error in the following case:
     /// * The `delegate_admin_info` account's public key does not match the expected delegate_admin public key stored in `self`.
     pub fn check_delegate_admin(&self, delegate_admin: &Pubkey) -> Result<(), RestakingError> {
-        if *delegate_admin != self.delegate_admin {
+        if self.delegate_admin.ne(delegate_admin) {
             msg!(
                 "Incorrect delegate_admin provided, expected {}, received {}",
                 self.delegate_admin,
