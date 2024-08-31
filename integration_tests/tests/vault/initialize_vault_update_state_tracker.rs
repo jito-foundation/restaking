@@ -3,9 +3,10 @@ mod tests {
     use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
     use jito_vault_sdk::error::VaultError;
     use solana_program::instruction::InstructionError;
-    use solana_sdk::transaction::TransactionError;
 
-    use crate::fixtures::{fixture::TestBuilder, vault_client::assert_vault_error};
+    use crate::fixtures::{
+        assert_ix_error, fixture::TestBuilder, vault_client::assert_vault_error,
+    };
 
     #[tokio::test]
     async fn test_initialize_vault_update_state_tracker_ok() {
@@ -174,13 +175,8 @@ mod tests {
                 )
                 .0,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            result,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+            .await;
+
+        assert_ix_error(result, InstructionError::InvalidAccountOwner);
     }
 }
