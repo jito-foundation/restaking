@@ -18,3 +18,4 @@ mod set_fees;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
+mod update_vault_balance;
