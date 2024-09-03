@@ -3,4 +3,5 @@ description: Jito Restaking Documentation
 url: "https://docs.restaking.jito.network"
 
 markdown: kramdown
-theme: jekyll-theme-primer
+remote_theme: sighingnow/jekyll-gitbook
+syntax_highlighter_style: colorful
