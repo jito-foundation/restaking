@@ -18,25 +18,9 @@ assets:
     - assets
 
 collections:
-  about:
-    output: true
-    permalink: /:collection/:path/
-  restaking:
-    output: true
-    permalink: /:collection/:path/
-  vault:
-    output: true
-    permalink: /:collection/:path/
-  tools:
-    output: true
-    permalink: /:collection/:path/
-  advanced:
+  posts:
     output: true
     permalink: /:collection/:path/
 
 ordered_collections:
-  - about
-  - restaking
-  - vault
-  - tools
-  - advanced
+  - posts

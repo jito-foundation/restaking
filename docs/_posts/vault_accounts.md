@@ -128,4 +128,4 @@ When assets are staked and the following conditions are met, the vault can be sl
 - The NCN has opted in to a slasher for the given vault.
 - The vault has agreed to the conditions set by the NCN for slashing the vault.
 
-![img.png](../assets/staked_venn_diagram.png)
+![img.png](/assets/images/staked_venn_diagram.png)
