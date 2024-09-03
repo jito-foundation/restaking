@@ -2,6 +2,6 @@ title: Jito Restaking Documentation
 description: Jito Restaking Documentation
 url: "https://docs.restaking.jito.network"
 
-markdown: kramdown
+# markdown: kramdown
 remote_theme: sighingnow/jekyll-gitbook
-syntax_highlighter_style: colorful
+# syntax_highlighter_style: colorful
