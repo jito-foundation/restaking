@@ -12,10 +12,16 @@ toc:
     enabled: true
 
 collections:
-  pages:
+  restaking:
     output: true
     permalink: /:collection/:path/
-  others:
+  vault:
+    output: true
+    permalink: /:collection/:path/
+  tools:
+    output: true
+    permalink: /:collection/:path/
+  advanced:
     output: true
     permalink: /:collection/:path/
 
