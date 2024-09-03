@@ -11,8 +11,10 @@ mod tests {
         let fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
 
+        let token_program = spl_token::id();
+
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 
@@ -45,8 +47,10 @@ mod tests {
         let fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
 
+        let token_program = spl_token::id();
+
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 

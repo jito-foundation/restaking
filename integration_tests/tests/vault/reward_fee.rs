@@ -9,6 +9,8 @@ mod tests {
     async fn test_reward_fee() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
@@ -24,6 +26,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -35,13 +38,18 @@ mod tests {
 
         let rewarder = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &rewarder.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &rewarder.pubkey(), &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &rewarder, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &rewarder,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -79,6 +87,8 @@ mod tests {
     async fn test_100_percent_reward_fee() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
@@ -94,6 +104,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -105,13 +116,18 @@ mod tests {
 
         let rewarder = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &rewarder.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &rewarder.pubkey(), &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &rewarder, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &rewarder,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -149,6 +165,8 @@ mod tests {
     async fn test_0_percent_reward_fee() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
@@ -164,6 +182,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -175,13 +194,18 @@ mod tests {
 
         let rewarder = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &rewarder.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &rewarder.pubkey(), &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &rewarder, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &rewarder,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -219,6 +243,8 @@ mod tests {
     async fn test_reward_with_non_zero_balance() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
@@ -234,6 +260,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -245,12 +272,23 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT * 2)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT * 2,
+            )
             .await
             .unwrap();
 
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -273,7 +311,12 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &depositor, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 

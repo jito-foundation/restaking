@@ -13,6 +13,8 @@ mod tests {
     async fn test_initialize_vault_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let (
@@ -22,7 +24,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
@@ -52,6 +54,8 @@ mod tests {
     async fn test_initialize_vault_deposit_fee_bps_too_high() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         vault_program_client.do_initialize_config().await.unwrap();
@@ -62,7 +66,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(10001, 100, 100, 9)
+            .do_initialize_vault(&token_program, 10001, 100, 100, 9)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -76,7 +80,13 @@ mod tests {
         );
 
         let err = vault_program_client
-            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
+            .do_initialize_vault(
+                &token_program,
+                config.deposit_withdrawal_fee_cap_bps() + 1,
+                0,
+                0,
+                9,
+            )
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -94,6 +104,8 @@ mod tests {
     async fn test_initialize_vault_withdrawal_fee_bps_too_high() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         vault_program_client.do_initialize_config().await.unwrap();
@@ -104,7 +116,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(100, 10001, 100, 9)
+            .do_initialize_vault(&token_program, 100, 10001, 100, 9)
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -118,7 +130,13 @@ mod tests {
         );
 
         let err = vault_program_client
-            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 9)
+            .do_initialize_vault(
+                &token_program,
+                0,
+                config.deposit_withdrawal_fee_cap_bps() + 1,
+                0,
+                9,
+            )
             .await
             .unwrap_err()
             .to_transaction_error()
@@ -136,12 +154,14 @@ mod tests {
     async fn test_initialize_vault_with_invalid_reward_fee_bps() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         vault_program_client.do_initialize_config().await.unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(0, 0, 10001, 9)
+            .do_initialize_vault(&token_program, 0, 0, 10001, 9)
             .await
             .unwrap_err()
             .to_transaction_error()

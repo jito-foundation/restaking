@@ -16,6 +16,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_slasher_ticket_ok() {
+        let token_program = spl_token::id();
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -25,7 +26,7 @@ mod tests {
             .unwrap();
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 
@@ -80,6 +81,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_slasher_ticket_bad_pda_fails() {
+        let token_program = spl_token::id();
+
         let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -91,7 +94,7 @@ mod tests {
 
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 
@@ -129,6 +132,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_slasher_ticket_bad_admin_fails() {
+        let token_program = spl_token::id();
+
         let mut fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
@@ -140,7 +145,7 @@ mod tests {
 
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 

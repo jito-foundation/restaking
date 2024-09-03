@@ -19,6 +19,8 @@ mod tests {
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -37,6 +39,7 @@ mod tests {
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -49,11 +52,22 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -81,12 +95,12 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &token_program, MINT_AMOUNT)
             .await;
         assert_vault_error(
             transaction_error,
@@ -99,6 +113,8 @@ mod tests {
     async fn test_burn_withdrawal_ticket_next_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -117,6 +133,7 @@ mod tests {
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -129,11 +146,22 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -161,7 +189,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -182,7 +210,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &token_program, MINT_AMOUNT)
             .await;
         assert_vault_error(
             transaction_error,
@@ -194,6 +222,8 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_basic_success() {
         const MINT_AMOUNT: u64 = 100_000;
+
+        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -213,6 +243,7 @@ mod tests {
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -225,11 +256,22 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -257,7 +299,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -290,7 +332,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -320,6 +362,8 @@ mod tests {
     async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -338,6 +382,7 @@ mod tests {
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -355,11 +400,22 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &&vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -387,7 +443,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -397,7 +453,7 @@ mod tests {
             .unwrap();
 
         let result = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &token_program, MINT_AMOUNT)
             .await;
         assert_vault_error(
             result,
@@ -416,7 +472,7 @@ mod tests {
             .await
             .unwrap();
         let result = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &token_program, MINT_AMOUNT)
             .await;
         assert_vault_error(
             result,
@@ -436,7 +492,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
         let staker_token_account = fixture
@@ -464,6 +520,8 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -482,6 +540,7 @@ mod tests {
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -494,16 +553,27 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -531,7 +601,7 @@ mod tests {
 
         let random_pubkey = Pubkey::new_unique();
         fixture
-            .create_ata(&vault.supported_mint, &random_pubkey)
+            .create_ata(&vault.supported_mint, &random_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -553,6 +623,7 @@ mod tests {
                 &vault_staker_withdrawal_ticket,
                 &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+                &token_program,
                 MIN_AMOUNT_OUT,
             )
             .await;

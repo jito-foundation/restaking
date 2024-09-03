@@ -16,13 +16,10 @@ use spl_associated_token_account::{
 };
 use spl_token::state::{Account, Mint};
 
-use crate::{
-    fixtures::{
-        restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
-        vault_client::{VaultProgramClient, VaultRoot},
-        TestResult,
-    },
-    helpers::token,
+use crate::fixtures::{
+    restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
+    vault_client::{VaultProgramClient, VaultRoot},
+    TestResult,
 };
 
 pub struct TestBuilder {
@@ -209,6 +206,7 @@ impl TestBuilder {
     /// Configures a vault with an NCN and operators fully configured
     pub async fn setup_vault_with_ncn_and_operators(
         &mut self,
+        token_program: &Pubkey,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
@@ -219,7 +217,12 @@ impl TestBuilder {
         let mut restaking_program_client = self.restaking_program_client();
 
         let (vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                token_program,
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+            )
             .await?;
         let restaking_config_admin = restaking_program_client.do_initialize_config().await?;
 

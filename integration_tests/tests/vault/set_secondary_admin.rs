@@ -16,6 +16,8 @@ mod tests {
     async fn test_set_secondary_admin_with_bad_admin() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let deposit_fee_bps = 99;
@@ -29,7 +31,12 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                &token_program,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
             .await
             .unwrap();
 
@@ -62,6 +69,8 @@ mod tests {
     async fn test_set_secondary_admin() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let deposit_fee_bps = 99;
@@ -75,7 +84,12 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                &token_program,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
             .await
             .unwrap();
 

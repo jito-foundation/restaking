@@ -13,6 +13,8 @@ mod tests {
     async fn test_close_update_state_tracker_no_operators_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -25,6 +27,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -78,6 +81,8 @@ mod tests {
     async fn test_close_update_state_tracker_not_finished_fails() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -91,6 +96,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -154,6 +160,8 @@ mod tests {
     async fn test_close_update_state_tracker_old_epoch_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -167,6 +175,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -178,11 +187,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -250,6 +259,8 @@ mod tests {
     async fn test_close_update_state_tracker_vrt_enqueued_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
@@ -263,6 +274,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -274,11 +286,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -287,7 +299,7 @@ mod tests {
             .await
             .unwrap();
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, 100_000)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, 100_000)
             .await
             .unwrap();
         let vault = vault_program_client

@@ -9,11 +9,13 @@ mod tests {
     async fn test_add_ncn_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 

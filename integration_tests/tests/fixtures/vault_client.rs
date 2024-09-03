@@ -46,10 +46,7 @@ use spl_token::{
     state::{Account as SPLTokenAccount, Mint},
 };
 
-use crate::{
-    fixtures::{TestError, TestResult},
-    helpers::token,
-};
+use crate::fixtures::{TestError, TestResult};
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
@@ -88,14 +85,22 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Pubkey,
+        token_program: &Pubkey,
         amount_to_mint: u64,
     ) -> TestResult<()> {
         self.airdrop(depositor, 100.0).await?;
         let vault = self.get_vault(&vault_root.vault_pubkey).await?;
-        self.create_ata(&vault.supported_mint, depositor).await?;
-        self.create_ata(&vault.vrt_mint, depositor).await?;
-        self.mint_spl_to(&vault.supported_mint, depositor, amount_to_mint)
+        self.create_ata(&vault.supported_mint, depositor, token_program)
             .await?;
+        self.create_ata(&vault.vrt_mint, depositor, token_program)
+            .await?;
+        self.mint_spl_to(
+            &vault.supported_mint,
+            depositor,
+            token_program,
+            amount_to_mint,
+        )
+        .await?;
 
         Ok(())
     }
@@ -265,13 +270,20 @@ impl VaultProgramClient {
 
     pub async fn setup_config_and_vault(
         &mut self,
+        token_program: &Pubkey,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
         let vault_root = self
-            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps, 9)
+            .do_initialize_vault(
+                token_program,
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                9,
+            )
             .await?;
 
         Ok((config_admin, vault_root))
@@ -279,6 +291,7 @@ impl VaultProgramClient {
 
     pub async fn do_initialize_vault(
         &mut self,
+        token_program: &Pubkey,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
@@ -294,7 +307,7 @@ impl VaultProgramClient {
         let token_mint = Keypair::new();
 
         self.airdrop(&vault_admin.pubkey(), 100.0).await?;
-        self.create_token_mint(&token_mint).await?;
+        self.create_token_mint(&token_mint, token_program).await?;
 
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -303,6 +316,7 @@ impl VaultProgramClient {
             &token_mint,
             &vault_admin,
             &vault_base,
+            token_program,
             deposit_fee_bps,
             withdraw_fee_bps,
             reward_fee_bps,
@@ -311,9 +325,10 @@ impl VaultProgramClient {
         .await?;
 
         // for holding the backed asset in the vault
-        self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
+        self.create_ata(&token_mint.pubkey(), &vault_pubkey, token_program)
+            .await?;
         // for holding fees
-        self.create_ata(&vrt_mint.pubkey(), &vault_admin.pubkey())
+        self.create_ata(&vrt_mint.pubkey(), &vault_admin.pubkey(), token_program)
             .await?;
 
         Ok(VaultRoot {
@@ -479,6 +494,7 @@ impl VaultProgramClient {
         ncn_pubkey: &Pubkey,
         slasher: &Keypair,
         operator_pubkey: &Pubkey,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<(), TestError> {
         let ncn_operator_state_pubkey = NcnOperatorState::find_program_address(
@@ -564,6 +580,7 @@ impl VaultProgramClient {
             &vault_ncn_slasher_operator_ticket,
             &vault_token_account,
             &slasher_token_account,
+            token_program,
             amount,
         )
         .await?;
@@ -725,6 +742,7 @@ impl VaultProgramClient {
         token_mint: &Keypair,
         vault_admin: &Keypair,
         vault_base: &Keypair,
+        token_program: &Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
@@ -741,6 +759,7 @@ impl VaultProgramClient {
                 &token_mint.pubkey(),
                 &vault_admin.pubkey(),
                 &vault_base.pubkey(),
+                token_program,
                 deposit_fee_bps,
                 withdrawal_fee_bps,
                 reward_fee_bps,
@@ -891,6 +910,7 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Keypair,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
@@ -911,8 +931,12 @@ impl VaultProgramClient {
         let vault_staker_withdrawal_ticket_token_account =
             get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint);
 
-        self.create_ata(&vault.vrt_mint, &vault_staker_withdrawal_ticket)
-            .await?;
+        self.create_ata(
+            &vault.vrt_mint,
+            &vault_staker_withdrawal_ticket,
+            token_program,
+        )
+        .await?;
 
         self.enqueue_withdraw(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -922,6 +946,7 @@ impl VaultProgramClient {
             depositor,
             &depositor_vrt_token_account,
             &base,
+            token_program,
             amount,
         )
         .await?;
@@ -1163,6 +1188,7 @@ impl VaultProgramClient {
         staker: &Keypair,
         staker_vrt_token_account: &Pubkey,
         base: &Keypair,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1176,6 +1202,7 @@ impl VaultProgramClient {
                 &staker.pubkey(),
                 staker_vrt_token_account,
                 &base.pubkey(),
+                token_program,
                 amount,
             )],
             Some(&staker.pubkey()),
@@ -1190,6 +1217,7 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         staker: &Keypair,
         vault_staker_withdrawal_ticket_base: &Pubkey,
+        token_program: &Pubkey,
         min_amount_out: u64,
     ) -> Result<(), TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
@@ -1210,6 +1238,7 @@ impl VaultProgramClient {
             &vault_staker_withdrawal_ticket,
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+            token_program,
             min_amount_out,
         )
         .await?;
@@ -1228,6 +1257,7 @@ impl VaultProgramClient {
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
+        token_program: &Pubkey,
         min_amount_out: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1243,6 +1273,7 @@ impl VaultProgramClient {
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
+                token_program,
                 min_amount_out,
             )],
             Some(&self.payer.pubkey()),
@@ -1283,6 +1314,7 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Keypair,
+        token_program: &Pubkey,
         amount_in: u64,
         min_amount_out: u64,
     ) -> TestResult<()> {
@@ -1296,6 +1328,7 @@ impl VaultProgramClient {
             &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
             None,
+            token_program,
             amount_in,
             min_amount_out,
         )
@@ -1312,6 +1345,7 @@ impl VaultProgramClient {
         depositor_vrt_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         mint_signer: Option<&Keypair>,
+        token_program: &Pubkey,
         amount_in: u64,
         min_amount_out: u64,
     ) -> Result<(), TestError> {
@@ -1332,6 +1366,7 @@ impl VaultProgramClient {
                 depositor_vrt_token_account,
                 vault_fee_token_account,
                 mint_signer.map(|s| s.pubkey()).as_ref(),
+                token_program,
                 amount_in,
                 min_amount_out,
             )],
@@ -1423,6 +1458,7 @@ impl VaultProgramClient {
         vault_ncn_slasher_operator_ticket: &Pubkey,
         vault_token_account: &Pubkey,
         slasher_token_account: &Pubkey,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1444,6 +1480,7 @@ impl VaultProgramClient {
                 vault_ncn_slasher_operator_ticket,
                 vault_token_account,
                 slasher_token_account,
+                token_program,
                 amount,
             )],
             Some(&slasher.pubkey()),

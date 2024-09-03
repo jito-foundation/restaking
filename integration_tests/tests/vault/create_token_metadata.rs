@@ -15,6 +15,8 @@ mod tests {
     async fn test_create_token_metadata_ok() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let (
@@ -24,7 +26,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
@@ -66,6 +68,8 @@ mod tests {
     async fn test_create_token_metadata_wrong_vrt_mint_fails() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let (
@@ -75,13 +79,13 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
         let random_mint = Keypair::new();
         vault_program_client
-            .create_token_mint(&random_mint)
+            .create_token_mint(&random_mint, &token_program)
             .await
             .unwrap();
 
@@ -117,6 +121,8 @@ mod tests {
     async fn test_create_token_metadata_wrong_metadata_fails() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let (
@@ -126,7 +132,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
@@ -159,6 +165,8 @@ mod tests {
     async fn test_wrong_admin_signed() {
         let fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         let mut vault_program_client = fixture.vault_program_client();
 
         let (
@@ -168,7 +176,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 

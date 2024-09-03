@@ -12,6 +12,8 @@ mod tests {
     async fn test_slash_ok() {
         let mut fixture = TestBuilder::new().await;
 
+        let token_program = spl_token::id();
+
         const MAX_SLASH_AMOUNT: u64 = 100;
         const MINT_AMOUNT: u64 = 100_000;
         const DELEGATION_AMOUNT: u64 = 10_000;
@@ -32,6 +34,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -43,11 +46,22 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -84,7 +98,7 @@ mod tests {
         // configure slasher and slash
         let slasher = &slashers_amounts[0].0;
         fixture
-            .create_ata(&vault.supported_mint, &slasher.pubkey())
+            .create_ata(&vault.supported_mint, &slasher.pubkey(), &token_program)
             .await
             .unwrap();
         let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
@@ -122,6 +136,7 @@ mod tests {
                 &ncn_root.ncn_pubkey,
                 &slasher,
                 &operator_root.operator_pubkey,
+                &token_program,
                 MAX_SLASH_AMOUNT,
             )
             .await
