@@ -1,6 +1,8 @@
 ---
 title: Vault Program Accounts
 mermaid: true
+category: Jekyll
+layout: post
 ---
 
 ## 1. About the program

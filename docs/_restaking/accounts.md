@@ -1,6 +1,8 @@
 ---
 title: Restaking Program
 mermaid: true
+category: Jekyll
+layout: post
 ---
 
 ## 1. About the program
