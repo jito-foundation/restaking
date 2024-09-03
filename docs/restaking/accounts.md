@@ -18,9 +18,9 @@ entities in the system.
 
 ![Restaking Accounts](restaking_accounts.png)
 
-## 2. Node Consensus Network (NCN)
+## 2. Ncn
 
-NCN are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
+NCN (Node Consensus Network) are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
 other services that require a staking mechanism for security.
 
 NCN can be registered through the restaking program.
@@ -43,7 +43,7 @@ Operators can register through the restaking program and configure several varia
 - Change voter keys
 - Withdraw funds sent to the operator from rewards, airdrops, and other sources.
 
-## 4.1. NCNOperatorState
+## 4.1. NcnOperatorState
 
 This state represents the mutual opt-in relationship between an NCN and an Operator. The NCN initializes this state. After created, the NCN and operator can both warm-up and cooldown the state to show support for each other.
 
@@ -60,7 +60,7 @@ graph TD
     Operator -->|Updates| NcnOperatorState
 ```
 
-## 4.2. NCNVaultTicket
+## 4.2. NcnVaultTicket
 
 This ticket represents the relationship between an NCN and a Vault. It is created by the NCN to opt in to work with a Vault.
 
@@ -90,7 +90,7 @@ graph TD
     Operator -.->|Opts in| Vault
 ```
 
-## 4.4. NCNVaultSlasherTicket
+## 4.4. NcnVaultSlasherTicket
 
 This ticket represents the slashing relationship between an NCN and a Vault. The NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
 
