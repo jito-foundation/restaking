@@ -19,7 +19,7 @@ entities in the system.
 
 ## 2. Diagram
 
-![Restaking Accounts](../assets/restaking_accounts.png)
+![Restaking Accounts](/assets/jekyll-gitbook/restaking_accounts.png)
 
 ## 2. Ncn
 
