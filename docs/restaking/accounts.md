@@ -1,5 +1,6 @@
 ---
 title: Restaking Program
+mermaid: true
 ---
 
 ## 1. About the program

@@ -1,5 +1,6 @@
 ---
 title: Vault Program Accounts
+mermaid: true
 ---
 
 ## 1. About the program
