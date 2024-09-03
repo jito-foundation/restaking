@@ -5,5 +5,22 @@ url: "https://docs.restaking.jito.network"
 
 remote_theme: sighingnow/jekyll-gitbook
 
-# markdown: kramdown
-# syntax_highlighter_style: colorful
+markdown: kramdown
+syntax_highlighter_style: colorful
+
+toc:
+    enabled: true
+
+collections:
+  pages:
+    output: true
+    permalink: /:collection/:path/
+  others:
+    output: true
+    permalink: /:collection/:path/
+
+ordered_collections:
+  - restaking
+  - vault
+  - tools
+  - advanced
