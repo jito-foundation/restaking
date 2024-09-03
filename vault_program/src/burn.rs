@@ -83,7 +83,7 @@ pub fn process_burn(
     // Burn the VRT tokens from the staker's account
     invoke(
         &burn(
-            &spl_token::id(),
+            token_program.key,
             staker_vrt_token_account.key,
             vrt_mint.key,
             staker.key,
@@ -99,7 +99,7 @@ pub fn process_burn(
     // Transfer the assets from the staker to the vault fee account
     invoke(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             staker_vrt_token_account.key,
             vault_fee_token_account.key,
             staker.key,
@@ -120,7 +120,7 @@ pub fn process_burn(
     drop(vault_data);
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             vault_token_account.key,
             staker_token_account.key,
             vault_info.key,

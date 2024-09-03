@@ -117,7 +117,7 @@ pub fn process_enqueue_withdrawal(
     // by the VaultStakerWithdrawalTicket
     invoke(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             staker_vrt_token_account.key,
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,

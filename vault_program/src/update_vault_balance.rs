@@ -50,7 +50,7 @@ pub fn process_update_vault_balance(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                &token_program.key,
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

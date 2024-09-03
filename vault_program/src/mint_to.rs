@@ -77,7 +77,7 @@ pub fn process_mint(
     {
         invoke(
             &transfer(
-                &spl_token::id(),
+                token_program.key,
                 depositor_token_account.key,
                 vault_token_account.key,
                 depositor.key,
@@ -102,7 +102,7 @@ pub fn process_mint(
     {
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 depositor_vrt_token_account.key,
                 vault_info.key,
@@ -119,7 +119,7 @@ pub fn process_mint(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

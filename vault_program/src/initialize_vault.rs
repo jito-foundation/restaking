@@ -80,7 +80,7 @@ pub fn process_initialize_vault(
 
         invoke(
             &spl_token::instruction::initialize_mint2(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 vault.key,
                 None,

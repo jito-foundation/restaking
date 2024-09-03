@@ -46,7 +46,10 @@ use spl_token::{
     state::{Account as SPLTokenAccount, Mint},
 };
 
-use crate::fixtures::{TestError, TestResult};
+use crate::{
+    fixtures::{TestError, TestResult},
+    helpers::token,
+};
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
@@ -1536,7 +1539,11 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn create_token_mint(
+        &mut self,
+        mint: &Keypair,
+        token_program: &Pubkey,
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
         self.banks_client
@@ -1548,10 +1555,10 @@ impl VaultProgramClient {
                             &mint.pubkey(),
                             rent.minimum_balance(Mint::LEN),
                             Mint::LEN as u64,
-                            &spl_token::id(),
+                            token_program,
                         ),
                         initialize_mint2(
-                            &spl_token::id(),
+                            token_program,
                             &mint.pubkey(),
                             &self.payer.pubkey(),
                             None,
@@ -1569,7 +1576,12 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn create_ata(&mut self, mint: &Pubkey, owner: &Pubkey) -> Result<(), TestError> {
+    pub async fn create_ata(
+        &mut self,
+        mint: &Pubkey,
+        owner: &Pubkey,
+        token_program: &Pubkey,
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
@@ -1578,7 +1590,7 @@ impl VaultProgramClient {
                         &self.payer.pubkey(),
                         owner,
                         mint,
-                        &spl_token::id(),
+                        token_program,
                     )],
                     Some(&self.payer.pubkey()),
                     &[&self.payer],
@@ -1595,6 +1607,7 @@ impl VaultProgramClient {
         &mut self,
         mint: &Pubkey,
         to: &Pubkey,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1606,10 +1619,10 @@ impl VaultProgramClient {
                             &self.payer.pubkey(),
                             to,
                             mint,
-                            &spl_token::id(),
+                            token_program,
                         ),
                         spl_token::instruction::mint_to(
-                            &spl_token::id(),
+                            token_program,
                             mint,
                             &get_associated_token_address(to, mint),
                             &self.payer.pubkey(),
@@ -1650,6 +1663,7 @@ impl VaultProgramClient {
         &mut self,
         vault: &Pubkey,
         rewarder: &Keypair,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<(), BanksClientError> {
         let vault_account = self.get_vault(vault).await.unwrap();
@@ -1669,10 +1683,10 @@ impl VaultProgramClient {
                             &rewarder.pubkey(),
                             &vault_token_account,
                             &vault_account.supported_mint,
-                            &spl_token::id(),
+                            token_program,
                         ),
                         spl_token::instruction::transfer(
-                            &spl_token::id(),
+                            token_program,
                             &rewarder_token_account,
                             &vault_token_account,
                             &rewarder.pubkey(),

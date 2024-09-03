@@ -167,7 +167,7 @@ pub fn process_slash(
     drop(vault_data);
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            &token_program.key,
             vault_token_account.key,
             slasher_token_account.key,
             vault_info.key,

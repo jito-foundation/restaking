@@ -49,6 +49,7 @@ pub fn process_ncn_withdraw_asset(
         ncn_info,
         ncn_token_account,
         receiver_token_account,
+        token_program,
         &ncn_seeds_slice,
         amount,
     )?;
@@ -60,12 +61,13 @@ fn _withdraw_ncn_asset<'a, 'info>(
     ncn: &'a AccountInfo<'info>,
     ncn_token_account: &'a AccountInfo<'info>,
     receiver_token_account: &'a AccountInfo<'info>,
+    token_program: &'a AccountInfo<'info>,
     seeds: &[&[u8]],
     amount: u64,
 ) -> ProgramResult {
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             ncn_token_account.key,
             receiver_token_account.key,
             ncn.key,

@@ -95,7 +95,7 @@ pub fn process_burn_withdrawal_ticket(
     // transfer fee to fee wallet
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             vault_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -112,7 +112,7 @@ pub fn process_burn_withdrawal_ticket(
     // burn the VRT tokens
     invoke_signed(
         &burn(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             vrt_mint.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -130,7 +130,7 @@ pub fn process_burn_withdrawal_ticket(
     // close token account
     invoke_signed(
         &close_account(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -152,7 +152,7 @@ pub fn process_burn_withdrawal_ticket(
     drop(vault_data); // avoid double borrow
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             vault_token_account.key,
             staker_token_account.key,
             vault_info.key,

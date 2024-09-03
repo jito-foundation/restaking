@@ -1,5 +1,5 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::loader::{load_associated_token_account, load_signer};
+use jito_jsm_core::loader::{load_associated_token_account, load_signer, load_token_program};
 use jito_restaking_core::operator::Operator;
 use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
@@ -14,7 +14,7 @@ pub fn process_operator_withdrawal_asset(
     token_mint: Pubkey,
     amount: u64,
 ) -> ProgramResult {
-    let [operator_info, operator_withdraw_admin, operator_token_account, receiver_token_account, _token_program] =
+    let [operator_info, operator_withdraw_admin, operator_token_account, receiver_token_account, token_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -30,6 +30,7 @@ pub fn process_operator_withdrawal_asset(
         &operator.withdrawal_fee_wallet,
         &token_mint,
     )?;
+    load_token_program(token_program)?;
 
     // The Operator withdraw admin shall be the signer of the transaction
     if operator.withdrawal_admin.ne(operator_withdraw_admin.key) {
@@ -47,6 +48,7 @@ pub fn process_operator_withdrawal_asset(
         operator_info,
         operator_token_account,
         receiver_token_account,
+        token_program,
         &ncn_seeds_slice,
         amount,
     )?;
@@ -58,12 +60,13 @@ fn _withdraw_operator_asset<'a, 'info>(
     operator: &'a AccountInfo<'info>,
     operator_token_account: &'a AccountInfo<'info>,
     receiver_token_account: &'a AccountInfo<'info>,
+    token_program: &'a AccountInfo<'info>,
     seeds: &[&[u8]],
     amount: u64,
 ) -> ProgramResult {
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            token_program.key,
             operator_token_account.key,
             receiver_token_account.key,
             operator.key,

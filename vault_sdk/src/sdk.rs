@@ -38,6 +38,7 @@ pub fn initialize_vault(
     token_mint: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
+    token_program: &Pubkey,
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
@@ -50,8 +51,8 @@ pub fn initialize_vault(
         AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*base, true),
+        AccountMeta::new_readonly(*token_program, false),
         AccountMeta::new_readonly(system_program::id(), false),
-        AccountMeta::new_readonly(spl_token::id(), false),
     ];
     Instruction {
         program_id: *program_id,
@@ -163,6 +164,7 @@ pub fn mint_to(
     depositor_vrt_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
     mint_signer: Option<&Pubkey>,
+    token_program: &Pubkey,
     amount_in: u64,
     min_amount_out: u64,
 ) -> Instruction {
@@ -175,7 +177,7 @@ pub fn mint_to(
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*depositor_vrt_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(*token_program, false),
     ];
     if let Some(signer) = mint_signer {
         accounts.push(AccountMeta::new_readonly(*signer, true));
@@ -204,6 +206,7 @@ pub fn burn(
     staker_vrt_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
     burn_signer: Option<&Pubkey>,
+    token_program: &Pubkey,
     amount_in: u64,
     min_amount_out: u64,
 ) -> Instruction {
@@ -216,7 +219,7 @@ pub fn burn(
         AccountMeta::new(*staker_token_account, false),
         AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(*token_program, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     if let Some(signer) = burn_signer {
@@ -551,6 +554,7 @@ pub fn slash(
     vault_ncn_slasher_operator_ticket: &Pubkey,
     vault_token_account: &Pubkey,
     slasher_token_account: &Pubkey,
+    token_program: &Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -569,7 +573,7 @@ pub fn slash(
         AccountMeta::new(*vault_ncn_slasher_operator_ticket, false),
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*slasher_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
@@ -588,6 +592,7 @@ pub fn enqueue_withdraw(
     staker: &Pubkey,
     staker_vrt_token_account: &Pubkey,
     base: &Pubkey,
+    token_program: &Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -598,7 +603,7 @@ pub fn enqueue_withdraw(
         AccountMeta::new(*staker, true),
         AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new_readonly(*base, true),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(*token_program, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
@@ -622,6 +627,7 @@ pub fn burn_withdrawal_ticket(
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
+    token_program: &Pubkey,
     min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -634,7 +640,7 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(*token_program, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
