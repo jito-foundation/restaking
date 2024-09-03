@@ -11,7 +11,7 @@ The vault program manages the vault receipt tokens (VRTs) and associated deposit
 
 ## 2. Diagram
 
-![Vault Accounts](../assets/images/vault_accounts.png)
+![Vault Accounts](/assets/images/vault_accounts.png)
 
 ## 3. Accounts
 
