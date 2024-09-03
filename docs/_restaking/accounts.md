@@ -1,5 +1,5 @@
 ---
-title: Restaking Program
+title: Restaking Program Accounts
 mermaid: true
 category: Jekyll
 layout: post
@@ -19,7 +19,7 @@ entities in the system.
 
 ## 2. Diagram
 
-![Restaking Accounts](/assets/jekyll-gitbook/restaking_accounts.png)
+![Restaking Accounts](../assets/images/restaking_accounts.png)
 
 ## 2. Ncn
 
