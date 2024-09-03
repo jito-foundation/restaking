@@ -19,7 +19,7 @@ entities in the system.
 
 ## 2. Diagram
 
-![Restaking Accounts](restaking_accounts.png)
+![Restaking Accounts](../assets/restaking_accounts.png)
 
 ## 2. Ncn
 

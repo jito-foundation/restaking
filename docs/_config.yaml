@@ -12,6 +12,9 @@ toc:
     enabled: true
 
 collections:
+  about:
+    output: true
+    permalink: /:collection/:path/
   restaking:
     output: true
     permalink: /:collection/:path/
@@ -26,6 +29,7 @@ collections:
     permalink: /:collection/:path/
 
 ordered_collections:
+  - about
   - restaking
   - vault
   - tools

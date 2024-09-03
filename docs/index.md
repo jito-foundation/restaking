@@ -1,5 +1,7 @@
 ---
 title: Jito (Re)staking
+category: Jekyll
+layout: home
 ---
 
 Jito (Re)staking is a multi-asset staking protocol for node consensus networks. The protocol tokenizes staked assets as
@@ -21,27 +23,9 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 | Devnet  | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
 | Devnet  | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
 
-## Core Concepts
-
-Understanding these core concepts will help you navigate the Jito Restaking ecosystem:
-
-- [Terminology](terminology.md)
-
-## Restaking
-
-- [Restaking Program Accounts](restaking/accounts.md)
-- [Restaking Program Theory Of Operation](restaking/theory_of_operation.md)
-- [Building an Node Consensus Network](advanced/building_ncn.md)
-
-## Vault
-
-- [Vault Program Accounts](vault/accounts.md)
-- [Vault Program Theory Of Operation](vault/theory_of_operation.md)
-
 ## Developers
 
 - [API](api/jito_jsm_core/index.html)
-- [Jito CLI](tools/cli.md)
 
 ## License
 
