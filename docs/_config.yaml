@@ -11,6 +11,12 @@ syntax_highlighter_style: colorful
 toc:
     enabled: true
 
+assets:
+  dirname: assets
+  baseurl: /assets/
+  sources:
+    - assets
+
 collections:
   about:
     output: true
