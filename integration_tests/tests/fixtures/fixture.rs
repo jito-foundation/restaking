@@ -12,7 +12,8 @@ use solana_sdk::{
     transaction::Transaction,
 };
 use spl_associated_token_account::{
-    get_associated_token_address, instruction::create_associated_token_account_idempotent,
+    get_associated_token_address_with_program_id,
+    instruction::create_associated_token_account_idempotent,
 };
 use spl_token::state::{Account, Mint};
 
@@ -128,10 +129,10 @@ impl TestBuilder {
                             mint,
                             token_program,
                         ),
-                        spl_token::instruction::mint_to(
+                        spl_token_2022::instruction::mint_to(
                             token_program,
                             mint,
-                            &get_associated_token_address(to, mint),
+                            &get_associated_token_address_with_program_id(to, mint, token_program),
                             &self.context.payer.pubkey(),
                             &[],
                             amount,

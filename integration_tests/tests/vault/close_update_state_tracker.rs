@@ -324,7 +324,7 @@ mod tests {
             .map(|root| root.operator_pubkey)
             .collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys)
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys, &token_program)
             .await
             .unwrap();
         let vault = vault_program_client
@@ -340,7 +340,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys)
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys, &token_program)
             .await
             .unwrap();
         let vault = vault_program_client

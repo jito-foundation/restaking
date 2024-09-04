@@ -15,7 +15,7 @@ use solana_program::{
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::instruction::{mint_to, transfer};
+use spl_token_2022::instruction::{mint_to, transfer};
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///

@@ -7,7 +7,7 @@ mod tests {
         signature::{Keypair, Signer},
         transaction::TransactionError,
     };
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account::get_associated_token_address_with_program_id;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
@@ -74,9 +74,10 @@ mod tests {
             .unwrap();
 
         let vault_vrt_account = fixture
-            .get_token_account(&get_associated_token_address(
+            .get_token_account(&get_associated_token_address_with_program_id(
                 &depositor.pubkey(),
                 &vault.vrt_mint,
+                &token_program,
             ))
             .await
             .unwrap();
@@ -86,9 +87,10 @@ mod tests {
         );
 
         let vault_fee_account = fixture
-            .get_token_account(&get_associated_token_address(
+            .get_token_account(&get_associated_token_address_with_program_id(
                 &vault.fee_wallet,
                 &vault.vrt_mint,
+                &token_program,
             ))
             .await
             .unwrap();
@@ -112,7 +114,11 @@ mod tests {
             .map(|root| root.operator_pubkey)
             .collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -199,7 +205,11 @@ mod tests {
             .map(|root| root.operator_pubkey)
             .collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 

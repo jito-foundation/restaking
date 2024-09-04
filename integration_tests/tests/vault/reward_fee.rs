@@ -64,7 +64,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -74,7 +78,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -142,7 +146,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -152,7 +160,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -220,7 +228,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -230,7 +242,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -306,7 +318,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -329,7 +345,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -339,7 +359,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 

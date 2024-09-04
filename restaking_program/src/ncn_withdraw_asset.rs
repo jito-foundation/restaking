@@ -6,7 +6,6 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
-use spl_token::instruction::transfer;
 
 pub fn process_ncn_withdraw_asset(
     program_id: &Pubkey,
@@ -65,8 +64,9 @@ fn _withdraw_ncn_asset<'a, 'info>(
     seeds: &[&[u8]],
     amount: u64,
 ) -> ProgramResult {
+    //TODO move to transfer checked?
     invoke_signed(
-        &transfer(
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             ncn_token_account.key,
             receiver_token_account.key,

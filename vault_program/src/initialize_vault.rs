@@ -25,7 +25,7 @@ pub fn process_initialize_vault(
     reward_fee_bps: u16,
     decimals: u8,
 ) -> ProgramResult {
-    let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
+    let [config, vault, vrt_mint, mint, admin, base, token_program, system_program] = accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -79,7 +79,7 @@ pub fn process_initialize_vault(
         )?;
 
         invoke(
-            &spl_token::instruction::initialize_mint2(
+            &spl_token_2022::instruction::initialize_mint2(
                 token_program.key,
                 vrt_mint.key,
                 vault.key,

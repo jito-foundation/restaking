@@ -7,7 +7,7 @@ mod tests {
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::{signature::Keypair, signer::Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account::get_associated_token_address_with_program_id;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
@@ -84,6 +84,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -178,6 +179,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -205,6 +207,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -316,6 +319,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -327,6 +331,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -348,9 +353,10 @@ mod tests {
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
 
         let depositor_token_account = fixture
-            .get_token_account(&get_associated_token_address(
+            .get_token_account(&get_associated_token_address_with_program_id(
                 &depositor.pubkey(),
                 &vault.supported_mint,
+                &token_program,
             ))
             .await
             .unwrap();
@@ -432,6 +438,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -468,6 +475,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -487,6 +495,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -496,9 +505,10 @@ mod tests {
             .await
             .unwrap();
         let staker_token_account = fixture
-            .get_token_account(&get_associated_token_address(
+            .get_token_account(&get_associated_token_address_with_program_id(
                 &depositor.pubkey(),
                 &vault.supported_mint,
+                &token_program,
             ))
             .await
             .unwrap();
@@ -590,6 +600,7 @@ mod tests {
             .do_full_vault_update(
                 &vault_root.vault_pubkey,
                 &[operator_roots[0].operator_pubkey],
+                &token_program,
             )
             .await
             .unwrap();
@@ -616,13 +627,29 @@ mod tests {
             .burn_withdrawal_ticket(
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 &vault_root.vault_pubkey,
-                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+                &get_associated_token_address_with_program_id(
+                    &vault_root.vault_pubkey,
+                    &vault.supported_mint,
+                    &token_program,
+                ),
                 &vault.vrt_mint,
                 &random_pubkey,
-                &get_associated_token_address(&random_pubkey, &vault.supported_mint),
+                &get_associated_token_address_with_program_id(
+                    &random_pubkey,
+                    &vault.supported_mint,
+                    &token_program,
+                ),
                 &vault_staker_withdrawal_ticket,
-                &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
-                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+                &get_associated_token_address_with_program_id(
+                    &vault_staker_withdrawal_ticket,
+                    &vault.vrt_mint,
+                    &token_program,
+                ),
+                &get_associated_token_address_with_program_id(
+                    &vault.fee_wallet,
+                    &vault.vrt_mint,
+                    &token_program,
+                ),
                 &token_program,
                 MIN_AMOUNT_OUT,
             )

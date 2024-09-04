@@ -19,8 +19,8 @@ pub enum VaultInstruction {
     #[account(3, name = "token_mint")]
     #[account(4, writable, signer, name = "admin")]
     #[account(5, signer, name = "base")]
-    #[account(6, name = "system_program")]
-    #[account(7, name = "token_program")]
+    #[account(6, name = "token_program")]
+    #[account(7, name = "system_program")]
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,

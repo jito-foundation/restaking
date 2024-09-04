@@ -6,7 +6,6 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
-use spl_token::instruction::transfer;
 
 pub fn process_operator_withdrawal_asset(
     program_id: &Pubkey,
@@ -65,7 +64,8 @@ fn _withdraw_operator_asset<'a, 'info>(
     amount: u64,
 ) -> ProgramResult {
     invoke_signed(
-        &transfer(
+        //TODO: Replace with transfer_checked
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             operator_token_account.key,
             receiver_token_account.key,

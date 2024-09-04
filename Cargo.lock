@@ -2370,7 +2370,7 @@ dependencies = [
  "jito-bytemuck",
  "shank",
  "solana-program",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
  "spl-token-2022 3.0.4",
  "thiserror",
@@ -2400,7 +2400,7 @@ dependencies = [
  "solana-rpc-client",
  "solana-rpc-client-api",
  "solana-sdk",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
  "thiserror",
  "tokio",
@@ -2434,7 +2434,7 @@ dependencies = [
  "jito-restaking-sdk",
  "shank",
  "solana-program",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
  "thiserror",
 ]
@@ -2458,8 +2458,9 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "solana-security-txt",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
+ "spl-token-2022 3.0.4",
  "thiserror",
  "tokio",
 ]
@@ -2481,8 +2482,9 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "solana-security-txt",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
+ "spl-token-2022 3.0.4",
  "thiserror",
  "tokio",
 ]
@@ -2541,7 +2543,7 @@ dependencies = [
  "jito-vault-sdk",
  "shank",
  "solana-program",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
  "thiserror",
 ]
@@ -2563,8 +2565,9 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "solana-security-txt",
- "spl-associated-token-account",
+ "spl-associated-token-account 3.0.4",
  "spl-token",
+ "spl-token-2022 3.0.4",
  "thiserror",
  "tokio",
 ]
@@ -5283,7 +5286,7 @@ dependencies = [
  "serde_json",
  "solana-account-decoder",
  "solana-sdk",
- "spl-associated-token-account",
+ "spl-associated-token-account 2.3.0",
  "spl-memo",
  "spl-token",
  "spl-token-2022 1.0.0",
@@ -5459,6 +5462,22 @@ dependencies = [
  "solana-program",
  "spl-token",
  "spl-token-2022 1.0.0",
+ "thiserror",
+]
+
+[[package]]
+name = "spl-associated-token-account"
+version = "3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "143109d789171379e6143ef23191786dfaac54289ad6e7917cfb26b36c432b10"
+dependencies = [
+ "assert_matches",
+ "borsh 1.5.1",
+ "num-derive 0.4.2",
+ "num-traits",
+ "solana-program",
+ "spl-token",
+ "spl-token-2022 3.0.4",
  "thiserror",
 ]
 

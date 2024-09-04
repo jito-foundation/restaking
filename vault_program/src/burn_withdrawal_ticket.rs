@@ -15,7 +15,7 @@ use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
-use spl_token::instruction::{burn, close_account, transfer};
+use spl_token_2022::instruction::{burn, close_account, transfer};
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///

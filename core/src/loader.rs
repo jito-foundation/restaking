@@ -3,7 +3,7 @@ use solana_program::{
     account_info::AccountInfo, msg, program_error::ProgramError, program_pack::Pack,
     pubkey::Pubkey, system_program,
 };
-use spl_associated_token_account::get_associated_token_address;
+use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token::state::Mint;
 
 /// Loads the account as a signer, returning an error if it is not or if it is not writable while
@@ -113,7 +113,8 @@ pub fn load_associated_token_account(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let associated_token_account = get_associated_token_address(owner, mint);
+    let associated_token_account =
+        get_associated_token_address_with_program_id(owner, mint, token_account.owner);
     if token_account.key.ne(&associated_token_account) {
         msg!("Account is not the associated token account");
         return Err(ProgramError::InvalidAccountData);

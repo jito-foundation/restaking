@@ -16,7 +16,7 @@ use solana_program::{
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::instruction::{burn, transfer};
+use spl_token_2022::instruction::{burn, transfer};
 
 /// Burns the specified amount of tokens from the staker's account and transfers the corresponding amount of VRT tokens to the vault's fee wallet.
 ///
