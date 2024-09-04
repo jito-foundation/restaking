@@ -1,5 +1,5 @@
 ---
-title: Jito (Re)Staking CLI
+title: CLI
 category: Jekyll
 layout: post
 weight: 1
