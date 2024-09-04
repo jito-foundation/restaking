@@ -34,8 +34,14 @@ collections:
     output: true
     permalink: /:collection/:path/
     sort_by: weight
+  tools:
+    output: true
+    permalink: /:collection/:path/
+    sort_by: weight
+
 ordered_collections:
   - about
   - restaking
   - vault
+  - tools
   - advanced

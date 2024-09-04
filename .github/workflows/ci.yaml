@@ -41,7 +41,7 @@ jobs:
       - name: cargo build
         run: cargo b -r
       - name: Generate the CLI markdown
-        run: ./target/release/jito-restaking-cli --markdown-help > ./docs/tools/cli.md
+        run: ./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/cli.md
       - name: Verify no CLI files changes
         uses: tj-actions/verify-changed-files@v20
         with:
