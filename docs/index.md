@@ -14,10 +14,12 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 
 ### Addresses
 
-| Network | Program   | Address                                      |
-|---------|-----------|----------------------------------------------|
-| Testnet | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng |
-| Testnet | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx |
+| Network | Program   | Address                                      | Version |
+|---------|-----------|----------------------------------------------|---------|
+| Testnet | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
+| Testnet | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
+| Devnet  | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
+| Devnet  | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
 
 ## Core Concepts
 
