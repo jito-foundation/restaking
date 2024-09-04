@@ -2,7 +2,7 @@
 title: Restaking Theory of Operation
 category: Jekyll
 layout: post
-weight: 2
+weight: 1
 ---
 
 # 1. Introduction
