@@ -5,18 +5,23 @@ mod tests {
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::assert_vault_error,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_ok() {
+    async fn test_crank_vault_update_state_tracker_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -126,11 +131,14 @@ mod tests {
         assert_eq!(operator_delegation.last_update_slot(), slot);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_multiple_operators_ok() {
+    async fn test_crank_vault_update_state_tracker_multiple_operators_ok(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -235,11 +243,14 @@ mod tests {
         );
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_same_index_twice_fails() {
+    async fn test_crank_vault_update_state_tracker_same_index_twice_fails(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -326,11 +337,12 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_skip_zero_fails() {
+    async fn test_crank_vault_update_state_tracker_skip_zero_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -409,11 +421,12 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_skip_index_fails() {
+    async fn test_crank_vault_update_state_tracker_skip_index_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -500,11 +513,14 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_partial_update_previous_epoch_ok() {
+    async fn test_crank_vault_update_state_tracker_partial_update_previous_epoch_ok(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;

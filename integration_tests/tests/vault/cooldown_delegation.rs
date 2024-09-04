@@ -2,18 +2,23 @@
 mod tests {
     use jito_vault_core::{config::Config, vault_operator_delegation::VaultOperatorDelegation};
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::assert_vault_error,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cooldown_delegation_invalid_admin_fails() {
+    async fn test_cooldown_delegation_invalid_admin_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -56,11 +61,12 @@ mod tests {
         assert_vault_error(result, VaultError::VaultDelegationAdminInvalid);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cooldown_delegation_too_much_fails() {
+    async fn test_cooldown_delegation_too_much_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -106,11 +112,12 @@ mod tests {
         assert_vault_error(result, VaultError::VaultSecurityUnderflow);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cooldown_delegation_vault_needs_updating_fails() {
+    async fn test_cooldown_delegation_vault_needs_updating_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -166,11 +173,12 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateNeeded);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cooldown_delegation_vault_withdrawal_ok() {
+    async fn test_cooldown_delegation_vault_withdrawal_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -251,11 +259,12 @@ mod tests {
         );
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cooldown_delegation_vault_ok() {
+    async fn test_cooldown_delegation_vault_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;

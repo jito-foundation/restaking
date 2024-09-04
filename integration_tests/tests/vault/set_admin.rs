@@ -2,6 +2,7 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
+    use rstest::rstest;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -10,10 +11,8 @@ mod tests {
         vault_client::{assert_vault_error, VaultProgramClient, VaultRoot},
     };
 
-    async fn setup() -> (VaultProgramClient, Pubkey, Keypair) {
+    async fn setup(token_program: Pubkey) -> (VaultProgramClient, Pubkey, Keypair) {
         let fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -40,9 +39,12 @@ mod tests {
         (vault_program_client, vault_pubkey, vault_admin)
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_admin_with_bad_admin() {
-        let (mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
+    async fn test_set_admin_with_bad_admin(#[case] token_program: Pubkey) {
+        let (mut vault_program_client, vault_pubkey, vault_admin) = setup(token_program).await;
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
@@ -63,9 +65,12 @@ mod tests {
         assert_vault_error(response, VaultError::VaultAdminInvalid);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_admin() {
-        let (mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
+    async fn test_set_admin(#[case] token_program: Pubkey) {
+        let (mut vault_program_client, vault_pubkey, vault_admin) = setup(token_program).await;
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
@@ -83,9 +88,12 @@ mod tests {
         assert_eq!(vault.admin, new_admin.pubkey());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_update_secondary_admin() {
-        let (mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
+    async fn test_update_secondary_admin(#[case] token_program: Pubkey) {
+        let (mut vault_program_client, vault_pubkey, vault_admin) = setup(token_program).await;
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();

@@ -4,15 +4,20 @@ mod tests {
         config::Config, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
         vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     };
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_slash_ok() {
+    async fn test_slash_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         const MAX_SLASH_AMOUNT: u64 = 100;
         const MINT_AMOUNT: u64 = 100_000;

@@ -2,6 +2,7 @@
 mod tests {
     use jito_vault_core::{config::Config, MAX_FEE_BPS};
     use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
+    use rstest::rstest;
     use solana_sdk::{
         pubkey::Pubkey,
         signature::{Keypair, Signer},
@@ -15,13 +16,12 @@ mod tests {
 
     async fn setup_test_vault(
         fixture: &mut TestBuilder,
+        token_program: Pubkey,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
     ) -> Result<(Pubkey, Pubkey, Keypair), TestError> {
         let mut vault_program_client = fixture.vault_program_client();
-
-        let token_program = spl_token::id();
 
         let result = vault_program_client
             .setup_config_and_vault(
@@ -51,8 +51,11 @@ mod tests {
         }
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_with_bad_fees() {
+    async fn test_initialize_vault_with_bad_fees(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = u16::MAX;
@@ -61,6 +64,7 @@ mod tests {
 
         let result = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -70,8 +74,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultFeeCapExceeded);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initial_fee_setup() {
+    async fn test_initial_fee_setup(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
         let deposit_fee_bps = 99;
         let withdrawal_fee_bps = 100;
@@ -79,6 +86,7 @@ mod tests {
 
         let (_, vault_pubkey, _) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -96,8 +104,11 @@ mod tests {
         assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_change_fees_after_two_epochs() {
+    async fn test_change_fees_after_two_epochs(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -106,6 +117,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -152,8 +164,11 @@ mod tests {
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cannot_change_fees_before_epoch_passes() {
+    async fn test_cannot_change_fees_before_epoch_passes(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -162,6 +177,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -188,8 +204,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultFeeChangeTooSoon);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_can_change_fees_after_another_epoch() {
+    async fn test_can_change_fees_after_another_epoch(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -198,6 +217,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -277,8 +297,11 @@ mod tests {
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cannot_change_fees_with_invalid_admin() {
+    async fn test_cannot_change_fees_with_invalid_admin(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -287,6 +310,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, _) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -328,8 +352,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultFeeAdminInvalid);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_regularly() {
+    async fn test_set_fees_regularly(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -338,6 +365,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -382,8 +410,11 @@ mod tests {
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_secondary_admin() {
+    async fn test_set_secondary_admin(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -392,6 +423,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -426,8 +458,11 @@ mod tests {
         assert_eq!(vault.fee_admin, new_admin.pubkey());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_with_old_admin_fails() {
+    async fn test_set_fees_with_old_admin_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -436,6 +471,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -489,8 +525,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultFeeAdminInvalid);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_with_new_admin_succeeds() {
+    async fn test_set_fees_with_new_admin_succeeds(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 99;
@@ -499,6 +538,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -562,8 +602,11 @@ mod tests {
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_larger_than_cap() {
+    async fn test_set_fees_larger_than_cap(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -572,6 +615,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -608,8 +652,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultFeeCapExceeded);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_with_ok_change() {
+    async fn test_set_fees_with_ok_change(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -618,6 +665,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -671,8 +719,11 @@ mod tests {
         assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_with_too_large_change() {
+    async fn test_set_fees_with_too_large_change(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -681,6 +732,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -728,8 +780,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultFeeBumpTooLarge);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_to_max_bump() {
+    async fn test_set_fees_to_max_bump(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -738,6 +793,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -786,8 +842,11 @@ mod tests {
         assert_eq!(updated_vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_fees_to_zero() {
+    async fn test_set_fees_to_zero(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -796,6 +855,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -840,8 +900,11 @@ mod tests {
         assert_eq!(updated_vault.reward_fee_bps(), reward_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_each() {
+    async fn test_set_each(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -850,6 +913,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
@@ -951,8 +1015,11 @@ mod tests {
         assert_eq!(updated_vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_cap_for_each() {
+    async fn test_cap_for_each(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 100;
@@ -961,6 +1028,7 @@ mod tests {
 
         let (config_pubkey, vault_pubkey, vault_admin) = setup_test_vault(
             &mut fixture,
+            token_program,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,

@@ -2,8 +2,10 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
+    use rstest::rstest;
     use solana_sdk::{
         instruction::InstructionError,
+        pubkey::Pubkey,
         signature::{Keypair, Signer},
         transaction::TransactionError,
     };
@@ -14,14 +16,15 @@ mod tests {
         vault_client::VaultStakerWithdrawalTicketRoot,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_enqueue_withdraw_with_fee_success() {
+    async fn test_enqueue_withdraw_with_fee_success(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
         const DEPOSIT_FEE_BPS: u16 = 100;
         const WITHDRAW_FEE_BPS: u16 = 100;
         let min_amount_out: u64 = MINT_AMOUNT * (10_000 - DEPOSIT_FEE_BPS) as u64 / 10_000;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = DEPOSIT_FEE_BPS;
         let withdraw_fee_bps = WITHDRAW_FEE_BPS;
@@ -165,10 +168,11 @@ mod tests {
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), amount_to_dequeue);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_enqueue_withdraw_zero_fails() {
-        let token_program = spl_token::id();
-
+    async fn test_enqueue_withdraw_zero_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,

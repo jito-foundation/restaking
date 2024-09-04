@@ -1,15 +1,20 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_reward_fee() {
+    async fn test_reward_fee(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         const MINT_AMOUNT: u64 = 100_000;
 
@@ -87,11 +92,12 @@ mod tests {
         assert_eq!(MINT_AMOUNT / 10, vault.vrt_supply());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_100_percent_reward_fee() {
+    async fn test_100_percent_reward_fee(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         const MINT_AMOUNT: u64 = 100_000;
 
@@ -169,11 +175,12 @@ mod tests {
         assert_eq!(MINT_AMOUNT, vault.vrt_supply());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_0_percent_reward_fee() {
+    async fn test_0_percent_reward_fee(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         const MINT_AMOUNT: u64 = 100_000;
 
@@ -251,11 +258,12 @@ mod tests {
         assert_eq!(0, vault.vrt_supply());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_reward_with_non_zero_balance() {
+    async fn test_reward_with_non_zero_balance(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         const MINT_AMOUNT: u64 = 100_000;
 

@@ -1,20 +1,25 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::assert_vault_error,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_add_delegation_ok() {
+    async fn test_add_delegation_ok(#[case] token_program: Pubkey) {
         const AMOUNT_IN: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -93,13 +98,14 @@ mod tests {
         assert_eq!(vault.vrt_supply(), AMOUNT_IN);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_add_delegation_over_delegate_fails() {
+    async fn test_add_delegation_over_delegate_fails(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;

@@ -5,6 +5,7 @@ mod tests {
         vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     };
     use jito_vault_sdk::error::VaultError;
+    use rstest::rstest;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::{signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address_with_program_id;
@@ -15,11 +16,12 @@ mod tests {
     };
 
     /// One can't burn the withdraw ticket until a full epoch has passed
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_burn_withdrawal_ticket_same_epoch_fails() {
+    async fn test_burn_withdrawal_ticket_same_epoch_fails(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -110,11 +112,12 @@ mod tests {
     }
 
     /// One can't burn the withdraw ticket until a full epoch has passed
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_burn_withdrawal_ticket_next_epoch_fails() {
+    async fn test_burn_withdrawal_ticket_next_epoch_fails(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -222,11 +225,12 @@ mod tests {
     }
 
     /// Tests basic withdraw ticket with no rewards or slashing incidents
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_burn_withdrawal_ticket_basic_success() {
+    async fn test_burn_withdrawal_ticket_basic_success(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -364,11 +368,12 @@ mod tests {
     }
 
     /// Tests basic withdraw ticket with no rewards or slashing incidents
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_burn_withdrawal_ticket_slippage_fails() {
+    async fn test_burn_withdrawal_ticket_slippage_fails(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -525,12 +530,15 @@ mod tests {
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_burn_withdrawal_ticket_wrong_staker_token_account_fails() {
+    async fn test_burn_withdrawal_ticket_wrong_staker_token_account_fails(
+        #[case] token_program: Pubkey,
+    ) {
         const MINT_AMOUNT: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
-
-        let token_program = spl_token::id();
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;

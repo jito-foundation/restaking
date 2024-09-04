@@ -2,6 +2,7 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
+    use rstest::rstest;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::{
         instruction::InstructionError, signature::Signer, transaction::TransactionError,
@@ -9,11 +10,12 @@ mod tests {
 
     use crate::fixtures::{fixture::TestBuilder, vault_client::VaultRoot};
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_ok() {
+    async fn test_initialize_vault_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -50,11 +52,12 @@ mod tests {
         assert_eq!(token_mint.decimals, 9);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_deposit_fee_bps_too_high() {
+    async fn test_initialize_vault_deposit_fee_bps_too_high(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -100,11 +103,12 @@ mod tests {
         );
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_withdrawal_fee_bps_too_high() {
+    async fn test_initialize_vault_withdrawal_fee_bps_too_high(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -150,11 +154,12 @@ mod tests {
         );
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_with_invalid_reward_fee_bps() {
+    async fn test_initialize_vault_with_invalid_reward_fee_bps(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
-
-        let token_program = spl_token::id();
 
         let mut vault_program_client = fixture.vault_program_client();
 

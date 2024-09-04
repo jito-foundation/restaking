@@ -17,5 +17,4 @@ mod set_capacity;
 mod set_fees;
 mod set_secondary_admin;
 mod slash;
-mod token22;
 mod update_token_metadata;
