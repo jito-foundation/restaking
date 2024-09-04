@@ -114,7 +114,7 @@ impl VaultNcnSlasherTicket {
     /// # Arguments
     /// * `program_id` - The program ID
     /// * `vault_ncn_slasher_ticket` - The [`VaultNcnSlasherTicket`] account
-    /// * `vault` - The [`Vault`] account
+    /// * `vault` - The [`crate::vault::Vault`] account
     /// * `ncn` - The ncn account
     /// * `slasher` - The slasher account
     /// * `expect_writable` - Whether the account should be writable

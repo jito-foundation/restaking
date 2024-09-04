@@ -1,8 +1,11 @@
 ---
-title: Restaking Program
+title: Restaking Accounts
+mermaid: true
+category: Jekyll
+layout: post
 ---
 
-### About the program
+## 1. About the program
 
 The restaking program acts as a registry for NCNs, operators, and relationships between NCNs, operators, and vaults.
 
@@ -14,9 +17,13 @@ It allows users to do the following:
 The restaking program does not store any funds; it is purely used as a registry and relationship manager between
 entities in the system.
 
-### Node Consensus Network (NCN)
+## 2. Diagram
 
-NCN are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
+![Restaking Accounts](/assets/images/restaking_accounts.png)
+
+## 2. Ncn
+
+NCN (Node Consensus Network) are services that provide infrastructure to the network, such as validators, oracles, keepers, bridges, L2s, and
 other services that require a staking mechanism for security.
 
 NCN can be registered through the restaking program.
@@ -28,7 +35,7 @@ There are several things one can do after registering an NCN:
 - Add and remove support for slashers
 - Withdraw funds sent to the NCN from rewards, airdrops, and other sources.
 
-### Operator
+## 3. Operator
 
 Operators are entities responsible for running NCN software.
 
@@ -39,18 +46,7 @@ Operators can register through the restaking program and configure several varia
 - Change voter keys
 - Withdraw funds sent to the operator from rewards, airdrops, and other sources.
 
-### Relationships
-
-The Jito Restaking protocol requires mutual opt-in from all parties entering stake agreements: vaults, operators, and
-NCNs.
-
-It leverages the concept of entity tickets, which are PDAs representing opt-in from one party to another. These tickets
-are created on-chain and can be used to track relationships between NCN, operators, and vaults. In addition to entity
-information, these tickets can store additional data like slot activated/deactivated, slashing conditions, and more.
-
-The tickets are detailed below:
-
-#### NCN Operator State
+## 4.1. NcnOperatorState
 
 This state represents the mutual opt-in relationship between an NCN and an Operator. The NCN initializes this state. After created, the NCN and operator can both warm-up and cooldown the state to show support for each other.
 
@@ -67,7 +63,7 @@ graph TD
     Operator -->|Updates| NcnOperatorState
 ```
 
-#### NCN Vault Ticket
+## 4.2. NcnVaultTicket
 
 This ticket represents the relationship between an NCN and a Vault. It is created by the NCN to opt in to work with a Vault.
 
@@ -82,7 +78,7 @@ graph TD
     NCN -.->|Opts in| Vault
 ```
 
-#### Operator Vault Ticket
+## 4.3. OperatorVaultTicket
 
 This ticket represents the relationship between an Operator and a Vault. It is created by the Operator to opt in to work with a Vault.
 
@@ -97,7 +93,7 @@ graph TD
     Operator -.->|Opts in| Vault
 ```
 
-#### NCN Vault Slasher Ticket
+## 4.4. NcnVaultSlasherTicket
 
 This ticket represents the slashing relationship between an NCN and a Vault. The NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
 

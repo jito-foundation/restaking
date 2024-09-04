@@ -162,7 +162,7 @@ impl VaultNcnSlasherOperatorTicket {
     /// # Arguments
     /// * `program_id` - The program ID
     /// * `vault_ncn_slasher_operator_ticket` - The [`VaultNcnSlasherOperatorTicket`] account
-    /// * `vault` - The [`Vault`] account
+    /// * `vault` - The [`crate::vault::Vault`] account
     /// * `ncn` - The ncn account
     /// * `slasher` - The slasher account
     /// * `operator` - The operator account
