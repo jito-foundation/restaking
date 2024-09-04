@@ -21,16 +21,19 @@ collections:
   about:
     output: true
     permalink: /:collection/:path/
+    sort_by: weight
   restaking:
     output: true
     permalink: /:collection/:path/
+    sort_by: weight
   vault:
     output: true
     permalink: /:collection/:path/
+    sort_by: weight
   advanced:
     output: true
     permalink: /:collection/:path/
-
+    sort_by: weight
 ordered_collections:
   - about
   - restaking

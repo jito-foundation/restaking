@@ -3,6 +3,7 @@ title: Vault Accounts
 mermaid: true
 category: Jekyll
 layout: post
+weight: 1
 ---
 
 ## 1. About the program

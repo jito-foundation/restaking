@@ -2,6 +2,7 @@
 title: Terminology
 category: Jekyll
 layout: post
+weight: 1
 ---
 
 # Terminology
