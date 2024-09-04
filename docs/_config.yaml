@@ -21,6 +21,14 @@ collections:
   pages:
     output: true
     permalink: /:collection/:path/
+    order:
+      - terminology.md
+      - restaking_accounts.md
+      - restaking_theory_of_operation.md
+      - vault_accounts.md
+      - vault_theory_of_operation.md
+      - building_vrt.md
+      - building_ncn.md
 
 ordered_collections:
   - pages
