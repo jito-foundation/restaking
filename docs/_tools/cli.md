@@ -1,7 +1,7 @@
 ---
 title: CLI
 category: Jekyll
-layout: page
+layout: post
 weight: 1
 ---
 
