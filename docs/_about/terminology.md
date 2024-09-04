@@ -1,5 +1,7 @@
 ---
-title: Jito (Re)staking Terminology
+title: Terminology
+category: Jekyll
+layout: post
 ---
 
 # Terminology

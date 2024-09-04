@@ -1,5 +1,5 @@
 ---
-title: Restaking Program - Accounts
+title: Restaking Accounts
 mermaid: true
 category: Jekyll
 layout: post

@@ -1,5 +1,5 @@
 ---
-title: Building a Vault Receipt Token (VRT)
+title: Building a VRT
 category: Jekyll
 layout: post
 ---

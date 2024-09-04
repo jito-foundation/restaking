@@ -1,5 +1,5 @@
 ---
-title: Building a Node Consensus Network (NCN)
+title: Building a NCN
 category: Jekyll
 layout: post
 ---

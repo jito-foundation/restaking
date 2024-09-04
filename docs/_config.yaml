@@ -18,17 +18,21 @@ assets:
     - assets
 
 collections:
-  pages:
+  about:
     output: true
     permalink: /:collection/:path/
-    order:
-      - terminology.md
-      - restaking_accounts.md
-      - restaking_theory_of_operation.md
-      - vault_accounts.md
-      - vault_theory_of_operation.md
-      - building_vrt.md
-      - building_ncn.md
+  restaking:
+    output: true
+    permalink: /:collection/:path/
+  vault:
+    output: true
+    permalink: /:collection/:path/
+  advanced:
+    output: true
+    permalink: /:collection/:path/
 
 ordered_collections:
-  - pages
+  - about
+  - restaking
+  - vault
+  - advanced

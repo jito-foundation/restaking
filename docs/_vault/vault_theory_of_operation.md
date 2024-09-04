@@ -1,5 +1,5 @@
 ---
-title: Vault Program Theory Of Operation
+title: Vault Theory Of Operation
 category: Jekyll
 layout: post
 ---

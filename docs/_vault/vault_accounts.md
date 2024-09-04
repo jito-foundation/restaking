@@ -1,5 +1,5 @@
 ---
-title: Vault Program Accounts
+title: Vault Accounts
 mermaid: true
 category: Jekyll
 layout: post

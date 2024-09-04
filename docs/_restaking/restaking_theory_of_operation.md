@@ -1,5 +1,5 @@
 ---
-title: Restaking Program - Theory Of Operation
+title: Restaking Theory of Operation
 category: Jekyll
 layout: post
 ---
