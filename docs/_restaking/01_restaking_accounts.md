@@ -3,7 +3,6 @@ title: Restaking Accounts
 mermaid: true
 category: Jekyll
 layout: post
-weight: 2
 ---
 
 ## 1. About the program
