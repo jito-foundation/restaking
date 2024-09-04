@@ -275,8 +275,6 @@ impl VaultCliHandler {
             "Creating token metadata transaction: {:?}",
             tx.get_signature()
         );
-        let simulation = rpc_client.simulate_transaction(&tx).await?;
-        info!("Simulation result: {:?}", simulation);
         rpc_client
             .send_and_confirm_transaction(&tx)
             .await
