@@ -269,7 +269,13 @@ impl VaultProgramClient {
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
         let vault_root = self
-            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps, 9)
+            .do_initialize_vault(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                epoch_withdraw_cap_bps,
+                9,
+            )
             .await?;
 
         Ok((config_admin, vault_root))
@@ -280,6 +286,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
         decimals: u8,
     ) -> Result<VaultRoot, TestError> {
         let vault_base = Keypair::new();

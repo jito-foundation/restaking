@@ -238,10 +238,6 @@ impl Vault {
         self.tokens_deposited.into()
     }
 
-    pub fn set_withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) {
-        self.withdrawal_fee_bps = PodU16::from(withdrawal_fee_bps);
-    }
-
     /// Retrieves the current total amount withdrawn for the epoch.
     ///
     /// # Returns
@@ -932,6 +928,16 @@ impl Vault {
             burn_amount: amount_to_burn,
             out_amount: amount_out,
         })
+    }
+
+    /// Calculate the maximum amount of tokens that can be withdrawn from the vault given the VRT
+    /// amount. This is the pro-rata share of the total tokens deposited in the vault.
+    pub fn calculate_assets_returned_amount(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+        (vrt_amount as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .and_then(|result| result.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)
     }
 
     /// Calculates the amount of tokens, denominated in the supported_mint asset,
@@ -1817,6 +1823,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn test_fee_change_after_two_epochs() {
         let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
