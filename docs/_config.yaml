@@ -22,23 +22,23 @@ assets:
 collections:
   about:
     output: true
-    permalink: /:collection/:path/
+    permalink: /:collection/:title/
     sort_by: weight
   restaking:
     output: true
-    permalink: /:collection/:path/
+    permalink: /:collection/:title/
     sort_by: weight
   vault:
     output: true
-    permalink: /:collection/:path/
+    permalink: /:collection/:title/
     sort_by: weight
   advanced:
     output: true
-    permalink: /:collection/:path/
+    permalink: /:collection/:title/
     sort_by: weight
   tools:
     output: true
-    permalink: /:collection/:path/
+    permalink: /:collection/:title/
 
 ordered_collections:
   - about
