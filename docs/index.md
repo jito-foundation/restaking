@@ -8,18 +8,6 @@ Jito (Re)staking is a multi-asset staking protocol for node consensus networks. 
 vault receipt tokens for enhanced liquidity and composability. Node consensus networks can use Jito Restaking to easily
 customize staking parameters, slashing conditions, and economic incentives to tailor their security and tokenomics.
 
-### Key Features
-
-- Universal framework for (re)staking SPL tokens to node consensus networks on Solana and SVM chains.
-- Staked assets are tokenized into Vault Receipt Tokens (VRT)
-- Flexible opt-in from node consensus networks, operators, and vaults for staking and slashing.
-
-### High Level Diagram
-
-![alt text](/assets/images/opt_in.png)
-*Figure: Overview of the Jito Restaking Ecosystem*
-
-
 ### Addresses
 
 | Network | Program   | Address                                      | Version |
@@ -28,7 +16,6 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 | Testnet | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
 | Devnet  | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
 | Devnet  | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
-
 
 ## API Documentation
 
