@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_FEE_BPS};
+use crate::{delegation_state::DelegationState, MAX_EPOCH_WITHDRAW_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -126,10 +126,10 @@ pub struct Vault {
     last_full_state_update_slot: PodU64,
 
     /// The tally of assets withdrawn on that epoch, this cannot be above epoch_snapshot_amount x epoch_withdraw_cap_bps
-    epoch_withdraw_amount: PodU64,
+    epoch_withdraw_supported_token_amount: PodU64,
 
     /// The amount of assets in the vault at the time of calling `process_update_vault`
-    epoch_snapshot_amount: PodU64,
+    epoch_snapshot_supported_token_amount: PodU64,
 
     /// The deposit fee in basis points
     deposit_fee_bps: PodU16,
@@ -137,11 +137,11 @@ pub struct Vault {
     /// The withdrawal fee in basis points
     withdrawal_fee_bps: PodU16,
 
-    /// The percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
-    pub epoch_withdraw_cap_bps: PodU16,
-
     /// Fee for each epoch
     reward_fee_bps: PodU16,
+
+    /// The percentage 25% - 100% (2500 - 10000) that is the max that can be withdrawn from the vault based on a snapshot of assets in the vault at the beginning of an epoch
+    epoch_withdraw_cap_bps: PodU16,
 
     /// The bump seed for the PDA
     pub bump: u8,
@@ -187,8 +187,8 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(0),
             last_full_state_update_slot: PodU64::from(0),
-            epoch_withdraw_amount: PodU64::from(0),
-            epoch_snapshot_amount: PodU64::from(0),
+            epoch_withdraw_supported_token_amount: PodU64::from(0),
+            epoch_snapshot_supported_token_amount: PodU64::from(0),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             reward_fee_bps: PodU16::from(reward_fee_bps),
@@ -226,6 +226,22 @@ impl Vault {
         self.last_full_state_update_slot.into()
     }
 
+    /// Retrieves the current total amount withdrawn for the epoch.
+    ///
+    /// # Returns
+    /// * `u64` - The total amount of tokens withdrawn in the current epoch.
+    pub fn epoch_withdraw_supported_token_amount(&self) -> u64 {
+        self.epoch_withdraw_supported_token_amount.into()
+    }
+
+    /// Retrieves the snapshot of the total amount available for withdrawal at the start of the epoch.
+    ///
+    /// # Returns
+    /// * `u64` - The amount of tokens available for withdrawal at the start of the current epoch.
+    pub fn epoch_snapshot_supported_token_amount(&self) -> u64 {
+        self.epoch_snapshot_supported_token_amount.into()
+    }
+
     pub fn vrt_supply(&self) -> u64 {
         self.vrt_supply.into()
     }
@@ -236,60 +252,6 @@ impl Vault {
 
     pub fn tokens_deposited(&self) -> u64 {
         self.tokens_deposited.into()
-    }
-
-    /// Retrieves the current total amount withdrawn for the epoch.
-    ///
-    /// # Returns
-    /// * `u64` - The total amount of tokens withdrawn in the current epoch.
-    pub fn epoch_withdraw_amount(&self) -> u64 {
-        self.epoch_withdraw_amount.into()
-    }
-
-    /// Resets the total amount withdrawn for the epoch to zero.
-    pub fn clear_epoch_withdraw_amount(&mut self) {
-        self.epoch_withdraw_amount = PodU64::from(0);
-    }
-
-    /// Increases the total amount withdrawn for the epoch by a specified amount.
-    ///
-    /// # Returns
-    /// * `Result<(), VaultError>` - Returns `Ok(())` if the amount is successfully added.
-    ///
-    /// # Errors
-    /// * [`VaultError::VaultOverflow`] - If adding the specified amount causes an overflow.
-    pub fn increment_epoch_withdraw_amount(&mut self, amount: u64) -> Result<(), VaultError> {
-        let mut epoch_withdraw_amount: u64 = self.epoch_withdraw_amount.into();
-        epoch_withdraw_amount = epoch_withdraw_amount
-            .checked_add(amount)
-            .ok_or(VaultError::VaultOverflow)?;
-        self.epoch_withdraw_amount = PodU64::from(epoch_withdraw_amount);
-
-        Ok(())
-    }
-
-    /// Retrieves the snapshot of the total amount available for withdrawal at the start of the epoch.
-    ///
-    /// # Returns
-    /// * `u64` - The amount of tokens available for withdrawal at the start of the current epoch.
-    pub fn epoch_snapshot_amount(&self) -> u64 {
-        self.epoch_snapshot_amount.into()
-    }
-
-    /// Sets the snapshot amount for the current epoch.
-    pub fn set_epoch_snapshot_amount(&mut self, epoch_snapshot_amount: u64) {
-        self.epoch_snapshot_amount = PodU64::from(epoch_snapshot_amount);
-    }
-
-    /// Retrieves the withdrawal cap for the epoch as basis points (bps).
-    ///
-    /// The cap is expressed as a percentage of the `epoch_snapshot_amount`,
-    /// where 10,000 bps equals 100%.
-    ///
-    /// # Returns
-    /// * `u16` - The withdrawal cap in basis points for the current epoch.
-    pub fn epoch_withdraw_cap_bps(&self) -> u16 {
-        self.epoch_withdraw_cap_bps.into()
     }
 
     pub fn increment_tokens_deposited(&mut self, amount: u64) -> Result<(), VaultError> {
@@ -357,6 +319,17 @@ impl Vault {
 
     pub fn reward_fee_bps(&self) -> u16 {
         self.reward_fee_bps.into()
+    }
+
+    /// Retrieves the withdrawal cap for the epoch as basis points (bps).
+    ///
+    /// The cap is expressed as a percentage of the `epoch_snapshot_amount`,
+    /// where 10,000 bps equals 100%.
+    ///
+    /// # Returns
+    /// * `u16` - The withdrawal cap in basis points for the current epoch.
+    pub fn epoch_withdraw_cap_bps(&self) -> u16 {
+        self.epoch_withdraw_cap_bps.into()
     }
 
     pub fn operator_count(&self) -> u64 {
@@ -434,6 +407,36 @@ impl Vault {
 
     pub fn set_vrt_supply(&mut self, vrt_supply: u64) {
         self.vrt_supply = PodU64::from(vrt_supply);
+    }
+
+    /// Resets the total amount withdrawn for the epoch to zero.
+    pub fn clear_epoch_withdraw_supported_token_amount(&mut self) {
+        self.epoch_withdraw_supported_token_amount = PodU64::from(0);
+    }
+
+    /// Increases the total amount withdrawn for the epoch by a specified amount.
+    ///
+    /// # Returns
+    /// * `Result<(), VaultError>` - Returns `Ok(())` if the amount is successfully added.
+    ///
+    /// # Errors
+    /// * [`VaultError::VaultOverflow`] - If adding the specified amount causes an overflow.
+    pub fn increment_epoch_withdraw_supported_token_amount(
+        &mut self,
+        amount: u64,
+    ) -> Result<(), VaultError> {
+        let mut epoch_withdraw_amount: u64 = self.epoch_withdraw_supported_token_amount.into();
+        epoch_withdraw_amount = epoch_withdraw_amount
+            .checked_add(amount)
+            .ok_or(VaultError::VaultOverflow)?;
+        self.epoch_withdraw_supported_token_amount = PodU64::from(epoch_withdraw_amount);
+
+        Ok(())
+    }
+
+    /// Sets the snapshot amount for the current epoch.
+    pub fn set_epoch_snapshot_supported_token_amount(&mut self, epoch_snapshot_amount: u64) {
+        self.epoch_snapshot_supported_token_amount = PodU64::from(epoch_snapshot_amount);
     }
 
     pub fn check_vrt_mint(&self, vrt_mint: &Pubkey) -> Result<(), ProgramError> {
@@ -597,7 +600,7 @@ impl Vault {
 
     /// Checks if a withdrawal is allowed based on the current vault limits.
     ///
-    /// If both `epoch_snapshot_amount` and `last_full_state_update_slot` are zero, this indicates that the vault has not yet recorded any withdrawals or state updates for the current epoch.
+    /// If both `epoch_snapshot_supported_token_amount` and `last_full_state_update_slot` are zero, this indicates that the vault has not yet recorded any withdrawals or state updates for the current epoch.
     /// In this scenario, any withdrawal amount up to the total `max_withdrawable` tokens is allowed because the vault is effectively in an initial state.
     ///
     /// # Returns
@@ -608,8 +611,9 @@ impl Vault {
     /// * [`jito_vault_sdk::error::VaultError::VaultOverflow`] - If any arithmetic operation (addition or multiplication) results in an overflow.
     /// * [`jito_vault_sdk::error::VaultError::VaultWithdrawalLimitExceeded`] - If the requested withdrawal exceeds the allowed limit for the epoch.
     pub fn check_withdrawal_allowed(&self, amount_to_withdraw: u64) -> Result<(), VaultError> {
-        let epoch_snapshot_amount: u64 = self.epoch_snapshot_amount();
-        let last_full_state_update_slot: u64 = self.last_full_state_update_slot();
+        let epoch_withdraw_amount: u128 = self.epoch_withdraw_supported_token_amount().into();
+        let epoch_snapshot_amount: u128 = self.epoch_snapshot_supported_token_amount().into();
+        let last_full_state_update_slot: u128 = self.last_full_state_update_slot().into();
         let max_withdrawable = self.tokens_deposited();
 
         if epoch_snapshot_amount == 0
@@ -618,20 +622,17 @@ impl Vault {
         {
             Ok(())
         } else {
-            let total_withdraw_amount = self
-                .epoch_withdraw_amount()
-                .checked_add(amount_to_withdraw)
+            let total_withdraw_amount = epoch_withdraw_amount
+                .checked_add(amount_to_withdraw as u128)
                 .ok_or(VaultError::VaultOverflow)?;
-            let max_allowed_withdraw = self
-                .epoch_snapshot_amount()
-                .checked_mul(self.epoch_withdraw_cap_bps() as u64)
+            let max_allowed_withdraw = epoch_snapshot_amount
+                .checked_mul(self.epoch_withdraw_cap_bps() as u128)
                 .ok_or(VaultError::VaultOverflow)?
-                .div_ceil(10_000);
+                .div_ceil(MAX_EPOCH_WITHDRAW_BPS as u128);
 
             if total_withdraw_amount <= max_allowed_withdraw {
                 Ok(())
             } else {
-                msg!("VaultWithdrawalLimitExceeded: epoch_snap_shot_amount: {}, last_full_state_update_slot: {}, amount_to_withdraw: {}, max_withdrawable: {}", epoch_snapshot_amount, last_full_state_update_slot, amount_to_withdraw, max_withdrawable);
                 Err(VaultError::VaultWithdrawalLimitExceeded)
             }
         }
@@ -722,6 +723,21 @@ impl Vault {
             return Err(VaultError::VaultFeeCapExceeded);
         }
         self.reward_fee_bps = PodU16::from(reward_fee_bps);
+        Ok(())
+    }
+
+    pub fn set_epoch_withdraw_cap_bps(
+        &mut self,
+        epoch_withdraw_cap_bps: u16,
+    ) -> Result<(), VaultError> {
+        if epoch_withdraw_cap_bps > MAX_EPOCH_WITHDRAW_BPS {
+            msg!(
+                "Epoch withdraw cap exceeds maximum allowed of {}",
+                MAX_EPOCH_WITHDRAW_BPS
+            );
+            return Err(VaultError::VaultEpochWithdrawCapExceeded);
+        }
+        self.epoch_withdraw_cap_bps = PodU16::from(epoch_withdraw_cap_bps);
         Ok(())
     }
 
@@ -1813,8 +1829,8 @@ mod tests {
             2500,
             0,
         );
-        vault.clear_epoch_withdraw_amount();
-        vault.set_epoch_snapshot_amount(1000);
+        vault.clear_epoch_withdraw_supported_token_amount();
+        vault.set_epoch_snapshot_supported_token_amount(1000);
 
         assert!(vault.check_withdrawal_allowed(250).is_ok());
         assert_eq!(

@@ -17,16 +17,16 @@ mod tests {
 
         let mut vault_program_client = fixture.vault_program_client();
 
-    let (
-        _config_admin,
-        VaultRoot {
-            vault_pubkey,
-            vault_admin,
-        },
-    ) = vault_program_client
-        .setup_config_and_vault(99, 100, 0, 0)
-        .await
-        .unwrap();
+        let (
+            _config_admin,
+            VaultRoot {
+                vault_pubkey,
+                vault_admin,
+            },
+        ) = vault_program_client
+            .setup_config_and_vault(99, 100, 0, 0)
+            .await
+            .unwrap();
 
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
 

@@ -93,6 +93,7 @@ export type InitializeVaultInstructionData = {
   depositFeeBps: number;
   withdrawalFeeBps: number;
   rewardFeeBps: number;
+  epochWithdrawCapBps: number;
   decimals: number;
 };
 
@@ -100,6 +101,7 @@ export type InitializeVaultInstructionDataArgs = {
   depositFeeBps: number;
   withdrawalFeeBps: number;
   rewardFeeBps: number;
+  epochWithdrawCapBps: number;
   decimals: number;
 };
 
@@ -110,6 +112,7 @@ export function getInitializeVaultInstructionDataEncoder(): Encoder<InitializeVa
       ['depositFeeBps', getU16Encoder()],
       ['withdrawalFeeBps', getU16Encoder()],
       ['rewardFeeBps', getU16Encoder()],
+      ['epochWithdrawCapBps', getU16Encoder()],
       ['decimals', getU8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: INITIALIZE_VAULT_DISCRIMINATOR })
@@ -122,6 +125,7 @@ export function getInitializeVaultInstructionDataDecoder(): Decoder<InitializeVa
     ['depositFeeBps', getU16Decoder()],
     ['withdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
+    ['epochWithdrawCapBps', getU16Decoder()],
     ['decimals', getU8Decoder()],
   ]);
 }
@@ -157,6 +161,7 @@ export type InitializeVaultInput<
   depositFeeBps: InitializeVaultInstructionDataArgs['depositFeeBps'];
   withdrawalFeeBps: InitializeVaultInstructionDataArgs['withdrawalFeeBps'];
   rewardFeeBps: InitializeVaultInstructionDataArgs['rewardFeeBps'];
+  epochWithdrawCapBps: InitializeVaultInstructionDataArgs['epochWithdrawCapBps'];
   decimals: InitializeVaultInstructionDataArgs['decimals'];
 };
 

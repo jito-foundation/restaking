@@ -115,4 +115,19 @@ mod tests {
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
+
+    #[tokio::test]
+    async fn test_initialize_vault_with_epoch_withdraw_cap_bps() {
+        let fixture = TestBuilder::new().await;
+
+        let mut vault_program_client = fixture.vault_program_client();
+
+        vault_program_client.do_initialize_config().await.unwrap();
+
+        let err = vault_program_client
+            .do_initialize_vault(0, 0, 0, 10001, 9)
+            .await;
+
+        assert_vault_error(err, VaultError::VaultEpochWithdrawCapExceeded);
+    }
 }

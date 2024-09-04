@@ -91,9 +91,12 @@ pub struct Vault {
     pub slasher_count: u64,
     pub last_fee_change_slot: u64,
     pub last_full_state_update_slot: u64,
+    pub epoch_withdraw_supported_token_amount: u64,
+    pub epoch_snapshot_supported_token_amount: u64,
     pub deposit_fee_bps: u16,
     pub withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
+    pub epoch_withdraw_cap_bps: u16,
     pub bump: u8,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
     pub reserved: [u8; 263],

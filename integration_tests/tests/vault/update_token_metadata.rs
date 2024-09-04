@@ -17,26 +17,26 @@ mod tests {
 
         let mut vault_program_client = fixture.vault_program_client();
 
-    let deposit_fee_bps = 99;
-    let withdrawal_fee_bps = 100;
-    let reward_fee_bps = 101;
-    let epoch_withdraw_cap_bps = 102;
+        let deposit_fee_bps = 99;
+        let withdrawal_fee_bps = 100;
+        let reward_fee_bps = 101;
+        let epoch_withdraw_cap_bps = 102;
 
-    let (
-        _config_admin,
-        VaultRoot {
-            vault_pubkey,
-            vault_admin,
-        },
-    ) = vault_program_client
-        .setup_config_and_vault(
-            deposit_fee_bps,
-            withdrawal_fee_bps,
-            reward_fee_bps,
-            epoch_withdraw_cap_bps,
-        )
-        .await
-        .unwrap();
+        let (
+            _config_admin,
+            VaultRoot {
+                vault_pubkey,
+                vault_admin,
+            },
+        ) = vault_program_client
+            .setup_config_and_vault(
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+                epoch_withdraw_cap_bps,
+            )
+            .await
+            .unwrap();
 
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
 

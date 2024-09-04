@@ -29,6 +29,8 @@ pub enum VaultError {
     VaultFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
+    #[error("VaultEpochWithdrawCapExceeded")]
+    VaultEpochWithdrawCapExceeded,
     #[error("VaultFeeChangeTooSoon")]
     VaultFeeChangeTooSoon,
     #[error("VaultFeeBumpTooLarge")]

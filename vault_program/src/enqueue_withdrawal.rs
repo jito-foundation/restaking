@@ -66,8 +66,8 @@ pub fn process_enqueue_withdrawal(
         return Err(VaultError::VaultEnqueueWithdrawalAmountZero.into());
     }
 
-    let amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
-    vault.check_withdrawal_allowed(amount_to_withdraw)?;
+    let supported_token_amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
+    vault.check_withdrawal_allowed(supported_token_amount_to_withdraw)?;
 
     // The VaultStakerWithdrawalTicket shall be at the canonical PDA
     let (
@@ -115,7 +115,7 @@ pub fn process_enqueue_withdrawal(
     );
 
     vault.increment_vrt_enqueued_for_cooldown_amount(vrt_amount)?;
-    vault.increment_epoch_withdraw_amount(amount_to_withdraw)?;
+    vault.increment_epoch_withdraw_supported_token_amount(supported_token_amount_to_withdraw)?;
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket

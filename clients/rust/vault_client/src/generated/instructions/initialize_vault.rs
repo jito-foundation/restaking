@@ -104,6 +104,7 @@ pub struct InitializeVaultInstructionArgs {
     pub deposit_fee_bps: u16,
     pub withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
+    pub epoch_withdraw_cap_bps: u16,
     pub decimals: u8,
 }
 
@@ -132,6 +133,7 @@ pub struct InitializeVaultBuilder {
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
+    epoch_withdraw_cap_bps: Option<u16>,
     decimals: Option<u8>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
@@ -198,6 +200,11 @@ impl InitializeVaultBuilder {
         self
     }
     #[inline(always)]
+    pub fn epoch_withdraw_cap_bps(&mut self, epoch_withdraw_cap_bps: u16) -> &mut Self {
+        self.epoch_withdraw_cap_bps = Some(epoch_withdraw_cap_bps);
+        self
+    }
+    #[inline(always)]
     pub fn decimals(&mut self, decimals: u8) -> &mut Self {
         self.decimals = Some(decimals);
         self
@@ -249,6 +256,10 @@ impl InitializeVaultBuilder {
                 .reward_fee_bps
                 .clone()
                 .expect("reward_fee_bps is not set"),
+            epoch_withdraw_cap_bps: self
+                .epoch_withdraw_cap_bps
+                .clone()
+                .expect("epoch_withdraw_cap_bps is not set"),
             decimals: self.decimals.clone().expect("decimals is not set"),
         };
 
@@ -454,6 +465,7 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
             deposit_fee_bps: None,
             withdrawal_fee_bps: None,
             reward_fee_bps: None,
+            epoch_withdraw_cap_bps: None,
             decimals: None,
             __remaining_accounts: Vec::new(),
         });
@@ -530,6 +542,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
+    pub fn epoch_withdraw_cap_bps(&mut self, epoch_withdraw_cap_bps: u16) -> &mut Self {
+        self.instruction.epoch_withdraw_cap_bps = Some(epoch_withdraw_cap_bps);
+        self
+    }
+    #[inline(always)]
     pub fn decimals(&mut self, decimals: u8) -> &mut Self {
         self.instruction.decimals = Some(decimals);
         self
@@ -591,6 +608,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
                 .reward_fee_bps
                 .clone()
                 .expect("reward_fee_bps is not set"),
+            epoch_withdraw_cap_bps: self
+                .instruction
+                .epoch_withdraw_cap_bps
+                .clone()
+                .expect("epoch_withdraw_cap_bps is not set"),
             decimals: self
                 .instruction
                 .decimals
@@ -644,6 +666,7 @@ struct InitializeVaultCpiBuilderInstruction<'a, 'b> {
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
+    epoch_withdraw_cap_bps: Option<u16>,
     decimals: Option<u8>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
