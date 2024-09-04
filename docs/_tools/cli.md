@@ -1,3 +1,10 @@
+---
+title: Jito (Re)Staking CLI
+category: Jekyll
+layout: post
+weight: 1
+---
+
 # Command-Line Help for `jito-restaking-cli`
 
 This document contains the help content for the `jito-restaking-cli` command-line program.

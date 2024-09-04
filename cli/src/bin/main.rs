@@ -68,7 +68,15 @@ async fn main() -> Result<(), anyhow::Error> {
     let args: Cli = Cli::parse();
 
     if args.markdown_help {
-        clap_markdown::print_help_markdown::<Cli>();
+        let markdown = clap_markdown::help_markdown::<Cli>();
+        println!("---");
+        println!("title: Jito (Re)Staking CLI");
+        println!("category: Jekyll");
+        println!("layout: post");
+        println!("weight: 1");
+        println!("---");
+        println!("");
+        println!("{}", markdown);
         return Ok(());
     }
 
