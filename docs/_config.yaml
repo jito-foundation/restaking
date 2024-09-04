@@ -9,7 +9,7 @@ markdown: kramdown
 syntax_highlighter_style: colorful
 
 toc:
-    enabled: false
+    enabled: true
 
 assets:
   dirname: assets

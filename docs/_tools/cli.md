@@ -3,6 +3,7 @@ title: CLI
 category: Jekyll
 layout: post
 weight: 1
+notoc: true
 ---
 
 # Command-Line Help for `jito-restaking-cli`

@@ -75,6 +75,7 @@ async fn main() -> Result<(), anyhow::Error> {
         println!("category: Jekyll");
         println!("layout: post");
         println!("weight: 1");
+        println!("notoc: true");
         println!("---");
         println!("");
         println!("{}", markdown);
