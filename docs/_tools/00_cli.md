@@ -200,6 +200,7 @@ Vault commands
 ###### **Subcommands:**
 
 * `initialize` — Initializes the vault
+* `create-token-metadata` — Creates token metadata for the vault's LRT token
 * `get` — Gets a vault
 * `list` — List all vaults
 
@@ -218,6 +219,21 @@ Initializes the vault
 * `<WITHDRAWAL_FEE_BPS>` — The withdrawal fee in bips
 * `<REWARD_FEE_BPS>` — The reward fee in bips
 * `<DECIMALS>` — The decimals of the token
+
+
+
+## `jito-restaking-cli vault vault create-token-metadata`
+
+Creates token metadata for the vault's LRT token
+
+**Usage:** `jito-restaking-cli vault vault create-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NAME>` — The name of the token
+* `<SYMBOL>` — The symbol of the token
+* `<URI>` — The URI for the token metadata
 
 
 
