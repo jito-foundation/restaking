@@ -40,9 +40,3 @@ The following diagram shows the interactions between users, admins, and the vaul
 
 ![Vault interactions](/assets/images/vault_interactions.png)
 *Figure: Overview of the Vault Interactions*
-
-### Restaking Interactions
-The following diagram shows the interactions between users, admins, and the restaking program:
-
-![Restaking interactions](/assets/images/restaking_interactions.png)
-*Figure: Overview of the Restaking Interactions*
