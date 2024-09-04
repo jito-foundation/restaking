@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use clap::Parser;
+use clap_markdown::MarkdownOptions;
 use env_logger::Env;
 use jito_restaking_cli::{
     cli_args::{Cli, ProgramCommand},
@@ -68,7 +69,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let args: Cli = Cli::parse();
 
     if args.markdown_help {
-        let markdown = clap_markdown::help_markdown::<Cli>();
+        let markdown = clap_markdown::help_markdown_custom::<Cli>(&MarkdownOptions::new().show_table_of_contents(false));
         println!("---");
         println!("title: Jito (Re)Staking CLI");
         println!("category: Jekyll");
