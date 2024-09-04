@@ -1,9 +1,8 @@
 ---
 title: CLI
 category: Jekyll
-layout: post
+layout: page
 weight: 1
-no_toc: true
 ---
 
 # Command-Line Help for `jito-restaking-cli`

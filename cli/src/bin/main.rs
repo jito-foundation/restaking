@@ -73,9 +73,8 @@ async fn main() -> Result<(), anyhow::Error> {
         println!("---");
         println!("title: CLI");
         println!("category: Jekyll");
-        println!("layout: post");
+        println!("layout: page");
         println!("weight: 1");
-        println!("no_toc: true");
         println!("---");
         println!("");
         println!("{}", markdown);
