@@ -5,8 +5,6 @@ layout: post
 weight: 1
 ---
 
-# Terminology
-
 - **Node**: A piece of software running the required protocols as specified by the node consensus network.
 - **Node Consensus Network (NCN)**: A set of nodes running software for the same network, working together to achieve
   consensus and provide services.

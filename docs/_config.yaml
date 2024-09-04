@@ -37,7 +37,6 @@ collections:
   tools:
     output: true
     permalink: /:collection/:path/
-    sort_by: weight
 
 ordered_collections:
   - about
