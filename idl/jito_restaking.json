@@ -1,5 +1,5 @@
 {
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "jito_restaking",
   "instructions": [
     {
@@ -1430,6 +1430,6 @@
   ],
   "metadata": {
     "origin": "shank",
-    "address": "2gYZ1xHgydtzqfRuwvoL5oZmJzRo6TDQJNjuf2fARouZ"
+    "address": "78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng"
   }
 }

@@ -43,7 +43,7 @@ export type Config = {
   restakingProgram: Address;
   epochLength: bigint;
   numVaults: bigint;
-  feeCapBps: number;
+  depositWithdrawalFeeCapBps: number;
   feeRateOfChangeBps: number;
   feeBumpBps: number;
   bump: number;
@@ -56,7 +56,7 @@ export type ConfigArgs = {
   restakingProgram: Address;
   epochLength: number | bigint;
   numVaults: number | bigint;
-  feeCapBps: number;
+  depositWithdrawalFeeCapBps: number;
   feeRateOfChangeBps: number;
   feeBumpBps: number;
   bump: number;
@@ -70,7 +70,7 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
     ['restakingProgram', getAddressEncoder()],
     ['epochLength', getU64Encoder()],
     ['numVaults', getU64Encoder()],
-    ['feeCapBps', getU16Encoder()],
+    ['depositWithdrawalFeeCapBps', getU16Encoder()],
     ['feeRateOfChangeBps', getU16Encoder()],
     ['feeBumpBps', getU16Encoder()],
     ['bump', getU8Encoder()],
@@ -85,7 +85,7 @@ export function getConfigDecoder(): Decoder<Config> {
     ['restakingProgram', getAddressDecoder()],
     ['epochLength', getU64Decoder()],
     ['numVaults', getU64Decoder()],
-    ['feeCapBps', getU16Decoder()],
+    ['depositWithdrawalFeeCapBps', getU16Decoder()],
     ['feeRateOfChangeBps', getU16Decoder()],
     ['feeBumpBps', getU16Decoder()],
     ['bump', getU8Decoder()],

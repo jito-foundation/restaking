@@ -6,7 +6,7 @@ use solana_program::{
 };
 
 use crate::{
-    inline_mpl_token_metadata::{self, pda::find_metadata_account},
+    inline_mpl_token_metadata::{self},
     instruction::{VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
 };
 
@@ -42,6 +42,7 @@ pub fn initialize_vault(
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
     epoch_withdraw_cap_bps: u16,
+    decimals: u8,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -61,6 +62,7 @@ pub fn initialize_vault(
             withdrawal_fee_bps,
             reward_fee_bps,
             epoch_withdraw_cap_bps,
+            decimals,
         }
         .try_to_vec()
         .unwrap(),
@@ -335,7 +337,6 @@ pub fn set_secondary_admin(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn add_delegation(
     program_id: &Pubkey,
     config: &Pubkey,
@@ -343,7 +344,6 @@ pub fn add_delegation(
     operator: &Pubkey,
     vault_operator_delegation: &Pubkey,
     admin: &Pubkey,
-    payer: &Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -352,7 +352,6 @@ pub fn add_delegation(
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new(*payer, true),
     ];
     Instruction {
         program_id: *program_id,
@@ -476,21 +475,22 @@ pub fn create_token_metadata(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_token_metadata(
     program_id: &Pubkey,
     vault: &Pubkey,
     admin: &Pubkey,
     vrt_mint: &Pubkey,
+    metadata: &Pubkey,
     name: String,
     symbol: String,
     uri: String,
 ) -> Instruction {
-    let (metadata, _) = find_metadata_account(vrt_mint);
-
     let accounts = vec![
         AccountMeta::new_readonly(*vault, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new(metadata, false),
+        AccountMeta::new(*vrt_mint, false),
+        AccountMeta::new(*metadata, false),
         AccountMeta::new_readonly(inline_mpl_token_metadata::id(), false),
     ];
 

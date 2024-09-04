@@ -1,5 +1,5 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::loader::load_signer;
+use jito_jsm_core::loader::{load_signer, load_token_mint};
 use jito_vault_core::{
     loader::{load_mpl_metadata, load_mpl_metadata_program},
     vault::Vault,
@@ -19,20 +19,20 @@ pub fn process_update_token_metadata(
     symbol: String,
     uri: String,
 ) -> ProgramResult {
-    let [vault_info, admin, metadata, mpl_token_metadata_program] = accounts else {
+    let [vault_info, admin, vrt_mint, metadata, mpl_token_metadata_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     Vault::load(program_id, vault_info, false)?;
-    load_signer(admin, false)?;
-    load_mpl_metadata_program(mpl_token_metadata_program)?;
-
     let vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-
-    load_mpl_metadata(metadata, &vault.vrt_mint)?;
+    load_signer(admin, false)?;
+    load_token_mint(vrt_mint)?;
+    load_mpl_metadata(metadata, vrt_mint.key)?;
+    load_mpl_metadata_program(mpl_token_metadata_program)?;
 
     vault.check_admin(admin.key)?;
+    vault.check_vrt_mint(vrt_mint.key)?;
 
     let update_metadata_accounts_instruction = update_metadata_accounts_v2(
         *mpl_token_metadata_program.key,

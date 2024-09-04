@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::config::Config;
+    use jito_vault_core::{config::Config, MAX_FEE_BPS};
     use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_sdk::{
         pubkey::Pubkey,
@@ -308,7 +308,7 @@ mod tests {
         let bad_admin = Keypair::new();
         fixture
             .vault_program_client()
-            ._airdrop(&bad_admin.pubkey(), 10.0)
+            .airdrop(&bad_admin.pubkey(), 10.0)
             .await
             .unwrap();
 
@@ -417,7 +417,7 @@ mod tests {
         let new_admin = Keypair::new();
         fixture
             .vault_program_client()
-            ._airdrop(&new_admin.pubkey(), 10.0)
+            .airdrop(&new_admin.pubkey(), 10.0)
             .await
             .unwrap();
 
@@ -463,7 +463,7 @@ mod tests {
         let new_admin = Keypair::new();
         fixture
             .vault_program_client()
-            ._airdrop(&new_admin.pubkey(), 10.0)
+            .airdrop(&new_admin.pubkey(), 10.0)
             .await
             .unwrap();
 
@@ -528,7 +528,7 @@ mod tests {
         let new_admin = Keypair::new();
         fixture
             .vault_program_client()
-            ._airdrop(&new_admin.pubkey(), 10.0)
+            .airdrop(&new_admin.pubkey(), 10.0)
             .await
             .unwrap();
 
@@ -610,9 +610,9 @@ mod tests {
             .await
             .unwrap();
 
-        let new_deposit_fee_bps = config.fee_cap_bps() + 1;
-        let new_withdrawal_fee_bps = config.fee_cap_bps() + 1;
-        let new_reward_fee_bps = Config::MAX_BPS + 1;
+        let new_deposit_fee_bps = config.deposit_withdrawal_fee_cap_bps() + 1;
+        let new_withdrawal_fee_bps = config.deposit_withdrawal_fee_cap_bps() + 1;
+        let new_reward_fee_bps = MAX_FEE_BPS + 1;
 
         let result = fixture
             .vault_program_client()
@@ -1011,9 +1011,9 @@ mod tests {
             .await
             .unwrap();
 
-        let new_deposit_fee_bps = Config::MAX_BPS + 1;
-        let new_withdrawal_fee_bps = Config::MAX_BPS + 1;
-        let new_reward_fee_bps = Config::MAX_BPS + 1;
+        let new_deposit_fee_bps = MAX_FEE_BPS + 1;
+        let new_withdrawal_fee_bps = MAX_FEE_BPS + 1;
+        let new_reward_fee_bps = MAX_FEE_BPS + 1;
 
         let result = fixture
             .vault_program_client()

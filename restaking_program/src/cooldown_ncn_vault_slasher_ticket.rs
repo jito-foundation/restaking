@@ -21,8 +21,8 @@ pub fn process_cooldown_ncn_vault_slasher_ticket(
     };
     Config::load(program_id, config, false)?;
     Ncn::load(program_id, ncn, false)?;
-    let mut config_data = config.data.borrow_mut();
-    let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+    let config_data = config.data.borrow();
+    let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(&config.vault_program, vault, false)?;
     NcnVaultSlasherTicket::load(
         program_id,

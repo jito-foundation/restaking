@@ -28,7 +28,7 @@ incremental = false
 codegen-units = 1
 
 [workspace.package]
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Jito Network Maintainers <support@jito.network>"]
 repository = "https://github.com/jito-foundation/restaking"
 homepage = "https://jito.network/"
@@ -45,20 +45,21 @@ bytemuck = { version = "1.16.3", features = ["min_const_generics"] }
 cfg-if = "1.0.0"
 chrono = "0.4.38"
 clap = { version = "4.5.16", features = ["derive"] }
+clap-markdown = { version = "0.1.4" }
 const_str_to_pubkey = "0.1.1"
 envfile = "0.2.1"
 env_logger = "0.10.2"
-jito-bytemuck = { path = "bytemuck", version = "=0.0.1" }
-jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.1" }
-jito-jsm-core = { path = "core", version = "=0.0.1" }
-jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.1" }
-jito-restaking-core = { path = "restaking_core", version = "=0.0.1" }
-jito-restaking-program = { path = "restaking_program", version = "=0.0.1" }
-jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.1" }
-jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.1" }
-jito-vault-core = { path = "vault_core", version = "=0.0.1" }
-jito-vault-program = { path = "vault_program", version = "=0.0.1" }
-jito-vault-sdk = { path = "vault_sdk", version = "=0.0.1" }
+jito-bytemuck = { path = "bytemuck", version = "=0.0.2" }
+jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.2" }
+jito-jsm-core = { path = "core", version = "=0.0.2" }
+jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.2" }
+jito-restaking-core = { path = "restaking_core", version = "=0.0.2" }
+jito-restaking-program = { path = "restaking_program", version = "=0.0.2" }
+jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.2" }
+jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.2" }
+jito-vault-core = { path = "vault_core", version = "=0.0.2" }
+jito-vault-program = { path = "vault_program", version = "=0.0.2" }
+jito-vault-sdk = { path = "vault_sdk", version = "=0.0.2" }
 log = "0.4.22"
 matches = "0.1.10"
 num-derive = "0.4.2"

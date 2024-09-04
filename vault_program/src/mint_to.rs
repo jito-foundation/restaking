@@ -19,8 +19,19 @@ use spl_token::instruction::{mint_to, transfer};
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
-/// Note: it's strongly encouraged to call [`crate::VaultInstruction::CrankVaultUpdateStateTracker`] before calling this instruction to ensure
+/// Note: it's strongly encouraged to call [`jito_vault_sdk::instruction::VaultInstruction::UpdateVaultBalance`] before calling this instruction to ensure
 /// the vault state is up-to-date.
+///
+/// Specification:
+/// - If the vault has a mint burn admin, it must match be present and be a signer
+/// - The vault must be up-to-date
+/// - The vault VRT mint must be correct
+/// - The amount to mint must be greater than zero
+/// - The post-mint tokens deposited shall be less than or equal to the vault capacity
+/// - The vault fee wallet must get the fee amount
+/// - The transaction shall fail if the amount out is less than the minimum amount out
+/// - The user's assets shall be deposited into the vault supported mint ATA
+/// - The vault shall mint the pro-rata amount to the user and the fee wallet
 pub fn process_mint(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -38,7 +49,7 @@ pub fn process_mint(
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
-    Vault::load(program_id, vault_info, false)?;
+    Vault::load(program_id, vault_info, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_token_mint(vrt_mint)?;

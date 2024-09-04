@@ -1,0 +1,4 @@
+ignore:
+  - "clients/"
+  - "shank-cli"
+  - "cli"

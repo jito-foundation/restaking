@@ -33,12 +33,12 @@ pub struct NcnVaultTicket {
 }
 
 impl NcnVaultTicket {
-    pub fn new(ncn: Pubkey, vault: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(ncn: Pubkey, vault: Pubkey, index: u64, bump: u8, slot: u64) -> Self {
         Self {
             ncn,
             vault,
             index: PodU64::from(index),
-            state: SlotToggle::new(0),
+            state: SlotToggle::new(slot),
             bump,
             reserved: [0; 263],
         }
@@ -112,6 +112,8 @@ impl NcnVaultTicket {
 
 #[cfg(test)]
 mod tests {
+    use jito_jsm_core::slot_toggle::SlotToggleState;
+
     use super::*;
 
     #[test]
@@ -124,5 +126,16 @@ mod tests {
             size_of::<u8>() + // bump
             263; // reserved
         assert_eq!(ncn_vault_ticket_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_ncn_vault_ticket_inactive_on_creation() {
+        let slot = 1;
+        let ncn_vault_ticket =
+            NcnVaultTicket::new(Pubkey::default(), Pubkey::default(), 0, 0, slot);
+        assert_eq!(
+            ncn_vault_ticket.state.state(slot + 1, 100),
+            SlotToggleState::Inactive
+        );
     }
 }

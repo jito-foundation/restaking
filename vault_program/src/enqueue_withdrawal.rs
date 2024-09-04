@@ -11,6 +11,7 @@ use jito_jsm_core::{
 use jito_vault_core::{
     config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -18,17 +19,15 @@ use solana_program::{
 use spl_token::instruction::transfer;
 
 /// Enqueues a withdraw into the VaultStakerWithdrawalTicket account, transferring the amount from the
-/// staker's VRT token account to the VaultStakerWithdrawalTicket VRT token account. It also queues
-/// the withdrawal in the vault's delegation list.
+/// staker's VRT token account to the VaultStakerWithdrawalTicket VRT token account.
 ///
-/// The most obvious options for withdrawing are calculating the redemption ratio and withdrawing
-/// the exact amount of collateral from operators. This may not be ideal in the case where the VRT:token
-/// ratio increases due to rewards. However, if the vault has excess collateral that isn't staked, the vault
-/// can withdraw that excess and return it to the staker. If there's no excess, they can withdraw the
-/// amount that was set aside for withdraw.
-///
-/// One should call the [`crate::VaultInstruction::CrankVaultUpdateStateTracker`] instruction before running this instruction
-/// to ensure that any rewards that were accrued are accounted for.
+/// Specification:
+/// - If the vault has a mint burn admin, it shall be present and be a signer of the transaction
+/// - The vault shall be up to date
+/// - The amount to withdraw must be greater than zero
+/// - The VaultStakerWithdrawalTicket account shall be at the canonical PDA
+/// - The vault shall accurately track the amount of VRT that has been enqueued for cooldown
+/// - The staker's VRT tokens shall be transferred to the VaultStakerWithdrawalTicket associated token account
 pub fn process_enqueue_withdrawal(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -60,6 +59,16 @@ pub fn process_enqueue_withdrawal(
     load_token_program(token_program)?;
     load_system_program(system_program)?;
 
+    vault.check_mint_burn_admin(optional_accounts.first())?;
+    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    if vrt_amount == 0 {
+        msg!("VRT amount must be greater than zero");
+        return Err(VaultError::VaultEnqueueWithdrawalAmountZero.into());
+    }
+
+    let amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
+    vault.check_withdrawal_allowed(amount_to_withdraw)?;
+
     // The VaultStakerWithdrawalTicket shall be at the canonical PDA
     let (
         vault_staker_withdrawal_ticket_pubkey,
@@ -74,12 +83,6 @@ pub fn process_enqueue_withdrawal(
         msg!("Vault staker withdrawal ticket is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
-
-    vault.check_mint_burn_admin(optional_accounts.first())?;
-    vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
-
-    let amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
-    vault.check_withdrawal_allowed(amount_to_withdraw)?;
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
