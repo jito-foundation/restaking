@@ -4,12 +4,9 @@ mod tests {
     use solana_program::{
         clock::DEFAULT_SLOTS_PER_EPOCH, instruction::InstructionError, pubkey::Pubkey,
     };
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
+    use solana_sdk::signature::{Keypair, Signer};
 
-    use crate::fixtures::fixture::TestBuilder;
+    use crate::fixtures::{assert_ix_error, fixture::TestBuilder};
 
     #[tokio::test]
     async fn test_initialize_config_ok() {
@@ -60,15 +57,9 @@ mod tests {
 
         let transaction_error = restaking_program_client
             .initialize_config(&config, &config_admin)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
+            .await;
 
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountOwner);
     }
 
     /// Test that initializing the config is at the canonical PDA
@@ -85,14 +76,8 @@ mod tests {
 
         let transaction_error = restaking_program_client
             .initialize_config(&Pubkey::new_unique(), &config_admin)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
+            .await;
 
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountData);
     }
 }

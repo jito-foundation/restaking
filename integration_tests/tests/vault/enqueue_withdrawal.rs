@@ -2,16 +2,12 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::{
-        instruction::InstructionError,
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
+    use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
-        vault_client::VaultStakerWithdrawalTicketRoot,
+        vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
 
     #[tokio::test]
@@ -189,16 +185,8 @@ mod tests {
 
         let err = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, 0)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultEnqueueWithdrawalAmountZero as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultEnqueueWithdrawalAmountZero);
     }
 }

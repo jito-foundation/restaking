@@ -3,11 +3,12 @@ mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
-    use solana_sdk::{
-        instruction::InstructionError, signature::Signer, transaction::TransactionError,
-    };
+    use solana_sdk::signature::Signer;
 
-    use crate::fixtures::{fixture::TestBuilder, vault_client::VaultRoot};
+    use crate::fixtures::{
+        fixture::TestBuilder,
+        vault_client::{assert_vault_error, VaultRoot},
+    };
 
     #[tokio::test]
     async fn test_initialize_vault_ok() {
@@ -63,31 +64,15 @@ mod tests {
 
         let err = vault_program_client
             .do_initialize_vault(10001, 100, 100, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
             .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 
     #[tokio::test]
@@ -105,31 +90,15 @@ mod tests {
 
         let err = vault_program_client
             .do_initialize_vault(100, 10001, 100, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
             .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 
     #[tokio::test]
@@ -142,16 +111,8 @@ mod tests {
 
         let err = vault_program_client
             .do_initialize_vault(0, 0, 10001, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 }
