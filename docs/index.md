@@ -23,9 +23,9 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 | Devnet  | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
 | Devnet  | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
 
-## Developers
+## API Documentation
 
-- [API](api/jito_jsm_core/index.html)
+- [API](api/jito_jsm_core/index.html){:target="_blank"}
 
 ## License
 
