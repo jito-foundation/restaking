@@ -18,9 +18,9 @@ assets:
     - assets
 
 collections:
-  posts:
+  pages:
     output: true
     permalink: /:collection/:path/
 
 ordered_collections:
-  - posts
+  - pages
