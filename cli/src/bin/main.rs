@@ -69,7 +69,9 @@ async fn main() -> Result<(), anyhow::Error> {
     let args: Cli = Cli::parse();
 
     if args.markdown_help {
-        let markdown = clap_markdown::help_markdown_custom::<Cli>(&MarkdownOptions::new().show_table_of_contents(false));
+        let markdown = clap_markdown::help_markdown_custom::<Cli>(
+            &MarkdownOptions::new().show_table_of_contents(false),
+        );
         println!("---");
         println!("title: CLI");
         println!("category: Jekyll");
