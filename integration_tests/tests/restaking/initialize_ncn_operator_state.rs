@@ -4,9 +4,11 @@ mod tests {
     use jito_restaking_core::{config::Config, ncn_operator_state::NcnOperatorState};
     use jito_restaking_sdk::error::RestakingError;
     use solana_program::instruction::InstructionError;
-    use solana_sdk::{signature::Keypair, transaction::TransactionError};
+    use solana_sdk::signature::Keypair;
 
-    use crate::fixtures::{fixture::TestBuilder, restaking_client::assert_restaking_error};
+    use crate::fixtures::{
+        assert_ix_error, fixture::TestBuilder, restaking_client::assert_restaking_error,
+    };
 
     #[tokio::test]
     async fn test_initialize_ncn_operator_state_ok() {
@@ -136,14 +138,9 @@ mod tests {
                 &ncn_root.ncn_admin,
                 &ncn_root.ncn_admin,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+            .await;
+
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountData);
     }
 
     #[tokio::test]
