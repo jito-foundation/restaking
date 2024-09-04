@@ -17,8 +17,6 @@ pub struct AddDelegation {
     pub vault_operator_delegation: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
-
-    pub system_program: solana_program::pubkey::Pubkey,
 }
 
 impl AddDelegation {
@@ -34,7 +32,7 @@ impl AddDelegation {
         args: AddDelegationInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -52,10 +50,6 @@ impl AddDelegation {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.system_program,
-            false,
         ));
         accounts.extend_from_slice(remaining_accounts);
         let mut data = AddDelegationInstructionData::new().try_to_vec().unwrap();
@@ -102,7 +96,6 @@ pub struct AddDelegationInstructionArgs {
 ///   2. `[]` operator
 ///   3. `[writable]` vault_operator_delegation
 ///   4. `[signer]` admin
-///   5. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct AddDelegationBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -110,7 +103,6 @@ pub struct AddDelegationBuilder {
     operator: Option<solana_program::pubkey::Pubkey>,
     vault_operator_delegation: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
     amount: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
@@ -147,12 +139,6 @@ impl AddDelegationBuilder {
         self.admin = Some(admin);
         self
     }
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
-        self
-    }
     #[inline(always)]
     pub fn amount(&mut self, amount: u64) -> &mut Self {
         self.amount = Some(amount);
@@ -186,9 +172,6 @@ impl AddDelegationBuilder {
                 .vault_operator_delegation
                 .expect("vault_operator_delegation is not set"),
             admin: self.admin.expect("admin is not set"),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
         };
         let args = AddDelegationInstructionArgs {
             amount: self.amount.clone().expect("amount is not set"),
@@ -209,8 +192,6 @@ pub struct AddDelegationCpiAccounts<'a, 'b> {
     pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
 /// `add_delegation` CPI instruction.
@@ -227,8 +208,6 @@ pub struct AddDelegationCpi<'a, 'b> {
     pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: AddDelegationInstructionArgs,
 }
@@ -246,7 +225,6 @@ impl<'a, 'b> AddDelegationCpi<'a, 'b> {
             operator: accounts.operator,
             vault_operator_delegation: accounts.vault_operator_delegation,
             admin: accounts.admin,
-            system_program: accounts.system_program,
             __args: args,
         }
     }
@@ -283,7 +261,7 @@ impl<'a, 'b> AddDelegationCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -304,10 +282,6 @@ impl<'a, 'b> AddDelegationCpi<'a, 'b> {
             *self.admin.key,
             true,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
-            false,
-        ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
                 pubkey: *remaining_account.0.key,
@@ -324,14 +298,13 @@ impl<'a, 'b> AddDelegationCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(6 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.operator.clone());
         account_infos.push(self.vault_operator_delegation.clone());
         account_infos.push(self.admin.clone());
-        account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -353,7 +326,6 @@ impl<'a, 'b> AddDelegationCpi<'a, 'b> {
 ///   2. `[]` operator
 ///   3. `[writable]` vault_operator_delegation
 ///   4. `[signer]` admin
-///   5. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct AddDelegationCpiBuilder<'a, 'b> {
     instruction: Box<AddDelegationCpiBuilderInstruction<'a, 'b>>,
@@ -368,7 +340,6 @@ impl<'a, 'b> AddDelegationCpiBuilder<'a, 'b> {
             operator: None,
             vault_operator_delegation: None,
             admin: None,
-            system_program: None,
             amount: None,
             __remaining_accounts: Vec::new(),
         });
@@ -406,14 +377,6 @@ impl<'a, 'b> AddDelegationCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.admin = Some(admin);
-        self
-    }
-    #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
         self
     }
     #[inline(always)]
@@ -480,11 +443,6 @@ impl<'a, 'b> AddDelegationCpiBuilder<'a, 'b> {
                 .expect("vault_operator_delegation is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
-
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -502,7 +460,6 @@ struct AddDelegationCpiBuilderInstruction<'a, 'b> {
     operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_operator_delegation: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     amount: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(

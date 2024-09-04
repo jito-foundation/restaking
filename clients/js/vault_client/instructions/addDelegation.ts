@@ -47,9 +47,6 @@ export type AddDelegationInstruction<
     | string
     | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -71,9 +68,6 @@ export type AddDelegationInstruction<
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
@@ -118,14 +112,12 @@ export type AddDelegationInput<
   TAccountOperator extends string = string,
   TAccountVaultOperatorDelegation extends string = string,
   TAccountAdmin extends string = string,
-  TAccountSystemProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
   operator: Address<TAccountOperator>;
   vaultOperatorDelegation: Address<TAccountVaultOperatorDelegation>;
   admin: TransactionSigner<TAccountAdmin>;
-  systemProgram?: Address<TAccountSystemProgram>;
   amount: AddDelegationInstructionDataArgs['amount'];
 };
 
@@ -135,15 +127,13 @@ export function getAddDelegationInstruction<
   TAccountOperator extends string,
   TAccountVaultOperatorDelegation extends string,
   TAccountAdmin extends string,
-  TAccountSystemProgram extends string,
 >(
   input: AddDelegationInput<
     TAccountConfig,
     TAccountVault,
     TAccountOperator,
     TAccountVaultOperatorDelegation,
-    TAccountAdmin,
-    TAccountSystemProgram
+    TAccountAdmin
   >
 ): AddDelegationInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
@@ -151,8 +141,7 @@ export function getAddDelegationInstruction<
   TAccountVault,
   TAccountOperator,
   TAccountVaultOperatorDelegation,
-  TAccountAdmin,
-  TAccountSystemProgram
+  TAccountAdmin
 > {
   // Program address.
   const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
@@ -167,7 +156,6 @@ export function getAddDelegationInstruction<
       isWritable: true,
     },
     admin: { value: input.admin ?? null, isWritable: false },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -177,12 +165,6 @@ export function getAddDelegationInstruction<
   // Original args.
   const args = { ...input };
 
-  // Resolve default values.
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
-  }
-
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
@@ -191,7 +173,6 @@ export function getAddDelegationInstruction<
       getAccountMeta(accounts.operator),
       getAccountMeta(accounts.vaultOperatorDelegation),
       getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
     data: getAddDelegationInstructionDataEncoder().encode(
@@ -203,8 +184,7 @@ export function getAddDelegationInstruction<
     TAccountVault,
     TAccountOperator,
     TAccountVaultOperatorDelegation,
-    TAccountAdmin,
-    TAccountSystemProgram
+    TAccountAdmin
   >;
 
   return instruction;
@@ -221,7 +201,6 @@ export type ParsedAddDelegationInstruction<
     operator: TAccountMetas[2];
     vaultOperatorDelegation: TAccountMetas[3];
     admin: TAccountMetas[4];
-    systemProgram: TAccountMetas[5];
   };
   data: AddDelegationInstructionData;
 };
@@ -234,7 +213,7 @@ export function parseAddDelegationInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedAddDelegationInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 6) {
+  if (instruction.accounts.length < 5) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -252,7 +231,6 @@ export function parseAddDelegationInstruction<
       operator: getNextAccount(),
       vaultOperatorDelegation: getNextAccount(),
       admin: getNextAccount(),
-      systemProgram: getNextAccount(),
     },
     data: getAddDelegationInstructionDataDecoder().decode(instruction.data),
   };
