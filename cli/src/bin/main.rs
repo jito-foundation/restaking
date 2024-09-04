@@ -78,7 +78,7 @@ async fn main() -> Result<(), anyhow::Error> {
         println!("layout: post");
         println!("weight: 1");
         println!("---");
-        println!("");
+        println!();
         println!("{}", markdown);
         return Ok(());
     }
