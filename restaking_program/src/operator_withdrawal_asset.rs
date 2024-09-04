@@ -63,8 +63,8 @@ fn _withdraw_operator_asset<'a, 'info>(
     seeds: &[&[u8]],
     amount: u64,
 ) -> ProgramResult {
+    #[allow(deprecated)]
     invoke_signed(
-        //TODO: Replace with transfer_checked
         &spl_token_2022::instruction::transfer(
             token_program.key,
             operator_token_account.key,

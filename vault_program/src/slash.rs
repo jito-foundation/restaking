@@ -15,7 +15,6 @@ use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
-use spl_token_2022::instruction::transfer;
 
 /// Processes the vault slash instruction: [`crate::VaultInstruction::Slash`]
 pub fn process_slash(
@@ -165,8 +164,10 @@ pub fn process_slash(
         .map(|seed| seed.as_slice())
         .collect::<Vec<&[u8]>>();
     drop(vault_data);
+
+    #[allow(deprecated)]
     invoke_signed(
-        &transfer(
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             vault_token_account.key,
             slasher_token_account.key,

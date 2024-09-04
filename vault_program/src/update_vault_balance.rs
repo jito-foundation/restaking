@@ -18,48 +18,26 @@ pub fn process_update_vault_balance(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    msg!("HERE 0");
-
     Config::load(program_id, config, false)?;
     Vault::load(program_id, vault_info, true)?;
-
-    msg!("HERE 1");
 
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
 
-    msg!("HERE 2");
-
     let vault_data = vault_info.data.borrow();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-
-    msg!("HERE 3");
 
     load_token_mint(vrt_mint)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_token_program(token_program)?;
 
-    msg!("HERE 4");
-
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault.check_vrt_mint(vrt_mint.key)?;
 
-    msg!("HERE 5");
-
-    // Calculate rewards
-    msg!("{:?}", vault_token_account.data);
-
-    let test = Account::unpack(&vault_token_account.data.borrow());
-    msg!("test: {:?}", test);
-
-    let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
-
-    msg!("HERE 6");
+    let new_balance = Account::unpack_from_slice(&vault_token_account.data.borrow())?.amount;
 
     let reward_fee = vault.calculate_rewards_fee(new_balance)?;
-
-    msg!("HERE 7");
 
     // Mint rewards
     if reward_fee > 0 {
@@ -68,8 +46,6 @@ pub fn process_update_vault_balance(
         let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
 
         msg!("Minting {} VRT rewards to the fee wallet", reward_fee);
-
-        msg!("HERE 1");
 
         invoke_signed(
             &mint_to(

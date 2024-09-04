@@ -96,7 +96,7 @@ impl TestBuilder {
             .get_account(*token_account)
             .await?
             .unwrap();
-        Ok(Account::unpack(&account.data).unwrap())
+        Ok(Account::unpack_from_slice(&account.data).unwrap())
     }
 
     pub async fn get_token_mint(&mut self, token_mint: &Pubkey) -> Result<Mint, BanksClientError> {

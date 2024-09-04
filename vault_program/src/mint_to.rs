@@ -15,7 +15,7 @@ use solana_program::{
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token_2022::instruction::{mint_to, transfer};
+use spl_token_2022::instruction::mint_to;
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
@@ -75,8 +75,9 @@ pub fn process_mint(
 
     // transfer tokens from depositor to vault
     {
+        #[allow(deprecated)]
         invoke(
-            &transfer(
+            &spl_token_2022::instruction::transfer(
                 token_program.key,
                 depositor_token_account.key,
                 vault_token_account.key,

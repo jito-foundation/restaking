@@ -1755,7 +1755,7 @@ impl VaultProgramClient {
             .unwrap()
             .unwrap();
 
-        Ok(SPLTokenAccount::unpack(&account.data).unwrap())
+        Ok(SPLTokenAccount::unpack_from_slice(&account.data).unwrap())
     }
 
     pub async fn create_and_fund_reward_vault(
@@ -1780,6 +1780,7 @@ impl VaultProgramClient {
         );
 
         let blockhash = self.banks_client.get_latest_blockhash().await?;
+
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 Transaction::new_signed_with_payer(
@@ -1790,6 +1791,7 @@ impl VaultProgramClient {
                             &vault_account.supported_mint,
                             token_program,
                         ),
+                        #[allow(deprecated)]
                         spl_token_2022::instruction::transfer(
                             token_program,
                             &rewarder_token_account,

@@ -4,7 +4,10 @@ use solana_program::{
     pubkey::Pubkey, system_program,
 };
 use spl_associated_token_account::get_associated_token_address_with_program_id;
-use spl_token::state::Mint;
+use spl_token_2022::{
+    generic_token_account::GenericTokenAccount,
+    state::{Account, Mint},
+};
 
 /// Loads the account as a signer, returning an error if it is not or if it is not writable while
 /// expected to be.
@@ -110,6 +113,12 @@ pub fn load_associated_token_account(
 
     if token_account.data_is_empty() {
         msg!("Account data is empty");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    // Additional validity check here since we now unpack with `unpack_from_slice` instead of `unpack`
+    if !Account::valid_account_data(&token_account.data.borrow()) {
+        msg!("Account data is invalid");
         return Err(ProgramError::InvalidAccountData);
     }
 

@@ -15,7 +15,7 @@ use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
-use spl_token_2022::instruction::{burn, close_account, transfer};
+use spl_token_2022::instruction::{burn, close_account};
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
@@ -93,8 +93,9 @@ pub fn process_burn_withdrawal_ticket(
     drop(vault_staker_withdrawal_ticket_data);
 
     // transfer fee to fee wallet
+    #[allow(deprecated)]
     invoke_signed(
-        &transfer(
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             vault_fee_token_account.key,
@@ -150,8 +151,9 @@ pub fn process_burn_withdrawal_ticket(
     vault_seeds.push(vec![vault_bump]);
     let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
     drop(vault_data); // avoid double borrow
+    #[allow(deprecated)]
     invoke_signed(
-        &transfer(
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             vault_token_account.key,
             staker_token_account.key,

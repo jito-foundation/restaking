@@ -16,7 +16,7 @@ use solana_program::{
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token_2022::instruction::{burn, transfer};
+use spl_token_2022::instruction::burn;
 
 /// Burns the specified amount of tokens from the staker's account and transfers the corresponding amount of VRT tokens to the vault's fee wallet.
 ///
@@ -97,8 +97,9 @@ pub fn process_burn(
         ],
     )?;
     // Transfer the assets from the staker to the vault fee account
+    #[allow(deprecated)]
     invoke(
-        &transfer(
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             staker_vrt_token_account.key,
             vault_fee_token_account.key,
@@ -118,8 +119,9 @@ pub fn process_burn(
     vault_seeds.push(vec![vault_bump]);
     let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
     drop(vault_data);
+    #[allow(deprecated)]
     invoke_signed(
-        &transfer(
+        &spl_token_2022::instruction::transfer(
             token_program.key,
             vault_token_account.key,
             staker_token_account.key,
