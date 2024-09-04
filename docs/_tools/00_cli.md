@@ -1,30 +1,13 @@
+---
+title: CLI
+category: Jekyll
+layout: post
+weight: 1
+---
+
 # Command-Line Help for `jito-restaking-cli`
 
 This document contains the help content for the `jito-restaking-cli` command-line program.
-
-**Command Overview:**
-
-* [`jito-restaking-cli`↴](#jito-restaking-cli)
-* [`jito-restaking-cli restaking`↴](#jito-restaking-cli-restaking)
-* [`jito-restaking-cli restaking config`↴](#jito-restaking-cli-restaking-config)
-* [`jito-restaking-cli restaking config initialize`↴](#jito-restaking-cli-restaking-config-initialize)
-* [`jito-restaking-cli restaking config get`↴](#jito-restaking-cli-restaking-config-get)
-* [`jito-restaking-cli restaking ncn`↴](#jito-restaking-cli-restaking-ncn)
-* [`jito-restaking-cli restaking ncn initialize`↴](#jito-restaking-cli-restaking-ncn-initialize)
-* [`jito-restaking-cli restaking ncn get`↴](#jito-restaking-cli-restaking-ncn-get)
-* [`jito-restaking-cli restaking ncn list`↴](#jito-restaking-cli-restaking-ncn-list)
-* [`jito-restaking-cli restaking operator`↴](#jito-restaking-cli-restaking-operator)
-* [`jito-restaking-cli restaking operator initialize`↴](#jito-restaking-cli-restaking-operator-initialize)
-* [`jito-restaking-cli restaking operator get`↴](#jito-restaking-cli-restaking-operator-get)
-* [`jito-restaking-cli restaking operator list`↴](#jito-restaking-cli-restaking-operator-list)
-* [`jito-restaking-cli vault`↴](#jito-restaking-cli-vault)
-* [`jito-restaking-cli vault config`↴](#jito-restaking-cli-vault-config)
-* [`jito-restaking-cli vault config initialize`↴](#jito-restaking-cli-vault-config-initialize)
-* [`jito-restaking-cli vault config get`↴](#jito-restaking-cli-vault-config-get)
-* [`jito-restaking-cli vault vault`↴](#jito-restaking-cli-vault-vault)
-* [`jito-restaking-cli vault vault initialize`↴](#jito-restaking-cli-vault-vault-initialize)
-* [`jito-restaking-cli vault vault get`↴](#jito-restaking-cli-vault-vault-get)
-* [`jito-restaking-cli vault vault list`↴](#jito-restaking-cli-vault-vault-list)
 
 ## `jito-restaking-cli`
 

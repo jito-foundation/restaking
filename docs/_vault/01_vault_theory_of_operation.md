@@ -1,5 +1,8 @@
 ---
-title: Vault Program Theory Of Operation
+title: Vault Theory Of Operation
+category: Jekyll
+layout: post
+weight: 2
 ---
 
 # 1. Introduction
