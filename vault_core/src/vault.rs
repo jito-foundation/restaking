@@ -125,7 +125,7 @@ pub struct Vault {
     /// The slot of the last time the delegations were updated
     last_full_state_update_slot: PodU64,
 
-    /// The tally of assets withdrawn on that epoch, this cannot be above epoch_snapshot_amount x epoch_withdraw_cap_bps
+    /// The tally of assets withdrawn on that epoch, this cannot be above `epoch_snapshot_supported_token_amount` x epoch_withdraw_cap_bps
     epoch_withdraw_supported_token_amount: PodU64,
 
     /// The amount of assets in the vault at the time of calling `process_update_vault`
@@ -226,7 +226,7 @@ impl Vault {
         self.last_full_state_update_slot.into()
     }
 
-    /// Retrieves the current total amount withdrawn for the epoch.
+    /// Retrieves the current total supported token amount withdrawn for the epoch.
     ///
     /// # Returns
     /// * `u64` - The total amount of tokens withdrawn in the current epoch.
@@ -234,7 +234,7 @@ impl Vault {
         self.epoch_withdraw_supported_token_amount.into()
     }
 
-    /// Retrieves the snapshot of the total amount available for withdrawal at the start of the epoch.
+    /// Retrieves the snapshot of the total supported token amount available for withdrawal at the start of the epoch.
     ///
     /// # Returns
     /// * `u64` - The amount of tokens available for withdrawal at the start of the current epoch.
@@ -409,12 +409,12 @@ impl Vault {
         self.vrt_supply = PodU64::from(vrt_supply);
     }
 
-    /// Resets the total amount withdrawn for the epoch to zero.
+    /// Resets the total supported token amount withdrawn for the epoch to zero.
     pub fn clear_epoch_withdraw_supported_token_amount(&mut self) {
         self.epoch_withdraw_supported_token_amount = PodU64::from(0);
     }
 
-    /// Increases the total amount withdrawn for the epoch by a specified amount.
+    /// Increases the total supported token amount withdrawn for the epoch by a specified amount.
     ///
     /// # Returns
     /// * `Result<(), VaultError>` - Returns `Ok(())` if the amount is successfully added.
@@ -434,7 +434,12 @@ impl Vault {
         Ok(())
     }
 
-    /// Sets the snapshot amount for the current epoch.
+    /// Updates the `epoch_snapshot_supported_token_amount` for the current epoch.
+    ///
+    /// # Arguments
+    ///
+    /// * `epoch_snapshot_amount` - A `u64` value representing the new amount of supported
+    ///   tokens for the current epoch.
     pub fn set_epoch_snapshot_supported_token_amount(&mut self, epoch_snapshot_amount: u64) {
         self.epoch_snapshot_supported_token_amount = PodU64::from(epoch_snapshot_amount);
     }
@@ -726,6 +731,18 @@ impl Vault {
         Ok(())
     }
 
+    /// Sets the `epoch_withdraw_cap_bps` (basis points) for the current epoch,
+    /// enforcing a cap on the percentage of the vault's balance that can be withdrawn.
+    ///
+    /// # Arguments
+    ///
+    /// * `epoch_withdraw_cap_bps` - A `u16` value representing the withdraw cap in basis points
+    ///   (where 1 basis point equals 0.01% of the vault's balance) for the current epoch.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `VaultError::VaultEpochWithdrawCapExceeded` if the input exceeds
+    /// `MAX_EPOCH_WITHDRAW_BPS`, which represents the maximum allowable withdraw cap.
     pub fn set_epoch_withdraw_cap_bps(
         &mut self,
         epoch_withdraw_cap_bps: u16,

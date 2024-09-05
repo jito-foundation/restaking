@@ -12,7 +12,7 @@ mod tests {
     const DEPOSIT_FEE_BPS: u16 = 0;
     const WITHDRAW_FEE_BPS: u16 = 0;
     const REWARD_FEE_BPS: u16 = 0;
-    const EPOCH_WITHDRAW_CAP_BPS: u16 = 2000; // 20%
+    const EPOCH_WITHDRAW_CAP_BPS: u16 = 2500; // 20%
     const NUM_OPERATORS: u16 = 1;
     const MINT_AMOUNT: u64 = 100_000;
     const HALF_MINT_AMOUNT: u64 = MINT_AMOUNT / 2;
