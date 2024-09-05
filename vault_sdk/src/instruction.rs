@@ -201,6 +201,14 @@ pub enum VaultInstruction {
         reward_fee_bps: Option<u16>,
     },
 
+    /// Sets `is_paused`
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
+    SetIsPaused {
+        is_paused: bool,
+    },
+
     /// Withdraws any non-backing tokens from the vault
     AdminWithdraw {
         amount: u64

@@ -1689,6 +1689,29 @@ impl VaultProgramClient {
             )
             .await
     }
+
+    pub async fn set_is_paused(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        admin: &Keypair,
+        is_paused: bool,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_is_paused(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &admin.pubkey(),
+                is_paused,
+            )],
+            Some(&admin.pubkey()),
+            &[admin],
+            blockhash,
+        ))
+        .await
+    }
 }
 
 #[inline(always)]

@@ -1,7 +1,7 @@
 //! The vault is responsible for holding tokens and minting VRT tokens.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{
-    types::{PodU16, PodU64},
+    types::{PodBool, PodU16, PodU64},
     AccountDeserialize, Discriminator,
 };
 use jito_jsm_core::loader::load_signer;
@@ -137,6 +137,8 @@ pub struct Vault {
     /// The bump seed for the PDA
     pub bump: u8,
 
+    is_paused: PodBool,
+
     /// Reserved space
     reserved: [u8; 263],
 }
@@ -185,6 +187,7 @@ impl Vault {
             slasher_count: PodU64::from(0),
             bump,
             delegation_state: DelegationState::default(),
+            is_paused: PodBool::from_bool(false),
             reserved: [0; 263],
         }
     }
@@ -367,6 +370,31 @@ impl Vault {
 
     pub fn set_vrt_supply(&mut self, vrt_supply: u64) {
         self.vrt_supply = PodU64::from(vrt_supply);
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.is_paused.into()
+    }
+
+    pub fn set_is_paused(&mut self, is_paused: bool) {
+        self.is_paused = PodBool::from_bool(is_paused);
+    }
+
+    /// Checks whether the vault is currently paused.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(())` if the vault is not paused.
+    ///
+    /// # Errors
+    /// * [`VaultError::VaultIsPaused`] - If the vault is currently paused.
+    pub fn check_is_paused(&self) -> Result<(), VaultError> {
+        if self.is_paused.into() {
+            msg!("Vault is currently paused.");
+            return Err(VaultError::VaultIsPaused);
+        }
+
+        Ok(())
     }
 
     pub fn check_vrt_mint(&self, vrt_mint: &Pubkey) -> Result<(), ProgramError> {
@@ -1010,7 +1038,7 @@ impl Vault {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use jito_bytemuck::types::{PodU16, PodU64};
+    use jito_bytemuck::types::{PodBool, PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
     use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
@@ -1077,6 +1105,7 @@ mod tests {
             std::mem::size_of::<PodU16>() + // deposit_fee_bps
             std::mem::size_of::<PodU16>() + // withdrawal_fee_bps
             std::mem::size_of::<PodU16>() + // reward_fee_bps
+            std::mem::size_of::<PodBool>() + // is_paused
             1 + // bump
             263; // reserved
 
