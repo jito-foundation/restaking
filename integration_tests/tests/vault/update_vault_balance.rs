@@ -15,7 +15,7 @@ mod tests {
     const DEPOSIT_FEE_BPS: u16 = 0;
     const WITHDRAW_FEE_BPS: u16 = 0;
     const REWARD_FEE_BPS: u16 = 1000; // 10%
-    const EPOCH_WITHDRAW_CAP_BPS: u16 = 1000; // 10%
+    const EPOCH_WITHDRAW_CAP_BPS: u16 = 2500; // 25%
 
     async fn setup() -> (TestBuilder, VaultRoot) {
         let num_operators = 1;
