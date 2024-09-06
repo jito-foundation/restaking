@@ -4,7 +4,7 @@ mod tests {
     use jito_vault_sdk::error::VaultError;
     use rstest::rstest;
     use solana_program::instruction::InstructionError;
-    use solana_sdk::{pubkey::Pubkey, transaction::TransactionError};
+    use solana_sdk::pubkey::Pubkey;
 
     use crate::fixtures::{
         assert_ix_error, fixture::TestBuilder, vault_client::assert_vault_error,
