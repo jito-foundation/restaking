@@ -6,6 +6,7 @@ use clap_markdown::MarkdownOptions;
 use env_logger::Env;
 use jito_restaking_cli::{
     cli_args::{Cli, ProgramCommand},
+    log::init_logger,
     restaking_handler::RestakingCliHandler,
     vault_handler::VaultCliHandler,
     CliConfig,
@@ -64,7 +65,7 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    init_logger();
 
     let args: Cli = Cli::parse();
 

@@ -6,6 +6,7 @@ members = [
     "clients/rust/restaking_client",
     "clients/rust/vault_client",
     "core",
+    "crank",
     "integration_tests",
     "restaking_core",
     "restaking_program",
