@@ -7,12 +7,11 @@ mod tests {
     };
     use jito_restaking_sdk::error::RestakingError;
     use solana_program::{instruction::InstructionError, pubkey::Pubkey};
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
+    use solana_sdk::signature::{Keypair, Signer};
 
-    use crate::fixtures::fixture::TestBuilder;
+    use crate::fixtures::{
+        assert_ix_error, fixture::TestBuilder, restaking_client::assert_restaking_error,
+    };
 
     #[tokio::test]
     async fn test_initialize_ncn_vault_slasher_ticket_ok() {
@@ -120,14 +119,9 @@ mod tests {
                 &ncn_root.ncn_admin,
                 100,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+            .await;
+
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountData);
     }
 
     #[tokio::test]
@@ -189,16 +183,8 @@ mod tests {
                 &ncn_root.ncn_admin,
                 100,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(RestakingError::NcnSlasherAdminInvalid as u32)
-            )
-        );
+            .await;
+
+        assert_restaking_error(transaction_error, RestakingError::NcnSlasherAdminInvalid);
     }
 }

@@ -6,7 +6,9 @@ mod tests {
     use solana_program::instruction::InstructionError;
     use solana_sdk::{pubkey::Pubkey, transaction::TransactionError};
 
-    use crate::fixtures::{fixture::TestBuilder, vault_client::assert_vault_error};
+    use crate::fixtures::{
+        assert_ix_error, fixture::TestBuilder, vault_client::assert_vault_error,
+    };
 
     #[rstest]
     #[case(spl_token::id())]
@@ -191,13 +193,8 @@ mod tests {
                 )
                 .0,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            result,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+            .await;
+
+        assert_ix_error(result, InstructionError::InvalidAccountOwner);
     }
 }

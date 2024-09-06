@@ -4,11 +4,12 @@ mod tests {
     use jito_vault_sdk::error::VaultError;
     use rstest::rstest;
     use solana_program::pubkey::Pubkey;
-    use solana_sdk::{
-        instruction::InstructionError, signature::Signer, transaction::TransactionError,
-    };
+    use solana_sdk::signature::Signer;
 
-    use crate::fixtures::{fixture::TestBuilder, vault_client::VaultRoot};
+    use crate::fixtures::{
+        fixture::TestBuilder,
+        vault_client::{assert_vault_error, VaultRoot},
+    };
 
     #[rstest]
     #[case(spl_token::id())]
@@ -70,17 +71,9 @@ mod tests {
 
         let err = vault_program_client
             .do_initialize_vault(&token_program, 10001, 100, 100, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
             .do_initialize_vault(
@@ -90,17 +83,9 @@ mod tests {
                 0,
                 9,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 
     #[rstest]
@@ -121,17 +106,9 @@ mod tests {
 
         let err = vault_program_client
             .do_initialize_vault(&token_program, 100, 10001, 100, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
             .do_initialize_vault(
@@ -141,17 +118,9 @@ mod tests {
                 0,
                 9,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 
     #[rstest]
@@ -167,16 +136,8 @@ mod tests {
 
         let err = vault_program_client
             .do_initialize_vault(&token_program, 0, 0, 10001, 9)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultFeeCapExceeded as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 }

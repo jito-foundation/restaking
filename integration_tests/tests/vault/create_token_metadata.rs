@@ -4,10 +4,10 @@ mod tests {
     use rstest::rstest;
     use solana_sdk::{
         instruction::InstructionError, pubkey::Pubkey, signature::Keypair, signer::Signer,
-        transaction::TransactionError,
     };
 
     use crate::fixtures::{
+        assert_ix_error,
         fixture::TestBuilder,
         vault_client::{assert_vault_error, VaultRoot},
     };
@@ -17,6 +17,8 @@ mod tests {
     #[case(spl_token_2022::id())]
     #[tokio::test]
     async fn test_create_token_metadata_ok(#[case] token_program: Pubkey) {
+        use solana_sdk::transaction::TransactionError;
+
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -120,10 +122,8 @@ mod tests {
                 uri.to_string(),
             )
             .await;
-        assert_eq!(
-            result.unwrap_err().to_transaction_error().unwrap(),
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+
+        assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
     #[rstest]
@@ -164,10 +164,8 @@ mod tests {
                 uri.to_string(),
             )
             .await;
-        assert_eq!(
-            result.unwrap_err().to_transaction_error().unwrap(),
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+
+        assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
     #[rstest]

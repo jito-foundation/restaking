@@ -2405,6 +2405,7 @@ dependencies = [
  "jito-restaking-core",
  "jito-vault-client",
  "jito-vault-core",
+ "jito-vault-sdk",
  "log",
  "solana-account-decoder",
  "solana-cli-config",

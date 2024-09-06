@@ -4,16 +4,14 @@ mod tests {
     use jito_vault_sdk::error::VaultError;
     use rstest::rstest;
     use solana_sdk::{
-        instruction::InstructionError,
         pubkey::Pubkey,
         signature::{Keypair, Signer},
-        transaction::TransactionError,
     };
     use spl_associated_token_account::get_associated_token_address_with_program_id;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
-        vault_client::VaultStakerWithdrawalTicketRoot,
+        vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
 
     #[rstest]
@@ -25,6 +23,8 @@ mod tests {
         const DEPOSIT_FEE_BPS: u16 = 100;
         const WITHDRAW_FEE_BPS: u16 = 100;
         let min_amount_out: u64 = MINT_AMOUNT * (10_000 - DEPOSIT_FEE_BPS) as u64 / 10_000;
+
+        let token_program = spl_token::id();
 
         let deposit_fee_bps = DEPOSIT_FEE_BPS;
         let withdraw_fee_bps = WITHDRAW_FEE_BPS;
@@ -217,18 +217,10 @@ mod tests {
             .await
             .unwrap();
 
-        let err = vault_program_client
+        let result = vault_program_client
             .do_enqueue_withdraw(&vault_root, &depositor, &token_program, 0)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            err,
-            TransactionError::InstructionError(
-                0,
-                InstructionError::Custom(VaultError::VaultEnqueueWithdrawalAmountZero as u32)
-            )
-        );
+            .await;
+
+        assert_vault_error(result, VaultError::VaultEnqueueWithdrawalAmountZero);
     }
 }

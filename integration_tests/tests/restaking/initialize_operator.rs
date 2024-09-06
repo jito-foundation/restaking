@@ -2,12 +2,9 @@
 mod tests {
     use jito_restaking_core::{config::Config, operator::Operator};
     use solana_program::{instruction::InstructionError, pubkey::Pubkey};
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
+    use solana_sdk::signature::{Keypair, Signer};
 
-    use crate::fixtures::fixture::TestBuilder;
+    use crate::fixtures::{assert_ix_error, fixture::TestBuilder};
 
     #[tokio::test]
     async fn test_initialize_operator_ok() {
@@ -67,14 +64,9 @@ mod tests {
                 &operator_admin,
                 &operator_base,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+            .await;
+
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountData);
     }
 
     #[tokio::test]
@@ -121,15 +113,9 @@ mod tests {
                 &operator_admin,
                 &operator_base,
             )
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
+            .await;
 
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountOwner);
     }
 
     #[tokio::test]
@@ -137,16 +123,9 @@ mod tests {
         let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        let transaction_error = restaking_program_client
-            .do_initialize_operator()
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+        let transaction_error = restaking_program_client.do_initialize_operator().await;
+
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountOwner);
     }
 
     #[tokio::test]

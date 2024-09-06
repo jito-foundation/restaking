@@ -24,8 +24,8 @@ pub fn process_update_vault_balance(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
 
-    let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
 
     load_token_mint(vrt_mint)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
@@ -39,11 +39,17 @@ pub fn process_update_vault_balance(
 
     let reward_fee = vault.calculate_rewards_fee(new_balance)?;
 
+    // Update state
+    vault.set_tokens_deposited(new_balance);
+    vault.increment_vrt_supply(reward_fee)?;
+
     // Mint rewards
     if reward_fee > 0 {
         let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
         vault_seeds.push(vec![vault_bump]);
         let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+
+        drop(vault_data);
 
         msg!("Minting {} VRT rewards to the fee wallet", reward_fee);
 
@@ -63,18 +69,6 @@ pub fn process_update_vault_balance(
             ],
             &[&seed_slices],
         )?;
-    }
-
-    drop(vault_data);
-
-    // Update state
-    {
-        // need to drop the reference to vault_data before we can borrow_mut again
-        let mut vault_data = vault_info.data.borrow_mut();
-        let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
-
-        vault.set_tokens_deposited(new_balance);
-        vault.increment_vrt_supply(reward_fee)?;
     }
 
     Ok(())
