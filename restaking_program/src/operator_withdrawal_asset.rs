@@ -20,13 +20,13 @@ pub fn process_operator_withdrawal_asset(
 
     Operator::load(program_id, operator_info, false)?;
     load_signer(operator_withdraw_admin, false)?;
-    load_associated_token_account(operator_token_account, operator_info.key, &mint.key)?;
+    load_associated_token_account(operator_token_account, operator_info.key, mint.key)?;
     let operator_data = operator_info.data.borrow();
     let operator = Operator::try_from_slice_unchecked(&operator_data)?;
     load_associated_token_account(
         receiver_token_account,
         &operator.withdrawal_fee_wallet,
-        &mint.key,
+        mint.key,
     )?;
     load_token_program(token_program)?;
 

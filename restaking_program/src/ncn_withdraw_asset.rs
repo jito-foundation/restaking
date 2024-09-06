@@ -19,10 +19,10 @@ pub fn process_ncn_withdraw_asset(
     };
 
     Ncn::load(program_id, ncn_info, false)?;
-    load_associated_token_account(ncn_token_account, ncn_info.key, &mint.key)?;
+    load_associated_token_account(ncn_token_account, ncn_info.key, mint.key)?;
     let ncn_data = ncn_info.data.borrow();
     let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
-    load_associated_token_account(receiver_token_account, &ncn.withdraw_fee_wallet, &mint.key)?;
+    load_associated_token_account(receiver_token_account, &ncn.withdraw_fee_wallet, mint.key)?;
     load_signer(withdraw_admin, false)?;
     load_token_program(token_program)?;
 
@@ -67,7 +67,7 @@ fn _withdraw_ncn_asset<'a, 'info>(
         &spl_token_2022::instruction::transfer_checked(
             token_program.key,
             ncn_token_account.key,
-            &mint.key,
+            mint.key,
             receiver_token_account.key,
             ncn.key,
             &[],
