@@ -18,6 +18,8 @@ pub struct EnqueueWithdrawal {
 
     pub staker: solana_program::pubkey::Pubkey,
 
+    pub vrt_mint: solana_program::pubkey::Pubkey,
+
     pub staker_vrt_token_account: solana_program::pubkey::Pubkey,
 
     pub base: solana_program::pubkey::Pubkey,
@@ -42,7 +44,7 @@ impl EnqueueWithdrawal {
         args: EnqueueWithdrawalInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -61,6 +63,10 @@ impl EnqueueWithdrawal {
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.staker,
             true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.vrt_mint,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.staker_vrt_token_account,
@@ -135,11 +141,12 @@ pub struct EnqueueWithdrawalInstructionArgs {
 ///   2. `[writable]` vault_staker_withdrawal_ticket
 ///   3. `[writable]` vault_staker_withdrawal_ticket_token_account
 ///   4. `[writable, signer]` staker
-///   5. `[writable]` staker_vrt_token_account
-///   6. `[signer]` base
-///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   9. `[signer, optional]` burn_signer
+///   5. `[]` vrt_mint
+///   6. `[writable]` staker_vrt_token_account
+///   7. `[signer]` base
+///   8. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   9. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   10. `[signer, optional]` burn_signer
 #[derive(Clone, Debug, Default)]
 pub struct EnqueueWithdrawalBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -147,6 +154,7 @@ pub struct EnqueueWithdrawalBuilder {
     vault_staker_withdrawal_ticket: Option<solana_program::pubkey::Pubkey>,
     vault_staker_withdrawal_ticket_token_account: Option<solana_program::pubkey::Pubkey>,
     staker: Option<solana_program::pubkey::Pubkey>,
+    vrt_mint: Option<solana_program::pubkey::Pubkey>,
     staker_vrt_token_account: Option<solana_program::pubkey::Pubkey>,
     base: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
@@ -190,6 +198,11 @@ impl EnqueueWithdrawalBuilder {
     #[inline(always)]
     pub fn staker(&mut self, staker: solana_program::pubkey::Pubkey) -> &mut Self {
         self.staker = Some(staker);
+        self
+    }
+    #[inline(always)]
+    pub fn vrt_mint(&mut self, vrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
@@ -262,6 +275,7 @@ impl EnqueueWithdrawalBuilder {
                 .vault_staker_withdrawal_ticket_token_account
                 .expect("vault_staker_withdrawal_ticket_token_account is not set"),
             staker: self.staker.expect("staker is not set"),
+            vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
             staker_vrt_token_account: self
                 .staker_vrt_token_account
                 .expect("staker_vrt_token_account is not set"),
@@ -295,6 +309,8 @@ pub struct EnqueueWithdrawalCpiAccounts<'a, 'b> {
 
     pub staker: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub staker_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub base: &'b solana_program::account_info::AccountInfo<'a>,
@@ -321,6 +337,8 @@ pub struct EnqueueWithdrawalCpi<'a, 'b> {
         &'b solana_program::account_info::AccountInfo<'a>,
 
     pub staker: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub staker_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -349,6 +367,7 @@ impl<'a, 'b> EnqueueWithdrawalCpi<'a, 'b> {
             vault_staker_withdrawal_ticket_token_account: accounts
                 .vault_staker_withdrawal_ticket_token_account,
             staker: accounts.staker,
+            vrt_mint: accounts.vrt_mint,
             staker_vrt_token_account: accounts.staker_vrt_token_account,
             base: accounts.base,
             token_program: accounts.token_program,
@@ -390,7 +409,7 @@ impl<'a, 'b> EnqueueWithdrawalCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -410,6 +429,10 @@ impl<'a, 'b> EnqueueWithdrawalCpi<'a, 'b> {
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.staker.key,
             true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.vrt_mint.key,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.staker_vrt_token_account.key,
@@ -456,13 +479,14 @@ impl<'a, 'b> EnqueueWithdrawalCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(10 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(11 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.vault_staker_withdrawal_ticket.clone());
         account_infos.push(self.vault_staker_withdrawal_ticket_token_account.clone());
         account_infos.push(self.staker.clone());
+        account_infos.push(self.vrt_mint.clone());
         account_infos.push(self.staker_vrt_token_account.clone());
         account_infos.push(self.base.clone());
         account_infos.push(self.token_program.clone());
@@ -491,11 +515,12 @@ impl<'a, 'b> EnqueueWithdrawalCpi<'a, 'b> {
 ///   2. `[writable]` vault_staker_withdrawal_ticket
 ///   3. `[writable]` vault_staker_withdrawal_ticket_token_account
 ///   4. `[writable, signer]` staker
-///   5. `[writable]` staker_vrt_token_account
-///   6. `[signer]` base
-///   7. `[]` token_program
-///   8. `[]` system_program
-///   9. `[signer, optional]` burn_signer
+///   5. `[]` vrt_mint
+///   6. `[writable]` staker_vrt_token_account
+///   7. `[signer]` base
+///   8. `[]` token_program
+///   9. `[]` system_program
+///   10. `[signer, optional]` burn_signer
 #[derive(Clone, Debug)]
 pub struct EnqueueWithdrawalCpiBuilder<'a, 'b> {
     instruction: Box<EnqueueWithdrawalCpiBuilderInstruction<'a, 'b>>,
@@ -510,6 +535,7 @@ impl<'a, 'b> EnqueueWithdrawalCpiBuilder<'a, 'b> {
             vault_staker_withdrawal_ticket: None,
             vault_staker_withdrawal_ticket_token_account: None,
             staker: None,
+            vrt_mint: None,
             staker_vrt_token_account: None,
             base: None,
             token_program: None,
@@ -559,6 +585,14 @@ impl<'a, 'b> EnqueueWithdrawalCpiBuilder<'a, 'b> {
         staker: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.staker = Some(staker);
+        self
+    }
+    #[inline(always)]
+    pub fn vrt_mint(
+        &mut self,
+        vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
@@ -668,6 +702,8 @@ impl<'a, 'b> EnqueueWithdrawalCpiBuilder<'a, 'b> {
 
             staker: self.instruction.staker.expect("staker is not set"),
 
+            vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
+
             staker_vrt_token_account: self
                 .instruction
                 .staker_vrt_token_account
@@ -704,6 +740,7 @@ struct EnqueueWithdrawalCpiBuilderInstruction<'a, 'b> {
     vault_staker_withdrawal_ticket_token_account:
         Option<&'b solana_program::account_info::AccountInfo<'a>>,
     staker: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     staker_vrt_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,

@@ -12,6 +12,8 @@ pub struct MintTo {
 
     pub vault: solana_program::pubkey::Pubkey,
 
+    pub supported_mint: solana_program::pubkey::Pubkey,
+
     pub vrt_mint: solana_program::pubkey::Pubkey,
 
     pub depositor: solana_program::pubkey::Pubkey,
@@ -42,13 +44,17 @@ impl MintTo {
         args: MintToInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault, false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.supported_mint,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vrt_mint,
@@ -132,18 +138,20 @@ pub struct MintToInstructionArgs {
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` vrt_mint
-///   3. `[writable, signer]` depositor
-///   4. `[writable]` depositor_token_account
-///   5. `[writable]` vault_token_account
-///   6. `[writable]` depositor_vrt_token_account
-///   7. `[writable]` vault_fee_token_account
-///   8. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   9. `[signer, optional]` mint_signer
+///   2. `[]` supported_mint
+///   3. `[writable]` vrt_mint
+///   4. `[writable, signer]` depositor
+///   5. `[writable]` depositor_token_account
+///   6. `[writable]` vault_token_account
+///   7. `[writable]` depositor_vrt_token_account
+///   8. `[writable]` vault_fee_token_account
+///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   10. `[signer, optional]` mint_signer
 #[derive(Clone, Debug, Default)]
 pub struct MintToBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
+    supported_mint: Option<solana_program::pubkey::Pubkey>,
     vrt_mint: Option<solana_program::pubkey::Pubkey>,
     depositor: Option<solana_program::pubkey::Pubkey>,
     depositor_token_account: Option<solana_program::pubkey::Pubkey>,
@@ -169,6 +177,11 @@ impl MintToBuilder {
     #[inline(always)]
     pub fn vault(&mut self, vault: solana_program::pubkey::Pubkey) -> &mut Self {
         self.vault = Some(vault);
+        self
+    }
+    #[inline(always)]
+    pub fn supported_mint(&mut self, supported_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.supported_mint = Some(supported_mint);
         self
     }
     #[inline(always)]
@@ -262,6 +275,7 @@ impl MintToBuilder {
         let accounts = MintTo {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
+            supported_mint: self.supported_mint.expect("supported_mint is not set"),
             vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
             depositor: self.depositor.expect("depositor is not set"),
             depositor_token_account: self
@@ -299,6 +313,8 @@ pub struct MintToCpiAccounts<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub depositor: &'b solana_program::account_info::AccountInfo<'a>,
@@ -324,6 +340,8 @@ pub struct MintToCpi<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -354,6 +372,7 @@ impl<'a, 'b> MintToCpi<'a, 'b> {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
+            supported_mint: accounts.supported_mint,
             vrt_mint: accounts.vrt_mint,
             depositor: accounts.depositor,
             depositor_token_account: accounts.depositor_token_account,
@@ -398,13 +417,17 @@ impl<'a, 'b> MintToCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.supported_mint.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -462,10 +485,11 @@ impl<'a, 'b> MintToCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(10 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(11 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
+        account_infos.push(self.supported_mint.clone());
         account_infos.push(self.vrt_mint.clone());
         account_infos.push(self.depositor.clone());
         account_infos.push(self.depositor_token_account.clone());
@@ -494,14 +518,15 @@ impl<'a, 'b> MintToCpi<'a, 'b> {
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` vrt_mint
-///   3. `[writable, signer]` depositor
-///   4. `[writable]` depositor_token_account
-///   5. `[writable]` vault_token_account
-///   6. `[writable]` depositor_vrt_token_account
-///   7. `[writable]` vault_fee_token_account
-///   8. `[]` token_program
-///   9. `[signer, optional]` mint_signer
+///   2. `[]` supported_mint
+///   3. `[writable]` vrt_mint
+///   4. `[writable, signer]` depositor
+///   5. `[writable]` depositor_token_account
+///   6. `[writable]` vault_token_account
+///   7. `[writable]` depositor_vrt_token_account
+///   8. `[writable]` vault_fee_token_account
+///   9. `[]` token_program
+///   10. `[signer, optional]` mint_signer
 #[derive(Clone, Debug)]
 pub struct MintToCpiBuilder<'a, 'b> {
     instruction: Box<MintToCpiBuilderInstruction<'a, 'b>>,
@@ -513,6 +538,7 @@ impl<'a, 'b> MintToCpiBuilder<'a, 'b> {
             __program: program,
             config: None,
             vault: None,
+            supported_mint: None,
             vrt_mint: None,
             depositor: None,
             depositor_token_account: None,
@@ -538,6 +564,14 @@ impl<'a, 'b> MintToCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn vault(&mut self, vault: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.vault = Some(vault);
+        self
+    }
+    #[inline(always)]
+    pub fn supported_mint(
+        &mut self,
+        supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.supported_mint = Some(supported_mint);
         self
     }
     #[inline(always)]
@@ -676,6 +710,11 @@ impl<'a, 'b> MintToCpiBuilder<'a, 'b> {
 
             vault: self.instruction.vault.expect("vault is not set"),
 
+            supported_mint: self
+                .instruction
+                .supported_mint
+                .expect("supported_mint is not set"),
+
             vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
 
             depositor: self.instruction.depositor.expect("depositor is not set"),
@@ -720,6 +759,7 @@ struct MintToCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    supported_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     depositor: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     depositor_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,

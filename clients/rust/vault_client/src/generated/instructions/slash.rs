@@ -34,6 +34,8 @@ pub struct Slash {
 
     pub vault_ncn_slasher_operator_ticket: solana_program::pubkey::Pubkey,
 
+    pub supported_mint: solana_program::pubkey::Pubkey,
+
     pub vault_token_account: solana_program::pubkey::Pubkey,
 
     pub slasher_token_account: solana_program::pubkey::Pubkey,
@@ -54,7 +56,7 @@ impl Slash {
         args: SlashInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(16 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(17 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -103,6 +105,10 @@ impl Slash {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault_ncn_slasher_operator_ticket,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.supported_mint,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -170,9 +176,10 @@ pub struct SlashInstructionArgs {
 ///   10. `[]` ncn_vault_slasher_ticket
 ///   11. `[]` vault_ncn_slasher_ticket
 ///   12. `[writable]` vault_ncn_slasher_operator_ticket
-///   13. `[writable]` vault_token_account
-///   14. `[]` slasher_token_account
-///   15. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   13. `[]` supported_mint
+///   14. `[writable]` vault_token_account
+///   15. `[]` slasher_token_account
+///   16. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct SlashBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -188,6 +195,7 @@ pub struct SlashBuilder {
     ncn_vault_slasher_ticket: Option<solana_program::pubkey::Pubkey>,
     vault_ncn_slasher_ticket: Option<solana_program::pubkey::Pubkey>,
     vault_ncn_slasher_operator_ticket: Option<solana_program::pubkey::Pubkey>,
+    supported_mint: Option<solana_program::pubkey::Pubkey>,
     vault_token_account: Option<solana_program::pubkey::Pubkey>,
     slasher_token_account: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
@@ -289,6 +297,11 @@ impl SlashBuilder {
         self
     }
     #[inline(always)]
+    pub fn supported_mint(&mut self, supported_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.supported_mint = Some(supported_mint);
+        self
+    }
+    #[inline(always)]
     pub fn vault_token_account(
         &mut self,
         vault_token_account: solana_program::pubkey::Pubkey,
@@ -361,6 +374,7 @@ impl SlashBuilder {
             vault_ncn_slasher_operator_ticket: self
                 .vault_ncn_slasher_operator_ticket
                 .expect("vault_ncn_slasher_operator_ticket is not set"),
+            supported_mint: self.supported_mint.expect("supported_mint is not set"),
             vault_token_account: self
                 .vault_token_account
                 .expect("vault_token_account is not set"),
@@ -407,6 +421,8 @@ pub struct SlashCpiAccounts<'a, 'b> {
 
     pub vault_ncn_slasher_operator_ticket: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub slasher_token_account: &'b solana_program::account_info::AccountInfo<'a>,
@@ -445,6 +461,8 @@ pub struct SlashCpi<'a, 'b> {
 
     pub vault_ncn_slasher_operator_ticket: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub slasher_token_account: &'b solana_program::account_info::AccountInfo<'a>,
@@ -475,6 +493,7 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
             ncn_vault_slasher_ticket: accounts.ncn_vault_slasher_ticket,
             vault_ncn_slasher_ticket: accounts.vault_ncn_slasher_ticket,
             vault_ncn_slasher_operator_ticket: accounts.vault_ncn_slasher_operator_ticket,
+            supported_mint: accounts.supported_mint,
             vault_token_account: accounts.vault_token_account,
             slasher_token_account: accounts.slasher_token_account,
             token_program: accounts.token_program,
@@ -514,7 +533,7 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(16 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(17 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -567,6 +586,10 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
             *self.vault_ncn_slasher_operator_ticket.key,
             false,
         ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.supported_mint.key,
+            false,
+        ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault_token_account.key,
             false,
@@ -595,7 +618,7 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(16 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(17 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
@@ -610,6 +633,7 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
         account_infos.push(self.ncn_vault_slasher_ticket.clone());
         account_infos.push(self.vault_ncn_slasher_ticket.clone());
         account_infos.push(self.vault_ncn_slasher_operator_ticket.clone());
+        account_infos.push(self.supported_mint.clone());
         account_infos.push(self.vault_token_account.clone());
         account_infos.push(self.slasher_token_account.clone());
         account_infos.push(self.token_program.clone());
@@ -642,9 +666,10 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
 ///   10. `[]` ncn_vault_slasher_ticket
 ///   11. `[]` vault_ncn_slasher_ticket
 ///   12. `[writable]` vault_ncn_slasher_operator_ticket
-///   13. `[writable]` vault_token_account
-///   14. `[]` slasher_token_account
-///   15. `[]` token_program
+///   13. `[]` supported_mint
+///   14. `[writable]` vault_token_account
+///   15. `[]` slasher_token_account
+///   16. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct SlashCpiBuilder<'a, 'b> {
     instruction: Box<SlashCpiBuilderInstruction<'a, 'b>>,
@@ -667,6 +692,7 @@ impl<'a, 'b> SlashCpiBuilder<'a, 'b> {
             ncn_vault_slasher_ticket: None,
             vault_ncn_slasher_ticket: None,
             vault_ncn_slasher_operator_ticket: None,
+            supported_mint: None,
             vault_token_account: None,
             slasher_token_account: None,
             token_program: None,
@@ -772,6 +798,14 @@ impl<'a, 'b> SlashCpiBuilder<'a, 'b> {
     ) -> &mut Self {
         self.instruction.vault_ncn_slasher_operator_ticket =
             Some(vault_ncn_slasher_operator_ticket);
+        self
+    }
+    #[inline(always)]
+    pub fn supported_mint(
+        &mut self,
+        supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.supported_mint = Some(supported_mint);
         self
     }
     #[inline(always)]
@@ -900,6 +934,11 @@ impl<'a, 'b> SlashCpiBuilder<'a, 'b> {
                 .vault_ncn_slasher_operator_ticket
                 .expect("vault_ncn_slasher_operator_ticket is not set"),
 
+            supported_mint: self
+                .instruction
+                .supported_mint
+                .expect("supported_mint is not set"),
+
             vault_token_account: self
                 .instruction
                 .vault_token_account
@@ -939,6 +978,7 @@ struct SlashCpiBuilderInstruction<'a, 'b> {
     ncn_vault_slasher_ticket: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_ncn_slasher_ticket: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_ncn_slasher_operator_ticket: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    supported_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     slasher_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,

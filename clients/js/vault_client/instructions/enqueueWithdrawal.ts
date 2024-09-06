@@ -50,6 +50,7 @@ export type EnqueueWithdrawalInstruction<
     | string
     | IAccountMeta<string> = string,
   TAccountStaker extends string | IAccountMeta<string> = string,
+  TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountStakerVrtTokenAccount extends string | IAccountMeta<string> = string,
   TAccountBase extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
@@ -80,6 +81,9 @@ export type EnqueueWithdrawalInstruction<
         ? WritableSignerAccount<TAccountStaker> &
             IAccountSignerMeta<TAccountStaker>
         : TAccountStaker,
+      TAccountVrtMint extends string
+        ? ReadonlyAccount<TAccountVrtMint>
+        : TAccountVrtMint,
       TAccountStakerVrtTokenAccount extends string
         ? WritableAccount<TAccountStakerVrtTokenAccount>
         : TAccountStakerVrtTokenAccount,
@@ -140,6 +144,7 @@ export type EnqueueWithdrawalInput<
   TAccountVaultStakerWithdrawalTicket extends string = string,
   TAccountVaultStakerWithdrawalTicketTokenAccount extends string = string,
   TAccountStaker extends string = string,
+  TAccountVrtMint extends string = string,
   TAccountStakerVrtTokenAccount extends string = string,
   TAccountBase extends string = string,
   TAccountTokenProgram extends string = string,
@@ -151,6 +156,7 @@ export type EnqueueWithdrawalInput<
   vaultStakerWithdrawalTicket: Address<TAccountVaultStakerWithdrawalTicket>;
   vaultStakerWithdrawalTicketTokenAccount: Address<TAccountVaultStakerWithdrawalTicketTokenAccount>;
   staker: TransactionSigner<TAccountStaker>;
+  vrtMint: Address<TAccountVrtMint>;
   stakerVrtTokenAccount: Address<TAccountStakerVrtTokenAccount>;
   base: TransactionSigner<TAccountBase>;
   tokenProgram?: Address<TAccountTokenProgram>;
@@ -166,6 +172,7 @@ export function getEnqueueWithdrawalInstruction<
   TAccountVaultStakerWithdrawalTicket extends string,
   TAccountVaultStakerWithdrawalTicketTokenAccount extends string,
   TAccountStaker extends string,
+  TAccountVrtMint extends string,
   TAccountStakerVrtTokenAccount extends string,
   TAccountBase extends string,
   TAccountTokenProgram extends string,
@@ -178,6 +185,7 @@ export function getEnqueueWithdrawalInstruction<
     TAccountVaultStakerWithdrawalTicket,
     TAccountVaultStakerWithdrawalTicketTokenAccount,
     TAccountStaker,
+    TAccountVrtMint,
     TAccountStakerVrtTokenAccount,
     TAccountBase,
     TAccountTokenProgram,
@@ -191,6 +199,7 @@ export function getEnqueueWithdrawalInstruction<
   TAccountVaultStakerWithdrawalTicket,
   TAccountVaultStakerWithdrawalTicketTokenAccount,
   TAccountStaker,
+  TAccountVrtMint,
   TAccountStakerVrtTokenAccount,
   TAccountBase,
   TAccountTokenProgram,
@@ -213,6 +222,7 @@ export function getEnqueueWithdrawalInstruction<
       isWritable: true,
     },
     staker: { value: input.staker ?? null, isWritable: true },
+    vrtMint: { value: input.vrtMint ?? null, isWritable: false },
     stakerVrtTokenAccount: {
       value: input.stakerVrtTokenAccount ?? null,
       isWritable: true,
@@ -248,6 +258,7 @@ export function getEnqueueWithdrawalInstruction<
       getAccountMeta(accounts.vaultStakerWithdrawalTicket),
       getAccountMeta(accounts.vaultStakerWithdrawalTicketTokenAccount),
       getAccountMeta(accounts.staker),
+      getAccountMeta(accounts.vrtMint),
       getAccountMeta(accounts.stakerVrtTokenAccount),
       getAccountMeta(accounts.base),
       getAccountMeta(accounts.tokenProgram),
@@ -265,6 +276,7 @@ export function getEnqueueWithdrawalInstruction<
     TAccountVaultStakerWithdrawalTicket,
     TAccountVaultStakerWithdrawalTicketTokenAccount,
     TAccountStaker,
+    TAccountVrtMint,
     TAccountStakerVrtTokenAccount,
     TAccountBase,
     TAccountTokenProgram,
@@ -286,12 +298,13 @@ export type ParsedEnqueueWithdrawalInstruction<
     vaultStakerWithdrawalTicket: TAccountMetas[2];
     vaultStakerWithdrawalTicketTokenAccount: TAccountMetas[3];
     staker: TAccountMetas[4];
-    stakerVrtTokenAccount: TAccountMetas[5];
-    base: TAccountMetas[6];
-    tokenProgram: TAccountMetas[7];
-    systemProgram: TAccountMetas[8];
+    vrtMint: TAccountMetas[5];
+    stakerVrtTokenAccount: TAccountMetas[6];
+    base: TAccountMetas[7];
+    tokenProgram: TAccountMetas[8];
+    systemProgram: TAccountMetas[9];
     /** Signer for burning */
-    burnSigner?: TAccountMetas[9] | undefined;
+    burnSigner?: TAccountMetas[10] | undefined;
   };
   data: EnqueueWithdrawalInstructionData;
 };
@@ -304,7 +317,7 @@ export function parseEnqueueWithdrawalInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedEnqueueWithdrawalInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 10) {
+  if (instruction.accounts.length < 11) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -328,6 +341,7 @@ export function parseEnqueueWithdrawalInstruction<
       vaultStakerWithdrawalTicket: getNextAccount(),
       vaultStakerWithdrawalTicketTokenAccount: getNextAccount(),
       staker: getNextAccount(),
+      vrtMint: getNextAccount(),
       stakerVrtTokenAccount: getNextAccount(),
       base: getNextAccount(),
       tokenProgram: getNextAccount(),

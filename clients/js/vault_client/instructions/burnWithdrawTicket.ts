@@ -43,6 +43,7 @@ export type BurnWithdrawTicketInstruction<
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountVaultTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountSupportedMint extends string | IAccountMeta<string> = string,
   TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountStaker extends string | IAccountMeta<string> = string,
   TAccountStakerTokenAccount extends string | IAccountMeta<string> = string,
@@ -74,6 +75,9 @@ export type BurnWithdrawTicketInstruction<
       TAccountVaultTokenAccount extends string
         ? WritableAccount<TAccountVaultTokenAccount>
         : TAccountVaultTokenAccount,
+      TAccountSupportedMint extends string
+        ? ReadonlyAccount<TAccountSupportedMint>
+        : TAccountSupportedMint,
       TAccountVrtMint extends string
         ? WritableAccount<TAccountVrtMint>
         : TAccountVrtMint,
@@ -146,6 +150,7 @@ export type BurnWithdrawTicketInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountVaultTokenAccount extends string = string,
+  TAccountSupportedMint extends string = string,
   TAccountVrtMint extends string = string,
   TAccountStaker extends string = string,
   TAccountStakerTokenAccount extends string = string,
@@ -159,6 +164,7 @@ export type BurnWithdrawTicketInput<
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
   vaultTokenAccount: Address<TAccountVaultTokenAccount>;
+  supportedMint: Address<TAccountSupportedMint>;
   vrtMint: Address<TAccountVrtMint>;
   staker: Address<TAccountStaker>;
   stakerTokenAccount: Address<TAccountStakerTokenAccount>;
@@ -176,6 +182,7 @@ export function getBurnWithdrawTicketInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountVaultTokenAccount extends string,
+  TAccountSupportedMint extends string,
   TAccountVrtMint extends string,
   TAccountStaker extends string,
   TAccountStakerTokenAccount extends string,
@@ -190,6 +197,7 @@ export function getBurnWithdrawTicketInstruction<
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,
+    TAccountSupportedMint,
     TAccountVrtMint,
     TAccountStaker,
     TAccountStakerTokenAccount,
@@ -205,6 +213,7 @@ export function getBurnWithdrawTicketInstruction<
   TAccountConfig,
   TAccountVault,
   TAccountVaultTokenAccount,
+  TAccountSupportedMint,
   TAccountVrtMint,
   TAccountStaker,
   TAccountStakerTokenAccount,
@@ -226,6 +235,7 @@ export function getBurnWithdrawTicketInstruction<
       value: input.vaultTokenAccount ?? null,
       isWritable: true,
     },
+    supportedMint: { value: input.supportedMint ?? null, isWritable: false },
     vrtMint: { value: input.vrtMint ?? null, isWritable: true },
     staker: { value: input.staker ?? null, isWritable: true },
     stakerTokenAccount: {
@@ -272,6 +282,7 @@ export function getBurnWithdrawTicketInstruction<
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.vault),
       getAccountMeta(accounts.vaultTokenAccount),
+      getAccountMeta(accounts.supportedMint),
       getAccountMeta(accounts.vrtMint),
       getAccountMeta(accounts.staker),
       getAccountMeta(accounts.stakerTokenAccount),
@@ -291,6 +302,7 @@ export function getBurnWithdrawTicketInstruction<
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,
+    TAccountSupportedMint,
     TAccountVrtMint,
     TAccountStaker,
     TAccountStakerTokenAccount,
@@ -314,16 +326,17 @@ export type ParsedBurnWithdrawTicketInstruction<
     config: TAccountMetas[0];
     vault: TAccountMetas[1];
     vaultTokenAccount: TAccountMetas[2];
-    vrtMint: TAccountMetas[3];
-    staker: TAccountMetas[4];
-    stakerTokenAccount: TAccountMetas[5];
-    vaultStakerWithdrawalTicket: TAccountMetas[6];
-    vaultStakerWithdrawalTicketTokenAccount: TAccountMetas[7];
-    vaultFeeTokenAccount: TAccountMetas[8];
-    tokenProgram: TAccountMetas[9];
-    systemProgram: TAccountMetas[10];
+    supportedMint: TAccountMetas[3];
+    vrtMint: TAccountMetas[4];
+    staker: TAccountMetas[5];
+    stakerTokenAccount: TAccountMetas[6];
+    vaultStakerWithdrawalTicket: TAccountMetas[7];
+    vaultStakerWithdrawalTicketTokenAccount: TAccountMetas[8];
+    vaultFeeTokenAccount: TAccountMetas[9];
+    tokenProgram: TAccountMetas[10];
+    systemProgram: TAccountMetas[11];
     /** Signer for burning */
-    burnSigner?: TAccountMetas[11] | undefined;
+    burnSigner?: TAccountMetas[12] | undefined;
   };
   data: BurnWithdrawTicketInstructionData;
 };
@@ -336,7 +349,7 @@ export function parseBurnWithdrawTicketInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedBurnWithdrawTicketInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 12) {
+  if (instruction.accounts.length < 13) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -358,6 +371,7 @@ export function parseBurnWithdrawTicketInstruction<
       config: getNextAccount(),
       vault: getNextAccount(),
       vaultTokenAccount: getNextAccount(),
+      supportedMint: getNextAccount(),
       vrtMint: getNextAccount(),
       staker: getNextAccount(),
       stakerTokenAccount: getNextAccount(),

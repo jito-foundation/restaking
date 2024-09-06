@@ -47,12 +47,12 @@ export type InitializeVaultInstruction<
   TAccountTokenMint extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountBase extends string | IAccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  TAccountSystemProgram extends
+    | string
+    | IAccountMeta<string> = '11111111111111111111111111111111',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -78,12 +78,12 @@ export type InitializeVaultInstruction<
       TAccountBase extends string
         ? ReadonlySignerAccount<TAccountBase> & IAccountSignerMeta<TAccountBase>
         : TAccountBase,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
+      TAccountSystemProgram extends string
+        ? ReadonlyAccount<TAccountSystemProgram>
+        : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
@@ -143,8 +143,8 @@ export type InitializeVaultInput<
   TAccountTokenMint extends string = string,
   TAccountAdmin extends string = string,
   TAccountBase extends string = string,
-  TAccountSystemProgram extends string = string,
   TAccountTokenProgram extends string = string,
+  TAccountSystemProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
@@ -152,8 +152,8 @@ export type InitializeVaultInput<
   tokenMint: Address<TAccountTokenMint>;
   admin: TransactionSigner<TAccountAdmin>;
   base: TransactionSigner<TAccountBase>;
-  systemProgram?: Address<TAccountSystemProgram>;
   tokenProgram?: Address<TAccountTokenProgram>;
+  systemProgram?: Address<TAccountSystemProgram>;
   depositFeeBps: InitializeVaultInstructionDataArgs['depositFeeBps'];
   withdrawalFeeBps: InitializeVaultInstructionDataArgs['withdrawalFeeBps'];
   rewardFeeBps: InitializeVaultInstructionDataArgs['rewardFeeBps'];
@@ -167,8 +167,8 @@ export function getInitializeVaultInstruction<
   TAccountTokenMint extends string,
   TAccountAdmin extends string,
   TAccountBase extends string,
-  TAccountSystemProgram extends string,
   TAccountTokenProgram extends string,
+  TAccountSystemProgram extends string,
 >(
   input: InitializeVaultInput<
     TAccountConfig,
@@ -177,8 +177,8 @@ export function getInitializeVaultInstruction<
     TAccountTokenMint,
     TAccountAdmin,
     TAccountBase,
-    TAccountSystemProgram,
-    TAccountTokenProgram
+    TAccountTokenProgram,
+    TAccountSystemProgram
   >
 ): InitializeVaultInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
@@ -188,8 +188,8 @@ export function getInitializeVaultInstruction<
   TAccountTokenMint,
   TAccountAdmin,
   TAccountBase,
-  TAccountSystemProgram,
-  TAccountTokenProgram
+  TAccountTokenProgram,
+  TAccountSystemProgram
 > {
   // Program address.
   const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
@@ -202,8 +202,8 @@ export function getInitializeVaultInstruction<
     tokenMint: { value: input.tokenMint ?? null, isWritable: false },
     admin: { value: input.admin ?? null, isWritable: true },
     base: { value: input.base ?? null, isWritable: false },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -214,13 +214,13 @@ export function getInitializeVaultInstruction<
   const args = { ...input };
 
   // Resolve default values.
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
-  }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
       'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
@@ -232,8 +232,8 @@ export function getInitializeVaultInstruction<
       getAccountMeta(accounts.tokenMint),
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.base),
-      getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
     data: getInitializeVaultInstructionDataEncoder().encode(
@@ -247,8 +247,8 @@ export function getInitializeVaultInstruction<
     TAccountTokenMint,
     TAccountAdmin,
     TAccountBase,
-    TAccountSystemProgram,
-    TAccountTokenProgram
+    TAccountTokenProgram,
+    TAccountSystemProgram
   >;
 
   return instruction;
@@ -266,8 +266,8 @@ export type ParsedInitializeVaultInstruction<
     tokenMint: TAccountMetas[3];
     admin: TAccountMetas[4];
     base: TAccountMetas[5];
-    systemProgram: TAccountMetas[6];
-    tokenProgram: TAccountMetas[7];
+    tokenProgram: TAccountMetas[6];
+    systemProgram: TAccountMetas[7];
   };
   data: InitializeVaultInstructionData;
 };
@@ -299,8 +299,8 @@ export function parseInitializeVaultInstruction<
       tokenMint: getNextAccount(),
       admin: getNextAccount(),
       base: getNextAccount(),
-      systemProgram: getNextAccount(),
       tokenProgram: getNextAccount(),
+      systemProgram: getNextAccount(),
     },
     data: getInitializeVaultInstructionDataDecoder().decode(instruction.data),
   };
