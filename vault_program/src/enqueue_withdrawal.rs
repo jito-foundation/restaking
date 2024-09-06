@@ -5,7 +5,7 @@ use jito_jsm_core::{
     create_account,
     loader::{
         load_associated_token_account, load_signer, load_system_account, load_system_program,
-        load_token_program,
+        load_token_mint, load_token_program,
     },
 };
 use jito_vault_core::{
@@ -14,7 +14,7 @@ use jito_vault_core::{
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Enqueues a withdraw into the VaultStakerWithdrawalTicket account, transferring the amount from the
@@ -34,7 +34,7 @@ pub fn process_enqueue_withdrawal(
 ) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(9);
 
-    let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, staker, staker_vrt_token_account, base, token_program, system_program] =
+    let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, staker, vrt_mint, staker_vrt_token_account, base, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -57,7 +57,9 @@ pub fn process_enqueue_withdrawal(
     load_signer(base, false)?;
     load_token_program(token_program)?;
     load_system_program(system_program)?;
+    load_token_mint(vrt_mint)?;
 
+    vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     if vrt_amount == 0 {
@@ -114,15 +116,19 @@ pub fn process_enqueue_withdrawal(
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket
-    #[allow(deprecated)]
+
+    let vrt_mint_account = spl_token_2022::state::Mint::unpack(&vrt_mint.data.borrow())?;
+
     invoke(
-        &spl_token_2022::instruction::transfer(
+        &spl_token_2022::instruction::transfer_checked(
             token_program.key,
             staker_vrt_token_account.key,
+            vrt_mint.key,
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             &[],
             vrt_amount,
+            vrt_mint_account.decimals,
         )?,
         &[
             staker_vrt_token_account.clone(),

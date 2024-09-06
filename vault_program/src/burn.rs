@@ -13,6 +13,7 @@ use solana_program::{
     entrypoint::ProgramResult,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
+    program_pack::Pack,
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
@@ -45,7 +46,7 @@ pub fn process_burn(
 ) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(10);
 
-    let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_fee_token_account, token_program, system_program] =
+    let [config, vault_info, vault_token_account, supported_mint, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_fee_token_account, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -60,6 +61,7 @@ pub fn process_burn(
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
+    load_token_mint(supported_mint)?;
     load_token_mint(vrt_mint)?;
     load_signer(staker, false)?;
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
@@ -71,6 +73,7 @@ pub fn process_burn(
     // The vault VRT mint shall be correct
     // The vault shall not need an update
     vault.check_vrt_mint(vrt_mint.key)?;
+    vault.check_supported_mint(supported_mint.key)?;
     vault.check_update_state_ok(clock.slot, config.epoch_length())?;
     vault.check_mint_burn_admin(optional_accounts.first())?;
 
@@ -96,16 +99,19 @@ pub fn process_burn(
             staker.clone(),
         ],
     )?;
+
+    let vrt_mint_account = spl_token_2022::state::Mint::unpack(&vrt_mint.data.borrow())?;
     // Transfer the assets from the staker to the vault fee account
-    #[allow(deprecated)]
     invoke(
-        &spl_token_2022::instruction::transfer(
+        &spl_token_2022::instruction::transfer_checked(
             token_program.key,
             staker_vrt_token_account.key,
+            vrt_mint.key,
             vault_fee_token_account.key,
             staker.key,
             &[],
             fee_amount,
+            vrt_mint_account.decimals,
         )?,
         &[
             staker_vrt_token_account.clone(),
@@ -119,15 +125,20 @@ pub fn process_burn(
     vault_seeds.push(vec![vault_bump]);
     let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
     drop(vault_data);
-    #[allow(deprecated)]
+
+    let supported_mint_account =
+        spl_token_2022::state::Mint::unpack(&supported_mint.data.borrow())?;
+
     invoke_signed(
-        &spl_token_2022::instruction::transfer(
+        &spl_token_2022::instruction::transfer_checked(
             token_program.key,
             vault_token_account.key,
+            supported_mint.key,
             staker_token_account.key,
             vault_info.key,
             &[],
             out_amount,
+            supported_mint_account.decimals,
         )?,
         &[
             vault_token_account.clone(),

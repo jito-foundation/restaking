@@ -366,15 +366,16 @@ pub fn cooldown_operator_vault_ticket(
 pub fn ncn_withdrawal_asset(
     program_id: &Pubkey,
     ncn: &Pubkey,
+    mint: &Pubkey,
     ncn_token_account: &Pubkey,
     receiver_token_account: &Pubkey,
     admin: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*ncn, false),
+        AccountMeta::new_readonly(*mint, false),
         AccountMeta::new(*ncn_token_account, false),
         AccountMeta::new(*receiver_token_account, false),
         AccountMeta::new_readonly(*admin, true),
@@ -383,7 +384,7 @@ pub fn ncn_withdrawal_asset(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::NcnWithdrawalAsset { amount }
             .try_to_vec()
             .unwrap(),
     }
@@ -394,15 +395,16 @@ pub fn operator_withdrawal_asset(
     program_id: &Pubkey,
     operator: &Pubkey,
     admin: &Pubkey,
+    mint: &Pubkey,
     operator_token_account: &Pubkey,
     receiver_token_account: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*mint, false),
         AccountMeta::new(*operator_token_account, false),
         AccountMeta::new(*receiver_token_account, false),
         AccountMeta::new_readonly(*token_program, false),
@@ -410,7 +412,7 @@ pub fn operator_withdrawal_asset(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::OperatorWithdrawalAsset { amount }
             .try_to_vec()
             .unwrap(),
     }

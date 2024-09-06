@@ -172,18 +172,20 @@ pub enum RestakingInstruction {
     OperatorSetSecondaryAdmin(OperatorAdminRole),
 
     #[account(0, name = "ncn")]
-    #[account(1, writable, name = "ncn_token_account")]
-    #[account(2, writable, name = "receiver_token_account")]
-    #[account(3, signer, name = "admin")]
-    #[account(4, name = "token_program")]
-    NcnWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+    #[account(1, name = "mint")]
+    #[account(2, writable, name = "ncn_token_account")]
+    #[account(3, writable, name = "receiver_token_account")]
+    #[account(4, signer, name = "admin")]
+    #[account(5, name = "token_program")]
+    NcnWithdrawalAsset { amount: u64 },
 
     #[account(0, name = "operator")]
     #[account(1, signer, name = "admin")]
-    #[account(2, writable, name = "operator_token_account")]
-    #[account(3, writable, name = "receiver_token_account")]
-    #[account(4, name = "token_program")]
-    OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+    #[account(2, name = "mint")]
+    #[account(3, writable, name = "operator_token_account")]
+    #[account(4, writable, name = "receiver_token_account")]
+    #[account(5, name = "token_program")]
+    OperatorWithdrawalAsset { amount: u64 },
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]

@@ -377,6 +377,14 @@ impl Vault {
         Ok(())
     }
 
+    pub fn check_supported_mint(&self, supported_mint: &Pubkey) -> Result<(), ProgramError> {
+        if self.supported_mint.ne(supported_mint) {
+            msg!("Vault VRT mint does not match the provided VRT mint");
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
+
     /// Check admin validity and signature
     #[inline(always)]
     pub fn check_admin(&self, admin: &Pubkey) -> Result<(), ProgramError> {

@@ -1,4 +1,7 @@
-use std::{fmt, fmt::Debug};
+use std::{
+    borrow::Borrow,
+    fmt::{self, Debug},
+};
 
 use borsh::BorshDeserialize;
 use jito_bytemuck::AccountDeserialize;
@@ -42,8 +45,10 @@ use spl_associated_token_account::{
     get_associated_token_address_with_program_id,
     instruction::create_associated_token_account_idempotent,
 };
-use spl_token::state::{Account as SPLTokenAccount, Mint};
-use spl_token_2022::instruction::initialize_mint2;
+use spl_token_2022::{
+    instruction::initialize_mint2,
+    state::{Account as SPLTokenAccount, Mint},
+};
 
 use crate::fixtures::{TestError, TestResult};
 
@@ -112,6 +117,11 @@ impl VaultProgramClient {
     pub async fn get_vault(&mut self, account: &Pubkey) -> Result<Vault, TestError> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
         Ok(Vault::try_from_slice_unchecked(&mut account.data.as_slice())?.clone())
+    }
+
+    pub async fn get_mint(&mut self, account: &Pubkey) -> Result<Mint, TestError> {
+        let account = self.banks_client.get_account(*account).await?.unwrap();
+        Ok(Mint::unpack(&account.data.borrow())?.clone())
     }
 
     pub async fn get_vault_ncn_ticket(
@@ -1767,6 +1777,8 @@ impl VaultProgramClient {
     ) -> Result<(), BanksClientError> {
         let vault_account = self.get_vault(vault).await.unwrap();
 
+        let mint = self.get_mint(&vault_account.supported_mint).await.unwrap();
+
         let rewarder_token_account = get_associated_token_address_with_program_id(
             &rewarder.pubkey(),
             &vault_account.supported_mint,
@@ -1791,14 +1803,15 @@ impl VaultProgramClient {
                             &vault_account.supported_mint,
                             token_program,
                         ),
-                        #[allow(deprecated)]
-                        spl_token_2022::instruction::transfer(
+                        spl_token_2022::instruction::transfer_checked(
                             token_program,
                             &rewarder_token_account,
+                            &vault_account.supported_mint,
                             &vault_token_account,
                             &rewarder.pubkey(),
                             &[],
                             amount,
+                            mint.decimals,
                         )
                         .unwrap(),
                     ],

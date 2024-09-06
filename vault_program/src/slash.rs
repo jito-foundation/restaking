@@ -1,5 +1,7 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::loader::{load_associated_token_account, load_signer, load_token_program};
+use jito_jsm_core::loader::{
+    load_associated_token_account, load_signer, load_token_mint, load_token_program,
+};
 use jito_restaking_core::{
     ncn::Ncn, ncn_operator_state::NcnOperatorState,
     ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
@@ -13,7 +15,8 @@ use jito_vault_core::{
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
+    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
+    sysvar::Sysvar,
 };
 
 /// Processes the vault slash instruction: [`crate::VaultInstruction::Slash`]
@@ -22,7 +25,7 @@ pub fn process_slash(
     accounts: &[AccountInfo],
     slash_amount: u64,
 ) -> ProgramResult {
-    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_delegation, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, vault_token_account, slasher_token_account, token_program] =
+    let [config, vault_info, ncn, operator, slasher, ncn_operator_state, ncn_vault_ticket, operator_vault_ticket, vault_ncn_ticket, vault_operator_delegation, ncn_vault_slasher_ticket, vault_ncn_slasher_ticket, vault_ncn_slasher_operator_ticket, supported_mint, vault_token_account, slasher_token_account, token_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -123,11 +126,13 @@ pub fn process_slash(
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_associated_token_account(slasher_token_account, slasher.key, &vault.supported_mint)?;
     load_token_program(token_program)?;
+    load_token_mint(supported_mint)?;
 
     let slot = Clock::get()?.slot;
     let epoch_length = config.epoch_length();
 
     // The vault shall be up-to-date before slashing
+    vault.check_supported_mint(supported_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, epoch_length)?;
 
     // All ticket states shall be active or cooling down
@@ -165,15 +170,19 @@ pub fn process_slash(
         .collect::<Vec<&[u8]>>();
     drop(vault_data);
 
-    #[allow(deprecated)]
+    let supported_mint_account =
+        spl_token_2022::state::Mint::unpack(&supported_mint.data.borrow())?;
+
     invoke_signed(
-        &spl_token_2022::instruction::transfer(
+        &spl_token_2022::instruction::transfer_checked(
             token_program.key,
             vault_token_account.key,
+            supported_mint.key,
             slasher_token_account.key,
             vault_info.key,
             &[],
             slash_amount,
+            supported_mint_account.decimals,
         )?,
         &[
             vault_token_account.clone(),
