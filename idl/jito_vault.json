@@ -66,12 +66,12 @@
           "isSigner": true
         },
         {
-          "name": "systemProgram",
+          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "tokenProgram",
+          "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -482,6 +482,11 @@
           "isSigner": false
         },
         {
+          "name": "supportedMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "vrtMint",
           "isMut": true,
           "isSigner": false
@@ -557,6 +562,11 @@
         {
           "name": "vaultTokenAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "supportedMint",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -646,6 +656,11 @@
           "name": "staker",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "vrtMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "stakerVrtTokenAccount",
@@ -739,6 +754,11 @@
         {
           "name": "vaultTokenAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "supportedMint",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -1361,6 +1381,11 @@
         {
           "name": "vaultNcnSlasherOperatorTicket",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "supportedMint",
+          "isMut": false,
           "isSigner": false
         },
         {

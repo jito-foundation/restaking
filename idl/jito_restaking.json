@@ -785,6 +785,11 @@
           "isSigner": false
         },
         {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "ncnTokenAccount",
           "isMut": true,
           "isSigner": false
@@ -806,10 +811,6 @@
         }
       ],
       "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
         {
           "name": "amount",
           "type": "u64"
@@ -834,6 +835,11 @@
           "isSigner": true
         },
         {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "operatorTokenAccount",
           "isMut": true,
           "isSigner": false
@@ -850,10 +856,6 @@
         }
       ],
       "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
         {
           "name": "amount",
           "type": "u64"
