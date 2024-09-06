@@ -2,15 +2,17 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
     use spl_associated_token_account::get_associated_token_address_with_program_id;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
-    use rstest::rstest;
-    use solana_sdk::pubkey::Pubkey;
 
     #[rstest]
     #[case(spl_token::id())]
