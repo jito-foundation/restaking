@@ -80,6 +80,7 @@ fn _withdraw_operator_asset<'a, 'info>(
         &[
             operator_token_account.clone(),
             receiver_token_account.clone(),
+            mint.clone(),
             operator.clone(),
         ],
         &[seeds],

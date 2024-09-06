@@ -77,6 +77,7 @@ fn _withdraw_ncn_asset<'a, 'info>(
         &[
             ncn_token_account.clone(),
             receiver_token_account.clone(),
+            mint.clone(),
             ncn.clone(),
         ],
         &[seeds],

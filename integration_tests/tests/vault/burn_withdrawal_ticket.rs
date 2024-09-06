@@ -640,6 +640,7 @@ mod tests {
                     &vault.supported_mint,
                     &token_program,
                 ),
+                &vault.supported_mint,
                 &vault.vrt_mint,
                 &random_pubkey,
                 &get_associated_token_address_with_program_id(

@@ -188,6 +188,7 @@ pub fn process_slash(
             vault_token_account.clone(),
             slasher_token_account.clone(),
             vault_info.clone(),
+            supported_mint.clone(),
         ],
         &[vault_seeds_slice.as_slice()],
     )?;

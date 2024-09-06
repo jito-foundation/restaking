@@ -39,7 +39,7 @@ pub fn process_mint(
     amount_in: u64,
     min_amount_out: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(9);
+    let (required_accounts, optional_accounts) = accounts.split_at(10);
 
     let [config, vault_info, supported_mint, vrt_mint, depositor, depositor_token_account, vault_token_account, depositor_vrt_token_account, vault_fee_token_account, token_program] =
         required_accounts
@@ -95,6 +95,7 @@ pub fn process_mint(
                 depositor_token_account.clone(),
                 vault_token_account.clone(),
                 depositor.clone(),
+                supported_mint.clone(),
             ],
         )?;
     }

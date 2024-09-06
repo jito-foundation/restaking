@@ -117,6 +117,7 @@ pub fn process_burn(
             staker_vrt_token_account.clone(),
             vault_fee_token_account.clone(),
             staker.clone(),
+            vrt_mint.clone(),
         ],
     )?;
 
@@ -144,6 +145,7 @@ pub fn process_burn(
             vault_token_account.clone(),
             staker_token_account.clone(),
             vault_info.clone(),
+            supported_mint.clone(),
         ],
         &[seed_slices.as_slice()],
     )?;
