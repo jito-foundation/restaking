@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use bytemuck::{Pod, Zeroable};
 
 /// The standard `bool` is not a `Pod`, define a replacement that is
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Pod, Zeroable)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Pod, Zeroable)]
 #[repr(transparent)]
 pub struct PodBool(pub u8);
 impl PodBool {
@@ -34,6 +34,13 @@ impl From<&PodBool> for bool {
 impl From<PodBool> for bool {
     fn from(b: PodBool) -> Self {
         b.0 != 0
+    }
+}
+
+impl Debug for PodBool {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let v: bool = bool::from(self);
+        f.debug_tuple("PodBool").field(&v).finish()
     }
 }
 

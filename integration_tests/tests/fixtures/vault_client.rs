@@ -1692,7 +1692,6 @@ impl VaultProgramClient {
 
     pub async fn set_is_paused(
         &mut self,
-        config: &Pubkey,
         vault: &Pubkey,
         admin: &Keypair,
         is_paused: bool,
@@ -1701,7 +1700,7 @@ impl VaultProgramClient {
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::set_is_paused(
                 &jito_vault_program::id(),
-                config,
+                &Config::find_program_address(&jito_vault_program::id()).0,
                 vault,
                 &admin.pubkey(),
                 is_paused,

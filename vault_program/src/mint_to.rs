@@ -67,6 +67,7 @@ pub fn process_mint(
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     let MintSummary {
         vrt_to_depositor,

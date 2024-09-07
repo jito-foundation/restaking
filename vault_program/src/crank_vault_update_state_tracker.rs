@@ -28,6 +28,8 @@ pub fn process_crank_vault_update_state_tracker(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, false)?;
+    let vault_data = vault_info.data.borrow();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     Operator::load(&config.restaking_program, operator, false)?;
     VaultOperatorDelegation::load(
         program_id,
@@ -51,6 +53,8 @@ pub fn process_crank_vault_update_state_tracker(
     let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
         &mut vault_update_state_tracker_data,
     )?;
+
+    vault.check_is_paused()?;
 
     vault_update_state_tracker.check_and_update_index(vault_operator_delegation.index())?;
 

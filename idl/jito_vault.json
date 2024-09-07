@@ -877,6 +877,36 @@
       }
     },
     {
+      "name": "SetIsPaused",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 18
+      }
+    },
+    {
       "name": "AdminWithdraw",
       "accounts": [],
       "args": [
@@ -887,7 +917,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 18
+        "value": 19
       }
     },
     {
@@ -917,7 +947,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 19
+        "value": 20
       }
     },
     {
@@ -954,7 +984,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 20
+        "value": 21
       }
     },
     {
@@ -994,7 +1024,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 21
+        "value": 22
       }
     },
     {
@@ -1034,7 +1064,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 22
+        "value": 23
       }
     },
     {
@@ -1074,7 +1104,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 23
+        "value": 24
       }
     },
     {
@@ -1116,7 +1146,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 24
+        "value": 25
       }
     },
     {
@@ -1151,7 +1181,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 25
+        "value": 26
       }
     },
     {
@@ -1186,7 +1216,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 26
+        "value": 27
       }
     },
     {
@@ -1244,7 +1274,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 27
+        "value": 28
       }
     },
     {
@@ -1292,7 +1322,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 28
+        "value": 29
       }
     },
     {
@@ -1387,7 +1417,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 29
+        "value": 30
       }
     }
   ],
@@ -1607,6 +1637,12 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "isPaused",
+            "type": {
+              "defined": "PodBool"
+            }
           },
           {
             "name": "reserved",
@@ -2340,6 +2376,11 @@
       "code": 1044,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
+    },
+    {
+      "code": 1045,
+      "name": "VaultIsPaused",
+      "msg": "VaultIsPaused"
     }
   ],
   "metadata": {

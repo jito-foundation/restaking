@@ -62,6 +62,7 @@ pub fn process_initialize_vault_ncn_ticket(
 
     vault.check_ncn_admin(vault_ncn_admin.key)?;
     vault.check_update_state_ok(slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // The NcnVaultTicket shall be active
     msg!(

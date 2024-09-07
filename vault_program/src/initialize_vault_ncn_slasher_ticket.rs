@@ -45,6 +45,8 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
     load_signer(payer, true)?;
     load_system_program(system_program)?;
 
+    vault.check_is_paused()?;
+
     // The VaultNcnSlasherTicket shall be at the canonical PDA
     let (
         vault_ncn_slasher_ticket_pubkey,

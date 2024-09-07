@@ -73,6 +73,7 @@ pub fn process_burn(
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(clock.slot, config.epoch_length())?;
     vault.check_mint_burn_admin(optional_accounts.first())?;
+    vault.check_is_paused()?;
 
     let BurnSummary {
         fee_amount,

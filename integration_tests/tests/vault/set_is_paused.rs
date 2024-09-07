@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::{Keypair, Signer};
@@ -37,8 +36,6 @@ mod tests {
     async fn test_set_is_paused_with_bad_admin() {
         let (mut vault_program_client, vault_pubkey, _) = setup().await;
 
-        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
-
         let bad_admin = Keypair::new();
         vault_program_client
             .airdrop(&bad_admin.pubkey(), 10.0)
@@ -46,7 +43,7 @@ mod tests {
             .unwrap();
 
         let response = vault_program_client
-            .set_is_paused(&config_pubkey, &vault_pubkey, &bad_admin, true)
+            .set_is_paused(&vault_pubkey, &bad_admin, true)
             .await;
 
         assert_vault_error(response, VaultError::VaultAdminInvalid);
@@ -56,13 +53,12 @@ mod tests {
     async fn test_set_is_paused() {
         let (mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
 
-        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
 
         assert!(!vault.is_paused());
 
         vault_program_client
-            .set_is_paused(&config_pubkey, &vault_pubkey, &vault_admin, true)
+            .set_is_paused(&vault_pubkey, &vault_admin, true)
             .await
             .unwrap();
 

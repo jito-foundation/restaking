@@ -26,7 +26,7 @@ import {
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 
-export const ADMIN_WITHDRAW_DISCRIMINATOR = 18;
+export const ADMIN_WITHDRAW_DISCRIMINATOR = 19;
 
 export function getAdminWithdrawDiscriminatorBytes() {
   return getU8Encoder().encode(ADMIN_WITHDRAW_DISCRIMINATOR);
