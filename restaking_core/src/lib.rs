@@ -5,3 +5,4 @@ pub mod ncn_vault_slasher_ticket;
 pub mod ncn_vault_ticket;
 pub mod operator;
 pub mod operator_vault_ticket;
+pub mod price_table;
