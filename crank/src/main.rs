@@ -1,4 +1,4 @@
-use std::{io::Write, path::PathBuf, str::FromStr};
+use std::{collections::HashMap, io::Write, path::PathBuf, str::FromStr};
 
 use anyhow::Result;
 use chrono::Local;
@@ -11,7 +11,7 @@ use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_client::programs::JITO_RESTAKING_ID;
 use jito_vault_client::programs::JITO_VAULT_ID;
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation, vault_update_state_tracker::VaultUpdateStateTracker
 };
 use log::{error, Record};
 use solana_account_decoder::UiAccountEncoding;
@@ -116,7 +116,6 @@ async fn main() -> Result<()> {
         }
     }
 }
-
 async fn run_crank_loop(
     rpc_client: &RpcClient,
     keypair: &Keypair,
@@ -133,7 +132,7 @@ async fn run_crank_loop(
     let config = Config::try_from_slice_unchecked(config.data())?;
     let vault_epoch_length = config.epoch_length();
 
-    let vault_acounts = rpc_client
+    let vault_accounts = rpc_client
         .get_program_accounts_with_config(
             vault_program_id,
             RpcProgramAccountsConfig {
@@ -150,15 +149,51 @@ async fn run_crank_loop(
         )
         .await?;
 
-    let vaults = vault_acounts
+    let all_vault_operator_delegations = rpc_client
+        .get_program_accounts_with_config(
+            vault_program_id,
+            RpcProgramAccountsConfig {
+                filters: Some(vec![
+                    RpcFilterType::Memcmp(Memcmp::new(
+                        0,
+                        MemcmpEncodedBytes::Bytes(vec![VaultOperatorDelegation::DISCRIMINATOR]),
+                    )),
+                ]),
+                account_config: RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    ..RpcAccountInfoConfig::default()
+                },
+                ..RpcProgramAccountsConfig::default()
+            },
+        )
+        .await?;
+
+    let vaults = vault_accounts
         .iter()
         .map(|(pubkey, account)| Ok((pubkey, Vault::try_from_slice_unchecked(account.data())?)))
         .collect::<Result<Vec<_>>>()?;
 
     let current_epoch = slot / vault_epoch_length;
-    let vaults_need_updating = vaults.iter().filter(|(_, vault)| {
-        vault.last_full_state_update_slot() / vault_epoch_length != current_epoch
-    });
+    let vaults_need_updating: Vec<_> = vaults
+        .iter()
+        .filter(|(_, vault)| {
+            vault.last_full_state_update_slot() / vault_epoch_length != current_epoch
+        })
+        .collect();
+
+    // Group vault operator delegations by vaults that need updating
+    let mut grouped_delegations: HashMap<Pubkey, Vec<(Pubkey, VaultOperatorDelegation)>> = HashMap::new();
+    for (pubkey, account) in all_vault_operator_delegations {
+        let delegation = VaultOperatorDelegation::try_from_slice_unchecked(account.data())?;
+        if vaults_need_updating.iter().any(|(vault_pubkey, _)| **vault_pubkey == delegation.vault) {
+            grouped_delegations
+                .entry(delegation.vault)
+                .or_default()
+                .push((pubkey, *delegation));
+        }
+    }
+
+    // TODO: Process the grouped vault operator delegations
 
     Ok(())
 }
