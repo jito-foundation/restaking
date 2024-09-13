@@ -3,15 +3,18 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use clap::Subcommand;
 use jito_bytemuck::{AccountDeserialize, Discriminator};
+use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_client::{
     instructions::{
-        CloseVaultUpdateStateTrackerBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
+        AddDelegationBuilder, CloseVaultUpdateStateTrackerBuilder, InitializeConfigBuilder,
+        InitializeVaultBuilder, InitializeVaultOperatorDelegationBuilder,
         InitializeVaultUpdateStateTrackerBuilder, MintToBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+    vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use log::{debug, info};
 use solana_account_decoder::UiAccountEncoding;
@@ -80,6 +83,20 @@ pub enum VaultActions {
         amount_in: u64,
         /// Minimum amount of VRT to mint
         min_amount_out: u64,
+    },
+    InitializeOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    DelegateToOperator {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// Amount to delegate
+        amount: u64,
     },
     /// Gets a vault
     Get {
@@ -151,6 +168,20 @@ impl VaultCliHandler {
                         min_amount_out,
                     },
             } => self.mint_vrt(vault, amount_in, min_amount_out).await,
+            VaultCommands::Vault {
+                action: VaultActions::InitializeOperatorDelegation { vault, operator },
+            } => {
+                self.initialize_vault_operator_delegation(vault, operator)
+                    .await
+            }
+            VaultCommands::Vault {
+                action:
+                    VaultActions::DelegateToOperator {
+                        vault,
+                        operator,
+                        amount,
+                    },
+            } => self.delegate_to_operator(vault, operator, amount).await,
             VaultCommands::Vault {
                 action: VaultActions::Get { pubkey },
             } => self.get_vault(pubkey).await,
@@ -457,13 +488,118 @@ impl VaultCliHandler {
             "Initializing vault update state tracker transaction: {:?}",
             tx.get_signature()
         );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
-
-        println!("{:?}", result);
+        rpc_client.send_and_confirm_transaction(&tx).await?;
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
         info!("\nMinted VRT");
+
+        Ok(())
+    }
+
+    pub async fn initialize_vault_operator_delegation(
+        &self,
+        vault: String,
+        operator: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let operator = Pubkey::from_str(&operator)?;
+
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &self.restaking_program_id,
+            &operator,
+            &vault,
+        )
+        .0;
+
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &operator,
+        )
+        .0;
+
+        let mut ix_builder = InitializeVaultOperatorDelegationBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .operator(operator)
+            .operator_vault_ticket(operator_vault_ticket)
+            .vault_operator_delegation(vault_operator_delegation)
+            .payer(keypair.pubkey())
+            .admin(keypair.pubkey());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Initializing vault operator delegation transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    pub async fn delegate_to_operator(
+        &self,
+        vault: String,
+        operator: String,
+        amount: u64,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let operator = Pubkey::from_str(&operator)?;
+
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &operator,
+        )
+        .0;
+
+        let mut ix_builder = AddDelegationBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .operator(operator)
+            .vault_operator_delegation(vault_operator_delegation)
+            .admin(keypair.pubkey())
+            .amount(amount);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Initializing vault operator delegation transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
 
         Ok(())
     }

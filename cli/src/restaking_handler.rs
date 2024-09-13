@@ -5,8 +5,11 @@ use clap::Subcommand;
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_client::instructions::{
     InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
+    InitializeOperatorVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
 };
-use jito_restaking_core::{config::Config, ncn::Ncn, operator::Operator};
+use jito_restaking_core::{
+    config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
+};
 use log::{debug, info};
 use solana_account_decoder::UiAccountEncoding;
 use solana_program::pubkey::Pubkey;
@@ -63,6 +66,10 @@ pub enum NcnActions {
 pub enum OperatorActions {
     /// Initialize Operator
     Initialize,
+    /// Initialize Operator Vault Ticket
+    InitializeOperatorVaultTicket { operator: String, vault: String },
+    /// Warmup Operator Vault Ticket
+    WarmupOperatorVaultTicket { operator: String, vault: String },
     /// Get operator
     Get { pubkey: String },
     /// List all operators
@@ -108,6 +115,12 @@ impl RestakingCliHandler {
             RestakingCommands::Operator {
                 action: OperatorActions::Initialize,
             } => self.initialize_operator().await,
+            RestakingCommands::Operator {
+                action: OperatorActions::InitializeOperatorVaultTicket { operator, vault },
+            } => self.initialize_operator_vault_ticket(operator, vault).await,
+            RestakingCommands::Operator {
+                action: OperatorActions::WarmupOperatorVaultTicket { operator, vault },
+            } => self.warmup_operator_vault_ticket(operator, vault).await,
             RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
             } => self.operator_get(pubkey).await,
@@ -290,6 +303,112 @@ impl RestakingCliHandler {
             .as_ref()
             .ok_or_else(|| anyhow!("No signature status"))?;
         info!("Transaction status: {:?}", tx_status);
+
+        info!("Operator initialized");
+        info!("Operator: {:?}", operator);
+        info!("Base: {:?}", base.pubkey());
+
+        Ok(())
+    }
+
+    pub async fn initialize_operator_vault_ticket(
+        &self,
+        operator: String,
+        vault: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let vault = Pubkey::from_str(&vault)?;
+
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &self.restaking_program_id,
+            &operator,
+            &vault,
+        )
+        .0;
+
+        let mut ix_builder = InitializeOperatorVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .operator(operator)
+            .vault(vault)
+            .admin(keypair.pubkey())
+            .operator_vault_ticket(operator_vault_ticket)
+            .payer(keypair.pubkey());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Initializing operator vault ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        info!("\nCreated Operator Vault Ticket");
+        info!("Operator address: {}", operator);
+        info!("Vault address: {}", vault);
+        info!("Operator Vault Ticket address: {}", operator_vault_ticket);
+
+        Ok(())
+    }
+
+    pub async fn warmup_operator_vault_ticket(
+        &self,
+        operator: String,
+        vault: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let vault = Pubkey::from_str(&vault)?;
+
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &self.restaking_program_id,
+            &operator,
+            &vault,
+        )
+        .0;
+
+        let mut ix_builder = WarmupOperatorVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .operator(operator)
+            .vault(vault)
+            .operator_vault_ticket(operator_vault_ticket)
+            .admin(keypair.pubkey());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Warming up operator vault ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
 
         Ok(())
     }
