@@ -6,14 +6,15 @@ use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_client::{
     instructions::{
-        AddDelegationBuilder, CloseVaultUpdateStateTrackerBuilder, InitializeConfigBuilder,
-        InitializeVaultBuilder, InitializeVaultOperatorDelegationBuilder,
+        AddDelegationBuilder, CloseVaultUpdateStateTrackerBuilder, EnqueueWithdrawalBuilder,
+        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultOperatorDelegationBuilder,
         InitializeVaultUpdateStateTrackerBuilder, MintToBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use log::{debug, info};
@@ -96,6 +97,12 @@ pub enum VaultActions {
         /// Operator account
         operator: String,
         /// Amount to delegate
+        amount: u64,
+    },
+    EnqueueWithdrawal {
+        /// Vault account
+        vault: String,
+        /// Amount to withdraw
         amount: u64,
     },
     /// Gets a vault
@@ -182,6 +189,9 @@ impl VaultCliHandler {
                         amount,
                     },
             } => self.delegate_to_operator(vault, operator, amount).await,
+            VaultCommands::Vault {
+                action: VaultActions::EnqueueWithdrawal { vault, amount },
+            } => self.enqueue_withdrawal(vault, amount).await,
             VaultCommands::Vault {
                 action: VaultActions::Get { pubkey },
             } => self.get_vault(pubkey).await,
@@ -589,6 +599,72 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Initializing vault operator delegation transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    pub async fn enqueue_withdrawal(&self, vault: String, amount: u64) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let vault_account_raw = rpc_client.get_account(&vault).await?;
+        let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
+
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &keypair.pubkey(),
+        )
+        .0;
+
+        let vault_staker_withdrawal_ticket_token_account =
+            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault_account.vrt_mint);
+
+        let staker_vrt_token_account =
+            get_associated_token_address(&keypair.pubkey(), &vault_account.vrt_mint);
+
+        let vault_staker_withdrawal_ticket_ata_ix = create_associated_token_account_idempotent(
+            &keypair.pubkey(),
+            &vault_staker_withdrawal_ticket,
+            &vault_account.vrt_mint,
+            &spl_token::ID,
+        );
+
+        let mut ix_builder = EnqueueWithdrawalBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .vault_staker_withdrawal_ticket(vault_staker_withdrawal_ticket)
+            .vault_staker_withdrawal_ticket_token_account(
+                vault_staker_withdrawal_ticket_token_account,
+            )
+            .staker(keypair.pubkey())
+            .staker_vrt_token_account(staker_vrt_token_account)
+            .base(keypair.pubkey())
+            .amount(amount);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[
+                vault_staker_withdrawal_ticket_ata_ix,
+                ix_builder.instruction(),
+            ],
             Some(&keypair.pubkey()),
             &[keypair],
             blockhash,
