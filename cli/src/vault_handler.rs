@@ -3,8 +3,16 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use clap::Subcommand;
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_vault_client::instructions::{InitializeConfigBuilder, InitializeVaultBuilder};
-use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_client::{
+    instructions::{
+        CloseVaultUpdateStateTrackerBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
+        InitializeVaultUpdateStateTrackerBuilder, MintToBuilder,
+    },
+    types::WithdrawalAllocationMethod,
+};
+use jito_vault_core::{
+    config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+};
 use log::{debug, info};
 use solana_account_decoder::UiAccountEncoding;
 use solana_program::pubkey::Pubkey;
@@ -16,6 +24,9 @@ use solana_rpc_client_api::{
 use solana_sdk::{
     signature::{Keypair, Signer},
     transaction::Transaction,
+};
+use spl_associated_token_account::{
+    get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 
 use crate::cli_args::CliConfig;
@@ -51,6 +62,24 @@ pub enum VaultActions {
         withdrawal_fee_bps: u16,
         /// The reward fee in bips
         reward_fee_bps: u16,
+    },
+    InitializeUpdateStateTracker {
+        /// Vault account
+        vault: String,
+    },
+    CloseUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// Optional NCN epoch to close
+        ncn_epoch: Option<u64>,
+    },
+    MintVRT {
+        /// Vault account
+        vault: String,
+        /// Amount to deposit
+        amount_in: u64,
+        /// Minimum amount of VRT to mint
+        min_amount_out: u64,
     },
     /// Gets a vault
     Get {
@@ -105,6 +134,23 @@ impl VaultCliHandler {
                 )
                 .await
             }
+            VaultCommands::Vault {
+                action: VaultActions::InitializeUpdateStateTracker { vault },
+            } => self.initialize_vault_update_state_tracker(vault).await,
+            VaultCommands::Vault {
+                action: VaultActions::CloseUpdateStateTracker { vault, ncn_epoch },
+            } => {
+                self.close_vault_update_state_tracker(vault, ncn_epoch)
+                    .await
+            }
+            VaultCommands::Vault {
+                action:
+                    VaultActions::MintVRT {
+                        vault,
+                        amount_in,
+                        min_amount_out,
+                    },
+            } => self.mint_vrt(vault, amount_in, min_amount_out).await,
             VaultCommands::Vault {
                 action: VaultActions::Get { pubkey },
             } => self.get_vault(pubkey).await,
@@ -203,6 +249,221 @@ impl VaultCliHandler {
         info!("Initializing vault transaction: {:?}", tx.get_signature());
         rpc_client.send_and_confirm_transaction(&tx).await?;
         info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        info!("\nCreated new vault");
+        info!("Vault address: {}", vault);
+        info!("Base address: {}", base.pubkey());
+        info!("VRT mint address: {}", vrt_mint.pubkey());
+        info!("Token mint address: {}", token_mint);
+
+        Ok(())
+    }
+
+    pub async fn initialize_vault_update_state_tracker(&self, vault: String) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config = Config::find_program_address(&self.vault_program_id).0;
+
+        let config_account_raw = rpc_client.get_account(&config).await?;
+        let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
+
+        let current_slot = rpc_client.get_slot().await?;
+        let epoch_length = config_account.epoch_length();
+        let ncn_epoch = current_slot / epoch_length;
+
+        let vault = Pubkey::from_str(&vault)?;
+        let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            ncn_epoch,
+        )
+        .0;
+
+        let mut ix_builder = InitializeVaultUpdateStateTrackerBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .vault_update_state_tracker(vault_update_state_tracker)
+            .payer(keypair.pubkey())
+            .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy); // Only withdrawal allocation method supported for now
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Initializing vault update state tracker transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        info!("\nCreated Update State Tracker");
+        info!("Vault address: {}", vault);
+        info!(
+            "Vault Update State Tracker address: {}",
+            vault_update_state_tracker
+        );
+        info!("NCN Epoch: {}", ncn_epoch);
+
+        Ok(())
+    }
+
+    pub async fn close_vault_update_state_tracker(
+        &self,
+        vault: String,
+        ncn_epoch: Option<u64>,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config = Config::find_program_address(&self.vault_program_id).0;
+
+        let ncn_epoch = match ncn_epoch {
+            Some(ncn_epoch) => ncn_epoch,
+            None => {
+                let config_account_raw = rpc_client.get_account(&config).await?;
+                let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
+
+                let current_slot = rpc_client.get_slot().await?;
+                let epoch_length = config_account.epoch_length();
+                current_slot / epoch_length
+            }
+        };
+
+        let vault = Pubkey::from_str(&vault)?;
+        let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            ncn_epoch,
+        )
+        .0;
+
+        let mut ix_builder = CloseVaultUpdateStateTrackerBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .vault_update_state_tracker(vault_update_state_tracker)
+            .ncn_epoch(ncn_epoch)
+            .payer(keypair.pubkey());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Closing vault update state tracker transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        info!("\nClose Update State Tracker");
+        Ok(())
+    }
+
+    pub async fn mint_vrt(&self, vault: String, amount_in: u64, min_amount_out: u64) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+
+        let vault_account_raw = rpc_client.get_account(&vault).await?;
+        let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
+
+        let depositor = keypair.pubkey();
+        let depositor_token_account =
+            get_associated_token_address(&depositor, &vault_account.supported_mint);
+        let depositor_vrt_token_account =
+            get_associated_token_address(&depositor, &vault_account.vrt_mint);
+
+        let vault_token_account =
+            get_associated_token_address(&vault, &vault_account.supported_mint);
+
+        let vault_fee_token_account =
+            get_associated_token_address(&vault_account.fee_wallet, &vault_account.vrt_mint);
+
+        let depositor_ata_ix = create_associated_token_account_idempotent(
+            &depositor,
+            &depositor,
+            &vault_account.supported_mint,
+            &spl_token::ID,
+        );
+        let depositor_vrt_ata_ix = create_associated_token_account_idempotent(
+            &depositor,
+            &depositor,
+            &vault_account.vrt_mint,
+            &spl_token::ID,
+        );
+        let vault_ata_ix = create_associated_token_account_idempotent(
+            &depositor,
+            &vault,
+            &vault_account.supported_mint,
+            &spl_token::ID,
+        );
+        let vault_fee_ata_ix = create_associated_token_account_idempotent(
+            &depositor,
+            &vault_account.fee_wallet,
+            &vault_account.supported_mint,
+            &spl_token::ID,
+        );
+
+        let mut ix_builder = MintToBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vrt_mint(vault_account.vrt_mint)
+            .depositor(depositor)
+            .depositor_token_account(depositor_token_account)
+            .depositor_vrt_token_account(depositor_vrt_token_account)
+            .vault_token_account(vault_token_account)
+            .vault_fee_token_account(vault_fee_token_account)
+            .amount_in(amount_in)
+            .min_amount_out(min_amount_out)
+            .vault(vault);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[
+                depositor_ata_ix,
+                depositor_vrt_ata_ix,
+                vault_ata_ix,
+                vault_fee_ata_ix,
+                ix_builder.instruction(),
+            ],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Initializing vault update state tracker transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        println!("{:?}", result);
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        info!("\nMinted VRT");
 
         Ok(())
     }
