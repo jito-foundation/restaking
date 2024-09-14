@@ -6,8 +6,9 @@ use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_client::{
     instructions::{
-        AddDelegationBuilder, CloseVaultUpdateStateTrackerBuilder, EnqueueWithdrawalBuilder,
-        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultOperatorDelegationBuilder,
+        AddDelegationBuilder, BurnWithdrawTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
+        CrankVaultUpdateStateTrackerBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
+        InitializeVaultBuilder, InitializeVaultOperatorDelegationBuilder,
         InitializeVaultUpdateStateTrackerBuilder, MintToBuilder,
     },
     types::WithdrawalAllocationMethod,
@@ -105,6 +106,20 @@ pub enum VaultActions {
         /// Amount to withdraw
         amount: u64,
     },
+    CrankUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// NCN epoch to crank
+        ncn_epoch: Option<u64>,
+    },
+    BurnWithdrawalTicket {
+        /// Vault account
+        vault: String,
+        /// Minimum amount of VRT to mint
+        min_amount_out: u64,
+    },
     /// Gets a vault
     Get {
         /// The vault pubkey
@@ -189,9 +204,28 @@ impl VaultCliHandler {
                         amount,
                     },
             } => self.delegate_to_operator(vault, operator, amount).await,
+
             VaultCommands::Vault {
                 action: VaultActions::EnqueueWithdrawal { vault, amount },
             } => self.enqueue_withdrawal(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::CrankUpdateStateTracker {
+                        vault,
+                        operator,
+                        ncn_epoch,
+                    },
+            } => {
+                self.crank_vault_update_state_tracker(vault, operator, ncn_epoch)
+                    .await
+            }
+            VaultCommands::Vault {
+                action:
+                    VaultActions::BurnWithdrawalTicket {
+                        vault,
+                        min_amount_out,
+                    },
+            } => self.burn_withdrawal_ticket(vault, min_amount_out).await,
             VaultCommands::Vault {
                 action: VaultActions::Get { pubkey },
             } => self.get_vault(pubkey).await,
@@ -228,7 +262,12 @@ impl VaultCliHandler {
             "Initializing vault config transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
         info!("Transaction confirmed: {:?}", tx.get_signature());
         Ok(())
     }
@@ -288,7 +327,11 @@ impl VaultCliHandler {
             blockhash,
         );
         info!("Initializing vault transaction: {:?}", tx.get_signature());
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
         info!("\nCreated new vault");
@@ -344,7 +387,13 @@ impl VaultCliHandler {
             "Initializing vault update state tracker transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
         info!("\nCreated Update State Tracker");
@@ -411,7 +460,11 @@ impl VaultCliHandler {
             "Closing vault update state tracker transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
         info!("\nClose Update State Tracker");
@@ -498,7 +551,11 @@ impl VaultCliHandler {
             "Initializing vault update state tracker transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
@@ -557,7 +614,11 @@ impl VaultCliHandler {
             "Initializing vault operator delegation transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
@@ -607,7 +668,11 @@ impl VaultCliHandler {
             "Initializing vault operator delegation transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
@@ -673,7 +738,154 @@ impl VaultCliHandler {
             "Initializing vault operator delegation transaction: {:?}",
             tx.get_signature()
         );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    pub async fn crank_vault_update_state_tracker(
+        &self,
+        vault: String,
+        operator: String,
+        ncn_epoch: Option<u64>,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config = Config::find_program_address(&self.vault_program_id).0;
+
+        let vault = Pubkey::from_str(&vault)?;
+        let operator = Pubkey::from_str(&operator)?;
+
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &operator,
+        )
+        .0;
+
+        let ncn_epoch = match ncn_epoch {
+            Some(ncn_epoch) => ncn_epoch,
+            None => {
+                let config_account_raw = rpc_client.get_account(&config).await?;
+                let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
+
+                let current_slot = rpc_client.get_slot().await?;
+                let epoch_length = config_account.epoch_length();
+                current_slot / epoch_length
+            }
+        };
+
+        let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            ncn_epoch,
+        )
+        .0;
+
+        let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
+        ix_builder
+            .config(config)
+            .vault(vault)
+            .operator(operator)
+            .vault_operator_delegation(vault_operator_delegation)
+            .vault_update_state_tracker(vault_update_state_tracker);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Cranking vault update state tracker: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    pub async fn burn_withdrawal_ticket(&self, vault: String, min_amount_out: u64) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let vault_account_raw = rpc_client.get_account(&vault).await?;
+        let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
+
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &keypair.pubkey(),
+        )
+        .0;
+
+        let staker = keypair.pubkey();
+        let staker_token_account =
+            get_associated_token_address(&staker, &vault_account.supported_mint);
+
+        let vault_token_account =
+            get_associated_token_address(&vault, &vault_account.supported_mint);
+
+        let vault_fee_token_account =
+            get_associated_token_address(&vault_account.fee_wallet, &vault_account.vrt_mint);
+
+        let vault_staker_withdrawal_ticket_token_account =
+            get_associated_token_address(&vault_staker_withdrawal_ticket, &vault_account.vrt_mint);
+
+        let mut ix_builder = BurnWithdrawTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vrt_mint(vault_account.vrt_mint)
+            .vault(vault)
+            .vault_staker_withdrawal_ticket(vault_staker_withdrawal_ticket)
+            .vault_staker_withdrawal_ticket_token_account(
+                vault_staker_withdrawal_ticket_token_account,
+            )
+            .staker_token_account(staker_token_account)
+            .vault_fee_token_account(vault_fee_token_account)
+            .vault_token_account(vault_token_account)
+            .min_amount_out(min_amount_out)
+            .staker(staker);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Initializing vault operator delegation transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
 

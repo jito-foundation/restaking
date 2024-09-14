@@ -72,9 +72,20 @@ Enqueue withdrawal:
 cargo run -- vault vault enqueue-withdrawal VAULT AMOUNT
 ```
 
+## Crank Vault Update State Tracker
+
+```bash
+cargo run -- vault vault crank-update-state-tracker VAULT OPERATOR NCN_EPOCH
+```
+
+## Burn Withdrawal Ticket
+
+```bash
+cargo run -- vault vault burn-withdrawal-ticket VAULT
+```
+
 Wait for cooldown period to pass
 
 WITHDRAW FROM VAULT
-getEnqueueWithdrawalInstruction
 getCrankVaultUpdateStateTrackerInstruction (to get rewards - not necessary)
 getBurnWithdrawTicketInstruction (you need to wait at least an eopoch after getEnqueueWithdrawalInstruction was called for it to work)
