@@ -120,6 +120,24 @@ pub enum VaultActions {
         /// Minimum amount of VRT to mint
         min_amount_out: u64,
     },
+    GetStateTracker {
+        /// Vault account
+        vault: String,
+        /// NCN epoch
+        ncn_epoch: u64,
+    },
+    GetOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    GetWithdrawalTicket {
+        /// Vault account
+        vault: String,
+        /// Staker account
+        staker: Option<String>,
+    },
     /// Gets a vault
     Get {
         /// The vault pubkey
@@ -226,6 +244,15 @@ impl VaultCliHandler {
                         min_amount_out,
                     },
             } => self.burn_withdrawal_ticket(vault, min_amount_out).await,
+            VaultCommands::Vault {
+                action: VaultActions::GetStateTracker { vault, ncn_epoch },
+            } => self.get_vault_update_state_tracker(vault, ncn_epoch).await,
+            VaultCommands::Vault {
+                action: VaultActions::GetOperatorDelegation { vault, operator },
+            } => self.get_vault_operator_delegation(vault, operator).await,
+            VaultCommands::Vault {
+                action: VaultActions::GetWithdrawalTicket { vault, staker },
+            } => self.get_withdrawal_ticket(vault, staker).await,
             VaultCommands::Vault {
                 action: VaultActions::Get { pubkey },
             } => self.get_vault(pubkey).await,
@@ -898,6 +925,72 @@ impl VaultCliHandler {
         let account = rpc_client.get_account(&pubkey).await?;
         let vault = Vault::try_from_slice_unchecked(&account.data)?;
         info!("vault at address {}: {:?}", pubkey, vault);
+        Ok(())
+    }
+
+    pub async fn get_vault_update_state_tracker(
+        &self,
+        vault: String,
+        ncn_epoch: u64,
+    ) -> Result<()> {
+        let vault = Pubkey::from_str(&vault)?;
+        let rpc_client = self.get_rpc_client();
+        let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            ncn_epoch,
+        )
+        .0;
+        let account = rpc_client.get_account(&vault_update_state_tracker).await?;
+        let state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked(&account.data)?;
+        info!("{:?}", state_tracker);
+        Ok(())
+    }
+
+    pub async fn get_vault_operator_delegation(
+        &self,
+        vault: String,
+        operator: String,
+    ) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let vault = Pubkey::from_str(&vault)?;
+        let operator = Pubkey::from_str(&operator)?;
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &operator,
+        )
+        .0;
+        let account = rpc_client.get_account(&vault_operator_delegation).await?;
+        let delegation = VaultOperatorDelegation::try_from_slice_unchecked(&account.data)?;
+        info!("{:?}", delegation);
+        Ok(())
+    }
+
+    pub async fn get_withdrawal_ticket(&self, vault: String, staker: Option<String>) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let vault = Pubkey::from_str(&vault)?;
+        let staker = if let Some(staker) = staker {
+            Pubkey::from_str(&staker)?
+        } else {
+            let keypair = self
+                .cli_config
+                .keypair
+                .as_ref()
+                .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            keypair.pubkey()
+        };
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &staker,
+        )
+        .0;
+        let account = rpc_client
+            .get_account(&vault_staker_withdrawal_ticket)
+            .await?;
+        let ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked(&account.data)?;
+        info!("{:?}", ticket);
         Ok(())
     }
 

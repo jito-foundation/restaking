@@ -53,6 +53,10 @@ yarn generate-clients
 cargo b --release
 ```
 
+### Vault Creation Demo
+
+Run through the [restaking CLI demo](./cli/demo.md).
+
 ## Running Tests
 
 If you haven't installed `cargo-nextest` yet, it's recommended to install it.
