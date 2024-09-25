@@ -6,6 +6,8 @@ This demo provides all of the commands to make a vault, mint some VRT, create an
 
 Build and install the CLI
 
+In the root of the repo:
+
 ```bash
 cargo build --release
 cargo install --path ./cli --bin jito-restaking-cli
