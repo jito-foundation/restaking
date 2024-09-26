@@ -23,13 +23,13 @@ pub fn process_ncn_withdraw_asset(
 
     Ncn::load(program_id, ncn_info, false)?;
     load_token_mint(token_mint)?;
-    load_associated_token_account(ncn_token_account, ncn_info.key, &token_mint.key)?;
+    load_associated_token_account(ncn_token_account, ncn_info.key, token_mint.key)?;
     let ncn_data = ncn_info.data.borrow();
     let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
     load_associated_token_account(
         receiver_token_account,
         &ncn.withdraw_fee_wallet,
-        &token_mint.key,
+        token_mint.key,
     )?;
     load_signer(withdraw_admin, false)?;
     load_token_program(token_program)?;

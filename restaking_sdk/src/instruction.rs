@@ -1,6 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
-use solana_program::pubkey::Pubkey;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
 pub enum RestakingInstruction {
