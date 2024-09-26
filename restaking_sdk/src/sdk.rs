@@ -369,8 +369,8 @@ pub fn ncn_withdrawal_asset(
     ncn_token_account: &Pubkey,
     receiver_token_account: &Pubkey,
     admin: &Pubkey,
+    token_mint: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -378,12 +378,13 @@ pub fn ncn_withdrawal_asset(
         AccountMeta::new(*ncn_token_account, false),
         AccountMeta::new(*receiver_token_account, false),
         AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::NcnWithdrawalAsset { amount }
             .try_to_vec()
             .unwrap(),
     }
@@ -396,8 +397,8 @@ pub fn operator_withdrawal_asset(
     admin: &Pubkey,
     operator_token_account: &Pubkey,
     receiver_token_account: &Pubkey,
+    token_mint: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
     amount: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -405,12 +406,13 @@ pub fn operator_withdrawal_asset(
         AccountMeta::new_readonly(*admin, true),
         AccountMeta::new(*operator_token_account, false),
         AccountMeta::new(*receiver_token_account, false),
+        AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::OperatorWithdrawalAsset { amount }
             .try_to_vec()
             .unwrap(),
     }

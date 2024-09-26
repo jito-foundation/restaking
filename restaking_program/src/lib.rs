@@ -173,13 +173,13 @@ pub fn process_instruction(
             msg!("Instruction: OperatorSetSecondaryAdmin");
             process_set_operator_secondary_admin(program_id, accounts, role)
         }
-        RestakingInstruction::NcnWithdrawalAsset { token_mint, amount } => {
+        RestakingInstruction::NcnWithdrawalAsset { amount } => {
             msg!("Instruction: NcnWithdrawalAsset");
-            process_ncn_withdraw_asset(program_id, accounts, token_mint, amount)
+            process_ncn_withdraw_asset(program_id, accounts, amount)
         }
-        RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
+        RestakingInstruction::OperatorWithdrawalAsset { amount } => {
             msg!("Instruction: OperatorWithdrawalAsset");
-            process_operator_withdrawal_asset(program_id, accounts, token_mint, amount)
+            process_operator_withdrawal_asset(program_id, accounts, amount)
         }
     }
 }
