@@ -114,7 +114,7 @@ graph TD
 State in these programs is spread out across many accounts.
 To reason about the state of stake at any given time, one can reference the chart below.
 
-Assets are considered staked iff:
+Assets are considered staked if:
 
 - The NCN has opted-in to the operator
 - The operator has opted-in to the NCN
