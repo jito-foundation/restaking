@@ -949,7 +949,7 @@ impl Vault {
 
     /// Returns the seeds for the PDA used for signing
     pub fn signing_seeds(&self) -> Vec<Vec<u8>> {
-        let mut vault_seeds = Vault::seeds(&self.base);
+        let mut vault_seeds = Self::seeds(&self.base);
         vault_seeds.push(vec![self.bump]);
         vault_seeds
     }
