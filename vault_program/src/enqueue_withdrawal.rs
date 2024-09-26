@@ -94,7 +94,7 @@ pub fn process_enqueue_withdrawal(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultStakerWithdrawalTicket>() as u64)
-            .unwrap(),
+            .ok_or(ProgramError::ArithmeticOverflow)?,
         &vault_staker_withdrawal_ticket_seeds,
     )?;
     let mut vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow_mut();

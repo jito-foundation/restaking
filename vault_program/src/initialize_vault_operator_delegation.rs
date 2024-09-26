@@ -73,7 +73,7 @@ pub fn process_initialize_vault_operator_delegation(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultOperatorDelegation>() as u64)
-            .unwrap(),
+            .ok_or(ProgramError::ArithmeticOverflow)?,
         &vault_operator_delegation_seeds,
     )?;
 

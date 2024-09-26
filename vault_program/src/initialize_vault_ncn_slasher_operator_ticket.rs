@@ -49,7 +49,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     let ncn_epoch = Clock::get()?
         .slot
         .checked_div(config.epoch_length())
-        .unwrap();
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (
@@ -88,7 +88,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultNcnSlasherOperatorTicket>() as u64)
-            .unwrap(),
+            .ok_or(ProgramError::ArithmeticOverflow)?,
         &vault_ncn_slasher_operator_ticket_seeds,
     )?;
 

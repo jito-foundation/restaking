@@ -76,7 +76,7 @@ pub fn process_initialize_vault_ncn_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultNcnTicket>() as u64)
-            .unwrap(),
+            .ok_or(ProgramError::ArithmeticOverflow)?,
         &vault_ncn_ticket_seeds,
     )?;
     let mut vault_ncn_ticket_data = vault_ncn_ticket.try_borrow_mut_data()?;

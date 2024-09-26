@@ -79,7 +79,7 @@ pub fn process_initialize_vault_ncn_slasher_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultNcnSlasherTicket>() as u64)
-            .unwrap(),
+            .ok_or(ProgramError::ArithmeticOverflow)?,
         &vault_ncn_slasher_ticket_seeds,
     )?;
 
