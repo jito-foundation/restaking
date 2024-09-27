@@ -60,8 +60,17 @@ export const JITO_RESTAKING_ERROR__OPERATOR_OVERFLOW = 0x7d9; // 2009
 export const JITO_RESTAKING_ERROR__VAULT_OVERFLOW = 0x7da; // 2010
 /** SlasherOverflow: SlasherOverflow */
 export const JITO_RESTAKING_ERROR__SLASHER_OVERFLOW = 0x7db; // 2011
+/** ArithmeticOverflow: ArithmeticOverflow */
+export const JITO_RESTAKING_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
+/** ArithmeticUnderflow: ArithmeticUnderflow */
+export const JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW = 0xbb9; // 3001
+/** DivisionByZero: DivisionByZero */
+export const JITO_RESTAKING_ERROR__DIVISION_BY_ZERO = 0xbba; // 3002
 
 export type JitoRestakingError =
+  | typeof JITO_RESTAKING_ERROR__ARITHMETIC_OVERFLOW
+  | typeof JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW
+  | typeof JITO_RESTAKING_ERROR__DIVISION_BY_ZERO
   | typeof JITO_RESTAKING_ERROR__NCN_ADMIN_INVALID
   | typeof JITO_RESTAKING_ERROR__NCN_COOLDOWN_OPERATOR_FAILED
   | typeof JITO_RESTAKING_ERROR__NCN_OPERATOR_ADMIN_INVALID
@@ -89,6 +98,9 @@ export type JitoRestakingError =
 let jitoRestakingErrorMessages: Record<JitoRestakingError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
   jitoRestakingErrorMessages = {
+    [JITO_RESTAKING_ERROR__ARITHMETIC_OVERFLOW]: `ArithmeticOverflow`,
+    [JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW]: `ArithmeticUnderflow`,
+    [JITO_RESTAKING_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,
     [JITO_RESTAKING_ERROR__NCN_ADMIN_INVALID]: `NcnAdminInvalid`,
     [JITO_RESTAKING_ERROR__NCN_COOLDOWN_OPERATOR_FAILED]: `NcnCooldownOperatorFailed`,
     [JITO_RESTAKING_ERROR__NCN_OPERATOR_ADMIN_INVALID]: `NcnOperatorAdminInvalid`,
