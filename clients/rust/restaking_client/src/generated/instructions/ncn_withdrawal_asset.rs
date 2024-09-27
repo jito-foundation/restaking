@@ -5,7 +5,6 @@
 //! <https://github.com/kinobi-so/kinobi>
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
 
 /// Accounts.
 pub struct NcnWithdrawalAsset {
@@ -16,6 +15,8 @@ pub struct NcnWithdrawalAsset {
     pub receiver_token_account: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
+
+    pub token_mint: solana_program::pubkey::Pubkey,
 
     pub token_program: solana_program::pubkey::Pubkey,
 }
@@ -33,7 +34,7 @@ impl NcnWithdrawalAsset {
         args: NcnWithdrawalAssetInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.ncn, false,
         ));
@@ -47,6 +48,10 @@ impl NcnWithdrawalAsset {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.token_mint,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.token_program,
@@ -87,7 +92,6 @@ impl Default for NcnWithdrawalAssetInstructionData {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NcnWithdrawalAssetInstructionArgs {
-    pub token_mint: Pubkey,
     pub amount: u64,
 }
 
@@ -99,15 +103,16 @@ pub struct NcnWithdrawalAssetInstructionArgs {
 ///   1. `[writable]` ncn_token_account
 ///   2. `[writable]` receiver_token_account
 ///   3. `[signer]` admin
-///   4. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   4. `[]` token_mint
+///   5. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct NcnWithdrawalAssetBuilder {
     ncn: Option<solana_program::pubkey::Pubkey>,
     ncn_token_account: Option<solana_program::pubkey::Pubkey>,
     receiver_token_account: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
+    token_mint: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
-    token_mint: Option<Pubkey>,
     amount: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
@@ -142,15 +147,15 @@ impl NcnWithdrawalAssetBuilder {
         self.admin = Some(admin);
         self
     }
+    #[inline(always)]
+    pub fn token_mint(&mut self, token_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.token_mint = Some(token_mint);
+        self
+    }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
@@ -187,12 +192,12 @@ impl NcnWithdrawalAssetBuilder {
                 .receiver_token_account
                 .expect("receiver_token_account is not set"),
             admin: self.admin.expect("admin is not set"),
+            token_mint: self.token_mint.expect("token_mint is not set"),
             token_program: self.token_program.unwrap_or(solana_program::pubkey!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
         };
         let args = NcnWithdrawalAssetInstructionArgs {
-            token_mint: self.token_mint.clone().expect("token_mint is not set"),
             amount: self.amount.clone().expect("amount is not set"),
         };
 
@@ -210,6 +215,8 @@ pub struct NcnWithdrawalAssetCpiAccounts<'a, 'b> {
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
@@ -225,6 +232,8 @@ pub struct NcnWithdrawalAssetCpi<'a, 'b> {
     pub receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
@@ -243,6 +252,7 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
             ncn_token_account: accounts.ncn_token_account,
             receiver_token_account: accounts.receiver_token_account,
             admin: accounts.admin,
+            token_mint: accounts.token_mint,
             token_program: accounts.token_program,
             __args: args,
         }
@@ -280,7 +290,7 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.ncn.key,
             false,
@@ -296,6 +306,10 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.admin.key,
             true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.token_mint.key,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.token_program.key,
@@ -319,12 +333,13 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(6 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.ncn.clone());
         account_infos.push(self.ncn_token_account.clone());
         account_infos.push(self.receiver_token_account.clone());
         account_infos.push(self.admin.clone());
+        account_infos.push(self.token_mint.clone());
         account_infos.push(self.token_program.clone());
         remaining_accounts
             .iter()
@@ -346,7 +361,8 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
 ///   1. `[writable]` ncn_token_account
 ///   2. `[writable]` receiver_token_account
 ///   3. `[signer]` admin
-///   4. `[]` token_program
+///   4. `[]` token_mint
+///   5. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct NcnWithdrawalAssetCpiBuilder<'a, 'b> {
     instruction: Box<NcnWithdrawalAssetCpiBuilderInstruction<'a, 'b>>,
@@ -360,8 +376,8 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
             ncn_token_account: None,
             receiver_token_account: None,
             admin: None,
-            token_program: None,
             token_mint: None,
+            token_program: None,
             amount: None,
             __remaining_accounts: Vec::new(),
         });
@@ -394,16 +410,19 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
+    pub fn token_mint(
+        &mut self,
+        token_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.token_mint = Some(token_mint);
+        self
+    }
+    #[inline(always)]
     pub fn token_program(
         &mut self,
         token_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.instruction.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
@@ -453,11 +472,6 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
         let args = NcnWithdrawalAssetInstructionArgs {
-            token_mint: self
-                .instruction
-                .token_mint
-                .clone()
-                .expect("token_mint is not set"),
             amount: self.instruction.amount.clone().expect("amount is not set"),
         };
         let instruction = NcnWithdrawalAssetCpi {
@@ -476,6 +490,8 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
                 .expect("receiver_token_account is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
+
+            token_mint: self.instruction.token_mint.expect("token_mint is not set"),
 
             token_program: self
                 .instruction
@@ -497,8 +513,8 @@ struct NcnWithdrawalAssetCpiBuilderInstruction<'a, 'b> {
     ncn_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     receiver_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_mint: Option<Pubkey>,
     amount: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
