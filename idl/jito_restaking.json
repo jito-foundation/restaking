@@ -800,16 +800,17 @@
           "isSigner": true
         },
         {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         }
       ],
       "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
         {
           "name": "amount",
           "type": "u64"
@@ -844,16 +845,17 @@
           "isSigner": false
         },
         {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         }
       ],
       "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
         {
           "name": "amount",
           "type": "u64"
