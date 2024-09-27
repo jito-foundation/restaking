@@ -162,6 +162,7 @@ impl RestakingProgramClient {
             &operator_pubkey,
             &operator_admin,
             &operator_base,
+            0,
         )
         .await?;
         Ok(OperatorRoot {
@@ -868,6 +869,7 @@ impl RestakingProgramClient {
         operator: &Pubkey,
         admin: &Keypair,
         base: &Keypair,
+        operator_fee_bps: u16,
     ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -878,6 +880,7 @@ impl RestakingProgramClient {
                 operator,
                 &admin.pubkey(),
                 &base.pubkey(),
+                operator_fee_bps,
             )],
             Some(&admin.pubkey()),
             &[admin, base],

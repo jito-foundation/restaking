@@ -63,6 +63,7 @@ mod tests {
                 &incorrect_operator_pubkey,
                 &operator_admin,
                 &operator_base,
+                0,
             )
             .await;
 
@@ -98,6 +99,7 @@ mod tests {
                 &operator_pubkey,
                 &operator_admin,
                 &operator_base,
+                0,
             )
             .await
             .unwrap();
@@ -112,6 +114,7 @@ mod tests {
                 &operator_pubkey,
                 &operator_admin,
                 &operator_base,
+                0,
             )
             .await;
 

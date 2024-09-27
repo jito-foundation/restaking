@@ -13,7 +13,11 @@ use solana_program::{
 
 /// Initializes a node operator and associated accounts.
 /// [`crate::RestakingInstruction::InitializeOperator`]
-pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+pub fn process_initialize_operator(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    operator_fee_bps: u16,
+) -> ProgramResult {
     let [config, operator, admin, base, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -53,6 +57,7 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
         *base.key,
         *admin.key,
         config.operator_count(),
+        operator_fee_bps,
         operator_bump,
     );
 

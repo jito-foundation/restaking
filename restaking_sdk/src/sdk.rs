@@ -255,6 +255,7 @@ pub fn initialize_operator(
     operator: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
+    operator_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -266,7 +267,7 @@ pub fn initialize_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeOperator
+        data: RestakingInstruction::InitializeOperator { operator_fee_bps }
             .try_to_vec()
             .unwrap(),
     }

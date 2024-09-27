@@ -4,7 +4,10 @@
 use std::fmt::Debug;
 
 use bytemuck::{Pod, Zeroable};
-use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_bytemuck::{
+    types::{PodU16, PodU64},
+    AccountDeserialize, Discriminator,
+};
 use jito_restaking_sdk::error::RestakingError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -54,8 +57,11 @@ pub struct Operator {
     /// The bump seed for the PDA
     pub bump: u8,
 
+    /// The operator fee in basis points
+    pub operator_fee_bps: PodU16,
+
     /// Reserved space
-    reserved_space: [u8; 263],
+    reserved_space: [u8; 261],
 }
 
 impl Operator {
@@ -65,7 +71,7 @@ impl Operator {
     /// * `admin` - The admin of the Operator
     /// * `index` - The index of the Operator
     /// * `bump` - The bump seed for the PDA
-    pub fn new(base: Pubkey, admin: Pubkey, index: u64, bump: u8) -> Self {
+    pub fn new(base: Pubkey, admin: Pubkey, index: u64, operator_fee_bps: u16, bump: u8) -> Self {
         Self {
             base,
             admin,
@@ -77,8 +83,9 @@ impl Operator {
             index: PodU64::from(index),
             ncn_count: PodU64::from(0),
             vault_count: PodU64::from(0),
+            operator_fee_bps: PodU16::from(operator_fee_bps),
             bump,
-            reserved_space: [0; 263],
+            reserved_space: [0; 261],
         }
     }
 
@@ -212,6 +219,14 @@ impl Operator {
         }
         Ok(())
     }
+
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), ProgramError> {
+        if self.admin.ne(admin) {
+            msg!("Operator admin invalid");
+            return Err(RestakingError::OperatorAdminInvalid.into());
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -242,7 +257,7 @@ mod tests {
     #[test]
     fn test_update_secondary_admin_ok() {
         let old_admin = Pubkey::new_unique();
-        let mut operator = Operator::new(Pubkey::new_unique(), old_admin, 0, 0);
+        let mut operator = Operator::new(Pubkey::new_unique(), old_admin, 0, 0, 0);
 
         assert_eq!(operator.ncn_admin, old_admin);
         assert_eq!(operator.vault_admin, old_admin);
