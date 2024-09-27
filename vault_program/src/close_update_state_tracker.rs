@@ -43,7 +43,7 @@ pub fn process_close_vault_update_state_tracker(
 
     let current_ncn_epoch = slot
         .checked_div(config.epoch_length())
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+        .ok_or(VaultError::DivisionByZero)?;
 
     // The VaultUpdateStateTracker shall be up-to-date before closing
     if ncn_epoch != current_ncn_epoch {

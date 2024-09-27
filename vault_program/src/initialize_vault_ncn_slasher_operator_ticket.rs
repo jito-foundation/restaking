@@ -10,6 +10,7 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -49,7 +50,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     let ncn_epoch = Clock::get()?
         .slot
         .checked_div(config.epoch_length())
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+        .ok_or(VaultError::DivisionByZero)?;
 
     // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (
@@ -88,7 +89,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultNcnSlasherOperatorTicket>() as u64)
-            .ok_or(ProgramError::ArithmeticOverflow)?,
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_ncn_slasher_operator_ticket_seeds,
     )?;
 

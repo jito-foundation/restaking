@@ -104,7 +104,7 @@ pub fn process_slash(
     let ncn_epoch = Clock::get()?
         .slot
         .checked_div(config.epoch_length())
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+        .ok_or(VaultError::DivisionByZero)?;
     VaultNcnSlasherOperatorTicket::load(
         program_id,
         vault_ncn_slasher_operator_ticket,

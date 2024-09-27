@@ -6,7 +6,7 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use jito_vault_sdk::instruction::WithdrawalAllocationMethod;
+use jito_vault_sdk::{error::VaultError, instruction::WithdrawalAllocationMethod};
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
@@ -41,7 +41,7 @@ pub fn process_crank_vault_update_state_tracker(
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
     let ncn_epoch = slot
         .checked_div(config.epoch_length())
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+        .ok_or(VaultError::DivisionByZero)?;
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,

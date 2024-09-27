@@ -101,7 +101,7 @@ pub fn process_initialize_vault(
             &Rent::get()?,
             8_u64
                 .checked_add(size_of::<Vault>() as u64)
-                .ok_or(ProgramError::ArithmeticOverflow)?,
+                .ok_or(VaultError::ArithmeticOverflow)?,
             &vault_seeds,
         )?;
 
