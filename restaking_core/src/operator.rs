@@ -36,6 +36,9 @@ pub struct Operator {
     /// The withdrawal fee wallet where withdrawn funds are sent
     pub withdrawal_fee_wallet: Pubkey,
 
+    /// The admin allowed to harvest stray funds
+    pub harvest_admin: Pubkey,
+
     /// The voter pubkey can be used as the voter for signing transactions for interacting
     /// with various NCN programs. NCNs can also opt for their own signing infrastructure.
     pub voter: Pubkey,
@@ -73,6 +76,7 @@ impl Operator {
             vault_admin: admin,
             withdrawal_admin: admin,
             withdrawal_fee_wallet: admin,
+            harvest_admin: admin,
             voter: admin,
             index: PodU64::from(index),
             ncn_count: PodU64::from(0),
@@ -141,6 +145,11 @@ impl Operator {
         if self.withdrawal_fee_wallet.eq(old_admin) {
             self.withdrawal_fee_wallet = *new_admin;
             msg!("Withdrawal fee wallet set to {:?}", new_admin);
+        }
+
+        if self.harvest_admin.eq(old_admin) {
+            self.harvest_admin = *new_admin;
+            msg!("Harvest admin set to {:?}", new_admin);
         }
     }
 

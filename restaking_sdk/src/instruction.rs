@@ -184,6 +184,12 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "receiver_token_account")]
     #[account(4, name = "token_program")]
     OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+
+    #[account(0, writable, name = "program_account")]
+    #[account(1, name = "config_ncn_or_operator")]
+    #[account(2, signer, name = "harvest_admin")]
+    #[account(3, writable, name = "destination")]
+    HarvestLamports,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -193,6 +199,7 @@ pub enum NcnAdminRole {
     Slasher,
     Withdraw,
     WithdrawWallet,
+    Harvest,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -202,4 +209,5 @@ pub enum OperatorAdminRole {
     VoterAdmin,
     WithdrawAdmin,
     WithdrawWallet,
+    Harvest,
 }

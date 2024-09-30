@@ -36,6 +36,9 @@ pub struct Ncn {
     /// The withdraw fee wallet of the NCN
     pub withdraw_fee_wallet: Pubkey,
 
+    /// The admin allowed to harvest stray funds
+    pub harvest_admin: Pubkey,
+
     /// The index of the NCN
     index: PodU64,
 
@@ -70,6 +73,7 @@ impl Ncn {
             slasher_admin: admin,
             withdraw_admin: admin,
             withdraw_fee_wallet: admin,
+            harvest_admin: admin,
             index: PodU64::from(ncn_index),
             operator_count: PodU64::from(0),
             vault_count: PodU64::from(0),
@@ -151,6 +155,11 @@ impl Ncn {
         if self.withdraw_fee_wallet.eq(old_admin) {
             self.withdraw_fee_wallet = *new_admin;
             msg!("Withdraw fee wallet set to {:?}", new_admin);
+        }
+
+        if self.harvest_admin.eq(old_admin) {
+            self.harvest_admin = *new_admin;
+            msg!("Harvest admin set to {:?}", new_admin);
         }
     }
 

@@ -1,6 +1,8 @@
 mod cooldown_ncn_vault_slasher_ticket;
 mod cooldown_ncn_vault_ticket;
 mod cooldown_operator_vault_ticket;
+mod harvest_lamports;
+mod harvest_tokens;
 mod initialize_config;
 mod initialize_ncn;
 mod initialize_ncn_operator_state;
@@ -36,7 +38,8 @@ use crate::{
     cooldown_ncn_vault_slasher_ticket::process_cooldown_ncn_vault_slasher_ticket,
     cooldown_ncn_vault_ticket::process_cooldown_ncn_vault_ticket,
     cooldown_operator_vault_ticket::process_cooldown_operator_vault_ticket,
-    initialize_config::process_initialize_config, initialize_ncn::process_initialize_ncn,
+    harvest_lamports::process_harvest_lamports, initialize_config::process_initialize_config,
+    initialize_ncn::process_initialize_ncn,
     initialize_ncn_operator_state::process_initialize_ncn_operator_state,
     initialize_ncn_vault_slasher_ticket::process_initialize_ncn_vault_slasher_ticket,
     initialize_ncn_vault_ticket::process_initialize_ncn_vault_ticket,
@@ -180,6 +183,10 @@ pub fn process_instruction(
         RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
             msg!("Instruction: OperatorWithdrawalAsset");
             process_operator_withdrawal_asset(program_id, accounts, token_mint, amount)
+        }
+        RestakingInstruction::HarvestLamports => {
+            msg!("Instruction: HarvestLamports");
+            process_harvest_lamports(program_id, accounts)
         }
     }
 }
