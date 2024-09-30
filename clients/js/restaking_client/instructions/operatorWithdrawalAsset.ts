@@ -34,7 +34,7 @@ import {
 import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR = 22;
+export const OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR = 23;
 
 export function getOperatorWithdrawalAssetDiscriminatorBytes() {
   return getU8Encoder().encode(OPERATOR_WITHDRAWAL_ASSET_DISCRIMINATOR);

@@ -30,6 +30,7 @@ import {
   type ParsedNcnWithdrawalAssetInstruction,
   type ParsedOperatorCooldownNcnInstruction,
   type ParsedOperatorSetAdminInstruction,
+  type ParsedOperatorSetFeeInstruction,
   type ParsedOperatorSetSecondaryAdminInstruction,
   type ParsedOperatorWarmupNcnInstruction,
   type ParsedOperatorWithdrawalAssetInstruction,
@@ -73,6 +74,7 @@ export enum JitoRestakingInstruction {
   NcnSetSecondaryAdmin,
   OperatorSetAdmin,
   OperatorSetSecondaryAdmin,
+  OperatorSetFee,
   NcnWithdrawalAsset,
   OperatorWithdrawalAsset,
 }
@@ -145,9 +147,12 @@ export function identifyJitoRestakingInstruction(
     return JitoRestakingInstruction.OperatorSetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoRestakingInstruction.NcnWithdrawalAsset;
+    return JitoRestakingInstruction.OperatorSetFee;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
+    return JitoRestakingInstruction.NcnWithdrawalAsset;
+  }
+  if (containsBytes(data, getU8Encoder().encode(23), 0)) {
     return JitoRestakingInstruction.OperatorWithdrawalAsset;
   }
   throw new Error(
@@ -221,6 +226,9 @@ export type ParsedJitoRestakingInstruction<
   | ({
       instructionType: JitoRestakingInstruction.OperatorSetSecondaryAdmin;
     } & ParsedOperatorSetSecondaryAdminInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.OperatorSetFee;
+    } & ParsedOperatorSetFeeInstruction<TProgram>)
   | ({
       instructionType: JitoRestakingInstruction.NcnWithdrawalAsset;
     } & ParsedNcnWithdrawalAssetInstruction<TProgram>)

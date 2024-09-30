@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
@@ -48,6 +50,7 @@ export type Operator = {
   ncnCount: bigint;
   vaultCount: bigint;
   bump: number;
+  operatorFeeBps: number;
   reservedSpace: Array<number>;
 };
 
@@ -64,6 +67,7 @@ export type OperatorArgs = {
   ncnCount: number | bigint;
   vaultCount: number | bigint;
   bump: number;
+  operatorFeeBps: number;
   reservedSpace: Array<number>;
 };
 
@@ -81,7 +85,8 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['ncnCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 263 })],
+    ['operatorFeeBps', getU16Encoder()],
+    ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 261 })],
   ]);
 }
 
@@ -99,7 +104,8 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['ncnCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 263 })],
+    ['operatorFeeBps', getU16Decoder()],
+    ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 261 })],
   ]);
 }
 

@@ -34,7 +34,7 @@ import {
 import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const NCN_WITHDRAWAL_ASSET_DISCRIMINATOR = 21;
+export const NCN_WITHDRAWAL_ASSET_DISCRIMINATOR = 22;
 
 export function getNcnWithdrawalAssetDiscriminatorBytes() {
   return getU8Encoder().encode(NCN_WITHDRAWAL_ASSET_DISCRIMINATOR);

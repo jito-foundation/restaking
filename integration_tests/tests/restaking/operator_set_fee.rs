@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    
     use solana_sdk::instruction::InstructionError;
 
     use crate::fixtures::{

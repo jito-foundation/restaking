@@ -23,6 +23,7 @@ export * from './ncnWarmupOperator';
 export * from './ncnWithdrawalAsset';
 export * from './operatorCooldownNcn';
 export * from './operatorSetAdmin';
+export * from './operatorSetFee';
 export * from './operatorSetSecondaryAdmin';
 export * from './operatorWarmupNcn';
 export * from './operatorWithdrawalAsset';

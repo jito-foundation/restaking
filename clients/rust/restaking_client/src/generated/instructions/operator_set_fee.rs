@@ -5,58 +5,37 @@
 //! <https://github.com/kinobi-so/kinobi>
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
 
 /// Accounts.
-pub struct OperatorWithdrawalAsset {
+pub struct OperatorSetFee {
     pub operator: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
-
-    pub operator_token_account: solana_program::pubkey::Pubkey,
-
-    pub receiver_token_account: solana_program::pubkey::Pubkey,
-
-    pub token_program: solana_program::pubkey::Pubkey,
 }
 
-impl OperatorWithdrawalAsset {
+impl OperatorSetFee {
     pub fn instruction(
         &self,
-        args: OperatorWithdrawalAssetInstructionArgs,
+        args: OperatorSetFeeInstructionArgs,
     ) -> solana_program::instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: OperatorWithdrawalAssetInstructionArgs,
+        args: OperatorSetFeeInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        let mut accounts = Vec::with_capacity(2 + remaining_accounts.len());
+        accounts.push(solana_program::instruction::AccountMeta::new(
             self.operator,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.operator_token_account,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.receiver_token_account,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.token_program,
-            false,
-        ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = OperatorWithdrawalAssetInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = OperatorSetFeeInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -69,17 +48,17 @@ impl OperatorWithdrawalAsset {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct OperatorWithdrawalAssetInstructionData {
+pub struct OperatorSetFeeInstructionData {
     discriminator: u8,
 }
 
-impl OperatorWithdrawalAssetInstructionData {
+impl OperatorSetFeeInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 23 }
+        Self { discriminator: 21 }
     }
 }
 
-impl Default for OperatorWithdrawalAssetInstructionData {
+impl Default for OperatorSetFeeInstructionData {
     fn default() -> Self {
         Self::new()
     }
@@ -87,33 +66,25 @@ impl Default for OperatorWithdrawalAssetInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct OperatorWithdrawalAssetInstructionArgs {
-    pub token_mint: Pubkey,
-    pub amount: u64,
+pub struct OperatorSetFeeInstructionArgs {
+    pub new_fee_bps: u16,
 }
 
-/// Instruction builder for `OperatorWithdrawalAsset`.
+/// Instruction builder for `OperatorSetFee`.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` operator
+///   0. `[writable]` operator
 ///   1. `[signer]` admin
-///   2. `[writable]` operator_token_account
-///   3. `[writable]` receiver_token_account
-///   4. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
-pub struct OperatorWithdrawalAssetBuilder {
+pub struct OperatorSetFeeBuilder {
     operator: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
-    operator_token_account: Option<solana_program::pubkey::Pubkey>,
-    receiver_token_account: Option<solana_program::pubkey::Pubkey>,
-    token_program: Option<solana_program::pubkey::Pubkey>,
-    token_mint: Option<Pubkey>,
-    amount: Option<u64>,
+    new_fee_bps: Option<u16>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl OperatorWithdrawalAssetBuilder {
+impl OperatorSetFeeBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -128,35 +99,8 @@ impl OperatorWithdrawalAssetBuilder {
         self
     }
     #[inline(always)]
-    pub fn operator_token_account(
-        &mut self,
-        operator_token_account: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.operator_token_account = Some(operator_token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn receiver_token_account(
-        &mut self,
-        receiver_token_account: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.receiver_token_account = Some(receiver_token_account);
-        self
-    }
-    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
-    #[inline(always)]
-    pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.token_mint = Some(token_mint);
-        self
-    }
-    #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.amount = Some(amount);
+    pub fn new_fee_bps(&mut self, new_fee_bps: u16) -> &mut Self {
+        self.new_fee_bps = Some(new_fee_bps);
         self
     }
     /// Add an aditional account to the instruction.
@@ -179,72 +123,47 @@ impl OperatorWithdrawalAssetBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = OperatorWithdrawalAsset {
+        let accounts = OperatorSetFee {
             operator: self.operator.expect("operator is not set"),
             admin: self.admin.expect("admin is not set"),
-            operator_token_account: self
-                .operator_token_account
-                .expect("operator_token_account is not set"),
-            receiver_token_account: self
-                .receiver_token_account
-                .expect("receiver_token_account is not set"),
-            token_program: self.token_program.unwrap_or(solana_program::pubkey!(
-                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-            )),
         };
-        let args = OperatorWithdrawalAssetInstructionArgs {
-            token_mint: self.token_mint.clone().expect("token_mint is not set"),
-            amount: self.amount.clone().expect("amount is not set"),
+        let args = OperatorSetFeeInstructionArgs {
+            new_fee_bps: self.new_fee_bps.clone().expect("new_fee_bps is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `operator_withdrawal_asset` CPI accounts.
-pub struct OperatorWithdrawalAssetCpiAccounts<'a, 'b> {
+/// `operator_set_fee` CPI accounts.
+pub struct OperatorSetFeeCpiAccounts<'a, 'b> {
     pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub operator_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `operator_withdrawal_asset` CPI instruction.
-pub struct OperatorWithdrawalAssetCpi<'a, 'b> {
+/// `operator_set_fee` CPI instruction.
+pub struct OperatorSetFeeCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub operator_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: OperatorWithdrawalAssetInstructionArgs,
+    pub __args: OperatorSetFeeInstructionArgs,
 }
 
-impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
+impl<'a, 'b> OperatorSetFeeCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: OperatorWithdrawalAssetCpiAccounts<'a, 'b>,
-        args: OperatorWithdrawalAssetInstructionArgs,
+        accounts: OperatorSetFeeCpiAccounts<'a, 'b>,
+        args: OperatorSetFeeInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
             operator: accounts.operator,
             admin: accounts.admin,
-            operator_token_account: accounts.operator_token_account,
-            receiver_token_account: accounts.receiver_token_account,
-            token_program: accounts.token_program,
             __args: args,
         }
     }
@@ -281,26 +200,14 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        let mut accounts = Vec::with_capacity(2 + remaining_accounts.len());
+        accounts.push(solana_program::instruction::AccountMeta::new(
             *self.operator.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.admin.key,
             true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.operator_token_account.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.receiver_token_account.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.token_program.key,
-            false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
@@ -309,9 +216,7 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = OperatorWithdrawalAssetInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = OperatorSetFeeInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -320,13 +225,10 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(2 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.operator.clone());
         account_infos.push(self.admin.clone());
-        account_infos.push(self.operator_token_account.clone());
-        account_infos.push(self.receiver_token_account.clone());
-        account_infos.push(self.token_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -339,31 +241,24 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `OperatorWithdrawalAsset` via CPI.
+/// Instruction builder for `OperatorSetFee` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` operator
+///   0. `[writable]` operator
 ///   1. `[signer]` admin
-///   2. `[writable]` operator_token_account
-///   3. `[writable]` receiver_token_account
-///   4. `[]` token_program
 #[derive(Clone, Debug)]
-pub struct OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
-    instruction: Box<OperatorWithdrawalAssetCpiBuilderInstruction<'a, 'b>>,
+pub struct OperatorSetFeeCpiBuilder<'a, 'b> {
+    instruction: Box<OperatorSetFeeCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
+impl<'a, 'b> OperatorSetFeeCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(OperatorWithdrawalAssetCpiBuilderInstruction {
+        let instruction = Box::new(OperatorSetFeeCpiBuilderInstruction {
             __program: program,
             operator: None,
             admin: None,
-            operator_token_account: None,
-            receiver_token_account: None,
-            token_program: None,
-            token_mint: None,
-            amount: None,
+            new_fee_bps: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -382,37 +277,8 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn operator_token_account(
-        &mut self,
-        operator_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.operator_token_account = Some(operator_token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn receiver_token_account(
-        &mut self,
-        receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.receiver_token_account = Some(receiver_token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn token_program(
-        &mut self,
-        token_program: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.instruction.token_mint = Some(token_mint);
-        self
-    }
-    #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.instruction.amount = Some(amount);
+    pub fn new_fee_bps(&mut self, new_fee_bps: u16) -> &mut Self {
+        self.instruction.new_fee_bps = Some(new_fee_bps);
         self
     }
     /// Add an additional account to the instruction.
@@ -456,35 +322,19 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = OperatorWithdrawalAssetInstructionArgs {
-            token_mint: self
+        let args = OperatorSetFeeInstructionArgs {
+            new_fee_bps: self
                 .instruction
-                .token_mint
+                .new_fee_bps
                 .clone()
-                .expect("token_mint is not set"),
-            amount: self.instruction.amount.clone().expect("amount is not set"),
+                .expect("new_fee_bps is not set"),
         };
-        let instruction = OperatorWithdrawalAssetCpi {
+        let instruction = OperatorSetFeeCpi {
             __program: self.instruction.__program,
 
             operator: self.instruction.operator.expect("operator is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
-
-            operator_token_account: self
-                .instruction
-                .operator_token_account
-                .expect("operator_token_account is not set"),
-
-            receiver_token_account: self
-                .instruction
-                .receiver_token_account
-                .expect("receiver_token_account is not set"),
-
-            token_program: self
-                .instruction
-                .token_program
-                .expect("token_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -495,15 +345,11 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct OperatorWithdrawalAssetCpiBuilderInstruction<'a, 'b> {
+struct OperatorSetFeeCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    operator_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    receiver_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_mint: Option<Pubkey>,
-    amount: Option<u64>,
+    new_fee_bps: Option<u16>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,
