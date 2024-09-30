@@ -38,8 +38,8 @@ use crate::{
     cooldown_ncn_vault_slasher_ticket::process_cooldown_ncn_vault_slasher_ticket,
     cooldown_ncn_vault_ticket::process_cooldown_ncn_vault_ticket,
     cooldown_operator_vault_ticket::process_cooldown_operator_vault_ticket,
-    harvest_lamports::process_harvest_lamports, initialize_config::process_initialize_config,
-    initialize_ncn::process_initialize_ncn,
+    harvest_lamports::process_harvest_lamports, harvest_tokens::process_harvest_tokens,
+    initialize_config::process_initialize_config, initialize_ncn::process_initialize_ncn,
     initialize_ncn_operator_state::process_initialize_ncn_operator_state,
     initialize_ncn_vault_slasher_ticket::process_initialize_ncn_vault_slasher_ticket,
     initialize_ncn_vault_ticket::process_initialize_ncn_vault_ticket,
@@ -187,6 +187,10 @@ pub fn process_instruction(
         RestakingInstruction::HarvestLamports => {
             msg!("Instruction: HarvestLamports");
             process_harvest_lamports(program_id, accounts)
+        }
+        RestakingInstruction::HarvestTokens { amount } => {
+            msg!("Instruction: HarvestTokens");
+            process_harvest_tokens(program_id, accounts, amount)
         }
     }
 }

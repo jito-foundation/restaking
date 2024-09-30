@@ -190,6 +190,17 @@ pub enum RestakingInstruction {
     #[account(2, signer, name = "harvest_admin")]
     #[account(3, writable, name = "destination")]
     HarvestLamports,
+
+    #[account(0, writable, name = "program_account")]
+    #[account(1, name = "config_ncn_or_operator")]
+    #[account(2, signer, name = "harvest_admin")]
+    #[account(3, name = "mint")]
+    #[account(4, writable, name = "program_token_account")]
+    #[account(5, writable, name = "destination_base")]
+    #[account(6, writable, name = "destination_token_account")]
+    #[account(7, name = "token_program")]
+    #[account(8, name = "system_program")]
+    HarvestTokens { amount: u64 },
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
