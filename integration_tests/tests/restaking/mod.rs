@@ -10,4 +10,5 @@ mod ncn_set_admin;
 mod ncn_warmup_operator;
 mod operator_cooldown_ncn;
 mod operator_set_admin;
+mod operator_set_fee;
 mod operator_warmup_ncn;

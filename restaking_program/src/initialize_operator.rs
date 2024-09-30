@@ -5,7 +5,7 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{config::Config, operator::Operator};
+use jito_restaking_core::{config::Config, operator::Operator, MAX_FEE_BPS};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -35,6 +35,11 @@ pub fn process_initialize_operator(
         msg!("Operator account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
     }
+    // Check that the fee is not greater than the maximum allowed
+    if operator_fee_bps > MAX_FEE_BPS {
+        msg!("New fee exceeds maximum allowed fee");
+        return Err(ProgramError::InvalidArgument);
+    }
 
     msg!("Initializing operator at address {}", operator.key);
     create_account(
@@ -53,6 +58,7 @@ pub fn process_initialize_operator(
     let mut operator_data = operator.try_borrow_mut_data()?;
     operator_data[0] = Operator::DISCRIMINATOR;
     let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
+
     *operator = Operator::new(
         *base.key,
         *admin.key,
