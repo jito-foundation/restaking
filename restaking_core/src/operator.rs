@@ -239,6 +239,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // withdrawal_admin
             std::mem::size_of::<Pubkey>() + // withdrawal_fee_wallet
+            std::mem::size_of::<Pubkey>() + // harvest_admin
             std::mem::size_of::<Pubkey>() + // voter
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // ncn_count

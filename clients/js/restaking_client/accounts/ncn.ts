@@ -44,6 +44,7 @@ export type Ncn = {
   slasherAdmin: Address;
   withdrawAdmin: Address;
   withdrawFeeWallet: Address;
+  harvestAdmin: Address;
   index: bigint;
   operatorCount: bigint;
   vaultCount: bigint;
@@ -61,6 +62,7 @@ export type NcnArgs = {
   slasherAdmin: Address;
   withdrawAdmin: Address;
   withdrawFeeWallet: Address;
+  harvestAdmin: Address;
   index: number | bigint;
   operatorCount: number | bigint;
   vaultCount: number | bigint;
@@ -79,6 +81,7 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['slasherAdmin', getAddressEncoder()],
     ['withdrawAdmin', getAddressEncoder()],
     ['withdrawFeeWallet', getAddressEncoder()],
+    ['harvestAdmin', getAddressEncoder()],
     ['index', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
@@ -98,6 +101,7 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['slasherAdmin', getAddressDecoder()],
     ['withdrawAdmin', getAddressDecoder()],
     ['withdrawFeeWallet', getAddressDecoder()],
+    ['harvestAdmin', getAddressDecoder()],
     ['index', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],

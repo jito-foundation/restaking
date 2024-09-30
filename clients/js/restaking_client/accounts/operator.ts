@@ -43,6 +43,7 @@ export type Operator = {
   vaultAdmin: Address;
   withdrawalAdmin: Address;
   withdrawalFeeWallet: Address;
+  harvestAdmin: Address;
   voter: Address;
   index: bigint;
   ncnCount: bigint;
@@ -59,6 +60,7 @@ export type OperatorArgs = {
   vaultAdmin: Address;
   withdrawalAdmin: Address;
   withdrawalFeeWallet: Address;
+  harvestAdmin: Address;
   voter: Address;
   index: number | bigint;
   ncnCount: number | bigint;
@@ -76,6 +78,7 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['vaultAdmin', getAddressEncoder()],
     ['withdrawalAdmin', getAddressEncoder()],
     ['withdrawalFeeWallet', getAddressEncoder()],
+    ['harvestAdmin', getAddressEncoder()],
     ['voter', getAddressEncoder()],
     ['index', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
@@ -94,6 +97,7 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['vaultAdmin', getAddressDecoder()],
     ['withdrawalAdmin', getAddressDecoder()],
     ['withdrawalFeeWallet', getAddressDecoder()],
+    ['harvestAdmin', getAddressDecoder()],
     ['voter', getAddressDecoder()],
     ['index', getU64Decoder()],
     ['ncnCount', getU64Decoder()],

@@ -21,6 +21,7 @@ export enum NcnAdminRole {
   Slasher,
   Withdraw,
   WithdrawWallet,
+  Harvest,
 }
 
 export type NcnAdminRoleArgs = NcnAdminRole;

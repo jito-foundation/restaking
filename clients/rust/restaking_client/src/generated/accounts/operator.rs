@@ -45,6 +45,11 @@ pub struct Operator {
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
+    pub harvest_admin: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
     pub voter: Pubkey,
     pub index: u64,
     pub ncn_count: u64,

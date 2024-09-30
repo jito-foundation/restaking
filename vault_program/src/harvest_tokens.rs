@@ -3,7 +3,6 @@ use jito_jsm_core::loader::{
     load_associated_token_account, load_signer, load_system_program, load_token_mint,
     load_token_program,
 };
-
 use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
@@ -11,17 +10,19 @@ use jito_vault_core::{
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use solana_program::program_pack::Pack;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
+    program_pack::Pack,
     pubkey::Pubkey,
 };
-use spl_token::instruction::{close_account, transfer};
-use spl_token::state::Account;
+use spl_token::{
+    instruction::{close_account, transfer},
+    state::Account,
+};
 
 /// Harvest Lamports from any account owned by the program
 /// [`crate::RestakingInstruction::HarvestLamports`]

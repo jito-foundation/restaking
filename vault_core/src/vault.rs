@@ -1075,6 +1075,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // capacity_admin
             std::mem::size_of::<Pubkey>() + // fee_admin
             std::mem::size_of::<Pubkey>() + // withdraw_admin
+            std::mem::size_of::<Pubkey>() + // harvest_admin
             std::mem::size_of::<Pubkey>() + // fee_wallet
             std::mem::size_of::<Pubkey>() + // mint_burn_admin
             std::mem::size_of::<PodU64>() + // vault_index

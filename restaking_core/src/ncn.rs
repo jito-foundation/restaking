@@ -241,6 +241,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // slasher_admin
             std::mem::size_of::<Pubkey>() + // withdraw_admin
+            std::mem::size_of::<Pubkey>() + // harvest_admin
             std::mem::size_of::<Pubkey>() + // withdraw_fee_wallet
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // operator_count

@@ -26,4 +26,5 @@ pub enum NcnAdminRole {
     Slasher,
     Withdraw,
     WithdrawWallet,
+    Harvest,
 }

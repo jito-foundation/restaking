@@ -65,6 +65,7 @@ export type Vault = {
   withdrawAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  harvestAdmin: Address;
   vaultIndex: bigint;
   ncnCount: bigint;
   operatorCount: bigint;
@@ -100,6 +101,7 @@ export type VaultArgs = {
   withdrawAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  harvestAdmin: Address;
   vaultIndex: number | bigint;
   ncnCount: number | bigint;
   operatorCount: number | bigint;
@@ -136,6 +138,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['withdrawAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
+    ['harvestAdmin', getAddressEncoder()],
     ['vaultIndex', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
@@ -173,6 +176,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['withdrawAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
+    ['harvestAdmin', getAddressDecoder()],
     ['vaultIndex', getU64Decoder()],
     ['ncnCount', getU64Decoder()],
     ['operatorCount', getU64Decoder()],

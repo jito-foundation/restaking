@@ -21,6 +21,7 @@ export enum OperatorAdminRole {
   VoterAdmin,
   WithdrawAdmin,
   WithdrawWallet,
+  Harvest,
 }
 
 export type OperatorAdminRoleArgs = OperatorAdminRole;

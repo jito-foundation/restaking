@@ -30,4 +30,5 @@ pub enum VaultAdminRole {
     MintBurnAdmin,
     WithdrawAdmin,
     FeeAdmin,
+    HarvestAdmin,
 }
