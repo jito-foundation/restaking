@@ -229,6 +229,24 @@ pub fn process_harvest_tokens(
                 vault_update_state_tracker_seeds,
             )
         }
+        Vault::DISCRIMINATOR => {
+            if !admin_from_vault {
+                msg!("Only the Vault's harvest admin has the authority to harvest from the Vault account");
+                return Err(ProgramError::InvalidAccountData);
+            }
+
+            let vault = Vault::try_from_slice_unchecked(&account_data)?;
+
+            // Super important to prevent the vault's supported mint from being withdrawn
+            if vault.supported_mint.eq(mint.key) {
+                msg!("You cannot withdraw the vault's supported mint");
+                return Err(ProgramError::InvalidAccountData);
+            }
+
+            let (_, vault_bump, vault_seeds) = Vault::find_program_address(program_id, &vault.base);
+
+            (vault_bump, vault_seeds)
+        }
         _ => {
             msg!("Invalid discriminator for program account");
             return Err(ProgramError::InvalidAccountData);
