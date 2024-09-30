@@ -17,7 +17,7 @@ pub fn process_harvest_lamports(program_id: &Pubkey, accounts: &[AccountInfo]) -
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    load_signer(harvest_admin, true)?;
+    load_signer(harvest_admin, false)?;
 
     if program_account.owner.ne(program_id) {
         msg!("Program account is not owned by the program");
@@ -31,8 +31,8 @@ pub fn process_harvest_lamports(program_id: &Pubkey, accounts: &[AccountInfo]) -
     let (admin_from_config, admin_from_ncn, admin_from_operator) =
         match config_ncn_or_operator_discriminator {
             Config::DISCRIMINATOR => {
-                let mut config_data = config_ncn_or_operator.data.borrow_mut();
-                let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+                let mut config_data = config_ncn_or_operator.data.borrow();
+                let config = Config::try_from_slice_unchecked(&mut config_data)?;
 
                 if config.admin.ne(harvest_admin.key) {
                     msg!("Config's admin does not match the admin provided");
@@ -42,8 +42,8 @@ pub fn process_harvest_lamports(program_id: &Pubkey, accounts: &[AccountInfo]) -
                 (true, false, false)
             }
             Ncn::DISCRIMINATOR => {
-                let mut ncn_data = config_ncn_or_operator.data.borrow_mut();
-                let ncn = Ncn::try_from_slice_unchecked_mut(&mut ncn_data)?;
+                let mut ncn_data = config_ncn_or_operator.data.borrow();
+                let ncn = Ncn::try_from_slice_unchecked(&mut ncn_data)?;
 
                 if ncn.harvest_admin.ne(harvest_admin.key) {
                     msg!("Ncn's harvest admin does not match the admin provided");
@@ -53,8 +53,8 @@ pub fn process_harvest_lamports(program_id: &Pubkey, accounts: &[AccountInfo]) -
                 (false, true, false)
             }
             Operator::DISCRIMINATOR => {
-                let mut operator_data = config_ncn_or_operator.data.borrow_mut();
-                let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
+                let mut operator_data = config_ncn_or_operator.data.borrow();
+                let operator = Operator::try_from_slice_unchecked(&mut operator_data)?;
 
                 if operator.harvest_admin.ne(harvest_admin.key) {
                     msg!("Operator's harvest admin does not match the admin provided");

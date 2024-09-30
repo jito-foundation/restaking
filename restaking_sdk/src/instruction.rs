@@ -191,7 +191,7 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "destination")]
     HarvestLamports,
 
-    #[account(0, writable, name = "program_account")]
+    #[account(0, name = "program_account")]
     #[account(1, name = "config_ncn_or_operator")]
     #[account(2, signer, name = "harvest_admin")]
     #[account(3, name = "mint")]

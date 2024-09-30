@@ -9,6 +9,8 @@ mod cooldown_vault_ncn_ticket;
 mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod enqueue_withdrawal;
+mod harvest_lamports;
+mod harvest_tokens;
 mod initialize_config;
 mod initialize_vault;
 mod initialize_vault_ncn_slasher_operator_ticket;
@@ -49,7 +51,8 @@ use crate::{
     cooldown_vault_ncn_ticket::process_cooldown_vault_ncn_ticket,
     crank_vault_update_state_tracker::process_crank_vault_update_state_tracker,
     create_token_metadata::process_create_token_metadata,
-    enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
+    enqueue_withdrawal::process_enqueue_withdrawal, harvest_lamports::process_harvest_lamports,
+    harvest_tokens::process_harvest_tokens, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_ncn_slasher_ticket::process_initialize_vault_ncn_slasher_ticket,
@@ -272,6 +275,14 @@ pub fn process_instruction(
         VaultInstruction::UpdateTokenMetadata { name, symbol, uri } => {
             msg!("Instruction: UpdateTokenMetadata");
             process_update_token_metadata(program_id, accounts, name, symbol, uri)
+        }
+        VaultInstruction::HarvestLamports => {
+            msg!("Instruction: HarvestLamports");
+            process_harvest_lamports(program_id, accounts)
+        }
+        VaultInstruction::HarvestTokens { amount } => {
+            msg!("Instruction: HarvestTokens");
+            process_harvest_tokens(program_id, accounts, amount)
         }
     }
 }
