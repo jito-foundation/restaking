@@ -58,7 +58,7 @@ impl VaultOperatorDelegation {
         self.index.into()
     }
 
-    pub fn is_updated(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
+    pub fn check_is_already_updated(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
         let last_updated_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
         if last_updated_epoch >= current_epoch {
