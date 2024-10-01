@@ -52,6 +52,7 @@ pub fn process_mint(
     Vault::load(program_id, vault_info, true)?;
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
+
     load_token_mint(vrt_mint)?;
     load_signer(depositor, false)?;
     load_associated_token_account(
@@ -92,9 +93,8 @@ pub fn process_mint(
         )?;
     }
 
-    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-    vault_seeds.push(vec![vault_bump]);
-    let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+    let signing_seeds = vault.signing_seeds();
+    let seed_slices: Vec<&[u8]> = signing_seeds.iter().map(|seed| seed.as_slice()).collect();
 
     drop(vault_data); // no double borrow
 
