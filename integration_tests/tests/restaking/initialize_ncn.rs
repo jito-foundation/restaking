@@ -2,12 +2,9 @@
 mod tests {
     use jito_restaking_core::{config::Config, ncn::Ncn};
     use solana_program::{instruction::InstructionError, pubkey::Pubkey};
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
+    use solana_sdk::signature::{Keypair, Signer};
 
-    use crate::fixtures::fixture::TestBuilder;
+    use crate::fixtures::{assert_ix_error, fixture::TestBuilder};
 
     #[tokio::test]
     async fn test_initialize_ncn_ok() {
@@ -69,13 +66,9 @@ mod tests {
 
         let result = restaking_program_client
             .initialize_ncn(&config, &incorrect_ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap_err();
+            .await;
 
-        assert_eq!(
-            result.to_transaction_error().unwrap(),
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+        assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
     #[tokio::test]
@@ -107,16 +100,10 @@ mod tests {
 
         let transaction_error = restaking_program_client
             .initialize_ncn(&config_pubkey, &ncn_pubkey, &ncn_admin, &ncn_base)
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
+            .await;
 
         // expected ncn is system program during initialization
-        assert_eq!(
-            transaction_error,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+        assert_ix_error(transaction_error, InstructionError::InvalidAccountOwner);
     }
 
     #[tokio::test]
@@ -124,18 +111,10 @@ mod tests {
         let fixture = TestBuilder::new().await;
         let mut restaking_program_client = fixture.restaking_program_client();
 
-        let ncn_root = restaking_program_client
-            .do_initialize_ncn()
-            .await
-            .unwrap_err()
-            .to_transaction_error()
-            .unwrap();
+        let ncn_root = restaking_program_client.do_initialize_ncn().await;
 
         // config isn't initialized, so owned by system program
-        assert_eq!(
-            ncn_root,
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountOwner)
-        );
+        assert_ix_error(ncn_root, InstructionError::InvalidAccountOwner);
     }
 
     #[tokio::test]

@@ -3,10 +3,10 @@ mod tests {
     use jito_vault_sdk::{error::VaultError, inline_mpl_token_metadata};
     use solana_sdk::{
         instruction::InstructionError, pubkey::Pubkey, signature::Keypair, signer::Signer,
-        transaction::TransactionError,
     };
 
     use crate::fixtures::{
+        assert_ix_error,
         fixture::TestBuilder,
         vault_client::{assert_vault_error, VaultRoot},
     };
@@ -107,10 +107,8 @@ mod tests {
                 uri.to_string(),
             )
             .await;
-        assert_eq!(
-            result.unwrap_err().to_transaction_error().unwrap(),
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+
+        assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
     #[tokio::test]
@@ -149,10 +147,8 @@ mod tests {
                 uri.to_string(),
             )
             .await;
-        assert_eq!(
-            result.unwrap_err().to_transaction_error().unwrap(),
-            TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
-        );
+
+        assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
     #[tokio::test]

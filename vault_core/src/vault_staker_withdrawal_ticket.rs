@@ -131,7 +131,7 @@ impl VaultStakerWithdrawalTicket {
     /// # Arguments
     /// * `program_id` - The program ID
     /// * `vault_staker_withdrawal_ticket` - The [`VaultStakerWithdrawalTicket`] account
-    /// * `vault` - The [`Vault`] account
+    /// * `vault` - The [`crate::vault::Vault`] account
     /// * `staker` - The staker account
     /// * `expect_writable` - Whether the account should be writable
     ///
