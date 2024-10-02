@@ -1,7 +1,5 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::loader::{
-    load_signer, load_token_2022_program, load_token_account, load_token_mint, load_token_program,
-};
+use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint};
 use jito_restaking_core::ncn::Ncn;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
@@ -40,19 +38,23 @@ pub fn process_ncn_delegate_token_account(
         token_mint.key,
         token_program_info,
     )?;
+    spl_token_2022::check_spl_token_program_account(token_program_info.key)?;
 
-    match (*token_mint.owner, *token_account.owner) {
-        (spl_token::ID, spl_token::ID) => {
-            load_token_program(token_program_info)?;
-        }
-        (spl_token_2022::ID, spl_token_2022::ID) => {
-            load_token_2022_program(token_program_info)?;
-        }
-        _ => {
-            msg!("token_mint and token_account owner does not match");
-            return Err(ProgramError::InvalidAccountData);
-        }
+    if token_mint.owner.ne(token_account.owner) {
+        return Err(ProgramError::InvalidAccountData);
     }
+    // match (*token_mint.owner, *token_account.owner) {
+    //     (spl_token::ID, spl_token::ID) => {
+    //         load_token_program(token_program_info)?;
+    //     }
+    //     (spl_token_2022::ID, spl_token_2022::ID) => {
+    //         load_token_2022_program(token_program_info)?;
+    //     }
+    //     _ => {
+    //         msg!("token_mint and token_account owner does not match");
+    //         return Err(ProgramError::InvalidAccountData);
+    //     }
+    // }
 
     let ncn_data = ncn_info.data.borrow();
     let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
