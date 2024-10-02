@@ -21,6 +21,7 @@ mod mint_to;
 mod set_admin;
 mod set_capacity;
 mod set_fees;
+mod set_program_fee;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
@@ -32,6 +33,7 @@ mod withdrawal_asset;
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
+use set_program_fee::process_set_program_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -98,9 +100,9 @@ pub fn process_instruction(
         // ------------------------------------------
         // Initialization
         // ------------------------------------------
-        VaultInstruction::InitializeConfig => {
+        VaultInstruction::InitializeConfig { program_fee_bps } => {
             msg!("Instruction: InitializeConfig");
-            process_initialize_config(program_id, accounts)
+            process_initialize_config(program_id, accounts, program_fee_bps)
         }
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
@@ -170,6 +172,10 @@ pub fn process_instruction(
                 withdrawal_fee_bps,
                 reward_fee_bps,
             )
+        }
+        VaultInstruction::SetProgramFee { new_fee_bps } => {
+            msg!("Instruction: SetProgramFee");
+            process_set_program_fee(program_id, accounts, new_fee_bps)
         }
         // ------------------------------------------
         // Vault minting and burning

@@ -234,7 +234,7 @@ impl VaultProgramClient {
         self.airdrop(&config_admin.pubkey(), 1.0).await?;
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
-        self.initialize_config(&config_pubkey, &config_admin)
+        self.initialize_config(&config_pubkey, &config_admin, &self.payer.pubkey(), 0)
             .await?;
 
         Ok(config_admin)
@@ -244,6 +244,8 @@ impl VaultProgramClient {
         &mut self,
         config: &Pubkey,
         config_admin: &Keypair,
+        program_fee_wallet: &Pubkey,
+        program_fee_bps: u16,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -252,6 +254,8 @@ impl VaultProgramClient {
                 &config,
                 &config_admin.pubkey(),
                 &jito_restaking_program::id(),
+                program_fee_wallet,
+                program_fee_bps,
             )],
             Some(&config_admin.pubkey()),
             &[config_admin],

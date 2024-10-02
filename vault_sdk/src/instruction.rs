@@ -10,7 +10,9 @@ pub enum VaultInstruction {
     #[account(1, writable, signer, name = "admin")]
     #[account(2, name = "restaking_program")]
     #[account(3, name = "system_program")]
-    InitializeConfig,
+    InitializeConfig {
+        program_fee_bps: u16,
+    },
 
     /// Initializes the vault
     #[account(0, writable, name = "config")]
@@ -134,9 +136,10 @@ pub enum VaultInstruction {
     #[account(5, writable, name = "staker_token_account")]
     #[account(6, signer, name = "staker_vrt_token_account")]
     #[account(7, writable, name = "vault_fee_token_account")]
-    #[account(8, name = "token_program")]
-    #[account(9, name = "system_program")]
-    #[account(10, signer, optional, name = "burn_signer", description = "Signer for burning")]
+    #[account(8, writable, name = "program_fee_token_account")]
+    #[account(9, name = "token_program")]
+    #[account(10, name = "system_program")]
+    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
     Burn {
         amount_in: u64,
         min_amount_out: u64
@@ -176,9 +179,10 @@ pub enum VaultInstruction {
     #[account(6, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(7, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(8, writable, name = "vault_fee_token_account")]
-    #[account(9, name = "token_program")]
-    #[account(10, name = "system_program")]
-    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
+    #[account(9, writable, name = "program_fee_token_account")]
+    #[account(10, name = "token_program")]
+    #[account(11, name = "system_program")]
+    #[account(12, signer, optional, name = "burn_signer", description = "Signer for burning")]
     BurnWithdrawTicket {
         min_amount_out: u64
     },
@@ -199,6 +203,13 @@ pub enum VaultInstruction {
         deposit_fee_bps: Option<u16>,
         withdrawal_fee_bps: Option<u16>,
         reward_fee_bps: Option<u16>,
+    },
+
+    /// Sets the program fee for the vault program
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "admin")]
+    SetProgramFee {
+        new_fee_bps: u16
     },
 
     /// Withdraws any non-backing tokens from the vault

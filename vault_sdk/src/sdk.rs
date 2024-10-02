@@ -15,17 +15,22 @@ pub fn initialize_config(
     config: &Pubkey,
     admin: &Pubkey,
     restaking_program: &Pubkey,
+    program_fee_wallet: &Pubkey,
+    program_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*restaking_program, false),
+        AccountMeta::new_readonly(*program_fee_wallet, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeConfig.try_to_vec().unwrap(),
+        data: VaultInstruction::InitializeConfig { program_fee_bps }
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
