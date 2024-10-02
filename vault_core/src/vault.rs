@@ -153,6 +153,7 @@ impl Vault {
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
         bump: u8,
+        current_slot: u64,
     ) -> Self {
         Self {
             base,
@@ -175,8 +176,8 @@ impl Vault {
             vrt_enqueued_for_cooldown_amount: PodU64::from(0),
             vrt_cooling_down_amount: PodU64::from(0),
             vrt_ready_to_claim_amount: PodU64::from(0),
-            last_fee_change_slot: PodU64::from(0),
-            last_full_state_update_slot: PodU64::from(0),
+            last_fee_change_slot: PodU64::from(current_slot),
+            last_full_state_update_slot: PodU64::from(current_slot),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             reward_fee_bps: PodU16::from(reward_fee_bps),
@@ -1044,6 +1045,7 @@ mod tests {
             withdraw_fee_bps,
             0,
             0,
+            0,
         );
 
         vault.set_tokens_deposited(tokens_deposited);
@@ -1099,6 +1101,7 @@ mod tests {
             old_admin,
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1199,6 +1202,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
@@ -1211,6 +1215,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1229,6 +1234,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1262,6 +1268,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1628,6 +1635,7 @@ mod tests {
             0,
             1000, //10%
             0,
+            0,
         );
         vault.set_tokens_deposited(0);
 
@@ -1648,6 +1656,7 @@ mod tests {
             0,
             1000, //10%
             0,
+            0,
         );
         vault.set_tokens_deposited(1000);
 
@@ -1667,6 +1676,7 @@ mod tests {
             0,
             0,
             10_000, //100%
+            0,
             0,
         );
 
