@@ -84,7 +84,6 @@ impl TestBuilder {
             .await
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub async fn create_token_account(
         &mut self,
         token_program_id: &Pubkey,
@@ -94,10 +93,12 @@ impl TestBuilder {
         extensions: &[ExtensionType],
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
-        let rent = self.context.banks_client.get_rent().await.unwrap();
+        let rent = self.context.banks_client.get_rent().await?;
         let space =
             ExtensionType::try_calculate_account_len::<spl_token_2022::state::Account>(extensions)
-                .unwrap();
+                .map_err(|_e| {
+                    BanksClientError::ClientError("failed to try calculate account length")
+                })?;
         let account_rent = rent.minimum_balance(space);
 
         let mut instructions = vec![solana_program::system_instruction::create_account(
@@ -132,7 +133,7 @@ impl TestBuilder {
                 pool_mint,
                 &owner,
             )
-            .unwrap(),
+            .map_err(|_e| BanksClientError::ClientError("failed to initialize account"))?,
         );
 
         let mut signers = vec![&self.context.payer, account];
@@ -146,8 +147,7 @@ impl TestBuilder {
                     &account.pubkey(),
                     &self.context.payer.pubkey(),
                     &[],
-                )
-                .unwrap()
+                ).map_err(|_e| BanksClientError::ClientError("failed to enable required trasfer memos"))?
                 )
                 }
                 ExtensionType::CpiGuard => {
@@ -159,7 +159,9 @@ impl TestBuilder {
                             &self.context.payer.pubkey(),
                             &[],
                         )
-                        .unwrap(),
+                        .map_err(|_e| {
+                            BanksClientError::ClientError("failed to enable cpi guard")
+                        })?,
                     )
                 }
                 ExtensionType::ImmutableOwner
@@ -192,11 +194,11 @@ impl TestBuilder {
             .banks_client
             .get_account(*token_account)
             .await?
-            .unwrap();
+            .ok_or(BanksClientError::ClientError("failed to get token account"))?;
 
         let account_info =
             StateWithExtensionsOwned::<spl_token_2022::state::Account>::unpack(account.data)
-                .unwrap();
+                .map_err(|_e| BanksClientError::ClientError("failed to unpack"))?;
 
         Ok(account_info.base)
     }
@@ -210,10 +212,13 @@ impl TestBuilder {
             .banks_client
             .get_account(*token_mint)
             .await?
-            .unwrap();
-        let token_mint_acc =
-            StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(account.data).unwrap();
-        Ok(token_mint_acc.base)
+            .ok_or(BanksClientError::ClientError("failed to get token account"))?;
+
+        let account_info =
+            StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(account.data)
+                .map_err(|_e| BanksClientError::ClientError("failed to unpack"))?;
+
+        Ok(account_info.base)
     }
 
     /// Mints tokens to an ATA owned by the `to` address
@@ -242,7 +247,7 @@ impl TestBuilder {
                     &[],
                     amount,
                 )
-                .unwrap(),
+                .map_err(|_e| BanksClientError::ClientError("failed to mint to"))?,
             ]
         } else {
             vec![spl_token_2022::instruction::mint_to(
@@ -253,7 +258,7 @@ impl TestBuilder {
                 &[],
                 amount,
             )
-            .unwrap()]
+            .map_err(|_e| BanksClientError::ClientError("failed to mint to"))?]
         };
         self.context
             .banks_client
