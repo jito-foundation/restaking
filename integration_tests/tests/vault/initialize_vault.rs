@@ -16,6 +16,8 @@ mod tests {
 
         let mut vault_program_client = fixture.vault_program_client();
 
+        let expect_slot = 100;
+        fixture.warp_to_slot(expect_slot).await.unwrap();
         let (
             _config_admin,
             VaultRoot {
@@ -44,6 +46,8 @@ mod tests {
         assert_eq!(vault.ncn_count(), 0);
         assert_eq!(vault.operator_count(), 0);
         assert_eq!(vault.slasher_count(), 0);
+        assert_eq!(vault.last_fee_change_slot(), expect_slot);
+        assert_eq!(vault.last_full_state_update_slot(), expect_slot);
 
         let token_mint = fixture.get_token_mint(&vault.vrt_mint).await.unwrap();
         assert_eq!(token_mint.decimals, 9);

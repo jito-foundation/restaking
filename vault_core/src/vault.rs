@@ -163,6 +163,7 @@ impl Vault {
         reward_fee_bps: u16,
         epoch_withdraw_cap_bps: u16,
         bump: u8,
+        current_slot: u64,
     ) -> Self {
         Self {
             base,
@@ -185,10 +186,10 @@ impl Vault {
             vrt_enqueued_for_cooldown_amount: PodU64::from(0),
             vrt_cooling_down_amount: PodU64::from(0),
             vrt_ready_to_claim_amount: PodU64::from(0),
-            last_fee_change_slot: PodU64::from(0),
-            last_full_state_update_slot: PodU64::from(0),
             epoch_withdraw_supported_token_amount: PodU64::from(0),
             epoch_snapshot_supported_token_amount: PodU64::from(0),
+            last_fee_change_slot: PodU64::from(current_slot),
+            last_full_state_update_slot: PodU64::from(current_slot),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             reward_fee_bps: PodU16::from(reward_fee_bps),
@@ -1097,6 +1098,13 @@ impl Vault {
     /// Returns the seeds for the PDA
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
+    }
+
+    /// Returns the seeds for the PDA used for signing
+    pub fn signing_seeds(&self) -> Vec<Vec<u8>> {
+        let mut vault_seeds = Self::seeds(&self.base);
+        vault_seeds.push(vec![self.bump]);
+        vault_seeds
     }
 
     /// Find the program address for the Vault
