@@ -627,6 +627,7 @@ pub fn burn_withdrawal_ticket(
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
+    program_fee_vrt_token_account: &Pubkey,
     min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
@@ -639,6 +640,7 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new(*program_fee_vrt_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];

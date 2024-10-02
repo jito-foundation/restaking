@@ -234,7 +234,7 @@ impl VaultProgramClient {
         self.airdrop(&config_admin.pubkey(), 1.0).await?;
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
-        self.initialize_config(&config_pubkey, &config_admin, &self.payer.pubkey(), 0)
+        self.initialize_config(&config_pubkey, &config_admin, &config_admin.pubkey(), 0)
             .await?;
 
         Ok(config_admin)
@@ -1191,6 +1191,7 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         staker: &Keypair,
         vault_staker_withdrawal_ticket_base: &Pubkey,
+        config_fee_wallet: &Pubkey,
         min_amount_out: u64,
     ) -> Result<(), TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
@@ -1211,6 +1212,7 @@ impl VaultProgramClient {
             &vault_staker_withdrawal_ticket,
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+            &get_associated_token_address(config_fee_wallet, &vault.vrt_mint),
             min_amount_out,
         )
         .await?;
@@ -1229,6 +1231,7 @@ impl VaultProgramClient {
         vault_staker_withdrawal_ticket: &Pubkey,
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
+        program_fee_vrt_token_account: &Pubkey,
         min_amount_out: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1244,6 +1247,7 @@ impl VaultProgramClient {
                 vault_staker_withdrawal_ticket,
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
+                program_fee_vrt_token_account,
                 min_amount_out,
             )],
             Some(&self.payer.pubkey()),

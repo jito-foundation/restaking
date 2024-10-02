@@ -759,15 +759,6 @@ impl Vault {
         })
     }
 
-    // TODO add program fee here, extending BurnSummary
-    // And being very careful with the math here
-    /*
-
-    Program fee gets added to global config? how does that get updated?
-    Do we need a check that the program fee + vault fee <= 100%?
-    Or do we just top out at 100%? If so, who gets what share? Pro-rata or one gets their whole fee first?
-
-    */
     pub fn burn_with_fee(
         &mut self,
         program_fee_bps: u16,
