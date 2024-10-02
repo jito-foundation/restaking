@@ -70,6 +70,7 @@ pub fn process_close_vault_update_state_tracker(
     }
 
     msg!("Closing VaultUpdateStateTracker");
+    drop(vault_update_state_tracker_data);
     close_program_account(program_id, vault_update_state_tracker_info, payer)?;
 
     Ok(())
