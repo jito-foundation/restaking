@@ -65,8 +65,7 @@ pub fn process_burn(
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
     load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.vrt_mint)?;
-    // load_token_program(token_program)?;
-    spl_token_2022::check_spl_token_program_account(token_program)?;
+    load_token_program(token_program)?;
     load_system_program(system_program)?;
 
     // The vault VRT mint shall be correct

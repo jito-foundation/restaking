@@ -5,6 +5,7 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
+use spl_token_2022::extension::StateWithExtensionsOwned;
 
 /// Processes the ncn delegate token account instruction: [`crate::RestakingInstruction::NcnDelegateTokenAccount`]
 ///
@@ -43,24 +44,24 @@ pub fn process_ncn_delegate_token_account(
     if token_mint.owner.ne(token_account.owner) {
         return Err(ProgramError::InvalidAccountData);
     }
-    // match (*token_mint.owner, *token_account.owner) {
-    //     (spl_token::ID, spl_token::ID) => {
-    //         load_token_program(token_program_info)?;
-    //     }
-    //     (spl_token_2022::ID, spl_token_2022::ID) => {
-    //         load_token_2022_program(token_program_info)?;
-    //     }
-    //     _ => {
-    //         msg!("token_mint and token_account owner does not match");
-    //         return Err(ProgramError::InvalidAccountData);
-    //     }
-    // }
 
     let ncn_data = ncn_info.data.borrow();
     let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
 
     // The Ncn delegate_admin shall be the signer of the transaction
     ncn.check_delegate_admin(delegate_admin.key)?;
+
+    let token_acc_info = StateWithExtensionsOwned::<spl_token_2022::state::Account>::unpack(
+        token_account.data.borrow().to_vec(),
+    )?;
+    if amount > token_acc_info.base.amount {
+        msg!(
+            "Amount is incorrect, expected lower than {}, received {}",
+            token_acc_info.base.amount,
+            amount
+        );
+        return Err(ProgramError::InvalidInstructionData);
+    }
 
     let mut ncn_seeds = Ncn::seeds(&ncn.base);
     ncn_seeds.push(vec![ncn.bump]);

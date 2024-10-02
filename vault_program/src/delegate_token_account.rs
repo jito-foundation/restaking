@@ -1,12 +1,11 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::loader::{
-    load_signer, load_token_2022_program, load_token_account, load_token_mint, load_token_program,
-};
+use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint};
 use jito_vault_core::{config::Config, vault::Vault};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
+use spl_token_2022::extension::StateWithExtensionsOwned;
 
 /// Processes the delegate token account instruction: [`crate::VaultInstruction::DelegateTokenAccount`]
 ///
@@ -42,29 +41,33 @@ pub fn process_delegate_token_account(
         token_mint.key,
         token_program_info,
     )?;
+    spl_token_2022::check_spl_token_program_account(token_program_info.key)?;
 
-    match (*token_mint.owner, *token_account.owner) {
-        (spl_token::ID, spl_token::ID) => {
-            load_token_program(token_program_info)?;
-        }
-        (spl_token_2022::ID, spl_token_2022::ID) => {
-            load_token_2022_program(token_program_info)?;
-        }
-        _ => {
-            msg!("token_mint and token_account owner does not match");
-            return Err(ProgramError::InvalidAccountData);
-        }
+    if token_mint.owner.ne(token_account.owner) {
+        return Err(ProgramError::InvalidAccountData);
     }
 
     let mut vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     if vault.supported_mint.eq(token_mint.key) {
-        msg!("Invalid Token mint");
+        msg!("Cannot delegate away the supported mint for a vault!");
         return Err(ProgramError::InvalidAccountData);
     }
 
     // The Vault delegate_asset_admin shall be the signer of the transaction
     vault.check_delegate_asset_admin(delegate_asset_admin.key)?;
+
+    let token_acc_info = StateWithExtensionsOwned::<spl_token_2022::state::Account>::unpack(
+        token_account.data.borrow().to_vec(),
+    )?;
+    if amount > token_acc_info.base.amount {
+        msg!(
+            "Amount is incorrect, expected lower than {}, received {}",
+            token_acc_info.base.amount,
+            amount
+        );
+        return Err(ProgramError::InvalidInstructionData);
+    }
 
     let (vault_pubkey, vault_bump, mut vault_seeds) =
         Vault::find_program_address(program_id, &vault.base);
