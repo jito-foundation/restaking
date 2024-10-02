@@ -6,13 +6,14 @@ use jito_restaking_core::{
 };
 use jito_restaking_sdk::{
     error::RestakingError,
+    instruction::OperatorAdminRole,
     sdk::{
         cooldown_ncn_vault_ticket, initialize_config, initialize_ncn,
         initialize_ncn_operator_state, initialize_ncn_vault_slasher_ticket,
         initialize_ncn_vault_ticket, initialize_operator, initialize_operator_vault_ticket,
         ncn_cooldown_operator, ncn_set_admin, ncn_warmup_operator, operator_cooldown_ncn,
-        operator_set_admin, operator_warmup_ncn, warmup_ncn_vault_slasher_ticket,
-        warmup_ncn_vault_ticket, warmup_operator_vault_ticket,
+        operator_set_admin, operator_set_secondary_admin, operator_warmup_ncn,
+        warmup_ncn_vault_slasher_ticket, warmup_ncn_vault_ticket, warmup_operator_vault_ticket,
     },
 };
 use solana_program::{
@@ -857,6 +858,30 @@ impl RestakingProgramClient {
             )],
             Some(&old_admin.pubkey()),
             &[old_admin, new_admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn operator_set_secondary_admin(
+        &mut self,
+        operator: &Pubkey,
+        old_admin: &Keypair,
+        new_admin: &Keypair,
+        operator_admin_role: OperatorAdminRole,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[operator_set_secondary_admin(
+                &jito_restaking_program::id(),
+                operator,
+                &old_admin.pubkey(),
+                &new_admin.pubkey(),
+                operator_admin_role,
+            )],
+            Some(&old_admin.pubkey()),
+            &[old_admin],
             blockhash,
         ))
         .await

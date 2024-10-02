@@ -19,7 +19,7 @@ pub fn process_set_operator_secondary_admin(
     let [operator, admin, new_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
-    Operator::load(program_id, operator, false)?;
+    Operator::load(program_id, operator, true)?;
     load_signer(admin, false)?;
 
     // The Operator admin shall be the signer of the transaction

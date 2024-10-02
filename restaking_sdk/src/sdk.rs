@@ -294,13 +294,13 @@ pub fn operator_set_secondary_admin(
     program_id: &Pubkey,
     operator: &Pubkey,
     admin: &Pubkey,
-    voter: &Pubkey,
+    new_admin: &Pubkey,
     operator_admin_role: OperatorAdminRole,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new_readonly(*voter, false),
+        AccountMeta::new_readonly(*new_admin, false),
     ];
     Instruction {
         program_id: *program_id,

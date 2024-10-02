@@ -305,6 +305,13 @@ impl TestBuilder {
         Ok(())
     }
 
+    pub async fn warp_to_slot(&mut self, warp_slot: u64) -> Result<(), BanksClientError> {
+        self.context
+            .warp_to_slot(warp_slot)
+            .map_err(|_| BanksClientError::ClientError("failed to warp slot"))?;
+        Ok(())
+    }
+
     pub async fn get_current_slot(&mut self) -> Result<u64, BanksClientError> {
         let clock: Clock = self.context.banks_client.get_sysvar().await?;
         Ok(clock.slot)
