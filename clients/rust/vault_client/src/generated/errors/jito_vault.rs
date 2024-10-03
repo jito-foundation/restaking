@@ -65,67 +65,70 @@ pub enum JitoVaultError {
     VaultUpdateNeeded = 0x3F9,
     /// 1018 - VaultIsUpdated
     #[error("VaultIsUpdated")]
-    VaultIsUpdated = 0x3FA,
-    /// 1019 - VaultUpdateIncorrectIndex
+    VaultIsUpdated = 0x3F9,
+    /// 1018 - VaultOperatorDelegationUpdateNeeded
+    #[error("VaultOperatorDelegationUpdateNeeded")]
+    VaultOperatorDelegationUpdateNeeded = 0x3FA,
+    /// 1019 - VaultOperatorDelegationIsUpdated
+    #[error("VaultOperatorDelegationIsUpdated")]
+    VaultOperatorDelegationIsUpdated = 0x3FB,
+    /// 1020 - VaultUpdateIncorrectIndex
     #[error("VaultUpdateIncorrectIndex")]
-    VaultUpdateIncorrectIndex = 0x3FB,
-    /// 1020 - VaultUpdateStateNotFinishedUpdating
+    VaultUpdateIncorrectIndex = 0x3FC,
+    /// 1021 - VaultUpdateStateNotFinishedUpdating
     #[error("VaultUpdateStateNotFinishedUpdating")]
-    VaultUpdateStateNotFinishedUpdating = 0x3FC,
-    /// 1021 - VaultSecurityOverflow
+    VaultUpdateStateNotFinishedUpdating = 0x3FD,
+    /// 1022 - VaultSecurityOverflow
     #[error("VaultSecurityOverflow")]
-    VaultSecurityOverflow = 0x3FD,
-    /// 1022 - VaultSlashIncomplete
+    VaultSecurityOverflow = 0x3FE,
+    /// 1023 - VaultSlashIncomplete
     #[error("VaultSlashIncomplete")]
-    VaultSlashIncomplete = 0x3FE,
-    /// 1023 - VaultSecurityUnderflow
+    VaultSlashIncomplete = 0x3FF,
+    /// 1024 - VaultSecurityUnderflow
     #[error("VaultSecurityUnderflow")]
-    VaultSecurityUnderflow = 0x3FF,
-    /// 1024 - SlippageError
+    VaultSecurityUnderflow = 0x400,
+    /// 1025 - SlippageError
     #[error("SlippageError")]
-    SlippageError = 0x400,
-    /// 1025 - VaultStakerWithdrawalTicketNotWithdrawable
+    SlippageError = 0x401,
+    /// 1026 - VaultStakerWithdrawalTicketNotWithdrawable
     #[error("VaultStakerWithdrawalTicketNotWithdrawable")]
-    VaultStakerWithdrawalTicketNotWithdrawable = 0x401,
-    /// 1026 - VaultNcnSlasherTicketFailedCooldown
+    VaultStakerWithdrawalTicketNotWithdrawable = 0x402,
+    /// 1027 - VaultNcnSlasherTicketFailedCooldown
     #[error("VaultNcnSlasherTicketFailedCooldown")]
-    VaultNcnSlasherTicketFailedCooldown = 0x402,
-    /// 1027 - VaultNcnSlasherTicketFailedWarmup
+    VaultNcnSlasherTicketFailedCooldown = 0x403,
+    /// 1028 - VaultNcnSlasherTicketFailedWarmup
     #[error("VaultNcnSlasherTicketFailedWarmup")]
-    VaultNcnSlasherTicketFailedWarmup = 0x403,
-    /// 1028 - VaultNcnTicketFailedCooldown
+    VaultNcnSlasherTicketFailedWarmup = 0x404,
+    /// 1029 - VaultNcnTicketFailedCooldown
     #[error("VaultNcnTicketFailedCooldown")]
-    VaultNcnTicketFailedCooldown = 0x404,
-    /// 1029 - VaultNcnTicketFailedWarmup
+    VaultNcnTicketFailedCooldown = 0x405,
+    /// 1030 - VaultNcnTicketFailedWarmup
     #[error("VaultNcnTicketFailedWarmup")]
-    VaultNcnTicketFailedWarmup = 0x405,
-    /// 1030 - VaultNcnTicketUnslashable
+    VaultNcnTicketFailedWarmup = 0x406,
+    /// 1031 - VaultNcnTicketUnslashable
     #[error("VaultNcnTicketUnslashable")]
-    VaultNcnTicketUnslashable = 0x406,
-    /// 1031 - OperatorVaultTicketUnslashable
+    VaultNcnTicketUnslashable = 0x407,
+    /// 1032 - OperatorVaultTicketUnslashable
     #[error("OperatorVaultTicketUnslashable")]
-    OperatorVaultTicketUnslashable = 0x407,
-    /// 1032 - NcnOperatorStateUnslashable
+    OperatorVaultTicketUnslashable = 0x408,
+    /// 1033 - NcnOperatorStateUnslashable
     #[error("NcnOperatorStateUnslashable")]
-    NcnOperatorStateUnslashable = 0x408,
-    /// 1033 - VaultNcnSlasherTicketUnslashable
+    NcnOperatorStateUnslashable = 0x409,
+    /// 1034 - VaultNcnSlasherTicketUnslashable
     #[error("VaultNcnSlasherTicketUnslashable")]
-    VaultNcnSlasherTicketUnslashable = 0x409,
-    /// 1034 - NcnVaultTicketUnslashable
+    VaultNcnSlasherTicketUnslashable = 0x40A,
+    /// 1035 - NcnVaultTicketUnslashable
     #[error("NcnVaultTicketUnslashable")]
-    NcnVaultTicketUnslashable = 0x40A,
-    /// 1035 - NcnVaultSlasherTicketUnslashable
+    NcnVaultTicketUnslashable = 0x40B,
+    /// 1036 - NcnVaultSlasherTicketUnslashable
     #[error("NcnVaultSlasherTicketUnslashable")]
-    NcnVaultSlasherTicketUnslashable = 0x40B,
-    /// 1036 - VaultMaxSlashedPerOperatorExceeded
+    NcnVaultSlasherTicketUnslashable = 0x40C,
+    /// 1037 - VaultMaxSlashedPerOperatorExceeded
     #[error("VaultMaxSlashedPerOperatorExceeded")]
-    VaultMaxSlashedPerOperatorExceeded = 0x40C,
-    /// 1037 - VaultStakerWithdrawalTicketInvalidStaker
+    VaultMaxSlashedPerOperatorExceeded = 0x40D,
+    /// 1038 - VaultStakerWithdrawalTicketInvalidStaker
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
-    VaultStakerWithdrawalTicketInvalidStaker = 0x40D,
-    /// 1038 - VaultWithdrawalLimitExceeded
-    #[error("VaultWithdrawalLimitExceeded")]
-    VaultWithdrawalLimitExceeded = 0x40E,
+    VaultStakerWithdrawalTicketInvalidStaker = 0x40E,
     /// 1039 - SlasherOverflow
     #[error("SlasherOverflow")]
     SlasherOverflow = 0x40F,
