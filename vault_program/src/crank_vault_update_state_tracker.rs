@@ -52,6 +52,7 @@ pub fn process_crank_vault_update_state_tracker(
         &mut vault_update_state_tracker_data,
     )?;
 
+    vault_operator_delegation.check_is_already_updated(slot, config.epoch_length())?;
     vault_update_state_tracker.check_and_update_index(vault_operator_delegation.index())?;
 
     match WithdrawalAllocationMethod::try_from(
