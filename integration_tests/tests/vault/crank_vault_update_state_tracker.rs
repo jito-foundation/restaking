@@ -307,14 +307,16 @@ mod tests {
             )
             .await
             .unwrap();
+
         fixture.warp_slot_incremental(1).await.unwrap();
+
         let result = vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
                 &operator_roots[0].operator_pubkey,
             )
             .await;
-        assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
+        assert_vault_error(result, VaultError::VaultOperatorDelegationIsUpdated);
     }
 
     #[tokio::test]

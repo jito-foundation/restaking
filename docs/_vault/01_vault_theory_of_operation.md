@@ -7,13 +7,13 @@ weight: 2
 
 # 1. Introduction
 
-The Vault Program is a crucial component of Jito's Liquid Restaking system, designed to manage and facilitate the staking and unstaking of tokens within the Solana ecosystem. This program is responsible for holding tokens, minting and burning Vault Representation Tokens (VRT), and managing various administrative functions related to the vault's operation.
+The Vault Program is a crucial component of Jito's Liquid Restaking system, designed to manage and facilitate the staking and unstaking of tokens within the Solana ecosystem. This program is responsible for holding tokens, minting and burning Vault Receipt Tokens (VRT), and managing various administrative functions related to the vault's operation.
 
 Key features of the vault program include:
 - Token management: Securely holding deposited tokens and minting corresponding VRT tokens.
 - Fee handling: Managing deposit, withdrawal, and reward fees.
 - Administrative controls: Allowing authorized parties to manage vault parameters and perform administrative actions.
-- Delegation support: Facilitating delegation to operators and managing relationships with Network Controlled Nodes (NCNs).
+- Delegation support: Facilitating delegation to operators and managing relationships with Node Consensus Networks (NCNs).
 - Slashing mechanism: Implementing a slashing feature to penalize misbehavior.
 - State tracking: Maintaining and updating the vault's state to ensure accurate token representation.
 
@@ -62,7 +62,7 @@ These parameters allow for fine-tuning of the vault's behavior and economics.
 # 5. Vault State Tracking
 The Vault Program maintains several state variables to track various aspects of its operation. Here's an overview of some key state variables:
 
-1. `vrt_supply`: Tracks the total number of Vault Representation Tokens (VRT) in circulation. This is updated whenever VRTs are minted or burned. It shall always match the total supply of VRTs tracked by the token mint.
+1. `vrt_supply`: Tracks the total number of Vault Receipt Tokens (VRT) in circulation. This is updated whenever VRTs are minted or burned. It shall always match the total supply of VRTs tracked by the token mint.
 2. `tokens_deposited`: Represents the total number of supported tokens currently held by the vault. This is increased when users deposit tokens and decreased when tokens are withdrawn or slashed.
 3. `delegation_state`: A complex state that tracks the aggregate delegation of tokens to operators. It includes:
    - `total_security`: The total amount of tokens delegated as security.
@@ -79,7 +79,7 @@ These state variables work together to provide a comprehensive view of the vault
 
 # 6. Minting
 
-Minting is the process of depositing tokens into the vault and receiving Vault Representation Tokens (VRT) in return. Here's a high-level overview of the minting process:
+Minting is the process of depositing tokens into the vault and receiving Vault Receipt Tokens (VRT) in return. Here's a high-level overview of the minting process:
 
 1. User initiates a mint transaction, specifying the amount of tokens to deposit.
 2. The program checks if the vault has sufficient capacity to accept the deposit.
@@ -150,11 +150,11 @@ Key points:
 # 8. Delegations
 
 ## 8.1. Adding Delegations
-1. The vault delegation admin initiates the process by calling the `AddDelegation` instruction. The delegation instruction needs the vault, opereator, `VaultOperatorDelegation` and other accounts.
+1. The vault delegation admin initiates the process by calling the `AddDelegation` instruction. The delegation instruction needs the vault, operator, `VaultOperatorDelegation` and other accounts.
 2. The system performs several checks:
    - Verifies that the vault delegation admin is the signer of the transaction
    - Ensures that the vault's state is up-to-date before adding delegation
-3. After the above checks, the vault attempts to increment it's internal delegation state, running the following checks before doing so:
+3. After the above checks, the vault attempts to increment its internal delegation state, running the following checks before doing so:
    - The system calculates the amount available for delegation, considering:
      - The total tokens deposited in the vault
      - The current total assets already delegated
@@ -208,7 +208,7 @@ The withdrawal enqueueing process is a crucial part of the vault's operation, al
    - Ensures that the vault's state is up-to-date before enqueuing a withdrawal
    - If the vault has a mint burn admin, it must be set and be the signer of the transaction
 
-3. The `VaultStakerWithdrawalTicket` is created and the staker's VRT is transferred to an ATA owned by the `VaultStakerWithdrawalTicket`.
+3. The `VaultStakerWithdrawalTicket` is created.
 
 4. The vault's `vrt_enqueued_for_cooldown_amount` is incremented by the VRT amount deposited in the ticket.
 
@@ -278,7 +278,7 @@ Burning is the process of redeeming VRT tokens for the underlying assets in the 
 
 ## 11.2. Burning VRT Withdrawal Tickets
 
-Burning a VRT Withdrawal Ticket is the process of finalizing a withdrawal from the vault. VRTs that have been withdrawan for more than one full epoch can be burned to receive the underlying assets.
+Burning a VRT Withdrawal Ticket is the process of finalizing a withdrawal from the vault. VRTs that have been withdrawn for more than one full epoch can be burned to receive the underlying assets.
 
 Here's a high-level overview of the process:
 
@@ -325,7 +325,7 @@ Each party must create and maintain active tickets or states that indicate their
 
 3. If all checks pass:
    - The specified amount is deducted from the operator's delegation in the vault.
-   - The vault's total deposited tokens are decreased.
+   - The vault's total amount of deposited tokens is decreased.
    - The slashed funds are transferred to the slasher's account.
 
 ## 12.3. Key Components
