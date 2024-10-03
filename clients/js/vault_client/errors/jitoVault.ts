@@ -51,65 +51,67 @@ export const JITO_VAULT_ERROR__VAULT_UNDERFLOW = 0x3f8; // 1016
 /** VaultUpdateNeeded: VaultUpdateNeeded */
 export const JITO_VAULT_ERROR__VAULT_UPDATE_NEEDED = 0x3f9; // 1017
 /** VaultIsUpdated: VaultIsUpdated */
-export const JITO_VAULT_ERROR__VAULT_IS_UPDATED = 0x3f9; // 1017
+export const JITO_VAULT_ERROR__VAULT_IS_UPDATED = 0x3fa; // 1018
 /** VaultOperatorDelegationUpdateNeeded: VaultOperatorDelegationUpdateNeeded */
-export const JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_UPDATE_NEEDED = 0x3fa; // 1018
+export const JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_UPDATE_NEEDED = 0x3fb; // 1019
 /** VaultOperatorDelegationIsUpdated: VaultOperatorDelegationIsUpdated */
-export const JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_IS_UPDATED = 0x3fb; // 1019
+export const JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_IS_UPDATED = 0x3fc; // 1020
 /** VaultUpdateIncorrectIndex: VaultUpdateIncorrectIndex */
-export const JITO_VAULT_ERROR__VAULT_UPDATE_INCORRECT_INDEX = 0x3fc; // 1020
+export const JITO_VAULT_ERROR__VAULT_UPDATE_INCORRECT_INDEX = 0x3fd; // 1021
 /** VaultUpdateStateNotFinishedUpdating: VaultUpdateStateNotFinishedUpdating */
-export const JITO_VAULT_ERROR__VAULT_UPDATE_STATE_NOT_FINISHED_UPDATING = 0x3fd; // 1021
+export const JITO_VAULT_ERROR__VAULT_UPDATE_STATE_NOT_FINISHED_UPDATING = 0x3fe; // 1022
 /** VaultSecurityOverflow: VaultSecurityOverflow */
-export const JITO_VAULT_ERROR__VAULT_SECURITY_OVERFLOW = 0x3fe; // 1022
+export const JITO_VAULT_ERROR__VAULT_SECURITY_OVERFLOW = 0x3ff; // 1023
 /** VaultSlashIncomplete: VaultSlashIncomplete */
-export const JITO_VAULT_ERROR__VAULT_SLASH_INCOMPLETE = 0x3ff; // 1023
+export const JITO_VAULT_ERROR__VAULT_SLASH_INCOMPLETE = 0x400; // 1024
 /** VaultSecurityUnderflow: VaultSecurityUnderflow */
-export const JITO_VAULT_ERROR__VAULT_SECURITY_UNDERFLOW = 0x400; // 1024
+export const JITO_VAULT_ERROR__VAULT_SECURITY_UNDERFLOW = 0x401; // 1025
 /** SlippageError: SlippageError */
-export const JITO_VAULT_ERROR__SLIPPAGE_ERROR = 0x401; // 1025
+export const JITO_VAULT_ERROR__SLIPPAGE_ERROR = 0x402; // 1026
 /** VaultStakerWithdrawalTicketNotWithdrawable: VaultStakerWithdrawalTicketNotWithdrawable */
-export const JITO_VAULT_ERROR__VAULT_STAKER_WITHDRAWAL_TICKET_NOT_WITHDRAWABLE = 0x402; // 1026
+export const JITO_VAULT_ERROR__VAULT_STAKER_WITHDRAWAL_TICKET_NOT_WITHDRAWABLE = 0x403; // 1027
 /** VaultNcnSlasherTicketFailedCooldown: VaultNcnSlasherTicketFailedCooldown */
-export const JITO_VAULT_ERROR__VAULT_NCN_SLASHER_TICKET_FAILED_COOLDOWN = 0x403; // 1027
+export const JITO_VAULT_ERROR__VAULT_NCN_SLASHER_TICKET_FAILED_COOLDOWN = 0x404; // 1028
 /** VaultNcnSlasherTicketFailedWarmup: VaultNcnSlasherTicketFailedWarmup */
-export const JITO_VAULT_ERROR__VAULT_NCN_SLASHER_TICKET_FAILED_WARMUP = 0x404; // 1028
+export const JITO_VAULT_ERROR__VAULT_NCN_SLASHER_TICKET_FAILED_WARMUP = 0x405; // 1029
 /** VaultNcnTicketFailedCooldown: VaultNcnTicketFailedCooldown */
-export const JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_COOLDOWN = 0x405; // 1029
+export const JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_COOLDOWN = 0x406; // 1030
 /** VaultNcnTicketFailedWarmup: VaultNcnTicketFailedWarmup */
-export const JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_WARMUP = 0x406; // 1030
+export const JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_WARMUP = 0x407; // 1031
 /** VaultNcnTicketUnslashable: VaultNcnTicketUnslashable */
-export const JITO_VAULT_ERROR__VAULT_NCN_TICKET_UNSLASHABLE = 0x407; // 1031
+export const JITO_VAULT_ERROR__VAULT_NCN_TICKET_UNSLASHABLE = 0x408; // 1032
 /** OperatorVaultTicketUnslashable: OperatorVaultTicketUnslashable */
-export const JITO_VAULT_ERROR__OPERATOR_VAULT_TICKET_UNSLASHABLE = 0x408; // 1032
+export const JITO_VAULT_ERROR__OPERATOR_VAULT_TICKET_UNSLASHABLE = 0x409; // 1033
 /** NcnOperatorStateUnslashable: NcnOperatorStateUnslashable */
-export const JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE = 0x409; // 1033
+export const JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE = 0x40a; // 1034
 /** VaultNcnSlasherTicketUnslashable: VaultNcnSlasherTicketUnslashable */
-export const JITO_VAULT_ERROR__VAULT_NCN_SLASHER_TICKET_UNSLASHABLE = 0x40a; // 1034
+export const JITO_VAULT_ERROR__VAULT_NCN_SLASHER_TICKET_UNSLASHABLE = 0x40b; // 1035
 /** NcnVaultTicketUnslashable: NcnVaultTicketUnslashable */
-export const JITO_VAULT_ERROR__NCN_VAULT_TICKET_UNSLASHABLE = 0x40b; // 1035
+export const JITO_VAULT_ERROR__NCN_VAULT_TICKET_UNSLASHABLE = 0x40c; // 1036
 /** NcnVaultSlasherTicketUnslashable: NcnVaultSlasherTicketUnslashable */
-export const JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE = 0x40c; // 1036
+export const JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE = 0x40d; // 1037
 /** VaultMaxSlashedPerOperatorExceeded: VaultMaxSlashedPerOperatorExceeded */
-export const JITO_VAULT_ERROR__VAULT_MAX_SLASHED_PER_OPERATOR_EXCEEDED = 0x40d; // 1037
+export const JITO_VAULT_ERROR__VAULT_MAX_SLASHED_PER_OPERATOR_EXCEEDED = 0x40e; // 1038
 /** VaultStakerWithdrawalTicketInvalidStaker: VaultStakerWithdrawalTicketInvalidStaker */
-export const JITO_VAULT_ERROR__VAULT_STAKER_WITHDRAWAL_TICKET_INVALID_STAKER = 0x40e; // 1038
+export const JITO_VAULT_ERROR__VAULT_STAKER_WITHDRAWAL_TICKET_INVALID_STAKER = 0x40f; // 1039
+/** VaultWithdrawalLimitExceeded: VaultWithdrawalLimitExceeded */
+export const JITO_VAULT_ERROR__VAULT_WITHDRAWAL_LIMIT_EXCEEDED = 0x410; // 1040
 /** SlasherOverflow: SlasherOverflow */
-export const JITO_VAULT_ERROR__SLASHER_OVERFLOW = 0x40f; // 1039
+export const JITO_VAULT_ERROR__SLASHER_OVERFLOW = 0x411; // 1041
 /** NcnOverflow: NcnOverflow */
-export const JITO_VAULT_ERROR__NCN_OVERFLOW = 0x410; // 1040
+export const JITO_VAULT_ERROR__NCN_OVERFLOW = 0x412; // 1042
 /** OperatorOverflow: OperatorOverflow */
-export const JITO_VAULT_ERROR__OPERATOR_OVERFLOW = 0x411; // 1041
+export const JITO_VAULT_ERROR__OPERATOR_OVERFLOW = 0x413; // 1043
 /** VaultDelegationZero: VaultDelegationZero */
-export const JITO_VAULT_ERROR__VAULT_DELEGATION_ZERO = 0x412; // 1042
+export const JITO_VAULT_ERROR__VAULT_DELEGATION_ZERO = 0x414; // 1044
 /** VaultCooldownZero: VaultCooldownZero */
-export const JITO_VAULT_ERROR__VAULT_COOLDOWN_ZERO = 0x413; // 1043
+export const JITO_VAULT_ERROR__VAULT_COOLDOWN_ZERO = 0x415; // 1045
 /** VaultBurnZero: VaultBurnZero */
-export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x414; // 1044
+export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x416; // 1046
 /** VaultEnqueueWithdrawalAmountZero: VaultEnqueueWithdrawalAmountZero */
-export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x415; // 1045
+export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x417; // 1047
 /** VaultMintZero: VaultMintZero */
-export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x416; // 1046
+export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x418; // 1048
 
 export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE
