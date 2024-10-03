@@ -10,8 +10,6 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -78,19 +76,13 @@ export type OperatorDelegateTokenAccountInstruction<
 
 export type OperatorDelegateTokenAccountInstructionData = {
   discriminator: number;
-  amount: bigint;
 };
 
-export type OperatorDelegateTokenAccountInstructionDataArgs = {
-  amount: number | bigint;
-};
+export type OperatorDelegateTokenAccountInstructionDataArgs = {};
 
 export function getOperatorDelegateTokenAccountInstructionDataEncoder(): Encoder<OperatorDelegateTokenAccountInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([
-      ['discriminator', getU8Encoder()],
-      ['amount', getU64Encoder()],
-    ]),
+    getStructEncoder([['discriminator', getU8Encoder()]]),
     (value) => ({
       ...value,
       discriminator: OPERATOR_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR,
@@ -99,10 +91,7 @@ export function getOperatorDelegateTokenAccountInstructionDataEncoder(): Encoder
 }
 
 export function getOperatorDelegateTokenAccountInstructionDataDecoder(): Decoder<OperatorDelegateTokenAccountInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getU8Decoder()],
-    ['amount', getU64Decoder()],
-  ]);
+  return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
 export function getOperatorDelegateTokenAccountInstructionDataCodec(): Codec<
@@ -129,7 +118,6 @@ export type OperatorDelegateTokenAccountInput<
   tokenAccount: Address<TAccountTokenAccount>;
   delegate: Address<TAccountDelegate>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  amount: OperatorDelegateTokenAccountInstructionDataArgs['amount'];
 };
 
 export function getOperatorDelegateTokenAccountInstruction<
@@ -174,9 +162,6 @@ export function getOperatorDelegateTokenAccountInstruction<
     ResolvedAccount
   >;
 
-  // Original args.
-  const args = { ...input };
-
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
@@ -194,9 +179,7 @@ export function getOperatorDelegateTokenAccountInstruction<
       getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getOperatorDelegateTokenAccountInstructionDataEncoder().encode(
-      args as OperatorDelegateTokenAccountInstructionDataArgs
-    ),
+    data: getOperatorDelegateTokenAccountInstructionDataEncoder().encode({}),
   } as OperatorDelegateTokenAccountInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,

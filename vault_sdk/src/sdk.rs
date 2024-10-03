@@ -292,7 +292,6 @@ pub fn delegate_token_account(
     token_account: &Pubkey,
     delegate: &Pubkey,
     token_program_id: &Pubkey,
-    amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -306,9 +305,7 @@ pub fn delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::DelegateTokenAccount { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::DelegateTokenAccount.try_to_vec().unwrap(),
     }
 }
 

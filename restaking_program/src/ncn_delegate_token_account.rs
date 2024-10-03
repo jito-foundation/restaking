@@ -2,10 +2,9 @@ use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint};
 use jito_restaking_core::ncn::Ncn;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
+    account_info::AccountInfo, entrypoint::ProgramResult, program::invoke_signed,
     program_error::ProgramError, pubkey::Pubkey,
 };
-use spl_token_2022::extension::StateWithExtensionsOwned;
 
 /// Processes the ncn delegate token account instruction: [`crate::RestakingInstruction::NcnDelegateTokenAccount`]
 ///
@@ -15,14 +14,12 @@ use spl_token_2022::extension::StateWithExtensionsOwned;
 /// # Arguments
 /// * `program_id` - The public key of the program, used to ensure the correct program is being executed.
 /// * `accounts` - A slice of `AccountInfo` representing the accounts required for this instruction.
-/// * `amount` - The number of tokens to delegate to the delegate account.
 ///
 /// # Returns
-/// * `ProgramResult` - Returns `Ok(())` if the delegation is successful, otherwise returns an appropriate `ProgramError`.
+/// * `ProgramResult` - Returns `Ok(())` if the delegation is successful, otherwise returns an appropriate [`ProgramError`].
 pub fn process_ncn_delegate_token_account(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
-    amount: u64,
 ) -> ProgramResult {
     let [ncn_info, delegate_admin, token_mint, token_account, delegate, token_program_info] =
         accounts
@@ -41,6 +38,8 @@ pub fn process_ncn_delegate_token_account(
     )?;
     spl_token_2022::check_spl_token_program_account(token_program_info.key)?;
 
+    // We support SPL Token and SPL Token 2022 standards
+    // The owner of token mint and token account must match
     if token_mint.owner.ne(token_account.owner) {
         return Err(ProgramError::InvalidAccountData);
     }
@@ -50,18 +49,6 @@ pub fn process_ncn_delegate_token_account(
 
     // The Ncn delegate_admin shall be the signer of the transaction
     ncn.check_delegate_admin(delegate_admin.key)?;
-
-    let token_acc_info = StateWithExtensionsOwned::<spl_token_2022::state::Account>::unpack(
-        token_account.data.borrow().to_vec(),
-    )?;
-    if amount > token_acc_info.base.amount {
-        msg!(
-            "Amount is incorrect, expected lower than {}, received {}",
-            token_acc_info.base.amount,
-            amount
-        );
-        return Err(ProgramError::InvalidInstructionData);
-    }
 
     let mut ncn_seeds = Ncn::seeds(&ncn.base);
     ncn_seeds.push(vec![ncn.bump]);
@@ -78,7 +65,7 @@ pub fn process_ncn_delegate_token_account(
         delegate.key,
         ncn_info.key,
         &[],
-        amount,
+        u64::MAX,
     )?;
 
     invoke_signed(

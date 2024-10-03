@@ -817,7 +817,6 @@ impl VaultProgramClient {
         token_account: &Pubkey,
         delegate: &Pubkey,
         token_program_id: &Pubkey,
-        amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -830,7 +829,6 @@ impl VaultProgramClient {
                 token_account,
                 delegate,
                 token_program_id,
-                amount,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer, &delegate_asset_admin],

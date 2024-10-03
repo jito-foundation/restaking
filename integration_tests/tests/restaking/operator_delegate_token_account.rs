@@ -1,19 +1,17 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_sdk::error::RestakingError;
-    use solana_program::{instruction::InstructionError, program_option::COption, pubkey::Pubkey};
+    use solana_program::{program_option::COption, pubkey::Pubkey};
     use solana_sdk::{signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address;
     use test_case::test_case;
 
     use crate::fixtures::{
-        assert_ix_error,
         fixture::TestBuilder,
         restaking_client::{assert_restaking_error, OperatorRoot},
     };
 
     const MINT_AMOUNT: u64 = 100_000;
-    const DELEGATE_AMOUNT: u64 = 50_000;
 
     async fn setup(token_program_id: &Pubkey) -> (TestBuilder, OperatorRoot, Keypair, Keypair) {
         let mut fixture = TestBuilder::new().await;
@@ -95,7 +93,6 @@ mod tests {
                     ),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await
                 .unwrap();
@@ -104,7 +101,7 @@ mod tests {
             let token_account_acc = fixture.get_token_account(&ata).await.unwrap();
 
             assert_eq!(token_account_acc.delegate, COption::Some(bob));
-            assert_eq!(token_account_acc.delegated_amount, DELEGATE_AMOUNT);
+            assert_eq!(token_account_acc.delegated_amount, u64::MAX);
         } else {
             restaking_program_client
                 .operator_delegate_token_account(
@@ -114,7 +111,6 @@ mod tests {
                     &operator_token_account.pubkey(),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await
                 .unwrap();
@@ -125,7 +121,7 @@ mod tests {
                 .unwrap();
 
             assert_eq!(vault_token_acc.delegate, COption::Some(bob));
-            assert_eq!(vault_token_acc.delegated_amount, DELEGATE_AMOUNT);
+            assert_eq!(vault_token_acc.delegated_amount, u64::MAX);
         }
     }
 
@@ -154,7 +150,6 @@ mod tests {
                     ),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
@@ -168,55 +163,10 @@ mod tests {
                     &operator_token_account.pubkey(),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
             assert_restaking_error(response, RestakingError::OperatorDelegateAdminInvalid);
-        }
-    }
-
-    #[test_case(spl_token::id(); "token")]
-    #[test_case(spl_token_2022::id(); "token-2022")]
-    #[tokio::test]
-    async fn test_operator_delegate_token_account_exceed_amount_fails(token_program_id: Pubkey) {
-        let (fixture, operator_root, random_mint, operator_token_account) =
-            setup(&token_program_id).await;
-        let mut restaking_program_client = fixture.restaking_program_client();
-
-        let bob = Pubkey::new_unique();
-        if token_program_id.eq(&spl_token::id()) {
-            // Delegate
-            let test_error = restaking_program_client
-                .operator_delegate_token_account(
-                    &operator_root.operator_pubkey,
-                    &operator_root.operator_admin,
-                    &random_mint.pubkey(),
-                    &get_associated_token_address(
-                        &operator_root.operator_pubkey,
-                        &random_mint.pubkey(),
-                    ),
-                    &bob,
-                    &token_program_id,
-                    MINT_AMOUNT + 1,
-                )
-                .await;
-
-            assert_ix_error(test_error, InstructionError::InvalidInstructionData);
-        } else {
-            let test_error = restaking_program_client
-                .operator_delegate_token_account(
-                    &operator_root.operator_pubkey,
-                    &operator_root.operator_admin,
-                    &random_mint.pubkey(),
-                    &operator_token_account.pubkey(),
-                    &bob,
-                    &token_program_id,
-                    MINT_AMOUNT + 1,
-                )
-                .await;
-
-            assert_ix_error(test_error, InstructionError::InvalidInstructionData);
         }
     }
 }

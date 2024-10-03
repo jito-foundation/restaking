@@ -947,7 +947,6 @@ impl RestakingProgramClient {
         token_account: &Pubkey,
         delegate: &Pubkey,
         token_program_id: &Pubkey,
-        amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -959,7 +958,6 @@ impl RestakingProgramClient {
                 token_account,
                 delegate,
                 token_program_id,
-                amount,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer, &delegate_admin],
@@ -976,7 +974,6 @@ impl RestakingProgramClient {
         token_account: &Pubkey,
         delegate: &Pubkey,
         token_program_id: &Pubkey,
-        amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.process_transaction(&Transaction::new_signed_with_payer(
@@ -988,7 +985,6 @@ impl RestakingProgramClient {
                 token_account,
                 delegate,
                 token_program_id,
-                amount,
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer, &delegate_admin],

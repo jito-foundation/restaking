@@ -14,7 +14,6 @@ mod tests {
     };
 
     const MINT_AMOUNT: u64 = 100_000;
-    const DELEGATE_AMOUNT: u64 = 50_000;
 
     async fn setup(token_program_id: &Pubkey) -> (TestBuilder, Pubkey, Keypair, Keypair, Keypair) {
         let mut fixture = TestBuilder::new().await;
@@ -101,7 +100,6 @@ mod tests {
                     &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await
                 .unwrap();
@@ -109,7 +107,7 @@ mod tests {
             let token_account_acc = fixture.get_token_account(&ata).await.unwrap();
 
             assert_eq!(token_account_acc.delegate, COption::Some(bob));
-            assert_eq!(token_account_acc.delegated_amount, DELEGATE_AMOUNT);
+            assert_eq!(token_account_acc.delegated_amount, u64::MAX);
         } else {
             vault_program_client
                 .delegate_token_account(
@@ -120,7 +118,6 @@ mod tests {
                     &vault_token_account.pubkey(),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await
                 .unwrap();
@@ -131,7 +128,7 @@ mod tests {
                 .unwrap();
 
             assert_eq!(vault_token_acc.delegate, COption::Some(bob));
-            assert_eq!(vault_token_acc.delegated_amount, DELEGATE_AMOUNT);
+            assert_eq!(vault_token_acc.delegated_amount, u64::MAX);
         }
     }
 
@@ -157,7 +154,6 @@ mod tests {
                     &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
@@ -172,7 +168,6 @@ mod tests {
                     &vault_token_account.pubkey(),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
@@ -194,7 +189,7 @@ mod tests {
         let bob = Pubkey::new_unique();
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
-            let response = vault_program_client
+            let test_error = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
                     &vault_pubkey,
@@ -203,13 +198,12 @@ mod tests {
                     &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
-            assert!(response.is_err());
+            assert_ix_error(test_error, InstructionError::InvalidAccountData);
         } else {
-            let response = vault_program_client
+            let test_error = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
                     &vault_pubkey,
@@ -218,18 +212,19 @@ mod tests {
                     &vault_token_account.pubkey(),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
-            assert!(response.is_err());
+            assert_ix_error(test_error, InstructionError::InvalidAccountData);
         }
     }
 
     #[test_case(spl_token::id(); "token")]
     #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
-    async fn test_delegate_vault_token_account_does_not_match_mint_fails(token_program_id: Pubkey) {
+    async fn test_delegate_vault_token_account_does_not_match_token_mint_fails(
+        token_program_id: Pubkey,
+    ) {
         let (fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
             setup(&token_program_id).await;
         let mut vault_program_client = fixture.vault_program_client();
@@ -240,7 +235,7 @@ mod tests {
         let bob = Pubkey::new_unique();
         if token_program_id.eq(&spl_token::id()) {
             // Delegate
-            let response = vault_program_client
+            let test_error = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
                     &vault_pubkey,
@@ -249,13 +244,12 @@ mod tests {
                     &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
-            assert!(response.is_err());
+            assert_ix_error(test_error, InstructionError::InvalidAccountOwner);
         } else {
-            let response = vault_program_client
+            let test_error = vault_program_client
                 .delegate_token_account(
                     &config_pubkey,
                     &vault_pubkey,
@@ -264,55 +258,10 @@ mod tests {
                     &vault_token_account.pubkey(),
                     &bob,
                     &token_program_id,
-                    DELEGATE_AMOUNT,
                 )
                 .await;
 
-            assert!(response.is_err());
-        }
-    }
-
-    #[test_case(spl_token::id(); "token")]
-    #[test_case(spl_token_2022::id(); "token-2022")]
-    #[tokio::test]
-    async fn test_delegate_token_account_exceed_amount_fails(token_program_id: Pubkey) {
-        let (fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
-            setup(&token_program_id).await;
-        let mut vault_program_client = fixture.vault_program_client();
-        let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
-
-        let bob = Pubkey::new_unique();
-        if token_program_id.eq(&spl_token::id()) {
-            // Delegate
-            let test_error = vault_program_client
-                .delegate_token_account(
-                    &config_pubkey,
-                    &vault_pubkey,
-                    &vault_admin,
-                    &random_mint.pubkey(),
-                    &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
-                    &bob,
-                    &token_program_id,
-                    MINT_AMOUNT + 1,
-                )
-                .await;
-
-            assert_ix_error(test_error, InstructionError::InvalidInstructionData);
-        } else {
-            let test_error = vault_program_client
-                .delegate_token_account(
-                    &config_pubkey,
-                    &vault_pubkey,
-                    &vault_admin,
-                    &random_mint.pubkey(),
-                    &vault_token_account.pubkey(),
-                    &bob,
-                    &token_program_id,
-                    MINT_AMOUNT + 1,
-                )
-                .await;
-
-            assert_ix_error(test_error, InstructionError::InvalidInstructionData);
+            assert_ix_error(test_error, InstructionError::InvalidAccountOwner);
         }
     }
 }

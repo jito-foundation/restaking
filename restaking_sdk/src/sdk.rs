@@ -362,7 +362,6 @@ pub fn cooldown_operator_vault_ticket(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn ncn_delegate_token_account(
     program_id: &Pubkey,
     ncn: &Pubkey,
@@ -371,7 +370,6 @@ pub fn ncn_delegate_token_account(
     token_account: &Pubkey,
     delegate: &Pubkey,
     token_program: &Pubkey,
-    amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*ncn, false),
@@ -384,13 +382,12 @@ pub fn ncn_delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnDelegateTokenAccount { amount }
+        data: RestakingInstruction::NcnDelegateTokenAccount
             .try_to_vec()
             .unwrap(),
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn operator_delegate_token_account(
     program_id: &Pubkey,
     operator: &Pubkey,
@@ -399,7 +396,6 @@ pub fn operator_delegate_token_account(
     token_account: &Pubkey,
     delegate: &Pubkey,
     token_program: &Pubkey,
-    amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*operator, false),
@@ -412,7 +408,7 @@ pub fn operator_delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorDelegateTokenAccount { amount }
+        data: RestakingInstruction::OperatorDelegateTokenAccount
             .try_to_vec()
             .unwrap(),
     }

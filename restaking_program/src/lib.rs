@@ -173,13 +173,13 @@ pub fn process_instruction(
             msg!("Instruction: OperatorSetSecondaryAdmin");
             process_set_operator_secondary_admin(program_id, accounts, role)
         }
-        RestakingInstruction::NcnDelegateTokenAccount { amount } => {
+        RestakingInstruction::NcnDelegateTokenAccount => {
             msg!("Instruction: NcnDelegateTokenAccount");
-            process_ncn_delegate_token_account(program_id, accounts, amount)
+            process_ncn_delegate_token_account(program_id, accounts)
         }
-        RestakingInstruction::OperatorDelegateTokenAccount { amount } => {
+        RestakingInstruction::OperatorDelegateTokenAccount => {
             msg!("Instruction: OperatorDelegateTokenAccount");
-            process_operator_delegate_token_account(program_id, accounts, amount)
+            process_operator_delegate_token_account(program_id, accounts)
         }
     }
 }

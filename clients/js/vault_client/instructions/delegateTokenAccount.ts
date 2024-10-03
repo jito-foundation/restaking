@@ -10,8 +10,6 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -80,21 +78,13 @@ export type DelegateTokenAccountInstruction<
     ]
   >;
 
-export type DelegateTokenAccountInstructionData = {
-  discriminator: number;
-  amount: bigint;
-};
+export type DelegateTokenAccountInstructionData = { discriminator: number };
 
-export type DelegateTokenAccountInstructionDataArgs = {
-  amount: number | bigint;
-};
+export type DelegateTokenAccountInstructionDataArgs = {};
 
 export function getDelegateTokenAccountInstructionDataEncoder(): Encoder<DelegateTokenAccountInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([
-      ['discriminator', getU8Encoder()],
-      ['amount', getU64Encoder()],
-    ]),
+    getStructEncoder([['discriminator', getU8Encoder()]]),
     (value) => ({
       ...value,
       discriminator: DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR,
@@ -103,10 +93,7 @@ export function getDelegateTokenAccountInstructionDataEncoder(): Encoder<Delegat
 }
 
 export function getDelegateTokenAccountInstructionDataDecoder(): Decoder<DelegateTokenAccountInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getU8Decoder()],
-    ['amount', getU64Decoder()],
-  ]);
+  return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
 export function getDelegateTokenAccountInstructionDataCodec(): Codec<
@@ -135,7 +122,6 @@ export type DelegateTokenAccountInput<
   tokenAccount: Address<TAccountTokenAccount>;
   delegate: Address<TAccountDelegate>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  amount: DelegateTokenAccountInstructionDataArgs['amount'];
 };
 
 export function getDelegateTokenAccountInstruction<
@@ -187,9 +173,6 @@ export function getDelegateTokenAccountInstruction<
     ResolvedAccount
   >;
 
-  // Original args.
-  const args = { ...input };
-
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
@@ -208,9 +191,7 @@ export function getDelegateTokenAccountInstruction<
       getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getDelegateTokenAccountInstructionDataEncoder().encode(
-      args as DelegateTokenAccountInstructionDataArgs
-    ),
+    data: getDelegateTokenAccountInstructionDataEncoder().encode({}),
   } as DelegateTokenAccountInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,

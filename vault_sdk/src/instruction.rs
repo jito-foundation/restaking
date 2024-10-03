@@ -209,9 +209,7 @@ pub enum VaultInstruction {
     #[account(4, writable, name = "token_account")]
     #[account(5, name = "delegate")]
     #[account(6, name = "token_program")]
-    DelegateTokenAccount {
-        amount: u64
-    },
+    DelegateTokenAccount,
 
     /// Changes the signer for vault admin
     #[account(0, name = "config")]

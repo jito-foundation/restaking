@@ -22,16 +22,12 @@ pub struct OperatorDelegateTokenAccount {
 }
 
 impl OperatorDelegateTokenAccount {
-    pub fn instruction(
-        &self,
-        args: OperatorDelegateTokenAccountInstructionArgs,
-    ) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(args, &[])
+    pub fn instruction(&self) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(&[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: OperatorDelegateTokenAccountInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
@@ -60,11 +56,9 @@ impl OperatorDelegateTokenAccount {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = OperatorDelegateTokenAccountInstructionData::new()
+        let data = OperatorDelegateTokenAccountInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -91,12 +85,6 @@ impl Default for OperatorDelegateTokenAccountInstructionData {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct OperatorDelegateTokenAccountInstructionArgs {
-    pub amount: u64,
-}
-
 /// Instruction builder for `OperatorDelegateTokenAccount`.
 ///
 /// ### Accounts:
@@ -115,7 +103,6 @@ pub struct OperatorDelegateTokenAccountBuilder {
     token_account: Option<solana_program::pubkey::Pubkey>,
     delegate: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
-    amount: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -154,11 +141,6 @@ impl OperatorDelegateTokenAccountBuilder {
         self.token_program = Some(token_program);
         self
     }
-    #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.amount = Some(amount);
-        self
-    }
     /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -189,11 +171,8 @@ impl OperatorDelegateTokenAccountBuilder {
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
         };
-        let args = OperatorDelegateTokenAccountInstructionArgs {
-            amount: self.amount.clone().expect("amount is not set"),
-        };
 
-        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
     }
 }
 
@@ -228,15 +207,12 @@ pub struct OperatorDelegateTokenAccountCpi<'a, 'b> {
     pub delegate: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
-    /// The arguments for the instruction.
-    pub __args: OperatorDelegateTokenAccountInstructionArgs,
 }
 
 impl<'a, 'b> OperatorDelegateTokenAccountCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
         accounts: OperatorDelegateTokenAccountCpiAccounts<'a, 'b>,
-        args: OperatorDelegateTokenAccountInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
@@ -246,7 +222,6 @@ impl<'a, 'b> OperatorDelegateTokenAccountCpi<'a, 'b> {
             token_account: accounts.token_account,
             delegate: accounts.delegate,
             token_program: accounts.token_program,
-            __args: args,
         }
     }
     #[inline(always)]
@@ -314,11 +289,9 @@ impl<'a, 'b> OperatorDelegateTokenAccountCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = OperatorDelegateTokenAccountInstructionData::new()
+        let data = OperatorDelegateTokenAccountInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = self.__args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -370,7 +343,6 @@ impl<'a, 'b> OperatorDelegateTokenAccountCpiBuilder<'a, 'b> {
             token_account: None,
             delegate: None,
             token_program: None,
-            amount: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -423,11 +395,6 @@ impl<'a, 'b> OperatorDelegateTokenAccountCpiBuilder<'a, 'b> {
         self.instruction.token_program = Some(token_program);
         self
     }
-    #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.instruction.amount = Some(amount);
-        self
-    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -469,9 +436,6 @@ impl<'a, 'b> OperatorDelegateTokenAccountCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = OperatorDelegateTokenAccountInstructionArgs {
-            amount: self.instruction.amount.clone().expect("amount is not set"),
-        };
         let instruction = OperatorDelegateTokenAccountCpi {
             __program: self.instruction.__program,
 
@@ -495,7 +459,6 @@ impl<'a, 'b> OperatorDelegateTokenAccountCpiBuilder<'a, 'b> {
                 .instruction
                 .token_program
                 .expect("token_program is not set"),
-            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -513,7 +476,6 @@ struct OperatorDelegateTokenAccountCpiBuilderInstruction<'a, 'b> {
     token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     delegate: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    amount: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

@@ -176,7 +176,7 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "token_account")]
     #[account(4, name = "delegate")]
     #[account(5, name = "token_program")]
-    NcnDelegateTokenAccount { amount: u64 },
+    NcnDelegateTokenAccount,
 
     #[account(0, name = "operator")]
     #[account(1, signer, name = "delegate_admin")]
@@ -184,7 +184,7 @@ pub enum RestakingInstruction {
     #[account(3, writable, name = "token_account")]
     #[account(4, name = "delegate")]
     #[account(5, name = "token_program")]
-    OperatorDelegateTokenAccount { amount: u64 },
+    OperatorDelegateTokenAccount,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]

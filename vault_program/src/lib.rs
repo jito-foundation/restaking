@@ -153,9 +153,9 @@ pub fn process_instruction(
             msg!("Instruction: SetDepositCapacity");
             process_set_deposit_capacity(program_id, accounts, amount)
         }
-        VaultInstruction::DelegateTokenAccount { amount } => {
+        VaultInstruction::DelegateTokenAccount => {
             msg!("Instruction: DelegateTokenAccount");
-            process_delegate_token_account(program_id, accounts, amount)
+            process_delegate_token_account(program_id, accounts)
         }
         VaultInstruction::SetFees {
             deposit_fee_bps,

@@ -10,8 +10,6 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -74,21 +72,13 @@ export type NcnDelegateTokenAccountInstruction<
     ]
   >;
 
-export type NcnDelegateTokenAccountInstructionData = {
-  discriminator: number;
-  amount: bigint;
-};
+export type NcnDelegateTokenAccountInstructionData = { discriminator: number };
 
-export type NcnDelegateTokenAccountInstructionDataArgs = {
-  amount: number | bigint;
-};
+export type NcnDelegateTokenAccountInstructionDataArgs = {};
 
 export function getNcnDelegateTokenAccountInstructionDataEncoder(): Encoder<NcnDelegateTokenAccountInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([
-      ['discriminator', getU8Encoder()],
-      ['amount', getU64Encoder()],
-    ]),
+    getStructEncoder([['discriminator', getU8Encoder()]]),
     (value) => ({
       ...value,
       discriminator: NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR,
@@ -97,10 +87,7 @@ export function getNcnDelegateTokenAccountInstructionDataEncoder(): Encoder<NcnD
 }
 
 export function getNcnDelegateTokenAccountInstructionDataDecoder(): Decoder<NcnDelegateTokenAccountInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getU8Decoder()],
-    ['amount', getU64Decoder()],
-  ]);
+  return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
 export function getNcnDelegateTokenAccountInstructionDataCodec(): Codec<
@@ -127,7 +114,6 @@ export type NcnDelegateTokenAccountInput<
   tokenAccount: Address<TAccountTokenAccount>;
   delegate: Address<TAccountDelegate>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  amount: NcnDelegateTokenAccountInstructionDataArgs['amount'];
 };
 
 export function getNcnDelegateTokenAccountInstruction<
@@ -172,9 +158,6 @@ export function getNcnDelegateTokenAccountInstruction<
     ResolvedAccount
   >;
 
-  // Original args.
-  const args = { ...input };
-
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
@@ -192,9 +175,7 @@ export function getNcnDelegateTokenAccountInstruction<
       getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getNcnDelegateTokenAccountInstructionDataEncoder().encode(
-      args as NcnDelegateTokenAccountInstructionDataArgs
-    ),
+    data: getNcnDelegateTokenAccountInstructionDataEncoder().encode({}),
   } as NcnDelegateTokenAccountInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
