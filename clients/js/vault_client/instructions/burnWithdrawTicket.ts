@@ -10,8 +10,6 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -106,30 +104,19 @@ export type BurnWithdrawTicketInstruction<
     ]
   >;
 
-export type BurnWithdrawTicketInstructionData = {
-  discriminator: number;
-  minAmountOut: bigint;
-};
+export type BurnWithdrawTicketInstructionData = { discriminator: number };
 
-export type BurnWithdrawTicketInstructionDataArgs = {
-  minAmountOut: number | bigint;
-};
+export type BurnWithdrawTicketInstructionDataArgs = {};
 
 export function getBurnWithdrawTicketInstructionDataEncoder(): Encoder<BurnWithdrawTicketInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([
-      ['discriminator', getU8Encoder()],
-      ['minAmountOut', getU64Encoder()],
-    ]),
+    getStructEncoder([['discriminator', getU8Encoder()]]),
     (value) => ({ ...value, discriminator: BURN_WITHDRAW_TICKET_DISCRIMINATOR })
   );
 }
 
 export function getBurnWithdrawTicketInstructionDataDecoder(): Decoder<BurnWithdrawTicketInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getU8Decoder()],
-    ['minAmountOut', getU64Decoder()],
-  ]);
+  return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
 export function getBurnWithdrawTicketInstructionDataCodec(): Codec<
@@ -169,7 +156,6 @@ export type BurnWithdrawTicketInput<
   systemProgram?: Address<TAccountSystemProgram>;
   /** Signer for burning */
   burnSigner?: TransactionSigner<TAccountBurnSigner>;
-  minAmountOut: BurnWithdrawTicketInstructionDataArgs['minAmountOut'];
 };
 
 export function getBurnWithdrawTicketInstruction<
@@ -253,9 +239,6 @@ export function getBurnWithdrawTicketInstruction<
     ResolvedAccount
   >;
 
-  // Original args.
-  const args = { ...input };
-
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
@@ -283,9 +266,7 @@ export function getBurnWithdrawTicketInstruction<
       getAccountMeta(accounts.burnSigner),
     ],
     programAddress,
-    data: getBurnWithdrawTicketInstructionDataEncoder().encode(
-      args as BurnWithdrawTicketInstructionDataArgs
-    ),
+    data: getBurnWithdrawTicketInstructionDataEncoder().encode({}),
   } as BurnWithdrawTicketInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
