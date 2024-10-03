@@ -48,7 +48,7 @@ Operators can register through the restaking program and configure several varia
 
 ## 4.1. NcnOperatorState
 
-This state represents the mutual opt-in relationship between an NCN and an Operator. The NCN initializes this state. After created, the NCN and operator can both warm-up and cooldown the state to show support for each other.
+This state represents the mutual opt-in relationship between an NCN and an Operator. The NCN initializes this state. Once created, the NCN and operator can both warm-up and cooldown the state to show support for each other.
 
 ```mermaid
 graph TD

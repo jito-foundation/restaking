@@ -22,7 +22,7 @@ More information about the theory of operation can be found in the [theory of op
 
 ### 3.1. Config
 
-The configuration account is a global account that is used to configure the vault program. It is used to set the restaking program and other program-wide settings. It also keeps track of the number of vaults, fee caps, and other program-wide settings. The number of vaults is used to programs can programmatically iterate through all vaults in the program.
+The configuration account is a global account that is used to configure the vault program. It is used to set the restaking program and other program-wide settings. It also keeps track of the number of vaults, fee caps, and other program-wide settings. The number of vaults is used so programs can programmatically iterate through all vaults in the program.
 
 ### 3.2. Vault
 
