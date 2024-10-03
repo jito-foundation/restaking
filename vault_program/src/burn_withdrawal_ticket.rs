@@ -24,7 +24,6 @@ use spl_token::instruction::{burn, close_account, transfer};
 pub fn process_burn_withdrawal_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
-    min_amount_out: u64,
 ) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(11);
     let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, token_program, system_program] =
@@ -41,6 +40,7 @@ pub fn process_burn_withdrawal_ticket(
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_token_mint(vrt_mint)?;
+
     // staker
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
     VaultStakerWithdrawalTicket::load(
@@ -76,7 +76,10 @@ pub fn process_burn_withdrawal_ticket(
         fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount(), min_amount_out)?;
+    } = vault.burn_with_fee(
+        vault_staker_withdrawal_ticket.vrt_amount(),
+        vault_staker_withdrawal_ticket.min_amount_out(),
+    )?;
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
     let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =

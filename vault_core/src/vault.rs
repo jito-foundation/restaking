@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_FEE_BPS};
+use crate::{delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -142,6 +142,8 @@ pub struct Vault {
 }
 
 impl Vault {
+    pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         vrt_mint: Pubkey,
@@ -820,6 +822,100 @@ impl Vault {
             burn_amount: amount_to_burn,
             out_amount: amount_out,
         })
+    }
+
+    /// Checks to see if the minimum amount out is acceptable
+    pub fn check_min_amount_out(
+        &self,
+        amount_in: u64,
+        min_amount_out: u64,
+    ) -> Result<(), VaultError> {
+        if amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        } else if amount_in > self.vrt_supply() {
+            msg!("Amount exceeds vault VRT supply");
+            return Err(VaultError::VaultInsufficientFunds);
+        }
+
+        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let amount_to_burn = amount_in
+            .checked_sub(fee_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        let amount_out: u64 = (amount_to_burn as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let max_withdrawable = self
+            .tokens_deposited()
+            .checked_sub(self.delegation_state.total_security()?)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        // The vault shall not be able to withdraw more than the max withdrawable amount
+        if amount_out > max_withdrawable {
+            msg!("Amount out exceeds max withdrawable amount");
+            return Err(VaultError::VaultUnderflow);
+        }
+
+        let amount_out_delta = amount_out.saturating_sub(min_amount_out);
+        let calculated_slippage = amount_out_delta
+            .checked_mul(MAX_BPS as u64)
+            .and_then(|x| x.checked_div(amount_out))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        if calculated_slippage < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS as u64 {
+            msg!(
+                "Calculated slippage {} is less that the minimum slippage {}",
+                calculated_slippage,
+                Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        Ok(())
+    }
+
+    pub fn calculate_min_amount_out(
+        &self,
+        amount_in: u64,
+        max_slippage_bps: u16,
+    ) -> Result<u64, VaultError> {
+        if amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        }
+
+        if max_slippage_bps < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS {
+            msg!(
+                "Slippage error, minimum slippage is {} bps",
+                Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let amount_to_burn = amount_in
+            .checked_sub(fee_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        let amount_out: u64 = (amount_to_burn as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let slippage = MAX_BPS
+            .checked_sub(max_slippage_bps)
+            .ok_or(VaultError::VaultUnderflow)?;
+        let min_amount_out = (slippage as u64)
+            .checked_mul(amount_out)
+            .and_then(|x| x.checked_div(MAX_BPS as u64))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        Ok(min_amount_out)
     }
 
     /// Calculates the amount of tokens, denominated in the supported_mint asset,
@@ -1982,5 +2078,47 @@ mod tests {
     fn test_burn_with_fee_zero_amount() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(vault.burn_with_fee(0, 0), Err(VaultError::VaultBurnZero));
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out() {
+        let vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault.calculate_min_amount_out(amount_out, 100).unwrap();
+        assert_eq!(min_amount_out, 99);
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out_with_withdrawal_fee() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault.calculate_min_amount_out(amount_out, 100).unwrap();
+        assert_eq!(min_amount_out, 98);
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out_slippage_too_low() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        assert!(vault
+            .calculate_min_amount_out(amount_out, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS - 1)
+            .is_err());
+    }
+
+    #[test]
+    fn test_check_min_amount_out_ok() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault.calculate_min_amount_out(amount_out, 50).unwrap();
+        assert!(vault
+            .check_min_amount_out(amount_out, min_amount_out)
+            .is_ok());
+    }
+
+    #[test]
+    fn test_check_min_amount_out_too_high() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        assert!(vault.check_min_amount_out(amount_out, 99).is_err());
     }
 }

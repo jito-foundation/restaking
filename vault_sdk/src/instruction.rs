@@ -155,7 +155,8 @@ pub enum VaultInstruction {
     #[account(8, name = "system_program")]
     #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
-        amount: u64
+        amount: u64,
+        min_amount_out: u64
     },
 
     #[account(0, name = "config")]
@@ -179,9 +180,7 @@ pub enum VaultInstruction {
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
     #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
-    BurnWithdrawTicket {
-        min_amount_out: u64
-    },
+    BurnWithdrawTicket,
 
     /// Sets the max tokens that can be deposited into the VRT
     #[account(0, name = "config")]
