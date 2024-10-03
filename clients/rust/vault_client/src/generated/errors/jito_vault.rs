@@ -149,7 +149,16 @@ pub enum JitoVaultError {
     VaultEnqueueWithdrawalAmountZero = 0x415,
     /// 1046 - VaultMintZero
     #[error("VaultMintZero")]
-    VaultMintZero = 0x414,
+    VaultMintZero = 0x416,
+    /// 3000 - ArithmeticOverflow
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 0xBB8,
+    /// 3001 - ArithmeticUnderflow
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow = 0xBB9,
+    /// 3002 - DivisionByZero
+    #[error("DivisionByZero")]
+    DivisionByZero = 0xBBA,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

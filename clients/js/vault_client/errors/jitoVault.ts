@@ -107,7 +107,13 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x414; // 1044
 /** VaultEnqueueWithdrawalAmountZero: VaultEnqueueWithdrawalAmountZero */
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x415; // 1045
 /** VaultMintZero: VaultMintZero */
-export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x414; // 1044
+export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x416; // 1046
+/** ArithmeticOverflow: ArithmeticOverflow */
+export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
+/** ArithmeticUnderflow: ArithmeticUnderflow */
+export const JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW = 0xbb9; // 3001
+/** DivisionByZero: DivisionByZero */
+export const JITO_VAULT_ERROR__DIVISION_BY_ZERO = 0xbba; // 3002
 
 export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW
@@ -232,7 +238,7 @@ export function isJitoVaultError<TProgramErrorCode extends JitoVaultError>(
   },
   code?: TProgramErrorCode
 ): error is SolanaError<typeof SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM> &
-Readonly<{ context: Readonly<{ code: TProgramErrorCode }> }> {
+  Readonly<{ context: Readonly<{ code: TProgramErrorCode }> }> {
   return isProgramError<TProgramErrorCode>(
     error,
     transactionMessage,
