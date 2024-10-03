@@ -849,17 +849,6 @@ impl Vault {
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        let max_withdrawable = self
-            .tokens_deposited()
-            .checked_sub(self.delegation_state.total_security()?)
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        // The vault shall not be able to withdraw more than the max withdrawable amount
-        if amount_out > max_withdrawable {
-            msg!("Amount out exceeds max withdrawable amount");
-            return Err(VaultError::VaultUnderflow);
-        }
-
         let amount_out_delta = amount_out.saturating_sub(min_amount_out);
         let calculated_slippage = amount_out_delta
             .checked_mul(MAX_BPS as u64)

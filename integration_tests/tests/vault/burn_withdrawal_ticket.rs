@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, delegation_state::DelegationState,
+        config::Config, delegation_state::DelegationState, vault::Vault,
         vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     };
     use jito_vault_sdk::error::VaultError;
@@ -80,13 +80,22 @@ mod tests {
             .await
             .unwrap();
 
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await;
         assert_vault_error(
             transaction_error,
@@ -160,8 +169,17 @@ mod tests {
             .await
             .unwrap();
 
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -182,7 +200,7 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await;
         assert_vault_error(
             transaction_error,
@@ -256,8 +274,17 @@ mod tests {
             .await
             .unwrap();
 
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -290,7 +317,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await
             .unwrap();
 
@@ -347,11 +374,6 @@ mod tests {
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
@@ -386,8 +408,17 @@ mod tests {
             .await
             .unwrap();
 
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -397,7 +428,7 @@ mod tests {
             .unwrap();
 
         let result = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await;
         assert_vault_error(
             result,
@@ -416,7 +447,7 @@ mod tests {
             .await
             .unwrap();
         let result = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await;
         assert_vault_error(
             result,
@@ -436,7 +467,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, MINT_AMOUNT)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await
             .unwrap();
         let staker_token_account = fixture
@@ -462,7 +493,6 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_wrong_staker_token_account_fails() {
         const MINT_AMOUNT: u64 = 100_000;
-        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -502,8 +532,17 @@ mod tests {
             .await
             .unwrap();
 
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -553,7 +592,6 @@ mod tests {
                 &vault_staker_withdrawal_ticket,
                 &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
-                MIN_AMOUNT_OUT,
             )
             .await;
         assert_vault_error(result, VaultError::VaultStakerWithdrawalTicketInvalidStaker);
