@@ -947,6 +947,13 @@ impl Vault {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
     }
 
+    /// Returns the seeds for the PDA used for signing
+    pub fn signing_seeds(&self) -> Vec<Vec<u8>> {
+        let mut vault_seeds = Self::seeds(&self.base);
+        vault_seeds.push(vec![self.bump]);
+        vault_seeds
+    }
+
     /// Find the program address for the Vault
     ///
     /// # Arguments
