@@ -30,6 +30,7 @@ export * from './mintTo';
 export * from './setAdmin';
 export * from './setDepositCapacity';
 export * from './setFees';
+export * from './setIsPaused';
 export * from './setSecondaryAdmin';
 export * from './slash';
 export * from './updateTokenMetadata';

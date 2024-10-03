@@ -36,7 +36,7 @@ import {
   type VaultAdminRoleArgs,
 } from '../types';
 
-export const SET_SECONDARY_ADMIN_DISCRIMINATOR = 20;
+export const SET_SECONDARY_ADMIN_DISCRIMINATOR = 21;
 
 export function getSetSecondaryAdminDiscriminatorBytes() {
   return getU8Encoder().encode(SET_SECONDARY_ADMIN_DISCRIMINATOR);

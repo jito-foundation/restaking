@@ -133,4 +133,55 @@ mod tests {
             .await;
         assert_vault_error(result, VaultError::VaultInsufficientFunds);
     }
+
+    #[tokio::test]
+    async fn test_add_delegation_vault_is_paused_fails() {
+        const MINT_AMOUNT: u64 = 100_000;
+        const MIN_AMOUNT_OUT: u64 = 100_000;
+        let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        // setup depositor, mint, deposit and delegate
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MIN_AMOUNT_OUT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await;
+
+        assert_vault_error(result, VaultError::VaultIsPaused);
+    }
 }

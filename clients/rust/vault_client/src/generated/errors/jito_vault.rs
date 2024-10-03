@@ -150,6 +150,9 @@ pub enum JitoVaultError {
     /// 1046 - VaultMintZero
     #[error("VaultMintZero")]
     VaultMintZero = 0x416,
+    /// 1047 - VaultIsPaused
+    #[error("VaultIsPaused")]
+    VaultIsPaused = 0x417,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

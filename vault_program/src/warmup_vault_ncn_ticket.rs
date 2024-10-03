@@ -34,6 +34,7 @@ pub fn process_warmup_vault_ncn_ticket(
 
     // The vault shall be up-to-date before warming up the NCN
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // The VaultNcnTicket shall be ready to be activated
     let mut vault_ncn_ticket_data = vault_ncn_ticket.data.borrow_mut();

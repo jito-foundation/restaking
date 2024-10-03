@@ -75,6 +75,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
 
     // The vault shall be up-to-date before adding support for the NCN slasher operator
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing vault NCN slasher operator ticket at address {}",

@@ -43,7 +43,7 @@ pub struct AdminWithdrawInstructionData {
 
 impl AdminWithdrawInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 18 }
+        Self { discriminator: 19 }
     }
 }
 

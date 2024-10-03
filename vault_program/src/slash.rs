@@ -130,6 +130,7 @@ pub fn process_slash(
 
     // The vault shall be up-to-date before slashing
     vault.check_update_state_ok(Clock::get()?.slot, epoch_length)?;
+    vault.check_is_paused()?;
 
     // All ticket states shall be active or cooling down
     check_states_active_or_cooling_down(

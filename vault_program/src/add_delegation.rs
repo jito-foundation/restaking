@@ -57,6 +57,8 @@ pub fn process_add_delegation(
     // The Vault shall be up-to-date before adding delegation
     vault.check_update_state_ok(clock.slot, config.epoch_length())?;
 
+    vault.check_is_paused()?;
+
     vault.delegate(amount)?;
     vault_operator_delegation
         .delegation_state

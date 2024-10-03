@@ -41,6 +41,8 @@ pub fn process_close_vault_update_state_tracker(
     )?;
     load_signer(payer, true)?;
 
+    vault.check_is_paused()?;
+
     let current_ncn_epoch = slot.checked_div(config.epoch_length()).unwrap();
 
     // The VaultUpdateStateTracker shall be up-to-date before closing

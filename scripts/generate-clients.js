@@ -151,6 +151,22 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
         },
     },
     {
+        // PodBool -> bool
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podBool"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("bool"),
+            };
+        },
+    },
+    {
         select: (node) => {
             return (
                 kinobi.isNode(node, "accountNode")

@@ -97,6 +97,8 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
+    #[error("VaultIsPaused")]
+    VaultIsPaused,
 }
 
 impl<T> DecodeError<T> for VaultError {
