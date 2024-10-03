@@ -147,7 +147,7 @@ impl TestBuilder {
                     &account.pubkey(),
                     &self.context.payer.pubkey(),
                     &[],
-                ).map_err(|_e| BanksClientError::ClientError("failed to enable required trasfer memos"))?
+                ).map_err(|_e| BanksClientError::ClientError("failed to enable required transfer memos"))?
                 )
                 }
                 ExtensionType::CpiGuard => {
