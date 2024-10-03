@@ -186,10 +186,10 @@ impl Vault {
             vrt_enqueued_for_cooldown_amount: PodU64::from(0),
             vrt_cooling_down_amount: PodU64::from(0),
             vrt_ready_to_claim_amount: PodU64::from(0),
-            epoch_withdraw_supported_token_amount: PodU64::from(0),
-            epoch_snapshot_supported_token_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(current_slot),
             last_full_state_update_slot: PodU64::from(current_slot),
+            epoch_withdraw_supported_token_amount: PodU64::from(0),
+            epoch_snapshot_supported_token_amount: PodU64::from(0),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             reward_fee_bps: PodU16::from(reward_fee_bps),
@@ -619,28 +619,19 @@ impl Vault {
     pub fn check_withdrawal_allowed(&self, amount_to_withdraw: u64) -> Result<(), VaultError> {
         let epoch_withdraw_amount: u128 = self.epoch_withdraw_supported_token_amount().into();
         let epoch_snapshot_amount: u128 = self.epoch_snapshot_supported_token_amount().into();
-        let last_full_state_update_slot: u128 = self.last_full_state_update_slot().into();
-        let max_withdrawable = self.tokens_deposited();
 
-        if epoch_snapshot_amount == 0
-            && last_full_state_update_slot == 0
-            && amount_to_withdraw <= max_withdrawable
-        {
+        let total_withdraw_amount = epoch_withdraw_amount
+            .checked_add(amount_to_withdraw as u128)
+            .ok_or(VaultError::VaultOverflow)?;
+        let max_allowed_withdraw = epoch_snapshot_amount
+            .checked_mul(self.epoch_withdraw_cap_bps() as u128)
+            .ok_or(VaultError::VaultOverflow)?
+            .div_ceil(MAX_EPOCH_WITHDRAW_BPS as u128);
+
+        if total_withdraw_amount <= max_allowed_withdraw {
             Ok(())
         } else {
-            let total_withdraw_amount = epoch_withdraw_amount
-                .checked_add(amount_to_withdraw as u128)
-                .ok_or(VaultError::VaultOverflow)?;
-            let max_allowed_withdraw = epoch_snapshot_amount
-                .checked_mul(self.epoch_withdraw_cap_bps() as u128)
-                .ok_or(VaultError::VaultOverflow)?
-                .div_ceil(MAX_EPOCH_WITHDRAW_BPS as u128);
-
-            if total_withdraw_amount <= max_allowed_withdraw {
-                Ok(())
-            } else {
-                Err(VaultError::VaultWithdrawalLimitExceeded)
-            }
+            Err(VaultError::VaultWithdrawalLimitExceeded)
         }
     }
 
@@ -1198,6 +1189,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
 
         vault.set_tokens_deposited(tokens_deposited);
@@ -1256,6 +1248,7 @@ mod tests {
             old_admin,
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1358,6 +1351,7 @@ mod tests {
             0,
             0,
             0,
+            0,
         );
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
@@ -1370,6 +1364,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1389,6 +1384,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1423,6 +1419,7 @@ mod tests {
             Pubkey::new_unique(),
             0,
             Pubkey::new_unique(),
+            0,
             0,
             0,
             0,
@@ -1791,6 +1788,7 @@ mod tests {
             1000, //10%
             0,
             0,
+            0,
         );
         vault.set_tokens_deposited(0);
 
@@ -1810,6 +1808,7 @@ mod tests {
             0,
             0,
             1000, //10%
+            0,
             0,
             0,
         );
@@ -1833,6 +1832,7 @@ mod tests {
             10_000, //100%
             0,
             0,
+            0,
         );
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
@@ -1852,6 +1852,7 @@ mod tests {
             0,
             0,
             2500,
+            0,
             0,
         );
         vault.clear_epoch_withdraw_supported_token_amount();

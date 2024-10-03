@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::{signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address;
@@ -12,7 +13,7 @@ mod tests {
     const DEPOSIT_FEE_BPS: u16 = 0;
     const WITHDRAW_FEE_BPS: u16 = 0;
     const REWARD_FEE_BPS: u16 = 0;
-    const EPOCH_WITHDRAW_CAP_BPS: u16 = 2500; // 25%
+    const EPOCH_WITHDRAW_CAP_BPS: u16 = 5000; // 50%
     const NUM_OPERATORS: u16 = 1;
     const MINT_AMOUNT: u64 = 100_000;
     const HALF_MINT_AMOUNT: u64 = MINT_AMOUNT / 2;
@@ -29,7 +30,7 @@ mod tests {
             vault_root,
             restaking_config_admin: _,
             ncn_root: _,
-            operator_roots: _,
+            operator_roots,
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
@@ -51,6 +52,23 @@ mod tests {
             .unwrap();
         vault_program_client
             .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
             .await
             .unwrap();
 
@@ -95,7 +113,7 @@ mod tests {
             vault_root,
             restaking_config_admin: _,
             ncn_root: _,
-            operator_roots: _,
+            operator_roots,
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
@@ -117,6 +135,23 @@ mod tests {
             .unwrap();
         vault_program_client
             .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
             .await
             .unwrap();
 
