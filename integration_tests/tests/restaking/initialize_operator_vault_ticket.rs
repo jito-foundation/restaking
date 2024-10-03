@@ -11,8 +11,11 @@ mod tests {
         let mut restaking_program_client = fixture.restaking_program_client();
 
         let mut vault_program_client = fixture.vault_program_client();
+
+        let token_program = spl_token::id();
+
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 

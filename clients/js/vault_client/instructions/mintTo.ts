@@ -43,6 +43,7 @@ export type MintToInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
+  TAccountSupportedMint extends string | IAccountMeta<string> = string,
   TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountDepositor extends string | IAccountMeta<string> = string,
   TAccountDepositorTokenAccount extends string | IAccountMeta<string> = string,
@@ -66,6 +67,9 @@ export type MintToInstruction<
       TAccountVault extends string
         ? WritableAccount<TAccountVault>
         : TAccountVault,
+      TAccountSupportedMint extends string
+        ? ReadonlyAccount<TAccountSupportedMint>
+        : TAccountSupportedMint,
       TAccountVrtMint extends string
         ? WritableAccount<TAccountVrtMint>
         : TAccountVrtMint,
@@ -139,6 +143,7 @@ export function getMintToInstructionDataCodec(): Codec<
 export type MintToInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
+  TAccountSupportedMint extends string = string,
   TAccountVrtMint extends string = string,
   TAccountDepositor extends string = string,
   TAccountDepositorTokenAccount extends string = string,
@@ -150,6 +155,7 @@ export type MintToInput<
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
+  supportedMint: Address<TAccountSupportedMint>;
   vrtMint: Address<TAccountVrtMint>;
   depositor: TransactionSigner<TAccountDepositor>;
   depositorTokenAccount: Address<TAccountDepositorTokenAccount>;
@@ -166,6 +172,7 @@ export type MintToInput<
 export function getMintToInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
+  TAccountSupportedMint extends string,
   TAccountVrtMint extends string,
   TAccountDepositor extends string,
   TAccountDepositorTokenAccount extends string,
@@ -178,6 +185,7 @@ export function getMintToInstruction<
   input: MintToInput<
     TAccountConfig,
     TAccountVault,
+    TAccountSupportedMint,
     TAccountVrtMint,
     TAccountDepositor,
     TAccountDepositorTokenAccount,
@@ -191,6 +199,7 @@ export function getMintToInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
+  TAccountSupportedMint,
   TAccountVrtMint,
   TAccountDepositor,
   TAccountDepositorTokenAccount,
@@ -207,6 +216,7 @@ export function getMintToInstruction<
   const originalAccounts = {
     config: { value: input.config ?? null, isWritable: false },
     vault: { value: input.vault ?? null, isWritable: true },
+    supportedMint: { value: input.supportedMint ?? null, isWritable: false },
     vrtMint: { value: input.vrtMint ?? null, isWritable: true },
     depositor: { value: input.depositor ?? null, isWritable: true },
     depositorTokenAccount: {
@@ -247,6 +257,7 @@ export function getMintToInstruction<
     accounts: [
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.vault),
+      getAccountMeta(accounts.supportedMint),
       getAccountMeta(accounts.vrtMint),
       getAccountMeta(accounts.depositor),
       getAccountMeta(accounts.depositorTokenAccount),
@@ -264,6 +275,7 @@ export function getMintToInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
+    TAccountSupportedMint,
     TAccountVrtMint,
     TAccountDepositor,
     TAccountDepositorTokenAccount,
@@ -285,15 +297,16 @@ export type ParsedMintToInstruction<
   accounts: {
     config: TAccountMetas[0];
     vault: TAccountMetas[1];
-    vrtMint: TAccountMetas[2];
-    depositor: TAccountMetas[3];
-    depositorTokenAccount: TAccountMetas[4];
-    vaultTokenAccount: TAccountMetas[5];
-    depositorVrtTokenAccount: TAccountMetas[6];
-    vaultFeeTokenAccount: TAccountMetas[7];
-    tokenProgram: TAccountMetas[8];
+    supportedMint: TAccountMetas[2];
+    vrtMint: TAccountMetas[3];
+    depositor: TAccountMetas[4];
+    depositorTokenAccount: TAccountMetas[5];
+    vaultTokenAccount: TAccountMetas[6];
+    depositorVrtTokenAccount: TAccountMetas[7];
+    vaultFeeTokenAccount: TAccountMetas[8];
+    tokenProgram: TAccountMetas[9];
     /** Signer for minting */
-    mintSigner?: TAccountMetas[9] | undefined;
+    mintSigner?: TAccountMetas[10] | undefined;
   };
   data: MintToInstructionData;
 };
@@ -306,7 +319,7 @@ export function parseMintToInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedMintToInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 10) {
+  if (instruction.accounts.length < 11) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -327,6 +340,7 @@ export function parseMintToInstruction<
     accounts: {
       config: getNextAccount(),
       vault: getNextAccount(),
+      supportedMint: getNextAccount(),
       vrtMint: getNextAccount(),
       depositor: getNextAccount(),
       depositorTokenAccount: getNextAccount(),

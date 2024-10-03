@@ -2,6 +2,7 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
+    use rstest::rstest;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::Signer;
 
@@ -10,8 +11,11 @@ mod tests {
         vault_client::{assert_vault_error, VaultRoot},
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_ok() {
+    async fn test_initialize_vault_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -25,7 +29,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
@@ -53,8 +57,11 @@ mod tests {
         assert_eq!(token_mint.decimals, 9);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_deposit_fee_bps_too_high() {
+    async fn test_initialize_vault_deposit_fee_bps_too_high(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -67,20 +74,29 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(10001, 100, 100, 9)
+            .do_initialize_vault(&token_program, 10001, 100, 100, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
-            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
+            .do_initialize_vault(
+                &token_program,
+                config.deposit_withdrawal_fee_cap_bps() + 1,
+                0,
+                0,
+                9,
+            )
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_withdrawal_fee_bps_too_high() {
+    async fn test_initialize_vault_withdrawal_fee_bps_too_high(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -93,20 +109,29 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(100, 10001, 100, 9)
+            .do_initialize_vault(&token_program, 100, 10001, 100, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
-            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 9)
+            .do_initialize_vault(
+                &token_program,
+                0,
+                config.deposit_withdrawal_fee_cap_bps() + 1,
+                0,
+                9,
+            )
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_with_invalid_reward_fee_bps() {
+    async fn test_initialize_vault_with_invalid_reward_fee_bps(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -114,7 +139,7 @@ mod tests {
         vault_program_client.do_initialize_config().await.unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(0, 0, 10001, 9)
+            .do_initialize_vault(&token_program, 0, 0, 10001, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);

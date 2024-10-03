@@ -14,6 +14,8 @@ pub struct Burn {
 
     pub vault_token_account: solana_program::pubkey::Pubkey,
 
+    pub supported_mint: solana_program::pubkey::Pubkey,
+
     pub vrt_mint: solana_program::pubkey::Pubkey,
 
     pub staker: solana_program::pubkey::Pubkey,
@@ -44,7 +46,7 @@ impl Burn {
         args: BurnInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -54,6 +56,10 @@ impl Burn {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault_token_account,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.supported_mint,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -139,19 +145,21 @@ pub struct BurnInstructionArgs {
 ///   0. `[]` config
 ///   1. `[writable]` vault
 ///   2. `[writable]` vault_token_account
-///   3. `[writable]` vrt_mint
-///   4. `[signer]` staker
-///   5. `[writable]` staker_token_account
-///   6. `[signer]` staker_vrt_token_account
-///   7. `[writable]` vault_fee_token_account
-///   8. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   9. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   10. `[signer, optional]` burn_signer
+///   3. `[]` supported_mint
+///   4. `[writable]` vrt_mint
+///   5. `[signer]` staker
+///   6. `[writable]` staker_token_account
+///   7. `[signer]` staker_vrt_token_account
+///   8. `[writable]` vault_fee_token_account
+///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   10. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   11. `[signer, optional]` burn_signer
 #[derive(Clone, Debug, Default)]
 pub struct BurnBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
     vault_token_account: Option<solana_program::pubkey::Pubkey>,
+    supported_mint: Option<solana_program::pubkey::Pubkey>,
     vrt_mint: Option<solana_program::pubkey::Pubkey>,
     staker: Option<solana_program::pubkey::Pubkey>,
     staker_token_account: Option<solana_program::pubkey::Pubkey>,
@@ -185,6 +193,11 @@ impl BurnBuilder {
         vault_token_account: solana_program::pubkey::Pubkey,
     ) -> &mut Self {
         self.vault_token_account = Some(vault_token_account);
+        self
+    }
+    #[inline(always)]
+    pub fn supported_mint(&mut self, supported_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.supported_mint = Some(supported_mint);
         self
     }
     #[inline(always)]
@@ -279,6 +292,7 @@ impl BurnBuilder {
             vault_token_account: self
                 .vault_token_account
                 .expect("vault_token_account is not set"),
+            supported_mint: self.supported_mint.expect("supported_mint is not set"),
             vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
             staker: self.staker.expect("staker is not set"),
             staker_token_account: self
@@ -318,6 +332,8 @@ pub struct BurnCpiAccounts<'a, 'b> {
 
     pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub staker: &'b solana_program::account_info::AccountInfo<'a>,
@@ -345,6 +361,8 @@ pub struct BurnCpi<'a, 'b> {
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -376,6 +394,7 @@ impl<'a, 'b> BurnCpi<'a, 'b> {
             config: accounts.config,
             vault: accounts.vault,
             vault_token_account: accounts.vault_token_account,
+            supported_mint: accounts.supported_mint,
             vrt_mint: accounts.vrt_mint,
             staker: accounts.staker,
             staker_token_account: accounts.staker_token_account,
@@ -420,7 +439,7 @@ impl<'a, 'b> BurnCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -431,6 +450,10 @@ impl<'a, 'b> BurnCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault_token_account.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.supported_mint.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -488,11 +511,12 @@ impl<'a, 'b> BurnCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(11 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(12 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.vault_token_account.clone());
+        account_infos.push(self.supported_mint.clone());
         account_infos.push(self.vrt_mint.clone());
         account_infos.push(self.staker.clone());
         account_infos.push(self.staker_token_account.clone());
@@ -522,14 +546,15 @@ impl<'a, 'b> BurnCpi<'a, 'b> {
 ///   0. `[]` config
 ///   1. `[writable]` vault
 ///   2. `[writable]` vault_token_account
-///   3. `[writable]` vrt_mint
-///   4. `[signer]` staker
-///   5. `[writable]` staker_token_account
-///   6. `[signer]` staker_vrt_token_account
-///   7. `[writable]` vault_fee_token_account
-///   8. `[]` token_program
-///   9. `[]` system_program
-///   10. `[signer, optional]` burn_signer
+///   3. `[]` supported_mint
+///   4. `[writable]` vrt_mint
+///   5. `[signer]` staker
+///   6. `[writable]` staker_token_account
+///   7. `[signer]` staker_vrt_token_account
+///   8. `[writable]` vault_fee_token_account
+///   9. `[]` token_program
+///   10. `[]` system_program
+///   11. `[signer, optional]` burn_signer
 #[derive(Clone, Debug)]
 pub struct BurnCpiBuilder<'a, 'b> {
     instruction: Box<BurnCpiBuilderInstruction<'a, 'b>>,
@@ -542,6 +567,7 @@ impl<'a, 'b> BurnCpiBuilder<'a, 'b> {
             config: None,
             vault: None,
             vault_token_account: None,
+            supported_mint: None,
             vrt_mint: None,
             staker: None,
             staker_token_account: None,
@@ -575,6 +601,14 @@ impl<'a, 'b> BurnCpiBuilder<'a, 'b> {
         vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.vault_token_account = Some(vault_token_account);
+        self
+    }
+    #[inline(always)]
+    pub fn supported_mint(
+        &mut self,
+        supported_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.supported_mint = Some(supported_mint);
         self
     }
     #[inline(always)]
@@ -718,6 +752,11 @@ impl<'a, 'b> BurnCpiBuilder<'a, 'b> {
                 .vault_token_account
                 .expect("vault_token_account is not set"),
 
+            supported_mint: self
+                .instruction
+                .supported_mint
+                .expect("supported_mint is not set"),
+
             vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
 
             staker: self.instruction.staker.expect("staker is not set"),
@@ -763,6 +802,7 @@ struct BurnCpiBuilderInstruction<'a, 'b> {
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    supported_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     staker: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     staker_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,

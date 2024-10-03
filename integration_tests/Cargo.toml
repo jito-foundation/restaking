@@ -19,6 +19,7 @@ jito-restaking-sdk = { workspace = true }
 jito-vault-core = { workspace = true }
 jito-vault-program = { workspace = true }
 jito-vault-sdk = { workspace = true }
+rstest = { workspace = true }
 shank = { workspace = true }
 solana-program = { workspace = true }
 solana-program-test = { workspace = true }
@@ -26,6 +27,7 @@ solana-sdk = { workspace = true }
 solana-security-txt = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
+spl-token-2022 = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 

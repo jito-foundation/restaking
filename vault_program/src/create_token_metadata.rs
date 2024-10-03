@@ -24,6 +24,11 @@ pub fn process_create_token_metadata(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
+    if vrt_mint.owner.eq(&spl_token_2022::id()) {
+        msg!("metadata for Token Extension Program tokens ( Token 2022 ) is not yet supported");
+        return Err(ProgramError::InvalidAccountData);
+    }
+
     Vault::load(program_id, vault_info, false)?;
     let vault_data = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;

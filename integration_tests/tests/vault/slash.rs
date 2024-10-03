@@ -4,12 +4,19 @@ mod tests {
         config::Config, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
         vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     };
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_slash_ok() {
+    async fn test_slash_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         const MAX_SLASH_AMOUNT: u64 = 100;
@@ -32,6 +39,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -43,11 +51,22 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -72,7 +91,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -84,7 +107,7 @@ mod tests {
         // configure slasher and slash
         let slasher = &slashers_amounts[0].0;
         fixture
-            .create_ata(&vault.supported_mint, &slasher.pubkey())
+            .create_ata(&vault.supported_mint, &slasher.pubkey(), &token_program)
             .await
             .unwrap();
         let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
@@ -122,6 +145,7 @@ mod tests {
                 &ncn_root.ncn_pubkey,
                 &slasher,
                 &operator_root.operator_pubkey,
+                &token_program,
                 MAX_SLASH_AMOUNT,
             )
             .await

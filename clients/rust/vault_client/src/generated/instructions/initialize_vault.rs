@@ -20,9 +20,9 @@ pub struct InitializeVault {
 
     pub base: solana_program::pubkey::Pubkey,
 
-    pub system_program: solana_program::pubkey::Pubkey,
-
     pub token_program: solana_program::pubkey::Pubkey,
+
+    pub system_program: solana_program::pubkey::Pubkey,
 }
 
 impl InitializeVault {
@@ -61,11 +61,11 @@ impl InitializeVault {
             self.base, true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.system_program,
+            self.token_program,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.token_program,
+            self.system_program,
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
@@ -117,8 +117,8 @@ pub struct InitializeVaultInstructionArgs {
 ///   3. `[]` token_mint
 ///   4. `[writable, signer]` admin
 ///   5. `[signer]` base
-///   6. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   6. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   7. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitializeVaultBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -127,8 +127,8 @@ pub struct InitializeVaultBuilder {
     token_mint: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
     base: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
+    system_program: Option<solana_program::pubkey::Pubkey>,
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
@@ -170,16 +170,16 @@ impl InitializeVaultBuilder {
         self.base = Some(base);
         self
     }
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
-        self
-    }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.token_program = Some(token_program);
+        self
+    }
+    /// `[optional account, default to '11111111111111111111111111111111']`
+    #[inline(always)]
+    pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.system_program = Some(system_program);
         self
     }
     #[inline(always)]
@@ -229,12 +229,12 @@ impl InitializeVaultBuilder {
             token_mint: self.token_mint.expect("token_mint is not set"),
             admin: self.admin.expect("admin is not set"),
             base: self.base.expect("base is not set"),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
             token_program: self.token_program.unwrap_or(solana_program::pubkey!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
+            system_program: self
+                .system_program
+                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
         };
         let args = InitializeVaultInstructionArgs {
             deposit_fee_bps: self
@@ -270,9 +270,9 @@ pub struct InitializeVaultCpiAccounts<'a, 'b> {
 
     pub base: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
 /// `initialize_vault` CPI instruction.
@@ -292,9 +292,9 @@ pub struct InitializeVaultCpi<'a, 'b> {
 
     pub base: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: InitializeVaultInstructionArgs,
 }
@@ -313,8 +313,8 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             token_mint: accounts.token_mint,
             admin: accounts.admin,
             base: accounts.base,
-            system_program: accounts.system_program,
             token_program: accounts.token_program,
+            system_program: accounts.system_program,
             __args: args,
         }
     }
@@ -377,11 +377,11 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
+            *self.token_program.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.token_program.key,
+            *self.system_program.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
@@ -408,8 +408,8 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
         account_infos.push(self.token_mint.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.base.clone());
-        account_infos.push(self.system_program.clone());
         account_infos.push(self.token_program.clone());
+        account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -432,8 +432,8 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
 ///   3. `[]` token_mint
 ///   4. `[writable, signer]` admin
 ///   5. `[signer]` base
-///   6. `[]` system_program
-///   7. `[]` token_program
+///   6. `[]` token_program
+///   7. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitializeVaultCpiBuilder<'a, 'b> {
     instruction: Box<InitializeVaultCpiBuilderInstruction<'a, 'b>>,
@@ -449,8 +449,8 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
             token_mint: None,
             admin: None,
             base: None,
-            system_program: None,
             token_program: None,
+            system_program: None,
             deposit_fee_bps: None,
             withdrawal_fee_bps: None,
             reward_fee_bps: None,
@@ -499,19 +499,19 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
-        self
-    }
-    #[inline(always)]
     pub fn token_program(
         &mut self,
         token_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.token_program = Some(token_program);
+        self
+    }
+    #[inline(always)]
+    pub fn system_program(
+        &mut self,
+        system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.system_program = Some(system_program);
         self
     }
     #[inline(always)]
@@ -612,15 +612,15 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
 
             base: self.instruction.base.expect("base is not set"),
 
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
-
             token_program: self
                 .instruction
                 .token_program
                 .expect("token_program is not set"),
+
+            system_program: self
+                .instruction
+                .system_program
+                .expect("system_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -639,8 +639,8 @@ struct InitializeVaultCpiBuilderInstruction<'a, 'b> {
     token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,

@@ -2,19 +2,26 @@
 mod tests {
     use jito_jsm_core::slot_toggle::SlotToggleState;
     use jito_vault_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::fixture::TestBuilder;
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_add_slasher_ok() {
+    async fn test_add_slasher_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let mut restaking_program_client = fixture.restaking_program_client();
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 

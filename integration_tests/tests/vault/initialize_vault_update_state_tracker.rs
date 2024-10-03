@@ -2,18 +2,24 @@
 mod tests {
     use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
     use jito_vault_sdk::error::VaultError;
+    use rstest::rstest;
     use solana_program::instruction::InstructionError;
+    use solana_sdk::pubkey::Pubkey;
 
     use crate::fixtures::{
         assert_ix_error, fixture::TestBuilder, vault_client::assert_vault_error,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_update_state_tracker_ok() {
+    async fn test_initialize_vault_update_state_tracker_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
+
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
         let vault_config = vault_program_client
@@ -83,12 +89,18 @@ mod tests {
         );
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_update_state_tracker_no_operators_fails() {
+    async fn test_initialize_vault_update_state_tracker_no_operators_fails(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
+
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
         let vault_config = vault_program_client
@@ -111,12 +123,18 @@ mod tests {
         assert_vault_error(result, VaultError::VaultIsUpdated);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_initialize_vault_update_state_tracker_already_initialized_fails() {
+    async fn test_initialize_vault_update_state_tracker_already_initialized_fails(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
+
         let mut vault_program_client = fixture.vault_program_client();
         let (_vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
         let vault_config = vault_program_client

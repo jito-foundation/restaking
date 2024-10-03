@@ -8,8 +8,6 @@
 
 import {
   combineCodec,
-  getAddressDecoder,
-  getAddressEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -44,6 +42,7 @@ export type OperatorWithdrawalAssetInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
+  TAccountMint extends string | IAccountMeta<string> = string,
   TAccountOperatorTokenAccount extends string | IAccountMeta<string> = string,
   TAccountReceiverTokenAccount extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
@@ -61,6 +60,9 @@ export type OperatorWithdrawalAssetInstruction<
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
+      TAccountMint extends string
+        ? ReadonlyAccount<TAccountMint>
+        : TAccountMint,
       TAccountOperatorTokenAccount extends string
         ? WritableAccount<TAccountOperatorTokenAccount>
         : TAccountOperatorTokenAccount,
@@ -76,12 +78,10 @@ export type OperatorWithdrawalAssetInstruction<
 
 export type OperatorWithdrawalAssetInstructionData = {
   discriminator: number;
-  tokenMint: Address;
   amount: bigint;
 };
 
 export type OperatorWithdrawalAssetInstructionDataArgs = {
-  tokenMint: Address;
   amount: number | bigint;
 };
 
@@ -89,7 +89,6 @@ export function getOperatorWithdrawalAssetInstructionDataEncoder(): Encoder<Oper
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['tokenMint', getAddressEncoder()],
       ['amount', getU64Encoder()],
     ]),
     (value) => ({
@@ -102,7 +101,6 @@ export function getOperatorWithdrawalAssetInstructionDataEncoder(): Encoder<Oper
 export function getOperatorWithdrawalAssetInstructionDataDecoder(): Decoder<OperatorWithdrawalAssetInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['tokenMint', getAddressDecoder()],
     ['amount', getU64Decoder()],
   ]);
 }
@@ -120,22 +118,24 @@ export function getOperatorWithdrawalAssetInstructionDataCodec(): Codec<
 export type OperatorWithdrawalAssetInput<
   TAccountOperator extends string = string,
   TAccountAdmin extends string = string,
+  TAccountMint extends string = string,
   TAccountOperatorTokenAccount extends string = string,
   TAccountReceiverTokenAccount extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   operator: Address<TAccountOperator>;
   admin: TransactionSigner<TAccountAdmin>;
+  mint: Address<TAccountMint>;
   operatorTokenAccount: Address<TAccountOperatorTokenAccount>;
   receiverTokenAccount: Address<TAccountReceiverTokenAccount>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  tokenMint: OperatorWithdrawalAssetInstructionDataArgs['tokenMint'];
   amount: OperatorWithdrawalAssetInstructionDataArgs['amount'];
 };
 
 export function getOperatorWithdrawalAssetInstruction<
   TAccountOperator extends string,
   TAccountAdmin extends string,
+  TAccountMint extends string,
   TAccountOperatorTokenAccount extends string,
   TAccountReceiverTokenAccount extends string,
   TAccountTokenProgram extends string,
@@ -143,6 +143,7 @@ export function getOperatorWithdrawalAssetInstruction<
   input: OperatorWithdrawalAssetInput<
     TAccountOperator,
     TAccountAdmin,
+    TAccountMint,
     TAccountOperatorTokenAccount,
     TAccountReceiverTokenAccount,
     TAccountTokenProgram
@@ -151,6 +152,7 @@ export function getOperatorWithdrawalAssetInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator,
   TAccountAdmin,
+  TAccountMint,
   TAccountOperatorTokenAccount,
   TAccountReceiverTokenAccount,
   TAccountTokenProgram
@@ -162,6 +164,7 @@ export function getOperatorWithdrawalAssetInstruction<
   const originalAccounts = {
     operator: { value: input.operator ?? null, isWritable: false },
     admin: { value: input.admin ?? null, isWritable: false },
+    mint: { value: input.mint ?? null, isWritable: false },
     operatorTokenAccount: {
       value: input.operatorTokenAccount ?? null,
       isWritable: true,
@@ -191,6 +194,7 @@ export function getOperatorWithdrawalAssetInstruction<
     accounts: [
       getAccountMeta(accounts.operator),
       getAccountMeta(accounts.admin),
+      getAccountMeta(accounts.mint),
       getAccountMeta(accounts.operatorTokenAccount),
       getAccountMeta(accounts.receiverTokenAccount),
       getAccountMeta(accounts.tokenProgram),
@@ -203,6 +207,7 @@ export function getOperatorWithdrawalAssetInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,
     TAccountAdmin,
+    TAccountMint,
     TAccountOperatorTokenAccount,
     TAccountReceiverTokenAccount,
     TAccountTokenProgram
@@ -219,9 +224,10 @@ export type ParsedOperatorWithdrawalAssetInstruction<
   accounts: {
     operator: TAccountMetas[0];
     admin: TAccountMetas[1];
-    operatorTokenAccount: TAccountMetas[2];
-    receiverTokenAccount: TAccountMetas[3];
-    tokenProgram: TAccountMetas[4];
+    mint: TAccountMetas[2];
+    operatorTokenAccount: TAccountMetas[3];
+    receiverTokenAccount: TAccountMetas[4];
+    tokenProgram: TAccountMetas[5];
   };
   data: OperatorWithdrawalAssetInstructionData;
 };
@@ -234,7 +240,7 @@ export function parseOperatorWithdrawalAssetInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedOperatorWithdrawalAssetInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -249,6 +255,7 @@ export function parseOperatorWithdrawalAssetInstruction<
     accounts: {
       operator: getNextAccount(),
       admin: getNextAccount(),
+      mint: getNextAccount(),
       operatorTokenAccount: getNextAccount(),
       receiverTokenAccount: getNextAccount(),
       tokenProgram: getNextAccount(),

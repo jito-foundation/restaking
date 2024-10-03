@@ -2,17 +2,21 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::{signature::Keypair, signer::Signer};
+    use rstest::rstest;
+    use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
     use crate::fixtures::{fixture::TestBuilder, vault_client::assert_vault_error};
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_capacity_ok() {
+    async fn test_set_capacity_ok(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 
@@ -40,13 +44,16 @@ mod tests {
         assert_eq!(vault.capacity(), 100);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_capacity_wrong_admin() {
+    async fn test_set_capacity_wrong_admin(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(&token_program, 0, 0, 0)
             .await
             .unwrap();
 

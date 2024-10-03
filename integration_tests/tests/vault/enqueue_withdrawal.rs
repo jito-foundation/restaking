@@ -2,16 +2,23 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
+    use spl_associated_token_account::get_associated_token_address_with_program_id;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_enqueue_withdraw_with_fee_success() {
+    async fn test_enqueue_withdraw_with_fee_success(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
         const DEPOSIT_FEE_BPS: u16 = 100;
         const WITHDRAW_FEE_BPS: u16 = 100;
@@ -31,6 +38,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -47,18 +55,30 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                min_amount_out,
+            )
             .await
             .unwrap();
 
         let vault_vrt_account = fixture
-            .get_token_account(&get_associated_token_address(
+            .get_token_account(&get_associated_token_address_with_program_id(
                 &depositor.pubkey(),
                 &vault.vrt_mint,
+                &token_program,
             ))
             .await
             .unwrap();
@@ -68,9 +88,10 @@ mod tests {
         );
 
         let vault_fee_account = fixture
-            .get_token_account(&get_associated_token_address(
+            .get_token_account(&get_associated_token_address_with_program_id(
                 &vault.fee_wallet,
                 &vault.vrt_mint,
+                &token_program,
             ))
             .await
             .unwrap();
@@ -94,7 +115,11 @@ mod tests {
             .map(|root| root.operator_pubkey)
             .collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -117,7 +142,7 @@ mod tests {
         // 98010 tokens will be undeleged for withdraw
         let amount_to_dequeue = MINT_AMOUNT * (10_000 - WITHDRAW_FEE_BPS) as u64 / 10_000;
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, amount_to_dequeue)
             .await
             .unwrap();
 
@@ -141,8 +166,11 @@ mod tests {
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), amount_to_dequeue);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_enqueue_withdraw_zero_fails() {
+    async fn test_enqueue_withdraw_zero_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -150,17 +178,17 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(&token_program, 0, 0, 0, 1, &[])
             .await
             .unwrap();
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100, 100)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100, 100)
             .await
             .unwrap();
 
@@ -179,12 +207,16 @@ mod tests {
             .map(|root| root.operator_pubkey)
             .collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
         let err = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, 0)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, 0)
             .await;
 
         assert_vault_error(err, VaultError::VaultEnqueueWithdrawalAmountZero);

@@ -13,9 +13,10 @@ use jito_vault_core::{
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
+    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
+    sysvar::Sysvar,
 };
-use spl_token::instruction::{burn, close_account, transfer};
+use spl_token_2022::instruction::{burn, close_account};
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
@@ -26,8 +27,8 @@ pub fn process_burn_withdrawal_ticket(
     accounts: &[AccountInfo],
     min_amount_out: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(11);
-    let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, token_program, system_program] =
+    let (required_accounts, optional_accounts) = accounts.split_at(12);
+    let [config, vault_info, vault_token_account, supported_mint, vrt_mint, staker, staker_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -41,6 +42,7 @@ pub fn process_burn_withdrawal_ticket(
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_token_mint(vrt_mint)?;
+    load_token_mint(supported_mint)?;
     // staker
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
     VaultStakerWithdrawalTicket::load(
@@ -64,6 +66,7 @@ pub fn process_burn_withdrawal_ticket(
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
+    vault.check_supported_mint(supported_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault_staker_withdrawal_ticket.check_staker(staker.key)?;
 
@@ -92,27 +95,31 @@ pub fn process_burn_withdrawal_ticket(
         .collect();
     drop(vault_staker_withdrawal_ticket_data);
 
+    let vrt_mint_account = spl_token_2022::state::Mint::unpack(&vrt_mint.data.borrow())?;
     // transfer fee to fee wallet
     invoke_signed(
-        &transfer(
-            &spl_token::id(),
+        &spl_token_2022::instruction::transfer_checked(
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
+            vrt_mint.key,
             vault_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
             &[],
             fee_amount,
+            vrt_mint_account.decimals,
         )?,
         &[
             vault_staker_withdrawal_ticket_token_account.clone(),
             vault_fee_token_account.clone(),
             vault_staker_withdrawal_ticket_info.clone(),
+            vrt_mint.clone(),
         ],
         &[&seed_slices],
     )?;
     // burn the VRT tokens
     invoke_signed(
         &burn(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             vrt_mint.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -130,7 +137,7 @@ pub fn process_burn_withdrawal_ticket(
     // close token account
     invoke_signed(
         &close_account(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -150,19 +157,26 @@ pub fn process_burn_withdrawal_ticket(
     vault_seeds.push(vec![vault_bump]);
     let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
     drop(vault_data); // avoid double borrow
+
+    let supported_mint_account =
+        spl_token_2022::state::Mint::unpack(&supported_mint.data.borrow())?;
+
     invoke_signed(
-        &transfer(
-            &spl_token::id(),
+        &spl_token_2022::instruction::transfer_checked(
+            token_program.key,
             vault_token_account.key,
+            supported_mint.key,
             staker_token_account.key,
             vault_info.key,
             &[],
             out_amount,
+            supported_mint_account.decimals,
         )?,
         &[
             vault_token_account.clone(),
             staker_token_account.clone(),
             vault_info.clone(),
+            supported_mint.clone(),
         ],
         &[&seed_slices],
     )?;

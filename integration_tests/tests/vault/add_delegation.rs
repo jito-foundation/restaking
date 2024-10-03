@@ -1,15 +1,22 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::assert_vault_error,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_add_delegation_ok() {
+    async fn test_add_delegation_ok(#[case] token_program: Pubkey) {
         const AMOUNT_IN: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
@@ -27,6 +34,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -39,11 +47,17 @@ mod tests {
         // setup depositor, mint, deposit and delegate
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, AMOUNT_IN, MIN_AMOUNT_OUT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                AMOUNT_IN,
+                MIN_AMOUNT_OUT,
+            )
             .await
             .unwrap();
 
@@ -84,8 +98,11 @@ mod tests {
         assert_eq!(vault.vrt_supply(), AMOUNT_IN);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_add_delegation_over_delegate_fails() {
+    async fn test_add_delegation_over_delegate_fails(#[case] token_program: Pubkey) {
         const MINT_AMOUNT: u64 = 100_000;
         const MIN_AMOUNT_OUT: u64 = 100_000;
         let mut fixture = TestBuilder::new().await;
@@ -103,6 +120,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -115,11 +133,17 @@ mod tests {
         // setup depositor, mint, deposit and delegate
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MIN_AMOUNT_OUT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MIN_AMOUNT_OUT,
+            )
             .await
             .unwrap();
 

@@ -6,7 +6,7 @@ use solana_program::{
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::{instruction::mint_to, state::Account};
+use spl_token_2022::{instruction::mint_to, state::Account};
 
 pub fn process_update_vault_balance(
     program_id: &Pubkey,
@@ -35,8 +35,7 @@ pub fn process_update_vault_balance(
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault.check_vrt_mint(vrt_mint.key)?;
 
-    // Calculate rewards
-    let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
+    let new_balance = Account::unpack_from_slice(&vault_token_account.data.borrow())?.amount;
 
     let reward_fee = vault.calculate_rewards_fee(new_balance)?;
 
@@ -56,7 +55,7 @@ pub fn process_update_vault_balance(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

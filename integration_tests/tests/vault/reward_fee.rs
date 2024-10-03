@@ -1,12 +1,19 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_reward_fee() {
+    async fn test_reward_fee(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         const MINT_AMOUNT: u64 = 100_000;
@@ -24,6 +31,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -35,13 +43,18 @@ mod tests {
 
         let rewarder = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &rewarder.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &rewarder.pubkey(), &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &rewarder, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &rewarder,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -56,7 +69,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -66,7 +83,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -75,8 +92,11 @@ mod tests {
         assert_eq!(MINT_AMOUNT / 10, vault.vrt_supply());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_100_percent_reward_fee() {
+    async fn test_100_percent_reward_fee(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         const MINT_AMOUNT: u64 = 100_000;
@@ -94,6 +114,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -105,13 +126,18 @@ mod tests {
 
         let rewarder = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &rewarder.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &rewarder.pubkey(), &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &rewarder, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &rewarder,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -126,7 +152,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -136,7 +166,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -145,8 +175,11 @@ mod tests {
         assert_eq!(MINT_AMOUNT, vault.vrt_supply());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_0_percent_reward_fee() {
+    async fn test_0_percent_reward_fee(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         const MINT_AMOUNT: u64 = 100_000;
@@ -164,6 +197,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -175,13 +209,18 @@ mod tests {
 
         let rewarder = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &rewarder.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &rewarder.pubkey(), &token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &rewarder, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &rewarder,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -196,7 +235,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -206,7 +249,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -215,8 +258,11 @@ mod tests {
         assert_eq!(0, vault.vrt_supply());
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_reward_with_non_zero_balance() {
+    async fn test_reward_with_non_zero_balance(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         const MINT_AMOUNT: u64 = 100_000;
@@ -234,6 +280,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -245,12 +292,23 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT * 2)
+            .configure_depositor(
+                &vault_root,
+                &depositor.pubkey(),
+                &token_program,
+                MINT_AMOUNT * 2,
+            )
             .await
             .unwrap();
 
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -268,12 +326,21 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &depositor, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &depositor,
+                &token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -286,7 +353,11 @@ mod tests {
         let operator_root_pubkeys: Vec<_> =
             operator_roots.iter().map(|r| r.operator_pubkey).collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &operator_root_pubkeys,
+                &token_program,
+            )
             .await
             .unwrap();
 
@@ -296,7 +367,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 

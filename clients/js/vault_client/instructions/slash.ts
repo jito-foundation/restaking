@@ -54,6 +54,7 @@ export type SlashInstruction<
   TAccountVaultNcnSlasherOperatorTicket extends
     | string
     | IAccountMeta<string> = string,
+  TAccountSupportedMint extends string | IAccountMeta<string> = string,
   TAccountVaultTokenAccount extends string | IAccountMeta<string> = string,
   TAccountSlasherTokenAccount extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
@@ -101,6 +102,9 @@ export type SlashInstruction<
       TAccountVaultNcnSlasherOperatorTicket extends string
         ? WritableAccount<TAccountVaultNcnSlasherOperatorTicket>
         : TAccountVaultNcnSlasherOperatorTicket,
+      TAccountSupportedMint extends string
+        ? ReadonlyAccount<TAccountSupportedMint>
+        : TAccountSupportedMint,
       TAccountVaultTokenAccount extends string
         ? WritableAccount<TAccountVaultTokenAccount>
         : TAccountVaultTokenAccount,
@@ -159,6 +163,7 @@ export type SlashInput<
   TAccountNcnVaultSlasherTicket extends string = string,
   TAccountVaultNcnSlasherTicket extends string = string,
   TAccountVaultNcnSlasherOperatorTicket extends string = string,
+  TAccountSupportedMint extends string = string,
   TAccountVaultTokenAccount extends string = string,
   TAccountSlasherTokenAccount extends string = string,
   TAccountTokenProgram extends string = string,
@@ -176,6 +181,7 @@ export type SlashInput<
   ncnVaultSlasherTicket: Address<TAccountNcnVaultSlasherTicket>;
   vaultNcnSlasherTicket: Address<TAccountVaultNcnSlasherTicket>;
   vaultNcnSlasherOperatorTicket: Address<TAccountVaultNcnSlasherOperatorTicket>;
+  supportedMint: Address<TAccountSupportedMint>;
   vaultTokenAccount: Address<TAccountVaultTokenAccount>;
   slasherTokenAccount: Address<TAccountSlasherTokenAccount>;
   tokenProgram?: Address<TAccountTokenProgram>;
@@ -196,6 +202,7 @@ export function getSlashInstruction<
   TAccountNcnVaultSlasherTicket extends string,
   TAccountVaultNcnSlasherTicket extends string,
   TAccountVaultNcnSlasherOperatorTicket extends string,
+  TAccountSupportedMint extends string,
   TAccountVaultTokenAccount extends string,
   TAccountSlasherTokenAccount extends string,
   TAccountTokenProgram extends string,
@@ -214,6 +221,7 @@ export function getSlashInstruction<
     TAccountNcnVaultSlasherTicket,
     TAccountVaultNcnSlasherTicket,
     TAccountVaultNcnSlasherOperatorTicket,
+    TAccountSupportedMint,
     TAccountVaultTokenAccount,
     TAccountSlasherTokenAccount,
     TAccountTokenProgram
@@ -233,6 +241,7 @@ export function getSlashInstruction<
   TAccountNcnVaultSlasherTicket,
   TAccountVaultNcnSlasherTicket,
   TAccountVaultNcnSlasherOperatorTicket,
+  TAccountSupportedMint,
   TAccountVaultTokenAccount,
   TAccountSlasherTokenAccount,
   TAccountTokenProgram
@@ -273,6 +282,7 @@ export function getSlashInstruction<
       value: input.vaultNcnSlasherOperatorTicket ?? null,
       isWritable: true,
     },
+    supportedMint: { value: input.supportedMint ?? null, isWritable: false },
     vaultTokenAccount: {
       value: input.vaultTokenAccount ?? null,
       isWritable: true,
@@ -313,6 +323,7 @@ export function getSlashInstruction<
       getAccountMeta(accounts.ncnVaultSlasherTicket),
       getAccountMeta(accounts.vaultNcnSlasherTicket),
       getAccountMeta(accounts.vaultNcnSlasherOperatorTicket),
+      getAccountMeta(accounts.supportedMint),
       getAccountMeta(accounts.vaultTokenAccount),
       getAccountMeta(accounts.slasherTokenAccount),
       getAccountMeta(accounts.tokenProgram),
@@ -336,6 +347,7 @@ export function getSlashInstruction<
     TAccountNcnVaultSlasherTicket,
     TAccountVaultNcnSlasherTicket,
     TAccountVaultNcnSlasherOperatorTicket,
+    TAccountSupportedMint,
     TAccountVaultTokenAccount,
     TAccountSlasherTokenAccount,
     TAccountTokenProgram
@@ -363,9 +375,10 @@ export type ParsedSlashInstruction<
     ncnVaultSlasherTicket: TAccountMetas[10];
     vaultNcnSlasherTicket: TAccountMetas[11];
     vaultNcnSlasherOperatorTicket: TAccountMetas[12];
-    vaultTokenAccount: TAccountMetas[13];
-    slasherTokenAccount: TAccountMetas[14];
-    tokenProgram: TAccountMetas[15];
+    supportedMint: TAccountMetas[13];
+    vaultTokenAccount: TAccountMetas[14];
+    slasherTokenAccount: TAccountMetas[15];
+    tokenProgram: TAccountMetas[16];
   };
   data: SlashInstructionData;
 };
@@ -378,7 +391,7 @@ export function parseSlashInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedSlashInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 16) {
+  if (instruction.accounts.length < 17) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -404,6 +417,7 @@ export function parseSlashInstruction<
       ncnVaultSlasherTicket: getNextAccount(),
       vaultNcnSlasherTicket: getNextAccount(),
       vaultNcnSlasherOperatorTicket: getNextAccount(),
+      supportedMint: getNextAccount(),
       vaultTokenAccount: getNextAccount(),
       slasherTokenAccount: getNextAccount(),
       tokenProgram: getNextAccount(),

@@ -12,7 +12,8 @@ use solana_sdk::{
     transaction::Transaction,
 };
 use spl_associated_token_account::{
-    get_associated_token_address, instruction::create_associated_token_account_idempotent,
+    get_associated_token_address_with_program_id,
+    instruction::create_associated_token_account_idempotent,
 };
 use spl_token::state::{Account, Mint};
 
@@ -95,7 +96,7 @@ impl TestBuilder {
             .get_account(*token_account)
             .await?
             .unwrap();
-        Ok(Account::unpack(&account.data).unwrap())
+        Ok(Account::unpack_from_slice(&account.data).unwrap())
     }
 
     pub async fn get_token_mint(&mut self, token_mint: &Pubkey) -> Result<Mint, BanksClientError> {
@@ -113,6 +114,7 @@ impl TestBuilder {
         &mut self,
         mint: &Pubkey,
         to: &Pubkey,
+        token_program: &Pubkey,
         amount: u64,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
@@ -125,12 +127,12 @@ impl TestBuilder {
                             &self.context.payer.pubkey(),
                             to,
                             mint,
-                            &spl_token::id(),
+                            token_program,
                         ),
-                        spl_token::instruction::mint_to(
-                            &spl_token::id(),
+                        spl_token_2022::instruction::mint_to(
+                            token_program,
                             mint,
-                            &get_associated_token_address(to, mint),
+                            &get_associated_token_address_with_program_id(to, mint, token_program),
                             &self.context.payer.pubkey(),
                             &[],
                             amount,
@@ -150,6 +152,7 @@ impl TestBuilder {
         &mut self,
         mint: &Pubkey,
         owner: &Pubkey,
+        token_program: &Pubkey,
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
         self.context
@@ -160,7 +163,7 @@ impl TestBuilder {
                         &self.context.payer.pubkey(),
                         owner,
                         mint,
-                        &spl_token::id(),
+                        token_program,
                     )],
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],
@@ -211,6 +214,7 @@ impl TestBuilder {
     /// Configures a vault with an NCN and operators fully configured
     pub async fn setup_vault_with_ncn_and_operators(
         &mut self,
+        token_program: &Pubkey,
         deposit_fee_bps: u16,
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
@@ -221,7 +225,12 @@ impl TestBuilder {
         let mut restaking_program_client = self.restaking_program_client();
 
         let (vault_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                token_program,
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+            )
             .await?;
         let restaking_config_admin = restaking_program_client.do_initialize_config().await?;
 

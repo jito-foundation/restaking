@@ -5,15 +5,22 @@ mod tests {
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::assert_vault_error,
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_ok() {
+    async fn test_crank_vault_update_state_tracker_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -29,6 +36,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -40,11 +48,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -123,8 +131,13 @@ mod tests {
         assert_eq!(operator_delegation.last_update_slot(), slot);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_multiple_operators_ok() {
+    async fn test_crank_vault_update_state_tracker_multiple_operators_ok(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -140,6 +153,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -151,11 +165,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -229,8 +243,13 @@ mod tests {
         );
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_same_index_twice_fails() {
+    async fn test_crank_vault_update_state_tracker_same_index_twice_fails(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -246,6 +265,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -257,11 +277,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -319,8 +339,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultOperatorDelegationIsUpdated);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_skip_zero_fails() {
+    async fn test_crank_vault_update_state_tracker_skip_zero_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -336,6 +359,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -347,11 +371,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -399,8 +423,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_skip_index_fails() {
+    async fn test_crank_vault_update_state_tracker_skip_index_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -416,6 +443,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -427,11 +455,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -487,8 +515,13 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateIncorrectIndex);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_crank_vault_update_state_tracker_partial_update_previous_epoch_ok() {
+    async fn test_crank_vault_update_state_tracker_partial_update_previous_epoch_ok(
+        #[case] token_program: Pubkey,
+    ) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -504,6 +537,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -515,11 +549,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 

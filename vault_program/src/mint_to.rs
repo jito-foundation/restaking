@@ -12,10 +12,11 @@ use solana_program::{
     entrypoint::ProgramResult,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
+    program_pack::Pack,
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::instruction::{mint_to, transfer};
+use spl_token_2022::instruction::mint_to;
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
@@ -38,9 +39,9 @@ pub fn process_mint(
     amount_in: u64,
     min_amount_out: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(9);
+    let (required_accounts, optional_accounts) = accounts.split_at(10);
 
-    let [config, vault_info, vrt_mint, depositor, depositor_token_account, vault_token_account, depositor_vrt_token_account, vault_fee_token_account, token_program] =
+    let [config, vault_info, supported_mint, vrt_mint, depositor, depositor_token_account, vault_token_account, depositor_vrt_token_account, vault_fee_token_account, token_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -60,6 +61,7 @@ pub fn process_mint(
         depositor.key,
         &vault.supported_mint,
     )?;
+    load_token_mint(supported_mint)?;
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_associated_token_account(depositor_vrt_token_account, depositor.key, vrt_mint.key)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
@@ -67,6 +69,7 @@ pub fn process_mint(
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
+    vault.check_supported_mint(supported_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
     let MintSummary {
@@ -76,19 +79,24 @@ pub fn process_mint(
 
     // transfer tokens from depositor to vault
     {
+        let supported_mint_account =
+            spl_token_2022::state::Mint::unpack(&supported_mint.data.borrow())?;
         invoke(
-            &transfer(
-                &spl_token::id(),
+            &spl_token_2022::instruction::transfer_checked(
+                token_program.key,
                 depositor_token_account.key,
+                supported_mint.key,
                 vault_token_account.key,
                 depositor.key,
                 &[],
                 amount_in,
+                supported_mint_account.decimals,
             )?,
             &[
                 depositor_token_account.clone(),
                 vault_token_account.clone(),
                 depositor.clone(),
+                supported_mint.clone(),
             ],
         )?;
     }
@@ -102,7 +110,7 @@ pub fn process_mint(
     {
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 depositor_vrt_token_account.key,
                 vault_info.key,
@@ -119,7 +127,7 @@ pub fn process_mint(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

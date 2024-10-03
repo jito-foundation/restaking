@@ -2,15 +2,22 @@
 mod tests {
     use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
     use jito_vault_sdk::error::VaultError;
-    use solana_sdk::signature::{Keypair, Signer};
+    use rstest::rstest;
+    use solana_sdk::{
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+    };
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
         vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_close_update_state_tracker_no_operators_ok() {
+    async fn test_close_update_state_tracker_no_operators_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -25,6 +32,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -74,8 +82,11 @@ mod tests {
             .unwrap();
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_close_update_state_tracker_not_finished_fails() {
+    async fn test_close_update_state_tracker_not_finished_fails(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -91,6 +102,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -150,8 +162,11 @@ mod tests {
         assert_vault_error(result, VaultError::VaultUpdateStateNotFinishedUpdating);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_close_update_state_tracker_old_epoch_ok() {
+    async fn test_close_update_state_tracker_old_epoch_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -167,6 +182,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -178,11 +194,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -246,8 +262,11 @@ mod tests {
             .unwrap();
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_close_update_state_tracker_vrt_enqueued_ok() {
+    async fn test_close_update_state_tracker_vrt_enqueued_ok(#[case] token_program: Pubkey) {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
@@ -263,6 +282,7 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
@@ -274,11 +294,11 @@ mod tests {
 
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .configure_depositor(&vault_root, &depositor.pubkey(), &token_program, 100_000)
             .await
             .unwrap();
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .do_mint_to(&vault_root, &depositor, &token_program, 100_000, 100_000)
             .await
             .unwrap();
 
@@ -287,7 +307,7 @@ mod tests {
             .await
             .unwrap();
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, 100_000)
+            .do_enqueue_withdraw(&vault_root, &depositor, &token_program, 100_000)
             .await
             .unwrap();
         let vault = vault_program_client
@@ -312,7 +332,7 @@ mod tests {
             .map(|root| root.operator_pubkey)
             .collect();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys)
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys, &token_program)
             .await
             .unwrap();
         let vault = vault_program_client
@@ -328,7 +348,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys)
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys, &token_program)
             .await
             .unwrap();
         let vault = vault_program_client

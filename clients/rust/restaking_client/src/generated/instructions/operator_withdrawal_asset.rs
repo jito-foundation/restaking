@@ -5,13 +5,14 @@
 //! <https://github.com/kinobi-so/kinobi>
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
 
 /// Accounts.
 pub struct OperatorWithdrawalAsset {
     pub operator: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
+
+    pub mint: solana_program::pubkey::Pubkey,
 
     pub operator_token_account: solana_program::pubkey::Pubkey,
 
@@ -33,13 +34,16 @@ impl OperatorWithdrawalAsset {
         args: OperatorWithdrawalAssetInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.operator,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.mint, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.operator_token_account,
@@ -88,7 +92,6 @@ impl Default for OperatorWithdrawalAssetInstructionData {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OperatorWithdrawalAssetInstructionArgs {
-    pub token_mint: Pubkey,
     pub amount: u64,
 }
 
@@ -98,17 +101,18 @@ pub struct OperatorWithdrawalAssetInstructionArgs {
 ///
 ///   0. `[]` operator
 ///   1. `[signer]` admin
-///   2. `[writable]` operator_token_account
-///   3. `[writable]` receiver_token_account
-///   4. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   2. `[]` mint
+///   3. `[writable]` operator_token_account
+///   4. `[writable]` receiver_token_account
+///   5. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct OperatorWithdrawalAssetBuilder {
     operator: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
+    mint: Option<solana_program::pubkey::Pubkey>,
     operator_token_account: Option<solana_program::pubkey::Pubkey>,
     receiver_token_account: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
-    token_mint: Option<Pubkey>,
     amount: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
@@ -125,6 +129,11 @@ impl OperatorWithdrawalAssetBuilder {
     #[inline(always)]
     pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
         self.admin = Some(admin);
+        self
+    }
+    #[inline(always)]
+    pub fn mint(&mut self, mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.mint = Some(mint);
         self
     }
     #[inline(always)]
@@ -147,11 +156,6 @@ impl OperatorWithdrawalAssetBuilder {
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
@@ -182,6 +186,7 @@ impl OperatorWithdrawalAssetBuilder {
         let accounts = OperatorWithdrawalAsset {
             operator: self.operator.expect("operator is not set"),
             admin: self.admin.expect("admin is not set"),
+            mint: self.mint.expect("mint is not set"),
             operator_token_account: self
                 .operator_token_account
                 .expect("operator_token_account is not set"),
@@ -193,7 +198,6 @@ impl OperatorWithdrawalAssetBuilder {
             )),
         };
         let args = OperatorWithdrawalAssetInstructionArgs {
-            token_mint: self.token_mint.clone().expect("token_mint is not set"),
             amount: self.amount.clone().expect("amount is not set"),
         };
 
@@ -206,6 +210,8 @@ pub struct OperatorWithdrawalAssetCpiAccounts<'a, 'b> {
     pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub operator_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -222,6 +228,8 @@ pub struct OperatorWithdrawalAssetCpi<'a, 'b> {
     pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub operator_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -242,6 +250,7 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
             __program: program,
             operator: accounts.operator,
             admin: accounts.admin,
+            mint: accounts.mint,
             operator_token_account: accounts.operator_token_account,
             receiver_token_account: accounts.receiver_token_account,
             token_program: accounts.token_program,
@@ -281,7 +290,7 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.operator.key,
             false,
@@ -289,6 +298,10 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.admin.key,
             true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.mint.key,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.operator_token_account.key,
@@ -320,10 +333,11 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(6 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.operator.clone());
         account_infos.push(self.admin.clone());
+        account_infos.push(self.mint.clone());
         account_infos.push(self.operator_token_account.clone());
         account_infos.push(self.receiver_token_account.clone());
         account_infos.push(self.token_program.clone());
@@ -345,9 +359,10 @@ impl<'a, 'b> OperatorWithdrawalAssetCpi<'a, 'b> {
 ///
 ///   0. `[]` operator
 ///   1. `[signer]` admin
-///   2. `[writable]` operator_token_account
-///   3. `[writable]` receiver_token_account
-///   4. `[]` token_program
+///   2. `[]` mint
+///   3. `[writable]` operator_token_account
+///   4. `[writable]` receiver_token_account
+///   5. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
     instruction: Box<OperatorWithdrawalAssetCpiBuilderInstruction<'a, 'b>>,
@@ -359,10 +374,10 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
             __program: program,
             operator: None,
             admin: None,
+            mint: None,
             operator_token_account: None,
             receiver_token_account: None,
             token_program: None,
-            token_mint: None,
             amount: None,
             __remaining_accounts: Vec::new(),
         });
@@ -379,6 +394,11 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.admin = Some(admin);
+        self
+    }
+    #[inline(always)]
+    pub fn mint(&mut self, mint: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.mint = Some(mint);
         self
     }
     #[inline(always)]
@@ -403,11 +423,6 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
         token_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.instruction.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
@@ -457,11 +472,6 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
         let args = OperatorWithdrawalAssetInstructionArgs {
-            token_mint: self
-                .instruction
-                .token_mint
-                .clone()
-                .expect("token_mint is not set"),
             amount: self.instruction.amount.clone().expect("amount is not set"),
         };
         let instruction = OperatorWithdrawalAssetCpi {
@@ -470,6 +480,8 @@ impl<'a, 'b> OperatorWithdrawalAssetCpiBuilder<'a, 'b> {
             operator: self.instruction.operator.expect("operator is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
+
+            mint: self.instruction.mint.expect("mint is not set"),
 
             operator_token_account: self
                 .instruction
@@ -499,10 +511,10 @@ struct OperatorWithdrawalAssetCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     operator_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     receiver_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_mint: Option<Pubkey>,
     amount: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(

@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_sdk::{error::VaultError, inline_mpl_token_metadata};
+    use rstest::rstest;
     use solana_sdk::{
         instruction::InstructionError, pubkey::Pubkey, signature::Keypair, signer::Signer,
     };
@@ -11,8 +12,13 @@ mod tests {
         vault_client::{assert_vault_error, VaultRoot},
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_create_token_metadata_ok() {
+    async fn test_create_token_metadata_ok(#[case] token_program: Pubkey) {
+        use solana_sdk::transaction::TransactionError;
+
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -24,7 +30,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
@@ -38,7 +44,7 @@ mod tests {
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
-        vault_program_client
+        let result = vault_program_client
             .create_token_metadata(
                 &vault_pubkey,
                 &vault_admin,
@@ -49,21 +55,30 @@ mod tests {
                 symbol.to_string(),
                 uri.to_string(),
             )
-            .await
-            .unwrap();
+            .await;
 
-        let token_metadata = vault_program_client
-            .get_token_metadata(&vault.vrt_mint)
-            .await
-            .unwrap();
+        if token_program.eq(&spl_token_2022::id()) {
+            // Token 2022's metadata is not yet supported
+            assert_eq!(
+                result.unwrap_err().to_transaction_error().unwrap(),
+                TransactionError::InstructionError(0, InstructionError::InvalidAccountData)
+            );
+        } else {
+            let token_metadata = vault_program_client
+                .get_token_metadata(&vault.vrt_mint)
+                .await
+                .unwrap();
 
-        assert!(token_metadata.name.starts_with(name));
-        assert!(token_metadata.symbol.starts_with(symbol));
-        assert!(token_metadata.uri.starts_with(uri));
+            assert!(token_metadata.name.starts_with(name));
+            assert!(token_metadata.symbol.starts_with(symbol));
+            assert!(token_metadata.uri.starts_with(uri));
+        }
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
     #[tokio::test]
-    async fn test_create_token_metadata_wrong_vrt_mint_fails() {
+    async fn test_create_token_metadata_wrong_vrt_mint_fails(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -75,13 +90,13 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
         let random_mint = Keypair::new();
         vault_program_client
-            .create_token_mint(&random_mint)
+            .create_token_mint(&random_mint, &token_program)
             .await
             .unwrap();
 
@@ -111,8 +126,10 @@ mod tests {
         assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
     #[tokio::test]
-    async fn test_create_token_metadata_wrong_metadata_fails() {
+    async fn test_create_token_metadata_wrong_metadata_fails(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -124,7 +141,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 
@@ -151,8 +168,10 @@ mod tests {
         assert_ix_error(result, InstructionError::InvalidAccountData);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
     #[tokio::test]
-    async fn test_wrong_admin_signed() {
+    async fn test_wrong_admin_signed(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -164,7 +183,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(&token_program, 99, 100, 0)
             .await
             .unwrap();
 

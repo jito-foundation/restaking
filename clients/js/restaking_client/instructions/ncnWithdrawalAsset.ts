@@ -8,8 +8,6 @@
 
 import {
   combineCodec,
-  getAddressDecoder,
-  getAddressEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -43,6 +41,7 @@ export function getNcnWithdrawalAssetDiscriminatorBytes() {
 export type NcnWithdrawalAssetInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn extends string | IAccountMeta<string> = string,
+  TAccountMint extends string | IAccountMeta<string> = string,
   TAccountNcnTokenAccount extends string | IAccountMeta<string> = string,
   TAccountReceiverTokenAccount extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
@@ -55,6 +54,9 @@ export type NcnWithdrawalAssetInstruction<
   IInstructionWithAccounts<
     [
       TAccountNcn extends string ? ReadonlyAccount<TAccountNcn> : TAccountNcn,
+      TAccountMint extends string
+        ? ReadonlyAccount<TAccountMint>
+        : TAccountMint,
       TAccountNcnTokenAccount extends string
         ? WritableAccount<TAccountNcnTokenAccount>
         : TAccountNcnTokenAccount,
@@ -74,20 +76,15 @@ export type NcnWithdrawalAssetInstruction<
 
 export type NcnWithdrawalAssetInstructionData = {
   discriminator: number;
-  tokenMint: Address;
   amount: bigint;
 };
 
-export type NcnWithdrawalAssetInstructionDataArgs = {
-  tokenMint: Address;
-  amount: number | bigint;
-};
+export type NcnWithdrawalAssetInstructionDataArgs = { amount: number | bigint };
 
 export function getNcnWithdrawalAssetInstructionDataEncoder(): Encoder<NcnWithdrawalAssetInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['tokenMint', getAddressEncoder()],
       ['amount', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: NCN_WITHDRAWAL_ASSET_DISCRIMINATOR })
@@ -97,7 +94,6 @@ export function getNcnWithdrawalAssetInstructionDataEncoder(): Encoder<NcnWithdr
 export function getNcnWithdrawalAssetInstructionDataDecoder(): Decoder<NcnWithdrawalAssetInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['tokenMint', getAddressDecoder()],
     ['amount', getU64Decoder()],
   ]);
 }
@@ -114,22 +110,24 @@ export function getNcnWithdrawalAssetInstructionDataCodec(): Codec<
 
 export type NcnWithdrawalAssetInput<
   TAccountNcn extends string = string,
+  TAccountMint extends string = string,
   TAccountNcnTokenAccount extends string = string,
   TAccountReceiverTokenAccount extends string = string,
   TAccountAdmin extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   ncn: Address<TAccountNcn>;
+  mint: Address<TAccountMint>;
   ncnTokenAccount: Address<TAccountNcnTokenAccount>;
   receiverTokenAccount: Address<TAccountReceiverTokenAccount>;
   admin: TransactionSigner<TAccountAdmin>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  tokenMint: NcnWithdrawalAssetInstructionDataArgs['tokenMint'];
   amount: NcnWithdrawalAssetInstructionDataArgs['amount'];
 };
 
 export function getNcnWithdrawalAssetInstruction<
   TAccountNcn extends string,
+  TAccountMint extends string,
   TAccountNcnTokenAccount extends string,
   TAccountReceiverTokenAccount extends string,
   TAccountAdmin extends string,
@@ -137,6 +135,7 @@ export function getNcnWithdrawalAssetInstruction<
 >(
   input: NcnWithdrawalAssetInput<
     TAccountNcn,
+    TAccountMint,
     TAccountNcnTokenAccount,
     TAccountReceiverTokenAccount,
     TAccountAdmin,
@@ -145,6 +144,7 @@ export function getNcnWithdrawalAssetInstruction<
 ): NcnWithdrawalAssetInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
+  TAccountMint,
   TAccountNcnTokenAccount,
   TAccountReceiverTokenAccount,
   TAccountAdmin,
@@ -156,6 +156,7 @@ export function getNcnWithdrawalAssetInstruction<
   // Original accounts.
   const originalAccounts = {
     ncn: { value: input.ncn ?? null, isWritable: false },
+    mint: { value: input.mint ?? null, isWritable: false },
     ncnTokenAccount: { value: input.ncnTokenAccount ?? null, isWritable: true },
     receiverTokenAccount: {
       value: input.receiverTokenAccount ?? null,
@@ -182,6 +183,7 @@ export function getNcnWithdrawalAssetInstruction<
   const instruction = {
     accounts: [
       getAccountMeta(accounts.ncn),
+      getAccountMeta(accounts.mint),
       getAccountMeta(accounts.ncnTokenAccount),
       getAccountMeta(accounts.receiverTokenAccount),
       getAccountMeta(accounts.admin),
@@ -194,6 +196,7 @@ export function getNcnWithdrawalAssetInstruction<
   } as NcnWithdrawalAssetInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
+    TAccountMint,
     TAccountNcnTokenAccount,
     TAccountReceiverTokenAccount,
     TAccountAdmin,
@@ -210,10 +213,11 @@ export type ParsedNcnWithdrawalAssetInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     ncn: TAccountMetas[0];
-    ncnTokenAccount: TAccountMetas[1];
-    receiverTokenAccount: TAccountMetas[2];
-    admin: TAccountMetas[3];
-    tokenProgram: TAccountMetas[4];
+    mint: TAccountMetas[1];
+    ncnTokenAccount: TAccountMetas[2];
+    receiverTokenAccount: TAccountMetas[3];
+    admin: TAccountMetas[4];
+    tokenProgram: TAccountMetas[5];
   };
   data: NcnWithdrawalAssetInstructionData;
 };
@@ -226,7 +230,7 @@ export function parseNcnWithdrawalAssetInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedNcnWithdrawalAssetInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -240,6 +244,7 @@ export function parseNcnWithdrawalAssetInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       ncn: getNextAccount(),
+      mint: getNextAccount(),
       ncnTokenAccount: getNextAccount(),
       receiverTokenAccount: getNextAccount(),
       admin: getNextAccount(),

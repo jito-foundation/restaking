@@ -4,7 +4,8 @@ mod tests {
         config::Config, vault_operator_delegation::VaultOperatorDelegation,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
-    use solana_sdk::{signature::Keypair, signer::Signer};
+    use rstest::rstest;
+    use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
@@ -16,7 +17,7 @@ mod tests {
     const WITHDRAW_FEE_BPS: u16 = 0;
     const REWARD_FEE_BPS: u16 = 1000; // 10%
 
-    async fn setup() -> (TestBuilder, VaultRoot) {
+    async fn setup(token_program: &Pubkey) -> (TestBuilder, VaultRoot) {
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -32,6 +33,7 @@ mod tests {
             slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
+                &token_program,
                 DEPOSIT_FEE_BPS,
                 WITHDRAW_FEE_BPS,
                 REWARD_FEE_BPS,
@@ -44,13 +46,18 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &depositor.pubkey(), token_program, MINT_AMOUNT)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &depositor, MINT_AMOUNT)
+            .create_and_fund_reward_vault(
+                &vault_root.vault_pubkey,
+                &depositor,
+                token_program,
+                MINT_AMOUNT,
+            )
             .await
             .unwrap();
 
@@ -107,13 +114,16 @@ mod tests {
         (fixture, vault_root)
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_update_vault_balance_ok() {
-        let (fixture, vault_root) = setup().await;
+    async fn test_update_vault_balance_ok(#[case] token_program: Pubkey) {
+        let (fixture, vault_root) = setup(&token_program).await;
         let mut vault_program_client = fixture.vault_program_client();
 
         vault_program_client
-            .update_vault_balance(&vault_root.vault_pubkey)
+            .update_vault_balance(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 
@@ -123,7 +133,7 @@ mod tests {
             .unwrap();
 
         let reward_fee_account = vault_program_client
-            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .get_reward_fee_token_account(&vault_root.vault_pubkey, &token_program)
             .await
             .unwrap();
 

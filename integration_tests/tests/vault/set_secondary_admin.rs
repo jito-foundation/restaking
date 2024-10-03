@@ -2,6 +2,7 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
+    use rstest::rstest;
     use solana_sdk::{
         pubkey::Pubkey,
         signature::{Keypair, Signer},
@@ -12,8 +13,11 @@ mod tests {
         vault_client::{assert_vault_error, VaultRoot},
     };
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_secondary_admin_with_bad_admin() {
+    async fn test_set_secondary_admin_with_bad_admin(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -29,7 +33,12 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                &token_program,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
             .await
             .unwrap();
 
@@ -58,8 +67,11 @@ mod tests {
         assert_vault_error(response, VaultError::VaultAdminInvalid);
     }
 
+    #[rstest]
+    #[case(spl_token::id())]
+    #[case(spl_token_2022::id())]
     #[tokio::test]
-    async fn test_set_secondary_admin() {
+    async fn test_set_secondary_admin(#[case] token_program: Pubkey) {
         let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
@@ -75,7 +87,12 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+            .setup_config_and_vault(
+                &token_program,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+            )
             .await
             .unwrap();
 
