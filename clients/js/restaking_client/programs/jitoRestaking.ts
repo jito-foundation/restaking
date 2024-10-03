@@ -16,6 +16,8 @@ import {
   type ParsedCooldownNcnVaultSlasherTicketInstruction,
   type ParsedCooldownNcnVaultTicketInstruction,
   type ParsedCooldownOperatorVaultTicketInstruction,
+  type ParsedHarvestLamportsInstruction,
+  type ParsedHarvestTokensInstruction,
   type ParsedInitializeConfigInstruction,
   type ParsedInitializeNcnInstruction,
   type ParsedInitializeNcnOperatorStateInstruction,
@@ -75,6 +77,8 @@ export enum JitoRestakingInstruction {
   OperatorSetSecondaryAdmin,
   NcnWithdrawalAsset,
   OperatorWithdrawalAsset,
+  HarvestLamports,
+  HarvestTokens,
 }
 
 export function identifyJitoRestakingInstruction(
@@ -149,6 +153,12 @@ export function identifyJitoRestakingInstruction(
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
     return JitoRestakingInstruction.OperatorWithdrawalAsset;
+  }
+  if (containsBytes(data, getU8Encoder().encode(23), 0)) {
+    return JitoRestakingInstruction.HarvestLamports;
+  }
+  if (containsBytes(data, getU8Encoder().encode(24), 0)) {
+    return JitoRestakingInstruction.HarvestTokens;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoRestaking instruction.'
@@ -226,4 +236,10 @@ export type ParsedJitoRestakingInstruction<
     } & ParsedNcnWithdrawalAssetInstruction<TProgram>)
   | ({
       instructionType: JitoRestakingInstruction.OperatorWithdrawalAsset;
-    } & ParsedOperatorWithdrawalAssetInstruction<TProgram>);
+    } & ParsedOperatorWithdrawalAssetInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.HarvestLamports;
+    } & ParsedHarvestLamportsInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.HarvestTokens;
+    } & ParsedHarvestTokensInstruction<TProgram>);

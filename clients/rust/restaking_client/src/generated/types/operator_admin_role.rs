@@ -26,4 +26,5 @@ pub enum OperatorAdminRole {
     VoterAdmin,
     WithdrawAdmin,
     WithdrawWallet,
+    Harvest,
 }

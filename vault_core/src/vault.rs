@@ -103,6 +103,9 @@ pub struct Vault {
     /// Optional mint signer
     pub mint_burn_admin: Pubkey,
 
+    /// Harvest admin
+    pub harvest_admin: Pubkey,
+
     // ------------------------------------------
     // Indexing and counters
     // These are helpful when one needs to iterate through all the accounts
@@ -168,6 +171,7 @@ impl Vault {
             fee_admin: admin,
             withdraw_admin: admin,
             fee_wallet: admin,
+            harvest_admin: admin,
             mint_burn_admin: Pubkey::default(),
             capacity: PodU64::from(u64::MAX),
             vault_index: PodU64::from(vault_index),
@@ -482,6 +486,11 @@ impl Vault {
         if self.fee_admin.eq(old_admin) {
             self.fee_admin = *new_admin;
             msg!("Fee admin set to {:?}", new_admin);
+        }
+
+        if self.harvest_admin.eq(old_admin) {
+            self.harvest_admin = *new_admin;
+            msg!("Harvest admin set to {:?}", new_admin);
         }
     }
 
@@ -1075,6 +1084,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // capacity_admin
             std::mem::size_of::<Pubkey>() + // fee_admin
             std::mem::size_of::<Pubkey>() + // withdraw_admin
+            std::mem::size_of::<Pubkey>() + // harvest_admin
             std::mem::size_of::<Pubkey>() + // fee_wallet
             std::mem::size_of::<Pubkey>() + // mint_burn_admin
             std::mem::size_of::<PodU64>() + // vault_index

@@ -25,6 +25,8 @@ import {
   type ParsedCrankVaultUpdateStateTrackerInstruction,
   type ParsedCreateTokenMetadataInstruction,
   type ParsedEnqueueWithdrawalInstruction,
+  type ParsedHarvestLamportsInstruction,
+  type ParsedHarvestTokensInstruction,
   type ParsedInitializeConfigInstruction,
   type ParsedInitializeVaultInstruction,
   type ParsedInitializeVaultNcnSlasherOperatorTicketInstruction,
@@ -90,6 +92,8 @@ export enum JitoVaultInstruction {
   CreateTokenMetadata,
   UpdateTokenMetadata,
   Slash,
+  HarvestLamports,
+  HarvestTokens,
 }
 
 export function identifyJitoVaultInstruction(
@@ -185,6 +189,12 @@ export function identifyJitoVaultInstruction(
   }
   if (containsBytes(data, getU8Encoder().encode(29), 0)) {
     return JitoVaultInstruction.Slash;
+  }
+  if (containsBytes(data, getU8Encoder().encode(30), 0)) {
+    return JitoVaultInstruction.HarvestLamports;
+  }
+  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.HarvestTokens;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoVault instruction.'
@@ -283,4 +293,10 @@ export type ParsedJitoVaultInstruction<
     } & ParsedUpdateTokenMetadataInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.Slash;
-    } & ParsedSlashInstruction<TProgram>);
+    } & ParsedSlashInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.HarvestLamports;
+    } & ParsedHarvestLamportsInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.HarvestTokens;
+    } & ParsedHarvestTokensInstruction<TProgram>);

@@ -25,6 +25,7 @@ export enum VaultAdminRole {
   MintBurnAdmin,
   WithdrawAdmin,
   FeeAdmin,
+  HarvestAdmin,
 }
 
 export type VaultAdminRoleArgs = VaultAdminRole;

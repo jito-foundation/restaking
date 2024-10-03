@@ -317,6 +317,23 @@ pub enum VaultInstruction {
     Slash {
         amount: u64
     },
+
+    #[account(0, writable, name = "program_account")]
+    #[account(1, name = "config_or_vault")]
+    #[account(2, signer, name = "harvest_admin")]
+    #[account(3, name = "destination")]
+    HarvestLamports,
+
+    #[account(0, name = "program_account")]
+    #[account(1, name = "config_or_vault")]
+    #[account(2, signer, name = "harvest_admin")]
+    #[account(3, name = "mint")]
+    #[account(4, writable, name = "program_token_account")]
+    #[account(5, writable, name = "destination_base")]
+    #[account(6, writable, name = "destination_token_account")]
+    #[account(7, name = "token_program")]
+    #[account(8, name = "system_program")]
+    HarvestTokens { amount: u64 },
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
@@ -330,6 +347,7 @@ pub enum VaultAdminRole {
     MintBurnAdmin,
     WithdrawAdmin,
     FeeAdmin,
+    HarvestAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]

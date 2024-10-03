@@ -46,6 +46,9 @@ pub fn process_set_operator_secondary_admin(
         OperatorAdminRole::WithdrawWallet => {
             operator.withdrawal_fee_wallet = *new_admin.key;
         }
+        OperatorAdminRole::Harvest => {
+            operator.harvest_admin = *new_admin.key;
+        }
     }
 
     Ok(())

@@ -18,6 +18,8 @@ export * from './cooldownVaultNcnTicket';
 export * from './crankVaultUpdateStateTracker';
 export * from './createTokenMetadata';
 export * from './enqueueWithdrawal';
+export * from './harvestLamports';
+export * from './harvestTokens';
 export * from './initializeConfig';
 export * from './initializeVault';
 export * from './initializeVaultNcnSlasherOperatorTicket';

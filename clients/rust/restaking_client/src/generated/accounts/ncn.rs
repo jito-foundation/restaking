@@ -46,6 +46,11 @@ pub struct Ncn {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub withdraw_fee_wallet: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub harvest_admin: Pubkey,
     pub index: u64,
     pub operator_count: u64,
     pub vault_count: u64,
