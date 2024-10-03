@@ -108,6 +108,8 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x414; // 1044
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x415; // 1045
 /** VaultMintZero: VaultMintZero */
 export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x416; // 1046
+/** VaultIsPaused: VaultIsPaused */
+export const JITO_VAULT_ERROR__VAULT_IS_PAUSED = 0x417; // 1047
 
 export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE

@@ -2388,7 +2388,7 @@
       "msg": "VaultMintZero"
     },
     {
-      "code": 1045,
+      "code": 1047,
       "name": "VaultIsPaused",
       "msg": "VaultIsPaused"
     }
