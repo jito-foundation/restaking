@@ -1,6 +1,7 @@
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::{operator::Operator, MAX_FEE_BPS};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey,
@@ -14,7 +15,7 @@ pub fn process_operator_set_fee(
     accounts: &[AccountInfo],
     new_fee_bps: u16,
 ) -> ProgramResult {
-    let [operator_account, admin] = accounts else {
+    let [_config, operator_account, admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
@@ -28,7 +29,7 @@ pub fn process_operator_set_fee(
     // Check that the new fee is not greater than the maximum allowed
     if new_fee_bps > MAX_FEE_BPS {
         msg!("New fee exceeds maximum allowed fee");
-        return Err(ProgramError::InvalidArgument);
+        return Err(RestakingError::OperatorFeeCapExceeded.into());
     }
 
     operator.operator_fee_bps = new_fee_bps.into();

@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_restaking_core::config::Config;
     use solana_sdk::instruction::InstructionError;
 
     use crate::fixtures::{
@@ -38,9 +39,12 @@ mod tests {
             .unwrap();
         assert_eq!(operator.operator_fee_bps, initial_fee_bps.into());
 
+        let restaking_config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
+
         let new_fee_bps = 2000;
         restaking_program_client
             .operator_set_fee(
+                &restaking_config_pubkey,
                 &operator_root.operator_pubkey,
                 &operator_root.operator_admin,
                 new_fee_bps,
@@ -59,9 +63,12 @@ mod tests {
     async fn test_operator_set_fee_exceeds_max() {
         let (mut restaking_program_client, operator_root) = setup().await;
 
+        let restaking_config_pubkey = Config::find_program_address(&jito_restaking_program::id()).0;
+
         let invalid_fee_bps = 10001; // Exceeds maximum allowed fee
         let result = restaking_program_client
             .operator_set_fee(
+                &restaking_config_pubkey,
                 &operator_root.operator_pubkey,
                 &operator_root.operator_admin,
                 invalid_fee_bps,

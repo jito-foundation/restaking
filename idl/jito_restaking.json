@@ -785,6 +785,11 @@
       "name": "OperatorSetFee",
       "accounts": [
         {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "operator",
           "isMut": true,
           "isSigner": false
@@ -1462,6 +1467,11 @@
       "code": 2011,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
+    },
+    {
+      "code": 2012,
+      "name": "OperatorFeeCapExceeded",
+      "msg": "OperatorFeeCapExceeded"
     }
   ],
   "metadata": {

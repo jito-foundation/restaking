@@ -172,8 +172,9 @@ pub enum RestakingInstruction {
     OperatorSetSecondaryAdmin(OperatorAdminRole),
 
     /// Sets the fee for a node operator
-    #[account(0, writable, name = "operator")]
-    #[account(1, signer, name = "admin")]
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "operator")]
+    #[account(2, signer, name = "admin")]
     OperatorSetFee { new_fee_bps: u16 },
 
     #[account(0, name = "ncn")]

@@ -50,6 +50,8 @@ pub enum RestakingError {
     VaultOverflow,
     #[error("SlasherOverflow")]
     SlasherOverflow,
+    #[error("OperatorFeeCapExceeded")]
+    OperatorFeeCapExceeded,
 }
 
 impl<T> DecodeError<T> for RestakingError {

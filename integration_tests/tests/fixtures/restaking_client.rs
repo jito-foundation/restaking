@@ -919,6 +919,7 @@ impl RestakingProgramClient {
 
     pub async fn operator_set_fee(
         &mut self,
+        config: &Pubkey,
         operator: &Pubkey,
         admin: &Keypair,
         new_fee_bps: u16,
@@ -928,6 +929,7 @@ impl RestakingProgramClient {
         self.process_transaction(&Transaction::new_signed_with_payer(
             &[operator_set_fee(
                 &jito_restaking_program::id(),
+                config,
                 operator,
                 &admin.pubkey(),
                 new_fee_bps,

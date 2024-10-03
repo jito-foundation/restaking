@@ -314,11 +314,13 @@ pub fn operator_set_secondary_admin(
 
 pub fn operator_set_fee(
     program_id: &Pubkey,
+    config: &Pubkey,
     operator: &Pubkey,
     admin: &Pubkey,
     new_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*admin, true),
     ];
