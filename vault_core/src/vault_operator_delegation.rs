@@ -62,8 +62,13 @@ impl VaultOperatorDelegation {
     }
 
     pub fn check_is_already_updated(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let last_updated_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        let last_updated_epoch = self
+            .last_update_slot()
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         if last_updated_epoch >= current_epoch {
             msg!("VaultOperatorDelegationUpdate is not needed");
             return Err(VaultError::VaultOperatorDelegationIsUpdated);
