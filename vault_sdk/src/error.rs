@@ -41,6 +41,10 @@ pub enum VaultError {
     VaultUpdateNeeded,
     #[error("VaultIsUpdated")]
     VaultIsUpdated,
+    #[error("VaultOperatorDelegationUpdateNeeded")]
+    VaultOperatorDelegationUpdateNeeded,
+    #[error("VaultOperatorDelegationIsUpdated")]
+    VaultOperatorDelegationIsUpdated,
     #[error("VaultUpdateIncorrectIndex")]
     VaultUpdateIncorrectIndex,
     #[error("VaultUpdateStateNotFinishedUpdating")]

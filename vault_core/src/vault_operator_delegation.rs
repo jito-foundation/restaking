@@ -2,6 +2,7 @@
 
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
@@ -57,10 +58,15 @@ impl VaultOperatorDelegation {
         self.index.into()
     }
 
-    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+    pub fn check_is_already_updated(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
         let last_updated_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
         let current_epoch = slot.checked_div(epoch_length).unwrap();
-        last_updated_epoch < current_epoch
+        if last_updated_epoch >= current_epoch {
+            msg!("VaultOperatorDelegationUpdate is not needed");
+            return Err(VaultError::VaultOperatorDelegationIsUpdated);
+        }
+
+        Ok(())
     }
 
     /// Updates the state of the delegation
