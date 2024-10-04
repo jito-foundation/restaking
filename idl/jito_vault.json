@@ -2350,6 +2350,16 @@
       "code": 1046,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
+    },
+    {
+      "code": 1047,
+      "name": "InvalidDepositor",
+      "msg": "InvalidDepositor"
+    },
+    {
+      "code": 1048,
+      "name": "InvalidDepositTokenAccount",
+      "msg": "InvalidDepositTokenAccount"
     }
   ],
   "metadata": {

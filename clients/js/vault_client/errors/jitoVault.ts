@@ -108,8 +108,14 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x414; // 1044
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x415; // 1045
 /** VaultMintZero: VaultMintZero */
 export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x416; // 1046
+/** InvalidDepositor: InvalidDepositor */
+export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x417; // 1047
+/** InvalidDepositTokenAccount: InvalidDepositTokenAccount */
+export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x418; // 1048
 
 export type JitoVaultError =
+  | typeof JITO_VAULT_ERROR__INVALID_DEPOSITOR
+  | typeof JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__NCN_OVERFLOW
   | typeof JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE
@@ -161,6 +167,8 @@ export type JitoVaultError =
 let jitoVaultErrorMessages: Record<JitoVaultError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
   jitoVaultErrorMessages = {
+    [JITO_VAULT_ERROR__INVALID_DEPOSITOR]: `InvalidDepositor`,
+    [JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT]: `InvalidDepositTokenAccount`,
     [JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE]: `NcnOperatorStateUnslashable`,
     [JITO_VAULT_ERROR__NCN_OVERFLOW]: `NcnOverflow`,
     [JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE]: `NcnVaultSlasherTicketUnslashable`,
