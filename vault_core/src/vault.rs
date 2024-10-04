@@ -829,20 +829,24 @@ impl Vault {
             return Ok(0);
         }
         let vrt_reserve = self
-            .vrt_cooling_down_amount()
-            .checked_add(self.vrt_ready_to_claim_amount())
-            .and_then(|x| x.checked_add(self.vrt_enqueued_for_cooldown_amount()))
+            .vrt_enqueued_for_cooldown_amount()
+            .checked_add(self.vrt_cooling_down_amount())
+            .and_then(|x| x.checked_add(self.vrt_ready_to_claim_amount()))
             .ok_or(VaultError::VaultOverflow)?;
-        let amount_to_reserve_for_vrts = (vrt_reserve as u128)
+
+        let fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
+
+        let vrt_reserve_with_fee = vrt_reserve
+            .checked_add(fee_amount)
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_with_fee as u128)
             .checked_mul(self.tokens_deposited() as u128)
             .and_then(|x| x.checked_div(self.vrt_supply() as u128))
             .and_then(|result| result.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        let fee_amount = self.calculate_withdraw_fee(amount_to_reserve_for_vrts)?;
-        amount_to_reserve_for_vrts
-            .checked_sub(fee_amount)
-            .ok_or(VaultError::VaultUnderflow)
+        Ok(amount_to_reserve_for_vrts)
     }
 
     pub fn calculate_assets_needed_for_withdrawals(
