@@ -54,11 +54,11 @@ pub struct Operator {
     /// Helpful for indexing all available OperatorVaultTickets.
     vault_count: PodU64,
 
-    /// The bump seed for the PDA
-    pub bump: u8,
-
     /// The operator fee in basis points
     pub operator_fee_bps: PodU16,
+
+    /// The bump seed for the PDA
+    pub bump: u8,
 
     /// Reserved space
     reserved_space: [u8; 261],

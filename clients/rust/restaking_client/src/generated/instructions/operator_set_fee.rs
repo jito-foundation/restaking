@@ -8,6 +8,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
 pub struct OperatorSetFee {
+    pub config: solana_program::pubkey::Pubkey,
+
     pub operator: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
@@ -26,7 +28,11 @@ impl OperatorSetFee {
         args: OperatorSetFeeInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(2 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
+        ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.operator,
             false,
@@ -74,10 +80,12 @@ pub struct OperatorSetFeeInstructionArgs {
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` operator
-///   1. `[signer]` admin
+///   0. `[]` config
+///   1. `[writable]` operator
+///   2. `[signer]` admin
 #[derive(Clone, Debug, Default)]
 pub struct OperatorSetFeeBuilder {
+    config: Option<solana_program::pubkey::Pubkey>,
     operator: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
     new_fee_bps: Option<u16>,
@@ -87,6 +95,11 @@ pub struct OperatorSetFeeBuilder {
 impl OperatorSetFeeBuilder {
     pub fn new() -> Self {
         Self::default()
+    }
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.config = Some(config);
+        self
     }
     #[inline(always)]
     pub fn operator(&mut self, operator: solana_program::pubkey::Pubkey) -> &mut Self {
@@ -124,6 +137,7 @@ impl OperatorSetFeeBuilder {
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
         let accounts = OperatorSetFee {
+            config: self.config.expect("config is not set"),
             operator: self.operator.expect("operator is not set"),
             admin: self.admin.expect("admin is not set"),
         };
@@ -137,6 +151,8 @@ impl OperatorSetFeeBuilder {
 
 /// `operator_set_fee` CPI accounts.
 pub struct OperatorSetFeeCpiAccounts<'a, 'b> {
+    pub config: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
@@ -146,6 +162,8 @@ pub struct OperatorSetFeeCpiAccounts<'a, 'b> {
 pub struct OperatorSetFeeCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -162,6 +180,7 @@ impl<'a, 'b> OperatorSetFeeCpi<'a, 'b> {
     ) -> Self {
         Self {
             __program: program,
+            config: accounts.config,
             operator: accounts.operator,
             admin: accounts.admin,
             __args: args,
@@ -200,7 +219,11 @@ impl<'a, 'b> OperatorSetFeeCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(2 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
+        ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.operator.key,
             false,
@@ -225,8 +248,9 @@ impl<'a, 'b> OperatorSetFeeCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(2 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(3 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.operator.clone());
         account_infos.push(self.admin.clone());
         remaining_accounts
@@ -245,8 +269,9 @@ impl<'a, 'b> OperatorSetFeeCpi<'a, 'b> {
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` operator
-///   1. `[signer]` admin
+///   0. `[]` config
+///   1. `[writable]` operator
+///   2. `[signer]` admin
 #[derive(Clone, Debug)]
 pub struct OperatorSetFeeCpiBuilder<'a, 'b> {
     instruction: Box<OperatorSetFeeCpiBuilderInstruction<'a, 'b>>,
@@ -256,12 +281,21 @@ impl<'a, 'b> OperatorSetFeeCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
         let instruction = Box::new(OperatorSetFeeCpiBuilderInstruction {
             __program: program,
+            config: None,
             operator: None,
             admin: None,
             new_fee_bps: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
+    }
+    #[inline(always)]
+    pub fn config(
+        &mut self,
+        config: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.config = Some(config);
+        self
     }
     #[inline(always)]
     pub fn operator(
@@ -332,6 +366,8 @@ impl<'a, 'b> OperatorSetFeeCpiBuilder<'a, 'b> {
         let instruction = OperatorSetFeeCpi {
             __program: self.instruction.__program,
 
+            config: self.instruction.config.expect("config is not set"),
+
             operator: self.instruction.operator.expect("operator is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
@@ -347,6 +383,7 @@ impl<'a, 'b> OperatorSetFeeCpiBuilder<'a, 'b> {
 #[derive(Clone, Debug)]
 struct OperatorSetFeeCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
+    config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     new_fee_bps: Option<u16>,

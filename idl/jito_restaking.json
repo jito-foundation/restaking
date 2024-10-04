@@ -1212,14 +1212,14 @@
             }
           },
           {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
             "name": "operatorFeeBps",
             "type": {
               "defined": "PodU16"
             }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           },
           {
             "name": "reservedSpace",
@@ -1450,28 +1450,28 @@
     },
     {
       "code": 2008,
+      "name": "OperatorFeeCapExceeded",
+      "msg": "OperatorFeeCapExceeded"
+    },
+    {
+      "code": 2009,
       "name": "NcnOverflow",
       "msg": "NcnOverflow"
     },
     {
-      "code": 2009,
+      "code": 2010,
       "name": "OperatorOverflow",
       "msg": "OperatorOverflow"
     },
     {
-      "code": 2010,
+      "code": 2011,
       "name": "VaultOverflow",
       "msg": "VaultOverflow"
     },
     {
-      "code": 2011,
+      "code": 2012,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
-    },
-    {
-      "code": 2012,
-      "name": "OperatorFeeCapExceeded",
-      "msg": "OperatorFeeCapExceeded"
     }
   ],
   "metadata": {

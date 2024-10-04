@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::{config::Config, operator::Operator, MAX_FEE_BPS};
+    use jito_restaking_sdk::error::RestakingError;
     use solana_program::{instruction::InstructionError, pubkey::Pubkey};
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -234,6 +235,9 @@ mod tests {
             .initialize_operator(&config, &operator, &operator_admin, &operator_base, fee_bps)
             .await;
 
-        assert_ix_error(result, InstructionError::InvalidArgument);
+        assert_ix_error(
+            result,
+            InstructionError::Custom(RestakingError::OperatorFeeCapExceeded as u32),
+        );
     }
 }

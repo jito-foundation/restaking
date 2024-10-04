@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_restaking_core::config::Config;
+    use jito_restaking_sdk::error::RestakingError;
     use solana_sdk::instruction::InstructionError;
 
     use crate::fixtures::{
@@ -75,6 +76,9 @@ mod tests {
             )
             .await;
 
-        assert_ix_error(result, InstructionError::InvalidArgument);
+        assert_ix_error(
+            result,
+            InstructionError::Custom(RestakingError::OperatorFeeCapExceeded as u32),
+        );
     }
 }

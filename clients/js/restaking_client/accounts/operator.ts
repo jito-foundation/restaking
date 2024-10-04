@@ -49,8 +49,8 @@ export type Operator = {
   index: bigint;
   ncnCount: bigint;
   vaultCount: bigint;
-  bump: number;
   operatorFeeBps: number;
+  bump: number;
   reservedSpace: Array<number>;
 };
 
@@ -66,8 +66,8 @@ export type OperatorArgs = {
   index: number | bigint;
   ncnCount: number | bigint;
   vaultCount: number | bigint;
-  bump: number;
   operatorFeeBps: number;
+  bump: number;
   reservedSpace: Array<number>;
 };
 
@@ -84,8 +84,8 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['index', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
-    ['bump', getU8Encoder()],
     ['operatorFeeBps', getU16Encoder()],
+    ['bump', getU8Encoder()],
     ['reservedSpace', getArrayEncoder(getU8Encoder(), { size: 261 })],
   ]);
 }
@@ -103,8 +103,8 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['index', getU64Decoder()],
     ['ncnCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],
-    ['bump', getU8Decoder()],
     ['operatorFeeBps', getU16Decoder()],
+    ['bump', getU8Decoder()],
     ['reservedSpace', getArrayDecoder(getU8Decoder(), { size: 261 })],
   ]);
 }

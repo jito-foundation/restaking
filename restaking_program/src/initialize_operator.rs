@@ -6,6 +6,7 @@ use jito_jsm_core::{
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_restaking_core::{config::Config, operator::Operator, MAX_FEE_BPS};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -38,7 +39,7 @@ pub fn process_initialize_operator(
     // Check that the fee is not greater than the maximum allowed
     if operator_fee_bps > MAX_FEE_BPS {
         msg!("New fee exceeds maximum allowed fee");
-        return Err(ProgramError::InvalidArgument);
+        return Err(RestakingError::OperatorFeeCapExceeded.into());
     }
 
     msg!("Initializing operator at address {}", operator.key);

@@ -42,6 +42,8 @@ pub enum RestakingError {
     OperatorVaultTicketFailedWarmup,
     #[error("OperatorWarmupNcnFailed")]
     OperatorWarmupNcnFailed,
+    #[error("OperatorFeeCapExceeded")]
+    OperatorFeeCapExceeded,
     #[error("NcnOverflow")]
     NcnOverflow,
     #[error("OperatorOverflow")]
@@ -50,8 +52,6 @@ pub enum RestakingError {
     VaultOverflow,
     #[error("SlasherOverflow")]
     SlasherOverflow,
-    #[error("OperatorFeeCapExceeded")]
-    OperatorFeeCapExceeded,
 }
 
 impl<T> DecodeError<T> for RestakingError {

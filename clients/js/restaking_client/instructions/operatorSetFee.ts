@@ -24,6 +24,7 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
+  type ReadonlyAccount,
   type ReadonlySignerAccount,
   type TransactionSigner,
   type WritableAccount,
@@ -39,6 +40,7 @@ export function getOperatorSetFeeDiscriminatorBytes() {
 
 export type OperatorSetFeeInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+  TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
@@ -46,6 +48,9 @@ export type OperatorSetFeeInstruction<
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
+      TAccountConfig extends string
+        ? ReadonlyAccount<TAccountConfig>
+        : TAccountConfig,
       TAccountOperator extends string
         ? WritableAccount<TAccountOperator>
         : TAccountOperator,
@@ -92,21 +97,25 @@ export function getOperatorSetFeeInstructionDataCodec(): Codec<
 }
 
 export type OperatorSetFeeInput<
+  TAccountConfig extends string = string,
   TAccountOperator extends string = string,
   TAccountAdmin extends string = string,
 > = {
+  config: Address<TAccountConfig>;
   operator: Address<TAccountOperator>;
   admin: TransactionSigner<TAccountAdmin>;
   newFeeBps: OperatorSetFeeInstructionDataArgs['newFeeBps'];
 };
 
 export function getOperatorSetFeeInstruction<
+  TAccountConfig extends string,
   TAccountOperator extends string,
   TAccountAdmin extends string,
 >(
-  input: OperatorSetFeeInput<TAccountOperator, TAccountAdmin>
+  input: OperatorSetFeeInput<TAccountConfig, TAccountOperator, TAccountAdmin>
 ): OperatorSetFeeInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+  TAccountConfig,
   TAccountOperator,
   TAccountAdmin
 > {
@@ -115,6 +124,7 @@ export function getOperatorSetFeeInstruction<
 
   // Original accounts.
   const originalAccounts = {
+    config: { value: input.config ?? null, isWritable: false },
     operator: { value: input.operator ?? null, isWritable: true },
     admin: { value: input.admin ?? null, isWritable: false },
   };
@@ -129,6 +139,7 @@ export function getOperatorSetFeeInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
+      getAccountMeta(accounts.config),
       getAccountMeta(accounts.operator),
       getAccountMeta(accounts.admin),
     ],
@@ -138,6 +149,7 @@ export function getOperatorSetFeeInstruction<
     ),
   } as OperatorSetFeeInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+    TAccountConfig,
     TAccountOperator,
     TAccountAdmin
   >;
@@ -151,8 +163,9 @@ export type ParsedOperatorSetFeeInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    operator: TAccountMetas[0];
-    admin: TAccountMetas[1];
+    config: TAccountMetas[0];
+    operator: TAccountMetas[1];
+    admin: TAccountMetas[2];
   };
   data: OperatorSetFeeInstructionData;
 };
@@ -165,7 +178,7 @@ export function parseOperatorSetFeeInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedOperatorSetFeeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 2) {
+  if (instruction.accounts.length < 3) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -178,6 +191,7 @@ export function parseOperatorSetFeeInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
+      config: getNextAccount(),
       operator: getNextAccount(),
       admin: getNextAccount(),
     },
