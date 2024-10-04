@@ -1563,7 +1563,22 @@ mod tests {
         let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
         let result = vault.calculate_vrt_reserve_amount().unwrap();
-        assert_eq!(result, 99);
+
+        // This is correct, because we need to account for the withdrawal fee
+        // The withdrawal fee is 0.1% of the total amount, so 1000 * 0.001 = 1
+        // The cooling down amount is 100, so we need to reserve 101
+        assert_eq!(result, 101);
+    }
+
+    #[test]
+    fn test_calculate_vrt_reserve_amount_with_fee_with_assets_in_different_stages() {
+        let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        vault.set_vrt_enqueued_for_cooldown_amount(50);
+        vault.set_vrt_cooling_down_amount(25);
+        vault.vrt_ready_to_claim_amount = PodU64::from(25);
+        let result = vault.calculate_vrt_reserve_amount().unwrap();
+
+        assert_eq!(result, 101);
     }
 
     #[test]
