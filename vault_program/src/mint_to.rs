@@ -76,6 +76,11 @@ pub fn process_mint(
         return Err(VaultError::InvalidDepositor.into());
     }
 
+    if depositor_token_account.key.eq(vault_token_account.key) {
+        msg!("Depositor token account cannot be the vault token account");
+        return Err(VaultError::InvalidDepositTokenAccount.into());
+    }
+
     let MintSummary {
         vrt_to_depositor,
         vrt_to_fee_wallet,
