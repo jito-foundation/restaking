@@ -1036,7 +1036,7 @@ mod tests {
     use crate::{
         delegation_state::DelegationState,
         vault::{BurnSummary, MintSummary, Vault},
-        MAX_FEE_BPS,
+        MAX_BPS, MAX_FEE_BPS,
     };
 
     fn make_test_vault(
@@ -1907,7 +1907,7 @@ mod tests {
 
     #[test]
     fn test_max_decrease() {
-        let current_fee_bps = u16::MAX;
+        let current_fee_bps = MAX_BPS;
         let new_fee_bps = 0;
         let fee_cap_bps = 3000;
         let fee_bump_bps = 10;
