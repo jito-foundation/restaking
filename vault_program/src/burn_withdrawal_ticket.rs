@@ -81,10 +81,10 @@ pub fn process_burn_withdrawal_ticket(
         vault_staker_withdrawal_ticket.min_amount_out(),
     )?;
 
-    vault.check_min_supported_mint_out(
-        vault_staker_withdrawal_ticket.vrt_amount(),
-        vault_staker_withdrawal_ticket.min_amount_out(),
-    )?;
+    if out_amount < vault_staker_withdrawal_ticket.min_amount_out() {
+        msg!("Min amount out is not met");
+        return Err(VaultError::SlippageError.into());
+    }
 
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
