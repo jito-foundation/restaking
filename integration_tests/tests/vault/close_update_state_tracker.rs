@@ -295,7 +295,7 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_amount_out(100_000, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(100_000, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client

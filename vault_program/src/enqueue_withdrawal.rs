@@ -68,7 +68,7 @@ pub fn process_enqueue_withdrawal(
     }
 
     // Check that min_amount_out is acceptable
-    vault.check_min_amount_out(vrt_amount, min_amount_out)?;
+    vault.check_min_supported_mint_out(vrt_amount, min_amount_out)?;
 
     // The VaultStakerWithdrawalTicket shall be at the canonical PDA
     let (

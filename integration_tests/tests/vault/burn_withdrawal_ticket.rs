@@ -86,7 +86,7 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -175,7 +175,7 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -280,7 +280,7 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -414,7 +414,7 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -538,7 +538,7 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_amount_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client

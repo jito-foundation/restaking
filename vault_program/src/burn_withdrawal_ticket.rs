@@ -80,6 +80,12 @@ pub fn process_burn_withdrawal_ticket(
         vault_staker_withdrawal_ticket.vrt_amount(),
         vault_staker_withdrawal_ticket.min_amount_out(),
     )?;
+
+    vault.check_min_supported_mint_out(
+        vault_staker_withdrawal_ticket.vrt_amount(),
+        vault_staker_withdrawal_ticket.min_amount_out(),
+    )?;
+
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
     let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =

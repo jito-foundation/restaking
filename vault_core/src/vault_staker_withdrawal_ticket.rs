@@ -28,8 +28,9 @@ pub struct VaultStakerWithdrawalTicket {
     /// This is used to ensure the amount redeemed is the same as the amount allocated.
     vrt_amount: PodU64,
 
-    /// The minimum amount of the supported mint that the staker expects to receive
-    /// This is required to be less than the current amount less withdrawal fees
+    /// The minimum supported mint to be withdrawn when this ticket is burned
+    /// This is required to factor in a 0.5% slippage of the current exchange
+    /// as well as account for the vault and program withdrawal fees
     min_amount_out: PodU64,
 
     /// The slot the withdrawal was enqueued
