@@ -6,10 +6,12 @@ use jito_vault_core::{
     config::Config,
     vault::{MintSummary, Vault},
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
     clock::Clock,
     entrypoint::ProgramResult,
+    msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
@@ -68,6 +70,11 @@ pub fn process_mint(
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+
+    if depositor.key.eq(vault_info.key) {
+        msg!("Depositor cannot be the vault");
+        return Err(VaultError::InvalidDepositor.into());
+    }
 
     let MintSummary {
         vrt_to_depositor,
