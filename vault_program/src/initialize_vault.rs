@@ -10,7 +10,7 @@ use jito_jsm_core::{
 use jito_vault_core::{config::Config, vault::Vault, MAX_FEE_BPS};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, rent::Rent,
     system_instruction, sysvar::Sysvar,
 };
@@ -90,6 +90,8 @@ pub fn process_initialize_vault(
         )?;
     }
 
+    let slot = Clock::get()?.slot;
+
     // Initialize vault
     {
         msg!("Initializing vault at address {}", vault.key);
@@ -117,6 +119,7 @@ pub fn process_initialize_vault(
             withdrawal_fee_bps,
             reward_fee_bps,
             vault_bump,
+            slot,
         );
     }
 

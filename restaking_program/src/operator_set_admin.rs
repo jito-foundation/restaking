@@ -19,7 +19,7 @@ pub fn process_set_node_operator_admin(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    Operator::load(program_id, operator, false)?;
+    Operator::load(program_id, operator, true)?;
     load_signer(old_admin, false)?;
     load_signer(new_admin, false)?;
 
