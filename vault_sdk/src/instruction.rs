@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
-use solana_program::program_error::ProgramError;
+use solana_program::{program_error::ProgramError, pubkey::Pubkey};
 
 #[rustfmt::skip]
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
@@ -210,6 +210,13 @@ pub enum VaultInstruction {
     #[account(1, signer, name = "admin")]
     SetProgramFee {
         new_fee_bps: u16
+    },
+
+    /// Sets the program fee wallet for the vault program
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "config_fee_admin")]
+    SetConfigFeeWallet {
+        new_fee_wallet: Pubkey,
     },
 
     /// Withdraws any non-backing tokens from the vault

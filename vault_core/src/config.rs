@@ -46,14 +46,17 @@ pub struct Config {
     /// The amount a fee can increase above the rate of change in basis points
     fee_bump_bps: PodU16,
 
-    /// The bump seed for the PDA
-    pub bump: u8,
-
     /// The program fee in basis points
     pub program_fee_bps: PodU16,
 
     /// The fee wallet
     pub program_fee_wallet: Pubkey,
+
+    /// The admin for the fee account
+    pub fee_admin: Pubkey,
+
+    /// The bump seed for the PDA
+    pub bump: u8,
 
     /// Reserved space
     reserved: [u8; 229],
@@ -85,6 +88,7 @@ impl Config {
             fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
             program_fee_bps: PodU16::from(program_fee_bps),
             program_fee_wallet,
+            fee_admin: admin, // TODO: Change this to a different admin
             bump,
             reserved: [0; 229],
         }

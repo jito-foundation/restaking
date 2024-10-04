@@ -29,6 +29,8 @@ pub enum VaultError {
     VaultFeeAdminInvalid,
     #[error("VaultConfigAdminInvalid")]
     VaultConfigAdminInvalid,
+    #[error("VaultConfigFeeAdminInvalid")]
+    VaultConfigFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
     #[error("VaultFeeChangeTooSoon")]

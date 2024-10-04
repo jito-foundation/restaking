@@ -777,7 +777,11 @@ impl Vault {
         let mut vault_fee_amount = self.calculate_withdraw_fee(amount_in)?;
 
         // Prioritize program fee over vault fee if they exceed the amount in
-        if program_fee_amount + vault_fee_amount > amount_in {
+        if program_fee_amount
+            .checked_add(vault_fee_amount)
+            .ok_or(VaultError::VaultOverflow)?
+            > amount_in
+        {
             vault_fee_amount = amount_in
                 .checked_sub(program_fee_amount)
                 .ok_or(VaultError::VaultUnderflow)?;
