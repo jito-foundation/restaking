@@ -42,6 +42,10 @@ pub fn process_close_vault_update_state_tracker(
     load_signer(payer, true)?;
 
     let current_ncn_epoch = slot.checked_div(config.epoch_length()).unwrap();
+    let last_updated_epoch = vault
+        .last_full_state_update_slot()
+        .checked_div(config.epoch_length())
+        .unwrap();
 
     // The VaultUpdateStateTracker shall be up-to-date before closing
     if ncn_epoch != current_ncn_epoch {
@@ -65,9 +69,15 @@ pub fn process_close_vault_update_state_tracker(
         vault.set_last_full_state_update_slot(slot);
 
         // shift the VRT amounts down by one, accumulating in vrt_ready_to_claim_amount
-        vault.increment_vrt_ready_to_claim_amount(vault.vrt_cooling_down_amount())?;
-        vault.set_vrt_cooling_down_amount(vault.vrt_enqueued_for_cooldown_amount());
-        vault.set_vrt_enqueued_for_cooldown_amount(0);
+        // at max, two epochs are needed to run through the cycle
+        let epoch_diff = current_ncn_epoch
+            .checked_sub(last_updated_epoch)
+            .ok_or(VaultError::VaultUnderflow)?;
+        for _ in 0..epoch_diff.min(2) {
+            vault.increment_vrt_ready_to_claim_amount(vault.vrt_cooling_down_amount())?;
+            vault.set_vrt_cooling_down_amount(vault.vrt_enqueued_for_cooldown_amount());
+            vault.set_vrt_enqueued_for_cooldown_amount(0);
+        }
     }
 
     msg!("Closing VaultUpdateStateTracker");
