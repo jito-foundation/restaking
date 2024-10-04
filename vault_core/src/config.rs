@@ -14,6 +14,8 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey,
 };
 
+use crate::MAX_BPS;
+
 impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
 }
@@ -66,9 +68,9 @@ impl Config {
             epoch_length: PodU64::from(DEFAULT_SLOTS_PER_EPOCH),
             num_vaults: PodU64::from(0),
             // Cannot be higher than 100%
-            deposit_withdrawal_fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS),
-            fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS),
-            fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
+            deposit_withdrawal_fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS.min(MAX_BPS)),
+            fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS.min(MAX_BPS)),
+            fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS.min(MAX_BPS)),
             bump,
             reserved: [0; 263],
         }
@@ -83,15 +85,15 @@ impl Config {
     }
 
     pub fn deposit_withdrawal_fee_cap_bps(&self) -> u16 {
-        self.deposit_withdrawal_fee_cap_bps.into()
+        u16::from(self.deposit_withdrawal_fee_cap_bps).min(MAX_BPS)
     }
 
     pub fn fee_rate_of_change_bps(&self) -> u16 {
-        self.fee_rate_of_change_bps.into()
+        u16::from(self.fee_rate_of_change_bps).min(MAX_BPS)
     }
 
     pub fn fee_bump_bps(&self) -> u16 {
-        self.fee_bump_bps.into()
+        u16::from(self.fee_bump_bps).min(MAX_BPS)
     }
 
     pub fn increment_num_vaults(&mut self) -> Result<(), VaultError> {

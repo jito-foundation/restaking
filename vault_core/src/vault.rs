@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_FEE_BPS};
+use crate::{delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -178,9 +178,9 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(current_slot),
             last_full_state_update_slot: PodU64::from(current_slot),
-            deposit_fee_bps: PodU16::from(deposit_fee_bps),
-            withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
-            reward_fee_bps: PodU16::from(reward_fee_bps),
+            deposit_fee_bps: PodU16::from(deposit_fee_bps.min(MAX_BPS)),
+            withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps.min(MAX_BPS)),
+            reward_fee_bps: PodU16::from(reward_fee_bps.min(MAX_BPS)),
             ncn_count: PodU64::from(0),
             operator_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
@@ -282,15 +282,15 @@ impl Vault {
     }
 
     pub fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps.into()
+        u16::from(self.deposit_fee_bps).min(MAX_BPS)
     }
 
     pub fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps.into()
+        u16::from(self.withdrawal_fee_bps).min(MAX_BPS)
     }
 
     pub fn reward_fee_bps(&self) -> u16 {
-        self.reward_fee_bps.into()
+        u16::from(self.reward_fee_bps).min(MAX_BPS)
     }
 
     pub fn operator_count(&self) -> u64 {
@@ -624,6 +624,17 @@ impl Vault {
         fee_bump_bps: u16,
         fee_rate_of_change_bps: u16,
     ) -> Result<(), VaultError> {
+        if current_fee_bps > MAX_BPS
+            || new_fee_bps > MAX_BPS
+            || fee_cap_bps > MAX_BPS
+            || fee_bump_bps > MAX_BPS
+            || fee_rate_of_change_bps > MAX_BPS
+        {
+            // This is always false
+            msg!("BPS cannot be above {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
         let fee_delta = new_fee_bps.saturating_sub(current_fee_bps);
         let fee_cap_bps = fee_cap_bps.min(MAX_FEE_BPS);
 
