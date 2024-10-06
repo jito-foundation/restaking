@@ -114,32 +114,36 @@ impl VaultUpdateStateTracker {
         (pda, bump, seeds)
     }
 
+    /// Loads the [`VaultUpdateStateTracker`] account
+    ///
+    /// # Returns
+    /// * `Result<(), ProgramError>` - The result of the operation
     pub fn load(
         program_id: &Pubkey,
-        vault_update_delegation_ticket: &AccountInfo,
+        vault_update_state_tracker_info: &AccountInfo,
         vault: &AccountInfo,
         ncn_epoch: u64,
         expect_writable: bool,
     ) -> Result<(), ProgramError> {
-        if vault_update_delegation_ticket.owner.ne(program_id) {
-            msg!("Vault update delegations ticket has an invalid owner");
+        if vault_update_state_tracker_info.owner.ne(program_id) {
+            msg!("Vault update state tracker account has an invalid owner");
             return Err(ProgramError::InvalidAccountOwner);
         }
-        if vault_update_delegation_ticket.data_is_empty() {
-            msg!("Vault update delegations ticket data is empty");
+        if vault_update_state_tracker_info.data_is_empty() {
+            msg!("Vault update state tracker account data is empty");
             return Err(ProgramError::InvalidAccountData);
         }
-        if expect_writable && !vault_update_delegation_ticket.is_writable {
-            msg!("Vault update delegations ticket is not writable");
+        if expect_writable && !vault_update_state_tracker_info.is_writable {
+            msg!("Vault update state tracker account is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
-        if vault_update_delegation_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
-            msg!("Vault update delegations ticket discriminator is invalid");
+        if vault_update_state_tracker_info.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
+            msg!("Vault update state tracker account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
         let expected_pubkey = Self::find_program_address(program_id, vault.key, ncn_epoch).0;
-        if vault_update_delegation_ticket.key.ne(&expected_pubkey) {
-            msg!("Vault update delegations ticket is not at the correct PDA");
+        if vault_update_state_tracker_info.key.ne(&expected_pubkey) {
+            msg!("Vault update state tracker account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
