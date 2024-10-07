@@ -13,10 +13,14 @@ import {
   decodeAccount,
   fetchEncodedAccount,
   fetchEncodedAccounts,
+  fixDecoderSize,
+  fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -33,6 +37,7 @@ import {
   type FetchAccountsConfig,
   type MaybeAccount,
   type MaybeEncodedAccount,
+  type ReadonlyUint8Array,
 } from '@solana/web3.js';
 
 export type Operator = {
@@ -41,9 +46,9 @@ export type Operator = {
   admin: Address;
   ncnAdmin: Address;
   vaultAdmin: Address;
-  withdrawalAdmin: Address;
-  withdrawalFeeWallet: Address;
+  delegateAdmin: Address;
   voter: Address;
+  reserved1: ReadonlyUint8Array;
   index: bigint;
   ncnCount: bigint;
   vaultCount: bigint;
@@ -57,9 +62,9 @@ export type OperatorArgs = {
   admin: Address;
   ncnAdmin: Address;
   vaultAdmin: Address;
-  withdrawalAdmin: Address;
-  withdrawalFeeWallet: Address;
+  delegateAdmin: Address;
   voter: Address;
+  reserved1: ReadonlyUint8Array;
   index: number | bigint;
   ncnCount: number | bigint;
   vaultCount: number | bigint;
@@ -74,9 +79,9 @@ export function getOperatorEncoder(): Encoder<OperatorArgs> {
     ['admin', getAddressEncoder()],
     ['ncnAdmin', getAddressEncoder()],
     ['vaultAdmin', getAddressEncoder()],
-    ['withdrawalAdmin', getAddressEncoder()],
-    ['withdrawalFeeWallet', getAddressEncoder()],
+    ['delegateAdmin', getAddressEncoder()],
     ['voter', getAddressEncoder()],
+    ['reserved1', fixEncoderSize(getBytesEncoder(), 32)],
     ['index', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
@@ -92,9 +97,9 @@ export function getOperatorDecoder(): Decoder<Operator> {
     ['admin', getAddressDecoder()],
     ['ncnAdmin', getAddressDecoder()],
     ['vaultAdmin', getAddressDecoder()],
-    ['withdrawalAdmin', getAddressDecoder()],
-    ['withdrawalFeeWallet', getAddressDecoder()],
+    ['delegateAdmin', getAddressDecoder()],
     ['voter', getAddressDecoder()],
+    ['reserved1', fixDecoderSize(getBytesDecoder(), 32)],
     ['index', getU64Decoder()],
     ['ncnCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],
