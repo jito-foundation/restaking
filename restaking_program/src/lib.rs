@@ -9,15 +9,15 @@ mod initialize_ncn_vault_ticket;
 mod initialize_operator;
 mod initialize_operator_vault_ticket;
 mod ncn_cooldown_operator;
+mod ncn_delegate_token_account;
 mod ncn_set_admin;
 mod ncn_set_secondary_admin;
 mod ncn_warmup_operator;
-mod ncn_withdraw_asset;
 mod operator_cooldown_ncn;
+mod operator_delegate_token_account;
 mod operator_set_admin;
 mod operator_set_secondary_admin;
 mod operator_warmup_ncn;
-mod operator_withdrawal_asset;
 mod warmup_ncn_vault_slasher_ticket;
 mod warmup_ncn_vault_ticket;
 mod warmup_operator_vault_ticket;
@@ -42,15 +42,15 @@ use crate::{
     initialize_ncn_vault_ticket::process_initialize_ncn_vault_ticket,
     initialize_operator::process_initialize_operator,
     initialize_operator_vault_ticket::process_initialize_operator_vault_ticket,
-    ncn_cooldown_operator::process_ncn_cooldown_operator, ncn_set_admin::process_ncn_set_admin,
-    ncn_set_secondary_admin::process_ncn_set_secondary_admin,
+    ncn_cooldown_operator::process_ncn_cooldown_operator,
+    ncn_delegate_token_account::process_ncn_delegate_token_account,
+    ncn_set_admin::process_ncn_set_admin, ncn_set_secondary_admin::process_ncn_set_secondary_admin,
     ncn_warmup_operator::process_ncn_warmup_operator,
-    ncn_withdraw_asset::process_ncn_withdraw_asset,
     operator_cooldown_ncn::process_operator_cooldown_ncn,
+    operator_delegate_token_account::process_operator_delegate_token_account,
     operator_set_admin::process_set_node_operator_admin,
     operator_set_secondary_admin::process_set_operator_secondary_admin,
     operator_warmup_ncn::process_operator_warmup_ncn,
-    operator_withdrawal_asset::process_operator_withdrawal_asset,
     warmup_ncn_vault_slasher_ticket::process_warmup_ncn_vault_slasher_ticket,
     warmup_ncn_vault_ticket::process_warmup_ncn_vault_ticket,
     warmup_operator_vault_ticket::process_warmup_operator_vault_ticket,
@@ -173,13 +173,13 @@ pub fn process_instruction(
             msg!("Instruction: OperatorSetSecondaryAdmin");
             process_set_operator_secondary_admin(program_id, accounts, role)
         }
-        RestakingInstruction::NcnWithdrawalAsset { token_mint, amount } => {
-            msg!("Instruction: NcnWithdrawalAsset");
-            process_ncn_withdraw_asset(program_id, accounts, token_mint, amount)
+        RestakingInstruction::NcnDelegateTokenAccount => {
+            msg!("Instruction: NcnDelegateTokenAccount");
+            process_ncn_delegate_token_account(program_id, accounts)
         }
-        RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount } => {
-            msg!("Instruction: OperatorWithdrawalAsset");
-            process_operator_withdrawal_asset(program_id, accounts, token_mint, amount)
+        RestakingInstruction::OperatorDelegateTokenAccount => {
+            msg!("Instruction: OperatorDelegateTokenAccount");
+            process_operator_delegate_token_account(program_id, accounts)
         }
     }
 }
