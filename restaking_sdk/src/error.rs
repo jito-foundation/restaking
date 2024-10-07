@@ -13,8 +13,8 @@ pub enum RestakingError {
     NcnVaultAdminInvalid,
     #[error("NcnAdminInvalid")]
     NcnAdminInvalid,
-    #[error("NcnWithdrawAdminInvalid")]
-    NcnWithdrawAdminInvalid,
+    #[error("NcnDelegateAdminInvalid")]
+    NcnDelegateAdminInvalid,
     #[error("NcnVaultSlasherTicketFailedCooldown")]
     NcnVaultSlasherTicketFailedCooldown,
     #[error("NcnVaultTicketFailedCooldown")]
@@ -32,8 +32,8 @@ pub enum RestakingError {
     OperatorVaultAdminInvalid,
     #[error("OperatorAdminInvalid")]
     OperatorAdminInvalid,
-    #[error("OperatorWithdrawAdminInvalid")]
-    OperatorWithdrawAdminInvalid,
+    #[error("OperatorDelegateAdminInvalid")]
+    OperatorDelegateAdminInvalid,
     #[error("OperatorCooldownNcnFailed")]
     OperatorCooldownNcnFailed,
     #[error("OperatorVaultTicketFailedCooldown")]

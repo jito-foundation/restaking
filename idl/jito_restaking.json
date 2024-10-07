@@ -777,7 +777,7 @@
       }
     },
     {
-      "name": "NcnWithdrawalAsset",
+      "name": "NcnDelegateTokenAccount",
       "accounts": [
         {
           "name": "ncn",
@@ -785,19 +785,24 @@
           "isSigner": false
         },
         {
-          "name": "ncnTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "receiverTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "admin",
+          "name": "delegateAdmin",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegate",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "tokenProgram",
@@ -805,23 +810,14 @@
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 21
       }
     },
     {
-      "name": "OperatorWithdrawalAsset",
+      "name": "OperatorDelegateTokenAccount",
       "accounts": [
         {
           "name": "operator",
@@ -829,18 +825,23 @@
           "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "delegateAdmin",
           "isMut": false,
           "isSigner": true
         },
         {
-          "name": "operatorTokenAccount",
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "receiverTokenAccount",
-          "isMut": true,
+          "name": "delegate",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -849,16 +850,7 @@
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 22
@@ -939,12 +931,17 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawAdmin",
+            "name": "delegateAdmin",
             "type": "publicKey"
           },
           {
-            "name": "withdrawFeeWallet",
-            "type": "publicKey"
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "index",
@@ -1147,16 +1144,21 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawalAdmin",
-            "type": "publicKey"
-          },
-          {
-            "name": "withdrawalFeeWallet",
+            "name": "delegateAdmin",
             "type": "publicKey"
           },
           {
             "name": "voter",
             "type": "publicKey"
+          },
+          {
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "index",
@@ -1279,10 +1281,7 @@
             "name": "Slasher"
           },
           {
-            "name": "Withdraw"
-          },
-          {
-            "name": "WithdrawWallet"
+            "name": "Delegate"
           }
         ]
       }
@@ -1302,10 +1301,7 @@
             "name": "VoterAdmin"
           },
           {
-            "name": "WithdrawAdmin"
-          },
-          {
-            "name": "WithdrawWallet"
+            "name": "DelegateAdmin"
           }
         ]
       }
@@ -1339,8 +1335,8 @@
     },
     {
       "code": 1005,
-      "name": "NcnWithdrawAdminInvalid",
-      "msg": "NcnWithdrawAdminInvalid"
+      "name": "NcnDelegateAdminInvalid",
+      "msg": "NcnDelegateAdminInvalid"
     },
     {
       "code": 1006,
@@ -1384,8 +1380,8 @@
     },
     {
       "code": 2003,
-      "name": "OperatorWithdrawAdminInvalid",
-      "msg": "OperatorWithdrawAdminInvalid"
+      "name": "OperatorDelegateAdminInvalid",
+      "msg": "OperatorDelegateAdminInvalid"
     },
     {
       "code": 2004,
