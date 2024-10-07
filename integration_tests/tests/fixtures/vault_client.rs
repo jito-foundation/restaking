@@ -41,10 +41,8 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::{
-    instruction::initialize_mint2,
-    state::{Account as SPLTokenAccount, Mint},
-};
+use spl_token::state::Account as SPLTokenAccount;
+use spl_token_2022::extension::ExtensionType;
 
 use crate::fixtures::{TestError, TestResult};
 
@@ -291,7 +289,8 @@ impl VaultProgramClient {
         let token_mint = Keypair::new();
 
         self.airdrop(&vault_admin.pubkey(), 100.0).await?;
-        self.create_token_mint(&token_mint).await?;
+        self.create_token_mint(&token_mint, &spl_token::id())
+            .await?;
 
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
@@ -804,6 +803,35 @@ impl VaultProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn delegate_token_account(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        delegate_asset_admin: &Keypair,
+        token_mint: &Pubkey,
+        token_account: &Pubkey,
+        delegate: &Pubkey,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::delegate_token_account(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                &delegate_asset_admin.pubkey(),
+                token_mint,
+                token_account,
+                delegate,
+                token_program_id,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &delegate_asset_admin],
             blockhash,
         ))
         .await
@@ -1536,29 +1564,64 @@ impl VaultProgramClient {
         Ok(())
     }
 
-    pub async fn create_token_mint(&mut self, mint: &Keypair) -> Result<(), TestError> {
+    pub async fn create_token_mint(
+        &mut self,
+        mint: &Keypair,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         let rent: Rent = self.banks_client.get_sysvar().await?;
+        let ixs = if token_program_id.eq(&spl_token::id()) {
+            vec![
+                create_account(
+                    &self.payer.pubkey(),
+                    &mint.pubkey(),
+                    rent.minimum_balance(spl_token::state::Mint::LEN),
+                    spl_token::state::Mint::LEN as u64,
+                    &token_program_id,
+                ),
+                spl_token::instruction::initialize_mint2(
+                    &token_program_id,
+                    &mint.pubkey(),
+                    &self.payer.pubkey(),
+                    None,
+                    9,
+                )
+                .unwrap(),
+            ]
+        } else {
+            let space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&[
+                ExtensionType::MintCloseAuthority,
+            ])
+            .unwrap();
+            vec![
+                create_account(
+                    &self.payer.pubkey(),
+                    &mint.pubkey(),
+                    rent.minimum_balance(space),
+                    space as u64,
+                    &token_program_id,
+                ),
+                spl_token_2022::instruction::initialize_mint_close_authority(
+                    token_program_id,
+                    &mint.pubkey(),
+                    None,
+                )
+                .unwrap(),
+                spl_token_2022::instruction::initialize_mint(
+                    &token_program_id,
+                    &mint.pubkey(),
+                    &self.payer.pubkey(),
+                    None,
+                    9,
+                )
+                .unwrap(),
+            ]
+        };
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 Transaction::new_signed_with_payer(
-                    &[
-                        create_account(
-                            &self.payer.pubkey(),
-                            &mint.pubkey(),
-                            rent.minimum_balance(Mint::LEN),
-                            Mint::LEN as u64,
-                            &spl_token::id(),
-                        ),
-                        initialize_mint2(
-                            &spl_token::id(),
-                            &mint.pubkey(),
-                            &self.payer.pubkey(),
-                            None,
-                            9,
-                        )
-                        .unwrap(),
-                    ],
+                    &ixs,
                     Some(&self.payer.pubkey()),
                     &[&self.payer, mint],
                     blockhash,
