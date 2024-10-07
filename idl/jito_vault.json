@@ -877,14 +877,45 @@
       }
     },
     {
-      "name": "AdminWithdraw",
-      "accounts": [],
-      "args": [
+      "name": "DelegateTokenAccount",
+      "accounts": [
         {
-          "name": "amount",
-          "type": "u64"
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "delegateAssetAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 18
@@ -1539,7 +1570,7 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawAdmin",
+            "name": "delegateAssetAdmin",
             "type": "publicKey"
           },
           {
@@ -2060,7 +2091,7 @@
             "name": "MintBurnAdmin"
           },
           {
-            "name": "WithdrawAdmin"
+            "name": "DelegateAssetAdmin"
           },
           {
             "name": "FeeAdmin"
@@ -2158,196 +2189,201 @@
     },
     {
       "code": 1008,
+      "name": "VaultDelegateAssetAdminInvalid",
+      "msg": "VaultDelegateAssetAdminInvalid"
+    },
+    {
+      "code": 1009,
       "name": "VaultCapacityExceeded",
       "msg": "VaultCapacityExceeded"
     },
     {
-      "code": 1009,
+      "code": 1010,
       "name": "VaultSlasherAdminInvalid",
       "msg": "VaultSlasherAdminInvalid"
     },
     {
-      "code": 1010,
+      "code": 1011,
       "name": "VaultNcnAdminInvalid",
       "msg": "VaultNcnAdminInvalid"
     },
     {
-      "code": 1011,
+      "code": 1012,
       "name": "VaultFeeAdminInvalid",
       "msg": "VaultFeeAdminInvalid"
     },
     {
-      "code": 1012,
+      "code": 1013,
       "name": "VaultFeeCapExceeded",
       "msg": "VaultFeeCapExceeded"
     },
     {
-      "code": 1013,
+      "code": 1014,
       "name": "VaultFeeChangeTooSoon",
       "msg": "VaultFeeChangeTooSoon"
     },
     {
-      "code": 1014,
+      "code": 1015,
       "name": "VaultFeeBumpTooLarge",
       "msg": "VaultFeeBumpTooLarge"
     },
     {
-      "code": 1015,
+      "code": 1016,
       "name": "VaultUnderflow",
       "msg": "VaultUnderflow"
     },
     {
-      "code": 1016,
+      "code": 1017,
       "name": "VaultUpdateNeeded",
       "msg": "VaultUpdateNeeded"
     },
     {
-      "code": 1017,
+      "code": 1018,
       "name": "VaultIsUpdated",
       "msg": "VaultIsUpdated"
     },
     {
-      "code": 1018,
+      "code": 1019,
       "name": "VaultOperatorDelegationUpdateNeeded",
       "msg": "VaultOperatorDelegationUpdateNeeded"
     },
     {
-      "code": 1019,
+      "code": 1020,
       "name": "VaultOperatorDelegationIsUpdated",
       "msg": "VaultOperatorDelegationIsUpdated"
     },
     {
-      "code": 1020,
+      "code": 1021,
       "name": "VaultUpdateIncorrectIndex",
       "msg": "VaultUpdateIncorrectIndex"
     },
     {
-      "code": 1021,
+      "code": 1022,
       "name": "VaultUpdateStateNotFinishedUpdating",
       "msg": "VaultUpdateStateNotFinishedUpdating"
     },
     {
-      "code": 1022,
+      "code": 1023,
       "name": "VaultSecurityOverflow",
       "msg": "VaultSecurityOverflow"
     },
     {
-      "code": 1023,
+      "code": 1024,
       "name": "VaultSlashIncomplete",
       "msg": "VaultSlashIncomplete"
     },
     {
-      "code": 1024,
+      "code": 1025,
       "name": "VaultSecurityUnderflow",
       "msg": "VaultSecurityUnderflow"
     },
     {
-      "code": 1025,
+      "code": 1026,
       "name": "SlippageError",
       "msg": "SlippageError"
     },
     {
-      "code": 1026,
+      "code": 1027,
       "name": "VaultStakerWithdrawalTicketNotWithdrawable",
       "msg": "VaultStakerWithdrawalTicketNotWithdrawable"
     },
     {
-      "code": 1027,
+      "code": 1028,
       "name": "VaultNcnSlasherTicketFailedCooldown",
       "msg": "VaultNcnSlasherTicketFailedCooldown"
     },
     {
-      "code": 1028,
+      "code": 1029,
       "name": "VaultNcnSlasherTicketFailedWarmup",
       "msg": "VaultNcnSlasherTicketFailedWarmup"
     },
     {
-      "code": 1029,
+      "code": 1030,
       "name": "VaultNcnTicketFailedCooldown",
       "msg": "VaultNcnTicketFailedCooldown"
     },
     {
-      "code": 1030,
+      "code": 1031,
       "name": "VaultNcnTicketFailedWarmup",
       "msg": "VaultNcnTicketFailedWarmup"
     },
     {
-      "code": 1031,
+      "code": 1032,
       "name": "VaultNcnTicketUnslashable",
       "msg": "VaultNcnTicketUnslashable"
     },
     {
-      "code": 1032,
+      "code": 1033,
       "name": "OperatorVaultTicketUnslashable",
       "msg": "OperatorVaultTicketUnslashable"
     },
     {
-      "code": 1033,
+      "code": 1034,
       "name": "NcnOperatorStateUnslashable",
       "msg": "NcnOperatorStateUnslashable"
     },
     {
-      "code": 1034,
+      "code": 1035,
       "name": "VaultNcnSlasherTicketUnslashable",
       "msg": "VaultNcnSlasherTicketUnslashable"
     },
     {
-      "code": 1035,
+      "code": 1036,
       "name": "NcnVaultTicketUnslashable",
       "msg": "NcnVaultTicketUnslashable"
     },
     {
-      "code": 1036,
+      "code": 1037,
       "name": "NcnVaultSlasherTicketUnslashable",
       "msg": "NcnVaultSlasherTicketUnslashable"
     },
     {
-      "code": 1037,
+      "code": 1038,
       "name": "VaultMaxSlashedPerOperatorExceeded",
       "msg": "VaultMaxSlashedPerOperatorExceeded"
     },
     {
-      "code": 1038,
+      "code": 1039,
       "name": "VaultStakerWithdrawalTicketInvalidStaker",
       "msg": "VaultStakerWithdrawalTicketInvalidStaker"
     },
     {
-      "code": 1039,
+      "code": 1040,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
     },
     {
-      "code": 1040,
+      "code": 1041,
       "name": "NcnOverflow",
       "msg": "NcnOverflow"
     },
     {
-      "code": 1041,
+      "code": 1042,
       "name": "OperatorOverflow",
       "msg": "OperatorOverflow"
     },
     {
-      "code": 1042,
+      "code": 1043,
       "name": "VaultDelegationZero",
       "msg": "VaultDelegationZero"
     },
     {
-      "code": 1043,
+      "code": 1044,
       "name": "VaultCooldownZero",
       "msg": "VaultCooldownZero"
     },
     {
-      "code": 1044,
+      "code": 1045,
       "name": "VaultBurnZero",
       "msg": "VaultBurnZero"
     },
     {
-      "code": 1045,
+      "code": 1046,
       "name": "VaultEnqueueWithdrawalAmountZero",
       "msg": "VaultEnqueueWithdrawalAmountZero"
     },
     {
-      "code": 1046,
+      "code": 1047,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
     }

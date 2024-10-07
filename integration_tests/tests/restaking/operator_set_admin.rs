@@ -88,7 +88,6 @@ mod tests {
         assert_eq!(operator.ncn_admin, new_admin.pubkey());
         assert_eq!(operator.vault_admin, new_admin.pubkey());
         assert_eq!(operator.voter, new_admin.pubkey());
-        assert_eq!(operator.withdrawal_admin, new_admin.pubkey());
-        assert_eq!(operator.withdrawal_fee_wallet, new_admin.pubkey());
+        assert_eq!(operator.delegate_admin, new_admin.pubkey());
     }
 }

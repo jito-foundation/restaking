@@ -24,6 +24,5 @@ pub enum NcnAdminRole {
     Operator,
     Vault,
     Slasher,
-    Withdraw,
-    WithdrawWallet,
+    Delegate,
 }
