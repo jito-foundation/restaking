@@ -24,9 +24,9 @@ pub enum JitoRestakingError {
     /// 1004 - NcnAdminInvalid
     #[error("NcnAdminInvalid")]
     NcnAdminInvalid = 0x3EC,
-    /// 1005 - NcnWithdrawAdminInvalid
-    #[error("NcnWithdrawAdminInvalid")]
-    NcnWithdrawAdminInvalid = 0x3ED,
+    /// 1005 - NcnDelegateAdminInvalid
+    #[error("NcnDelegateAdminInvalid")]
+    NcnDelegateAdminInvalid = 0x3ED,
     /// 1006 - NcnVaultSlasherTicketFailedCooldown
     #[error("NcnVaultSlasherTicketFailedCooldown")]
     NcnVaultSlasherTicketFailedCooldown = 0x3EE,
@@ -51,9 +51,9 @@ pub enum JitoRestakingError {
     /// 2002 - OperatorAdminInvalid
     #[error("OperatorAdminInvalid")]
     OperatorAdminInvalid = 0x7D2,
-    /// 2003 - OperatorWithdrawAdminInvalid
-    #[error("OperatorWithdrawAdminInvalid")]
-    OperatorWithdrawAdminInvalid = 0x7D3,
+    /// 2003 - OperatorDelegateAdminInvalid
+    #[error("OperatorDelegateAdminInvalid")]
+    OperatorDelegateAdminInvalid = 0x7D3,
     /// 2004 - OperatorCooldownNcnFailed
     #[error("OperatorCooldownNcnFailed")]
     OperatorCooldownNcnFailed = 0x7D4,

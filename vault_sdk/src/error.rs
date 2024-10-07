@@ -19,6 +19,8 @@ pub enum VaultError {
     VaultMintBurnAdminInvalid,
     #[error("VaultDelegationAdminInvalid")]
     VaultDelegationAdminInvalid,
+    #[error("VaultDelegateAssetAdminInvalid")]
+    VaultDelegateAssetAdminInvalid,
     #[error("VaultCapacityExceeded")]
     VaultCapacityExceeded,
     #[error("VaultSlasherAdminInvalid")]

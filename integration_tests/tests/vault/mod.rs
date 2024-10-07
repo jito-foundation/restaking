@@ -4,6 +4,7 @@ mod close_update_state_tracker;
 mod cooldown_delegation;
 mod crank_vault_update_state_tracker;
 mod create_token_metadata;
+mod delegate_token_account;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
