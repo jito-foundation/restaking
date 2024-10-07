@@ -27,7 +27,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 101)
+            .setup_config_and_vault(99, 100, 101, 0)
             .await
             .unwrap();
 
