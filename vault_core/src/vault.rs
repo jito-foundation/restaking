@@ -55,10 +55,8 @@ pub struct Vault {
     /// The total number of tokens deposited
     tokens_deposited: PodU64,
 
-    /// Maximum capacity of supported mint tokens that can be deposited
-    /// after deposit_capacity is reached, no more deposits/minting of
-    /// VRTs can occur. However, the vault can hold more supported tokens
-    /// than the deposit capacity, but no more VRTs can be minted.
+    /// The maximum deposit capacity allowed in the mint_to instruction.
+    /// The deposited assets in the vault may exceed the deposit_capacity during other operations, such as vault balance updates.
     deposit_capacity: PodU64,
 
     /// Rolled-up stake state for all operators in the set
