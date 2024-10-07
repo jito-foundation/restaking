@@ -94,8 +94,8 @@ pub struct Vault {
     /// The admin responsible for setting the fees
     pub fee_admin: Pubkey,
 
-    /// The admin responsible for withdrawing tokens
-    pub withdraw_admin: Pubkey,
+    /// The delegate_admin responsible for delegating assets
+    pub delegate_asset_admin: Pubkey,
 
     /// Fee wallet account
     pub fee_wallet: Pubkey,
@@ -168,7 +168,7 @@ impl Vault {
             slasher_admin: admin,
             capacity_admin: admin,
             fee_admin: admin,
-            withdraw_admin: admin,
+            delegate_asset_admin: admin,
             fee_wallet: admin,
             mint_burn_admin: Pubkey::default(),
             capacity: PodU64::from(u64::MAX),
@@ -439,6 +439,29 @@ impl Vault {
         Ok(())
     }
 
+    /// Validates the delegate_asset_admin account and ensures it matches the expected delegate_asset_admin.
+    ///
+    /// # Arguments
+    /// * `delegate_asset_admin` - A reference to the [`Pubkey`] representing the delegate_asset_admin Pubkey that is attempting
+    ///   to authorize the operation.
+    ///
+    /// # Returns
+    /// * `Result<(), VaultError>` - Returns `Ok(())` if the delegate_asset_admin Pubkey is valid.
+    ///
+    /// # Errors
+    /// This function will return a [`jito_vault_sdk::error::VaultError::VaultDelegateAssetAdminInvalid`] error in the following case:
+    /// * The `delegate_asset_admin` 's public key does not match the expected delegate_asset_admin public key stored in `self`.
+    pub fn check_delegate_asset_admin(
+        &self,
+        delegate_asset_admin: &Pubkey,
+    ) -> Result<(), VaultError> {
+        if self.delegate_asset_admin.ne(delegate_asset_admin) {
+            msg!("Vault delegate asset admin does not match the provided delegate asset admin");
+            return Err(VaultError::VaultDelegateAssetAdminInvalid);
+        }
+        Ok(())
+    }
+
     /// Replace all secondary admins that were equal to the old admin to the new admin
     pub fn update_secondary_admin(&mut self, old_admin: &Pubkey, new_admin: &Pubkey) {
         if self.delegation_admin.eq(old_admin) {
@@ -476,9 +499,9 @@ impl Vault {
             msg!("Mint burn admin set to {:?}", new_admin);
         }
 
-        if self.withdraw_admin.eq(old_admin) {
-            self.withdraw_admin = *new_admin;
-            msg!("Withdraw admin set to {:?}", new_admin);
+        if self.delegate_asset_admin.eq(old_admin) {
+            self.delegate_asset_admin = *new_admin;
+            msg!("Delegate asset admin set to {:?}", new_admin);
         }
 
         if self.fee_admin.eq(old_admin) {
@@ -1022,7 +1045,7 @@ impl Vault {
         }
 
         // there is some protection built-in to the vault to avoid over delegating assets
-        // this numer is denominated in the supported token units
+        // this number is denominated in the supported token units
         let amount_to_reserve_for_vrts = self.calculate_vrt_reserve_amount()?;
 
         let amount_available_for_delegation = self
@@ -1176,7 +1199,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // slasher_admin
             std::mem::size_of::<Pubkey>() + // capacity_admin
             std::mem::size_of::<Pubkey>() + // fee_admin
-            std::mem::size_of::<Pubkey>() + // withdraw_admin
+            std::mem::size_of::<Pubkey>() + // delegate_asset_admin
             std::mem::size_of::<Pubkey>() + // fee_wallet
             std::mem::size_of::<Pubkey>() + // mint_burn_admin
             std::mem::size_of::<PodU64>() + // vault_index
@@ -1218,7 +1241,7 @@ mod tests {
         assert_eq!(vault.capacity_admin, old_admin);
         assert_eq!(vault.fee_wallet, old_admin);
         assert_eq!(vault.mint_burn_admin, old_admin);
-        assert_eq!(vault.withdraw_admin, old_admin);
+        assert_eq!(vault.delegate_asset_admin, old_admin);
         assert_eq!(vault.fee_admin, old_admin);
 
         let new_admin = Pubkey::new_unique();
@@ -1231,7 +1254,7 @@ mod tests {
         assert_eq!(vault.capacity_admin, new_admin);
         assert_eq!(vault.fee_wallet, new_admin);
         assert_eq!(vault.mint_burn_admin, new_admin);
-        assert_eq!(vault.withdraw_admin, new_admin);
+        assert_eq!(vault.delegate_asset_admin, new_admin);
         assert_eq!(vault.fee_admin, new_admin);
     }
 

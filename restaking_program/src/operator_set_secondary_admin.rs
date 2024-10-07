@@ -40,11 +40,8 @@ pub fn process_set_operator_secondary_admin(
         OperatorAdminRole::VoterAdmin => {
             operator.voter = *new_admin.key;
         }
-        OperatorAdminRole::WithdrawAdmin => {
-            operator.withdrawal_admin = *new_admin.key;
-        }
-        OperatorAdminRole::WithdrawWallet => {
-            operator.withdrawal_fee_wallet = *new_admin.key;
+        OperatorAdminRole::DelegateAdmin => {
+            operator.delegate_admin = *new_admin.key;
         }
     }
 

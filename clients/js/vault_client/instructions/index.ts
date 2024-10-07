@@ -7,7 +7,6 @@
  */
 
 export * from './addDelegation';
-export * from './adminWithdraw';
 export * from './burn';
 export * from './burnWithdrawTicket';
 export * from './changeWithdrawalTicketOwner';
@@ -17,6 +16,7 @@ export * from './cooldownVaultNcnSlasherTicket';
 export * from './cooldownVaultNcnTicket';
 export * from './crankVaultUpdateStateTracker';
 export * from './createTokenMetadata';
+export * from './delegateTokenAccount';
 export * from './enqueueWithdrawal';
 export * from './initializeConfig';
 export * from './initializeVault';
