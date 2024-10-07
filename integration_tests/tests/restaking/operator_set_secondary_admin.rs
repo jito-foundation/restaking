@@ -117,14 +117,14 @@ mod tests {
         }
 
         {
-            // Withdraw Admin
+            // Delegate Admin
             let new_admin = Keypair::new();
             restaking_program_client
                 .operator_set_secondary_admin(
                     &operator_root.operator_pubkey,
                     &operator_root.operator_admin,
                     &new_admin,
-                    OperatorAdminRole::WithdrawAdmin,
+                    OperatorAdminRole::DelegateAdmin,
                 )
                 .await
                 .unwrap();
@@ -134,28 +134,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert_eq!(operator.withdrawal_admin, new_admin.pubkey());
-        }
-
-        {
-            // Withdraw Wallet
-            let new_admin = Keypair::new();
-            restaking_program_client
-                .operator_set_secondary_admin(
-                    &operator_root.operator_pubkey,
-                    &operator_root.operator_admin,
-                    &new_admin,
-                    OperatorAdminRole::WithdrawWallet,
-                )
-                .await
-                .unwrap();
-
-            let operator = restaking_program_client
-                .get_operator(&operator_root.operator_pubkey)
-                .await
-                .unwrap();
-
-            assert_eq!(operator.withdrawal_fee_wallet, new_admin.pubkey());
+            assert_eq!(operator.delegate_admin, new_admin.pubkey());
         }
     }
 }

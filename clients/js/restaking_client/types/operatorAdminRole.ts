@@ -19,8 +19,7 @@ export enum OperatorAdminRole {
   NcnAdmin,
   VaultAdmin,
   VoterAdmin,
-  WithdrawAdmin,
-  WithdrawWallet,
+  DelegateAdmin,
 }
 
 export type OperatorAdminRoleArgs = OperatorAdminRole;
