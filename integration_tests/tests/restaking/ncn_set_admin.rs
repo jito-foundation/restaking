@@ -76,7 +76,6 @@ mod tests {
         assert_eq!(ncn.operator_admin, new_admin.pubkey());
         assert_eq!(ncn.vault_admin, new_admin.pubkey());
         assert_eq!(ncn.slasher_admin, new_admin.pubkey());
-        assert_eq!(ncn.withdraw_admin, new_admin.pubkey());
-        assert_eq!(ncn.withdraw_fee_wallet, new_admin.pubkey());
+        assert_eq!(ncn.delegate_admin, new_admin.pubkey());
     }
 }

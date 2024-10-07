@@ -30,15 +30,15 @@ pub struct Operator {
     /// The vault admin can add and remove support for vaults in the restaking protocol
     pub vault_admin: Pubkey,
 
-    /// The withdrawal admin can withdraw assets from the operator
-    pub withdrawal_admin: Pubkey,
-
-    /// The withdrawal fee wallet where withdrawn funds are sent
-    pub withdrawal_fee_wallet: Pubkey,
+    /// The delegate admin can delegate assets from the operator
+    pub delegate_admin: Pubkey,
 
     /// The voter pubkey can be used as the voter for signing transactions for interacting
     /// with various NCN programs. NCNs can also opt for their own signing infrastructure.
     pub voter: Pubkey,
+
+    /// Reserved space
+    reserved_1: [u8; 32],
 
     /// The operator index
     index: PodU64,
@@ -71,8 +71,8 @@ impl Operator {
             admin,
             ncn_admin: admin,
             vault_admin: admin,
-            withdrawal_admin: admin,
-            withdrawal_fee_wallet: admin,
+            delegate_admin: admin,
+            reserved_1: [0; 32],
             voter: admin,
             index: PodU64::from(index),
             ncn_count: PodU64::from(0),
@@ -112,6 +112,54 @@ impl Operator {
         Ok(())
     }
 
+    /// Validates the admin account and ensures it matches the expected admin.
+    ///
+    /// # Arguments
+    /// * `admin` - A reference to the [`Pubkey`] representing the admin Pubkey that is attempting
+    ///   to authorize the operation.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the admin account is valid.
+    ///
+    /// # Errors
+    /// This function will return a [`jito_restaking_sdk::error::RestakingError::OperatorAdminInvalid`] error in the following case:
+    /// * The `admin_info` account's public key does not match the expected admin public key stored in `self`.
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), RestakingError> {
+        if self.admin.ne(admin) {
+            msg!(
+                "Incorrect admin provided, expected {}, received {}",
+                self.admin,
+                admin
+            );
+            return Err(RestakingError::OperatorAdminInvalid);
+        }
+        Ok(())
+    }
+
+    /// Validates the delegate_admin account and ensures it matches the expected delegate_admin.
+    ///
+    /// # Arguments
+    /// * `delegate_admin_info` - A reference to the [`Pubkey`] representing the delegate_admin Pubkey that is attempting
+    ///   to authorize the operation.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the delegate_admin account is valid.
+    ///
+    /// # Errors
+    /// This function will return a [`jito_restaking_sdk::error::RestakingError::OperatorDelegateAdminInvalid`] error in the following case:
+    /// * The `delegate_admin_info` account's public key does not match the expected admin public key stored in `self`.
+    pub fn check_delegate_admin(&self, delegate_admin: &Pubkey) -> Result<(), RestakingError> {
+        if self.delegate_admin.ne(delegate_admin) {
+            msg!(
+                "Incorrect delegate_admin provided, expected {}, received {}",
+                self.delegate_admin,
+                delegate_admin
+            );
+            return Err(RestakingError::OperatorDelegateAdminInvalid);
+        }
+        Ok(())
+    }
+
     /// Replace all secondary admins that were equal to the old admin to the new admin
     ///
     /// # Arguments
@@ -133,14 +181,9 @@ impl Operator {
             msg!("Voter set to {:?}", new_admin);
         }
 
-        if self.withdrawal_admin.eq(old_admin) {
-            self.withdrawal_admin = *new_admin;
-            msg!("Withdrawal admin set to {:?}", new_admin);
-        }
-
-        if self.withdrawal_fee_wallet.eq(old_admin) {
-            self.withdrawal_fee_wallet = *new_admin;
-            msg!("Withdrawal fee wallet set to {:?}", new_admin);
+        if self.delegate_admin.eq(old_admin) {
+            self.delegate_admin = *new_admin;
+            msg!("Delegate admin set to {:?}", new_admin);
         }
     }
 
@@ -228,8 +271,8 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // admin
             std::mem::size_of::<Pubkey>() + // ncn_admin
             std::mem::size_of::<Pubkey>() + // vault_admin
-            std::mem::size_of::<Pubkey>() + // withdrawal_admin
-            std::mem::size_of::<Pubkey>() + // withdrawal_fee_wallet
+            std::mem::size_of::<Pubkey>() + // delegate_admin
+            32 + // reserved_space
             std::mem::size_of::<Pubkey>() + // voter
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // ncn_count
@@ -247,8 +290,7 @@ mod tests {
         assert_eq!(operator.ncn_admin, old_admin);
         assert_eq!(operator.vault_admin, old_admin);
         assert_eq!(operator.voter, old_admin);
-        assert_eq!(operator.withdrawal_admin, old_admin);
-        assert_eq!(operator.withdrawal_fee_wallet, old_admin);
+        assert_eq!(operator.delegate_admin, old_admin);
 
         let new_admin = Pubkey::new_unique();
         operator.update_secondary_admin(&old_admin, &new_admin);
@@ -256,7 +298,6 @@ mod tests {
         assert_eq!(operator.ncn_admin, new_admin);
         assert_eq!(operator.vault_admin, new_admin);
         assert_eq!(operator.voter, new_admin);
-        assert_eq!(operator.withdrawal_admin, new_admin);
-        assert_eq!(operator.withdrawal_fee_wallet, new_admin);
+        assert_eq!(operator.delegate_admin, new_admin);
     }
 }

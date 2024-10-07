@@ -74,7 +74,7 @@ pub struct Vault {
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
-    pub withdraw_admin: Pubkey,
+    pub delegate_asset_admin: Pubkey,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
