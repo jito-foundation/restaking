@@ -33,24 +33,24 @@ pub enum JitoVaultError {
     /// 1007 - VaultDelegationAdminInvalid
     #[error("VaultDelegationAdminInvalid")]
     VaultDelegationAdminInvalid = 0x3EF,
-    /// 1008 - VaultCapacityExceeded
+    /// 1008 - VaultDelegateAssetAdminInvalid
+    #[error("VaultDelegateAssetAdminInvalid")]
+    VaultDelegateAssetAdminInvalid = 0x3F0,
+    /// 1009 - VaultCapacityExceeded
     #[error("VaultCapacityExceeded")]
-    VaultCapacityExceeded = 0x3F0,
-    /// 1009 - VaultSlasherAdminInvalid
+    VaultCapacityExceeded = 0x3F1,
+    /// 1010 - VaultSlasherAdminInvalid
     #[error("VaultSlasherAdminInvalid")]
-    VaultSlasherAdminInvalid = 0x3F1,
-    /// 1010 - VaultNcnAdminInvalid
+    VaultSlasherAdminInvalid = 0x3F2,
+    /// 1011 - VaultNcnAdminInvalid
     #[error("VaultNcnAdminInvalid")]
-    VaultNcnAdminInvalid = 0x3F2,
-    /// 1011 - VaultFeeAdminInvalid
+    VaultNcnAdminInvalid = 0x3F3,
+    /// 1012 - VaultFeeAdminInvalid
     #[error("VaultFeeAdminInvalid")]
-    VaultFeeAdminInvalid = 0x3F3,
-    /// 1012 - VaultFeeCapExceeded
+    VaultFeeAdminInvalid = 0x3F4,
+    /// 1013 - VaultFeeCapExceeded
     #[error("VaultFeeCapExceeded")]
-    VaultFeeCapExceeded = 0x3F4,
-    /// 1013 - VaultEpochWithdrawCapExceeded
-    #[error("VaultEpochWithdrawCapExceeded")]
-    VaultEpochWithdrawCapExceeded = 0x3F5,
+    VaultFeeCapExceeded = 0x3F5,
     /// 1014 - VaultFeeChangeTooSoon
     #[error("VaultFeeChangeTooSoon")]
     VaultFeeChangeTooSoon = 0x3F6,
@@ -129,33 +129,30 @@ pub enum JitoVaultError {
     /// 1039 - VaultStakerWithdrawalTicketInvalidStaker
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
     VaultStakerWithdrawalTicketInvalidStaker = 0x40F,
-    /// 1040 - VaultWithdrawalLimitExceeded
-    #[error("VaultWithdrawalLimitExceeded")]
-    VaultWithdrawalLimitExceeded = 0x410,
-    /// 1041 - SlasherOverflow
+    /// 1040 - SlasherOverflow
     #[error("SlasherOverflow")]
-    SlasherOverflow = 0x411,
-    /// 1042 - NcnOverflow
+    SlasherOverflow = 0x410,
+    /// 1041 - NcnOverflow
     #[error("NcnOverflow")]
-    NcnOverflow = 0x412,
-    /// 1043 - OperatorOverflow
+    NcnOverflow = 0x411,
+    /// 1042 - OperatorOverflow
     #[error("OperatorOverflow")]
-    OperatorOverflow = 0x413,
-    /// 1044 - VaultDelegationZero
+    OperatorOverflow = 0x412,
+    /// 1043 - VaultDelegationZero
     #[error("VaultDelegationZero")]
-    VaultDelegationZero = 0x414,
-    /// 1045 - VaultCooldownZero
+    VaultDelegationZero = 0x413,
+    /// 1044 - VaultCooldownZero
     #[error("VaultCooldownZero")]
-    VaultCooldownZero = 0x415,
-    /// 1046 - VaultBurnZero
+    VaultCooldownZero = 0x414,
+    /// 1045 - VaultBurnZero
     #[error("VaultBurnZero")]
-    VaultBurnZero = 0x416,
-    /// 1047 - VaultEnqueueWithdrawalAmountZero
+    VaultBurnZero = 0x415,
+    /// 1046 - VaultEnqueueWithdrawalAmountZero
     #[error("VaultEnqueueWithdrawalAmountZero")]
-    VaultEnqueueWithdrawalAmountZero = 0x417,
-    /// 1048 - VaultMintZero
+    VaultEnqueueWithdrawalAmountZero = 0x416,
+    /// 1047 - VaultMintZero
     #[error("VaultMintZero")]
-    VaultMintZero = 0x418,
+    VaultMintZero = 0x417,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

@@ -249,13 +249,13 @@ mod tests {
                     &vault_pubkey,
                     &vault_admin,
                     &new_admin,
-                    VaultAdminRole::WithdrawAdmin,
+                    VaultAdminRole::DelegateAssetAdmin,
                 )
                 .await
                 .unwrap();
 
             let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
-            assert_eq!(vault.withdraw_admin, new_admin);
+            assert_eq!(vault.delegate_asset_admin, new_admin);
         }
     }
 }

@@ -62,7 +62,7 @@ export type Vault = {
   slasherAdmin: Address;
   capacityAdmin: Address;
   feeAdmin: Address;
-  withdrawAdmin: Address;
+  delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
   vaultIndex: bigint;
@@ -100,7 +100,7 @@ export type VaultArgs = {
   slasherAdmin: Address;
   capacityAdmin: Address;
   feeAdmin: Address;
-  withdrawAdmin: Address;
+  delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
   vaultIndex: number | bigint;
@@ -139,7 +139,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['slasherAdmin', getAddressEncoder()],
     ['capacityAdmin', getAddressEncoder()],
     ['feeAdmin', getAddressEncoder()],
-    ['withdrawAdmin', getAddressEncoder()],
+    ['delegateAssetAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
     ['vaultIndex', getU64Encoder()],
@@ -179,7 +179,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['slasherAdmin', getAddressDecoder()],
     ['capacityAdmin', getAddressDecoder()],
     ['feeAdmin', getAddressDecoder()],
-    ['withdrawAdmin', getAddressDecoder()],
+    ['delegateAssetAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
     ['vaultIndex', getU64Decoder()],

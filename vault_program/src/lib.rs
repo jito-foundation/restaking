@@ -8,6 +8,7 @@ mod cooldown_vault_ncn_slasher_ticket;
 mod cooldown_vault_ncn_ticket;
 mod crank_vault_update_state_tracker;
 mod create_token_metadata;
+mod delegate_token_account;
 mod enqueue_withdrawal;
 mod initialize_config;
 mod initialize_vault;
@@ -27,7 +28,6 @@ mod update_token_metadata;
 mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
-mod withdrawal_asset;
 
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
@@ -49,6 +49,7 @@ use crate::{
     cooldown_vault_ncn_ticket::process_cooldown_vault_ncn_ticket,
     crank_vault_update_state_tracker::process_crank_vault_update_state_tracker,
     create_token_metadata::process_create_token_metadata,
+    delegate_token_account::process_delegate_token_account,
     enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
     initialize_vault::process_initialize_vault,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
@@ -63,7 +64,6 @@ use crate::{
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
-    withdrawal_asset::process_withdrawal_asset,
 };
 
 declare_id!(str_to_pubkey(env!("VAULT_PROGRAM_ID")));
@@ -155,9 +155,9 @@ pub fn process_instruction(
             msg!("Instruction: SetDepositCapacity");
             process_set_deposit_capacity(program_id, accounts, amount)
         }
-        VaultInstruction::AdminWithdraw { amount } => {
-            msg!("Instruction: WithdrawalAsset");
-            process_withdrawal_asset(program_id, accounts, amount)
+        VaultInstruction::DelegateTokenAccount => {
+            msg!("Instruction: DelegateTokenAccount");
+            process_delegate_token_account(program_id, accounts)
         }
         VaultInstruction::SetFees {
             deposit_fee_bps,

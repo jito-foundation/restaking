@@ -81,7 +81,7 @@ mod tests {
 
         let random_mint = Keypair::new();
         vault_program_client
-            .create_token_mint(&random_mint)
+            .create_token_mint(&random_mint, &spl_token::id())
             .await
             .unwrap();
 

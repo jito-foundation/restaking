@@ -125,7 +125,7 @@ mod tests {
         assert_eq!(vault.capacity_admin, new_admin.pubkey());
         assert_eq!(vault.fee_wallet, new_admin.pubkey());
         assert_eq!(vault.mint_burn_admin, new_admin.pubkey());
-        assert_eq!(vault.withdraw_admin, new_admin.pubkey());
+        assert_eq!(vault.delegate_asset_admin, new_admin.pubkey());
         assert_eq!(vault.fee_admin, new_admin.pubkey());
     }
 }
