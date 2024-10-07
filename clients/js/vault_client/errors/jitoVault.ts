@@ -109,11 +109,11 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x415; // 1045
 /** VaultEnqueueWithdrawalAmountZero: VaultEnqueueWithdrawalAmountZero */
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x416; // 1046
 /** VaultMintZero: VaultMintZero */
-export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x416; // 1046
+export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x417; // 1047
 /** InvalidDepositor: InvalidDepositor */
-export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x417; // 1047
+export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x418; // 1048
 /** InvalidDepositTokenAccount: InvalidDepositTokenAccount */
-export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x418; // 1048
+export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x419; // 1049
 
 export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSITOR

@@ -2388,12 +2388,12 @@
       "msg": "VaultMintZero"
     },
     {
-      "code": 1047,
+      "code": 1048,
       "name": "InvalidDepositor",
       "msg": "InvalidDepositor"
     },
     {
-      "code": 1048,
+      "code": 1049,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
     }

@@ -152,13 +152,13 @@ pub enum JitoVaultError {
     VaultEnqueueWithdrawalAmountZero = 0x416,
     /// 1047 - VaultMintZero
     #[error("VaultMintZero")]
-    VaultMintZero = 0x416,
-    /// 1047 - InvalidDepositor
+    VaultMintZero = 0x417,
+    /// 1048 - InvalidDepositor
     #[error("InvalidDepositor")]
-    InvalidDepositor = 0x417,
-    /// 1048 - InvalidDepositTokenAccount
+    InvalidDepositor = 0x418,
+    /// 1049 - InvalidDepositTokenAccount
     #[error("InvalidDepositTokenAccount")]
-    InvalidDepositTokenAccount = 0x418,
+    InvalidDepositTokenAccount = 0x419,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {
