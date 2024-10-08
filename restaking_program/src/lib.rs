@@ -16,6 +16,7 @@ mod ncn_warmup_operator;
 mod operator_cooldown_ncn;
 mod operator_delegate_token_account;
 mod operator_set_admin;
+mod operator_set_fee;
 mod operator_set_secondary_admin;
 mod operator_warmup_ncn;
 mod warmup_ncn_vault_slasher_ticket;
@@ -25,6 +26,7 @@ mod warmup_operator_vault_ticket;
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
 use jito_restaking_sdk::instruction::RestakingInstruction;
+use operator_set_fee::process_operator_set_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -93,9 +95,9 @@ pub fn process_instruction(
             msg!("Instruction: InitializeNcn");
             process_initialize_ncn(program_id, accounts)
         }
-        RestakingInstruction::InitializeOperator => {
+        RestakingInstruction::InitializeOperator { operator_fee_bps } => {
             msg!("Instruction: InitializeOperator");
-            process_initialize_operator(program_id, accounts)
+            process_initialize_operator(program_id, accounts, operator_fee_bps)
         }
         RestakingInstruction::InitializeNcnVaultTicket => {
             msg!("Instruction: InitializeNcnVaultTicket");
@@ -172,6 +174,10 @@ pub fn process_instruction(
         RestakingInstruction::OperatorSetSecondaryAdmin(role) => {
             msg!("Instruction: OperatorSetSecondaryAdmin");
             process_set_operator_secondary_admin(program_id, accounts, role)
+        }
+        RestakingInstruction::OperatorSetFee { new_fee_bps } => {
+            msg!("Instruction: OperatorSetFee");
+            process_operator_set_fee(program_id, accounts, new_fee_bps)
         }
         RestakingInstruction::NcnDelegateTokenAccount => {
             msg!("Instruction: NcnDelegateTokenAccount");
