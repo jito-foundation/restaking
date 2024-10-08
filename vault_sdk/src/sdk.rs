@@ -208,6 +208,7 @@ pub fn burn(
     staker_token_account: &Pubkey,
     staker_vrt_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
+    program_fee_vrt_token_account: &Pubkey,
     burn_signer: Option<&Pubkey>,
     amount_in: u64,
     min_amount_out: u64,
@@ -221,6 +222,7 @@ pub fn burn(
         AccountMeta::new(*staker_token_account, false),
         AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new(*program_fee_vrt_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];

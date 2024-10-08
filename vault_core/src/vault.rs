@@ -800,7 +800,7 @@ impl Vault {
         let program_fee_amount = Config::calculate_program_fee(program_fee_bps, amount_in)?;
         let mut vault_fee_amount = self.calculate_withdraw_fee(amount_in)?;
 
-        // Prioritize program fee over vault fee if they exceed the amount in
+        // Prioritize program fee over vault fee if together they exceed the amount in
         if program_fee_amount
             .checked_add(vault_fee_amount)
             .ok_or(VaultError::VaultOverflow)?
@@ -1346,10 +1346,58 @@ mod tests {
             program_fee_amount: _,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(0, 100, 99).unwrap();
+        } = vault.burn_with_fee(0, 100, 98).unwrap();
         assert_eq!(fee_amount, 1);
         assert_eq!(burn_amount, 99);
         assert_eq!(out_amount, 99);
+    }
+
+    #[test]
+    fn test_burn_with_program_fee_ok() {
+        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
+
+        let BurnSummary {
+            vault_fee_amount,
+            program_fee_amount,
+            burn_amount,
+            out_amount,
+        } = vault.burn_with_fee(200, 100, 97).unwrap();
+        assert_eq!(vault_fee_amount, 1);
+        assert_eq!(program_fee_amount, 2);
+        assert_eq!(burn_amount, 97);
+        assert_eq!(out_amount, 97);
+    }
+
+    #[test]
+    fn test_burn_with_program_fee_priority() {
+        let mut vault = make_test_vault(0, 15000, 100, 100, DelegationState::default());
+
+        let BurnSummary {
+            vault_fee_amount,
+            program_fee_amount,
+            burn_amount,
+            out_amount,
+        } = vault.burn_with_fee(9000, 100, 0).unwrap();
+        assert_eq!(program_fee_amount, 90);
+        assert_eq!(vault_fee_amount, 10);
+        assert_eq!(burn_amount, 0);
+        assert_eq!(out_amount, 0);
+    }
+
+    #[test]
+    fn test_burn_with_max_program_fee() {
+        let mut vault = make_test_vault(0, 0, 100, 100, DelegationState::default());
+
+        let BurnSummary {
+            vault_fee_amount,
+            program_fee_amount,
+            burn_amount,
+            out_amount,
+        } = vault.burn_with_fee(10000, 100, 0).unwrap();
+        assert_eq!(vault_fee_amount, 0);
+        assert_eq!(program_fee_amount, 100);
+        assert_eq!(burn_amount, 0);
+        assert_eq!(out_amount, 0);
     }
 
     #[test]
