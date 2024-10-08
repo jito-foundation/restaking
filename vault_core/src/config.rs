@@ -198,6 +198,7 @@ mod tests {
             std::mem::size_of::<PodU16>() + // fee_cap_bps
             std::mem::size_of::<PodU16>() + // fee_rate_of_change_bps
             std::mem::size_of::<PodU16>() + // fee_bump_bps
+            std::mem::size_of::<Pubkey>() + // program_fee_bps
             std::mem::size_of::<u8>() + // bump
             263; // reserved
         assert_eq!(config_size, sum_of_fields);

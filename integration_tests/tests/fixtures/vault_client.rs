@@ -270,7 +270,13 @@ impl VaultProgramClient {
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
         let vault_root = self
-            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps, 9)
+            .do_initialize_vault(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                9,
+                &config_admin.pubkey(),
+            )
             .await?;
 
         Ok((config_admin, vault_root))
@@ -282,6 +288,7 @@ impl VaultProgramClient {
         withdraw_fee_bps: u16,
         reward_fee_bps: u16,
         decimals: u8,
+        program_fee_wallet: &Pubkey,
     ) -> Result<VaultRoot, TestError> {
         let vault_base = Keypair::new();
 
@@ -315,7 +322,11 @@ impl VaultProgramClient {
         // for holding fees
         self.create_ata(&vrt_mint.pubkey(), &vault_admin.pubkey())
             .await?;
+        // for holding program fee
+        self.create_ata(&vrt_mint.pubkey(), &program_fee_wallet)
+            .await?;
 
+        // for holding program fee
         Ok(VaultRoot {
             vault_admin,
             vault_pubkey,

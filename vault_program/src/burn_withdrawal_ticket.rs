@@ -26,7 +26,7 @@ pub fn process_burn_withdrawal_ticket(
     accounts: &[AccountInfo],
     min_amount_out: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(11);
+    let (required_accounts, optional_accounts) = accounts.split_at(12);
     let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, program_fee_token_account, token_program, system_program] =
         required_accounts
     else {
