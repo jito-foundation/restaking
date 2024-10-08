@@ -103,6 +103,8 @@ pub enum VaultError {
     InvalidDepositor,
     #[error("InvalidDepositTokenAccount")]
     InvalidDepositTokenAccount,
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange,
 }
 
 impl<T> DecodeError<T> for VaultError {

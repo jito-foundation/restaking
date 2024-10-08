@@ -7,6 +7,7 @@ use jito_vault_core::{
     vault::{MintSummary, Vault},
 };
 use jito_vault_sdk::error::VaultError;
+use solana_program::program_pack::Pack;
 use solana_program::{
     account_info::AccountInfo,
     clock::Clock,
@@ -71,6 +72,8 @@ pub fn process_mint(
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
 
+    // Currently, this is not possible, since the there are currently no instructions that allow the
+    // vault to deposit tokens into the vault token account. This check is for future proofing.
     if depositor.key.eq(vault_info.key) {
         msg!("Depositor cannot be the vault");
         return Err(VaultError::InvalidDepositor.into());
@@ -80,6 +83,12 @@ pub fn process_mint(
         msg!("Depositor token account cannot be the vault token account");
         return Err(VaultError::InvalidDepositTokenAccount.into());
     }
+
+    let vault_amount_before = {
+        let vault_token_account_data = vault_token_account.data.borrow();
+        let vault_token_account = spl_token::state::Account::unpack(&vault_token_account_data)?;
+        vault_token_account.amount
+    };
 
     let MintSummary {
         vrt_to_depositor,
@@ -103,6 +112,21 @@ pub fn process_mint(
                 depositor.clone(),
             ],
         )?;
+    }
+
+    let vault_amount_after = {
+        let vault_token_account_data = vault_token_account.data.borrow();
+        let vault_token_account = spl_token::state::Account::unpack(&vault_token_account_data)?;
+        vault_token_account.amount
+    };
+
+    if vault_amount_after
+        .checked_sub(vault_amount_before)
+        .ok_or(VaultError::VaultUnderflow)?
+        != amount_in
+    {
+        msg!("Amount in does not match amount out");
+        return Err(VaultError::NoSupportedMintBalanceChange.into());
     }
 
     let signing_seeds = vault.signing_seeds();

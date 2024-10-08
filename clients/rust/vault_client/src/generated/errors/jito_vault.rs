@@ -159,6 +159,9 @@ pub enum JitoVaultError {
     /// 1049 - InvalidDepositTokenAccount
     #[error("InvalidDepositTokenAccount")]
     InvalidDepositTokenAccount = 0x419,
+    /// 1050 - NoSupportedMintBalanceChange
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange = 0x41A,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

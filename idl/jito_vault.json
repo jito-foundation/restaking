@@ -2396,6 +2396,11 @@
       "code": 1049,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
+    },
+    {
+      "code": 1050,
+      "name": "NoSupportedMintBalanceChange",
+      "msg": "NoSupportedMintBalanceChange"
     }
   ],
   "metadata": {
