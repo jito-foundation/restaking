@@ -28,132 +28,105 @@ import {
   type ReadonlySignerAccount,
   type TransactionSigner,
   type WritableAccount,
-  type WritableSignerAccount,
 } from '@solana/web3.js';
 import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const INITIALIZE_OPERATOR_DISCRIMINATOR = 2;
+export const OPERATOR_SET_FEE_DISCRIMINATOR = 21;
 
-export function getInitializeOperatorDiscriminatorBytes() {
-  return getU8Encoder().encode(INITIALIZE_OPERATOR_DISCRIMINATOR);
+export function getOperatorSetFeeDiscriminatorBytes() {
+  return getU8Encoder().encode(OPERATOR_SET_FEE_DISCRIMINATOR);
 }
 
-export type InitializeOperatorInstruction<
+export type OperatorSetFeeInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountOperator extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountBase extends string | IAccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
       TAccountConfig extends string
-        ? WritableAccount<TAccountConfig>
+        ? ReadonlyAccount<TAccountConfig>
         : TAccountConfig,
       TAccountOperator extends string
         ? WritableAccount<TAccountOperator>
         : TAccountOperator,
       TAccountAdmin extends string
-        ? WritableSignerAccount<TAccountAdmin> &
+        ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountBase extends string
-        ? ReadonlySignerAccount<TAccountBase> & IAccountSignerMeta<TAccountBase>
-        : TAccountBase,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
 
-export type InitializeOperatorInstructionData = {
+export type OperatorSetFeeInstructionData = {
   discriminator: number;
-  operatorFeeBps: number;
+  newFeeBps: number;
 };
 
-export type InitializeOperatorInstructionDataArgs = { operatorFeeBps: number };
+export type OperatorSetFeeInstructionDataArgs = { newFeeBps: number };
 
-export function getInitializeOperatorInstructionDataEncoder(): Encoder<InitializeOperatorInstructionDataArgs> {
+export function getOperatorSetFeeInstructionDataEncoder(): Encoder<OperatorSetFeeInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['operatorFeeBps', getU16Encoder()],
+      ['newFeeBps', getU16Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: INITIALIZE_OPERATOR_DISCRIMINATOR })
+    (value) => ({ ...value, discriminator: OPERATOR_SET_FEE_DISCRIMINATOR })
   );
 }
 
-export function getInitializeOperatorInstructionDataDecoder(): Decoder<InitializeOperatorInstructionData> {
+export function getOperatorSetFeeInstructionDataDecoder(): Decoder<OperatorSetFeeInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['operatorFeeBps', getU16Decoder()],
+    ['newFeeBps', getU16Decoder()],
   ]);
 }
 
-export function getInitializeOperatorInstructionDataCodec(): Codec<
-  InitializeOperatorInstructionDataArgs,
-  InitializeOperatorInstructionData
+export function getOperatorSetFeeInstructionDataCodec(): Codec<
+  OperatorSetFeeInstructionDataArgs,
+  OperatorSetFeeInstructionData
 > {
   return combineCodec(
-    getInitializeOperatorInstructionDataEncoder(),
-    getInitializeOperatorInstructionDataDecoder()
+    getOperatorSetFeeInstructionDataEncoder(),
+    getOperatorSetFeeInstructionDataDecoder()
   );
 }
 
-export type InitializeOperatorInput<
+export type OperatorSetFeeInput<
   TAccountConfig extends string = string,
   TAccountOperator extends string = string,
   TAccountAdmin extends string = string,
-  TAccountBase extends string = string,
-  TAccountSystemProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
   operator: Address<TAccountOperator>;
   admin: TransactionSigner<TAccountAdmin>;
-  base: TransactionSigner<TAccountBase>;
-  systemProgram?: Address<TAccountSystemProgram>;
-  operatorFeeBps: InitializeOperatorInstructionDataArgs['operatorFeeBps'];
+  newFeeBps: OperatorSetFeeInstructionDataArgs['newFeeBps'];
 };
 
-export function getInitializeOperatorInstruction<
+export function getOperatorSetFeeInstruction<
   TAccountConfig extends string,
   TAccountOperator extends string,
   TAccountAdmin extends string,
-  TAccountBase extends string,
-  TAccountSystemProgram extends string,
 >(
-  input: InitializeOperatorInput<
-    TAccountConfig,
-    TAccountOperator,
-    TAccountAdmin,
-    TAccountBase,
-    TAccountSystemProgram
-  >
-): InitializeOperatorInstruction<
+  input: OperatorSetFeeInput<TAccountConfig, TAccountOperator, TAccountAdmin>
+): OperatorSetFeeInstruction<
   typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountOperator,
-  TAccountAdmin,
-  TAccountBase,
-  TAccountSystemProgram
+  TAccountAdmin
 > {
   // Program address.
   const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
-    config: { value: input.config ?? null, isWritable: true },
+    config: { value: input.config ?? null, isWritable: false },
     operator: { value: input.operator ?? null, isWritable: true },
-    admin: { value: input.admin ?? null, isWritable: true },
-    base: { value: input.base ?? null, isWritable: false },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    admin: { value: input.admin ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -163,38 +136,28 @@ export function getInitializeOperatorInstruction<
   // Original args.
   const args = { ...input };
 
-  // Resolve default values.
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
-  }
-
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.operator),
       getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.base),
-      getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getInitializeOperatorInstructionDataEncoder().encode(
-      args as InitializeOperatorInstructionDataArgs
+    data: getOperatorSetFeeInstructionDataEncoder().encode(
+      args as OperatorSetFeeInstructionDataArgs
     ),
-  } as InitializeOperatorInstruction<
+  } as OperatorSetFeeInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountOperator,
-    TAccountAdmin,
-    TAccountBase,
-    TAccountSystemProgram
+    TAccountAdmin
   >;
 
   return instruction;
 }
 
-export type ParsedInitializeOperatorInstruction<
+export type ParsedOperatorSetFeeInstruction<
   TProgram extends string = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -203,21 +166,19 @@ export type ParsedInitializeOperatorInstruction<
     config: TAccountMetas[0];
     operator: TAccountMetas[1];
     admin: TAccountMetas[2];
-    base: TAccountMetas[3];
-    systemProgram: TAccountMetas[4];
   };
-  data: InitializeOperatorInstructionData;
+  data: OperatorSetFeeInstructionData;
 };
 
-export function parseInitializeOperatorInstruction<
+export function parseOperatorSetFeeInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedInitializeOperatorInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+): ParsedOperatorSetFeeInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 3) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -233,11 +194,7 @@ export function parseInitializeOperatorInstruction<
       config: getNextAccount(),
       operator: getNextAccount(),
       admin: getNextAccount(),
-      base: getNextAccount(),
-      systemProgram: getNextAccount(),
     },
-    data: getInitializeOperatorInstructionDataDecoder().decode(
-      instruction.data
-    ),
+    data: getOperatorSetFeeInstructionDataDecoder().decode(instruction.data),
   };
 }

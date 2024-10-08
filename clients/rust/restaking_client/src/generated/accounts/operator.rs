@@ -45,9 +45,10 @@ pub struct Operator {
     pub index: u64,
     pub ncn_count: u64,
     pub vault_count: u64,
+    pub operator_fee_bps: u16,
     pub bump: u8,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved_space: [u8; 263],
+    pub reserved_space: [u8; 261],
 }
 
 impl Operator {
