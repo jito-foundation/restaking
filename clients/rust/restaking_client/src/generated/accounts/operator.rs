@@ -35,17 +35,13 @@ pub struct Operator {
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
-    pub withdrawal_admin: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub withdrawal_fee_wallet: Pubkey,
+    pub delegate_admin: Pubkey,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub voter: Pubkey,
+    pub reserved1: [u8; 32],
     pub index: u64,
     pub ncn_count: u64,
     pub vault_count: u64,

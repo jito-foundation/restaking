@@ -14,7 +14,6 @@ import {
 } from '@solana/web3.js';
 import {
   type ParsedAddDelegationInstruction,
-  type ParsedAdminWithdrawInstruction,
   type ParsedBurnInstruction,
   type ParsedBurnWithdrawTicketInstruction,
   type ParsedChangeWithdrawalTicketOwnerInstruction,
@@ -24,6 +23,7 @@ import {
   type ParsedCooldownVaultNcnTicketInstruction,
   type ParsedCrankVaultUpdateStateTrackerInstruction,
   type ParsedCreateTokenMetadataInstruction,
+  type ParsedDelegateTokenAccountInstruction,
   type ParsedEnqueueWithdrawalInstruction,
   type ParsedInitializeConfigInstruction,
   type ParsedInitializeVaultInstruction,
@@ -78,7 +78,7 @@ export enum JitoVaultInstruction {
   BurnWithdrawTicket,
   SetDepositCapacity,
   SetFees,
-  AdminWithdraw,
+  DelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
   AddDelegation,
@@ -151,7 +151,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetFees;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoVaultInstruction.AdminWithdraw;
+    return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
     return JitoVaultInstruction.SetAdmin;
@@ -249,8 +249,8 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.SetFees;
     } & ParsedSetFeesInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.AdminWithdraw;
-    } & ParsedAdminWithdrawInstruction<TProgram>)
+      instructionType: JitoVaultInstruction.DelegateTokenAccount;
+    } & ParsedDelegateTokenAccountInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetAdmin;
     } & ParsedSetAdminInstruction<TProgram>)

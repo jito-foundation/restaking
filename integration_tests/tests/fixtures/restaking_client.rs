@@ -966,6 +966,60 @@ impl RestakingProgramClient {
         .await
     }
 
+    pub async fn ncn_delegate_token_account(
+        &mut self,
+        ncn_pubkey: &Pubkey,
+        delegate_admin: &Keypair,
+        token_mint: &Pubkey,
+        token_account: &Pubkey,
+        delegate: &Pubkey,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::ncn_delegate_token_account(
+                &jito_restaking_program::id(),
+                ncn_pubkey,
+                &delegate_admin.pubkey(),
+                token_mint,
+                token_account,
+                delegate,
+                token_program_id,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &delegate_admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn operator_delegate_token_account(
+        &mut self,
+        operator_pubkey: &Pubkey,
+        delegate_admin: &Keypair,
+        token_mint: &Pubkey,
+        token_account: &Pubkey,
+        delegate: &Pubkey,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::operator_delegate_token_account(
+                &jito_restaking_program::id(),
+                operator_pubkey,
+                &delegate_admin.pubkey(),
+                token_mint,
+                token_account,
+                delegate,
+                token_program_id,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &delegate_admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn process_transaction(&mut self, tx: &Transaction) -> TestResult<()> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
