@@ -852,20 +852,24 @@ impl Vault {
             return Ok(0);
         }
         let vrt_reserve = self
-            .vrt_cooling_down_amount()
-            .checked_add(self.vrt_ready_to_claim_amount())
-            .and_then(|x| x.checked_add(self.vrt_enqueued_for_cooldown_amount()))
+            .vrt_enqueued_for_cooldown_amount()
+            .checked_add(self.vrt_cooling_down_amount())
+            .and_then(|x| x.checked_add(self.vrt_ready_to_claim_amount()))
             .ok_or(VaultError::VaultOverflow)?;
-        let amount_to_reserve_for_vrts = (vrt_reserve as u128)
+
+        let fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
+
+        let vrt_reserve_with_fee = vrt_reserve
+            .checked_add(fee_amount)
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_with_fee as u128)
             .checked_mul(self.tokens_deposited() as u128)
             .and_then(|x| x.checked_div(self.vrt_supply() as u128))
             .and_then(|result| result.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        let fee_amount = self.calculate_withdraw_fee(amount_to_reserve_for_vrts)?;
-        amount_to_reserve_for_vrts
-            .checked_sub(fee_amount)
-            .ok_or(VaultError::VaultUnderflow)
+        Ok(amount_to_reserve_for_vrts)
     }
 
     pub fn calculate_assets_needed_for_withdrawals(
@@ -1582,7 +1586,22 @@ mod tests {
         let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
         let result = vault.calculate_vrt_reserve_amount().unwrap();
-        assert_eq!(result, 99);
+
+        // This is correct, because we need to account for the withdrawal fee
+        // The withdrawal fee is 0.1% of the total amount, so 1000 * 0.001 = 1
+        // The cooling down amount is 100, so we need to reserve 101
+        assert_eq!(result, 101);
+    }
+
+    #[test]
+    fn test_calculate_vrt_reserve_amount_with_fee_with_assets_in_different_stages() {
+        let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        vault.set_vrt_enqueued_for_cooldown_amount(50);
+        vault.set_vrt_cooling_down_amount(25);
+        vault.vrt_ready_to_claim_amount = PodU64::from(25);
+        let result = vault.calculate_vrt_reserve_amount().unwrap();
+
+        assert_eq!(result, 101);
     }
 
     #[test]
