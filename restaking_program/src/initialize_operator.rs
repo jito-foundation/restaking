@@ -5,7 +5,8 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_restaking_core::{config::Config, operator::Operator};
+use jito_restaking_core::{config::Config, operator::Operator, MAX_FEE_BPS};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -13,7 +14,11 @@ use solana_program::{
 
 /// Initializes a node operator and associated accounts.
 /// [`crate::RestakingInstruction::InitializeOperator`]
-pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+pub fn process_initialize_operator(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    operator_fee_bps: u16,
+) -> ProgramResult {
     let [config, operator, admin, base, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -30,6 +35,11 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     if operator.key.ne(&operator_pubkey) {
         msg!("Operator account is not at the correct PDA");
         return Err(ProgramError::InvalidAccountData);
+    }
+    // Check that the fee is not greater than the maximum allowed
+    if operator_fee_bps > MAX_FEE_BPS {
+        msg!("New fee exceeds maximum allowed fee");
+        return Err(RestakingError::OperatorFeeCapExceeded.into());
     }
 
     msg!("Initializing operator at address {}", operator.key);
@@ -49,10 +59,12 @@ pub fn process_initialize_operator(program_id: &Pubkey, accounts: &[AccountInfo]
     let mut operator_data = operator.try_borrow_mut_data()?;
     operator_data[0] = Operator::DISCRIMINATOR;
     let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
+
     *operator = Operator::new(
         *base.key,
         *admin.key,
         config.operator_count(),
+        operator_fee_bps,
         operator_bump,
     );
 

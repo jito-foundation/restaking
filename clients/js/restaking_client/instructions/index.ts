@@ -24,6 +24,7 @@ export * from './ncnWarmupOperator';
 export * from './operatorCooldownNcn';
 export * from './operatorDelegateTokenAccount';
 export * from './operatorSetAdmin';
+export * from './operatorSetFee';
 export * from './operatorSetSecondaryAdmin';
 export * from './operatorWarmupNcn';
 export * from './warmupNcnVaultSlasherTicket';

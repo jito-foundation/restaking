@@ -75,7 +75,7 @@ pub struct OperatorDelegateTokenAccountInstructionData {
 
 impl OperatorDelegateTokenAccountInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 22 }
+        Self { discriminator: 23 }
     }
 }
 
