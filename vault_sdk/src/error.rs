@@ -99,6 +99,8 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
 }
 
 impl<T> DecodeError<T> for VaultError {
