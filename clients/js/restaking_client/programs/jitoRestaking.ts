@@ -31,6 +31,7 @@ import {
   type ParsedOperatorCooldownNcnInstruction,
   type ParsedOperatorDelegateTokenAccountInstruction,
   type ParsedOperatorSetAdminInstruction,
+  type ParsedOperatorSetFeeInstruction,
   type ParsedOperatorSetSecondaryAdminInstruction,
   type ParsedOperatorWarmupNcnInstruction,
   type ParsedWarmupNcnVaultSlasherTicketInstruction,
@@ -73,6 +74,7 @@ export enum JitoRestakingInstruction {
   NcnSetSecondaryAdmin,
   OperatorSetAdmin,
   OperatorSetSecondaryAdmin,
+  OperatorSetFee,
   NcnDelegateTokenAccount,
   OperatorDelegateTokenAccount,
 }
@@ -145,9 +147,12 @@ export function identifyJitoRestakingInstruction(
     return JitoRestakingInstruction.OperatorSetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoRestakingInstruction.NcnDelegateTokenAccount;
+    return JitoRestakingInstruction.OperatorSetFee;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
+    return JitoRestakingInstruction.NcnDelegateTokenAccount;
+  }
+  if (containsBytes(data, getU8Encoder().encode(23), 0)) {
     return JitoRestakingInstruction.OperatorDelegateTokenAccount;
   }
   throw new Error(
@@ -221,6 +226,9 @@ export type ParsedJitoRestakingInstruction<
   | ({
       instructionType: JitoRestakingInstruction.OperatorSetSecondaryAdmin;
     } & ParsedOperatorSetSecondaryAdminInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.OperatorSetFee;
+    } & ParsedOperatorSetFeeInstruction<TProgram>)
   | ({
       instructionType: JitoRestakingInstruction.NcnDelegateTokenAccount;
     } & ParsedNcnDelegateTokenAccountInstruction<TProgram>)
