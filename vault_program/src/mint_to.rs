@@ -7,7 +7,6 @@ use jito_vault_core::{
     vault::{MintSummary, Vault},
 };
 use jito_vault_sdk::error::VaultError;
-use solana_program::program_pack::Pack;
 use solana_program::{
     account_info::AccountInfo,
     clock::Clock,
@@ -15,6 +14,7 @@ use solana_program::{
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
+    program_pack::Pack,
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
