@@ -46,6 +46,9 @@ export type Config = {
   depositWithdrawalFeeCapBps: number;
   feeRateOfChangeBps: number;
   feeBumpBps: number;
+  programFeeBps: number;
+  programFeeWallet: Address;
+  feeAdmin: Address;
   bump: number;
   reserved: Array<number>;
 };
@@ -59,6 +62,9 @@ export type ConfigArgs = {
   depositWithdrawalFeeCapBps: number;
   feeRateOfChangeBps: number;
   feeBumpBps: number;
+  programFeeBps: number;
+  programFeeWallet: Address;
+  feeAdmin: Address;
   bump: number;
   reserved: Array<number>;
 };
@@ -73,8 +79,11 @@ export function getConfigEncoder(): Encoder<ConfigArgs> {
     ['depositWithdrawalFeeCapBps', getU16Encoder()],
     ['feeRateOfChangeBps', getU16Encoder()],
     ['feeBumpBps', getU16Encoder()],
+    ['programFeeBps', getU16Encoder()],
+    ['programFeeWallet', getAddressEncoder()],
+    ['feeAdmin', getAddressEncoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 229 })],
   ]);
 }
 
@@ -88,8 +97,11 @@ export function getConfigDecoder(): Decoder<Config> {
     ['depositWithdrawalFeeCapBps', getU16Decoder()],
     ['feeRateOfChangeBps', getU16Decoder()],
     ['feeBumpBps', getU16Decoder()],
+    ['programFeeBps', getU16Decoder()],
+    ['programFeeWallet', getAddressDecoder()],
+    ['feeAdmin', getAddressDecoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 229 })],
   ]);
 }
 

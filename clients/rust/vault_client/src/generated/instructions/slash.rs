@@ -137,7 +137,7 @@ pub struct SlashInstructionData {
 
 impl SlashInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 29 }
+        Self { discriminator: 31 }
     }
 }
 

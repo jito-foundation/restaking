@@ -10,6 +10,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -22,131 +24,99 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
-  type ReadonlyAccount,
   type ReadonlySignerAccount,
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
-import {
-  getVaultAdminRoleDecoder,
-  getVaultAdminRoleEncoder,
-  type VaultAdminRole,
-  type VaultAdminRoleArgs,
-} from '../types';
 
-export const SET_SECONDARY_ADMIN_DISCRIMINATOR = 22;
+export const SET_PROGRAM_FEE_DISCRIMINATOR = 18;
 
-export function getSetSecondaryAdminDiscriminatorBytes() {
-  return getU8Encoder().encode(SET_SECONDARY_ADMIN_DISCRIMINATOR);
+export function getSetProgramFeeDiscriminatorBytes() {
+  return getU8Encoder().encode(SET_PROGRAM_FEE_DISCRIMINATOR);
 }
 
-export type SetSecondaryAdminInstruction<
+export type SetProgramFeeInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
-  TAccountVault extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountNewAdmin extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
       TAccountConfig extends string
-        ? ReadonlyAccount<TAccountConfig>
+        ? WritableAccount<TAccountConfig>
         : TAccountConfig,
-      TAccountVault extends string
-        ? WritableAccount<TAccountVault>
-        : TAccountVault,
       TAccountAdmin extends string
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountNewAdmin extends string
-        ? ReadonlyAccount<TAccountNewAdmin>
-        : TAccountNewAdmin,
       ...TRemainingAccounts,
     ]
   >;
 
-export type SetSecondaryAdminInstructionData = {
+export type SetProgramFeeInstructionData = {
   discriminator: number;
-  vaultAdminRole: VaultAdminRole;
+  newFeeBps: number;
 };
 
-export type SetSecondaryAdminInstructionDataArgs = {
-  vaultAdminRole: VaultAdminRoleArgs;
-};
+export type SetProgramFeeInstructionDataArgs = { newFeeBps: number };
 
-export function getSetSecondaryAdminInstructionDataEncoder(): Encoder<SetSecondaryAdminInstructionDataArgs> {
+export function getSetProgramFeeInstructionDataEncoder(): Encoder<SetProgramFeeInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['vaultAdminRole', getVaultAdminRoleEncoder()],
+      ['newFeeBps', getU16Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: SET_SECONDARY_ADMIN_DISCRIMINATOR })
+    (value) => ({ ...value, discriminator: SET_PROGRAM_FEE_DISCRIMINATOR })
   );
 }
 
-export function getSetSecondaryAdminInstructionDataDecoder(): Decoder<SetSecondaryAdminInstructionData> {
+export function getSetProgramFeeInstructionDataDecoder(): Decoder<SetProgramFeeInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['vaultAdminRole', getVaultAdminRoleDecoder()],
+    ['newFeeBps', getU16Decoder()],
   ]);
 }
 
-export function getSetSecondaryAdminInstructionDataCodec(): Codec<
-  SetSecondaryAdminInstructionDataArgs,
-  SetSecondaryAdminInstructionData
+export function getSetProgramFeeInstructionDataCodec(): Codec<
+  SetProgramFeeInstructionDataArgs,
+  SetProgramFeeInstructionData
 > {
   return combineCodec(
-    getSetSecondaryAdminInstructionDataEncoder(),
-    getSetSecondaryAdminInstructionDataDecoder()
+    getSetProgramFeeInstructionDataEncoder(),
+    getSetProgramFeeInstructionDataDecoder()
   );
 }
 
-export type SetSecondaryAdminInput<
+export type SetProgramFeeInput<
   TAccountConfig extends string = string,
-  TAccountVault extends string = string,
   TAccountAdmin extends string = string,
-  TAccountNewAdmin extends string = string,
 > = {
   config: Address<TAccountConfig>;
-  vault: Address<TAccountVault>;
   admin: TransactionSigner<TAccountAdmin>;
-  newAdmin: Address<TAccountNewAdmin>;
-  vaultAdminRole: SetSecondaryAdminInstructionDataArgs['vaultAdminRole'];
+  newFeeBps: SetProgramFeeInstructionDataArgs['newFeeBps'];
 };
 
-export function getSetSecondaryAdminInstruction<
+export function getSetProgramFeeInstruction<
   TAccountConfig extends string,
-  TAccountVault extends string,
   TAccountAdmin extends string,
-  TAccountNewAdmin extends string,
 >(
-  input: SetSecondaryAdminInput<
-    TAccountConfig,
-    TAccountVault,
-    TAccountAdmin,
-    TAccountNewAdmin
-  >
-): SetSecondaryAdminInstruction<
+  input: SetProgramFeeInput<TAccountConfig, TAccountAdmin>
+): SetProgramFeeInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
-  TAccountVault,
-  TAccountAdmin,
-  TAccountNewAdmin
+  TAccountAdmin
 > {
   // Program address.
   const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
-    config: { value: input.config ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: true },
+    config: { value: input.config ?? null, isWritable: true },
     admin: { value: input.admin ?? null, isWritable: false },
-    newAdmin: { value: input.newAdmin ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -158,50 +128,41 @@ export function getSetSecondaryAdminInstruction<
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
-    accounts: [
-      getAccountMeta(accounts.config),
-      getAccountMeta(accounts.vault),
-      getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.newAdmin),
-    ],
+    accounts: [getAccountMeta(accounts.config), getAccountMeta(accounts.admin)],
     programAddress,
-    data: getSetSecondaryAdminInstructionDataEncoder().encode(
-      args as SetSecondaryAdminInstructionDataArgs
+    data: getSetProgramFeeInstructionDataEncoder().encode(
+      args as SetProgramFeeInstructionDataArgs
     ),
-  } as SetSecondaryAdminInstruction<
+  } as SetProgramFeeInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
-    TAccountVault,
-    TAccountAdmin,
-    TAccountNewAdmin
+    TAccountAdmin
   >;
 
   return instruction;
 }
 
-export type ParsedSetSecondaryAdminInstruction<
+export type ParsedSetProgramFeeInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
     config: TAccountMetas[0];
-    vault: TAccountMetas[1];
-    admin: TAccountMetas[2];
-    newAdmin: TAccountMetas[3];
+    admin: TAccountMetas[1];
   };
-  data: SetSecondaryAdminInstructionData;
+  data: SetProgramFeeInstructionData;
 };
 
-export function parseSetSecondaryAdminInstruction<
+export function parseSetProgramFeeInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedSetSecondaryAdminInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+): ParsedSetProgramFeeInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 2) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -215,10 +176,8 @@ export function parseSetSecondaryAdminInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       config: getNextAccount(),
-      vault: getNextAccount(),
       admin: getNextAccount(),
-      newAdmin: getNextAccount(),
     },
-    data: getSetSecondaryAdminInstructionDataDecoder().decode(instruction.data),
+    data: getSetProgramFeeInstructionDataDecoder().decode(instruction.data),
   };
 }
