@@ -12,5 +12,6 @@ mod ncn_warmup_operator;
 mod operator_cooldown_ncn;
 mod operator_delegate_token_account;
 mod operator_set_admin;
+mod operator_set_fee;
 mod operator_set_secondary_admin;
 mod operator_warmup_ncn;

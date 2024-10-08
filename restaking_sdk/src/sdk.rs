@@ -255,6 +255,7 @@ pub fn initialize_operator(
     operator: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
+    operator_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -266,7 +267,7 @@ pub fn initialize_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeOperator
+        data: RestakingInstruction::InitializeOperator { operator_fee_bps }
             .try_to_vec()
             .unwrap(),
     }
@@ -306,6 +307,27 @@ pub fn operator_set_secondary_admin(
         program_id: *program_id,
         accounts,
         data: RestakingInstruction::OperatorSetSecondaryAdmin(operator_admin_role)
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn operator_set_fee(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    operator: &Pubkey,
+    admin: &Pubkey,
+    new_fee_bps: u16,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*operator, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::OperatorSetFee { new_fee_bps }
             .try_to_vec()
             .unwrap(),
     }

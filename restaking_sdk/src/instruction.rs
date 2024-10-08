@@ -24,7 +24,7 @@ pub enum RestakingInstruction {
     #[account(2, writable, signer, name = "admin")]
     #[account(3, signer, name = "base")]
     #[account(4, name = "system_program")]
-    InitializeOperator,
+    InitializeOperator { operator_fee_bps: u16 },
 
     /// The NCN adds support for a vault slasher
     ///
@@ -169,6 +169,12 @@ pub enum RestakingInstruction {
     #[account(1, signer, name = "admin")]
     #[account(2, name = "new_admin")]
     OperatorSetSecondaryAdmin(OperatorAdminRole),
+
+    /// Sets the fee for a node operator
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "operator")]
+    #[account(2, signer, name = "admin")]
+    OperatorSetFee { new_fee_bps: u16 },
 
     #[account(0, name = "ncn")]
     #[account(1, signer, name = "delegate_admin")]

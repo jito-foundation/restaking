@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use jito_restaking_core::{config::Config, operator::Operator};
+    use jito_restaking_core::{config::Config, operator::Operator, MAX_FEE_BPS};
+    use jito_restaking_sdk::error::RestakingError;
     use solana_program::{instruction::InstructionError, pubkey::Pubkey};
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -63,6 +64,7 @@ mod tests {
                 &incorrect_operator_pubkey,
                 &operator_admin,
                 &operator_base,
+                0,
             )
             .await;
 
@@ -98,6 +100,7 @@ mod tests {
                 &operator_pubkey,
                 &operator_admin,
                 &operator_base,
+                0,
             )
             .await
             .unwrap();
@@ -112,6 +115,7 @@ mod tests {
                 &operator_pubkey,
                 &operator_admin,
                 &operator_base,
+                0,
             )
             .await;
 
@@ -166,5 +170,74 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_config.operator_count(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_initialize_operator_with_fee_ok() {
+        let fixture = TestBuilder::new().await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
+
+        let config = Config::find_program_address(&jito_restaking_program::id()).0;
+        let operator_admin = Keypair::new();
+        let operator_base = Keypair::new();
+        let operator =
+            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
+                .0;
+        let fee_bps = 100; // 1%
+
+        restaking_program_client
+            ._airdrop(&operator_admin.pubkey(), 1.0)
+            .await
+            .unwrap();
+
+        restaking_program_client
+            .initialize_operator(&config, &operator, &operator_admin, &operator_base, fee_bps)
+            .await
+            .unwrap();
+
+        let operator_account = restaking_program_client
+            .get_operator(&operator)
+            .await
+            .unwrap();
+
+        assert_eq!(operator_account.operator_fee_bps, fee_bps.into());
+    }
+
+    #[tokio::test]
+    async fn test_initialize_operator_with_fee_exceeds_max_fails() {
+        let fixture = TestBuilder::new().await;
+        let mut restaking_program_client = fixture.restaking_program_client();
+
+        restaking_program_client
+            .do_initialize_config()
+            .await
+            .unwrap();
+
+        let config = Config::find_program_address(&jito_restaking_program::id()).0;
+        let operator_admin = Keypair::new();
+        let operator_base = Keypair::new();
+        let operator =
+            Operator::find_program_address(&jito_restaking_program::id(), &operator_base.pubkey())
+                .0;
+        let fee_bps = MAX_FEE_BPS + 1; // Exceeds maximum
+
+        restaking_program_client
+            ._airdrop(&operator_admin.pubkey(), 1.0)
+            .await
+            .unwrap();
+
+        let result = restaking_program_client
+            .initialize_operator(&config, &operator, &operator_admin, &operator_base, fee_bps)
+            .await;
+
+        assert_ix_error(
+            result,
+            InstructionError::Custom(RestakingError::OperatorFeeCapExceeded as u32),
+        );
     }
 }

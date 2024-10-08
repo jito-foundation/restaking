@@ -74,7 +74,7 @@ pub struct NcnDelegateTokenAccountInstructionData {
 
 impl NcnDelegateTokenAccountInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 21 }
+        Self { discriminator: 22 }
     }
 }
 
