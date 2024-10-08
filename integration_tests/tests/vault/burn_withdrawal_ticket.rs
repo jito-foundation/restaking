@@ -579,9 +579,9 @@ mod tests {
             MINT_AMOUNT
         );
 
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
-            .unwrap();
+        // let min_amount_out = vault
+        //     .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+        //     .unwrap();
 
         // let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
         //     .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
