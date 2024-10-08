@@ -1,9 +1,8 @@
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
 use jito_restaking_core::operator::Operator;
-use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
     pubkey::Pubkey,
 };
 
@@ -26,10 +25,7 @@ pub fn process_set_node_operator_admin(
     // The Operator admin shall be the signer of the transaction
     let mut operator_data = operator.data.borrow_mut();
     let operator = Operator::try_from_slice_unchecked_mut(&mut operator_data)?;
-    if operator.admin.ne(old_admin.key) {
-        msg!("Invalid operator admin");
-        return Err(RestakingError::OperatorAdminInvalid.into());
-    }
+    operator.check_admin(old_admin.key)?;
 
     operator.admin = *new_admin.key;
 

@@ -122,7 +122,7 @@ mod tests {
             .do_slash(
                 &vault_root,
                 &ncn_root.ncn_pubkey,
-                &slasher,
+                slasher,
                 &operator_root.operator_pubkey,
                 MAX_SLASH_AMOUNT,
             )

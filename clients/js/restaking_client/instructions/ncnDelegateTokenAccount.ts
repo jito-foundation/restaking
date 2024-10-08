@@ -30,7 +30,7 @@ import {
 import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 21;
+export const NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 22;
 
 export function getNcnDelegateTokenAccountDiscriminatorBytes() {
   return getU8Encoder().encode(NCN_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR);
