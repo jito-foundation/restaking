@@ -783,6 +783,25 @@ impl Vault {
         })
     }
 
+    pub fn calculate_burn_summary(&self, amount_in: u64) -> Result<BurnSummary, VaultError> {
+        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let amount_to_burn = amount_in
+            .checked_sub(fee_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        let amount_out = (amount_to_burn as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
+
+        Ok(BurnSummary {
+            fee_amount,
+            burn_amount: amount_to_burn,
+            out_amount: amount_out,
+        })
+    }
+
     pub fn burn_with_fee(
         &mut self,
         amount_in: u64,
@@ -796,16 +815,9 @@ impl Vault {
             return Err(VaultError::VaultInsufficientFunds);
         }
 
-        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
-        let amount_to_burn = amount_in
-            .checked_sub(fee_amount)
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        let amount_out = (amount_to_burn as u128)
-            .checked_mul(self.tokens_deposited() as u128)
-            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .and_then(|x| x.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)?;
+        let burn_summary = self.calculate_burn_summary(amount_in)?;
+        let amount_out = burn_summary.out_amount;
+        let amount_to_burn = burn_summary.burn_amount;
 
         let max_withdrawable = self
             .tokens_deposited()
@@ -840,11 +852,7 @@ impl Vault {
             .ok_or(VaultError::VaultUnderflow)?;
         self.tokens_deposited = PodU64::from(tokens_deposited);
 
-        Ok(BurnSummary {
-            fee_amount,
-            burn_amount: amount_to_burn,
-            out_amount: amount_out,
-        })
+        Ok(burn_summary)
     }
 
     /// Checks to see if the minimum amount out is acceptable
@@ -863,16 +871,8 @@ impl Vault {
             return Err(VaultError::VaultInsufficientFunds);
         }
 
-        let fee_amount = self.calculate_withdraw_fee(vrt_amount_in)?;
-        let amount_to_burn = vrt_amount_in
-            .checked_sub(fee_amount)
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        let amount_out: u64 = (amount_to_burn as u128)
-            .checked_mul(self.tokens_deposited() as u128)
-            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .and_then(|x| x.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)?;
+        let burn_summary = self.calculate_burn_summary(vrt_amount_in)?;
+        let amount_out = burn_summary.out_amount;
 
         let amount_out_delta = amount_out.saturating_sub(min_supported_mint_out);
         let calculated_slippage = amount_out_delta
@@ -889,6 +889,7 @@ impl Vault {
             return Err(VaultError::SlippageError);
         }
 
+        // This is a sanity check calculation to ensure that the calculated min amount out is correct
         let calculated_min_amount_out =
             self.calculate_min_supported_mint_out(vrt_amount_in, calculated_slippage as u16)?;
 
@@ -925,16 +926,8 @@ impl Vault {
             return Err(VaultError::SlippageError);
         }
 
-        let fee_amount = self.calculate_withdraw_fee(vrt_amount_in)?;
-        let amount_to_burn = vrt_amount_in
-            .checked_sub(fee_amount)
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        let amount_out: u64 = (amount_to_burn as u128)
-            .checked_mul(self.tokens_deposited() as u128)
-            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .and_then(|x| x.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)?;
+        let burn_summary = self.calculate_burn_summary(vrt_amount_in)?;
+        let amount_out = burn_summary.out_amount;
 
         let slippage = MAX_BPS
             .checked_sub(max_slippage_bps)

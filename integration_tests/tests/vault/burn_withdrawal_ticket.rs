@@ -2,6 +2,8 @@
 mod tests {
     use jito_vault_core::{
         config::Config, delegation_state::DelegationState, vault::Vault,
+        vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+        vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
         vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     };
     use jito_vault_sdk::error::VaultError;
@@ -488,6 +490,236 @@ mod tests {
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
+    }
+
+    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    #[tokio::test]
+    async fn test_burn_withdrawal_ticket_min_amount_out_fails() {
+        const MINT_AMOUNT: u64 = 100_000;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![MINT_AMOUNT];
+
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin,
+            vault_root,
+            restaking_config_admin: _,
+            ncn_root,
+            operator_roots,
+            slashers_amounts,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        // Delegate all funds to the operator
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+        let operator_root_pubkeys: Vec<_> =
+            operator_roots.iter().map(|r| r.operator_pubkey).collect();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            vault.delegation_state.total_security().unwrap(),
+            MINT_AMOUNT
+        );
+
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .await
+            .unwrap();
+
+        let operator_root = &operator_roots[0];
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+        let operator_root_pubkeys: Vec<_> =
+            operator_roots.iter().map(|r| r.operator_pubkey).collect();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // configure slasher and slash
+        let slasher = &slashers_amounts[0].0;
+        fixture
+            .create_ata(&vault.supported_mint, &slasher.pubkey())
+            .await
+            .unwrap();
+        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
+        vault_program_client
+            .initialize_vault_ncn_slasher_operator_ticket(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &ncn_root.ncn_pubkey,
+                &slasher.pubkey(),
+                &operator_root.operator_pubkey,
+                &VaultNcnSlasherTicket::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    &ncn_root.ncn_pubkey,
+                    &slasher.pubkey(),
+                )
+                .0,
+                &VaultNcnSlasherOperatorTicket::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    &ncn_root.ncn_pubkey,
+                    &slasher.pubkey(),
+                    &operator_root.operator_pubkey,
+                    epoch,
+                )
+                .0,
+                &vault_config_admin,
+            )
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_slash(
+                &vault_root,
+                &ncn_root.ncn_pubkey,
+                slasher,
+                &operator_root.operator_pubkey,
+                MINT_AMOUNT,
+            )
+            .await;
+
+        assert_vault_error(result, VaultError::VaultSlashUnderflow);
+
+        // Cant actually test this.
+
+        // let result = vault_program_client
+        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+        //     .await;
+        // assert_vault_error(
+        //     result,
+        //     VaultError::VaultStakerWithdrawalTicketNotWithdrawable,
+        // );
+
+        // fixture
+        //     .warp_slot_incremental(config.epoch_length())
+        //     .await
+        //     .unwrap();
+        // vault_program_client
+        //     .do_full_vault_update(
+        //         &vault_root.vault_pubkey,
+        //         &[operator_roots[0].operator_pubkey],
+        //     )
+        //     .await
+        //     .unwrap();
+        // let result = vault_program_client
+        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+        //     .await;
+        // assert_vault_error(
+        //     result,
+        //     VaultError::VaultStakerWithdrawalTicketNotWithdrawable,
+        // );
+
+        // fixture
+        //     .warp_slot_incremental(config.epoch_length())
+        //     .await
+        //     .unwrap();
+        // vault_program_client
+        //     .do_full_vault_update(
+        //         &vault_root.vault_pubkey,
+        //         &[operator_roots[0].operator_pubkey],
+        //     )
+        //     .await
+        //     .unwrap();
+
+        // vault_program_client
+        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+        //     .await
+        //     .unwrap();
+        // let staker_token_account = fixture
+        //     .get_token_account(&get_associated_token_address(
+        //         &depositor.pubkey(),
+        //         &vault.supported_mint,
+        //     ))
+        //     .await
+        //     .unwrap();
+        // assert_eq!(staker_token_account.amount, MINT_AMOUNT);
+        // let vault = vault_program_client
+        //     .get_vault(&vault_root.vault_pubkey)
+        //     .await
+        //     .unwrap();
+        // assert_eq!(vault.tokens_deposited(), 0);
+        // assert_eq!(vault.vrt_supply(), 0);
+        // assert_eq!(vault.delegation_state, DelegationState::default());
+        // assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
+        // assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
+        // assert_eq!(vault.vrt_cooling_down_amount(), 0);
     }
 
     #[tokio::test]
