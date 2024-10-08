@@ -24,15 +24,16 @@ import {
   type ParsedInitializeOperatorInstruction,
   type ParsedInitializeOperatorVaultTicketInstruction,
   type ParsedNcnCooldownOperatorInstruction,
+  type ParsedNcnDelegateTokenAccountInstruction,
   type ParsedNcnSetAdminInstruction,
   type ParsedNcnSetSecondaryAdminInstruction,
   type ParsedNcnWarmupOperatorInstruction,
-  type ParsedNcnWithdrawalAssetInstruction,
   type ParsedOperatorCooldownNcnInstruction,
+  type ParsedOperatorDelegateTokenAccountInstruction,
   type ParsedOperatorSetAdminInstruction,
+  type ParsedOperatorSetFeeInstruction,
   type ParsedOperatorSetSecondaryAdminInstruction,
   type ParsedOperatorWarmupNcnInstruction,
-  type ParsedOperatorWithdrawalAssetInstruction,
   type ParsedWarmupNcnVaultSlasherTicketInstruction,
   type ParsedWarmupNcnVaultTicketInstruction,
   type ParsedWarmupOperatorVaultTicketInstruction,
@@ -73,8 +74,9 @@ export enum JitoRestakingInstruction {
   NcnSetSecondaryAdmin,
   OperatorSetAdmin,
   OperatorSetSecondaryAdmin,
-  NcnWithdrawalAsset,
-  OperatorWithdrawalAsset,
+  OperatorSetFee,
+  NcnDelegateTokenAccount,
+  OperatorDelegateTokenAccount,
 }
 
 export function identifyJitoRestakingInstruction(
@@ -145,10 +147,13 @@ export function identifyJitoRestakingInstruction(
     return JitoRestakingInstruction.OperatorSetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoRestakingInstruction.NcnWithdrawalAsset;
+    return JitoRestakingInstruction.OperatorSetFee;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoRestakingInstruction.OperatorWithdrawalAsset;
+    return JitoRestakingInstruction.NcnDelegateTokenAccount;
+  }
+  if (containsBytes(data, getU8Encoder().encode(23), 0)) {
+    return JitoRestakingInstruction.OperatorDelegateTokenAccount;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoRestaking instruction.'
@@ -222,8 +227,11 @@ export type ParsedJitoRestakingInstruction<
       instructionType: JitoRestakingInstruction.OperatorSetSecondaryAdmin;
     } & ParsedOperatorSetSecondaryAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingInstruction.NcnWithdrawalAsset;
-    } & ParsedNcnWithdrawalAssetInstruction<TProgram>)
+      instructionType: JitoRestakingInstruction.OperatorSetFee;
+    } & ParsedOperatorSetFeeInstruction<TProgram>)
   | ({
-      instructionType: JitoRestakingInstruction.OperatorWithdrawalAsset;
-    } & ParsedOperatorWithdrawalAssetInstruction<TProgram>);
+      instructionType: JitoRestakingInstruction.NcnDelegateTokenAccount;
+    } & ParsedNcnDelegateTokenAccountInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.OperatorDelegateTokenAccount;
+    } & ParsedOperatorDelegateTokenAccountInstruction<TProgram>);

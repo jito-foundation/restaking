@@ -20,12 +20,16 @@ pub struct InitializeOperator {
 }
 
 impl InitializeOperator {
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+    pub fn instruction(
+        &self,
+        args: InitializeOperatorInstructionArgs,
+    ) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: InitializeOperatorInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
@@ -48,9 +52,11 @@ impl InitializeOperator {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = InitializeOperatorInstructionData::new()
+        let mut data = InitializeOperatorInstructionData::new()
             .try_to_vec()
             .unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -77,6 +83,12 @@ impl Default for InitializeOperatorInstructionData {
     }
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InitializeOperatorInstructionArgs {
+    pub operator_fee_bps: u16,
+}
+
 /// Instruction builder for `InitializeOperator`.
 ///
 /// ### Accounts:
@@ -93,6 +105,7 @@ pub struct InitializeOperatorBuilder {
     admin: Option<solana_program::pubkey::Pubkey>,
     base: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
+    operator_fee_bps: Option<u16>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -126,6 +139,11 @@ impl InitializeOperatorBuilder {
         self.system_program = Some(system_program);
         self
     }
+    #[inline(always)]
+    pub fn operator_fee_bps(&mut self, operator_fee_bps: u16) -> &mut Self {
+        self.operator_fee_bps = Some(operator_fee_bps);
+        self
+    }
     /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -155,8 +173,14 @@ impl InitializeOperatorBuilder {
                 .system_program
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
         };
+        let args = InitializeOperatorInstructionArgs {
+            operator_fee_bps: self
+                .operator_fee_bps
+                .clone()
+                .expect("operator_fee_bps is not set"),
+        };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
@@ -187,12 +211,15 @@ pub struct InitializeOperatorCpi<'a, 'b> {
     pub base: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: InitializeOperatorInstructionArgs,
 }
 
 impl<'a, 'b> InitializeOperatorCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
         accounts: InitializeOperatorCpiAccounts<'a, 'b>,
+        args: InitializeOperatorInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
@@ -201,6 +228,7 @@ impl<'a, 'b> InitializeOperatorCpi<'a, 'b> {
             admin: accounts.admin,
             base: accounts.base,
             system_program: accounts.system_program,
+            __args: args,
         }
     }
     #[inline(always)]
@@ -264,9 +292,11 @@ impl<'a, 'b> InitializeOperatorCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = InitializeOperatorInstructionData::new()
+        let mut data = InitializeOperatorInstructionData::new()
             .try_to_vec()
             .unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -315,6 +345,7 @@ impl<'a, 'b> InitializeOperatorCpiBuilder<'a, 'b> {
             admin: None,
             base: None,
             system_program: None,
+            operator_fee_bps: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -351,6 +382,11 @@ impl<'a, 'b> InitializeOperatorCpiBuilder<'a, 'b> {
         system_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.system_program = Some(system_program);
+        self
+    }
+    #[inline(always)]
+    pub fn operator_fee_bps(&mut self, operator_fee_bps: u16) -> &mut Self {
+        self.instruction.operator_fee_bps = Some(operator_fee_bps);
         self
     }
     /// Add an additional account to the instruction.
@@ -394,6 +430,13 @@ impl<'a, 'b> InitializeOperatorCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
+        let args = InitializeOperatorInstructionArgs {
+            operator_fee_bps: self
+                .instruction
+                .operator_fee_bps
+                .clone()
+                .expect("operator_fee_bps is not set"),
+        };
         let instruction = InitializeOperatorCpi {
             __program: self.instruction.__program,
 
@@ -409,6 +452,7 @@ impl<'a, 'b> InitializeOperatorCpiBuilder<'a, 'b> {
                 .instruction
                 .system_program
                 .expect("system_program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -425,6 +469,7 @@ struct InitializeOperatorCpiBuilderInstruction<'a, 'b> {
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    operator_fee_bps: Option<u16>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

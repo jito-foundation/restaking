@@ -255,6 +255,7 @@ pub fn initialize_operator(
     operator: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
+    operator_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -266,7 +267,7 @@ pub fn initialize_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeOperator
+        data: RestakingInstruction::InitializeOperator { operator_fee_bps }
             .try_to_vec()
             .unwrap(),
     }
@@ -294,18 +295,39 @@ pub fn operator_set_secondary_admin(
     program_id: &Pubkey,
     operator: &Pubkey,
     admin: &Pubkey,
-    voter: &Pubkey,
+    new_admin: &Pubkey,
     operator_admin_role: OperatorAdminRole,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*operator, false),
         AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new_readonly(*voter, false),
+        AccountMeta::new_readonly(*new_admin, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
         data: RestakingInstruction::OperatorSetSecondaryAdmin(operator_admin_role)
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn operator_set_fee(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    operator: &Pubkey,
+    admin: &Pubkey,
+    new_fee_bps: u16,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*operator, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::OperatorSetFee { new_fee_bps }
             .try_to_vec()
             .unwrap(),
     }
@@ -362,55 +384,53 @@ pub fn cooldown_operator_vault_ticket(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn ncn_withdrawal_asset(
+pub fn ncn_delegate_token_account(
     program_id: &Pubkey,
     ncn: &Pubkey,
-    ncn_token_account: &Pubkey,
-    receiver_token_account: &Pubkey,
-    admin: &Pubkey,
+    delegate_admin: &Pubkey,
+    token_mint: &Pubkey,
+    token_account: &Pubkey,
+    delegate: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
-    amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*ncn, false),
-        AccountMeta::new(*ncn_token_account, false),
-        AccountMeta::new(*receiver_token_account, false),
-        AccountMeta::new_readonly(*admin, true),
+        AccountMeta::new_readonly(*delegate_admin, true),
+        AccountMeta::new(*token_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*delegate, false),
         AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::NcnDelegateTokenAccount
             .try_to_vec()
             .unwrap(),
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn operator_withdrawal_asset(
+pub fn operator_delegate_token_account(
     program_id: &Pubkey,
     operator: &Pubkey,
-    admin: &Pubkey,
-    operator_token_account: &Pubkey,
-    receiver_token_account: &Pubkey,
+    delegate_admin: &Pubkey,
+    token_mint: &Pubkey,
+    token_account: &Pubkey,
+    delegate: &Pubkey,
     token_program: &Pubkey,
-    token_mint: Pubkey,
-    amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*admin, true),
-        AccountMeta::new(*operator_token_account, false),
-        AccountMeta::new(*receiver_token_account, false),
+        AccountMeta::new_readonly(*delegate_admin, true),
+        AccountMeta::new(*token_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*delegate, false),
         AccountMeta::new_readonly(*token_program, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorWithdrawalAsset { token_mint, amount }
+        data: RestakingInstruction::OperatorDelegateTokenAccount
             .try_to_vec()
             .unwrap(),
     }

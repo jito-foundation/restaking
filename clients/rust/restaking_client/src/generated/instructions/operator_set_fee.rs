@@ -5,57 +5,43 @@
 //! <https://github.com/kinobi-so/kinobi>
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
 
 /// Accounts.
-pub struct NcnWithdrawalAsset {
-    pub ncn: solana_program::pubkey::Pubkey,
+pub struct OperatorSetFee {
+    pub config: solana_program::pubkey::Pubkey,
 
-    pub ncn_token_account: solana_program::pubkey::Pubkey,
-
-    pub receiver_token_account: solana_program::pubkey::Pubkey,
+    pub operator: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
-
-    pub token_program: solana_program::pubkey::Pubkey,
 }
 
-impl NcnWithdrawalAsset {
+impl OperatorSetFee {
     pub fn instruction(
         &self,
-        args: NcnWithdrawalAssetInstructionArgs,
+        args: OperatorSetFeeInstructionArgs,
     ) -> solana_program::instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: NcnWithdrawalAssetInstructionArgs,
+        args: OperatorSetFeeInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.ncn, false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.ncn_token_account,
+            self.config,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.receiver_token_account,
+            self.operator,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.token_program,
-            false,
-        ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = NcnWithdrawalAssetInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = OperatorSetFeeInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -68,17 +54,17 @@ impl NcnWithdrawalAsset {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct NcnWithdrawalAssetInstructionData {
+pub struct OperatorSetFeeInstructionData {
     discriminator: u8,
 }
 
-impl NcnWithdrawalAssetInstructionData {
+impl OperatorSetFeeInstructionData {
     pub fn new() -> Self {
         Self { discriminator: 21 }
     }
 }
 
-impl Default for NcnWithdrawalAssetInstructionData {
+impl Default for OperatorSetFeeInstructionData {
     fn default() -> Self {
         Self::new()
     }
@@ -86,55 +72,38 @@ impl Default for NcnWithdrawalAssetInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct NcnWithdrawalAssetInstructionArgs {
-    pub token_mint: Pubkey,
-    pub amount: u64,
+pub struct OperatorSetFeeInstructionArgs {
+    pub new_fee_bps: u16,
 }
 
-/// Instruction builder for `NcnWithdrawalAsset`.
+/// Instruction builder for `OperatorSetFee`.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` ncn
-///   1. `[writable]` ncn_token_account
-///   2. `[writable]` receiver_token_account
-///   3. `[signer]` admin
-///   4. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   0. `[]` config
+///   1. `[writable]` operator
+///   2. `[signer]` admin
 #[derive(Clone, Debug, Default)]
-pub struct NcnWithdrawalAssetBuilder {
-    ncn: Option<solana_program::pubkey::Pubkey>,
-    ncn_token_account: Option<solana_program::pubkey::Pubkey>,
-    receiver_token_account: Option<solana_program::pubkey::Pubkey>,
+pub struct OperatorSetFeeBuilder {
+    config: Option<solana_program::pubkey::Pubkey>,
+    operator: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
-    token_program: Option<solana_program::pubkey::Pubkey>,
-    token_mint: Option<Pubkey>,
-    amount: Option<u64>,
+    new_fee_bps: Option<u16>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl NcnWithdrawalAssetBuilder {
+impl OperatorSetFeeBuilder {
     pub fn new() -> Self {
         Self::default()
     }
     #[inline(always)]
-    pub fn ncn(&mut self, ncn: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.ncn = Some(ncn);
+    pub fn config(&mut self, config: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.config = Some(config);
         self
     }
     #[inline(always)]
-    pub fn ncn_token_account(
-        &mut self,
-        ncn_token_account: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.ncn_token_account = Some(ncn_token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn receiver_token_account(
-        &mut self,
-        receiver_token_account: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.receiver_token_account = Some(receiver_token_account);
+    pub fn operator(&mut self, operator: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.operator = Some(operator);
         self
     }
     #[inline(always)]
@@ -142,20 +111,9 @@ impl NcnWithdrawalAssetBuilder {
         self.admin = Some(admin);
         self
     }
-    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
-    pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.token_mint = Some(token_mint);
-        self
-    }
-    #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.amount = Some(amount);
+    pub fn new_fee_bps(&mut self, new_fee_bps: u16) -> &mut Self {
+        self.new_fee_bps = Some(new_fee_bps);
         self
     }
     /// Add an aditional account to the instruction.
@@ -178,72 +136,53 @@ impl NcnWithdrawalAssetBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = NcnWithdrawalAsset {
-            ncn: self.ncn.expect("ncn is not set"),
-            ncn_token_account: self
-                .ncn_token_account
-                .expect("ncn_token_account is not set"),
-            receiver_token_account: self
-                .receiver_token_account
-                .expect("receiver_token_account is not set"),
+        let accounts = OperatorSetFee {
+            config: self.config.expect("config is not set"),
+            operator: self.operator.expect("operator is not set"),
             admin: self.admin.expect("admin is not set"),
-            token_program: self.token_program.unwrap_or(solana_program::pubkey!(
-                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-            )),
         };
-        let args = NcnWithdrawalAssetInstructionArgs {
-            token_mint: self.token_mint.clone().expect("token_mint is not set"),
-            amount: self.amount.clone().expect("amount is not set"),
+        let args = OperatorSetFeeInstructionArgs {
+            new_fee_bps: self.new_fee_bps.clone().expect("new_fee_bps is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `ncn_withdrawal_asset` CPI accounts.
-pub struct NcnWithdrawalAssetCpiAccounts<'a, 'b> {
-    pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
+/// `operator_set_fee` CPI accounts.
+pub struct OperatorSetFeeCpiAccounts<'a, 'b> {
+    pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub ncn_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `ncn_withdrawal_asset` CPI instruction.
-pub struct NcnWithdrawalAssetCpi<'a, 'b> {
+/// `operator_set_fee` CPI instruction.
+pub struct OperatorSetFeeCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
+    pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub ncn_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: NcnWithdrawalAssetInstructionArgs,
+    pub __args: OperatorSetFeeInstructionArgs,
 }
 
-impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
+impl<'a, 'b> OperatorSetFeeCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: NcnWithdrawalAssetCpiAccounts<'a, 'b>,
-        args: NcnWithdrawalAssetInstructionArgs,
+        accounts: OperatorSetFeeCpiAccounts<'a, 'b>,
+        args: OperatorSetFeeInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
-            ncn: accounts.ncn,
-            ncn_token_account: accounts.ncn_token_account,
-            receiver_token_account: accounts.receiver_token_account,
+            config: accounts.config,
+            operator: accounts.operator,
             admin: accounts.admin,
-            token_program: accounts.token_program,
             __args: args,
         }
     }
@@ -280,26 +219,18 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.ncn.key,
+            *self.config.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.ncn_token_account.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.receiver_token_account.key,
+            *self.operator.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.admin.key,
             true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.token_program.key,
-            false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
@@ -308,9 +239,7 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = NcnWithdrawalAssetInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = OperatorSetFeeInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -319,13 +248,11 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(3 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.ncn.clone());
-        account_infos.push(self.ncn_token_account.clone());
-        account_infos.push(self.receiver_token_account.clone());
+        account_infos.push(self.config.clone());
+        account_infos.push(self.operator.clone());
         account_infos.push(self.admin.clone());
-        account_infos.push(self.token_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -338,54 +265,44 @@ impl<'a, 'b> NcnWithdrawalAssetCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `NcnWithdrawalAsset` via CPI.
+/// Instruction builder for `OperatorSetFee` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` ncn
-///   1. `[writable]` ncn_token_account
-///   2. `[writable]` receiver_token_account
-///   3. `[signer]` admin
-///   4. `[]` token_program
+///   0. `[]` config
+///   1. `[writable]` operator
+///   2. `[signer]` admin
 #[derive(Clone, Debug)]
-pub struct NcnWithdrawalAssetCpiBuilder<'a, 'b> {
-    instruction: Box<NcnWithdrawalAssetCpiBuilderInstruction<'a, 'b>>,
+pub struct OperatorSetFeeCpiBuilder<'a, 'b> {
+    instruction: Box<OperatorSetFeeCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
+impl<'a, 'b> OperatorSetFeeCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(NcnWithdrawalAssetCpiBuilderInstruction {
+        let instruction = Box::new(OperatorSetFeeCpiBuilderInstruction {
             __program: program,
-            ncn: None,
-            ncn_token_account: None,
-            receiver_token_account: None,
+            config: None,
+            operator: None,
             admin: None,
-            token_program: None,
-            token_mint: None,
-            amount: None,
+            new_fee_bps: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
     #[inline(always)]
-    pub fn ncn(&mut self, ncn: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.ncn = Some(ncn);
+    pub fn config(
+        &mut self,
+        config: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.config = Some(config);
         self
     }
     #[inline(always)]
-    pub fn ncn_token_account(
+    pub fn operator(
         &mut self,
-        ncn_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+        operator: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.ncn_token_account = Some(ncn_token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn receiver_token_account(
-        &mut self,
-        receiver_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.receiver_token_account = Some(receiver_token_account);
+        self.instruction.operator = Some(operator);
         self
     }
     #[inline(always)]
@@ -394,21 +311,8 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn token_program(
-        &mut self,
-        token_program: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.token_program = Some(token_program);
-        self
-    }
-    #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: Pubkey) -> &mut Self {
-        self.instruction.token_mint = Some(token_mint);
-        self
-    }
-    #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.instruction.amount = Some(amount);
+    pub fn new_fee_bps(&mut self, new_fee_bps: u16) -> &mut Self {
+        self.instruction.new_fee_bps = Some(new_fee_bps);
         self
     }
     /// Add an additional account to the instruction.
@@ -452,35 +356,21 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = NcnWithdrawalAssetInstructionArgs {
-            token_mint: self
+        let args = OperatorSetFeeInstructionArgs {
+            new_fee_bps: self
                 .instruction
-                .token_mint
+                .new_fee_bps
                 .clone()
-                .expect("token_mint is not set"),
-            amount: self.instruction.amount.clone().expect("amount is not set"),
+                .expect("new_fee_bps is not set"),
         };
-        let instruction = NcnWithdrawalAssetCpi {
+        let instruction = OperatorSetFeeCpi {
             __program: self.instruction.__program,
 
-            ncn: self.instruction.ncn.expect("ncn is not set"),
+            config: self.instruction.config.expect("config is not set"),
 
-            ncn_token_account: self
-                .instruction
-                .ncn_token_account
-                .expect("ncn_token_account is not set"),
-
-            receiver_token_account: self
-                .instruction
-                .receiver_token_account
-                .expect("receiver_token_account is not set"),
+            operator: self.instruction.operator.expect("operator is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
-
-            token_program: self
-                .instruction
-                .token_program
-                .expect("token_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -491,15 +381,12 @@ impl<'a, 'b> NcnWithdrawalAssetCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct NcnWithdrawalAssetCpiBuilderInstruction<'a, 'b> {
+struct OperatorSetFeeCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
-    ncn: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    ncn_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    receiver_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_mint: Option<Pubkey>,
-    amount: Option<u64>,
+    new_fee_bps: Option<u16>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

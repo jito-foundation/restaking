@@ -80,6 +80,8 @@ solana-rpc-client-api = "~1.18"
 solana-security-txt = "1.1.1"
 spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"] }
 spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
+spl-token-2022 = { version = "3.0.4", features = ["no-entrypoint"] }
 syn = "2.0.72"
+test-case = "3.3.1"
 thiserror = "1.0.57"
 tokio = { version = "1.36.0", features = ["full"] }
