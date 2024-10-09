@@ -30,7 +30,7 @@ pub struct Vault {
     pub supported_mint: Pubkey,
     pub vrt_supply: u64,
     pub tokens_deposited: u64,
-    pub capacity: u64,
+    pub deposit_capacity: u64,
     pub delegation_state: DelegationState,
     pub vrt_enqueued_for_cooldown_amount: u64,
     pub vrt_cooling_down_amount: u64,
