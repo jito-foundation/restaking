@@ -55,8 +55,9 @@ pub struct Vault {
     /// The total number of tokens deposited
     tokens_deposited: PodU64,
 
-    /// Max capacity of tokens in the vault
-    capacity: PodU64,
+    /// The maximum deposit capacity allowed in the mint_to instruction.
+    /// The deposited assets in the vault may exceed the deposit_capacity during other operations, such as vault balance updates.
+    deposit_capacity: PodU64,
 
     /// Rolled-up stake state for all operators in the set
     pub delegation_state: DelegationState,
@@ -171,7 +172,7 @@ impl Vault {
             delegate_asset_admin: admin,
             fee_wallet: admin,
             mint_burn_admin: Pubkey::default(),
-            capacity: PodU64::from(u64::MAX),
+            deposit_capacity: PodU64::from(u64::MAX),
             vault_index: PodU64::from(vault_index),
             vrt_supply: PodU64::from(0),
             tokens_deposited: PodU64::from(0),
@@ -200,8 +201,8 @@ impl Vault {
         self.last_fee_change_slot.into()
     }
 
-    pub fn capacity(&self) -> u64 {
-        self.capacity.into()
+    pub fn deposit_capacity(&self) -> u64 {
+        self.deposit_capacity.into()
     }
 
     pub fn vault_index(&self) -> u64 {
@@ -300,7 +301,7 @@ impl Vault {
     }
 
     pub fn set_capacity(&mut self, capacity: u64) {
-        self.capacity = PodU64::from(capacity);
+        self.deposit_capacity = PodU64::from(capacity);
     }
 
     pub fn set_vrt_cooling_down_amount(&mut self, amount: u64) {
@@ -750,7 +751,7 @@ impl Vault {
             .tokens_deposited()
             .checked_add(amount_in)
             .ok_or(VaultError::VaultOverflow)?;
-        if vault_token_amount_after_deposit > self.capacity() {
+        if vault_token_amount_after_deposit > self.deposit_capacity() {
             msg!("Amount exceeds vault capacity");
             return Err(VaultError::VaultCapacityExceeded);
         }

@@ -1511,7 +1511,7 @@
             }
           },
           {
-            "name": "capacity",
+            "name": "depositCapacity",
             "type": {
               "defined": "PodU64"
             }
