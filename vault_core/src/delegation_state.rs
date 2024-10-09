@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn test_undo_self_zeroes() {
         let mut delegation_state = DelegationState::new(1, 2, 3);
-        let copy = delegation_state.clone();
+        let copy = delegation_state;
         delegation_state.subtract(&copy).unwrap();
         assert_eq!(delegation_state, DelegationState::default());
     }

@@ -66,18 +66,21 @@ pub enum JitoRestakingError {
     /// 2007 - OperatorWarmupNcnFailed
     #[error("OperatorWarmupNcnFailed")]
     OperatorWarmupNcnFailed = 0x7D7,
-    /// 2008 - NcnOverflow
+    /// 2008 - OperatorFeeCapExceeded
+    #[error("OperatorFeeCapExceeded")]
+    OperatorFeeCapExceeded = 0x7D8,
+    /// 2009 - NcnOverflow
     #[error("NcnOverflow")]
-    NcnOverflow = 0x7D8,
-    /// 2009 - OperatorOverflow
+    NcnOverflow = 0x7D9,
+    /// 2010 - OperatorOverflow
     #[error("OperatorOverflow")]
-    OperatorOverflow = 0x7D9,
-    /// 2010 - VaultOverflow
+    OperatorOverflow = 0x7DA,
+    /// 2011 - VaultOverflow
     #[error("VaultOverflow")]
-    VaultOverflow = 0x7DA,
-    /// 2011 - SlasherOverflow
+    VaultOverflow = 0x7DB,
+    /// 2012 - SlasherOverflow
     #[error("SlasherOverflow")]
-    SlasherOverflow = 0x7DB,
+    SlasherOverflow = 0x7DC,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

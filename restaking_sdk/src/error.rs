@@ -42,6 +42,8 @@ pub enum RestakingError {
     OperatorVaultTicketFailedWarmup,
     #[error("OperatorWarmupNcnFailed")]
     OperatorWarmupNcnFailed,
+    #[error("OperatorFeeCapExceeded")]
+    OperatorFeeCapExceeded,
     #[error("NcnOverflow")]
     NcnOverflow,
     #[error("OperatorOverflow")]
