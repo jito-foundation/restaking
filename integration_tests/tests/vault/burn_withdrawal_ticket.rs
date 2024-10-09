@@ -497,11 +497,13 @@ mod tests {
     async fn test_burn_withdrawal_ticket_min_amount_out_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
+        let slash_amount = MINT_AMOUNT >> 1;
+        let withdraw_amount = MINT_AMOUNT >> 1;
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
-        let slasher_amounts = vec![MINT_AMOUNT];
+        let slasher_amounts = vec![slash_amount];
 
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
@@ -579,14 +581,14 @@ mod tests {
             MINT_AMOUNT
         );
 
-        // let min_amount_out = vault
-        //     .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
-        //     .unwrap();
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(withdraw_amount, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
 
-        // let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-        //     .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
-        //     .await
-        //     .unwrap();
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdraw(&vault_root, &depositor, withdraw_amount, min_amount_out)
+            .await
+            .unwrap();
 
         let operator_root = &operator_roots[0];
 
@@ -645,81 +647,22 @@ mod tests {
             .await
             .unwrap();
 
-        let result = vault_program_client
+        vault_program_client
             .do_slash(
                 &vault_root,
                 &ncn_root.ncn_pubkey,
                 slasher,
                 &operator_root.operator_pubkey,
-                MINT_AMOUNT,
+                slash_amount,
             )
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
             .await;
 
-        assert_vault_error(result, VaultError::VaultSlashUnderflow);
-
-        // Cant actually test this.
-
-        // let result = vault_program_client
-        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
-        //     .await;
-        // assert_vault_error(
-        //     result,
-        //     VaultError::VaultStakerWithdrawalTicketNotWithdrawable,
-        // );
-
-        // fixture
-        //     .warp_slot_incremental(config.epoch_length())
-        //     .await
-        //     .unwrap();
-        // vault_program_client
-        //     .do_full_vault_update(
-        //         &vault_root.vault_pubkey,
-        //         &[operator_roots[0].operator_pubkey],
-        //     )
-        //     .await
-        //     .unwrap();
-        // let result = vault_program_client
-        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
-        //     .await;
-        // assert_vault_error(
-        //     result,
-        //     VaultError::VaultStakerWithdrawalTicketNotWithdrawable,
-        // );
-
-        // fixture
-        //     .warp_slot_incremental(config.epoch_length())
-        //     .await
-        //     .unwrap();
-        // vault_program_client
-        //     .do_full_vault_update(
-        //         &vault_root.vault_pubkey,
-        //         &[operator_roots[0].operator_pubkey],
-        //     )
-        //     .await
-        //     .unwrap();
-
-        // vault_program_client
-        //     .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
-        //     .await
-        //     .unwrap();
-        // let staker_token_account = fixture
-        //     .get_token_account(&get_associated_token_address(
-        //         &depositor.pubkey(),
-        //         &vault.supported_mint,
-        //     ))
-        //     .await
-        //     .unwrap();
-        // assert_eq!(staker_token_account.amount, MINT_AMOUNT);
-        // let vault = vault_program_client
-        //     .get_vault(&vault_root.vault_pubkey)
-        //     .await
-        //     .unwrap();
-        // assert_eq!(vault.tokens_deposited(), 0);
-        // assert_eq!(vault.vrt_supply(), 0);
-        // assert_eq!(vault.delegation_state, DelegationState::default());
-        // assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
-        // assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
-        // assert_eq!(vault.vrt_cooling_down_amount(), 0);
+        assert_vault_error(result, VaultError::SlippageError);
     }
 
     #[tokio::test]

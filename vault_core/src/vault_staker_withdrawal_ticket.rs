@@ -29,7 +29,7 @@ pub struct VaultStakerWithdrawalTicket {
     vrt_amount: PodU64,
 
     /// The minimum supported mint to be withdrawn when this ticket is burned
-    /// This is required to factor in a 0.5% slippage of the current exchange
+    /// This is required to factor in a 0.5% slippage of the exchange rate at time of ticket creation
     /// as well as account for the vault and program withdrawal fees
     min_amount_out: PodU64,
 
