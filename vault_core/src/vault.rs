@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_FEE_BPS};
+use crate::{delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -143,6 +143,8 @@ pub struct Vault {
 }
 
 impl Vault {
+    pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         vrt_mint: Pubkey,
@@ -782,6 +784,25 @@ impl Vault {
         })
     }
 
+    pub fn calculate_burn_summary(&self, amount_in: u64) -> Result<BurnSummary, VaultError> {
+        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let amount_to_burn = amount_in
+            .checked_sub(fee_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        let amount_out = (amount_to_burn as u128)
+            .checked_mul(self.tokens_deposited() as u128)
+            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
+
+        Ok(BurnSummary {
+            fee_amount,
+            burn_amount: amount_to_burn,
+            out_amount: amount_out,
+        })
+    }
+
     pub fn burn_with_fee(
         &mut self,
         amount_in: u64,
@@ -795,16 +816,11 @@ impl Vault {
             return Err(VaultError::VaultInsufficientFunds);
         }
 
-        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
-        let amount_to_burn = amount_in
-            .checked_sub(fee_amount)
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        let amount_out = (amount_to_burn as u128)
-            .checked_mul(self.tokens_deposited() as u128)
-            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .and_then(|x| x.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)?;
+        let BurnSummary {
+            fee_amount,
+            burn_amount,
+            out_amount,
+        } = self.calculate_burn_summary(amount_in)?;
 
         let max_withdrawable = self
             .tokens_deposited()
@@ -812,38 +828,129 @@ impl Vault {
             .ok_or(VaultError::VaultUnderflow)?;
 
         // The vault shall not be able to withdraw more than the max withdrawable amount
-        if amount_out > max_withdrawable {
+        if out_amount > max_withdrawable {
             msg!("Amount out exceeds max withdrawable amount");
             return Err(VaultError::VaultUnderflow);
         }
 
         // Slippage check
-        if amount_out < min_amount_out {
+        if out_amount < min_amount_out {
             msg!(
                 "Slippage error, expected more than {} out, got {}",
                 min_amount_out,
-                amount_out
+                out_amount
             );
             return Err(VaultError::SlippageError);
         }
 
         let vrt_supply = self
             .vrt_supply()
-            .checked_sub(amount_to_burn)
+            .checked_sub(burn_amount)
             .ok_or(VaultError::VaultUnderflow)?;
         self.vrt_supply = PodU64::from(vrt_supply);
 
         let tokens_deposited = self
             .tokens_deposited()
-            .checked_sub(amount_out)
+            .checked_sub(out_amount)
             .ok_or(VaultError::VaultUnderflow)?;
         self.tokens_deposited = PodU64::from(tokens_deposited);
 
         Ok(BurnSummary {
             fee_amount,
-            burn_amount: amount_to_burn,
-            out_amount: amount_out,
+            burn_amount,
+            out_amount,
         })
+    }
+
+    /// Checks to see if the minimum amount out is acceptable
+    /// acceptable being defined as slippage being larger or equal to the minimum slippage
+    /// as well as accounting for withdraw fees
+    pub fn check_min_supported_mint_out(
+        &self,
+        vrt_amount_in: u64,
+        min_supported_mint_out: u64,
+    ) -> Result<(), VaultError> {
+        if vrt_amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        } else if vrt_amount_in > self.vrt_supply() {
+            msg!("Amount exceeds vault VRT supply");
+            return Err(VaultError::VaultInsufficientFunds);
+        }
+
+        let BurnSummary {
+            fee_amount: _,
+            burn_amount: _,
+            out_amount,
+        } = self.calculate_burn_summary(vrt_amount_in)?;
+
+        let amount_out_delta = out_amount.saturating_sub(min_supported_mint_out);
+        let calculated_slippage = amount_out_delta
+            .checked_mul(MAX_BPS as u64)
+            .and_then(|x| x.checked_div(out_amount))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        if calculated_slippage < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS as u64 {
+            msg!(
+                "Calculated slippage {} is less that the minimum slippage {}",
+                calculated_slippage,
+                Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        // This is a sanity check calculation to ensure that the calculated min amount out is correct
+        let calculated_min_amount_out =
+            self.calculate_min_supported_mint_out(vrt_amount_in, calculated_slippage as u16)?;
+
+        if calculated_min_amount_out != min_supported_mint_out {
+            msg!(
+                "Calculated min amount out {} does not match provided min amount out {}",
+                calculated_min_amount_out,
+                min_supported_mint_out
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        Ok(())
+    }
+
+    /// Calculates the amount of the supported mint expected to be withdrawn
+    /// when withdrawing a given amount of VRT. This accounts for a slippage and
+    /// withdraw fees ( vault and program )
+    pub fn calculate_min_supported_mint_out(
+        &self,
+        vrt_amount_in: u64,
+        max_slippage_bps: u16,
+    ) -> Result<u64, VaultError> {
+        if vrt_amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        }
+
+        if max_slippage_bps < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS {
+            msg!(
+                "Slippage error, minimum slippage is {} bps",
+                Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        let BurnSummary {
+            fee_amount: _,
+            burn_amount: _,
+            out_amount,
+        } = self.calculate_burn_summary(vrt_amount_in)?;
+
+        let slippage = MAX_BPS
+            .checked_sub(max_slippage_bps)
+            .ok_or(VaultError::VaultUnderflow)?;
+        let min_amount_out = (slippage as u64)
+            .checked_mul(out_amount)
+            .and_then(|x| x.checked_div(MAX_BPS as u64))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        Ok(min_amount_out)
     }
 
     /// Calculates the amount of tokens, denominated in the supported_mint asset,
@@ -2025,5 +2132,53 @@ mod tests {
     fn test_burn_with_fee_zero_amount() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(vault.burn_with_fee(0, 0), Err(VaultError::VaultBurnZero));
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out() {
+        let vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(amount_out, 100)
+            .unwrap();
+        assert_eq!(min_amount_out, 99);
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out_with_withdrawal_fee() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(amount_out, 100)
+            .unwrap();
+        assert_eq!(min_amount_out, 98);
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out_slippage_too_low() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        assert!(vault
+            .calculate_min_supported_mint_out(amount_out, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS - 1)
+            .is_err());
+    }
+
+    #[test]
+    fn test_check_min_amount_out_ok() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(amount_out, 50)
+            .unwrap();
+        assert!(vault
+            .check_min_supported_mint_out(amount_out, min_amount_out)
+            .is_ok());
+    }
+
+    #[test]
+    fn test_check_min_amount_out_too_high() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        assert!(vault.check_min_supported_mint_out(amount_out, 99).is_err());
     }
 }

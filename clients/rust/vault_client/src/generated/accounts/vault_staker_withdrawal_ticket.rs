@@ -27,6 +27,7 @@ pub struct VaultStakerWithdrawalTicket {
     )]
     pub base: Pubkey,
     pub vrt_amount: u64,
+    pub min_amount_out: u64,
     pub slot_unstaked: u64,
     pub bump: u8,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
