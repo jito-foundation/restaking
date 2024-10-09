@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_FEE_BPS};
+use crate::{delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -156,6 +156,10 @@ impl Vault {
         bump: u8,
         current_slot: u64,
     ) -> Self {
+        assert!(deposit_fee_bps <= MAX_BPS);
+        assert!(withdrawal_fee_bps <= MAX_BPS);
+        assert!(reward_fee_bps <= MAX_BPS);
+
         Self {
             base,
             vrt_mint,
@@ -283,15 +287,18 @@ impl Vault {
     }
 
     pub fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps.into()
+        assert!(u16::from(self.deposit_fee_bps) <= MAX_BPS);
+        u16::from(self.deposit_fee_bps)
     }
 
     pub fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps.into()
+        assert!(u16::from(self.withdrawal_fee_bps) <= MAX_BPS);
+        u16::from(self.withdrawal_fee_bps)
     }
 
     pub fn reward_fee_bps(&self) -> u16 {
-        self.reward_fee_bps.into()
+        assert!(u16::from(self.reward_fee_bps) <= MAX_BPS);
+        u16::from(self.reward_fee_bps)
     }
 
     pub fn operator_count(&self) -> u64 {
@@ -648,6 +655,17 @@ impl Vault {
         fee_bump_bps: u16,
         fee_rate_of_change_bps: u16,
     ) -> Result<(), VaultError> {
+        if current_fee_bps > MAX_BPS
+            || new_fee_bps > MAX_BPS
+            || fee_cap_bps > MAX_BPS
+            || fee_bump_bps > MAX_BPS
+            || fee_rate_of_change_bps > MAX_BPS
+        {
+            // This is always false
+            msg!("BPS cannot be above {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
         let fee_delta = new_fee_bps.saturating_sub(current_fee_bps);
         let fee_cap_bps = fee_cap_bps.min(MAX_FEE_BPS);
 
@@ -1053,7 +1071,7 @@ mod tests {
     use crate::{
         delegation_state::DelegationState,
         vault::{BurnSummary, MintSummary, Vault},
-        MAX_FEE_BPS,
+        MAX_BPS, MAX_FEE_BPS,
     };
 
     fn make_test_vault(
@@ -1939,7 +1957,7 @@ mod tests {
 
     #[test]
     fn test_max_decrease() {
-        let current_fee_bps = u16::MAX;
+        let current_fee_bps = MAX_BPS;
         let new_fee_bps = 0;
         let fee_cap_bps = 3000;
         let fee_bump_bps = 10;

@@ -42,6 +42,13 @@ pub fn process_set_fees(
     }
 
     if let Some(deposit_fee_bps) = deposit_fee_bps {
+        msg!(
+            "{} {} {} {}",
+            deposit_fee_bps,
+            config.deposit_withdrawal_fee_cap_bps(),
+            config.fee_bump_bps(),
+            config.fee_rate_of_change_bps()
+        );
         vault.set_deposit_fee_bps(
             deposit_fee_bps,
             config.deposit_withdrawal_fee_cap_bps(),
