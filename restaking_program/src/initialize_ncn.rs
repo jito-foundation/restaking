@@ -6,6 +6,7 @@ use jito_jsm_core::{
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_restaking_core::{config::Config, ncn::Ncn};
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -38,7 +39,9 @@ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
         system_program,
         program_id,
         &Rent::get()?,
-        8_u64.checked_add(size_of::<Ncn>() as u64).unwrap(),
+        8_u64
+            .checked_add(size_of::<Ncn>() as u64)
+            .ok_or(RestakingError::ArithmeticOverflow)?,
         &ncn_seeds,
     )?;
 

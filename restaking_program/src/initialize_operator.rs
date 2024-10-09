@@ -49,7 +49,9 @@ pub fn process_initialize_operator(
         system_program,
         program_id,
         &Rent::get()?,
-        8_u64.checked_add(size_of::<Operator>() as u64).unwrap(),
+        8_u64
+            .checked_add(size_of::<Operator>() as u64)
+            .ok_or(RestakingError::ArithmeticOverflow)?,
         &operator_seed,
     )?;
 

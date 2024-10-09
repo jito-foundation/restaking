@@ -62,7 +62,7 @@ pub fn process_initialize_ncn_operator_state(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<NcnOperatorState>() as u64)
-            .unwrap(),
+            .ok_or(RestakingError::ArithmeticOverflow)?,
         &ncn_operator_state_seeds,
     )?;
 
