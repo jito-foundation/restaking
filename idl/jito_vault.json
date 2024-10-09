@@ -1582,6 +1582,10 @@
             "type": "publicKey"
           },
           {
+            "name": "metadataAdmin",
+            "type": "publicKey"
+          },
+          {
             "name": "vaultIndex",
             "type": {
               "defined": "PodU64"
@@ -2095,6 +2099,9 @@
           },
           {
             "name": "FeeAdmin"
+          },
+          {
+            "name": "MetadataAdmin"
           }
         ]
       }

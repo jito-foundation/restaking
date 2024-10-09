@@ -335,6 +335,7 @@ pub enum VaultAdminRole {
     MintBurnAdmin,
     DelegateAssetAdmin,
     FeeAdmin,
+    MetadataAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]

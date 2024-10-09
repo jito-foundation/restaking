@@ -62,6 +62,10 @@ pub fn process_set_secondary_admin(
             vault.fee_admin = *new_admin.key;
             msg!("Fee admin set to {:?}", new_admin.key);
         }
+        VaultAdminRole::MetadataAdmin => {
+            vault.metadata_admin = *new_admin.key;
+            msg!("Metadata admin set to {:?}", new_admin.key);
+        }
     }
 
     Ok(())
