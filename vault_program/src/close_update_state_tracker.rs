@@ -35,10 +35,9 @@ pub fn process_close_vault_update_state_tracker(
         ncn_epoch,
         true,
     )?;
-    let mut vault_update_state_tracker_data = vault_update_state_tracker_info.data.borrow_mut();
-    let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
-        &mut vault_update_state_tracker_data,
-    )?;
+    let vault_update_state_tracker_data = vault_update_state_tracker_info.data.borrow();
+    let vault_update_state_tracker =
+        VaultUpdateStateTracker::try_from_slice_unchecked(&vault_update_state_tracker_data)?;
     load_signer(payer, true)?;
 
     let current_ncn_epoch = config.get_epoch_from_slot(slot)?;
