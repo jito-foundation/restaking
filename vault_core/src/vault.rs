@@ -156,6 +156,10 @@ impl Vault {
         bump: u8,
         current_slot: u64,
     ) -> Self {
+        assert!(deposit_fee_bps <= MAX_BPS);
+        assert!(withdrawal_fee_bps <= MAX_BPS);
+        assert!(reward_fee_bps <= MAX_BPS);
+
         Self {
             base,
             vrt_mint,
@@ -179,9 +183,9 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(current_slot),
             last_full_state_update_slot: PodU64::from(current_slot),
-            deposit_fee_bps: PodU16::from(deposit_fee_bps.min(MAX_BPS)),
-            withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps.min(MAX_BPS)),
-            reward_fee_bps: PodU16::from(reward_fee_bps.min(MAX_BPS)),
+            deposit_fee_bps: PodU16::from(deposit_fee_bps),
+            withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
+            reward_fee_bps: PodU16::from(reward_fee_bps),
             ncn_count: PodU64::from(0),
             operator_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
@@ -283,15 +287,18 @@ impl Vault {
     }
 
     pub fn deposit_fee_bps(&self) -> u16 {
-        u16::from(self.deposit_fee_bps).min(MAX_BPS)
+        assert!(u16::from(self.deposit_fee_bps) <= MAX_BPS);
+        u16::from(self.deposit_fee_bps)
     }
 
     pub fn withdrawal_fee_bps(&self) -> u16 {
-        u16::from(self.withdrawal_fee_bps).min(MAX_BPS)
+        assert!(u16::from(self.withdrawal_fee_bps) <= MAX_BPS);
+        u16::from(self.withdrawal_fee_bps)
     }
 
     pub fn reward_fee_bps(&self) -> u16 {
-        u16::from(self.reward_fee_bps).min(MAX_BPS)
+        assert!(u16::from(self.reward_fee_bps) <= MAX_BPS);
+        u16::from(self.reward_fee_bps)
     }
 
     pub fn operator_count(&self) -> u64 {

@@ -55,8 +55,8 @@ pub struct Config {
 
 impl Config {
     /// Maximum fee cap in basis points
-    pub const DEFAULT_FEES_CAP_BPS: u16 = 2_000; // 2%
-    /// Maximum rate of change in fee baisis pointer per epoch
+    pub const DEFAULT_FEES_CAP_BPS: u16 = 2_000; // 20%
+    /// Maximum rate of change in fee basis pointer per epoch
     pub const DEFAULT_FEE_RATE_OF_CHANGE_BPS: u16 = 2_500; // 25%
     /// Maximum bump in fee change above the rate of change
     pub const DEFAULT_FEE_BUMP_BPS: u16 = 10; // 0.1%
@@ -68,9 +68,9 @@ impl Config {
             epoch_length: PodU64::from(DEFAULT_SLOTS_PER_EPOCH),
             num_vaults: PodU64::from(0),
             // Cannot be higher than 100%
-            deposit_withdrawal_fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS.min(MAX_BPS)),
-            fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS.min(MAX_BPS)),
-            fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS.min(MAX_BPS)),
+            deposit_withdrawal_fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS),
+            fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS),
+            fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
             bump,
             reserved: [0; 263],
         }
@@ -85,15 +85,18 @@ impl Config {
     }
 
     pub fn deposit_withdrawal_fee_cap_bps(&self) -> u16 {
-        u16::from(self.deposit_withdrawal_fee_cap_bps).min(MAX_BPS)
+        assert!(u16::from(self.deposit_withdrawal_fee_cap_bps) <= MAX_BPS);
+        u16::from(self.deposit_withdrawal_fee_cap_bps)
     }
 
     pub fn fee_rate_of_change_bps(&self) -> u16 {
-        u16::from(self.fee_rate_of_change_bps).min(MAX_BPS)
+        assert!(u16::from(self.fee_rate_of_change_bps) <= MAX_BPS);
+        u16::from(self.fee_rate_of_change_bps)
     }
 
     pub fn fee_bump_bps(&self) -> u16 {
-        u16::from(self.fee_bump_bps).min(MAX_BPS)
+        assert!(u16::from(self.fee_bump_bps) <= MAX_BPS);
+        u16::from(self.fee_bump_bps)
     }
 
     pub fn increment_num_vaults(&mut self) -> Result<(), VaultError> {
@@ -169,5 +172,12 @@ mod tests {
             std::mem::size_of::<u8>() + // bump
             263; // reserved
         assert_eq!(config_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_bps_are_within_bounds() {
+        assert!(Config::DEFAULT_FEES_CAP_BPS <= MAX_BPS);
+        assert!(Config::DEFAULT_FEE_RATE_OF_CHANGE_BPS <= MAX_BPS);
+        assert!(Config::DEFAULT_FEE_BUMP_BPS <= MAX_BPS);
     }
 }
