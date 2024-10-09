@@ -114,21 +114,6 @@ pub fn process_mint(
         )?;
     }
 
-    let vault_amount_after = {
-        let vault_token_account_data = vault_token_account.data.borrow();
-        let vault_token_account = spl_token::state::Account::unpack(&vault_token_account_data)?;
-        vault_token_account.amount
-    };
-
-    if vault_amount_after
-        .checked_sub(vault_amount_before)
-        .ok_or(VaultError::VaultUnderflow)?
-        != amount_in
-    {
-        msg!("Amount in does not match amount out");
-        return Err(VaultError::NoSupportedMintBalanceChange.into());
-    }
-
     let signing_seeds = vault.signing_seeds();
     let seed_slices: Vec<&[u8]> = signing_seeds.iter().map(|seed| seed.as_slice()).collect();
 
@@ -169,6 +154,39 @@ pub fn process_mint(
             ],
             &[&seed_slices],
         )?;
+    }
+
+    // Post Operation Checks
+    let vault_amount_after = {
+        let vault_token_account_data = vault_token_account.data.borrow();
+        let vault_token_account = spl_token::state::Account::unpack(&vault_token_account_data)?;
+        vault_token_account.amount
+    };
+
+    if vault_amount_after
+        .checked_sub(vault_amount_before)
+        .ok_or(VaultError::VaultUnderflow)?
+        != amount_in
+    {
+        msg!("Amount in does not match amount out");
+        return Err(VaultError::NoSupportedMintBalanceChange.into());
+    }
+
+    let vault_vrt_supply = {
+        let vault_data = vault_info.data.borrow();
+        let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+        vault.vrt_supply()
+    };
+
+    let vrt_mint_total_supply = {
+        let vrt_mint_data = vrt_mint.data.borrow();
+        let vrt_mint = spl_token::state::Mint::unpack(&vrt_mint_data)?;
+        vrt_mint.supply
+    };
+
+    if vault_vrt_supply != vrt_mint_total_supply {
+        msg!("Vault VRT supply does not match VRT mint total supply");
+        return Err(VaultError::NoSupportedMintBalanceChange.into());
     }
 
     Ok(())
