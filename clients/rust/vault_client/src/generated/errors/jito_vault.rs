@@ -153,6 +153,9 @@ pub enum JitoVaultError {
     /// 1047 - VaultMintZero
     #[error("VaultMintZero")]
     VaultMintZero = 0x417,
+    /// 1048 - InvalidEpochLength
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength = 0x418,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

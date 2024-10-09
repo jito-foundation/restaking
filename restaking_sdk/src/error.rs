@@ -52,6 +52,8 @@ pub enum RestakingError {
     VaultOverflow,
     #[error("SlasherOverflow")]
     SlasherOverflow,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
 }
 
 impl<T> DecodeError<T> for RestakingError {

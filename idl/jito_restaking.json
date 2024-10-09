@@ -1468,6 +1468,11 @@
       "code": 2012,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
+    },
+    {
+      "code": 2013,
+      "name": "InvalidEpochLength",
+      "msg": "InvalidEpochLength"
     }
   ],
   "metadata": {

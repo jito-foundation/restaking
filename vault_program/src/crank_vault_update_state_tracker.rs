@@ -39,7 +39,8 @@ pub fn process_crank_vault_update_state_tracker(
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
-    let ncn_epoch = slot.checked_div(config.epoch_length()).unwrap();
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,

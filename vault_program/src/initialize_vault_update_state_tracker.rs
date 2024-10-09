@@ -36,10 +36,9 @@ pub fn process_initialize_vault_update_state_tracker(
     load_system_program(system_program)?;
 
     // The VaultUpdateStateTracker shall be at the canonical PDA
-    let ncn_epoch = Clock::get()?
-        .slot
-        .checked_div(config.epoch_length())
-        .unwrap();
+    let slot = Clock::get()?.slot;
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
     let (
         vault_update_state_tracker_pubkey,
         vault_update_state_tracker_bump,

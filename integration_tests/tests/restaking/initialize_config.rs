@@ -33,6 +33,8 @@ mod tests {
         assert_eq!(config.ncn_count(), 0);
         assert_eq!(config.operator_count(), 0);
         assert_eq!(config.epoch_length(), DEFAULT_SLOTS_PER_EPOCH);
+
+        assert_ne!(config.epoch_length(), 0);
     }
 
     #[tokio::test]
