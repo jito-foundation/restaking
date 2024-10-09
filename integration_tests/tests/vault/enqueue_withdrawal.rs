@@ -20,6 +20,7 @@ mod tests {
         let deposit_fee_bps = DEPOSIT_FEE_BPS;
         let withdraw_fee_bps = WITHDRAW_FEE_BPS;
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 10_000; // 100%
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -34,6 +35,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -143,6 +145,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_enqueue_withdraw_zero_fails() {
+        let epoch_withdraw_cap_bps = 10_000; // 100%
+
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -150,7 +154,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 0, epoch_withdraw_cap_bps, 1, &[])
             .await
             .unwrap();
 

@@ -25,7 +25,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(99, 100, 0, 0)
             .await
             .unwrap();
 
@@ -67,13 +67,13 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(10001, 100, 100, 9)
+            .do_initialize_vault(10001, 100, 100, 0, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
-            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
+            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 0, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
@@ -93,13 +93,13 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(100, 10001, 100, 9)
+            .do_initialize_vault(100, 10001, 100, 0, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
-            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 9)
+            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
@@ -114,9 +114,24 @@ mod tests {
         vault_program_client.do_initialize_config().await.unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(0, 0, 10001, 9)
+            .do_initialize_vault(0, 0, 10001, 0, 9)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
+    }
+
+    #[tokio::test]
+    async fn test_initialize_vault_with_epoch_withdraw_cap_bps() {
+        let fixture = TestBuilder::new().await;
+
+        let mut vault_program_client = fixture.vault_program_client();
+
+        vault_program_client.do_initialize_config().await.unwrap();
+
+        let err = vault_program_client
+            .do_initialize_vault(0, 0, 0, 10001, 9)
+            .await;
+
+        assert_vault_error(err, VaultError::VaultEpochWithdrawCapExceeded);
     }
 }
