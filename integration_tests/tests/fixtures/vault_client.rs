@@ -927,6 +927,26 @@ impl VaultProgramClient {
         .await
     }
 
+    pub async fn set_program_fee(
+        &mut self,
+        config_admin: &Keypair,
+        new_fee_bps: u16,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_program_fee(
+                &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &config_admin.pubkey(),
+                new_fee_bps,
+            )],
+            Some(&config_admin.pubkey()),
+            &[config_admin],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn do_enqueue_withdraw(
         &mut self,
         vault_root: &VaultRoot,
@@ -1836,6 +1856,26 @@ impl VaultProgramClient {
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn set_config_fee_wallet(
+        &mut self,
+        config_fee_admin: &Keypair,
+        new_fee_wallet: Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_config_fee_wallet(
+                &jito_vault_program::id(),
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &config_fee_admin.pubkey(),
+                new_fee_wallet,
+            )],
+            Some(&config_fee_admin.pubkey()),
+            &[config_fee_admin],
             blockhash,
         ))
         .await

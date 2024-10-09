@@ -289,6 +289,25 @@ pub fn set_fees(
     }
 }
 
+pub fn set_program_fee(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    admin: &Pubkey,
+    new_fee_bps: u16,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetProgramFee { new_fee_bps }
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn delegate_token_account(
     program_id: &Pubkey,
@@ -788,6 +807,25 @@ pub fn warmup_vault_ncn_slasher_ticket(
         program_id: *program_id,
         accounts,
         data: VaultInstruction::WarmupVaultNcnSlasherTicket
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn set_config_fee_wallet(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    config_fee_admin: &Pubkey,
+    new_fee_wallet: Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*config_fee_admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetConfigFeeWallet { new_fee_wallet }
             .try_to_vec()
             .unwrap(),
     }
