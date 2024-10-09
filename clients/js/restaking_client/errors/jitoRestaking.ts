@@ -62,8 +62,11 @@ export const JITO_RESTAKING_ERROR__OPERATOR_OVERFLOW = 0x7da; // 2010
 export const JITO_RESTAKING_ERROR__VAULT_OVERFLOW = 0x7db; // 2011
 /** SlasherOverflow: SlasherOverflow */
 export const JITO_RESTAKING_ERROR__SLASHER_OVERFLOW = 0x7dc; // 2012
+/** InvalidEpochLength: InvalidEpochLength */
+export const JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH = 0x7dd; // 2013
 
 export type JitoRestakingError =
+  | typeof JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH
   | typeof JITO_RESTAKING_ERROR__NCN_ADMIN_INVALID
   | typeof JITO_RESTAKING_ERROR__NCN_COOLDOWN_OPERATOR_FAILED
   | typeof JITO_RESTAKING_ERROR__NCN_DELEGATE_ADMIN_INVALID
@@ -92,6 +95,7 @@ export type JitoRestakingError =
 let jitoRestakingErrorMessages: Record<JitoRestakingError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
   jitoRestakingErrorMessages = {
+    [JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH]: `InvalidEpochLength`,
     [JITO_RESTAKING_ERROR__NCN_ADMIN_INVALID]: `NcnAdminInvalid`,
     [JITO_RESTAKING_ERROR__NCN_COOLDOWN_OPERATOR_FAILED]: `NcnCooldownOperatorFailed`,
     [JITO_RESTAKING_ERROR__NCN_DELEGATE_ADMIN_INVALID]: `NcnDelegateAdminInvalid`,
