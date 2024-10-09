@@ -16,10 +16,11 @@ import {
 } from '@solana/web3.js';
 
 export enum NcnAdminRole {
-  Operator,
-  Vault,
-  Slasher,
-  Delegate,
+  OperatorAdmin,
+  VaultAdmin,
+  SlasherAdmin,
+  DelegateAdmin,
+  MetadataAdmin,
 }
 
 export type NcnAdminRoleArgs = NcnAdminRole;

@@ -13,14 +13,10 @@ import {
   decodeAccount,
   fetchEncodedAccount,
   fetchEncodedAccounts,
-  fixDecoderSize,
-  fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
-  getBytesDecoder,
-  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -37,7 +33,6 @@ import {
   type FetchAccountsConfig,
   type MaybeAccount,
   type MaybeEncodedAccount,
-  type ReadonlyUint8Array,
 } from '@solana/web3.js';
 
 export type Ncn = {
@@ -48,7 +43,7 @@ export type Ncn = {
   vaultAdmin: Address;
   slasherAdmin: Address;
   delegateAdmin: Address;
-  reserved1: ReadonlyUint8Array;
+  metadataAdmin: Address;
   index: bigint;
   operatorCount: bigint;
   vaultCount: bigint;
@@ -65,7 +60,7 @@ export type NcnArgs = {
   vaultAdmin: Address;
   slasherAdmin: Address;
   delegateAdmin: Address;
-  reserved1: ReadonlyUint8Array;
+  metadataAdmin: Address;
   index: number | bigint;
   operatorCount: number | bigint;
   vaultCount: number | bigint;
@@ -83,7 +78,7 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['vaultAdmin', getAddressEncoder()],
     ['slasherAdmin', getAddressEncoder()],
     ['delegateAdmin', getAddressEncoder()],
-    ['reserved1', fixEncoderSize(getBytesEncoder(), 32)],
+    ['metadataAdmin', getAddressEncoder()],
     ['index', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
@@ -102,7 +97,7 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['vaultAdmin', getAddressDecoder()],
     ['slasherAdmin', getAddressDecoder()],
     ['delegateAdmin', getAddressDecoder()],
-    ['reserved1', fixDecoderSize(getBytesDecoder(), 32)],
+    ['metadataAdmin', getAddressDecoder()],
     ['index', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],

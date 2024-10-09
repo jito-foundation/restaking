@@ -33,8 +33,8 @@ pub struct Ncn {
     /// The delegate admin of the NCN
     pub delegate_admin: Pubkey,
 
-    // Reserved space
-    reserved_1: [u8; 32],
+    /// ( For future use ) Authority to update the ncn's metadata
+    pub metadata_admin: Pubkey,
 
     /// The index of the NCN
     index: PodU64,
@@ -69,7 +69,7 @@ impl Ncn {
             vault_admin: admin,
             slasher_admin: admin,
             delegate_admin: admin,
-            reserved_1: [0; 32],
+            metadata_admin: admin,
             index: PodU64::from(ncn_index),
             operator_count: PodU64::from(0),
             vault_count: PodU64::from(0),
@@ -195,6 +195,11 @@ impl Ncn {
             self.delegate_admin = *new_admin;
             msg!("Delegate admin set to {:?}", new_admin);
         }
+
+        if self.metadata_admin.eq(old_admin) {
+            self.metadata_admin = *new_admin;
+            msg!("Metadata admin set to {:?}", new_admin);
+        }
     }
 
     /// Returns the seeds for the PDA
@@ -275,7 +280,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // slasher_admin
             std::mem::size_of::<Pubkey>() + // delegate_admin
-            32 + // reserved
+            std::mem::size_of::<Pubkey>() + // metadata_admin
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // operator_count
             std::mem::size_of::<PodU64>() + // vault_count
@@ -302,5 +307,6 @@ mod tests {
         assert_eq!(ncn.vault_admin, new_admin);
         assert_eq!(ncn.slasher_admin, new_admin);
         assert_eq!(ncn.delegate_admin, new_admin);
+        assert_eq!(ncn.metadata_admin, new_admin);
     }
 }

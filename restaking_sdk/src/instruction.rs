@@ -195,10 +195,11 @@ pub enum RestakingInstruction {
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 pub enum NcnAdminRole {
-    Operator,
-    Vault,
-    Slasher,
-    Delegate,
+    OperatorAdmin,
+    VaultAdmin,
+    SlasherAdmin,
+    DelegateAdmin,
+    MetadataAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -207,4 +208,5 @@ pub enum OperatorAdminRole {
     VaultAdmin,
     VoterAdmin,
     DelegateAdmin,
+    MetadataAdmin,
 }

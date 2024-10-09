@@ -43,6 +43,9 @@ pub fn process_set_operator_secondary_admin(
         OperatorAdminRole::DelegateAdmin => {
             operator.delegate_admin = *new_admin.key;
         }
+        OperatorAdminRole::MetadataAdmin => {
+            operator.metadata_admin = *new_admin.key;
+        }
     }
 
     Ok(())

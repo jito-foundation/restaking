@@ -38,7 +38,7 @@ pub struct Config {
     pub bump: u8,
 
     /// Reserved space
-    reserved_1: [u8; 263],
+    reserved: [u8; 263],
 }
 
 impl Config {
@@ -50,7 +50,7 @@ impl Config {
             ncn_count: PodU64::from(0),
             operator_count: PodU64::from(0),
             bump,
-            reserved_1: [0; 263],
+            reserved: [0; 263],
         }
     }
 
