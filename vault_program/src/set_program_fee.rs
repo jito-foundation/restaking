@@ -12,7 +12,7 @@ use solana_program::{
 /// Specification:
 /// - The fee can only be changed by the config admin. The config admin must sign the transaction.
 /// - The transaction shall fail if the new fee exceeds MAX_FEE_BPS.
-/// - The fee change must be acceptable according to the Config::check_fee_change_ok method.
+/// - The fee change must be acceptable according to the Vault::check_fee_change_ok method.
 /// - The Config program_fee_bps shall be updated to the new fee.
 pub fn process_set_program_fee(
     program_id: &Pubkey,

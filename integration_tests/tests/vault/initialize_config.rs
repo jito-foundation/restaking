@@ -2,13 +2,10 @@
 mod tests {
     use jito_vault_core::{config::Config, MAX_FEE_BPS};
     use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, instruction::InstructionError};
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::TransactionError,
-    };
+    use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::{
-        assert_ix_error, fixture::TestBuilder, vault_client::assert_vault_error,
+        assert_ix_error, fixture::TestBuilder,
     };
 
     #[tokio::test]

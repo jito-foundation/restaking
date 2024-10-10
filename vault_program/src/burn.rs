@@ -43,7 +43,7 @@ pub fn process_burn(
     amount_in: u64,
     min_amount_out: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(10);
+    let (required_accounts, optional_accounts) = accounts.split_at(11);
 
     let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_fee_token_account, program_fee_token_account, token_program, system_program] =
         required_accounts
