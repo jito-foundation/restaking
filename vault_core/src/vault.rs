@@ -726,7 +726,7 @@ impl Vault {
     }
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
-    fn calculate_withdrawal_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+    fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
@@ -795,7 +795,7 @@ impl Vault {
             return Err(VaultError::VaultInsufficientFunds);
         }
 
-        let fee_amount = self.calculate_withdrawal_fee(amount_in)?;
+        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
         let amount_to_burn = amount_in
             .checked_sub(fee_amount)
             .ok_or(VaultError::VaultUnderflow)?;
@@ -927,7 +927,7 @@ impl Vault {
 
         // Calculate the total amount of assets available for withdrawal, which includes
         // both undelegated assets and assets in the withdrawal process
-        let available_for_withdrawal: u64 = undelegated_after_update
+        let available_for_withdrawal = undelegated_after_update
             .checked_add(assets_withdrawing_after_update)
             .ok_or(VaultError::VaultOverflow)?;
 
@@ -1060,7 +1060,7 @@ mod tests {
 
     fn make_test_vault(
         deposit_fee_bps: u16,
-        withdrawal_fee_bps: u16,
+        withdraw_fee_bps: u16,
         tokens_deposited: u64,
         vrt_supply: u64,
         delegation_state: DelegationState,
@@ -1072,7 +1072,7 @@ mod tests {
             0,
             Pubkey::new_unique(),
             deposit_fee_bps,
-            withdrawal_fee_bps,
+            withdraw_fee_bps,
             0,
             0,
             0,
