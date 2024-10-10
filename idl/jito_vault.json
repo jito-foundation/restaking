@@ -2386,6 +2386,21 @@
       "code": 1047,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
+    },
+    {
+      "code": 1048,
+      "name": "InvalidDepositor",
+      "msg": "InvalidDepositor"
+    },
+    {
+      "code": 1049,
+      "name": "InvalidDepositTokenAccount",
+      "msg": "InvalidDepositTokenAccount"
+    },
+    {
+      "code": 1050,
+      "name": "NoSupportedMintBalanceChange",
+      "msg": "NoSupportedMintBalanceChange"
     }
   ],
   "metadata": {

@@ -110,12 +110,21 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x415; // 1045
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x416; // 1046
 /** VaultMintZero: VaultMintZero */
 export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x417; // 1047
+/** InvalidDepositor: InvalidDepositor */
+export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x418; // 1048
+/** InvalidDepositTokenAccount: InvalidDepositTokenAccount */
+export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x419; // 1049
+/** NoSupportedMintBalanceChange: NoSupportedMintBalanceChange */
+export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41a; // 1050
 
 export type JitoVaultError =
+  | typeof JITO_VAULT_ERROR__INVALID_DEPOSITOR
+  | typeof JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__NCN_OVERFLOW
   | typeof JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__NCN_VAULT_TICKET_UNSLASHABLE
+  | typeof JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE
   | typeof JITO_VAULT_ERROR__OPERATOR_OVERFLOW
   | typeof JITO_VAULT_ERROR__OPERATOR_VAULT_TICKET_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__SLASHER_OVERFLOW
@@ -164,10 +173,13 @@ export type JitoVaultError =
 let jitoVaultErrorMessages: Record<JitoVaultError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
   jitoVaultErrorMessages = {
+    [JITO_VAULT_ERROR__INVALID_DEPOSITOR]: `InvalidDepositor`,
+    [JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT]: `InvalidDepositTokenAccount`,
     [JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE]: `NcnOperatorStateUnslashable`,
     [JITO_VAULT_ERROR__NCN_OVERFLOW]: `NcnOverflow`,
     [JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE]: `NcnVaultSlasherTicketUnslashable`,
     [JITO_VAULT_ERROR__NCN_VAULT_TICKET_UNSLASHABLE]: `NcnVaultTicketUnslashable`,
+    [JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE]: `NoSupportedMintBalanceChange`,
     [JITO_VAULT_ERROR__OPERATOR_OVERFLOW]: `OperatorOverflow`,
     [JITO_VAULT_ERROR__OPERATOR_VAULT_TICKET_UNSLASHABLE]: `OperatorVaultTicketUnslashable`,
     [JITO_VAULT_ERROR__SLASHER_OVERFLOW]: `SlasherOverflow`,
