@@ -88,7 +88,7 @@ impl Config {
             fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
             program_fee_bps: PodU16::from(program_fee_bps),
             program_fee_wallet,
-            fee_admin: admin, // TODO: Change this to a different admin
+            fee_admin: admin,
             bump,
             reserved: [0; 229],
         }

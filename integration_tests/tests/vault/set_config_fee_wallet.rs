@@ -2,25 +2,17 @@
 mod tests {
     use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
-    use solana_program::pubkey::Pubkey;
     use solana_sdk::{signature::Keypair, signer::Signer};
 
     use crate::fixtures::{fixture::TestBuilder, vault_client::assert_vault_error, TestError};
 
     #[tokio::test]
     async fn test_set_config_fee_wallet() -> Result<(), TestError> {
-        let mut context = TestBuilder::new().await;
+        let context = TestBuilder::new().await;
         let mut vault_program_client = context.vault_program_client();
 
         // Initialize config and vault
-        let (config_admin, vault_root) =
-            vault_program_client.setup_config_and_vault(0, 0, 0).await?;
-
-        // Get the initial config
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await?;
-        let initial_fee_wallet = config.program_fee_wallet;
+        let (config_admin, _) = vault_program_client.setup_config_and_vault(0, 0, 0).await?;
 
         // Set a new fee wallet
         let new_fee_wallet = Keypair::new().pubkey();
