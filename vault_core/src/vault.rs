@@ -858,7 +858,7 @@ impl Vault {
             .and_then(|x| x.checked_add(self.vrt_ready_to_claim_amount()))
             .ok_or(VaultError::VaultOverflow)?;
 
-        let fee_amount = self.calculate_withdrawal_fee(vrt_reserve)?;
+        let fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
 
         let vrt_reserve_post_fee = vrt_reserve
             .checked_sub(fee_amount)
