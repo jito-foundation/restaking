@@ -596,7 +596,7 @@ pub fn slash(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn enqueue_withdraw(
+pub fn enqueue_withdrawal(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,

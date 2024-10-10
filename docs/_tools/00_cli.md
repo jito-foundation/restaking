@@ -210,13 +210,13 @@ Vault commands
 
 Initializes the vault
 
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWALAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>`
 
 ###### **Arguments:**
 
 * `<TOKEN_MINT>` — The token which is allowed to be deposited into the vault
 * `<DEPOSIT_FEE_BPS>` — The deposit fee in bips
-* `<WITHDRAWAL_FEE_BPS>` — The withdrawal fee in bips
+* `<WITHDRAWALAL_FEE_BPS>` — The withdrawal fee in bips
 * `<REWARD_FEE_BPS>` — The reward fee in bips
 * `<DECIMALS>` — The decimals of the token
 

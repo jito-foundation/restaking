@@ -159,8 +159,8 @@ impl VaultStakerWithdrawalTicket {
             msg!("Vault staker withdraw ticket discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let vault_staker_withdraw_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
-        let base = Self::try_from_slice_unchecked(&vault_staker_withdraw_ticket_data)?.base;
+        let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
+        let base = Self::try_from_slice_unchecked(&vault_staker_withdrawal_ticket_data)?.base;
         let expected_pubkey = Self::find_program_address(program_id, vault.key, &base).0;
         if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
             msg!("Vault staker withdraw ticket is not at the correct PDA");

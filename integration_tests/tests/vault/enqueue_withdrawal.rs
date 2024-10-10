@@ -11,14 +11,14 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn test_enqueue_withdraw_with_fee_success() {
+    async fn test_enqueue_withdrawal_with_fee_success() {
         const MINT_AMOUNT: u64 = 100_000;
         const DEPOSIT_FEE_BPS: u16 = 100;
-        const WITHDRAW_FEE_BPS: u16 = 100;
+        const withdrawal_FEE_BPS: u16 = 100;
         let min_amount_out: u64 = MINT_AMOUNT * (10_000 - DEPOSIT_FEE_BPS) as u64 / 10_000;
 
         let deposit_fee_bps = DEPOSIT_FEE_BPS;
-        let withdraw_fee_bps = WITHDRAW_FEE_BPS;
+        let withdrawal_fee_bps = withdrawal_FEE_BPS;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -32,7 +32,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -115,9 +115,9 @@ mod tests {
 
         // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw
-        let amount_to_dequeue = MINT_AMOUNT * (10_000 - WITHDRAW_FEE_BPS) as u64 / 10_000;
+        let amount_to_dequeue = MINT_AMOUNT * (10_000 - withdrawal_FEE_BPS) as u64 / 10_000;
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, amount_to_dequeue)
+            .do_enqueue_withdrawal(&vault_root, &depositor, amount_to_dequeue)
             .await
             .unwrap();
 
@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_enqueue_withdraw_zero_fails() {
+    async fn test_enqueue_withdrawal_zero_fails() {
         let mut fixture = TestBuilder::new().await;
         let ConfiguredVault {
             mut vault_program_client,
@@ -184,7 +184,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, 0)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 0)
             .await;
 
         assert_vault_error(err, VaultError::VaultEnqueueWithdrawalAmountZero);

@@ -45,7 +45,7 @@ Here's a list of different admins that control the vault:
 - `slasher_admin`: Add and removal of slashers.
 - `capacity_admin`: Set the vault's max token capacity.
 - `fee_admin`: Set and adjust deposit, withdrawal, and reward fees.
-- `withdraw_admin`: Initiate token withdrawals from the vault.
+- `withdrawal_admin`: Initiate token withdrawals from the vault.
 - `mint_burn_admin`: An optional admin for minting and burning operations.
 
 # 4. Vault Configuration

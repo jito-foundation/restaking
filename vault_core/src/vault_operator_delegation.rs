@@ -72,8 +72,8 @@ impl VaultOperatorDelegation {
     /// Updates the state of the delegation
     /// The cooling_down_amount becomes the enqueued_for_cooldown_amount
     /// The enqueued_for_cooldown_amount is zeroed out
-    /// The cooling_down_for_withdraw_amount becomes the enqueued_for_withdraw_amount
-    /// The enqueued_for_withdraw_amount is zeroed out
+    /// The cooling_down_for_withdrawal_amount becomes the enqueued_for_withdrawal_amount
+    /// The enqueued_for_withdrawal_amount is zeroed out
     #[inline(always)]
     pub fn update(&mut self, slot: u64, epoch_length: u64) {
         let last_update_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
