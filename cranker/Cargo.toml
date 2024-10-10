@@ -1,0 +1,33 @@
+[package]
+name = "jito-restaking-cranker"
+description = "Jito Restaking Cranker"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme= { workspace = true }
+
+[[bin]]
+name = "jito-restaking-crank"
+path = "src/bin/main.rs"
+
+[dependencies]
+clap = { workspace = true }
+jito-bytemuck = { workspace = true }
+jito-restaking-client = { workspace = true }
+jito-restaking-core = { workspace = true }
+jito-vault-client = { workspace = true }
+jito-vault-core = { workspace = true }
+jito-vault-sdk = { workspace = true }
+jito-account-traits-derive = { workspace = true }
+solana-account-decoder = { workspace = true }
+solana-rpc-client = { workspace = true }
+solana-rpc-client-api = { workspace = true }
+solana-sdk = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace =  true }
+env_logger = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
