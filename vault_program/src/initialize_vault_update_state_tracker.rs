@@ -75,8 +75,11 @@ pub fn process_initialize_vault_update_state_tracker(
         &vault_update_state_tracker_seeds,
     )?;
 
-    let additional_assets_need_unstaking =
-        vault.calculate_assets_needed_for_withdrawals(Clock::get()?.slot, config.epoch_length())?;
+    let additional_assets_need_unstaking = vault.calculate_assets_needed_for_withdrawals(
+        Clock::get()?.slot,
+        config.epoch_length(),
+        config.program_fee_bps.into(),
+    )?;
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;

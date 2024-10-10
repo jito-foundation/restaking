@@ -866,7 +866,7 @@ impl Vault {
 
     /// Calculates the amount of tokens, denominated in the supported_mint asset,
     /// that should be reserved for the VRTs in the vault
-    pub fn calculate_vrt_reserve_amount(&self) -> Result<u64, VaultError> {
+    pub fn calculate_vrt_reserve_amount(&self, program_fee_bps: u16) -> Result<u64, VaultError> {
         if self.vrt_supply() == 0 {
             return Ok(0);
         }
@@ -876,13 +876,28 @@ impl Vault {
             .and_then(|x| x.checked_add(self.vrt_ready_to_claim_amount()))
             .ok_or(VaultError::VaultOverflow)?;
 
-        let fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
+        // Calculate program fee
+        let program_fee_amount = Config::calculate_program_fee(program_fee_bps, vrt_reserve)?;
 
-        let vrt_reserve_with_fee = vrt_reserve
-            .checked_add(fee_amount)
+        // Calculate vault fee
+        let vault_fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
+
+        // Prioritize program fee over vault fee if together they exceed the vrt_reserve
+        let total_fee = program_fee_amount
+            .checked_add(vault_fee_amount)
+            .ok_or(VaultError::VaultOverflow)?;
+        let adjusted_vault_fee = if total_fee > vrt_reserve {
+            vrt_reserve.saturating_sub(program_fee_amount)
+        } else {
+            vault_fee_amount
+        };
+
+        let vrt_reserve_with_fees = vrt_reserve
+            .checked_add(program_fee_amount)
+            .and_then(|x| x.checked_add(adjusted_vault_fee))
             .ok_or(VaultError::VaultOverflow)?;
 
-        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_with_fee as u128)
+        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_with_fees as u128)
             .checked_mul(self.tokens_deposited() as u128)
             .and_then(|x| x.checked_div(self.vrt_supply() as u128))
             .and_then(|result| result.try_into().ok())
@@ -895,9 +910,11 @@ impl Vault {
         &self,
         slot: u64,
         epoch_length: u64,
+        program_fee_bps: u16,
     ) -> Result<u64, VaultError> {
         // Calculate the total amount of assets needed to be set aside for all potential withdrawals
-        let amount_needed_set_aside_for_withdrawals = self.calculate_vrt_reserve_amount()?;
+        let amount_needed_set_aside_for_withdrawals =
+            self.calculate_vrt_reserve_amount(program_fee_bps)?;
 
         // Clone the current delegation state to simulate updates without modifying the original
         let mut delegation_state_after_update = self.delegation_state;
@@ -956,7 +973,7 @@ impl Vault {
         Ok(additional_assets_need_undelegating)
     }
 
-    pub fn delegate(&mut self, amount: u64) -> Result<(), VaultError> {
+    pub fn delegate(&mut self, amount: u64, program_fee_bps: u16) -> Result<(), VaultError> {
         if amount == 0 {
             msg!("Delegation amount is zero");
             return Err(VaultError::VaultDelegationZero);
@@ -967,7 +984,7 @@ impl Vault {
 
         // there is some protection built-in to the vault to avoid over delegating assets
         // this number is denominated in the supported token units
-        let amount_to_reserve_for_vrts = self.calculate_vrt_reserve_amount()?;
+        let amount_to_reserve_for_vrts = self.calculate_vrt_reserve_amount(program_fee_bps)?;
 
         let amount_available_for_delegation = self
             .tokens_deposited()
@@ -1583,14 +1600,14 @@ mod tests {
     fn test_delegate_ok() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
 
-        vault.delegate(1000).unwrap();
+        vault.delegate(1000, 0).unwrap();
     }
 
     #[test]
     fn test_delegate_more_than_available_fails() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(
-            vault.delegate(1001),
+            vault.delegate(1001, 0),
             Err(VaultError::VaultInsufficientFunds)
         );
     }
@@ -1598,13 +1615,16 @@ mod tests {
     #[test]
     fn test_delegate_more_than_available_with_delegate_state_fails() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(500, 200, 200));
-        assert_eq!(vault.delegate(101), Err(VaultError::VaultInsufficientFunds));
+        assert_eq!(
+            vault.delegate(101, 0),
+            Err(VaultError::VaultInsufficientFunds)
+        );
     }
 
     #[test]
     fn test_delegate_with_delegate_state_ok() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(500, 200, 100));
-        vault.delegate(100).unwrap();
+        vault.delegate(100, 0).unwrap();
     }
 
     #[test]
@@ -1612,7 +1632,7 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
-        vault.delegate(900).unwrap();
+        vault.delegate(900, 0).unwrap();
     }
 
     #[test]
@@ -1620,7 +1640,10 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
-        assert_eq!(vault.delegate(901), Err(VaultError::VaultInsufficientFunds));
+        assert_eq!(
+            vault.delegate(901, 0),
+            Err(VaultError::VaultInsufficientFunds)
+        );
     }
 
     #[test]
@@ -1628,7 +1651,7 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(100, 100, 100));
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
-        vault.delegate(400).unwrap();
+        vault.delegate(400, 0).unwrap();
     }
 
     #[test]
@@ -1636,21 +1659,24 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(100, 100, 100));
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
-        assert_eq!(vault.delegate(601), Err(VaultError::VaultInsufficientFunds));
+        assert_eq!(
+            vault.delegate(601, 0),
+            Err(VaultError::VaultInsufficientFunds)
+        );
     }
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_cooling_down_fails() {
         let mut vault = make_test_vault(0, 0, 1000, 900, DelegationState::new(0, 500, 0));
         vault.increment_vrt_ready_to_claim_amount(500).unwrap();
-        assert_eq!(vault.delegate(100), Err(VaultError::VaultUnderflow));
+        assert_eq!(vault.delegate(100, 0), Err(VaultError::VaultUnderflow));
     }
 
     #[test]
     fn test_calculate_vrt_reserve_amount_ok() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
-        let result = vault.calculate_vrt_reserve_amount().unwrap();
+        let result = vault.calculate_vrt_reserve_amount(0).unwrap();
         assert_eq!(result, 100);
     }
 
@@ -1658,7 +1684,7 @@ mod tests {
     fn test_calculate_vrt_reserve_amount_with_fee() {
         let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
-        let result = vault.calculate_vrt_reserve_amount().unwrap();
+        let result = vault.calculate_vrt_reserve_amount(100).unwrap();
 
         // This is correct, because we need to account for the withdrawal fee
         // The withdrawal fee is 0.1% of the total amount, so 1000 * 0.001 = 1
@@ -1672,9 +1698,56 @@ mod tests {
         vault.set_vrt_enqueued_for_cooldown_amount(50);
         vault.set_vrt_cooling_down_amount(25);
         vault.vrt_ready_to_claim_amount = PodU64::from(25);
-        let result = vault.calculate_vrt_reserve_amount().unwrap();
+        let result = vault.calculate_vrt_reserve_amount(100).unwrap();
 
-        assert_eq!(result, 101);
+        // 100 VRT total in different stages
+        // Vault fee: 100 * 0.1% = 1 VRT
+        // Program fee: 100 * 1% = 1 VRT
+        // Total to reserve: 102 VRT worth of tokens
+        assert_eq!(result, 102);
+    }
+
+    #[test]
+    fn test_calculate_vrt_reserve_amount_with_high_program_fee() {
+        let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        vault.set_vrt_cooling_down_amount(100);
+        let result = vault.calculate_vrt_reserve_amount(5000).unwrap();
+
+        // 100 VRT cooling down
+        // Vault fee: 100 * 0.1% = 1 VRT (but will be adjusted)
+        // Program fee: 100 * 50% = 50 VRT
+        // Total to reserve: 150 VRT worth of tokens
+        assert_eq!(result, 150);
+    }
+
+    #[test]
+    fn test_calculate_vrt_reserve_amount_with_max_fees() {
+        let mut vault = make_test_vault(0, MAX_FEE_BPS, 1000, 1000, DelegationState::default());
+        vault.set_vrt_cooling_down_amount(100);
+        let result = vault.calculate_vrt_reserve_amount(MAX_FEE_BPS).unwrap();
+
+        // 100 VRT cooling down
+        // Vault fee: 100 * 100% = 100 VRT (but will be adjusted)
+        // Program fee: 100 * 100% = 100 VRT
+        // Total to reserve: 200 VRT worth of tokens
+        assert_eq!(result, 200);
+    }
+
+    #[test]
+    fn test_calculate_vrt_reserve_amount_with_zero_supply() {
+        let vault = make_test_vault(0, 100, 1000, 0, DelegationState::default());
+        let result = vault.calculate_vrt_reserve_amount(100).unwrap();
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_calculate_vrt_reserve_amount_overflow() {
+        let mut vault = make_test_vault(0, 100, u64::MAX, u64::MAX, DelegationState::default());
+        vault.set_vrt_cooling_down_amount(u64::MAX);
+        assert_eq!(
+            vault.calculate_vrt_reserve_amount(MAX_FEE_BPS),
+            Err(VaultError::VaultOverflow)
+        );
     }
 
     #[test]
@@ -1682,19 +1755,19 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(1000, 0, 0));
         vault.set_vrt_cooling_down_amount(100);
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_assets_needed_for_withdrawals(100, 100, 0)
             .unwrap();
         assert_eq!(result, 100);
 
         vault.delegation_state = DelegationState::new(900, 0, 100);
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_assets_needed_for_withdrawals(100, 100, 0)
             .unwrap();
         assert_eq!(result, 0);
 
         vault.set_vrt_cooling_down_amount(200);
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_assets_needed_for_withdrawals(100, 100, 0)
             .unwrap();
         assert_eq!(result, 100);
     }
@@ -1705,12 +1778,12 @@ mod tests {
         vault.set_vrt_cooling_down_amount(100);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_assets_needed_for_withdrawals(100, 100, 0)
             .unwrap();
         assert_eq!(result, 0);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(200, 100)
+            .calculate_assets_needed_for_withdrawals(200, 100, 0)
             .unwrap();
         assert_eq!(result, 0);
     }
@@ -1721,19 +1794,19 @@ mod tests {
         vault.set_vrt_cooling_down_amount(300);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_assets_needed_for_withdrawals(100, 100, 0)
             .unwrap();
         assert_eq!(result, 100);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(200, 100)
+            .calculate_assets_needed_for_withdrawals(200, 100, 0)
             .unwrap();
         assert_eq!(result, 100);
 
         vault.increment_vrt_supply(100).unwrap();
         vault.increment_tokens_deposited(100).unwrap();
         let result = vault
-            .calculate_assets_needed_for_withdrawals(200, 100)
+            .calculate_assets_needed_for_withdrawals(200, 100, 0)
             .unwrap();
         assert_eq!(result, 0);
     }
@@ -2084,7 +2157,7 @@ mod tests {
     #[test]
     fn test_delegation_too_small() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
-        assert_eq!(vault.delegate(0), Err(VaultError::VaultDelegationZero));
+        assert_eq!(vault.delegate(0, 0), Err(VaultError::VaultDelegationZero));
     }
 
     #[test]
