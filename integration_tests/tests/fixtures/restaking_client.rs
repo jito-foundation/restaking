@@ -77,7 +77,9 @@ impl RestakingProgramClient {
         let account =
             NcnVaultTicket::find_program_address(&jito_restaking_program::id(), ncn, vault).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(*NcnVaultTicket::try_from_slice_unchecked(account.data.as_slice())?)
+        Ok(*NcnVaultTicket::try_from_slice_unchecked(
+            account.data.as_slice(),
+        )?)
     }
 
     pub async fn get_ncn_operator_state(
@@ -88,7 +90,9 @@ impl RestakingProgramClient {
         let account =
             NcnOperatorState::find_program_address(&jito_restaking_program::id(), ncn, operator).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(*NcnOperatorState::try_from_slice_unchecked(account.data.as_slice())?)
+        Ok(*NcnOperatorState::try_from_slice_unchecked(
+            account.data.as_slice(),
+        )?)
     }
 
     pub async fn get_ncn_vault_slasher_ticket(
@@ -105,12 +109,16 @@ impl RestakingProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(*NcnVaultSlasherTicket::try_from_slice_unchecked(account.data.as_slice())?)
+        Ok(*NcnVaultSlasherTicket::try_from_slice_unchecked(
+            account.data.as_slice(),
+        )?)
     }
 
     pub async fn get_operator(&mut self, account: &Pubkey) -> TestResult<Operator> {
         let account = self.banks_client.get_account(*account).await?.unwrap();
-        Ok(*Operator::try_from_slice_unchecked(account.data.as_slice())?)
+        Ok(*Operator::try_from_slice_unchecked(
+            account.data.as_slice(),
+        )?)
     }
 
     pub async fn get_operator_vault_ticket(
@@ -125,7 +133,9 @@ impl RestakingProgramClient {
         )
         .0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(*OperatorVaultTicket::try_from_slice_unchecked(account.data.as_slice())?)
+        Ok(*OperatorVaultTicket::try_from_slice_unchecked(
+            account.data.as_slice(),
+        )?)
     }
 
     pub async fn get_operator_ncn_ticket(
@@ -136,7 +146,9 @@ impl RestakingProgramClient {
         let account =
             NcnOperatorState::find_program_address(&jito_restaking_program::id(), operator, ncn).0;
         let account = self.banks_client.get_account(account).await?.unwrap();
-        Ok(*NcnOperatorState::try_from_slice_unchecked(account.data.as_slice())?)
+        Ok(*NcnOperatorState::try_from_slice_unchecked(
+            account.data.as_slice(),
+        )?)
     }
 
     pub async fn do_initialize_config(&mut self) -> TestResult<Keypair> {

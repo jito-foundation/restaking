@@ -4,9 +4,7 @@ mod tests {
     use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, instruction::InstructionError};
     use solana_sdk::signature::{Keypair, Signer};
 
-    use crate::fixtures::{
-        assert_ix_error, fixture::TestBuilder,
-    };
+    use crate::fixtures::{assert_ix_error, fixture::TestBuilder};
 
     #[tokio::test]
     async fn test_initialize_config_ok() {
