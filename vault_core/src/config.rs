@@ -14,6 +14,8 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey,
 };
 
+use crate::MAX_FEE_BPS;
+
 impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
 }
@@ -44,11 +46,20 @@ pub struct Config {
     /// The amount a fee can increase above the rate of change in basis points
     fee_bump_bps: PodU16,
 
+    /// The program fee in basis points
+    pub program_fee_bps: PodU16,
+
+    /// The fee wallet
+    pub program_fee_wallet: Pubkey,
+
+    /// The admin for the fee account
+    pub fee_admin: Pubkey,
+
     /// The bump seed for the PDA
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 263],
+    reserved: [u8; 229],
 }
 
 impl Config {
@@ -59,7 +70,13 @@ impl Config {
     /// Maximum bump in fee change above the rate of change
     pub const DEFAULT_FEE_BUMP_BPS: u16 = 10; // 0.1%
 
-    pub fn new(admin: Pubkey, restaking_program: Pubkey, bump: u8) -> Self {
+    pub fn new(
+        admin: Pubkey,
+        restaking_program: Pubkey,
+        program_fee_wallet: Pubkey,
+        program_fee_bps: u16,
+        bump: u8,
+    ) -> Self {
         Self {
             admin,
             restaking_program,
@@ -69,8 +86,11 @@ impl Config {
             deposit_withdrawal_fee_cap_bps: PodU16::from(Self::DEFAULT_FEES_CAP_BPS),
             fee_rate_of_change_bps: PodU16::from(Self::DEFAULT_FEE_RATE_OF_CHANGE_BPS),
             fee_bump_bps: PodU16::from(Self::DEFAULT_FEE_BUMP_BPS),
+            program_fee_bps: PodU16::from(program_fee_bps),
+            program_fee_wallet,
+            fee_admin: admin,
             bump,
-            reserved: [0; 263],
+            reserved: [0; 229],
         }
     }
 
@@ -90,6 +110,10 @@ impl Config {
         self.fee_rate_of_change_bps.into()
     }
 
+    pub fn program_fee_bps(&self) -> u16 {
+        self.program_fee_bps.into()
+    }
+
     pub fn fee_bump_bps(&self) -> u16 {
         self.fee_bump_bps.into()
     }
@@ -99,6 +123,16 @@ impl Config {
         num_vaults = num_vaults.checked_add(1).ok_or(VaultError::VaultOverflow)?;
         self.num_vaults = PodU64::from(num_vaults);
         Ok(())
+    }
+
+    /// Calculate the amount of tokens collected as a program fee for withdrawing tokens from the vault.
+    pub fn calculate_program_fee(program_fee_bps: u16, vrt_amount: u64) -> Result<u64, VaultError> {
+        let fee = (vrt_amount as u128)
+            .checked_mul(program_fee_bps as u128)
+            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+            .and_then(|x| x.try_into().ok())
+            .ok_or(VaultError::VaultOverflow)?;
+        Ok(fee)
     }
 
     pub fn seeds() -> Vec<Vec<u8>> {
@@ -164,6 +198,7 @@ mod tests {
             std::mem::size_of::<PodU16>() + // fee_cap_bps
             std::mem::size_of::<PodU16>() + // fee_rate_of_change_bps
             std::mem::size_of::<PodU16>() + // fee_bump_bps
+            std::mem::size_of::<Pubkey>() + // program_fee_bps
             std::mem::size_of::<u8>() + // bump
             263; // reserved
         assert_eq!(config_size, sum_of_fields);

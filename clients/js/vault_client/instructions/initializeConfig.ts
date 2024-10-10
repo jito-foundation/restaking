@@ -10,6 +10,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -66,19 +68,28 @@ export type InitializeConfigInstruction<
     ]
   >;
 
-export type InitializeConfigInstructionData = { discriminator: number };
+export type InitializeConfigInstructionData = {
+  discriminator: number;
+  programFeeBps: number;
+};
 
-export type InitializeConfigInstructionDataArgs = {};
+export type InitializeConfigInstructionDataArgs = { programFeeBps: number };
 
 export function getInitializeConfigInstructionDataEncoder(): Encoder<InitializeConfigInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([['discriminator', getU8Encoder()]]),
+    getStructEncoder([
+      ['discriminator', getU8Encoder()],
+      ['programFeeBps', getU16Encoder()],
+    ]),
     (value) => ({ ...value, discriminator: INITIALIZE_CONFIG_DISCRIMINATOR })
   );
 }
 
 export function getInitializeConfigInstructionDataDecoder(): Decoder<InitializeConfigInstructionData> {
-  return getStructDecoder([['discriminator', getU8Decoder()]]);
+  return getStructDecoder([
+    ['discriminator', getU8Decoder()],
+    ['programFeeBps', getU16Decoder()],
+  ]);
 }
 
 export function getInitializeConfigInstructionDataCodec(): Codec<
@@ -101,6 +112,7 @@ export type InitializeConfigInput<
   admin: TransactionSigner<TAccountAdmin>;
   restakingProgram: Address<TAccountRestakingProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
+  programFeeBps: InitializeConfigInstructionDataArgs['programFeeBps'];
 };
 
 export function getInitializeConfigInstruction<
@@ -140,6 +152,9 @@ export function getInitializeConfigInstruction<
     ResolvedAccount
   >;
 
+  // Original args.
+  const args = { ...input };
+
   // Resolve default values.
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
@@ -155,7 +170,9 @@ export function getInitializeConfigInstruction<
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getInitializeConfigInstructionDataEncoder().encode({}),
+    data: getInitializeConfigInstructionDataEncoder().encode(
+      args as InitializeConfigInstructionDataArgs
+    ),
   } as InitializeConfigInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,

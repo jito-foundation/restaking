@@ -48,111 +48,117 @@ pub enum JitoVaultError {
     /// 1012 - VaultFeeAdminInvalid
     #[error("VaultFeeAdminInvalid")]
     VaultFeeAdminInvalid = 0x3F4,
-    /// 1013 - VaultFeeCapExceeded
+    /// 1013 - VaultConfigAdminInvalid
+    #[error("VaultConfigAdminInvalid")]
+    VaultConfigAdminInvalid = 0x3F5,
+    /// 1014 - VaultConfigFeeAdminInvalid
+    #[error("VaultConfigFeeAdminInvalid")]
+    VaultConfigFeeAdminInvalid = 0x3F6,
+    /// 1015 - VaultFeeCapExceeded
     #[error("VaultFeeCapExceeded")]
-    VaultFeeCapExceeded = 0x3F5,
-    /// 1014 - VaultFeeChangeTooSoon
+    VaultFeeCapExceeded = 0x3F7,
+    /// 1016 - VaultFeeChangeTooSoon
     #[error("VaultFeeChangeTooSoon")]
-    VaultFeeChangeTooSoon = 0x3F6,
-    /// 1015 - VaultFeeBumpTooLarge
+    VaultFeeChangeTooSoon = 0x3F8,
+    /// 1017 - VaultFeeBumpTooLarge
     #[error("VaultFeeBumpTooLarge")]
-    VaultFeeBumpTooLarge = 0x3F7,
-    /// 1016 - VaultUnderflow
+    VaultFeeBumpTooLarge = 0x3F9,
+    /// 1018 - VaultUnderflow
     #[error("VaultUnderflow")]
-    VaultUnderflow = 0x3F8,
-    /// 1017 - VaultUpdateNeeded
+    VaultUnderflow = 0x3FA,
+    /// 1019 - VaultUpdateNeeded
     #[error("VaultUpdateNeeded")]
-    VaultUpdateNeeded = 0x3F9,
-    /// 1018 - VaultIsUpdated
+    VaultUpdateNeeded = 0x3FB,
+    /// 1020 - VaultIsUpdated
     #[error("VaultIsUpdated")]
-    VaultIsUpdated = 0x3FA,
-    /// 1019 - VaultOperatorDelegationUpdateNeeded
+    VaultIsUpdated = 0x3FC,
+    /// 1021 - VaultOperatorDelegationUpdateNeeded
     #[error("VaultOperatorDelegationUpdateNeeded")]
-    VaultOperatorDelegationUpdateNeeded = 0x3FB,
-    /// 1020 - VaultOperatorDelegationIsUpdated
+    VaultOperatorDelegationUpdateNeeded = 0x3FD,
+    /// 1022 - VaultOperatorDelegationIsUpdated
     #[error("VaultOperatorDelegationIsUpdated")]
-    VaultOperatorDelegationIsUpdated = 0x3FC,
-    /// 1021 - VaultUpdateIncorrectIndex
+    VaultOperatorDelegationIsUpdated = 0x3FE,
+    /// 1023 - VaultUpdateIncorrectIndex
     #[error("VaultUpdateIncorrectIndex")]
-    VaultUpdateIncorrectIndex = 0x3FD,
-    /// 1022 - VaultUpdateStateNotFinishedUpdating
+    VaultUpdateIncorrectIndex = 0x3FF,
+    /// 1024 - VaultUpdateStateNotFinishedUpdating
     #[error("VaultUpdateStateNotFinishedUpdating")]
-    VaultUpdateStateNotFinishedUpdating = 0x3FE,
-    /// 1023 - VaultSecurityOverflow
+    VaultUpdateStateNotFinishedUpdating = 0x400,
+    /// 1025 - VaultSecurityOverflow
     #[error("VaultSecurityOverflow")]
-    VaultSecurityOverflow = 0x3FF,
-    /// 1024 - VaultSlashIncomplete
+    VaultSecurityOverflow = 0x401,
+    /// 1026 - VaultSlashIncomplete
     #[error("VaultSlashIncomplete")]
-    VaultSlashIncomplete = 0x400,
-    /// 1025 - VaultSecurityUnderflow
+    VaultSlashIncomplete = 0x402,
+    /// 1027 - VaultSecurityUnderflow
     #[error("VaultSecurityUnderflow")]
-    VaultSecurityUnderflow = 0x401,
-    /// 1026 - SlippageError
+    VaultSecurityUnderflow = 0x403,
+    /// 1028 - SlippageError
     #[error("SlippageError")]
-    SlippageError = 0x402,
-    /// 1027 - VaultStakerWithdrawalTicketNotWithdrawable
+    SlippageError = 0x404,
+    /// 1029 - VaultStakerWithdrawalTicketNotWithdrawable
     #[error("VaultStakerWithdrawalTicketNotWithdrawable")]
-    VaultStakerWithdrawalTicketNotWithdrawable = 0x403,
-    /// 1028 - VaultNcnSlasherTicketFailedCooldown
+    VaultStakerWithdrawalTicketNotWithdrawable = 0x405,
+    /// 1030 - VaultNcnSlasherTicketFailedCooldown
     #[error("VaultNcnSlasherTicketFailedCooldown")]
-    VaultNcnSlasherTicketFailedCooldown = 0x404,
-    /// 1029 - VaultNcnSlasherTicketFailedWarmup
+    VaultNcnSlasherTicketFailedCooldown = 0x406,
+    /// 1031 - VaultNcnSlasherTicketFailedWarmup
     #[error("VaultNcnSlasherTicketFailedWarmup")]
-    VaultNcnSlasherTicketFailedWarmup = 0x405,
-    /// 1030 - VaultNcnTicketFailedCooldown
+    VaultNcnSlasherTicketFailedWarmup = 0x407,
+    /// 1032 - VaultNcnTicketFailedCooldown
     #[error("VaultNcnTicketFailedCooldown")]
-    VaultNcnTicketFailedCooldown = 0x406,
-    /// 1031 - VaultNcnTicketFailedWarmup
+    VaultNcnTicketFailedCooldown = 0x408,
+    /// 1033 - VaultNcnTicketFailedWarmup
     #[error("VaultNcnTicketFailedWarmup")]
-    VaultNcnTicketFailedWarmup = 0x407,
-    /// 1032 - VaultNcnTicketUnslashable
+    VaultNcnTicketFailedWarmup = 0x409,
+    /// 1034 - VaultNcnTicketUnslashable
     #[error("VaultNcnTicketUnslashable")]
-    VaultNcnTicketUnslashable = 0x408,
-    /// 1033 - OperatorVaultTicketUnslashable
+    VaultNcnTicketUnslashable = 0x40A,
+    /// 1035 - OperatorVaultTicketUnslashable
     #[error("OperatorVaultTicketUnslashable")]
-    OperatorVaultTicketUnslashable = 0x409,
-    /// 1034 - NcnOperatorStateUnslashable
+    OperatorVaultTicketUnslashable = 0x40B,
+    /// 1036 - NcnOperatorStateUnslashable
     #[error("NcnOperatorStateUnslashable")]
-    NcnOperatorStateUnslashable = 0x40A,
-    /// 1035 - VaultNcnSlasherTicketUnslashable
+    NcnOperatorStateUnslashable = 0x40C,
+    /// 1037 - VaultNcnSlasherTicketUnslashable
     #[error("VaultNcnSlasherTicketUnslashable")]
-    VaultNcnSlasherTicketUnslashable = 0x40B,
-    /// 1036 - NcnVaultTicketUnslashable
+    VaultNcnSlasherTicketUnslashable = 0x40D,
+    /// 1038 - NcnVaultTicketUnslashable
     #[error("NcnVaultTicketUnslashable")]
-    NcnVaultTicketUnslashable = 0x40C,
-    /// 1037 - NcnVaultSlasherTicketUnslashable
+    NcnVaultTicketUnslashable = 0x40E,
+    /// 1039 - NcnVaultSlasherTicketUnslashable
     #[error("NcnVaultSlasherTicketUnslashable")]
-    NcnVaultSlasherTicketUnslashable = 0x40D,
-    /// 1038 - VaultMaxSlashedPerOperatorExceeded
+    NcnVaultSlasherTicketUnslashable = 0x40F,
+    /// 1040 - VaultMaxSlashedPerOperatorExceeded
     #[error("VaultMaxSlashedPerOperatorExceeded")]
-    VaultMaxSlashedPerOperatorExceeded = 0x40E,
-    /// 1039 - VaultStakerWithdrawalTicketInvalidStaker
+    VaultMaxSlashedPerOperatorExceeded = 0x410,
+    /// 1041 - VaultStakerWithdrawalTicketInvalidStaker
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
-    VaultStakerWithdrawalTicketInvalidStaker = 0x40F,
-    /// 1040 - SlasherOverflow
+    VaultStakerWithdrawalTicketInvalidStaker = 0x411,
+    /// 1042 - SlasherOverflow
     #[error("SlasherOverflow")]
-    SlasherOverflow = 0x410,
-    /// 1041 - NcnOverflow
+    SlasherOverflow = 0x412,
+    /// 1043 - NcnOverflow
     #[error("NcnOverflow")]
-    NcnOverflow = 0x411,
-    /// 1042 - OperatorOverflow
+    NcnOverflow = 0x413,
+    /// 1044 - OperatorOverflow
     #[error("OperatorOverflow")]
-    OperatorOverflow = 0x412,
-    /// 1043 - VaultDelegationZero
+    OperatorOverflow = 0x414,
+    /// 1045 - VaultDelegationZero
     #[error("VaultDelegationZero")]
-    VaultDelegationZero = 0x413,
-    /// 1044 - VaultCooldownZero
+    VaultDelegationZero = 0x415,
+    /// 1046 - VaultCooldownZero
     #[error("VaultCooldownZero")]
-    VaultCooldownZero = 0x414,
-    /// 1045 - VaultBurnZero
+    VaultCooldownZero = 0x416,
+    /// 1047 - VaultBurnZero
     #[error("VaultBurnZero")]
-    VaultBurnZero = 0x415,
-    /// 1046 - VaultEnqueueWithdrawalAmountZero
+    VaultBurnZero = 0x417,
+    /// 1048 - VaultEnqueueWithdrawalAmountZero
     #[error("VaultEnqueueWithdrawalAmountZero")]
-    VaultEnqueueWithdrawalAmountZero = 0x416,
-    /// 1047 - VaultMintZero
+    VaultEnqueueWithdrawalAmountZero = 0x418,
+    /// 1049 - VaultMintZero
     #[error("VaultMintZero")]
-    VaultMintZero = 0x417,
+    VaultMintZero = 0x419,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

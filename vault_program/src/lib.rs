@@ -21,7 +21,9 @@ mod initialize_vault_with_mint;
 mod mint_to;
 mod set_admin;
 mod set_capacity;
+mod set_config_fee_wallet;
 mod set_fees;
+mod set_program_fee;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
@@ -32,6 +34,7 @@ mod warmup_vault_ncn_ticket;
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
+use set_program_fee::process_set_program_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -59,8 +62,9 @@ use crate::{
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
-    set_fees::process_set_fees, set_secondary_admin::process_set_secondary_admin,
-    slash::process_slash, update_token_metadata::process_update_token_metadata,
+    set_config_fee_wallet::process_set_config_fee_wallet, set_fees::process_set_fees,
+    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    update_token_metadata::process_update_token_metadata,
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
@@ -98,9 +102,9 @@ pub fn process_instruction(
         // ------------------------------------------
         // Initialization
         // ------------------------------------------
-        VaultInstruction::InitializeConfig => {
+        VaultInstruction::InitializeConfig { program_fee_bps } => {
             msg!("Instruction: InitializeConfig");
-            process_initialize_config(program_id, accounts)
+            process_initialize_config(program_id, accounts, program_fee_bps)
         }
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
@@ -170,6 +174,14 @@ pub fn process_instruction(
                 withdrawal_fee_bps,
                 reward_fee_bps,
             )
+        }
+        VaultInstruction::SetProgramFee { new_fee_bps } => {
+            msg!("Instruction: SetProgramFee");
+            process_set_program_fee(program_id, accounts, new_fee_bps)
+        }
+        VaultInstruction::SetConfigFeeWallet { new_fee_wallet } => {
+            msg!("Instruction: SetConfigFeeWallet");
+            process_set_config_fee_wallet(program_id, accounts, new_fee_wallet)
         }
         // ------------------------------------------
         // Vault minting and burning
