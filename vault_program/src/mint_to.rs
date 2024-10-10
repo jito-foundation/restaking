@@ -172,22 +172,5 @@ pub fn process_mint(
         return Err(VaultError::NoSupportedMintBalanceChange.into());
     }
 
-    let vault_vrt_supply = {
-        let vault_data = vault_info.data.borrow();
-        let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-        vault.vrt_supply()
-    };
-
-    let vrt_mint_total_supply = {
-        let vrt_mint_data = vrt_mint.data.borrow();
-        let vrt_mint = spl_token::state::Mint::unpack(&vrt_mint_data)?;
-        vrt_mint.supply
-    };
-
-    if vault_vrt_supply != vrt_mint_total_supply {
-        msg!("Vault VRT supply does not match VRT mint total supply");
-        return Err(VaultError::NoSupportedMintBalanceChange.into());
-    }
-
     Ok(())
 }
