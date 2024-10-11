@@ -261,12 +261,12 @@ impl VaultProgramClient {
     pub async fn setup_config_and_vault(
         &mut self,
         deposit_fee_bps: u16,
-        withdraw_fee_bps: u16,
+        withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
         let vault_root = self
-            .do_initialize_vault(deposit_fee_bps, withdraw_fee_bps, reward_fee_bps, 9)
+            .do_initialize_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps, 9)
             .await?;
 
         Ok((config_admin, vault_root))
@@ -275,7 +275,7 @@ impl VaultProgramClient {
     pub async fn do_initialize_vault(
         &mut self,
         deposit_fee_bps: u16,
-        withdraw_fee_bps: u16,
+        withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
         decimals: u8,
     ) -> Result<VaultRoot, TestError> {
@@ -300,7 +300,7 @@ impl VaultProgramClient {
             &vault_admin,
             &vault_base,
             deposit_fee_bps,
-            withdraw_fee_bps,
+            withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
         )
@@ -912,7 +912,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn do_enqueue_withdraw(
+    pub async fn do_enqueue_withdrawal(
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Keypair,
@@ -939,7 +939,7 @@ impl VaultProgramClient {
         self.create_ata(&vault.vrt_mint, &vault_staker_withdrawal_ticket)
             .await?;
 
-        self.enqueue_withdraw(
+        self.enqueue_withdrawal(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_root.vault_pubkey,
             &vault_staker_withdrawal_ticket,
@@ -1179,7 +1179,7 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn enqueue_withdraw(
+    pub async fn enqueue_withdrawal(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
@@ -1192,7 +1192,7 @@ impl VaultProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::enqueue_withdraw(
+            &[jito_vault_sdk::sdk::enqueue_withdrawal(
                 &jito_vault_program::id(),
                 config,
                 vault,
