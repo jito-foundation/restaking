@@ -105,6 +105,12 @@ pub enum VaultError {
     InvalidDepositTokenAccount,
     #[error("NoSupportedMintBalanceChange")]
     NoSupportedMintBalanceChange,
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 3000,
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow,
+    #[error("DivisionByZero")]
+    DivisionByZero,
 }
 
 impl<T> DecodeError<T> for VaultError {

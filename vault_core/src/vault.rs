@@ -514,18 +514,20 @@ impl Vault {
     // ------------------------------------------
 
     #[inline(always)]
-    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
         let last_updated_epoch = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)
-            .unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
-        last_updated_epoch < current_epoch
+            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        Ok(last_updated_epoch < current_epoch)
     }
 
     #[inline(always)]
     pub fn check_update_state_ok(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
-        if self.is_update_needed(slot, epoch_length) {
+        if self.is_update_needed(slot, epoch_length)? {
             msg!("Vault update is needed");
             return Err(VaultError::VaultUpdateNeeded.into());
         }
@@ -560,13 +562,19 @@ impl Vault {
     /// Fees can be changed at most one per epoch, and a **full** epoch must pass before a fee can be changed again.
     #[inline(always)]
     pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         let last_fee_change_epoch = self
             .last_fee_change_slot()
             .checked_div(epoch_length)
-            .unwrap();
+            .ok_or(VaultError::DivisionByZero)?;
 
-        if current_epoch <= last_fee_change_epoch.checked_add(1).unwrap() {
+        if current_epoch
+            <= last_fee_change_epoch
+                .checked_add(1)
+                .ok_or(VaultError::ArithmeticOverflow)?
+        {
             msg!("Fee changes are only allowed once per epoch");
             return Err(VaultError::VaultFeeChangeTooSoon);
         }
@@ -888,11 +896,15 @@ impl Vault {
         let last_epoch_update = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)
-            .unwrap();
-        let this_epoch = slot.checked_div(epoch_length).unwrap();
+            .ok_or(VaultError::DivisionByZero)?;
+        let this_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
 
         // Update the simulated delegation state based on the number of epochs passed
-        let epoch_diff = this_epoch.checked_sub(last_epoch_update).unwrap();
+        let epoch_diff = this_epoch
+            .checked_sub(last_epoch_update)
+            .ok_or(VaultError::ArithmeticUnderflow)?;
         match epoch_diff {
             0 => {
                 // no-op
