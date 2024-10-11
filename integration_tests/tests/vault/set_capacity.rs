@@ -20,7 +20,7 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.capacity(), u64::MAX);
+        assert_eq!(vault.deposit_capacity(), u64::MAX);
 
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
         vault_program_client
@@ -37,7 +37,7 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.capacity(), 100);
+        assert_eq!(vault.deposit_capacity(), 100);
     }
 
     #[tokio::test]

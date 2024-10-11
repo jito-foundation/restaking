@@ -340,7 +340,7 @@ impl TestBuilder {
     pub async fn setup_vault_with_ncn_and_operators(
         &mut self,
         deposit_fee_bps: u16,
-        withdraw_fee_bps: u16,
+        withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
         epoch_withdraw_cap_bps: u16,
         num_operators: u16,
@@ -352,7 +352,7 @@ impl TestBuilder {
         let (vault_config_admin, vault_root) = vault_program_client
             .setup_config_and_vault(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
             )

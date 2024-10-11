@@ -598,7 +598,7 @@ pub fn slash(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn enqueue_withdraw(
+pub fn enqueue_withdrawal(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -659,7 +659,7 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawTicket { min_amount_out }
+        data: VaultInstruction::BurnWithdrawalTicket { min_amount_out }
             .try_to_vec()
             .unwrap(),
     }

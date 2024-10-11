@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_EPOCH_WITHDRAW_BPS, MAX_FEE_BPS};
+use crate::{delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS, MAX_EPOCH_WITHDRAW_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -55,8 +55,9 @@ pub struct Vault {
     /// The total number of tokens deposited
     tokens_deposited: PodU64,
 
-    /// Max capacity of tokens in the vault
-    capacity: PodU64,
+    /// The maximum deposit capacity allowed in the mint_to instruction.
+    /// The deposited assets in the vault may exceed the deposit_capacity during other operations, such as vault balance updates.
+    deposit_capacity: PodU64,
 
     /// Rolled-up stake state for all operators in the set
     pub delegation_state: DelegationState,
@@ -164,8 +165,21 @@ impl Vault {
         epoch_withdraw_cap_bps: u16,
         bump: u8,
         current_slot: u64,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, VaultError> {
+        if deposit_fee_bps > MAX_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        if withdrawal_fee_bps > MAX_BPS {
+            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        if reward_fee_bps > MAX_BPS {
+            msg!("Reward fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
+        Ok(Self {
             base,
             vrt_mint,
             supported_mint,
@@ -179,7 +193,7 @@ impl Vault {
             delegate_asset_admin: admin,
             fee_wallet: admin,
             mint_burn_admin: Pubkey::default(),
-            capacity: PodU64::from(u64::MAX),
+            deposit_capacity: PodU64::from(u64::MAX),
             vault_index: PodU64::from(vault_index),
             vrt_supply: PodU64::from(0),
             tokens_deposited: PodU64::from(0),
@@ -200,7 +214,7 @@ impl Vault {
             bump,
             delegation_state: DelegationState::default(),
             reserved: [0; 263],
-        }
+        })
     }
 
     pub fn ncn_count(&self) -> u64 {
@@ -211,8 +225,8 @@ impl Vault {
         self.last_fee_change_slot.into()
     }
 
-    pub fn capacity(&self) -> u64 {
-        self.capacity.into()
+    pub fn deposit_capacity(&self) -> u64 {
+        self.deposit_capacity.into()
     }
 
     pub fn vault_index(&self) -> u64 {
@@ -311,15 +325,15 @@ impl Vault {
     }
 
     pub fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps.into()
+        u16::from(self.deposit_fee_bps)
     }
 
     pub fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps.into()
+        u16::from(self.withdrawal_fee_bps)
     }
 
     pub fn reward_fee_bps(&self) -> u16 {
-        self.reward_fee_bps.into()
+        u16::from(self.reward_fee_bps)
     }
 
     /// Retrieves the withdrawal cap for the epoch as basis points (bps).
@@ -338,7 +352,7 @@ impl Vault {
     }
 
     pub fn set_capacity(&mut self, capacity: u64) {
-        self.capacity = PodU64::from(capacity);
+        self.deposit_capacity = PodU64::from(capacity);
     }
 
     pub fn set_vrt_cooling_down_amount(&mut self, amount: u64) {
@@ -588,18 +602,20 @@ impl Vault {
     // ------------------------------------------
 
     #[inline(always)]
-    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
         let last_updated_epoch = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)
-            .unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
-        last_updated_epoch < current_epoch
+            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        Ok(last_updated_epoch < current_epoch)
     }
 
     #[inline(always)]
     pub fn check_update_state_ok(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
-        if self.is_update_needed(slot, epoch_length) {
+        if self.is_update_needed(slot, epoch_length)? {
             msg!("Vault update is needed");
             return Err(VaultError::VaultUpdateNeeded.into());
         }
@@ -665,13 +681,19 @@ impl Vault {
     /// Fees can be changed at most one per epoch, and a **full** epoch must pass before a fee can be changed again.
     #[inline(always)]
     pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         let last_fee_change_epoch = self
             .last_fee_change_slot()
             .checked_div(epoch_length)
-            .unwrap();
+            .ok_or(VaultError::DivisionByZero)?;
 
-        if current_epoch <= last_fee_change_epoch.checked_add(1).unwrap() {
+        if current_epoch
+            <= last_fee_change_epoch
+                .checked_add(1)
+                .ok_or(VaultError::ArithmeticOverflow)?
+        {
             msg!("Fee changes are only allowed once per epoch");
             return Err(VaultError::VaultFeeChangeTooSoon);
         }
@@ -780,6 +802,17 @@ impl Vault {
         fee_bump_bps: u16,
         fee_rate_of_change_bps: u16,
     ) -> Result<(), VaultError> {
+        if current_fee_bps > MAX_BPS
+            || new_fee_bps > MAX_BPS
+            || fee_cap_bps > MAX_BPS
+            || fee_bump_bps > MAX_BPS
+            || fee_rate_of_change_bps > MAX_BPS
+        {
+            // This is always false
+            msg!("BPS cannot be above {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
         let fee_delta = new_fee_bps.saturating_sub(current_fee_bps);
         let fee_cap_bps = fee_cap_bps.min(MAX_FEE_BPS);
 
@@ -858,7 +891,7 @@ impl Vault {
     }
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
-    fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+    fn calculate_withdrawal_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
@@ -881,7 +914,7 @@ impl Vault {
             .tokens_deposited()
             .checked_add(amount_in)
             .ok_or(VaultError::VaultOverflow)?;
-        if vault_token_amount_after_deposit > self.capacity() {
+        if vault_token_amount_after_deposit > self.deposit_capacity() {
             msg!("Amount exceeds vault capacity");
             return Err(VaultError::VaultCapacityExceeded);
         }
@@ -927,7 +960,7 @@ impl Vault {
             return Err(VaultError::VaultInsufficientFunds);
         }
 
-        let fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let fee_amount = self.calculate_withdrawal_fee(amount_in)?;
         let amount_to_burn = amount_in
             .checked_sub(fee_amount)
             .ok_or(VaultError::VaultUnderflow)?;
@@ -990,7 +1023,7 @@ impl Vault {
 
     /// Calculates the amount of tokens, denominated in the supported_mint asset,
     /// that should be reserved for the VRTs in the vault
-    pub fn calculate_vrt_reserve_amount(&self) -> Result<u64, VaultError> {
+    pub fn calculate_supported_assets_requested_for_withdrawal(&self) -> Result<u64, VaultError> {
         if self.vrt_supply() == 0 {
             return Ok(0);
         }
@@ -1000,13 +1033,13 @@ impl Vault {
             .and_then(|x| x.checked_add(self.vrt_ready_to_claim_amount()))
             .ok_or(VaultError::VaultOverflow)?;
 
-        let fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
+        let fee_amount = self.calculate_withdrawal_fee(vrt_reserve)?;
 
-        let vrt_reserve_with_fee = vrt_reserve
-            .checked_add(fee_amount)
-            .ok_or(VaultError::VaultOverflow)?;
+        let vrt_reserve_post_fee = vrt_reserve
+            .checked_sub(fee_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
 
-        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_with_fee as u128)
+        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_post_fee as u128)
             .checked_mul(self.tokens_deposited() as u128)
             .and_then(|x| x.checked_div(self.vrt_supply() as u128))
             .and_then(|result| result.try_into().ok())
@@ -1015,13 +1048,14 @@ impl Vault {
         Ok(amount_to_reserve_for_vrts)
     }
 
-    pub fn calculate_assets_needed_for_withdrawals(
+    pub fn calculate_additional_supported_assets_needed_to_unstake(
         &self,
         slot: u64,
         epoch_length: u64,
     ) -> Result<u64, VaultError> {
         // Calculate the total amount of assets needed to be set aside for all potential withdrawals
-        let amount_needed_set_aside_for_withdrawals = self.calculate_vrt_reserve_amount()?;
+        let amount_requested_for_withdrawals =
+            self.calculate_supported_assets_requested_for_withdrawal()?;
 
         // Clone the current delegation state to simulate updates without modifying the original
         let mut delegation_state_after_update = self.delegation_state;
@@ -1030,11 +1064,15 @@ impl Vault {
         let last_epoch_update = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)
-            .unwrap();
-        let this_epoch = slot.checked_div(epoch_length).unwrap();
+            .ok_or(VaultError::DivisionByZero)?;
+        let this_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
 
         // Update the simulated delegation state based on the number of epochs passed
-        let epoch_diff = this_epoch.checked_sub(last_epoch_update).unwrap();
+        let epoch_diff = this_epoch
+            .checked_sub(last_epoch_update)
+            .ok_or(VaultError::ArithmeticUnderflow)?;
         match epoch_diff {
             0 => {
                 // no-op
@@ -1075,7 +1113,7 @@ impl Vault {
         // Calculate how many additional assets need to be undelegated to meet the withdrawal needs
         // If available assets exceed the needed amount, this will be zero due to saturating subtraction
         let additional_assets_need_undelegating =
-            amount_needed_set_aside_for_withdrawals.saturating_sub(available_for_withdrawal);
+            amount_requested_for_withdrawals.saturating_sub(available_for_withdrawal);
 
         Ok(additional_assets_need_undelegating)
     }
@@ -1091,7 +1129,8 @@ impl Vault {
 
         // there is some protection built-in to the vault to avoid over delegating assets
         // this number is denominated in the supported token units
-        let amount_to_reserve_for_vrts = self.calculate_vrt_reserve_amount()?;
+        let amount_to_reserve_for_vrts =
+            self.calculate_supported_assets_requested_for_withdrawal()?;
 
         let amount_available_for_delegation = self
             .tokens_deposited()
@@ -1195,12 +1234,12 @@ mod tests {
     use crate::{
         delegation_state::DelegationState,
         vault::{BurnSummary, MintSummary, Vault},
-        MAX_FEE_BPS,
+        MAX_BPS, MAX_FEE_BPS,
     };
 
     fn make_test_vault(
         deposit_fee_bps: u16,
-        withdraw_fee_bps: u16,
+        withdrawal_fee_bps: u16,
         tokens_deposited: u64,
         vrt_supply: u64,
         delegation_state: DelegationState,
@@ -1212,12 +1251,13 @@ mod tests {
             0,
             Pubkey::new_unique(),
             deposit_fee_bps,
-            withdraw_fee_bps,
+            withdrawal_fee_bps,
             0,
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
 
         vault.set_tokens_deposited(tokens_deposited);
         vault.set_vrt_supply(vrt_supply);
@@ -1281,7 +1321,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = old_admin;
 
         assert_eq!(vault.delegation_admin, old_admin);
@@ -1379,7 +1420,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
 
@@ -1397,7 +1439,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
         let err = vault.check_mint_burn_admin(None).unwrap_err();
         assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
@@ -1417,7 +1460,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
@@ -1452,7 +1496,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
@@ -1726,23 +1771,27 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_vrt_reserve_amount_ok() {
+    fn test_calculate_supported_assets_requested_for_withdrawal_ok() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
-        let result = vault.calculate_vrt_reserve_amount().unwrap();
+        let result = vault
+            .calculate_supported_assets_requested_for_withdrawal()
+            .unwrap();
         assert_eq!(result, 100);
     }
 
     #[test]
-    fn test_calculate_vrt_reserve_amount_with_fee() {
+    fn test_calculate_supported_assets_requested_for_withdrawal_with_fee() {
         let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
-        let result = vault.calculate_vrt_reserve_amount().unwrap();
+        let result = vault
+            .calculate_supported_assets_requested_for_withdrawal()
+            .unwrap();
 
         // This is correct, because we need to account for the withdrawal fee
         // The withdrawal fee is 0.1% of the total amount, so 1000 * 0.001 = 1
-        // The cooling down amount is 100, so we need to reserve 101
-        assert_eq!(result, 101);
+        // The cooling down amount is 100, so we need to reserve 100 - 1 = 99
+        assert_eq!(result, 99);
     }
 
     #[test]
@@ -1751,9 +1800,11 @@ mod tests {
         vault.set_vrt_enqueued_for_cooldown_amount(50);
         vault.set_vrt_cooling_down_amount(25);
         vault.vrt_ready_to_claim_amount = PodU64::from(25);
-        let result = vault.calculate_vrt_reserve_amount().unwrap();
+        let result = vault
+            .calculate_supported_assets_requested_for_withdrawal()
+            .unwrap();
 
-        assert_eq!(result, 101);
+        assert_eq!(result, 99);
     }
 
     #[test]
@@ -1761,19 +1812,19 @@ mod tests {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(1000, 0, 0));
         vault.set_vrt_cooling_down_amount(100);
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(100, 100)
             .unwrap();
         assert_eq!(result, 100);
 
         vault.delegation_state = DelegationState::new(900, 0, 100);
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(100, 100)
             .unwrap();
         assert_eq!(result, 0);
 
         vault.set_vrt_cooling_down_amount(200);
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(100, 100)
             .unwrap();
         assert_eq!(result, 100);
     }
@@ -1784,12 +1835,12 @@ mod tests {
         vault.set_vrt_cooling_down_amount(100);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(100, 100)
             .unwrap();
         assert_eq!(result, 0);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(200, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(200, 100)
             .unwrap();
         assert_eq!(result, 0);
     }
@@ -1800,19 +1851,19 @@ mod tests {
         vault.set_vrt_cooling_down_amount(300);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(100, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(100, 100)
             .unwrap();
         assert_eq!(result, 100);
 
         let result = vault
-            .calculate_assets_needed_for_withdrawals(200, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(200, 100)
             .unwrap();
         assert_eq!(result, 100);
 
         vault.increment_vrt_supply(100).unwrap();
         vault.increment_tokens_deposited(100).unwrap();
         let result = vault
-            .calculate_assets_needed_for_withdrawals(200, 100)
+            .calculate_additional_supported_assets_needed_to_unstake(200, 100)
             .unwrap();
         assert_eq!(result, 0);
     }
@@ -1831,7 +1882,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.set_tokens_deposited(0);
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
@@ -1853,7 +1905,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.set_tokens_deposited(1000);
 
         let fee = vault.calculate_rewards_fee(0).unwrap();
@@ -1875,7 +1928,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
 
@@ -2118,7 +2172,7 @@ mod tests {
 
     #[test]
     fn test_max_decrease() {
-        let current_fee_bps = u16::MAX;
+        let current_fee_bps = MAX_BPS;
         let new_fee_bps = 0;
         let fee_cap_bps = 3000;
         let fee_bump_bps = 10;

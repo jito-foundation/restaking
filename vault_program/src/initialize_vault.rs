@@ -110,7 +110,9 @@ pub fn process_initialize_vault(
             system_program,
             program_id,
             &Rent::get()?,
-            8_u64.checked_add(size_of::<Vault>() as u64).unwrap(),
+            8_u64
+                .checked_add(size_of::<Vault>() as u64)
+                .ok_or(VaultError::ArithmeticOverflow)?,
             &vault_seeds,
         )?;
 
@@ -130,7 +132,7 @@ pub fn process_initialize_vault(
             epoch_withdraw_cap_bps,
             vault_bump,
             slot,
-        );
+        )?;
     }
 
     config.increment_num_vaults()?;

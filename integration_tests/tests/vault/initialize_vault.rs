@@ -37,7 +37,7 @@ mod tests {
         assert_eq!(vault.slasher_admin, vault_admin.pubkey());
         assert_eq!(vault.fee_wallet, vault_admin.pubkey());
         assert_eq!(vault.mint_burn_admin, Pubkey::default());
-        assert_eq!(vault.capacity(), u64::MAX);
+        assert_eq!(vault.deposit_capacity(), u64::MAX);
         assert_eq!(vault.vault_index(), 0);
         assert_eq!(vault.vrt_supply(), 0);
         assert_eq!(vault.tokens_deposited(), 0);

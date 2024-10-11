@@ -15,7 +15,7 @@ import {
 import {
   type ParsedAddDelegationInstruction,
   type ParsedBurnInstruction,
-  type ParsedBurnWithdrawTicketInstruction,
+  type ParsedBurnWithdrawalTicketInstruction,
   type ParsedChangeWithdrawalTicketOwnerInstruction,
   type ParsedCloseVaultUpdateStateTrackerInstruction,
   type ParsedCooldownDelegationInstruction,
@@ -75,7 +75,7 @@ export enum JitoVaultInstruction {
   Burn,
   EnqueueWithdrawal,
   ChangeWithdrawalTicketOwner,
-  BurnWithdrawTicket,
+  BurnWithdrawalTicket,
   SetDepositCapacity,
   SetFees,
   DelegateTokenAccount,
@@ -142,7 +142,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.ChangeWithdrawalTicketOwner;
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
-    return JitoVaultInstruction.BurnWithdrawTicket;
+    return JitoVaultInstruction.BurnWithdrawalTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(16), 0)) {
     return JitoVaultInstruction.SetDepositCapacity;
@@ -240,8 +240,8 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.ChangeWithdrawalTicketOwner;
     } & ParsedChangeWithdrawalTicketOwnerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.BurnWithdrawTicket;
-    } & ParsedBurnWithdrawTicketInstruction<TProgram>)
+      instructionType: JitoVaultInstruction.BurnWithdrawalTicket;
+    } & ParsedBurnWithdrawalTicketInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetDepositCapacity;
     } & ParsedSetDepositCapacityInstruction<TProgram>)

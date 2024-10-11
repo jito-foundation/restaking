@@ -17,7 +17,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 1;
@@ -31,7 +31,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
                 num_operators,
@@ -130,7 +130,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
@@ -144,7 +144,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
                 num_operators,
@@ -238,7 +238,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
@@ -252,7 +252,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
                 num_operators,
@@ -330,7 +330,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
@@ -344,7 +344,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
                 num_operators,
@@ -412,7 +412,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 3;
@@ -426,7 +426,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
                 num_operators,
@@ -502,7 +502,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
@@ -516,7 +516,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 epoch_withdraw_cap_bps,
                 num_operators,

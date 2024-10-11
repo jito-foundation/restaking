@@ -13,7 +13,7 @@ mod tests {
 
     const MINT_AMOUNT: u64 = 100_000;
     const DEPOSIT_FEE_BPS: u16 = 0;
-    const WITHDRAW_FEE_BPS: u16 = 0;
+    const WITHDRAWAL_FEE_BPS: u16 = 0;
     const REWARD_FEE_BPS: u16 = 1000; // 10%
     const EPOCH_WITHDRAW_CAP_BPS: u16 = 2500; // 25%
 
@@ -34,7 +34,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 DEPOSIT_FEE_BPS,
-                WITHDRAW_FEE_BPS,
+                WITHDRAWAL_FEE_BPS,
                 REWARD_FEE_BPS,
                 EPOCH_WITHDRAW_CAP_BPS,
                 num_operators,

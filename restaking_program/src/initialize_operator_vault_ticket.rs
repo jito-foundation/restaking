@@ -8,6 +8,7 @@ use jito_jsm_core::{
 use jito_restaking_core::{
     config::Config, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
 };
+use jito_restaking_sdk::error::RestakingError;
 use jito_vault_core::vault::Vault;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
@@ -70,7 +71,7 @@ pub fn process_initialize_operator_vault_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<OperatorVaultTicket>() as u64)
-            .unwrap(),
+            .ok_or(RestakingError::ArithmeticOverflow)?,
         &operator_vault_ticket_seeds,
     )?;
     let mut operator_vault_ticket_account_data =

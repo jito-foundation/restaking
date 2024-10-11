@@ -241,7 +241,7 @@ mod tests {
         }
 
         {
-            // Withdraw Admin
+            // WithdrawalAdmin
             let new_admin = Pubkey::new_unique();
             vault_program_client
                 .set_secondary_admin(

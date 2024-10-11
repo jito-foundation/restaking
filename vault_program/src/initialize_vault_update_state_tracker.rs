@@ -39,7 +39,7 @@ pub fn process_initialize_vault_update_state_tracker(
     let ncn_epoch = Clock::get()?
         .slot
         .checked_div(config.epoch_length())
-        .unwrap();
+        .ok_or(VaultError::DivisionByZero)?;
     let (
         vault_update_state_tracker_pubkey,
         vault_update_state_tracker_bump,
@@ -71,12 +71,15 @@ pub fn process_initialize_vault_update_state_tracker(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultUpdateStateTracker>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_update_state_tracker_seeds,
     )?;
 
-    let additional_assets_need_unstaking =
-        vault.calculate_assets_needed_for_withdrawals(Clock::get()?.slot, config.epoch_length())?;
+    let additional_assets_need_unstaking = vault
+        .calculate_additional_supported_assets_needed_to_unstake(
+            Clock::get()?.slot,
+            config.epoch_length(),
+        )?;
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;

@@ -728,7 +728,7 @@
       }
     },
     {
-      "name": "BurnWithdrawTicket",
+      "name": "BurnWithdrawalTicket",
       "accounts": [
         {
           "name": "config",
@@ -1516,7 +1516,7 @@
             }
           },
           {
-            "name": "capacity",
+            "name": "depositCapacity",
             "type": {
               "defined": "PodU64"
             }
@@ -2418,6 +2418,21 @@
       "code": 1049,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
+    },
+    {
+      "code": 3000,
+      "name": "ArithmeticOverflow",
+      "msg": "ArithmeticOverflow"
+    },
+    {
+      "code": 3001,
+      "name": "ArithmeticUnderflow",
+      "msg": "ArithmeticUnderflow"
+    },
+    {
+      "code": 3002,
+      "name": "DivisionByZero",
+      "msg": "DivisionByZero"
     }
   ],
   "metadata": {

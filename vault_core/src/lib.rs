@@ -9,5 +9,6 @@ pub mod vault_operator_delegation;
 pub mod vault_staker_withdrawal_ticket;
 pub mod vault_update_state_tracker;
 
-pub const MAX_FEE_BPS: u16 = 10_000;
-pub const MAX_EPOCH_WITHDRAW_BPS: u16 = 10_000;
+pub const MAX_BPS: u16 = 10_000;
+pub const MAX_FEE_BPS: u16 = MAX_BPS;
+pub const MAX_EPOCH_WITHDRAW_BPS: u16 = MAX_BPS;
