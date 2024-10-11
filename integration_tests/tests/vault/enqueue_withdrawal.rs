@@ -14,11 +14,11 @@ mod tests {
     async fn test_enqueue_withdrawal_with_fee_success() {
         const MINT_AMOUNT: u64 = 100_000;
         const DEPOSIT_FEE_BPS: u16 = 100;
-        const withdrawal_FEE_BPS: u16 = 100;
+        const WITHDRAWAL_FEE_BPS: u16 = 100;
         let min_amount_out: u64 = MINT_AMOUNT * (10_000 - DEPOSIT_FEE_BPS) as u64 / 10_000;
 
         let deposit_fee_bps = DEPOSIT_FEE_BPS;
-        let withdrawal_fee_bps = withdrawal_FEE_BPS;
+        let withdrawal_fee_bps = WITHDRAWAL_FEE_BPS;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -115,7 +115,7 @@ mod tests {
 
         // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw
-        let amount_to_dequeue = MINT_AMOUNT * (10_000 - withdrawal_FEE_BPS) as u64 / 10_000;
+        let amount_to_dequeue = MINT_AMOUNT * (10_000 - WITHDRAWAL_FEE_BPS) as u64 / 10_000;
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
             .do_enqueue_withdrawal(&vault_root, &depositor, amount_to_dequeue)
             .await

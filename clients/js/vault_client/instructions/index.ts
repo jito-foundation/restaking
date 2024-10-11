@@ -8,7 +8,7 @@
 
 export * from './addDelegation';
 export * from './burn';
-export * from './burnWithdrawTicket';
+export * from './burnWithdrawalTicket';
 export * from './changeWithdrawalTicketOwner';
 export * from './closeVaultUpdateStateTracker';
 export * from './cooldownDelegation';

@@ -657,7 +657,7 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawTicket { min_amount_out }
+        data: VaultInstruction::BurnWithdrawalTicket { min_amount_out }
             .try_to_vec()
             .unwrap(),
     }

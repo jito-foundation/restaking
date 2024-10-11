@@ -14,7 +14,7 @@ mod tests {
         vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
 
-    /// One can't burn the withdraw ticket until a full epoch has passed
+    /// One can't burn the withdrawal ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
@@ -94,7 +94,7 @@ mod tests {
         );
     }
 
-    /// One can't burn the withdraw ticket until a full epoch has passed
+    /// One can't burn the withdrawal ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_next_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
@@ -161,7 +161,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -190,13 +190,13 @@ mod tests {
         );
     }
 
-    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    /// Tests basic withdrawal ticket with no rewards or slashing incidents
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_basic_success() {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdrawal_fee_bps = 0;
+        let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -214,7 +214,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdrawal_fee_bps,
+                withdraw_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -315,13 +315,13 @@ mod tests {
         assert_eq!(depositor_token_account.amount, MINT_AMOUNT);
     }
 
-    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    /// Tests basic withdrawal ticket with no rewards or slashing incidents
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdrawal_fee_bps = 0;
+        let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -339,7 +339,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdrawal_fee_bps,
+                withdraw_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
