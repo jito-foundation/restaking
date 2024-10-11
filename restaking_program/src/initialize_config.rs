@@ -6,6 +6,7 @@ use jito_jsm_core::{
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_restaking_core::config::Config;
+use jito_restaking_sdk::error::RestakingError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -37,7 +38,9 @@ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) 
         system_program,
         program_id,
         &Rent::get()?,
-        8_u64.checked_add(size_of::<Config>() as u64).unwrap(),
+        8_u64
+            .checked_add(size_of::<Config>() as u64)
+            .ok_or(RestakingError::ArithmeticOverflow)?,
         &config_seeds,
     )?;
 
