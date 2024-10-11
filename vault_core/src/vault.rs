@@ -155,12 +155,21 @@ impl Vault {
         reward_fee_bps: u16,
         bump: u8,
         current_slot: u64,
-    ) -> Self {
-        assert!(deposit_fee_bps <= MAX_BPS);
-        assert!(withdrawal_fee_bps <= MAX_BPS);
-        assert!(reward_fee_bps <= MAX_BPS);
+    ) -> Result<Self, VaultError> {
+        if deposit_fee_bps > MAX_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        if withdrawal_fee_bps > MAX_BPS {
+            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        if reward_fee_bps > MAX_BPS {
+            msg!("Reward fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
 
-        Self {
+        Ok(Self {
             base,
             vrt_mint,
             supported_mint,
@@ -192,7 +201,7 @@ impl Vault {
             bump,
             delegation_state: DelegationState::default(),
             reserved: [0; 263],
-        }
+        })
     }
 
     pub fn ncn_count(&self) -> u64 {
@@ -1101,7 +1110,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
 
         vault.set_tokens_deposited(tokens_deposited);
         vault.set_vrt_supply(vrt_supply);
@@ -1161,7 +1171,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = old_admin;
 
         assert_eq!(vault.delegation_admin, old_admin);
@@ -1258,7 +1269,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
 
@@ -1275,7 +1287,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
         let err = vault.check_mint_burn_admin(None).unwrap_err();
         assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
@@ -1294,7 +1307,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
@@ -1328,7 +1342,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
@@ -1706,7 +1721,8 @@ mod tests {
             1000, //10%
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.set_tokens_deposited(0);
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
@@ -1727,7 +1743,8 @@ mod tests {
             1000, //10%
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.set_tokens_deposited(1000);
 
         let fee = vault.calculate_rewards_fee(0).unwrap();
@@ -1748,7 +1765,8 @@ mod tests {
             10_000, //100%
             0,
             0,
-        );
+        )
+        .unwrap();
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
 
