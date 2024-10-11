@@ -84,6 +84,15 @@ pub enum JitoRestakingError {
     /// 2013 - InvalidEpochLength
     #[error("InvalidEpochLength")]
     InvalidEpochLength = 0x7DD,
+    /// 3000 - ArithmeticOverflow
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 0xBB8,
+    /// 3001 - ArithmeticUnderflow
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow = 0xBB9,
+    /// 3002 - DivisionByZero
+    #[error("DivisionByZero")]
+    DivisionByZero = 0xBBA,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoRestakingError {

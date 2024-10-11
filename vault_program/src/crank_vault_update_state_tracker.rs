@@ -86,7 +86,7 @@ pub fn process_crank_vault_update_state_tracker(
         }
     }
 
-    vault_operator_delegation.update(slot, config.epoch_length());
+    vault_operator_delegation.update(slot, config.epoch_length())?;
     vault_update_state_tracker
         .delegation_state
         .accumulate(&vault_operator_delegation.delegation_state)?;

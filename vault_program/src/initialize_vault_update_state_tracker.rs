@@ -70,7 +70,7 @@ pub fn process_initialize_vault_update_state_tracker(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultUpdateStateTracker>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_update_state_tracker_seeds,
     )?;
 
