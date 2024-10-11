@@ -76,12 +76,17 @@ impl VaultStakerWithdrawalTicket {
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
-        let epoch_unstaked = self.slot_unstaked().checked_div(epoch_length).unwrap();
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        let epoch_unstaked = self
+            .slot_unstaked()
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)
-                .ok_or(ProgramError::ArithmeticOverflow)?
+                .ok_or(VaultError::ArithmeticOverflow)?
         {
             Ok(false)
         } else {

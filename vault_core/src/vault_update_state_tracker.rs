@@ -81,7 +81,12 @@ impl VaultUpdateStateTracker {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-        } else if index != self.last_updated_index().checked_add(1).unwrap() {
+        } else if index
+            != self
+                .last_updated_index()
+                .checked_add(1)
+                .ok_or(VaultError::ArithmeticOverflow)?
+        {
             msg!("VaultUpdateStateTracker incorrect index");
             return Err(VaultError::VaultUpdateIncorrectIndex);
         }

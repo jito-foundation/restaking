@@ -4,7 +4,10 @@ use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
-use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
 use crate::delegation_state::DelegationState;
 
@@ -59,8 +62,13 @@ impl VaultOperatorDelegation {
     }
 
     pub fn check_is_already_updated(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let last_updated_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        let last_updated_epoch = self
+            .last_update_slot()
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         if last_updated_epoch >= current_epoch {
             msg!("VaultOperatorDelegationUpdate is not needed");
             return Err(VaultError::VaultOperatorDelegationIsUpdated);
@@ -75,11 +83,18 @@ impl VaultOperatorDelegation {
     /// The cooling_down_for_withdrawal_amount becomes the enqueued_for_withdrawal_amount
     /// The enqueued_for_withdrawal_amount is zeroed out
     #[inline(always)]
-    pub fn update(&mut self, slot: u64, epoch_length: u64) {
-        let last_update_epoch = self.last_update_slot().checked_div(epoch_length).unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+    pub fn update(&mut self, slot: u64, epoch_length: u64) -> ProgramResult {
+        let last_update_epoch = self
+            .last_update_slot()
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
 
-        let epoch_diff = current_epoch.checked_sub(last_update_epoch).unwrap();
+        let epoch_diff = current_epoch
+            .checked_sub(last_update_epoch)
+            .ok_or(VaultError::ArithmeticUnderflow)?;
         match epoch_diff {
             0 => {
                 // do nothing
@@ -94,6 +109,7 @@ impl VaultOperatorDelegation {
             }
         }
         self.last_update_slot = PodU64::from(slot);
+        Ok(())
     }
 
     /// The seeds for the PDA
@@ -200,7 +216,8 @@ mod tests {
             .delegation_state
             .cooldown(50)
             .unwrap();
-        vault_operator_delegation.update(100, 100);
+        vault_operator_delegation.update(100, 100).unwrap();
+
         assert_eq!(
             vault_operator_delegation.delegation_state.staked_amount(),
             50
@@ -232,7 +249,8 @@ mod tests {
             .delegation_state
             .cooldown(50)
             .unwrap();
-        vault_operator_delegation.update(200, 100);
+        vault_operator_delegation.update(200, 100).unwrap();
+
         assert_eq!(
             vault_operator_delegation.delegation_state.staked_amount(),
             50
@@ -265,7 +283,8 @@ mod tests {
             .cooldown(50)
             .unwrap();
 
-        vault_operator_delegation.update(599, 100);
+        vault_operator_delegation.update(599, 100).unwrap();
+
         assert_eq!(
             vault_operator_delegation.delegation_state.staked_amount(),
             50
@@ -284,7 +303,8 @@ mod tests {
         );
         assert_eq!(vault_operator_delegation.last_update_slot(), 599);
 
-        vault_operator_delegation.update(600, 100);
+        vault_operator_delegation.update(600, 100).unwrap();
+
         assert_eq!(
             vault_operator_delegation.delegation_state.staked_amount(),
             50

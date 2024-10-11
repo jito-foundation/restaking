@@ -110,8 +110,17 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x415; // 1045
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x416; // 1046
 /** VaultMintZero: VaultMintZero */
 export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x417; // 1047
+/** ArithmeticOverflow: ArithmeticOverflow */
+export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
+/** ArithmeticUnderflow: ArithmeticUnderflow */
+export const JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW = 0xbb9; // 3001
+/** DivisionByZero: DivisionByZero */
+export const JITO_VAULT_ERROR__DIVISION_BY_ZERO = 0xbba; // 3002
 
 export type JitoVaultError =
+  | typeof JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW
+  | typeof JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW
+  | typeof JITO_VAULT_ERROR__DIVISION_BY_ZERO
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__NCN_OVERFLOW
   | typeof JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE
@@ -164,6 +173,9 @@ export type JitoVaultError =
 let jitoVaultErrorMessages: Record<JitoVaultError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
   jitoVaultErrorMessages = {
+    [JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW]: `ArithmeticOverflow`,
+    [JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW]: `ArithmeticUnderflow`,
+    [JITO_VAULT_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,
     [JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE]: `NcnOperatorStateUnslashable`,
     [JITO_VAULT_ERROR__NCN_OVERFLOW]: `NcnOverflow`,
     [JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE]: `NcnVaultSlasherTicketUnslashable`,
