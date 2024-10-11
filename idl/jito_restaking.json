@@ -974,6 +974,14 @@
             "type": "publicKey"
           },
           {
+            "name": "weightTableAdmin",
+            "type": "publicKey"
+          },
+          {
+            "name": "ncnProgramAdmin",
+            "type": "publicKey"
+          },
+          {
             "name": "index",
             "type": {
               "defined": "PodU64"
@@ -1316,6 +1324,12 @@
           },
           {
             "name": "MetadataAdmin"
+          },
+          {
+            "name": "WeightTableAdmin"
+          },
+          {
+            "name": "NcnProgramAdmin"
           }
         ]
       }

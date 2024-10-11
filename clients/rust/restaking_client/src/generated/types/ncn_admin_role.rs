@@ -26,4 +26,6 @@ pub enum NcnAdminRole {
     SlasherAdmin,
     DelegateAdmin,
     MetadataAdmin,
+    WeightTableAdmin,
+    NcnProgramAdmin,
 }

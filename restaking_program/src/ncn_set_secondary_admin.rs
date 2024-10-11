@@ -43,6 +43,12 @@ pub fn process_ncn_set_secondary_admin(
         NcnAdminRole::MetadataAdmin => {
             ncn.metadata_admin = *new_admin.key;
         }
+        NcnAdminRole::WeightTableAdmin => {
+            ncn.weight_table_admin = *new_admin.key;
+        }
+        NcnAdminRole::NcnProgramAdmin => {
+            ncn.ncn_program_admin = *new_admin.key;
+        }
     }
 
     Ok(())

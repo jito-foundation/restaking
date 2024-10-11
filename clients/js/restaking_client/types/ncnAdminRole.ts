@@ -21,6 +21,8 @@ export enum NcnAdminRole {
   SlasherAdmin,
   DelegateAdmin,
   MetadataAdmin,
+  WeightTableAdmin,
+  NcnProgramAdmin,
 }
 
 export type NcnAdminRoleArgs = NcnAdminRole;

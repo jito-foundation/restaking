@@ -200,6 +200,8 @@ pub enum NcnAdminRole {
     SlasherAdmin,
     DelegateAdmin,
     MetadataAdmin,
+    WeightTableAdmin,
+    NcnProgramAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
