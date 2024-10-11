@@ -45,7 +45,7 @@ Here's a list of different admins that control the vault:
 - `slasher_admin`: Add and removal of slashers.
 - `capacity_admin`: Set the vault's max token capacity.
 - `fee_admin`: Set and adjust deposit, withdrawal, and reward fees.
-- `withdraw_admin`: Initiate token withdrawals from the vault.
+- `withdrawal_admin`: Initiate token withdrawals from the vault.
 - `mint_burn_admin`: An optional admin for minting and burning operations.
 
 # 4. Vault Configuration
@@ -217,7 +217,7 @@ The withdrawal enqueueing process is a crucial part of the vault's operation, al
 Key points:
 - The vault keeps track of all the enqueued withdrawals in `vrt_enqueued_for_cooldown_amount`, `vrt_cooling_down_amount` and `vrt_ready_to_claim_amount` amounts. This is a safeguard to ensure the vault can meet its withdrawal obligations.
 - Withdrawals are not immediately available for withdrawal. They must complete the cooldown period of one full epoch before they can be withdrawn.
-- Anyone can complete the withdrawal process by calling the `BurnWithdrawTicket` instruction.
+- Anyone can complete the withdrawal process by calling the `BurnWithdrawalTicket` instruction.
   - This ensures that squatters can't prevent delegation by holding VRTs that can be withdrawn but aren't.
 - The amount of VRTs cooling down is tracked in `vrt_cooling_down_amount`, as opposed to assets equal to the redemption price at the time of withdrawal. This is because the redemption price at the time of withdrawal is unknown at the time of enqueuing. This attempts to guarantee that the vault can meet its withdrawal obligations even if the redemption price at the time of withdrawal is lower than the redemption price at the time of enqueuing.
 

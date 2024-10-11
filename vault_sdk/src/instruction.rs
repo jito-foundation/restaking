@@ -165,7 +165,7 @@ pub enum VaultInstruction {
     #[account(4, name = "new_owner")]
     ChangeWithdrawalTicketOwner,
 
-    /// Burns the withdraw ticket, returning funds to the staker. Withdraw tickets can be burned
+    /// Burns the withdrawal ticket, returning funds to the staker. Withdraw tickets can be burned
     /// after one full epoch of being enqueued.
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
@@ -179,7 +179,7 @@ pub enum VaultInstruction {
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
     #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
-    BurnWithdrawTicket {
+    BurnWithdrawalTicket {
         min_amount_out: u64
     },
 
