@@ -122,7 +122,7 @@ pub fn process_initialize_vault(
             reward_fee_bps,
             vault_bump,
             slot,
-        );
+        )?;
     }
 
     config.increment_num_vaults()?;
