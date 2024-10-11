@@ -692,7 +692,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -775,7 +775,7 @@ mod tests {
         assert_eq!(depositor_token_account.amount, MINT_AMOUNT);
     }
 
-    /// Test that the vrt withdrawal process if updating with normal crank operations
+    /// Test that the vrt withdrawal process if updating when skipping one epoch
     #[tokio::test]
     async fn test_withdraw_state_crank_skip_one_update_epoch_ok() {
         const MINT_AMOUNT: u64 = 100_000;
@@ -830,7 +830,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -948,7 +948,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
