@@ -85,18 +85,45 @@ impl Config {
     }
 
     pub fn deposit_withdrawal_fee_cap_bps(&self) -> u16 {
-        assert!(u16::from(self.deposit_withdrawal_fee_cap_bps) <= MAX_BPS);
         u16::from(self.deposit_withdrawal_fee_cap_bps)
     }
 
     pub fn fee_rate_of_change_bps(&self) -> u16 {
-        assert!(u16::from(self.fee_rate_of_change_bps) <= MAX_BPS);
         u16::from(self.fee_rate_of_change_bps)
     }
 
     pub fn fee_bump_bps(&self) -> u16 {
-        assert!(u16::from(self.fee_bump_bps) <= MAX_BPS);
         u16::from(self.fee_bump_bps)
+    }
+
+    pub fn set_deposit_withdrawal_fee_cap_bps(
+        &mut self,
+        fee_cap_bps: u16,
+    ) -> Result<(), VaultError> {
+        if fee_cap_bps > MAX_BPS {
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        self.deposit_withdrawal_fee_cap_bps = PodU16::from(fee_cap_bps);
+        Ok(())
+    }
+
+    pub fn set_fee_rate_of_change_bps(
+        &mut self,
+        fee_rate_of_change_bps: u16,
+    ) -> Result<(), VaultError> {
+        if fee_rate_of_change_bps > MAX_BPS {
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        self.fee_rate_of_change_bps = PodU16::from(fee_rate_of_change_bps);
+        Ok(())
+    }
+
+    pub fn set_fee_bump_bps(&mut self, fee_bump_bps: u16) -> Result<(), VaultError> {
+        if fee_bump_bps > MAX_BPS {
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        self.fee_bump_bps = PodU16::from(fee_bump_bps);
+        Ok(())
     }
 
     pub fn increment_num_vaults(&mut self) -> Result<(), VaultError> {
@@ -179,5 +206,38 @@ mod tests {
         assert!(Config::DEFAULT_FEES_CAP_BPS <= MAX_BPS);
         assert!(Config::DEFAULT_FEE_RATE_OF_CHANGE_BPS <= MAX_BPS);
         assert!(Config::DEFAULT_FEE_BUMP_BPS <= MAX_BPS);
+    }
+
+    #[test]
+    fn test_set_fee_cap_bps() {
+        let mut config = Config::new(Pubkey::new_unique(), Pubkey::new_unique(), 0);
+        assert_eq!(config.set_deposit_withdrawal_fee_cap_bps(1), Ok(()));
+        assert_eq!(config.set_deposit_withdrawal_fee_cap_bps(MAX_BPS), Ok(()));
+        assert_eq!(
+            config.set_deposit_withdrawal_fee_cap_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
+    }
+
+    #[test]
+    fn test_set_fee_rate_of_change_bps() {
+        let mut config = Config::new(Pubkey::new_unique(), Pubkey::new_unique(), 0);
+        assert_eq!(config.set_fee_rate_of_change_bps(1), Ok(()));
+        assert_eq!(config.set_fee_rate_of_change_bps(MAX_BPS), Ok(()));
+        assert_eq!(
+            config.set_fee_rate_of_change_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
+    }
+
+    #[test]
+    fn test_set_fee_bump_bps() {
+        let mut config = Config::new(Pubkey::new_unique(), Pubkey::new_unique(), 0);
+        assert_eq!(config.set_fee_bump_bps(1), Ok(()));
+        assert_eq!(config.set_fee_bump_bps(MAX_BPS), Ok(()));
+        assert_eq!(
+            config.set_fee_bump_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
     }
 }

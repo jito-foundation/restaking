@@ -287,17 +287,14 @@ impl Vault {
     }
 
     pub fn deposit_fee_bps(&self) -> u16 {
-        assert!(u16::from(self.deposit_fee_bps) <= MAX_BPS);
         u16::from(self.deposit_fee_bps)
     }
 
     pub fn withdrawal_fee_bps(&self) -> u16 {
-        assert!(u16::from(self.withdrawal_fee_bps) <= MAX_BPS);
         u16::from(self.withdrawal_fee_bps)
     }
 
     pub fn reward_fee_bps(&self) -> u16 {
-        assert!(u16::from(self.reward_fee_bps) <= MAX_BPS);
         u16::from(self.reward_fee_bps)
     }
 
