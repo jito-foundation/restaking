@@ -14,7 +14,6 @@ use solana_program::{
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
-    program_pack::Pack,
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
@@ -79,16 +78,13 @@ pub fn process_mint(
         return Err(VaultError::InvalidDepositor.into());
     }
 
+    // If the depositor token account is the same as the vault token account, there would be a zero balance change transfer
+    // coupled with a `amount_in` mint. This would allow the vault to inflate it's the VRT's value.
+    // vault -> 10 ST -> vault = +`amount_in` VRT
     if depositor_token_account.key.eq(vault_token_account.key) {
         msg!("Depositor token account cannot be the vault token account");
         return Err(VaultError::InvalidDepositTokenAccount.into());
     }
-
-    let vault_amount_before = {
-        let vault_token_account_data = vault_token_account.data.borrow();
-        let vault_token_account = spl_token::state::Account::unpack(&vault_token_account_data)?;
-        vault_token_account.amount
-    };
 
     let MintSummary {
         vrt_to_depositor,
@@ -154,22 +150,6 @@ pub fn process_mint(
             ],
             &[&seed_slices],
         )?;
-    }
-
-    // Post Operation Checks
-    let vault_amount_after = {
-        let vault_token_account_data = vault_token_account.data.borrow();
-        let vault_token_account = spl_token::state::Account::unpack(&vault_token_account_data)?;
-        vault_token_account.amount
-    };
-
-    if vault_amount_after
-        .checked_sub(vault_amount_before)
-        .ok_or(VaultError::VaultUnderflow)?
-        != amount_in
-    {
-        msg!("Amount in does not match amount out");
-        return Err(VaultError::NoSupportedMintBalanceChange.into());
     }
 
     Ok(())
