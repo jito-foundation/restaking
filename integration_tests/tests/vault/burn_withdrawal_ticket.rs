@@ -16,13 +16,13 @@ mod tests {
         vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
     };
 
-    /// One can't burn the withdraw ticket until a full epoch has passed
+    /// One can't burn the withdrawal ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_same_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -40,7 +40,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -92,7 +92,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -105,13 +105,13 @@ mod tests {
         );
     }
 
-    /// One can't burn the withdraw ticket until a full epoch has passed
+    /// One can't burn the withdrawal ticket until a full epoch has passed
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_next_epoch_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -129,7 +129,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -181,7 +181,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -210,7 +210,7 @@ mod tests {
         );
     }
 
-    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    /// Tests basic withdrawal ticket with no rewards or slashing incidents
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_basic_success() {
         const MINT_AMOUNT: u64 = 100_000;
@@ -286,7 +286,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -344,7 +344,7 @@ mod tests {
         assert_eq!(depositor_token_account.amount, MINT_AMOUNT);
     }
 
-    /// Tests basic withdraw ticket with no rewards or slashing incidents
+    /// Tests basic withdrawal ticket with no rewards or slashing incidents
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_slippage_fails() {
         const MINT_AMOUNT: u64 = 100_000;
@@ -420,7 +420,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -500,177 +500,7 @@ mod tests {
         let slash_amount = MINT_AMOUNT >> 1;
         let withdraw_amount = MINT_AMOUNT >> 1;
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
-        let reward_fee_bps = 0;
-        let num_operators = 1;
-        let slasher_amounts = vec![slash_amount];
-
-        let mut fixture = TestBuilder::new().await;
-        let ConfiguredVault {
-            mut vault_program_client,
-            restaking_program_client: _,
-            vault_config_admin,
-            vault_root,
-            restaking_config_admin: _,
-            ncn_root,
-            operator_roots,
-            slashers_amounts,
-        } = fixture
-            .setup_vault_with_ncn_and_operators(
-                deposit_fee_bps,
-                withdraw_fee_bps,
-                reward_fee_bps,
-                num_operators,
-                &slasher_amounts,
-            )
-            .await
-            .unwrap();
-
-        // Initial deposit + mint
-        let depositor = Keypair::new();
-        vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
-            .await
-            .unwrap();
-        vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
-            .await
-            .unwrap();
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length())
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_full_vault_update(
-                &vault_root.vault_pubkey,
-                &[operator_roots[0].operator_pubkey],
-            )
-            .await
-            .unwrap();
-
-        // Delegate all funds to the operator
-        vault_program_client
-            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
-            .await
-            .unwrap();
-
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length())
-            .await
-            .unwrap();
-        let operator_root_pubkeys: Vec<_> =
-            operator_roots.iter().map(|r| r.operator_pubkey).collect();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
-            .await
-            .unwrap();
-
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        assert_eq!(
-            vault.delegation_state.total_security().unwrap(),
-            MINT_AMOUNT
-        );
-
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(withdraw_amount, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
-            .unwrap();
-
-        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, withdraw_amount, min_amount_out)
-            .await
-            .unwrap();
-
-        let operator_root = &operator_roots[0];
-
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        fixture
-            .warp_slot_incremental(2 * config.epoch_length())
-            .await
-            .unwrap();
-        let operator_root_pubkeys: Vec<_> =
-            operator_roots.iter().map(|r| r.operator_pubkey).collect();
-        vault_program_client
-            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
-            .await
-            .unwrap();
-
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        // configure slasher and slash
-        let slasher = &slashers_amounts[0].0;
-        fixture
-            .create_ata(&vault.supported_mint, &slasher.pubkey())
-            .await
-            .unwrap();
-        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
-        vault_program_client
-            .initialize_vault_ncn_slasher_operator_ticket(
-                &Config::find_program_address(&jito_vault_program::id()).0,
-                &vault_root.vault_pubkey,
-                &ncn_root.ncn_pubkey,
-                &slasher.pubkey(),
-                &operator_root.operator_pubkey,
-                &VaultNcnSlasherTicket::find_program_address(
-                    &jito_vault_program::id(),
-                    &vault_root.vault_pubkey,
-                    &ncn_root.ncn_pubkey,
-                    &slasher.pubkey(),
-                )
-                .0,
-                &VaultNcnSlasherOperatorTicket::find_program_address(
-                    &jito_vault_program::id(),
-                    &vault_root.vault_pubkey,
-                    &ncn_root.ncn_pubkey,
-                    &slasher.pubkey(),
-                    &operator_root.operator_pubkey,
-                    epoch,
-                )
-                .0,
-                &vault_config_admin,
-            )
-            .await
-            .unwrap();
-
-        vault_program_client
-            .do_slash(
-                &vault_root,
-                &ncn_root.ncn_pubkey,
-                slasher,
-                &operator_root.operator_pubkey,
-                slash_amount,
-            )
-            .await
-            .unwrap();
-
-        let result = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
-            .await;
-
-        assert_vault_error(result, VaultError::SlippageError);
-    }
-
-    #[tokio::test]
-    async fn test_burn_withdrawal_ticket_wrong_staker_token_account_fails() {
-        const MINT_AMOUNT: u64 = 100_000;
-
-        let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -688,7 +518,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -717,7 +547,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 

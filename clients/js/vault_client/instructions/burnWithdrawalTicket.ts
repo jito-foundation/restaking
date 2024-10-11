@@ -30,13 +30,13 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const BURN_WITHDRAW_TICKET_DISCRIMINATOR = 15;
+export const BURN_WITHDRAWAL_TICKET_DISCRIMINATOR = 15;
 
-export function getBurnWithdrawTicketDiscriminatorBytes() {
-  return getU8Encoder().encode(BURN_WITHDRAW_TICKET_DISCRIMINATOR);
+export function getBurnWithdrawalTicketDiscriminatorBytes() {
+  return getU8Encoder().encode(BURN_WITHDRAWAL_TICKET_DISCRIMINATOR);
 }
 
-export type BurnWithdrawTicketInstruction<
+export type BurnWithdrawalTicketInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
@@ -104,32 +104,35 @@ export type BurnWithdrawTicketInstruction<
     ]
   >;
 
-export type BurnWithdrawTicketInstructionData = { discriminator: number };
+export type BurnWithdrawalTicketInstructionData = { discriminator: number };
 
-export type BurnWithdrawTicketInstructionDataArgs = {};
+export type BurnWithdrawalTicketInstructionDataArgs = {};
 
-export function getBurnWithdrawTicketInstructionDataEncoder(): Encoder<BurnWithdrawTicketInstructionDataArgs> {
+export function getBurnWithdrawalTicketInstructionDataEncoder(): Encoder<BurnWithdrawalTicketInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([['discriminator', getU8Encoder()]]),
-    (value) => ({ ...value, discriminator: BURN_WITHDRAW_TICKET_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: BURN_WITHDRAWAL_TICKET_DISCRIMINATOR,
+    })
   );
 }
 
-export function getBurnWithdrawTicketInstructionDataDecoder(): Decoder<BurnWithdrawTicketInstructionData> {
+export function getBurnWithdrawalTicketInstructionDataDecoder(): Decoder<BurnWithdrawalTicketInstructionData> {
   return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
-export function getBurnWithdrawTicketInstructionDataCodec(): Codec<
-  BurnWithdrawTicketInstructionDataArgs,
-  BurnWithdrawTicketInstructionData
+export function getBurnWithdrawalTicketInstructionDataCodec(): Codec<
+  BurnWithdrawalTicketInstructionDataArgs,
+  BurnWithdrawalTicketInstructionData
 > {
   return combineCodec(
-    getBurnWithdrawTicketInstructionDataEncoder(),
-    getBurnWithdrawTicketInstructionDataDecoder()
+    getBurnWithdrawalTicketInstructionDataEncoder(),
+    getBurnWithdrawalTicketInstructionDataDecoder()
   );
 }
 
-export type BurnWithdrawTicketInput<
+export type BurnWithdrawalTicketInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountVaultTokenAccount extends string = string,
@@ -158,7 +161,7 @@ export type BurnWithdrawTicketInput<
   burnSigner?: TransactionSigner<TAccountBurnSigner>;
 };
 
-export function getBurnWithdrawTicketInstruction<
+export function getBurnWithdrawalTicketInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountVaultTokenAccount extends string,
@@ -172,7 +175,7 @@ export function getBurnWithdrawTicketInstruction<
   TAccountSystemProgram extends string,
   TAccountBurnSigner extends string,
 >(
-  input: BurnWithdrawTicketInput<
+  input: BurnWithdrawalTicketInput<
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,
@@ -186,7 +189,7 @@ export function getBurnWithdrawTicketInstruction<
     TAccountSystemProgram,
     TAccountBurnSigner
   >
-): BurnWithdrawTicketInstruction<
+): BurnWithdrawalTicketInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
@@ -266,8 +269,8 @@ export function getBurnWithdrawTicketInstruction<
       getAccountMeta(accounts.burnSigner),
     ],
     programAddress,
-    data: getBurnWithdrawTicketInstructionDataEncoder().encode({}),
-  } as BurnWithdrawTicketInstruction<
+    data: getBurnWithdrawalTicketInstructionDataEncoder().encode({}),
+  } as BurnWithdrawalTicketInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
@@ -286,7 +289,7 @@ export function getBurnWithdrawTicketInstruction<
   return instruction;
 }
 
-export type ParsedBurnWithdrawTicketInstruction<
+export type ParsedBurnWithdrawalTicketInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -306,17 +309,17 @@ export type ParsedBurnWithdrawTicketInstruction<
     /** Signer for burning */
     burnSigner?: TAccountMetas[11] | undefined;
   };
-  data: BurnWithdrawTicketInstructionData;
+  data: BurnWithdrawalTicketInstructionData;
 };
 
-export function parseBurnWithdrawTicketInstruction<
+export function parseBurnWithdrawalTicketInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedBurnWithdrawTicketInstruction<TProgram, TAccountMetas> {
+): ParsedBurnWithdrawalTicketInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 12) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
@@ -349,7 +352,7 @@ export function parseBurnWithdrawTicketInstruction<
       systemProgram: getNextAccount(),
       burnSigner: getNextOptionalAccount(),
     },
-    data: getBurnWithdrawTicketInstructionDataDecoder().decode(
+    data: getBurnWithdrawalTicketInstructionDataDecoder().decode(
       instruction.data
     ),
   };

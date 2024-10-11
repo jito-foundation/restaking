@@ -11,7 +11,7 @@ impl Discriminator for VaultStakerWithdrawalTicket {
 }
 
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-/// For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
+/// For every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
@@ -87,12 +87,17 @@ impl VaultStakerWithdrawalTicket {
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
-        let epoch_unstaked = self.slot_unstaked().checked_div(epoch_length).unwrap();
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        let epoch_unstaked = self
+            .slot_unstaked()
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)
-                .ok_or(ProgramError::ArithmeticOverflow)?
+                .ok_or(VaultError::ArithmeticOverflow)?
         {
             Ok(false)
         } else {
@@ -155,26 +160,26 @@ impl VaultStakerWithdrawalTicket {
         expect_writable: bool,
     ) -> Result<(), ProgramError> {
         if vault_staker_withdrawal_ticket.owner.ne(program_id) {
-            msg!("Vault staker withdraw ticket has an invalid owner");
+            msg!("Vault staker withdrawal ticket has an invalid owner");
             return Err(ProgramError::InvalidAccountOwner);
         }
         if vault_staker_withdrawal_ticket.data_is_empty() {
-            msg!("Vault staker withdraw ticket data is empty");
+            msg!("Vault staker withdrawal ticket data is empty");
             return Err(ProgramError::InvalidAccountData);
         }
         if expect_writable && !vault_staker_withdrawal_ticket.is_writable {
-            msg!("Vault staker withdraw ticket is not writable");
+            msg!("Vault staker withdrawal ticket is not writable");
             return Err(ProgramError::InvalidAccountData);
         }
         if vault_staker_withdrawal_ticket.data.borrow()[0].ne(&Self::DISCRIMINATOR) {
-            msg!("Vault staker withdraw ticket discriminator is invalid");
+            msg!("Vault staker withdrawal ticket discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let vault_staker_withdraw_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
-        let base = Self::try_from_slice_unchecked(&vault_staker_withdraw_ticket_data)?.base;
+        let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
+        let base = Self::try_from_slice_unchecked(&vault_staker_withdrawal_ticket_data)?.base;
         let expected_pubkey = Self::find_program_address(program_id, vault.key, &base).0;
         if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
-            msg!("Vault staker withdraw ticket is not at the correct PDA");
+            msg!("Vault staker withdrawal ticket is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())

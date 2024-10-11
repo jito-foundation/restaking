@@ -92,7 +92,7 @@ impl VaultNcnSlasherOperatorTicket {
         let amount_after_slash = self
             .slashed()
             .checked_add(slash_amount)
-            .ok_or(ProgramError::ArithmeticOverflow)?;
+            .ok_or(VaultError::ArithmeticOverflow)?;
         if amount_after_slash > max_slashable_per_epoch {
             msg!("Slash amount exceeds the maximum slashable amount per epoch");
             return Err(VaultError::VaultMaxSlashedPerOperatorExceeded.into());

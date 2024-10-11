@@ -728,7 +728,7 @@
       }
     },
     {
-      "name": "BurnWithdrawTicket",
+      "name": "BurnWithdrawalTicket",
       "accounts": [
         {
           "name": "config",
@@ -2396,6 +2396,21 @@
       "code": 1048,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
+    },
+    {
+      "code": 3000,
+      "name": "ArithmeticOverflow",
+      "msg": "ArithmeticOverflow"
+    },
+    {
+      "code": 3001,
+      "name": "ArithmeticUnderflow",
+      "msg": "ArithmeticUnderflow"
+    },
+    {
+      "code": 3002,
+      "name": "DivisionByZero",
+      "msg": "DivisionByZero"
     }
   ],
   "metadata": {
