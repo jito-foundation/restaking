@@ -79,14 +79,14 @@ pub fn process_burn_withdrawal_ticket(
     } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount(), min_amount_out)?;
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
-    let (_, vault_staker_withdraw_bump, mut vault_staker_withdraw_seeds) =
+    let (_, vault_staker_withdrawal_bump, mut vault_staker_withdrawal_seeds) =
         VaultStakerWithdrawalTicket::find_program_address(
             program_id,
             vault_info.key,
             &vault_staker_withdrawal_ticket.base,
         );
-    vault_staker_withdraw_seeds.push(vec![vault_staker_withdraw_bump]);
-    let seed_slices: Vec<&[u8]> = vault_staker_withdraw_seeds
+    vault_staker_withdrawal_seeds.push(vec![vault_staker_withdrawal_bump]);
+    let seed_slices: Vec<&[u8]> = vault_staker_withdrawal_seeds
         .iter()
         .map(|seed| seed.as_slice())
         .collect();

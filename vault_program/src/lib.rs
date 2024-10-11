@@ -196,8 +196,8 @@ pub fn process_instruction(
             msg!("Instruction: ChangeWithdrawalTicketOwner");
             process_change_withdrawal_ticket_owner(program_id, accounts)
         }
-        VaultInstruction::BurnWithdrawTicket { min_amount_out } => {
-            msg!("Instruction: BurnWithdrawTicket");
+        VaultInstruction::BurnWithdrawalTicket { min_amount_out } => {
+            msg!("Instruction: BurnWithdrawalTicket");
             process_burn_withdrawal_ticket(program_id, accounts, min_amount_out)
         }
         // ------------------------------------------
