@@ -188,6 +188,7 @@ export function getBurnWithdrawalTicketInstruction<
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
   TAccountBurnSigner extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: BurnWithdrawalTicketInput<
     TAccountConfig,
@@ -202,9 +203,10 @@ export function getBurnWithdrawalTicketInstruction<
     TAccountTokenProgram,
     TAccountSystemProgram,
     TAccountBurnSigner
-  >
+  >,
+  config?: { programAddress?: TProgramAddress }
 ): BurnWithdrawalTicketInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountVault,
   TAccountVaultTokenAccount,
@@ -219,7 +221,7 @@ export function getBurnWithdrawalTicketInstruction<
   TAccountBurnSigner
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -290,7 +292,7 @@ export function getBurnWithdrawalTicketInstruction<
       args as BurnWithdrawalTicketInstructionDataArgs
     ),
   } as BurnWithdrawalTicketInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,

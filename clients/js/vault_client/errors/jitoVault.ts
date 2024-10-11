@@ -113,7 +113,7 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x417; // 1047
 /** VaultEnqueueWithdrawalAmountZero: VaultEnqueueWithdrawalAmountZero */
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x418; // 1048
 /** VaultMintZero: VaultMintZero */
-export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x417; // 1047
+export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x419; // 1049
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */

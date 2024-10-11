@@ -174,6 +174,7 @@ export function getInitializeVaultInstruction<
   TAccountBase extends string,
   TAccountSystemProgram extends string,
   TAccountTokenProgram extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: InitializeVaultInput<
     TAccountConfig,
@@ -184,9 +185,10 @@ export function getInitializeVaultInstruction<
     TAccountBase,
     TAccountSystemProgram,
     TAccountTokenProgram
-  >
+  >,
+  config?: { programAddress?: TProgramAddress }
 ): InitializeVaultInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountVault,
   TAccountVrtMint,
@@ -197,7 +199,7 @@ export function getInitializeVaultInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -245,7 +247,7 @@ export function getInitializeVaultInstruction<
       args as InitializeVaultInstructionDataArgs
     ),
   } as InitializeVaultInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountVault,
     TAccountVrtMint,

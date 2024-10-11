@@ -158,7 +158,7 @@ pub enum JitoVaultError {
     VaultEnqueueWithdrawalAmountZero = 0x418,
     /// 1049 - VaultMintZero
     #[error("VaultMintZero")]
-    VaultMintZero = 0x417,
+    VaultMintZero = 0x419,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

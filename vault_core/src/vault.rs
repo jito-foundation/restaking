@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS, MAX_EPOCH_WITHDRAW_BPS};
+use crate::{delegation_state::DelegationState, MAX_BPS, MAX_EPOCH_WITHDRAW_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -1950,7 +1950,8 @@ mod tests {
             2500,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.clear_epoch_withdraw_supported_token_amount();
         vault.set_epoch_snapshot_supported_token_amount(1000);
 

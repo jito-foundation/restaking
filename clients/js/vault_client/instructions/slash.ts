@@ -199,6 +199,7 @@ export function getSlashInstruction<
   TAccountVaultTokenAccount extends string,
   TAccountSlasherTokenAccount extends string,
   TAccountTokenProgram extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: SlashInput<
     TAccountConfig,
@@ -217,9 +218,10 @@ export function getSlashInstruction<
     TAccountVaultTokenAccount,
     TAccountSlasherTokenAccount,
     TAccountTokenProgram
-  >
+  >,
+  config?: { programAddress?: TProgramAddress }
 ): SlashInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountVault,
   TAccountNcn,
@@ -238,7 +240,7 @@ export function getSlashInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -322,7 +324,7 @@ export function getSlashInstruction<
       args as SlashInstructionDataArgs
     ),
   } as SlashInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountVault,
     TAccountNcn,
