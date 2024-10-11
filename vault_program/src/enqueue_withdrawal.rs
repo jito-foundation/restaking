@@ -83,7 +83,7 @@ pub fn process_enqueue_withdrawal(
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
-        "Initializing vault staker withdraw ticket at address {}",
+        "Initializing vault staker withdrawal ticket at address {}",
         vault_staker_withdrawal_ticket.key
     );
     create_account(

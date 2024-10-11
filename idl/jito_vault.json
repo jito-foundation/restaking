@@ -724,7 +724,7 @@
       }
     },
     {
-      "name": "BurnWithdrawTicket",
+      "name": "BurnWithdrawalTicket",
       "accounts": [
         {
           "name": "config",
