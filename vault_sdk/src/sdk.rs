@@ -575,7 +575,7 @@ pub fn slash(
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*slasher, true),
         AccountMeta::new_readonly(*ncn_operator_state, false),
         AccountMeta::new_readonly(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
