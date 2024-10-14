@@ -2,8 +2,6 @@
 mod tests {
     use jito_vault_core::{
         config::Config, delegation_state::DelegationState, vault::Vault,
-        vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
-        vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
         vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     };
     use jito_vault_sdk::error::VaultError;
@@ -497,8 +495,6 @@ mod tests {
     async fn test_burn_withdrawal_ticket_min_amount_out_fails() {
         const MINT_AMOUNT: u64 = 100_000;
 
-        let slash_amount = MINT_AMOUNT >> 1;
-        let withdraw_amount = MINT_AMOUNT >> 1;
         let deposit_fee_bps = 0;
         let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
