@@ -105,6 +105,9 @@ pub enum VaultError {
     InvalidDepositTokenAccount,
     #[error("NoSupportedMintBalanceChange")]
     NoSupportedMintBalanceChange,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
+
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
     #[error("ArithmeticUnderflow")]

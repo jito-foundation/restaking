@@ -162,6 +162,9 @@ pub enum JitoVaultError {
     /// 1050 - NoSupportedMintBalanceChange
     #[error("NoSupportedMintBalanceChange")]
     NoSupportedMintBalanceChange = 0x41A,
+    /// 1051 - InvalidEpochLength
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength = 0x41B,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

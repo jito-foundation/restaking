@@ -116,6 +116,8 @@ export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x418; // 1048
 export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x419; // 1049
 /** NoSupportedMintBalanceChange: NoSupportedMintBalanceChange */
 export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41a; // 1050
+/** InvalidEpochLength: InvalidEpochLength */
+export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x41b; // 1051
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */
@@ -129,6 +131,7 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__DIVISION_BY_ZERO
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSITOR
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT
+  | typeof JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__NCN_OVERFLOW
   | typeof JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE
@@ -187,6 +190,7 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,
     [JITO_VAULT_ERROR__INVALID_DEPOSITOR]: `InvalidDepositor`,
     [JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT]: `InvalidDepositTokenAccount`,
+    [JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH]: `InvalidEpochLength`,
     [JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE]: `NcnOperatorStateUnslashable`,
     [JITO_VAULT_ERROR__NCN_OVERFLOW]: `NcnOverflow`,
     [JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE]: `NcnVaultSlasherTicketUnslashable`,

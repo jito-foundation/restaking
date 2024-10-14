@@ -52,6 +52,8 @@ pub enum RestakingError {
     VaultOverflow,
     #[error("SlasherOverflow")]
     SlasherOverflow,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
 
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
