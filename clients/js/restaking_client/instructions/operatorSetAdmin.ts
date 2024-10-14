@@ -99,23 +99,20 @@ export function getOperatorSetAdminInstruction<
   TAccountOperator extends string,
   TAccountOldAdmin extends string,
   TAccountNewAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: OperatorSetAdminInput<
     TAccountOperator,
     TAccountOldAdmin,
     TAccountNewAdmin
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): OperatorSetAdminInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator,
   TAccountOldAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -138,7 +135,7 @@ export function getOperatorSetAdminInstruction<
     programAddress,
     data: getOperatorSetAdminInstructionDataEncoder().encode({}),
   } as OperatorSetAdminInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,
     TAccountOldAdmin,
     TAccountNewAdmin

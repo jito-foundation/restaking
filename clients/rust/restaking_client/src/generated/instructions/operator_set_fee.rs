@@ -116,7 +116,7 @@ impl OperatorSetFeeBuilder {
         self.new_fee_bps = Some(new_fee_bps);
         self
     }
-    /// Add an additional account to the instruction.
+    /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,

@@ -127,7 +127,6 @@ export function getOperatorDelegateTokenAccountInstruction<
   TAccountTokenAccount extends string,
   TAccountDelegate extends string,
   TAccountTokenProgram extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: OperatorDelegateTokenAccountInput<
     TAccountOperator,
@@ -136,10 +135,9 @@ export function getOperatorDelegateTokenAccountInstruction<
     TAccountTokenAccount,
     TAccountDelegate,
     TAccountTokenProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): OperatorDelegateTokenAccountInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountOperator,
   TAccountDelegateAdmin,
   TAccountTokenMint,
@@ -148,8 +146,7 @@ export function getOperatorDelegateTokenAccountInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -184,7 +181,7 @@ export function getOperatorDelegateTokenAccountInstruction<
     programAddress,
     data: getOperatorDelegateTokenAccountInstructionDataEncoder().encode({}),
   } as OperatorDelegateTokenAccountInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountOperator,
     TAccountDelegateAdmin,
     TAccountTokenMint,

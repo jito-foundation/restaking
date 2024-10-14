@@ -125,24 +125,22 @@ export function getCloseVaultUpdateStateTrackerInstruction<
   TAccountVault extends string,
   TAccountVaultUpdateStateTracker extends string,
   TAccountPayer extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: CloseVaultUpdateStateTrackerInput<
     TAccountConfig,
     TAccountVault,
     TAccountVaultUpdateStateTracker,
     TAccountPayer
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): CloseVaultUpdateStateTrackerInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountVaultUpdateStateTracker,
   TAccountPayer
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -175,7 +173,7 @@ export function getCloseVaultUpdateStateTrackerInstruction<
       args as CloseVaultUpdateStateTrackerInstructionDataArgs
     ),
   } as CloseVaultUpdateStateTrackerInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountVaultUpdateStateTracker,

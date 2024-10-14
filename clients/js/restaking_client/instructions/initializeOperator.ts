@@ -128,7 +128,6 @@ export function getInitializeOperatorInstruction<
   TAccountAdmin extends string,
   TAccountBase extends string,
   TAccountSystemProgram extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: InitializeOperatorInput<
     TAccountConfig,
@@ -136,10 +135,9 @@ export function getInitializeOperatorInstruction<
     TAccountAdmin,
     TAccountBase,
     TAccountSystemProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): InitializeOperatorInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountOperator,
   TAccountAdmin,
@@ -147,8 +145,7 @@ export function getInitializeOperatorInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -186,7 +183,7 @@ export function getInitializeOperatorInstruction<
       args as InitializeOperatorInstructionDataArgs
     ),
   } as InitializeOperatorInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountOperator,
     TAccountAdmin,

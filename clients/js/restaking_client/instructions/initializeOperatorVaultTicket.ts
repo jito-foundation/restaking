@@ -136,7 +136,6 @@ export function getInitializeOperatorVaultTicketInstruction<
   TAccountAdmin extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: InitializeOperatorVaultTicketInput<
     TAccountConfig,
@@ -146,10 +145,9 @@ export function getInitializeOperatorVaultTicketInstruction<
     TAccountAdmin,
     TAccountPayer,
     TAccountSystemProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): InitializeOperatorVaultTicketInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountOperator,
   TAccountVault,
@@ -159,8 +157,7 @@ export function getInitializeOperatorVaultTicketInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -200,7 +197,7 @@ export function getInitializeOperatorVaultTicketInstruction<
     programAddress,
     data: getInitializeOperatorVaultTicketInstructionDataEncoder().encode({}),
   } as InitializeOperatorVaultTicketInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountOperator,
     TAccountVault,

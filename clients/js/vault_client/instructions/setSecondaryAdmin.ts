@@ -124,24 +124,22 @@ export function getSetSecondaryAdminInstruction<
   TAccountVault extends string,
   TAccountAdmin extends string,
   TAccountNewAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: SetSecondaryAdminInput<
     TAccountConfig,
     TAccountVault,
     TAccountAdmin,
     TAccountNewAdmin
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): SetSecondaryAdminInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -171,7 +169,7 @@ export function getSetSecondaryAdminInstruction<
       args as SetSecondaryAdminInstructionDataArgs
     ),
   } as SetSecondaryAdminInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountAdmin,

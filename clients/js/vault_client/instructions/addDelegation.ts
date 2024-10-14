@@ -127,7 +127,6 @@ export function getAddDelegationInstruction<
   TAccountOperator extends string,
   TAccountVaultOperatorDelegation extends string,
   TAccountAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: AddDelegationInput<
     TAccountConfig,
@@ -135,10 +134,9 @@ export function getAddDelegationInstruction<
     TAccountOperator,
     TAccountVaultOperatorDelegation,
     TAccountAdmin
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): AddDelegationInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountOperator,
@@ -146,7 +144,7 @@ export function getAddDelegationInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -181,7 +179,7 @@ export function getAddDelegationInstruction<
       args as AddDelegationInstructionDataArgs
     ),
   } as AddDelegationInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountOperator,

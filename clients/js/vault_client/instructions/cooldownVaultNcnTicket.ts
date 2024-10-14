@@ -114,7 +114,6 @@ export function getCooldownVaultNcnTicketInstruction<
   TAccountNcn extends string,
   TAccountVaultNcnTicket extends string,
   TAccountAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: CooldownVaultNcnTicketInput<
     TAccountConfig,
@@ -122,10 +121,9 @@ export function getCooldownVaultNcnTicketInstruction<
     TAccountNcn,
     TAccountVaultNcnTicket,
     TAccountAdmin
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): CooldownVaultNcnTicketInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountNcn,
@@ -133,7 +131,7 @@ export function getCooldownVaultNcnTicketInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -160,7 +158,7 @@ export function getCooldownVaultNcnTicketInstruction<
     programAddress,
     data: getCooldownVaultNcnTicketInstructionDataEncoder().encode({}),
   } as CooldownVaultNcnTicketInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountNcn,

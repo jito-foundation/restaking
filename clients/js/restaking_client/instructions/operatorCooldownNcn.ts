@@ -114,7 +114,6 @@ export function getOperatorCooldownNcnInstruction<
   TAccountOperator extends string,
   TAccountNcnOperatorState extends string,
   TAccountAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: OperatorCooldownNcnInput<
     TAccountConfig,
@@ -122,10 +121,9 @@ export function getOperatorCooldownNcnInstruction<
     TAccountOperator,
     TAccountNcnOperatorState,
     TAccountAdmin
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): OperatorCooldownNcnInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountNcn,
   TAccountOperator,
@@ -133,8 +131,7 @@ export function getOperatorCooldownNcnInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -164,7 +161,7 @@ export function getOperatorCooldownNcnInstruction<
     programAddress,
     data: getOperatorCooldownNcnInstructionDataEncoder().encode({}),
   } as OperatorCooldownNcnInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountNcn,
     TAccountOperator,

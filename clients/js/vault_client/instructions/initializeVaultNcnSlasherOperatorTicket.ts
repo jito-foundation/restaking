@@ -150,7 +150,6 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
   TAccountVaultNcnSlasherOperatorTicket extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: InitializeVaultNcnSlasherOperatorTicketInput<
     TAccountConfig,
@@ -162,10 +161,9 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
     TAccountVaultNcnSlasherOperatorTicket,
     TAccountPayer,
     TAccountSystemProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): InitializeVaultNcnSlasherOperatorTicketInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountNcn,
@@ -177,7 +175,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -226,7 +224,7 @@ export function getInitializeVaultNcnSlasherOperatorTicketInstruction<
       {}
     ),
   } as InitializeVaultNcnSlasherOperatorTicketInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountNcn,

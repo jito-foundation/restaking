@@ -118,7 +118,6 @@ export function getUpdateVaultBalanceInstruction<
   TAccountVrtMint extends string,
   TAccountVaultFeeTokenAccount extends string,
   TAccountTokenProgram extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: UpdateVaultBalanceInput<
     TAccountConfig,
@@ -127,10 +126,9 @@ export function getUpdateVaultBalanceInstruction<
     TAccountVrtMint,
     TAccountVaultFeeTokenAccount,
     TAccountTokenProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): UpdateVaultBalanceInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountVaultTokenAccount,
@@ -139,7 +137,7 @@ export function getUpdateVaultBalanceInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -180,7 +178,7 @@ export function getUpdateVaultBalanceInstruction<
     programAddress,
     data: getUpdateVaultBalanceInstructionDataEncoder().encode({}),
   } as UpdateVaultBalanceInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,

@@ -67,19 +67,16 @@ export function getInitializeVaultWithMintInstructionDataCodec(): Codec<
 
 export type InitializeVaultWithMintInput = {};
 
-export function getInitializeVaultWithMintInstruction<
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
->(
-  input: InitializeVaultWithMintInput,
-  config?: { programAddress?: TProgramAddress }
-): InitializeVaultWithMintInstruction<TProgramAddress> {
+export function getInitializeVaultWithMintInstruction(
+  input: InitializeVaultWithMintInput
+): InitializeVaultWithMintInstruction<typeof JITO_VAULT_PROGRAM_ADDRESS> {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   const instruction = {
     programAddress,
     data: getInitializeVaultWithMintInstructionDataEncoder().encode({}),
-  } as InitializeVaultWithMintInstruction<TProgramAddress>;
+  } as InitializeVaultWithMintInstruction<typeof JITO_VAULT_PROGRAM_ADDRESS>;
 
   return instruction;
 }

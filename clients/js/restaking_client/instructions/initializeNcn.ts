@@ -114,7 +114,6 @@ export function getInitializeNcnInstruction<
   TAccountAdmin extends string,
   TAccountBase extends string,
   TAccountSystemProgram extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: InitializeNcnInput<
     TAccountConfig,
@@ -122,10 +121,9 @@ export function getInitializeNcnInstruction<
     TAccountAdmin,
     TAccountBase,
     TAccountSystemProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): InitializeNcnInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountNcn,
   TAccountAdmin,
@@ -133,8 +131,7 @@ export function getInitializeNcnInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -167,7 +164,7 @@ export function getInitializeNcnInstruction<
     programAddress,
     data: getInitializeNcnInstructionDataEncoder().encode({}),
   } as InitializeNcnInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountNcn,
     TAccountAdmin,

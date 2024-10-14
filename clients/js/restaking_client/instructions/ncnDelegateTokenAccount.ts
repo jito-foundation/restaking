@@ -123,7 +123,6 @@ export function getNcnDelegateTokenAccountInstruction<
   TAccountTokenAccount extends string,
   TAccountDelegate extends string,
   TAccountTokenProgram extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: NcnDelegateTokenAccountInput<
     TAccountNcn,
@@ -132,10 +131,9 @@ export function getNcnDelegateTokenAccountInstruction<
     TAccountTokenAccount,
     TAccountDelegate,
     TAccountTokenProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): NcnDelegateTokenAccountInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
   TAccountDelegateAdmin,
   TAccountTokenMint,
@@ -144,8 +142,7 @@ export function getNcnDelegateTokenAccountInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -180,7 +177,7 @@ export function getNcnDelegateTokenAccountInstruction<
     programAddress,
     data: getNcnDelegateTokenAccountInstructionDataEncoder().encode({}),
   } as NcnDelegateTokenAccountInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
     TAccountDelegateAdmin,
     TAccountTokenMint,

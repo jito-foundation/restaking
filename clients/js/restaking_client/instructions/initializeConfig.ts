@@ -108,25 +108,22 @@ export function getInitializeConfigInstruction<
   TAccountAdmin extends string,
   TAccountVaultProgram extends string,
   TAccountSystemProgram extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: InitializeConfigInput<
     TAccountConfig,
     TAccountAdmin,
     TAccountVaultProgram,
     TAccountSystemProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): InitializeConfigInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountAdmin,
   TAccountVaultProgram,
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -157,7 +154,7 @@ export function getInitializeConfigInstruction<
     programAddress,
     data: getInitializeConfigInstructionDataEncoder().encode({}),
   } as InitializeConfigInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountAdmin,
     TAccountVaultProgram,

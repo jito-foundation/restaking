@@ -97,19 +97,16 @@ export function getNcnSetAdminInstruction<
   TAccountNcn extends string,
   TAccountOldAdmin extends string,
   TAccountNewAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
-  input: NcnSetAdminInput<TAccountNcn, TAccountOldAdmin, TAccountNewAdmin>,
-  config?: { programAddress?: TProgramAddress }
+  input: NcnSetAdminInput<TAccountNcn, TAccountOldAdmin, TAccountNewAdmin>
 ): NcnSetAdminInstruction<
-  TProgramAddress,
+  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
   TAccountNcn,
   TAccountOldAdmin,
   TAccountNewAdmin
 > {
   // Program address.
-  const programAddress =
-    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -132,7 +129,7 @@ export function getNcnSetAdminInstruction<
     programAddress,
     data: getNcnSetAdminInstructionDataEncoder().encode({}),
   } as NcnSetAdminInstruction<
-    TProgramAddress,
+    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountNcn,
     TAccountOldAdmin,
     TAccountNewAdmin

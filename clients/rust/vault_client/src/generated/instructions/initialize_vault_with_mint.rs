@@ -61,7 +61,7 @@ impl InitializeVaultWithMintBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Add an additional account to the instruction.
+    /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,

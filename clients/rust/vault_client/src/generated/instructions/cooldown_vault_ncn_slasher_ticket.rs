@@ -140,7 +140,7 @@ impl CooldownVaultNcnSlasherTicketBuilder {
         self.admin = Some(admin);
         self
     }
-    /// Add an additional account to the instruction.
+    /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,

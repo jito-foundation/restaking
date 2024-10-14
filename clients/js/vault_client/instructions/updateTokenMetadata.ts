@@ -146,7 +146,6 @@ export function getUpdateTokenMetadataInstruction<
   TAccountVrtMint extends string,
   TAccountMetadata extends string,
   TAccountMplTokenMetadataProgram extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: UpdateTokenMetadataInput<
     TAccountVault,
@@ -154,10 +153,9 @@ export function getUpdateTokenMetadataInstruction<
     TAccountVrtMint,
     TAccountMetadata,
     TAccountMplTokenMetadataProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): UpdateTokenMetadataInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountVault,
   TAccountAdmin,
   TAccountVrtMint,
@@ -165,7 +163,7 @@ export function getUpdateTokenMetadataInstruction<
   TAccountMplTokenMetadataProgram
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -206,7 +204,7 @@ export function getUpdateTokenMetadataInstruction<
       args as UpdateTokenMetadataInstructionDataArgs
     ),
   } as UpdateTokenMetadataInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountVault,
     TAccountAdmin,
     TAccountVrtMint,

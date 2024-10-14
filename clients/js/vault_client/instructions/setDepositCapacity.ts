@@ -111,18 +111,16 @@ export function getSetDepositCapacityInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
-  input: SetDepositCapacityInput<TAccountConfig, TAccountVault, TAccountAdmin>,
-  config?: { programAddress?: TProgramAddress }
+  input: SetDepositCapacityInput<TAccountConfig, TAccountVault, TAccountAdmin>
 ): SetDepositCapacityInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -150,7 +148,7 @@ export function getSetDepositCapacityInstruction<
       args as SetDepositCapacityInstructionDataArgs
     ),
   } as SetDepositCapacityInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountAdmin

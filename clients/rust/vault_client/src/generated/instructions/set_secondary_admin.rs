@@ -132,7 +132,7 @@ impl SetSecondaryAdminBuilder {
         self.vault_admin_role = Some(vault_admin_role);
         self
     }
-    /// Add an additional account to the instruction.
+    /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,

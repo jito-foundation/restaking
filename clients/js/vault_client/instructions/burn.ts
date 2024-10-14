@@ -181,7 +181,6 @@ export function getBurnInstruction<
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
   TAccountBurnSigner extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: BurnInput<
     TAccountConfig,
@@ -195,10 +194,9 @@ export function getBurnInstruction<
     TAccountTokenProgram,
     TAccountSystemProgram,
     TAccountBurnSigner
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): BurnInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountVaultTokenAccount,
@@ -212,7 +210,7 @@ export function getBurnInstruction<
   TAccountBurnSigner
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -278,7 +276,7 @@ export function getBurnInstruction<
       args as BurnInstructionDataArgs
     ),
   } as BurnInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,

@@ -164,7 +164,6 @@ export function getCreateTokenMetadataInstruction<
   TAccountMetadata extends string,
   TAccountMplTokenMetadataProgram extends string,
   TAccountSystemProgram extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: CreateTokenMetadataInput<
     TAccountVault,
@@ -174,10 +173,9 @@ export function getCreateTokenMetadataInstruction<
     TAccountMetadata,
     TAccountMplTokenMetadataProgram,
     TAccountSystemProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): CreateTokenMetadataInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountVault,
   TAccountAdmin,
   TAccountVrtMint,
@@ -187,7 +185,7 @@ export function getCreateTokenMetadataInstruction<
   TAccountSystemProgram
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -236,7 +234,7 @@ export function getCreateTokenMetadataInstruction<
       args as CreateTokenMetadataInstructionDataArgs
     ),
   } as CreateTokenMetadataInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountVault,
     TAccountAdmin,
     TAccountVrtMint,

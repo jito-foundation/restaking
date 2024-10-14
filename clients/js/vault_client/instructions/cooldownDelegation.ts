@@ -127,7 +127,6 @@ export function getCooldownDelegationInstruction<
   TAccountOperator extends string,
   TAccountVaultOperatorDelegation extends string,
   TAccountAdmin extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: CooldownDelegationInput<
     TAccountConfig,
@@ -135,10 +134,9 @@ export function getCooldownDelegationInstruction<
     TAccountOperator,
     TAccountVaultOperatorDelegation,
     TAccountAdmin
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): CooldownDelegationInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountOperator,
@@ -146,7 +144,7 @@ export function getCooldownDelegationInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -181,7 +179,7 @@ export function getCooldownDelegationInstruction<
       args as CooldownDelegationInstructionDataArgs
     ),
   } as CooldownDelegationInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountOperator,

@@ -132,7 +132,6 @@ export function getDelegateTokenAccountInstruction<
   TAccountTokenAccount extends string,
   TAccountDelegate extends string,
   TAccountTokenProgram extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: DelegateTokenAccountInput<
     TAccountConfig,
@@ -142,10 +141,9 @@ export function getDelegateTokenAccountInstruction<
     TAccountTokenAccount,
     TAccountDelegate,
     TAccountTokenProgram
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): DelegateTokenAccountInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountDelegateAssetAdmin,
@@ -155,7 +153,7 @@ export function getDelegateTokenAccountInstruction<
   TAccountTokenProgram
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -195,7 +193,7 @@ export function getDelegateTokenAccountInstruction<
     programAddress,
     data: getDelegateTokenAccountInstructionDataEncoder().encode({}),
   } as DelegateTokenAccountInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountDelegateAssetAdmin,

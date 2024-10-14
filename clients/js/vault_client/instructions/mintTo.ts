@@ -174,7 +174,6 @@ export function getMintToInstruction<
   TAccountVaultFeeTokenAccount extends string,
   TAccountTokenProgram extends string,
   TAccountMintSigner extends string,
-  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: MintToInput<
     TAccountConfig,
@@ -187,10 +186,9 @@ export function getMintToInstruction<
     TAccountVaultFeeTokenAccount,
     TAccountTokenProgram,
     TAccountMintSigner
-  >,
-  config?: { programAddress?: TProgramAddress }
+  >
 ): MintToInstruction<
-  TProgramAddress,
+  typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
   TAccountVrtMint,
@@ -203,7 +201,7 @@ export function getMintToInstruction<
   TAccountMintSigner
 > {
   // Program address.
-  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -263,7 +261,7 @@ export function getMintToInstruction<
       args as MintToInstructionDataArgs
     ),
   } as MintToInstruction<
-    TProgramAddress,
+    typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
     TAccountVrtMint,
