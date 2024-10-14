@@ -165,7 +165,7 @@ pub enum VaultInstruction {
     #[account(4, name = "new_owner")]
     ChangeWithdrawalTicketOwner,
 
-    /// Burns the withdraw ticket, returning funds to the staker. Withdraw tickets can be burned
+    /// Burns the withdrawal ticket, returning funds to the staker. Withdraw tickets can be burned
     /// after one full epoch of being enqueued.
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
@@ -179,7 +179,7 @@ pub enum VaultInstruction {
     #[account(9, name = "token_program")]
     #[account(10, name = "system_program")]
     #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
-    BurnWithdrawTicket {
+    BurnWithdrawalTicket {
         min_amount_out: u64
     },
 
@@ -201,10 +201,15 @@ pub enum VaultInstruction {
         reward_fee_bps: Option<u16>,
     },
 
-    /// Withdraws any non-backing tokens from the vault
-    AdminWithdraw {
-        amount: u64
-    },
+    /// Delegate the token account to a third party
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, signer, name = "delegate_asset_admin")]
+    #[account(3, name = "token_mint")]
+    #[account(4, writable, name = "token_account")]
+    #[account(5, name = "delegate")]
+    #[account(6, name = "token_program")]
+    DelegateTokenAccount,
 
     /// Changes the signer for vault admin
     #[account(0, name = "config")]
@@ -328,7 +333,7 @@ pub enum VaultAdminRole {
     CapacityAdmin,
     FeeWallet,
     MintBurnAdmin,
-    WithdrawAdmin,
+    DelegateAssetAdmin,
     FeeAdmin,
 }
 

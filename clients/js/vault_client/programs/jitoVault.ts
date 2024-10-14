@@ -14,9 +14,8 @@ import {
 } from '@solana/web3.js';
 import {
   type ParsedAddDelegationInstruction,
-  type ParsedAdminWithdrawInstruction,
   type ParsedBurnInstruction,
-  type ParsedBurnWithdrawTicketInstruction,
+  type ParsedBurnWithdrawalTicketInstruction,
   type ParsedChangeWithdrawalTicketOwnerInstruction,
   type ParsedCloseVaultUpdateStateTrackerInstruction,
   type ParsedCooldownDelegationInstruction,
@@ -24,6 +23,7 @@ import {
   type ParsedCooldownVaultNcnTicketInstruction,
   type ParsedCrankVaultUpdateStateTrackerInstruction,
   type ParsedCreateTokenMetadataInstruction,
+  type ParsedDelegateTokenAccountInstruction,
   type ParsedEnqueueWithdrawalInstruction,
   type ParsedInitializeConfigInstruction,
   type ParsedInitializeVaultInstruction,
@@ -75,10 +75,10 @@ export enum JitoVaultInstruction {
   Burn,
   EnqueueWithdrawal,
   ChangeWithdrawalTicketOwner,
-  BurnWithdrawTicket,
+  BurnWithdrawalTicket,
   SetDepositCapacity,
   SetFees,
-  AdminWithdraw,
+  DelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
   AddDelegation,
@@ -142,7 +142,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.ChangeWithdrawalTicketOwner;
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
-    return JitoVaultInstruction.BurnWithdrawTicket;
+    return JitoVaultInstruction.BurnWithdrawalTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(16), 0)) {
     return JitoVaultInstruction.SetDepositCapacity;
@@ -151,7 +151,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetFees;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoVaultInstruction.AdminWithdraw;
+    return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
     return JitoVaultInstruction.SetAdmin;
@@ -240,8 +240,8 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.ChangeWithdrawalTicketOwner;
     } & ParsedChangeWithdrawalTicketOwnerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.BurnWithdrawTicket;
-    } & ParsedBurnWithdrawTicketInstruction<TProgram>)
+      instructionType: JitoVaultInstruction.BurnWithdrawalTicket;
+    } & ParsedBurnWithdrawalTicketInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetDepositCapacity;
     } & ParsedSetDepositCapacityInstruction<TProgram>)
@@ -249,8 +249,8 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.SetFees;
     } & ParsedSetFeesInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.AdminWithdraw;
-    } & ParsedAdminWithdrawInstruction<TProgram>)
+      instructionType: JitoVaultInstruction.DelegateTokenAccount;
+    } & ParsedDelegateTokenAccountInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetAdmin;
     } & ParsedSetAdminInstruction<TProgram>)

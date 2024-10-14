@@ -12,7 +12,7 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 1000; // 10%
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -25,7 +25,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -82,7 +82,7 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 10_000; // 100%
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -95,7 +95,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -152,7 +152,7 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0; // 0%
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -165,7 +165,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -222,7 +222,7 @@ mod tests {
         const MINT_AMOUNT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 1000; // 10%
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -235,7 +235,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,

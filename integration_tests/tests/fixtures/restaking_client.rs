@@ -12,7 +12,7 @@ use jito_restaking_sdk::{
         initialize_ncn_operator_state, initialize_ncn_vault_slasher_ticket,
         initialize_ncn_vault_ticket, initialize_operator, initialize_operator_vault_ticket,
         ncn_cooldown_operator, ncn_set_admin, ncn_warmup_operator, operator_cooldown_ncn,
-        operator_set_admin, operator_set_secondary_admin, operator_warmup_ncn,
+        operator_set_admin, operator_set_fee, operator_set_secondary_admin, operator_warmup_ncn,
         warmup_ncn_vault_slasher_ticket, warmup_ncn_vault_ticket, warmup_operator_vault_ticket,
     },
 };
@@ -163,6 +163,7 @@ impl RestakingProgramClient {
             &operator_pubkey,
             &operator_admin,
             &operator_base,
+            0,
         )
         .await?;
         Ok(OperatorRoot {
@@ -893,6 +894,7 @@ impl RestakingProgramClient {
         operator: &Pubkey,
         admin: &Keypair,
         base: &Keypair,
+        operator_fee_bps: u16,
     ) -> TestResult<()> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -903,6 +905,7 @@ impl RestakingProgramClient {
                 operator,
                 &admin.pubkey(),
                 &base.pubkey(),
+                operator_fee_bps,
             )],
             Some(&admin.pubkey()),
             &[admin, base],
@@ -934,6 +937,84 @@ impl RestakingProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn operator_set_fee(
+        &mut self,
+        config: &Pubkey,
+        operator: &Pubkey,
+        admin: &Keypair,
+        new_fee_bps: u16,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[operator_set_fee(
+                &jito_restaking_program::id(),
+                config,
+                operator,
+                &admin.pubkey(),
+                new_fee_bps,
+            )],
+            Some(&self.payer.pubkey()),
+            &[admin, &self.payer],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn ncn_delegate_token_account(
+        &mut self,
+        ncn_pubkey: &Pubkey,
+        delegate_admin: &Keypair,
+        token_mint: &Pubkey,
+        token_account: &Pubkey,
+        delegate: &Pubkey,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::ncn_delegate_token_account(
+                &jito_restaking_program::id(),
+                ncn_pubkey,
+                &delegate_admin.pubkey(),
+                token_mint,
+                token_account,
+                delegate,
+                token_program_id,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &delegate_admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn operator_delegate_token_account(
+        &mut self,
+        operator_pubkey: &Pubkey,
+        delegate_admin: &Keypair,
+        token_mint: &Pubkey,
+        token_account: &Pubkey,
+        delegate: &Pubkey,
+        token_program_id: &Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::operator_delegate_token_account(
+                &jito_restaking_program::id(),
+                operator_pubkey,
+                &delegate_admin.pubkey(),
+                token_mint,
+                token_account,
+                delegate,
+                token_program_id,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, &delegate_admin],
             blockhash,
         ))
         .await

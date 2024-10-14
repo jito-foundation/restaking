@@ -30,11 +30,11 @@ pub struct Ncn {
     /// The slasher admin of the NCN
     pub slasher_admin: Pubkey,
 
-    /// The withdraw admin of the NCN
-    pub withdraw_admin: Pubkey,
+    /// The delegate admin of the NCN
+    pub delegate_admin: Pubkey,
 
-    /// The withdraw fee wallet of the NCN
-    pub withdraw_fee_wallet: Pubkey,
+    // Reserved space
+    reserved_1: [u8; 32],
 
     /// The index of the NCN
     index: PodU64,
@@ -68,8 +68,8 @@ impl Ncn {
             operator_admin: admin,
             vault_admin: admin,
             slasher_admin: admin,
-            withdraw_admin: admin,
-            withdraw_fee_wallet: admin,
+            delegate_admin: admin,
+            reserved_1: [0; 32],
             index: PodU64::from(ncn_index),
             operator_count: PodU64::from(0),
             vault_count: PodU64::from(0),
@@ -122,6 +122,54 @@ impl Ncn {
         Ok(())
     }
 
+    /// Validates the admin account and ensures it matches the expected admin.
+    ///
+    /// # Arguments
+    /// * `admin` - A reference to the [`Pubkey`] representing the admin Pubkey that is attempting
+    ///   to authorize the operation.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the admin account is valid.
+    ///
+    /// # Errors
+    /// This function will return a [`jito_restaking_sdk::error::RestakingError::NcnAdminInvalid`] error in the following case:
+    /// * The `admin_info` account's public key does not match the expected admin public key stored in `self`.
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), RestakingError> {
+        if self.admin.ne(admin) {
+            msg!(
+                "Incorrect admin provided, expected {}, received {}",
+                self.admin,
+                admin
+            );
+            return Err(RestakingError::NcnAdminInvalid);
+        }
+        Ok(())
+    }
+
+    /// Validates the delegate_admin account and ensures it matches the expected delegate_admin.
+    ///
+    /// # Arguments
+    /// * `delegate_admin_info` - A reference to the [`Pubkey`] representing the delegate_admin Pubkey that is attempting
+    ///   to authorize the operation.
+    ///
+    /// # Returns
+    /// * `Result<(), RestakingError>` - Returns `Ok(())` if the delegate_admin account is valid.
+    ///
+    /// # Errors
+    /// This function will return a [`jito_restaking_sdk::error::RestakingError::NcnDelegateAdminInvalid`] error in the following case:
+    /// * The `delegate_admin_info` account's public key does not match the expected delegate_admin public key stored in `self`.
+    pub fn check_delegate_admin(&self, delegate_admin: &Pubkey) -> Result<(), RestakingError> {
+        if self.delegate_admin.ne(delegate_admin) {
+            msg!(
+                "Incorrect delegate_admin provided, expected {}, received {}",
+                self.delegate_admin,
+                delegate_admin
+            );
+            return Err(RestakingError::NcnDelegateAdminInvalid);
+        }
+        Ok(())
+    }
+
     /// Replace all secondary admins that were equal to the old admin to the new admin
     ///
     /// # Arguments
@@ -143,14 +191,9 @@ impl Ncn {
             msg!("Slasher admin set to {:?}", new_admin);
         }
 
-        if self.withdraw_admin.eq(old_admin) {
-            self.withdraw_admin = *new_admin;
-            msg!("Withdraw admin set to {:?}", new_admin);
-        }
-
-        if self.withdraw_fee_wallet.eq(old_admin) {
-            self.withdraw_fee_wallet = *new_admin;
-            msg!("Withdraw fee wallet set to {:?}", new_admin);
+        if self.delegate_admin.eq(old_admin) {
+            self.delegate_admin = *new_admin;
+            msg!("Delegate admin set to {:?}", new_admin);
         }
     }
 
@@ -231,8 +274,8 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // operator_admin
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // slasher_admin
-            std::mem::size_of::<Pubkey>() + // withdraw_admin
-            std::mem::size_of::<Pubkey>() + // withdraw_fee_wallet
+            std::mem::size_of::<Pubkey>() + // delegate_admin
+            32 + // reserved
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // operator_count
             std::mem::size_of::<PodU64>() + // vault_count
@@ -250,8 +293,7 @@ mod tests {
         assert_eq!(ncn.operator_admin, old_admin);
         assert_eq!(ncn.vault_admin, old_admin);
         assert_eq!(ncn.slasher_admin, old_admin);
-        assert_eq!(ncn.withdraw_admin, old_admin);
-        assert_eq!(ncn.withdraw_fee_wallet, old_admin);
+        assert_eq!(ncn.delegate_admin, old_admin);
 
         let new_admin = Pubkey::new_unique();
         ncn.update_secondary_admin(&old_admin, &new_admin);
@@ -259,7 +301,6 @@ mod tests {
         assert_eq!(ncn.operator_admin, new_admin);
         assert_eq!(ncn.vault_admin, new_admin);
         assert_eq!(ncn.slasher_admin, new_admin);
-        assert_eq!(ncn.withdraw_admin, new_admin);
-        assert_eq!(ncn.withdraw_fee_wallet, new_admin);
+        assert_eq!(ncn.delegate_admin, new_admin);
     }
 }

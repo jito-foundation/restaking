@@ -24,9 +24,9 @@ pub enum JitoRestakingError {
     /// 1004 - NcnAdminInvalid
     #[error("NcnAdminInvalid")]
     NcnAdminInvalid = 0x3EC,
-    /// 1005 - NcnWithdrawAdminInvalid
-    #[error("NcnWithdrawAdminInvalid")]
-    NcnWithdrawAdminInvalid = 0x3ED,
+    /// 1005 - NcnDelegateAdminInvalid
+    #[error("NcnDelegateAdminInvalid")]
+    NcnDelegateAdminInvalid = 0x3ED,
     /// 1006 - NcnVaultSlasherTicketFailedCooldown
     #[error("NcnVaultSlasherTicketFailedCooldown")]
     NcnVaultSlasherTicketFailedCooldown = 0x3EE,
@@ -51,9 +51,9 @@ pub enum JitoRestakingError {
     /// 2002 - OperatorAdminInvalid
     #[error("OperatorAdminInvalid")]
     OperatorAdminInvalid = 0x7D2,
-    /// 2003 - OperatorWithdrawAdminInvalid
-    #[error("OperatorWithdrawAdminInvalid")]
-    OperatorWithdrawAdminInvalid = 0x7D3,
+    /// 2003 - OperatorDelegateAdminInvalid
+    #[error("OperatorDelegateAdminInvalid")]
+    OperatorDelegateAdminInvalid = 0x7D3,
     /// 2004 - OperatorCooldownNcnFailed
     #[error("OperatorCooldownNcnFailed")]
     OperatorCooldownNcnFailed = 0x7D4,
@@ -66,18 +66,33 @@ pub enum JitoRestakingError {
     /// 2007 - OperatorWarmupNcnFailed
     #[error("OperatorWarmupNcnFailed")]
     OperatorWarmupNcnFailed = 0x7D7,
-    /// 2008 - NcnOverflow
+    /// 2008 - OperatorFeeCapExceeded
+    #[error("OperatorFeeCapExceeded")]
+    OperatorFeeCapExceeded = 0x7D8,
+    /// 2009 - NcnOverflow
     #[error("NcnOverflow")]
-    NcnOverflow = 0x7D8,
-    /// 2009 - OperatorOverflow
+    NcnOverflow = 0x7D9,
+    /// 2010 - OperatorOverflow
     #[error("OperatorOverflow")]
-    OperatorOverflow = 0x7D9,
-    /// 2010 - VaultOverflow
+    OperatorOverflow = 0x7DA,
+    /// 2011 - VaultOverflow
     #[error("VaultOverflow")]
-    VaultOverflow = 0x7DA,
-    /// 2011 - SlasherOverflow
+    VaultOverflow = 0x7DB,
+    /// 2012 - SlasherOverflow
     #[error("SlasherOverflow")]
-    SlasherOverflow = 0x7DB,
+    SlasherOverflow = 0x7DC,
+    /// 2013 - InvalidEpochLength
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength = 0x7DD,
+    /// 3000 - ArithmeticOverflow
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 0xBB8,
+    /// 3001 - ArithmeticUnderflow
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow = 0xBB9,
+    /// 3002 - DivisionByZero
+    #[error("DivisionByZero")]
+    DivisionByZero = 0xBBA,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoRestakingError {
