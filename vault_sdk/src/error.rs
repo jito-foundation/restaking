@@ -99,7 +99,12 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
-
+    #[error("InvalidDepositor")]
+    InvalidDepositor,
+    #[error("InvalidDepositTokenAccount")]
+    InvalidDepositTokenAccount,
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange,
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
     #[error("ArithmeticUnderflow")]

@@ -21,4 +21,5 @@ docs/api
 !.yarn/cache
 #.pnp.*
 
+# Personal Helper Scripts
 .development

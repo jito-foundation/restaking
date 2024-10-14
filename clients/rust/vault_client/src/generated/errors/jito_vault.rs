@@ -153,6 +153,15 @@ pub enum JitoVaultError {
     /// 1047 - VaultMintZero
     #[error("VaultMintZero")]
     VaultMintZero = 0x417,
+    /// 1048 - InvalidDepositor
+    #[error("InvalidDepositor")]
+    InvalidDepositor = 0x418,
+    /// 1049 - InvalidDepositTokenAccount
+    #[error("InvalidDepositTokenAccount")]
+    InvalidDepositTokenAccount = 0x419,
+    /// 1050 - NoSupportedMintBalanceChange
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange = 0x41A,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,
