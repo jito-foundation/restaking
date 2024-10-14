@@ -7,7 +7,7 @@ use jito_jsm_core::{
         load_signer, load_system_account, load_system_program, load_token_mint, load_token_program,
     },
 };
-use jito_vault_core::{config::Config, vault::Vault, MAX_FEE_BPS};
+use jito_vault_core::{config::Config, vault::Vault, MAX_EPOCH_WITHDRAW_BPS, MAX_FEE_BPS};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
@@ -23,6 +23,7 @@ pub fn process_initialize_vault(
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
+    epoch_withdraw_cap_bps: u16,
     decimals: u8,
 ) -> ProgramResult {
     let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
@@ -60,6 +61,14 @@ pub fn process_initialize_vault(
             config.deposit_withdrawal_fee_cap_bps()
         );
         return Err(VaultError::VaultFeeCapExceeded.into());
+    }
+
+    if epoch_withdraw_cap_bps > MAX_EPOCH_WITHDRAW_BPS {
+        msg!(
+            "Epoch withdraw cap exceeds maximum allowed of {}",
+            MAX_EPOCH_WITHDRAW_BPS
+        );
+        return Err(VaultError::VaultEpochWithdrawCapExceeded.into());
     }
 
     let rent = Rent::get()?;
@@ -120,6 +129,7 @@ pub fn process_initialize_vault(
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
             vault_bump,
             slot,
         )?;

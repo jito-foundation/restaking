@@ -80,6 +80,9 @@ pub fn process_burn(
         out_amount,
     } = vault.burn_with_fee(amount_in, min_amount_out)?;
 
+    vault.check_withdrawal_allowed(out_amount)?;
+    vault.increment_epoch_withdraw_supported_token_amount(out_amount)?;
+
     // Burn the VRT tokens from the staker's account
     invoke(
         &burn(
