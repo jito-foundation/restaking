@@ -76,6 +76,11 @@ impl Config {
         }
     }
 
+    pub fn get_epoch_from_slot(&self, slot: u64) -> Result<u64, VaultError> {
+        slot.checked_div(self.epoch_length())
+            .ok_or(VaultError::InvalidEpochLength)
+    }
+
     pub fn epoch_length(&self) -> u64 {
         self.epoch_length.into()
     }
