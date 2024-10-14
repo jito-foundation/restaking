@@ -47,10 +47,8 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     load_signer(payer, false)?;
     load_system_program(system_program)?;
 
-    let ncn_epoch = Clock::get()?
-        .slot
-        .checked_div(config.epoch_length())
-        .ok_or(VaultError::DivisionByZero)?;
+    let slot = Clock::get()?.slot;
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
 
     // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (

@@ -2398,6 +2398,26 @@
       "msg": "VaultMintZero"
     },
     {
+      "code": 1049,
+      "name": "InvalidDepositor",
+      "msg": "InvalidDepositor"
+    },
+    {
+      "code": 1050,
+      "name": "InvalidDepositTokenAccount",
+      "msg": "InvalidDepositTokenAccount"
+    },
+    {
+      "code": 1051,
+      "name": "NoSupportedMintBalanceChange",
+      "msg": "NoSupportedMintBalanceChange"
+    },
+    {
+      "code": 1052,
+      "name": "InvalidEpochLength",
+      "msg": "InvalidEpochLength"
+    },
+    {
       "code": 3000,
       "name": "ArithmeticOverflow",
       "msg": "ArithmeticOverflow"
