@@ -1470,6 +1470,11 @@
       "msg": "SlasherOverflow"
     },
     {
+      "code": 2013,
+      "name": "InvalidEpochLength",
+      "msg": "InvalidEpochLength"
+    },
+    {
       "code": 3000,
       "name": "ArithmeticOverflow",
       "msg": "ArithmeticOverflow"
