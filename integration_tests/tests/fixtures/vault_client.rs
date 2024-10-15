@@ -1864,7 +1864,7 @@ impl VaultProgramClient {
     pub async fn set_program_fee_wallet(
         &mut self,
         program_fee_admin: &Keypair,
-        new_fee_wallet: Pubkey,
+        new_fee_wallet: &Pubkey,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(

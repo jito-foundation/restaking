@@ -816,17 +816,16 @@ pub fn set_program_fee_wallet(
     program_id: &Pubkey,
     config: &Pubkey,
     program_fee_admin: &Pubkey,
-    new_fee_wallet: Pubkey,
+    new_fee_wallet: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new_readonly(*program_fee_admin, true),
+        AccountMeta::new_readonly(*new_fee_wallet, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetProgramFeeWallet { new_fee_wallet }
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::SetProgramFeeWallet.try_to_vec().unwrap(),
     }
 }

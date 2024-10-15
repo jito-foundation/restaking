@@ -1,6 +1,6 @@
-use jito_bytemuck::{types::PodU16, AccountDeserialize};
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::load_signer;
-use jito_vault_core::{config::Config, vault::Vault, MAX_FEE_BPS};
+use jito_vault_core::config::Config;
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,

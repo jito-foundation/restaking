@@ -15,9 +15,8 @@ use solana_program::{
 pub fn process_set_program_fee_wallet(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
-    new_fee_wallet: Pubkey,
 ) -> ProgramResult {
-    let [config, config_fee_admin] = accounts else {
+    let [config, config_fee_admin, new_fee_wallet] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, true)?;
@@ -30,8 +29,8 @@ pub fn process_set_program_fee_wallet(
         return Err(VaultError::VaultConfigFeeAdminInvalid.into());
     }
 
-    config.program_fee_wallet = new_fee_wallet;
+    config.program_fee_wallet = *new_fee_wallet.key;
 
-    msg!("Config fee wallet updated to: {:?}", new_fee_wallet);
+    msg!("Config fee wallet updated to: {:?}", new_fee_wallet.key);
     Ok(())
 }

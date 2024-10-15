@@ -179,9 +179,9 @@ pub fn process_instruction(
             msg!("Instruction: SetProgramFee");
             process_set_program_fee(program_id, accounts, new_fee_bps)
         }
-        VaultInstruction::SetProgramFeeWallet { new_fee_wallet } => {
-            msg!("Instruction: SetConfigFeeWallet");
-            process_set_program_fee_wallet(program_id, accounts, new_fee_wallet)
+        VaultInstruction::SetProgramFeeWallet => {
+            msg!("Instruction: SetProgramFeeWallet");
+            process_set_program_fee_wallet(program_id, accounts)
         }
         // ------------------------------------------
         // Vault minting and burning

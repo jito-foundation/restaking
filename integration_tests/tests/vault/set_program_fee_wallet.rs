@@ -17,7 +17,7 @@ mod tests {
         // Set a new fee wallet
         let new_fee_wallet = Keypair::new().pubkey();
         vault_program_client
-            .set_program_fee_wallet(&config_admin, new_fee_wallet)
+            .set_program_fee_wallet(&config_admin, &new_fee_wallet)
             .await?;
 
         // Check if the fee wallet was updated
@@ -32,13 +32,13 @@ mod tests {
             .airdrop(&non_admin.pubkey(), 1.0)
             .await?;
         let result = vault_program_client
-            .set_program_fee_wallet(&non_admin, Keypair::new().pubkey())
+            .set_program_fee_wallet(&non_admin, &Keypair::new().pubkey())
             .await;
         assert_vault_error(result, VaultError::VaultConfigFeeAdminInvalid);
 
         // Try to set fee wallet to the same address (should succeed)
         vault_program_client
-            .set_program_fee_wallet(&config_admin, new_fee_wallet)
+            .set_program_fee_wallet(&config_admin, &new_fee_wallet)
             .await?;
 
         Ok(())
