@@ -917,29 +917,16 @@ impl Vault {
         } = self.calculate_burn_summary(vrt_amount_in)?;
 
         let amount_out_delta = out_amount.saturating_sub(min_supported_mint_out);
-        let calculated_slippage = amount_out_delta
-            .checked_mul(MAX_BPS as u64)
-            .and_then(|x| x.checked_div(out_amount))
+        let calculated_slippage = (amount_out_delta as u128)
+            .checked_mul(MAX_BPS as u128)
+            .and_then(|x| x.checked_div(out_amount.into()))
             .ok_or(VaultError::VaultOverflow)?;
 
-        if calculated_slippage < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS as u64 {
+        if calculated_slippage < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS as u128 {
             msg!(
                 "Calculated slippage {} is less that the minimum slippage {}",
                 calculated_slippage,
                 Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
-            );
-            return Err(VaultError::SlippageError);
-        }
-
-        // This is a sanity check calculation to ensure that the calculated min amount out is correct
-        let calculated_min_amount_out =
-            self.calculate_min_supported_mint_out(vrt_amount_in, calculated_slippage as u16)?;
-
-        if calculated_min_amount_out != min_supported_mint_out {
-            msg!(
-                "Calculated min amount out {} does not match provided min amount out {}",
-                calculated_min_amount_out,
-                min_supported_mint_out
             );
             return Err(VaultError::SlippageError);
         }
