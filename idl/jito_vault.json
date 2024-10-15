@@ -2148,6 +2148,21 @@
   ],
   "errors": [
     {
+      "code": 0,
+      "name": "JsmCoreArithmeticOverflow",
+      "msg": "JsmCoreArithmeticOverflow"
+    },
+    {
+      "code": 1,
+      "name": "JsmCoreArithmeticUnderflow",
+      "msg": "JsmCoreArithmeticUnderflow"
+    },
+    {
+      "code": 2,
+      "name": "JsmCoreDivisionByZero",
+      "msg": "JsmCoreDivisionByZero"
+    },
+    {
       "code": 1000,
       "name": "VaultSlashUnderflow",
       "msg": "VaultSlashUnderflow"

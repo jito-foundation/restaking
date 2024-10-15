@@ -14,6 +14,12 @@ import {
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 
+/** JsmCoreArithmeticOverflow: JsmCoreArithmeticOverflow */
+export const JITO_VAULT_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW = 0x0; // 0
+/** JsmCoreArithmeticUnderflow: JsmCoreArithmeticUnderflow */
+export const JITO_VAULT_ERROR__JSM_CORE_ARITHMETIC_UNDERFLOW = 0x1; // 1
+/** JsmCoreDivisionByZero: JsmCoreDivisionByZero */
+export const JITO_VAULT_ERROR__JSM_CORE_DIVISION_BY_ZERO = 0x2; // 2
 /** VaultSlashUnderflow: VaultSlashUnderflow */
 export const JITO_VAULT_ERROR__VAULT_SLASH_UNDERFLOW = 0x3e8; // 1000
 /** VaultInsufficientFunds: VaultInsufficientFunds */
@@ -132,6 +138,9 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSITOR
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT
   | typeof JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH
+  | typeof JITO_VAULT_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW
+  | typeof JITO_VAULT_ERROR__JSM_CORE_ARITHMETIC_UNDERFLOW
+  | typeof JITO_VAULT_ERROR__JSM_CORE_DIVISION_BY_ZERO
   | typeof JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE
   | typeof JITO_VAULT_ERROR__NCN_OVERFLOW
   | typeof JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE
@@ -191,6 +200,9 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__INVALID_DEPOSITOR]: `InvalidDepositor`,
     [JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT]: `InvalidDepositTokenAccount`,
     [JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH]: `InvalidEpochLength`,
+    [JITO_VAULT_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW]: `JsmCoreArithmeticOverflow`,
+    [JITO_VAULT_ERROR__JSM_CORE_ARITHMETIC_UNDERFLOW]: `JsmCoreArithmeticUnderflow`,
+    [JITO_VAULT_ERROR__JSM_CORE_DIVISION_BY_ZERO]: `JsmCoreDivisionByZero`,
     [JITO_VAULT_ERROR__NCN_OPERATOR_STATE_UNSLASHABLE]: `NcnOperatorStateUnslashable`,
     [JITO_VAULT_ERROR__NCN_OVERFLOW]: `NcnOverflow`,
     [JITO_VAULT_ERROR__NCN_VAULT_SLASHER_TICKET_UNSLASHABLE]: `NcnVaultSlasherTicketUnslashable`,

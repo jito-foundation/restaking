@@ -14,6 +14,12 @@ import {
 } from '@solana/web3.js';
 import { JITO_RESTAKING_PROGRAM_ADDRESS } from '../programs';
 
+/** JsmCoreArithmeticOverflow: JsmCoreArithmeticOverflow */
+export const JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW = 0x0; // 0
+/** JsmCoreArithmeticUnderflow: JsmCoreArithmeticUnderflow */
+export const JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_UNDERFLOW = 0x1; // 1
+/** JsmCoreDivisionByZero: JsmCoreDivisionByZero */
+export const JITO_RESTAKING_ERROR__JSM_CORE_DIVISION_BY_ZERO = 0x2; // 2
 /** NcnOperatorAdminInvalid: NcnOperatorAdminInvalid */
 export const JITO_RESTAKING_ERROR__NCN_OPERATOR_ADMIN_INVALID = 0x3e8; // 1000
 /** NcnCooldownOperatorFailed: NcnCooldownOperatorFailed */
@@ -76,6 +82,9 @@ export type JitoRestakingError =
   | typeof JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW
   | typeof JITO_RESTAKING_ERROR__DIVISION_BY_ZERO
   | typeof JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH
+  | typeof JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW
+  | typeof JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_UNDERFLOW
+  | typeof JITO_RESTAKING_ERROR__JSM_CORE_DIVISION_BY_ZERO
   | typeof JITO_RESTAKING_ERROR__NCN_ADMIN_INVALID
   | typeof JITO_RESTAKING_ERROR__NCN_COOLDOWN_OPERATOR_FAILED
   | typeof JITO_RESTAKING_ERROR__NCN_DELEGATE_ADMIN_INVALID
@@ -108,6 +117,9 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW]: `ArithmeticUnderflow`,
     [JITO_RESTAKING_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,
     [JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH]: `InvalidEpochLength`,
+    [JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW]: `JsmCoreArithmeticOverflow`,
+    [JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_UNDERFLOW]: `JsmCoreArithmeticUnderflow`,
+    [JITO_RESTAKING_ERROR__JSM_CORE_DIVISION_BY_ZERO]: `JsmCoreDivisionByZero`,
     [JITO_RESTAKING_ERROR__NCN_ADMIN_INVALID]: `NcnAdminInvalid`,
     [JITO_RESTAKING_ERROR__NCN_COOLDOWN_OPERATOR_FAILED]: `NcnCooldownOperatorFailed`,
     [JITO_RESTAKING_ERROR__NCN_DELEGATE_ADMIN_INVALID]: `NcnDelegateAdminInvalid`,

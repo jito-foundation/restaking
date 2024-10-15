@@ -52,10 +52,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            ncn_operator_state.operator_opt_in_state.state(
-                fixture.get_current_slot().await.unwrap(),
-                config.epoch_length()
-            ),
+            ncn_operator_state
+                .operator_opt_in_state
+                .state(
+                    fixture.get_current_slot().await.unwrap(),
+                    config.epoch_length()
+                )
+                .unwrap(),
             SlotToggleState::Cooldown
         );
     }

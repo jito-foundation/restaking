@@ -8,6 +8,7 @@ use solana_program::{
     system_instruction,
 };
 
+pub mod error;
 pub mod loader;
 pub mod slot_toggle;
 

@@ -7,6 +7,8 @@ use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::types::PodU64;
 use shank::ShankType;
 
+use crate::error::JsmCoreError;
+
 /// SlotToggle is a state tracker that allows for activation and deactivation of certain features
 /// based on slot time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
@@ -66,7 +68,7 @@ impl SlotToggle {
     /// * `bool` - Whether the feature was successfully activated
     pub fn activate(&mut self, slot: u64, epoch_length: u64) -> bool {
         match self.state(slot, epoch_length) {
-            SlotToggleState::Inactive => {
+            Ok(SlotToggleState::Inactive) => {
                 if self.slot_added() == slot {
                     // this should only be possible if the feature is being activated for the first time
                     // and the slot is the same as the slot it was created at
@@ -92,7 +94,7 @@ impl SlotToggle {
     /// * `bool` - Whether the feature was successfully deactivated
     pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> bool {
         match self.state(slot, epoch_length) {
-            SlotToggleState::Active => {
+            Ok(SlotToggleState::Active) => {
                 self.slot_removed = PodU64::from(slot);
                 true
             }
@@ -104,13 +106,13 @@ impl SlotToggle {
     pub fn is_active_or_cooldown(&self, slot: u64, epoch_length: u64) -> bool {
         matches!(
             self.state(slot, epoch_length),
-            SlotToggleState::Active | SlotToggleState::Cooldown
+            Ok(SlotToggleState::Active) | Ok(SlotToggleState::Cooldown)
         )
     }
 
     /// Check if the feature is active at the given slot.
     pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
-        matches!(self.state(slot, epoch_length), SlotToggleState::Active)
+        matches!(self.state(slot, epoch_length), Ok(SlotToggleState::Active))
     }
 
     /// Get the state of the feature at the given slot.
@@ -122,28 +124,42 @@ impl SlotToggle {
     ///
     /// # Returns
     /// * `SlotToggleState` - The state of the feature at the given slot
-    pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+    pub fn state(&self, slot: u64, epoch_length: u64) -> Result<SlotToggleState, JsmCoreError> {
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(JsmCoreError::JsmCoreDivisionByZero)?;
 
         let slot_added: u64 = self.slot_added.into();
         let slot_removed: u64 = self.slot_removed.into();
 
         match slot_added.cmp(&slot_removed) {
-            Ordering::Equal => SlotToggleState::Inactive,
+            Ordering::Equal => Ok(SlotToggleState::Inactive),
             Ordering::Less => {
-                let slot_removed_epoch = slot_removed.checked_div(epoch_length).unwrap();
-                if current_epoch > slot_removed_epoch.checked_add(1).unwrap() {
-                    SlotToggleState::Inactive
+                let slot_removed_epoch = slot_removed
+                    .checked_div(epoch_length)
+                    .ok_or(JsmCoreError::JsmCoreDivisionByZero)?;
+                if current_epoch
+                    > slot_removed_epoch
+                        .checked_add(1)
+                        .ok_or(JsmCoreError::JsmCoreArithmeticOverflow)?
+                {
+                    Ok(SlotToggleState::Inactive)
                 } else {
-                    SlotToggleState::Cooldown
+                    Ok(SlotToggleState::Cooldown)
                 }
             }
             Ordering::Greater => {
-                let slot_added_epoch = slot_added.checked_div(epoch_length).unwrap();
-                if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
-                    SlotToggleState::Active
+                let slot_added_epoch = slot_added
+                    .checked_div(epoch_length)
+                    .ok_or(JsmCoreError::JsmCoreDivisionByZero)?;
+                if current_epoch
+                    > slot_added_epoch
+                        .checked_add(1)
+                        .ok_or(JsmCoreError::JsmCoreArithmeticOverflow)?
+                {
+                    Ok(SlotToggleState::Active)
                 } else {
-                    SlotToggleState::WarmUp
+                    Ok(SlotToggleState::WarmUp)
                 }
             }
         }
@@ -169,11 +185,14 @@ mod tests {
     fn test_slot_zero() {
         let epoch_length = 150;
         let toggle = SlotToggle::new(0);
-        assert_eq!(toggle.state(0, epoch_length), SlotToggleState::Inactive);
-        assert_eq!(toggle.state(10, epoch_length), SlotToggleState::Inactive);
+        assert_eq!(toggle.state(0, epoch_length), Ok(SlotToggleState::Inactive));
+        assert_eq!(
+            toggle.state(10, epoch_length),
+            Ok(SlotToggleState::Inactive)
+        );
         assert_eq!(
             toggle.state(epoch_length + 1, epoch_length),
-            SlotToggleState::Inactive
+            Ok(SlotToggleState::Inactive)
         );
     }
 
@@ -185,7 +204,7 @@ mod tests {
         let toggle = SlotToggle::new(creation_slot);
         assert_eq!(toggle.slot_added(), creation_slot);
         assert_eq!(toggle.slot_removed(), creation_slot);
-        assert!(toggle.state(creation_slot, epoch_length) == SlotToggleState::Inactive);
+        assert!(toggle.state(creation_slot, epoch_length) == Ok(SlotToggleState::Inactive));
     }
 
     #[test]
@@ -211,7 +230,7 @@ mod tests {
         // Assert inactive
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::Inactive
+            Ok(SlotToggleState::Inactive)
         );
 
         // Transition to warming up
@@ -219,40 +238,40 @@ mod tests {
         assert!(toggle.activate(current_slot, epoch_length));
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::WarmUp
+            Ok(SlotToggleState::WarmUp)
         );
 
         // Assert warming up
         current_slot += epoch_length;
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::WarmUp
+            Ok(SlotToggleState::WarmUp)
         );
 
         // Assert active
         current_slot += epoch_length;
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::Active
+            Ok(SlotToggleState::Active)
         );
 
         // Assert Deactivate
         assert!(toggle.deactivate(current_slot, epoch_length));
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::Cooldown
+            Ok(SlotToggleState::Cooldown)
         );
 
         current_slot += epoch_length;
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::Cooldown
+            Ok(SlotToggleState::Cooldown)
         );
 
         current_slot += epoch_length;
         assert_eq!(
             toggle.state(current_slot, epoch_length),
-            SlotToggleState::Inactive
+            Ok(SlotToggleState::Inactive)
         );
     }
 }
