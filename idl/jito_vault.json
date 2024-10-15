@@ -681,6 +681,10 @@
         {
           "name": "amount",
           "type": "u64"
+        },
+        {
+          "name": "minAmountOut",
+          "type": "u64"
         }
       ],
       "discriminant": {
@@ -791,12 +795,7 @@
           ]
         }
       ],
-      "args": [
-        {
-          "name": "minAmountOut",
-          "type": "u64"
-        }
-      ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 15
@@ -1863,6 +1862,12 @@
             }
           },
           {
+            "name": "minAmountOut",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
             "name": "slotUnstaked",
             "type": {
               "defined": "PodU64"
@@ -2284,126 +2289,131 @@
     },
     {
       "code": 1027,
+      "name": "SlippageTooLow",
+      "msg": "SlippageTooLow"
+    },
+    {
+      "code": 1028,
       "name": "VaultStakerWithdrawalTicketNotWithdrawable",
       "msg": "VaultStakerWithdrawalTicketNotWithdrawable"
     },
     {
-      "code": 1028,
+      "code": 1029,
       "name": "VaultNcnSlasherTicketFailedCooldown",
       "msg": "VaultNcnSlasherTicketFailedCooldown"
     },
     {
-      "code": 1029,
+      "code": 1030,
       "name": "VaultNcnSlasherTicketFailedWarmup",
       "msg": "VaultNcnSlasherTicketFailedWarmup"
     },
     {
-      "code": 1030,
+      "code": 1031,
       "name": "VaultNcnTicketFailedCooldown",
       "msg": "VaultNcnTicketFailedCooldown"
     },
     {
-      "code": 1031,
+      "code": 1032,
       "name": "VaultNcnTicketFailedWarmup",
       "msg": "VaultNcnTicketFailedWarmup"
     },
     {
-      "code": 1032,
+      "code": 1033,
       "name": "VaultNcnTicketUnslashable",
       "msg": "VaultNcnTicketUnslashable"
     },
     {
-      "code": 1033,
+      "code": 1034,
       "name": "OperatorVaultTicketUnslashable",
       "msg": "OperatorVaultTicketUnslashable"
     },
     {
-      "code": 1034,
+      "code": 1035,
       "name": "NcnOperatorStateUnslashable",
       "msg": "NcnOperatorStateUnslashable"
     },
     {
-      "code": 1035,
+      "code": 1036,
       "name": "VaultNcnSlasherTicketUnslashable",
       "msg": "VaultNcnSlasherTicketUnslashable"
     },
     {
-      "code": 1036,
+      "code": 1037,
       "name": "NcnVaultTicketUnslashable",
       "msg": "NcnVaultTicketUnslashable"
     },
     {
-      "code": 1037,
+      "code": 1038,
       "name": "NcnVaultSlasherTicketUnslashable",
       "msg": "NcnVaultSlasherTicketUnslashable"
     },
     {
-      "code": 1038,
+      "code": 1039,
       "name": "VaultMaxSlashedPerOperatorExceeded",
       "msg": "VaultMaxSlashedPerOperatorExceeded"
     },
     {
-      "code": 1039,
+      "code": 1040,
       "name": "VaultStakerWithdrawalTicketInvalidStaker",
       "msg": "VaultStakerWithdrawalTicketInvalidStaker"
     },
     {
-      "code": 1040,
+      "code": 1041,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
     },
     {
-      "code": 1041,
+      "code": 1042,
       "name": "NcnOverflow",
       "msg": "NcnOverflow"
     },
     {
-      "code": 1042,
+      "code": 1043,
       "name": "OperatorOverflow",
       "msg": "OperatorOverflow"
     },
     {
-      "code": 1043,
+      "code": 1044,
       "name": "VaultDelegationZero",
       "msg": "VaultDelegationZero"
     },
     {
-      "code": 1044,
+      "code": 1045,
       "name": "VaultCooldownZero",
       "msg": "VaultCooldownZero"
     },
     {
-      "code": 1045,
+      "code": 1046,
       "name": "VaultBurnZero",
       "msg": "VaultBurnZero"
     },
     {
-      "code": 1046,
+      "code": 1047,
       "name": "VaultEnqueueWithdrawalAmountZero",
       "msg": "VaultEnqueueWithdrawalAmountZero"
     },
     {
-      "code": 1047,
+      "code": 1048,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
     },
     {
-      "code": 1048,
+      "code": 1049,
       "name": "InvalidDepositor",
       "msg": "InvalidDepositor"
     },
     {
-      "code": 1049,
+      "code": 1050,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
     },
     {
-      "code": 1050,
+      "code": 1051,
       "name": "NoSupportedMintBalanceChange",
       "msg": "NoSupportedMintBalanceChange"
     },
     {
-      "code": 1051,
+      "code": 1052,
       "name": "InvalidEpochLength",
       "msg": "InvalidEpochLength"
     },

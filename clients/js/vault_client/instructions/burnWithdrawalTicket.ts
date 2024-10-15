@@ -10,8 +10,6 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -106,21 +104,13 @@ export type BurnWithdrawalTicketInstruction<
     ]
   >;
 
-export type BurnWithdrawalTicketInstructionData = {
-  discriminator: number;
-  minAmountOut: bigint;
-};
+export type BurnWithdrawalTicketInstructionData = { discriminator: number };
 
-export type BurnWithdrawalTicketInstructionDataArgs = {
-  minAmountOut: number | bigint;
-};
+export type BurnWithdrawalTicketInstructionDataArgs = {};
 
 export function getBurnWithdrawalTicketInstructionDataEncoder(): Encoder<BurnWithdrawalTicketInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([
-      ['discriminator', getU8Encoder()],
-      ['minAmountOut', getU64Encoder()],
-    ]),
+    getStructEncoder([['discriminator', getU8Encoder()]]),
     (value) => ({
       ...value,
       discriminator: BURN_WITHDRAWAL_TICKET_DISCRIMINATOR,
@@ -129,10 +119,7 @@ export function getBurnWithdrawalTicketInstructionDataEncoder(): Encoder<BurnWit
 }
 
 export function getBurnWithdrawalTicketInstructionDataDecoder(): Decoder<BurnWithdrawalTicketInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getU8Decoder()],
-    ['minAmountOut', getU64Decoder()],
-  ]);
+  return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
 export function getBurnWithdrawalTicketInstructionDataCodec(): Codec<
@@ -172,7 +159,6 @@ export type BurnWithdrawalTicketInput<
   systemProgram?: Address<TAccountSystemProgram>;
   /** Signer for burning */
   burnSigner?: TransactionSigner<TAccountBurnSigner>;
-  minAmountOut: BurnWithdrawalTicketInstructionDataArgs['minAmountOut'];
 };
 
 export function getBurnWithdrawalTicketInstruction<
@@ -256,9 +242,6 @@ export function getBurnWithdrawalTicketInstruction<
     ResolvedAccount
   >;
 
-  // Original args.
-  const args = { ...input };
-
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
@@ -286,9 +269,7 @@ export function getBurnWithdrawalTicketInstruction<
       getAccountMeta(accounts.burnSigner),
     ],
     programAddress,
-    data: getBurnWithdrawalTicketInstructionDataEncoder().encode(
-      args as BurnWithdrawalTicketInstructionDataArgs
-    ),
+    data: getBurnWithdrawalTicketInstructionDataEncoder().encode({}),
   } as BurnWithdrawalTicketInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,

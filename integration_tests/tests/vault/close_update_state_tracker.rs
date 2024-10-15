@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
+    use jito_vault_core::{
+        config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+    };
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -286,8 +288,18 @@ mod tests {
             .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 100_000)
             .await
             .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(100_000, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 100_000)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 100_000, min_amount_out)
             .await
             .unwrap();
         let vault = vault_program_client
