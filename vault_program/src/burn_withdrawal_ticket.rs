@@ -82,7 +82,11 @@ pub fn process_burn_withdrawal_ticket(
     )?;
 
     if out_amount < vault_staker_withdrawal_ticket.min_amount_out() {
-        msg!("Min amount out is not met");
+        msg!(
+            "Min amount out is not met. Actual out {}, min amount out {}",
+            out_amount,
+            vault_staker_withdrawal_ticket.min_amount_out()
+        );
         return Err(VaultError::SlippageError.into());
     }
 
