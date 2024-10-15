@@ -52,7 +52,7 @@ export type Vault = {
   supportedMint: Address;
   vrtSupply: bigint;
   tokensDeposited: bigint;
-  capacity: bigint;
+  depositCapacity: bigint;
   delegationState: DelegationState;
   vrtEnqueuedForCooldownAmount: bigint;
   vrtCoolingDownAmount: bigint;
@@ -64,7 +64,7 @@ export type Vault = {
   slasherAdmin: Address;
   capacityAdmin: Address;
   feeAdmin: Address;
-  withdrawAdmin: Address;
+  delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
   vaultIndex: bigint;
@@ -88,7 +88,7 @@ export type VaultArgs = {
   supportedMint: Address;
   vrtSupply: number | bigint;
   tokensDeposited: number | bigint;
-  capacity: number | bigint;
+  depositCapacity: number | bigint;
   delegationState: DelegationStateArgs;
   vrtEnqueuedForCooldownAmount: number | bigint;
   vrtCoolingDownAmount: number | bigint;
@@ -100,7 +100,7 @@ export type VaultArgs = {
   slasherAdmin: Address;
   capacityAdmin: Address;
   feeAdmin: Address;
-  withdrawAdmin: Address;
+  delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
   vaultIndex: number | bigint;
@@ -125,7 +125,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['supportedMint', getAddressEncoder()],
     ['vrtSupply', getU64Encoder()],
     ['tokensDeposited', getU64Encoder()],
-    ['capacity', getU64Encoder()],
+    ['depositCapacity', getU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
     ['vrtEnqueuedForCooldownAmount', getU64Encoder()],
     ['vrtCoolingDownAmount', getU64Encoder()],
@@ -137,7 +137,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['slasherAdmin', getAddressEncoder()],
     ['capacityAdmin', getAddressEncoder()],
     ['feeAdmin', getAddressEncoder()],
-    ['withdrawAdmin', getAddressEncoder()],
+    ['delegateAssetAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
     ['vaultIndex', getU64Encoder()],
@@ -163,7 +163,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['supportedMint', getAddressDecoder()],
     ['vrtSupply', getU64Decoder()],
     ['tokensDeposited', getU64Decoder()],
-    ['capacity', getU64Decoder()],
+    ['depositCapacity', getU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
     ['vrtEnqueuedForCooldownAmount', getU64Decoder()],
     ['vrtCoolingDownAmount', getU64Decoder()],
@@ -175,7 +175,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['slasherAdmin', getAddressDecoder()],
     ['capacityAdmin', getAddressDecoder()],
     ['feeAdmin', getAddressDecoder()],
-    ['withdrawAdmin', getAddressDecoder()],
+    ['delegateAssetAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
     ['vaultIndex', getU64Decoder()],

@@ -96,7 +96,12 @@
           "isSigner": false
         }
       ],
-      "args": [],
+      "args": [
+        {
+          "name": "operatorFeeBps",
+          "type": "u16"
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 2
@@ -777,20 +782,15 @@
       }
     },
     {
-      "name": "NcnWithdrawalAsset",
+      "name": "OperatorSetFee",
       "accounts": [
         {
-          "name": "ncn",
+          "name": "config",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "ncnTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "receiverTokenAccount",
+          "name": "operator",
           "isMut": true,
           "isSigner": false
         },
@@ -798,21 +798,12 @@
           "name": "admin",
           "isMut": false,
           "isSigner": true
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
         {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "amount",
-          "type": "u64"
+          "name": "newFeeBps",
+          "type": "u16"
         }
       ],
       "discriminant": {
@@ -821,26 +812,31 @@
       }
     },
     {
-      "name": "OperatorWithdrawalAsset",
+      "name": "NcnDelegateTokenAccount",
       "accounts": [
         {
-          "name": "operator",
+          "name": "ncn",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "delegateAdmin",
           "isMut": false,
           "isSigner": true
         },
         {
-          "name": "operatorTokenAccount",
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "receiverTokenAccount",
-          "isMut": true,
+          "name": "delegate",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -849,19 +845,50 @@
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 22
+      }
+    },
+    {
+      "name": "OperatorDelegateTokenAccount",
+      "accounts": [
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "delegateAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 23
       }
     }
   ],
@@ -939,12 +966,17 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawAdmin",
+            "name": "delegateAdmin",
             "type": "publicKey"
           },
           {
-            "name": "withdrawFeeWallet",
-            "type": "publicKey"
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "index",
@@ -1147,16 +1179,21 @@
             "type": "publicKey"
           },
           {
-            "name": "withdrawalAdmin",
-            "type": "publicKey"
-          },
-          {
-            "name": "withdrawalFeeWallet",
+            "name": "delegateAdmin",
             "type": "publicKey"
           },
           {
             "name": "voter",
             "type": "publicKey"
+          },
+          {
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "index",
@@ -1177,6 +1214,12 @@
             }
           },
           {
+            "name": "operatorFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
             "name": "bump",
             "type": "u8"
           },
@@ -1185,7 +1228,7 @@
             "type": {
               "array": [
                 "u8",
-                263
+                261
               ]
             }
           }
@@ -1279,10 +1322,7 @@
             "name": "Slasher"
           },
           {
-            "name": "Withdraw"
-          },
-          {
-            "name": "WithdrawWallet"
+            "name": "Delegate"
           }
         ]
       }
@@ -1302,10 +1342,7 @@
             "name": "VoterAdmin"
           },
           {
-            "name": "WithdrawAdmin"
-          },
-          {
-            "name": "WithdrawWallet"
+            "name": "DelegateAdmin"
           }
         ]
       }
@@ -1339,8 +1376,8 @@
     },
     {
       "code": 1005,
-      "name": "NcnWithdrawAdminInvalid",
-      "msg": "NcnWithdrawAdminInvalid"
+      "name": "NcnDelegateAdminInvalid",
+      "msg": "NcnDelegateAdminInvalid"
     },
     {
       "code": 1006,
@@ -1384,8 +1421,8 @@
     },
     {
       "code": 2003,
-      "name": "OperatorWithdrawAdminInvalid",
-      "msg": "OperatorWithdrawAdminInvalid"
+      "name": "OperatorDelegateAdminInvalid",
+      "msg": "OperatorDelegateAdminInvalid"
     },
     {
       "code": 2004,
@@ -1409,23 +1446,48 @@
     },
     {
       "code": 2008,
+      "name": "OperatorFeeCapExceeded",
+      "msg": "OperatorFeeCapExceeded"
+    },
+    {
+      "code": 2009,
       "name": "NcnOverflow",
       "msg": "NcnOverflow"
     },
     {
-      "code": 2009,
+      "code": 2010,
       "name": "OperatorOverflow",
       "msg": "OperatorOverflow"
     },
     {
-      "code": 2010,
+      "code": 2011,
       "name": "VaultOverflow",
       "msg": "VaultOverflow"
     },
     {
-      "code": 2011,
+      "code": 2012,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
+    },
+    {
+      "code": 2013,
+      "name": "InvalidEpochLength",
+      "msg": "InvalidEpochLength"
+    },
+    {
+      "code": 3000,
+      "name": "ArithmeticOverflow",
+      "msg": "ArithmeticOverflow"
+    },
+    {
+      "code": 3001,
+      "name": "ArithmeticUnderflow",
+      "msg": "ArithmeticUnderflow"
+    },
+    {
+      "code": 3002,
+      "name": "DivisionByZero",
+      "msg": "DivisionByZero"
     }
   ],
   "metadata": {

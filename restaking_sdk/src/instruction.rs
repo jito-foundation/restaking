@@ -1,6 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
-use solana_program::pubkey::Pubkey;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, ShankInstruction)]
 pub enum RestakingInstruction {
@@ -25,7 +24,7 @@ pub enum RestakingInstruction {
     #[account(2, writable, signer, name = "admin")]
     #[account(3, signer, name = "base")]
     #[account(4, name = "system_program")]
-    InitializeOperator,
+    InitializeOperator { operator_fee_bps: u16 },
 
     /// The NCN adds support for a vault slasher
     ///
@@ -171,19 +170,27 @@ pub enum RestakingInstruction {
     #[account(2, name = "new_admin")]
     OperatorSetSecondaryAdmin(OperatorAdminRole),
 
+    /// Sets the fee for a node operator
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "operator")]
+    #[account(2, signer, name = "admin")]
+    OperatorSetFee { new_fee_bps: u16 },
+
     #[account(0, name = "ncn")]
-    #[account(1, writable, name = "ncn_token_account")]
-    #[account(2, writable, name = "receiver_token_account")]
-    #[account(3, signer, name = "admin")]
-    #[account(4, name = "token_program")]
-    NcnWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+    #[account(1, signer, name = "delegate_admin")]
+    #[account(2, name = "token_mint")]
+    #[account(3, writable, name = "token_account")]
+    #[account(4, name = "delegate")]
+    #[account(5, name = "token_program")]
+    NcnDelegateTokenAccount,
 
     #[account(0, name = "operator")]
-    #[account(1, signer, name = "admin")]
-    #[account(2, writable, name = "operator_token_account")]
-    #[account(3, writable, name = "receiver_token_account")]
-    #[account(4, name = "token_program")]
-    OperatorWithdrawalAsset { token_mint: Pubkey, amount: u64 },
+    #[account(1, signer, name = "delegate_admin")]
+    #[account(2, name = "token_mint")]
+    #[account(3, writable, name = "token_account")]
+    #[account(4, name = "delegate")]
+    #[account(5, name = "token_program")]
+    OperatorDelegateTokenAccount,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -191,8 +198,7 @@ pub enum NcnAdminRole {
     Operator,
     Vault,
     Slasher,
-    Withdraw,
-    WithdrawWallet,
+    Delegate,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -200,6 +206,5 @@ pub enum OperatorAdminRole {
     NcnAdmin,
     VaultAdmin,
     VoterAdmin,
-    WithdrawAdmin,
-    WithdrawWallet,
+    DelegateAdmin,
 }

@@ -13,10 +13,14 @@ import {
   decodeAccount,
   fetchEncodedAccount,
   fetchEncodedAccounts,
+  fixDecoderSize,
+  fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -33,6 +37,7 @@ import {
   type FetchAccountsConfig,
   type MaybeAccount,
   type MaybeEncodedAccount,
+  type ReadonlyUint8Array,
 } from '@solana/web3.js';
 
 export type Ncn = {
@@ -42,8 +47,8 @@ export type Ncn = {
   operatorAdmin: Address;
   vaultAdmin: Address;
   slasherAdmin: Address;
-  withdrawAdmin: Address;
-  withdrawFeeWallet: Address;
+  delegateAdmin: Address;
+  reserved1: ReadonlyUint8Array;
   index: bigint;
   operatorCount: bigint;
   vaultCount: bigint;
@@ -59,8 +64,8 @@ export type NcnArgs = {
   operatorAdmin: Address;
   vaultAdmin: Address;
   slasherAdmin: Address;
-  withdrawAdmin: Address;
-  withdrawFeeWallet: Address;
+  delegateAdmin: Address;
+  reserved1: ReadonlyUint8Array;
   index: number | bigint;
   operatorCount: number | bigint;
   vaultCount: number | bigint;
@@ -77,8 +82,8 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['operatorAdmin', getAddressEncoder()],
     ['vaultAdmin', getAddressEncoder()],
     ['slasherAdmin', getAddressEncoder()],
-    ['withdrawAdmin', getAddressEncoder()],
-    ['withdrawFeeWallet', getAddressEncoder()],
+    ['delegateAdmin', getAddressEncoder()],
+    ['reserved1', fixEncoderSize(getBytesEncoder(), 32)],
     ['index', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
@@ -96,8 +101,8 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['operatorAdmin', getAddressDecoder()],
     ['vaultAdmin', getAddressDecoder()],
     ['slasherAdmin', getAddressDecoder()],
-    ['withdrawAdmin', getAddressDecoder()],
-    ['withdrawFeeWallet', getAddressDecoder()],
+    ['delegateAdmin', getAddressDecoder()],
+    ['reserved1', fixDecoderSize(getBytesDecoder(), 32)],
     ['index', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],

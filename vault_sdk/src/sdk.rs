@@ -282,13 +282,30 @@ pub fn set_fees(
     }
 }
 
-pub fn withdrawal_asset(program_id: &Pubkey, amount: u64) -> Instruction {
+#[allow(clippy::too_many_arguments)]
+pub fn delegate_token_account(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    delegate_asset_admin: &Pubkey,
+    token_mint: &Pubkey,
+    token_account: &Pubkey,
+    delegate: &Pubkey,
+    token_program_id: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*delegate_asset_admin, true),
+        AccountMeta::new_readonly(*token_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*delegate, false),
+        AccountMeta::new_readonly(*token_program_id, false),
+    ];
     Instruction {
         program_id: *program_id,
-        accounts: vec![],
-        data: VaultInstruction::AdminWithdraw { amount }
-            .try_to_vec()
-            .unwrap(),
+        accounts,
+        data: VaultInstruction::DelegateTokenAccount.try_to_vec().unwrap(),
     }
 }
 
@@ -558,7 +575,7 @@ pub fn slash(
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*slasher, true),
         AccountMeta::new_readonly(*ncn_operator_state, false),
         AccountMeta::new_readonly(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
@@ -579,7 +596,7 @@ pub fn slash(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn enqueue_withdraw(
+pub fn enqueue_withdrawal(
     program_id: &Pubkey,
     config: &Pubkey,
     vault: &Pubkey,
@@ -640,7 +657,7 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawTicket { min_amount_out }
+        data: VaultInstruction::BurnWithdrawalTicket { min_amount_out }
             .try_to_vec()
             .unwrap(),
     }

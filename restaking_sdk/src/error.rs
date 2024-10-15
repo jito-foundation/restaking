@@ -13,8 +13,8 @@ pub enum RestakingError {
     NcnVaultAdminInvalid,
     #[error("NcnAdminInvalid")]
     NcnAdminInvalid,
-    #[error("NcnWithdrawAdminInvalid")]
-    NcnWithdrawAdminInvalid,
+    #[error("NcnDelegateAdminInvalid")]
+    NcnDelegateAdminInvalid,
     #[error("NcnVaultSlasherTicketFailedCooldown")]
     NcnVaultSlasherTicketFailedCooldown,
     #[error("NcnVaultTicketFailedCooldown")]
@@ -32,8 +32,8 @@ pub enum RestakingError {
     OperatorVaultAdminInvalid,
     #[error("OperatorAdminInvalid")]
     OperatorAdminInvalid,
-    #[error("OperatorWithdrawAdminInvalid")]
-    OperatorWithdrawAdminInvalid,
+    #[error("OperatorDelegateAdminInvalid")]
+    OperatorDelegateAdminInvalid,
     #[error("OperatorCooldownNcnFailed")]
     OperatorCooldownNcnFailed,
     #[error("OperatorVaultTicketFailedCooldown")]
@@ -42,6 +42,8 @@ pub enum RestakingError {
     OperatorVaultTicketFailedWarmup,
     #[error("OperatorWarmupNcnFailed")]
     OperatorWarmupNcnFailed,
+    #[error("OperatorFeeCapExceeded")]
+    OperatorFeeCapExceeded,
     #[error("NcnOverflow")]
     NcnOverflow,
     #[error("OperatorOverflow")]
@@ -50,6 +52,15 @@ pub enum RestakingError {
     VaultOverflow,
     #[error("SlasherOverflow")]
     SlasherOverflow,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
+
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 3000,
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow,
+    #[error("DivisionByZero")]
+    DivisionByZero,
 }
 
 impl<T> DecodeError<T> for RestakingError {

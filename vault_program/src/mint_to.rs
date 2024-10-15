@@ -6,10 +6,12 @@ use jito_vault_core::{
     config::Config,
     vault::{MintSummary, Vault},
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo,
     clock::Clock,
     entrypoint::ProgramResult,
+    msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
@@ -69,6 +71,21 @@ pub fn process_mint(
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault.check_is_paused()?;
+
+    // Currently, this is not possible, since the there are currently no instructions that allow the
+    // vault to deposit tokens into the vault token account. This check is for future proofing.
+    if depositor.key.eq(vault_info.key) {
+        msg!("Depositor cannot be the vault");
+        return Err(VaultError::InvalidDepositor.into());
+    }
+
+    // If the depositor token account is the same as the vault token account, there would be a zero balance change transfer
+    // coupled with a `amount_in` mint. This would allow the vault to inflate it's the VRT's value.
+    // vault -> 10 ST -> vault = +`amount_in` VRT
+    if depositor_token_account.key.eq(vault_token_account.key) {
+        msg!("Depositor token account cannot be the vault token account");
+        return Err(VaultError::InvalidDepositTokenAccount.into());
+    }
 
     let MintSummary {
         vrt_to_depositor,

@@ -19,6 +19,8 @@ pub enum VaultError {
     VaultMintBurnAdminInvalid,
     #[error("VaultDelegationAdminInvalid")]
     VaultDelegationAdminInvalid,
+    #[error("VaultDelegateAssetAdminInvalid")]
+    VaultDelegateAssetAdminInvalid,
     #[error("VaultCapacityExceeded")]
     VaultCapacityExceeded,
     #[error("VaultSlasherAdminInvalid")]
@@ -99,6 +101,21 @@ pub enum VaultError {
     VaultMintZero,
     #[error("VaultIsPaused")]
     VaultIsPaused,
+    #[error("InvalidDepositor")]
+    InvalidDepositor,
+    #[error("InvalidDepositTokenAccount")]
+    InvalidDepositTokenAccount,
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
+
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 3000,
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow,
+    #[error("DivisionByZero")]
+    DivisionByZero,
 }
 
 impl<T> DecodeError<T> for VaultError {

@@ -71,7 +71,7 @@ impl Slash {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.slasher,
-            false,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.ncn_operator_state,
@@ -161,7 +161,7 @@ pub struct SlashInstructionArgs {
 ///   1. `[writable]` vault
 ///   2. `[]` ncn
 ///   3. `[]` operator
-///   4. `[]` slasher
+///   4. `[signer]` slasher
 ///   5. `[]` ncn_operator_state
 ///   6. `[]` ncn_vault_ticket
 ///   7. `[]` operator_vault_ticket
@@ -533,7 +533,7 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.slasher.key,
-            false,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.ncn_operator_state.key,
@@ -633,7 +633,7 @@ impl<'a, 'b> SlashCpi<'a, 'b> {
 ///   1. `[writable]` vault
 ///   2. `[]` ncn
 ///   3. `[]` operator
-///   4. `[]` slasher
+///   4. `[signer]` slasher
 ///   5. `[]` ncn_operator_state
 ///   6. `[]` ncn_vault_ticket
 ///   7. `[]` operator_vault_ticket

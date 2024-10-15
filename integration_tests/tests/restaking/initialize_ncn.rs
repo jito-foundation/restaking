@@ -27,7 +27,7 @@ mod tests {
         assert_eq!(ncn.operator_admin, ncn_root.ncn_admin.pubkey());
         assert_eq!(ncn.vault_admin, ncn_root.ncn_admin.pubkey());
         assert_eq!(ncn.slasher_admin, ncn_root.ncn_admin.pubkey());
-        assert_eq!(ncn.withdraw_admin, ncn_root.ncn_admin.pubkey());
+        assert_eq!(ncn.delegate_admin, ncn_root.ncn_admin.pubkey());
         assert_eq!(ncn.index(), 0);
         assert_eq!(ncn.operator_count(), 0);
         assert_eq!(ncn.slasher_count(), 0);
