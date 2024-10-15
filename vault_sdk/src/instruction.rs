@@ -214,8 +214,8 @@ pub enum VaultInstruction {
 
     /// Sets the program fee wallet for the vault program
     #[account(0, writable, name = "config")]
-    #[account(1, signer, name = "config_fee_admin")]
-    SetConfigFeeWallet {
+    #[account(1, signer, name = "program_fee_admin")]
+    SetProgramFeeWallet {
         new_fee_wallet: Pubkey,
     },
 

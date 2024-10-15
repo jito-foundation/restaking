@@ -12,7 +12,7 @@ use solana_program::{
 /// Specification:
 /// - The fee wallet can only be changed by the config fee admin. The config fee admin must sign the transaction.
 /// - The Config program_fee_wallet shall be updated to the new fee wallet.
-pub fn process_set_config_fee_wallet(
+pub fn process_set_program_fee_wallet(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     new_fee_wallet: Pubkey,

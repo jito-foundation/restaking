@@ -25,7 +25,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_initialize_config_fee_above_max() {
+    async fn test_initialize_program_fee_above_max() {
         let fixture = TestBuilder::new().await;
         let mut vault_program_client = fixture.vault_program_client();
 

@@ -812,20 +812,20 @@ pub fn warmup_vault_ncn_slasher_ticket(
     }
 }
 
-pub fn set_config_fee_wallet(
+pub fn set_program_fee_wallet(
     program_id: &Pubkey,
     config: &Pubkey,
-    config_fee_admin: &Pubkey,
+    program_fee_admin: &Pubkey,
     new_fee_wallet: Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
-        AccountMeta::new_readonly(*config_fee_admin, true),
+        AccountMeta::new_readonly(*program_fee_admin, true),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetConfigFeeWallet { new_fee_wallet }
+        data: VaultInstruction::SetProgramFeeWallet { new_fee_wallet }
             .try_to_vec()
             .unwrap(),
     }

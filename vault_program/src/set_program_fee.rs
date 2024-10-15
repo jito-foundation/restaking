@@ -12,7 +12,6 @@ use solana_program::{
 /// Specification:
 /// - The fee can only be changed by the config admin. The config admin must sign the transaction.
 /// - The transaction shall fail if the new fee exceeds MAX_FEE_BPS.
-/// - The fee change must be acceptable according to the Vault::check_fee_change_ok method.
 /// - The Config program_fee_bps shall be updated to the new fee.
 pub fn process_set_program_fee(
     program_id: &Pubkey,
@@ -32,20 +31,7 @@ pub fn process_set_program_fee(
         return Err(VaultError::VaultConfigAdminInvalid.into());
     }
 
-    if new_fee_bps > MAX_FEE_BPS {
-        msg!("New fee exceeds maximum allowed fee");
-        return Err(ProgramError::InvalidInstructionData);
-    }
-
-    Vault::check_fee_change_ok(
-        config.program_fee_bps(),
-        new_fee_bps,
-        config.deposit_withdrawal_fee_cap_bps(),
-        config.fee_bump_bps(),
-        config.fee_rate_of_change_bps(),
-    )?;
-
-    config.program_fee_bps = PodU16::from(new_fee_bps);
+    config.set_program_fee_bps(new_fee_bps)?;
 
     Ok(())
 }

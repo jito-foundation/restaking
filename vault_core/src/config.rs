@@ -47,7 +47,7 @@ pub struct Config {
     fee_bump_bps: PodU16,
 
     /// The program fee in basis points
-    pub program_fee_bps: PodU16,
+    program_fee_bps: PodU16,
 
     /// The fee wallet
     pub program_fee_wallet: Pubkey,
@@ -112,6 +112,15 @@ impl Config {
 
     pub fn program_fee_bps(&self) -> u16 {
         self.program_fee_bps.into()
+    }
+
+    pub fn set_program_fee_bps(&mut self, new_fee_bps: u16) -> Result<(), ProgramError> {
+        if new_fee_bps > MAX_FEE_BPS {
+            msg!("New fee exceeds maximum allowed fee");
+            return Err(ProgramError::InvalidInstructionData);
+        }
+        self.program_fee_bps = PodU16::from(new_fee_bps);
+        Ok(())
     }
 
     pub fn fee_bump_bps(&self) -> u16 {

@@ -643,7 +643,7 @@ impl Vault {
         Ok(())
     }
 
-    pub fn check_fee_change_ok(
+    fn check_fee_change_ok(
         current_fee_bps: u16,
         new_fee_bps: u16,
         fee_cap_bps: u16,

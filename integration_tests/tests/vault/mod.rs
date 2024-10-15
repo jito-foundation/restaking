@@ -16,7 +16,7 @@ mod initialize_vault_update_state_tracker;
 mod reward_fee;
 mod set_admin;
 mod set_capacity;
-mod set_config_fee_wallet;
+mod set_program_fee_wallet;
 mod set_fees;
 mod set_secondary_admin;
 mod slash;
