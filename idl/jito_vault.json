@@ -1352,7 +1352,7 @@
         {
           "name": "slasher",
           "isMut": false,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "ncnOperatorState",

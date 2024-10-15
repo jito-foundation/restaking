@@ -307,7 +307,7 @@ pub enum VaultInstruction {
     #[account(1, writable, name = "vault")]
     #[account(2, name = "ncn")]
     #[account(3, name = "operator")]
-    #[account(4, name = "slasher")]
+    #[account(4, signer, name = "slasher")]
     #[account(5, name = "ncn_operator_state")]
     #[account(6, name = "ncn_vault_ticket")]
     #[account(7, name = "operator_vault_ticket")]
