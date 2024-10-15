@@ -601,7 +601,6 @@ mod tests {
     #[tokio::test]
     async fn test_burn_withdrawal_ticket_vault_is_paused_fails() {
         const MINT_AMOUNT: u64 = 100_000;
-        const MIN_AMOUNT_OUT: u64 = 100_000;
 
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
@@ -641,8 +640,17 @@ mod tests {
             .await
             .unwrap();
 
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
             .await
             .unwrap();
 
@@ -697,7 +705,6 @@ mod tests {
                 &vault_staker_withdrawal_ticket,
                 &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
-                MIN_AMOUNT_OUT,
             )
             .await;
 

@@ -248,7 +248,7 @@ mod tests {
             .unwrap();
 
         let test_error = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 0)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 0, 0)
             .await;
 
         assert_vault_error(test_error, VaultError::VaultIsPaused);

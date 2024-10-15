@@ -2434,22 +2434,27 @@
       "msg": "VaultMintZero"
     },
     {
-      "code": 1048,
+      "code": 1049,
+      "name": "VaultIsPaused",
+      "msg": "VaultIsPaused"
+    },
+    {
+      "code": 1050,
       "name": "InvalidDepositor",
       "msg": "InvalidDepositor"
     },
     {
-      "code": 1050,
+      "code": 1051,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
     },
     {
-      "code": 1051,
+      "code": 1052,
       "name": "NoSupportedMintBalanceChange",
       "msg": "NoSupportedMintBalanceChange"
     },
     {
-      "code": 1052,
+      "code": 1053,
       "name": "InvalidEpochLength",
       "msg": "InvalidEpochLength"
     },
