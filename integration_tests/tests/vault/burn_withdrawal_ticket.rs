@@ -603,7 +603,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 

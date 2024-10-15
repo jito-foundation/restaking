@@ -877,6 +877,36 @@
       }
     },
     {
+      "name": "SetIsPaused",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 18
+      }
+    },
+    {
       "name": "DelegateTokenAccount",
       "accounts": [
         {
@@ -2395,21 +2425,26 @@
     },
     {
       "code": 1048,
+      "name": "VaultIsPaused",
+      "msg": "VaultIsPaused"
+    },
+    {
+      "code": 1049,
       "name": "InvalidDepositor",
       "msg": "InvalidDepositor"
     },
     {
-      "code": 1049,
+      "code": 1050,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
     },
     {
-      "code": 1050,
+      "code": 1051,
       "name": "NoSupportedMintBalanceChange",
       "msg": "NoSupportedMintBalanceChange"
     },
     {
-      "code": 1051,
+      "code": 1052,
       "name": "InvalidEpochLength",
       "msg": "InvalidEpochLength"
     },

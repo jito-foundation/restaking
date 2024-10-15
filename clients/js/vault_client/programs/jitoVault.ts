@@ -79,6 +79,7 @@ export enum JitoVaultInstruction {
   BurnWithdrawalTicket,
   SetDepositCapacity,
   SetFees,
+  SetIsPaused,
   DelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
@@ -152,10 +153,10 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetFees;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoVaultInstruction.DelegateTokenAccount;
+    return JitoVaultInstruction.SetIsPaused;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
-    return JitoVaultInstruction.AdminWithdraw;
+    return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
     return JitoVaultInstruction.SetAdmin;
@@ -252,6 +253,9 @@ export type ParsedJitoVaultInstruction<
   | ({
       instructionType: JitoVaultInstruction.SetFees;
     } & ParsedSetFeesInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.SetIsPaused;
+    } & ParsedSetIsPausedInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.DelegateTokenAccount;
     } & ParsedDelegateTokenAccountInstruction<TProgram>)

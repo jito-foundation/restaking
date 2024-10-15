@@ -110,14 +110,16 @@ export const JITO_VAULT_ERROR__VAULT_BURN_ZERO = 0x415; // 1045
 export const JITO_VAULT_ERROR__VAULT_ENQUEUE_WITHDRAWAL_AMOUNT_ZERO = 0x416; // 1046
 /** VaultMintZero: VaultMintZero */
 export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x417; // 1047
+/** VaultIsPaused: VaultIsPaused */
+export const JITO_VAULT_ERROR__VAULT_IS_PAUSED = 0x418; // 1048
 /** InvalidDepositor: InvalidDepositor */
-export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x418; // 1048
+export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x419; // 1049
 /** InvalidDepositTokenAccount: InvalidDepositTokenAccount */
-export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x419; // 1049
+export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x41a; // 1050
 /** NoSupportedMintBalanceChange: NoSupportedMintBalanceChange */
-export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41a; // 1050
+export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41b; // 1051
 /** InvalidEpochLength: InvalidEpochLength */
-export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x41b; // 1051
+export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x41c; // 1052
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */
