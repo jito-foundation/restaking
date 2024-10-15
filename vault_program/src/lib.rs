@@ -194,17 +194,20 @@ pub fn process_instruction(
             msg!("Instruction: Burn");
             process_burn(program_id, accounts, amount_in, min_amount_out)
         }
-        VaultInstruction::EnqueueWithdrawal { amount } => {
+        VaultInstruction::EnqueueWithdrawal {
+            amount,
+            min_amount_out,
+        } => {
             msg!("Instruction: EnqueueWithdrawal");
-            process_enqueue_withdrawal(program_id, accounts, amount)
+            process_enqueue_withdrawal(program_id, accounts, amount, min_amount_out)
         }
         VaultInstruction::ChangeWithdrawalTicketOwner => {
             msg!("Instruction: ChangeWithdrawalTicketOwner");
             process_change_withdrawal_ticket_owner(program_id, accounts)
         }
-        VaultInstruction::BurnWithdrawalTicket { min_amount_out } => {
+        VaultInstruction::BurnWithdrawalTicket => {
             msg!("Instruction: BurnWithdrawalTicket");
-            process_burn_withdrawal_ticket(program_id, accounts, min_amount_out)
+            process_burn_withdrawal_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-NCN operations
