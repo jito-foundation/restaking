@@ -38,7 +38,7 @@ pub fn process_update_vault_balance(
     // Calculate rewards
     let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
-    let reward_fee = vault.calculate_rewards_fee(new_balance)?;
+    let reward_fee = vault.calculate_rewards_fee_in_vrt(new_balance)?;
 
     // Update state
     vault.set_tokens_deposited(new_balance);

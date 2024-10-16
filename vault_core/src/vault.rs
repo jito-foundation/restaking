@@ -683,22 +683,108 @@ impl Vault {
 
     /// Calculate the rewards fee. This is used in `update_vault_balance` to mint
     /// the `fee` amount in VRTs to the `fee_wallet`.
-    pub fn calculate_rewards_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
-        let rewards = new_balance.saturating_sub(self.tokens_deposited());
+    pub fn calculate_rewards_fee_in_vrt(&self, new_st_balance: u64) -> Result<u64, VaultError> {
+        // if new_st_balance <= self.tokens_deposited() {
+        //     return Ok(0);
+        // }
 
-        let vrt_rewards = self.calculate_vrt_mint_amount(rewards)?;
+        // let st_rewards = new_st_balance
+        //     .checked_sub(self.tokens_deposited())
+        //     .ok_or(VaultError::VaultUnderflow)? as u64;
 
-        if vrt_rewards == 0 {
+        // let vault_fee_in_st: u64 = (st_rewards as u128)
+        //     .checked_mul(self.reward_fee_bps() as u128)
+        //     .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+        //     .and_then(|x| x.try_into().ok())
+        //     .ok_or(VaultError::VaultOverflow)?;
+
+        // let vault_fee_in_vrt = if self.vrt_supply() == 0 {
+        //     vault_fee_in_st
+        // } else {
+        //     (vault_fee_in_st as u128)
+        //         .checked_mul(self.vrt_supply() as u128)
+        //         .and_then(|x| x.checked_div(new_st_balance as u128))
+        //         .ok_or(VaultError::VaultOverflow)? as u64
+        // };
+
+        // if vault_fee_in_vrt == 0 {
+        //     // If we always mint at least 1, this would allow the Vault to dilute it's supply
+        //     // For example, at a 12:1 ST:VRT ratio, the vault would receive a 1200% fee
+        //     // They can keep donating a single token to the vault and mint a VRT
+        //     // return Ok(1);
+        //     return Ok(0);
+        // }
+
+        // Ok(vault_fee_in_vrt)
+
+        if new_st_balance <= self.tokens_deposited() {
             return Ok(0);
         }
 
-        let fee = (vrt_rewards as u128)
+        let st_rewards = new_st_balance
+            .checked_sub(self.tokens_deposited())
+            .ok_or(VaultError::VaultUnderflow)? as u64;
+
+        let rewards_in_vrt = if self.tokens_deposited() == 0 {
+            st_rewards
+        } else {
+            (st_rewards as u128)
+                .checked_mul(self.vrt_supply() as u128)
+                .and_then(|x| x.checked_div(new_st_balance as u128))
+                .ok_or(VaultError::VaultOverflow)? as u64
+        };
+
+        if rewards_in_vrt == 0 {
+            // If we always mint at least 1, this would allow the Vault to dilute it's supply
+            // For example, at a 12:1 ST:VRT ratio, the vault would receive a 1200% fee
+            // They can keep donating a single token to the vault and mint a VRT
+            // return Ok(1);
+            return Ok(0);
+        }
+
+        let vault_fee_in_vrt: u64 = (rewards_in_vrt as u128)
             .checked_mul(self.reward_fee_bps() as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        Ok(fee)
+        Ok(vault_fee_in_vrt)
+
+        // let rewards_supported_token = (rewards as u128)
+        //     .checked_mul(self.reward_fee_bps() as u128)
+        //     .unwrap()
+        //     .div_ceil(MAX_FEE_BPS as u128);
+
+        // let amount_reward_vrt_to_mint =
+        //     self.calculate_vrt_mint_amount(rewards_supported_token as u64)?;
+
+        // Ok(amount_reward_vrt_to_mint)
+
+        // let vrt_rewards = self.calculate_vrt_mint_amount(rewards)?;
+
+        // if reward_lamports == 0 {
+        //     return Some(0);
+        // }
+        // let total_lamports = (self.total_lamports as u128).checked_add(reward_lamports as u128)?;
+        // let fee_lamports = self.epoch_fee.apply(reward_lamports)?;
+        // if total_lamports == fee_lamports || self.pool_token_supply == 0 {
+        //     Some(reward_lamports)
+        // } else {
+        //     u64::try_from(
+        //         (self.pool_token_supply as u128)
+        //             .checked_mul(fee_lamports)?
+        //             .checked_div(total_lamports.checked_sub(fee_lamports)?)?,
+        //     )
+        //     .ok()
+        // }
+
+        // let adjusted_fee: u64 = (fee as u128)
+        //     .checked_mul(self.tokens_deposited() as u128)
+        //     .unwrap()
+        //     .checked_div(self.vrt_supply() as u128)
+        //     .unwrap() as u64;
+
+        // Ok(adjusted_fee)
     }
 
     /// Calculate the amount of VRT tokens to mint based on the amount of tokens deposited in the vault.
@@ -1653,7 +1739,7 @@ mod tests {
     fn test_calculate_reward_fee() {
         let vault = make_test_vault(0, 0, 1_000, 0, 0, DelegationState::default());
 
-        let fee = vault.calculate_rewards_fee(1000).unwrap();
+        let fee = vault.calculate_rewards_fee_in_vrt(1000).unwrap();
 
         assert_eq!(fee, 100);
     }
@@ -1662,7 +1748,7 @@ mod tests {
     fn test_calculate_negative_balance() {
         let vault = make_test_vault(0, 0, 10_000, 1000, 0, DelegationState::default());
 
-        let fee = vault.calculate_rewards_fee(0).unwrap();
+        let fee = vault.calculate_rewards_fee_in_vrt(0).unwrap();
 
         assert_eq!(fee, 0);
     }
@@ -1671,7 +1757,7 @@ mod tests {
     fn test_calculate_100_percent_rewards() {
         let vault = make_test_vault(0, 0, 10_000, 0, 0, DelegationState::default());
 
-        let fee = vault.calculate_rewards_fee(1000).unwrap();
+        let fee = vault.calculate_rewards_fee_in_vrt(1000).unwrap();
 
         assert_eq!(fee, 1000);
     }
@@ -1992,26 +2078,45 @@ mod tests {
         // Helper function to calculate and print reward fee
         fn calculate_and_print_fee(vault: &Vault, new_balance: u64, reward_fee: u16) {
             let reward = new_balance.saturating_sub(vault.tokens_deposited());
-            match vault.calculate_rewards_fee(new_balance) {
+            match vault.calculate_rewards_fee_in_vrt(new_balance) {
                 Ok(fee) => {
-                    let effective_rate = (fee as f64 / reward as f64) * 100.0;
+                    let price_ratio =
+                        (vault.tokens_deposited() as f64) / (vault.vrt_supply() as f64);
+                    let price_ratio_after = (new_balance as f64) / (vault.vrt_supply() as f64);
+
+                    let rewards_in_vrt = (1.0 / price_ratio_after) * reward as f64;
+
+                    let effective_rate = (fee as f64 / rewards_in_vrt as f64) * 100.0;
                     let expected_rate = reward_fee as f64 / 100.0;
                     let difference = (effective_rate - expected_rate).abs();
 
-                    let indicator = if effective_rate == expected_rate {
+                    let indicator = if effective_rate >= expected_rate {
                         "🟩"
-                    } else if difference <= 0.5 {
-                        "🟨"
-                    } else if difference <= 1.0 {
-                        "🟧"
+                    // } else if difference <= 0.5 {
+                    //     "🟨"
+                    // } else if difference <= 1.0 {
+                    //     "🟧"
                     } else {
                         "🟥"
                     };
 
                     println!(
-                        "{} Reward: {} tokens, Fee ({:.2}%): {} units, Effective rate: {:.5}% {}",
-                        indicator, reward, expected_rate, fee, effective_rate, indicator
+                        "{} ( x{} > x{} ) - effective {:.2}% expected {:.2}% - vrt rewards {:.2} fee {:.2} total reward st {} {}",
+                        indicator,
+                        price_ratio,
+                        price_ratio_after,
+                        effective_rate,
+                        expected_rate,
+                        rewards_in_vrt,
+                        fee,
+                        reward,
+                        indicator
                     );
+
+                    // println!(
+                    //     "{} Reward: {} tokens, Fee ({:.2}%): {} units, Effective rate: {:.5}% {}",
+                    //     indicator, reward, expected_rate, fee, effective_rate, indicator
+                    // );
                 }
                 Err(e) => println!("Error calculating fee for reward {}: {:?}", reward, e),
             }
@@ -2019,70 +2124,78 @@ mod tests {
 
         // Test cases
         let test_cases = [
-            (0, 1, 1_000),
-            (0, 2, 1_000),
-            (0, 3, 1_000),
-            (0, 5, 1_000),
-            (0, 8, 1_000),
-            (0, 10, 1_000),
-            (0, 55, 1_000),
-            (0, 100, 1_000),
-            (0, 101, 1_000),
-            (0, 102, 1_000),
-            (0, 103, 1_000),
-            (0, 104, 1_000),
-            (0, 105, 1_000),
-            (0, 1000, 1_000),
-            (0, 10000, 1_000),
-            (0, 100000, 1_000),
-            (0, 123456, 1_000),
-            (0, 1000000, 1_000),
-            (0, 10000000, 1_000),
-            (0, 100000000, 1_000),
-            (0, 1000000000, 1_000),
-            (0, 10000000000, 1_000),
-            (0, 100000000000, 1_000),
-            (0, 1000000000000, 1_000),
-            (0, 10000000000000, 1_000),
-            (0, 100000000000000, 1_000),
-            (0, 1000000000000000, 1_000),
-            (0, 10000000000000000, 1_000),
-            (0, 100000000000000000, 1_000),
-            (0, 1000000000000000000, 1_000),
-            (0, 1234123488989128398, 1_000),
-            (0, 10000000000000000000, 1_000),
-            (0, 1, 1),
-            (0, 10, 1),
-            (0, 5, 1),
-            (0, 55, 1),
-            (0, 89, 1),
-            (0, 100, 1),
-            (0, 1_000, 1),
-            (0, 10_000, 1),
-            (0, 100_000, 1),
-            (0, 1, 10),
-            (0, 10, 10),
-            (0, 100, 10),
-            (0, 1_000, 10),
-            (0, 10_000, 10),
-            (0, 100_000, 10),
-            (0, 1, 100),
-            (0, 10, 100),
-            (0, 100, 100),
-            (0, 1_000, 100),
-            (0, 10_000, 100),
-            (0, 100_000, 100),
-            (0, 1, 1_000),
-            (0, 10, 1_000),
-            (0, 100, 1_000),
-            (0, 1_000, 1_000),
-            (0, 10_000, 1_000),
-            (0, 100_000, 1_000),
+            (1000, 1, 1_000),
+            (1000, 2, 1_000),
+            (1000, 3, 1_000),
+            (1000, 5, 1_000),
+            (1000, 8, 1_000),
+            (1000, 10, 1_000),
+            (1000, 55, 1_000),
+            (1000, 100, 1_000),
+            (1000, 101, 1_000),
+            (1000, 102, 1_000),
+            (1000, 103, 1_000),
+            (1000, 104, 1_000),
+            (1000, 105, 1_000),
+            (1000, 1000, 1_000),
+            (1000, 10000, 1_000),
+            (1000, 100000, 1_000),
+            (1000, 123456, 1_000),
+            (1000, 1000000, 1_000),
+            (1000, 10000000, 1_000),
+            (1000, 100000000, 1_000),
+            (1000, 1000000000, 1_000),
+            (1000, 10000000000, 1_000),
+            (1000, 100000000000, 1_000),
+            (1000, 1000000000000, 1_000),
+            (1000, 10000000000000, 1_000),
+            (1000, 100000000000000, 1_000),
+            (1000, 1000000000000000, 1_000),
+            (1000, 10000000000000000, 1_000),
+            (1000, 100000000000000000, 1_000),
+            (1000, 1000000000000000000, 1_000),
+            (1000, 1234123488989128398, 1_000),
+            (1000, 10000000000000000000, 1_000),
+            (1000, 1, 1),
+            (1000, 10, 1),
+            (1000, 5, 1),
+            (1000, 55, 1),
+            (1000, 89, 1),
+            (1000, 100, 1),
+            (1000, 1_000, 1),
+            (1000, 10_000, 1),
+            (1000, 100_000, 1),
+            (1000, 1, 10),
+            (1000, 10, 10),
+            (1000, 100, 10),
+            (1000, 1_000, 10),
+            (1000, 10_000, 10),
+            (1000, 100_000, 10),
+            (1000, 1, 100),
+            (1000, 10, 100),
+            (1000, 100, 100),
+            (1000, 1_000, 100),
+            (1000, 10_000, 100),
+            (1000, 100_000, 100),
+            (1000, 1, 1_000),
+            (1000, 10, 1_000),
+            (1000, 100, 1_000),
+            (1000, 1_000, 1_000),
+            (1000, 10_000, 1_000),
+            (1000, 100_000, 1_000),
         ];
 
-        for (tokens_deposited, new_balance, reward_fee_bps) in test_cases.iter() {
-            let vault = setup_test_vault(*tokens_deposited, *tokens_deposited, *reward_fee_bps); // Assuming 1:1 ratio for tokens:VRT initially
-            calculate_and_print_fee(&vault, *new_balance, *reward_fee_bps);
+        for (tokens_deposited, reward_amount, reward_fee_bps) in test_cases.iter() {
+            let vault = setup_test_vault(
+                *tokens_deposited + 1_000_000,
+                *tokens_deposited,
+                *reward_fee_bps,
+            ); // Assuming 1:1 ratio for tokens:VRT initially
+            calculate_and_print_fee(
+                &vault,
+                *reward_amount + tokens_deposited + 1_000_000,
+                *reward_fee_bps,
+            );
         }
     }
 }
