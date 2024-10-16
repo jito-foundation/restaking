@@ -73,7 +73,7 @@ pub struct UpdateTokenMetadataInstructionData {
 
 impl UpdateTokenMetadataInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 28 }
+        Self { discriminator: 29 }
     }
 }
 

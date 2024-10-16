@@ -65,6 +65,8 @@ pub fn process_burn_withdrawal_ticket(
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
+
     vault_staker_withdrawal_ticket.check_staker(staker.key)?;
 
     if !vault_staker_withdrawal_ticket.is_withdrawable(Clock::get()?.slot, config.epoch_length())? {

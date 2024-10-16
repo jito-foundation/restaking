@@ -34,6 +34,7 @@ pub fn process_update_vault_balance(
 
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault.check_vrt_mint(vrt_mint.key)?;
+    vault.check_is_paused()?;
 
     // Calculate rewards
     let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;

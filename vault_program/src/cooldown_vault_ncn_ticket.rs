@@ -38,6 +38,7 @@ pub fn process_cooldown_vault_ncn_ticket(
 
     vault.check_ncn_admin(vault_ncn_admin.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // The VaultNcnTicket must be active in order to cooldown the NCN
     if !vault_ncn_ticket

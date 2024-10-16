@@ -1037,4 +1037,90 @@ mod tests {
             .unwrap();
         assert_eq!(depositor_token_account.amount, MINT_AMOUNT);
     }
+
+    #[tokio::test]
+    async fn test_crank_vault_update_state_tracker_vault_is_paused_fails() {
+        let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 3;
+        let slasher_amounts = vec![];
+
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length();
+
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let test_error = vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[2].operator_pubkey,
+            )
+            .await;
+
+        assert_vault_error(test_error, VaultError::VaultIsPaused);
+    }
 }

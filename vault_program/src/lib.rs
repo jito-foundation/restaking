@@ -22,6 +22,7 @@ mod mint_to;
 mod set_admin;
 mod set_capacity;
 mod set_fees;
+mod set_is_paused;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
@@ -59,8 +60,9 @@ use crate::{
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
-    set_fees::process_set_fees, set_secondary_admin::process_set_secondary_admin,
-    slash::process_slash, update_token_metadata::process_update_token_metadata,
+    set_fees::process_set_fees, set_is_paused::process_set_is_paused,
+    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    update_token_metadata::process_update_token_metadata,
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
@@ -170,6 +172,10 @@ pub fn process_instruction(
                 withdrawal_fee_bps,
                 reward_fee_bps,
             )
+        }
+        VaultInstruction::SetIsPaused { is_paused } => {
+            msg!("Instruction: SetIsPaused");
+            process_set_is_paused(program_id, accounts, is_paused)
         }
         // ------------------------------------------
         // Vault minting and burning

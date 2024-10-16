@@ -57,6 +57,7 @@ pub fn process_initialize_vault_update_state_tracker(
         msg!("Vault update state tracker is not needed");
         return Err(VaultError::VaultIsUpdated.into());
     }
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing VaultUpdateDelegationsTicket at address {}",

@@ -200,6 +200,14 @@ pub enum VaultInstruction {
         reward_fee_bps: Option<u16>,
     },
 
+    /// Sets `is_paused`
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, signer, name = "admin")]
+    SetIsPaused {
+        is_paused: bool,
+    },
+
     /// Delegate the token account to a third party
     #[account(0, name = "config")]
     #[account(1, name = "vault")]

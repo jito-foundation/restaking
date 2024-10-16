@@ -784,3 +784,24 @@ pub fn warmup_vault_ncn_slasher_ticket(
             .unwrap(),
     }
 }
+
+pub fn set_is_paused(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    admin: &Pubkey,
+    is_paused: bool,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetIsPaused { is_paused }
+            .try_to_vec()
+            .unwrap(),
+    }
+}

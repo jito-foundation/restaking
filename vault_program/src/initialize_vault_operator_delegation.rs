@@ -61,6 +61,7 @@ pub fn process_initialize_vault_operator_delegation(
 
     vault.check_operator_admin(vault_operator_admin.key)?;
     vault.check_update_state_ok(slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing VaultOperatorDelegation at address {}",
