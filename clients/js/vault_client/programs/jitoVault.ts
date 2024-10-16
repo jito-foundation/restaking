@@ -35,10 +35,10 @@ import {
   type ParsedInitializeVaultWithMintInstruction,
   type ParsedMintToInstruction,
   type ParsedSetAdminInstruction,
-  type ParsedSetConfigFeeWalletInstruction,
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
   type ParsedSetProgramFeeInstruction,
+  type ParsedSetProgramFeeWalletInstruction,
   type ParsedSetSecondaryAdminInstruction,
   type ParsedSlashInstruction,
   type ParsedUpdateTokenMetadataInstruction,
@@ -81,7 +81,7 @@ export enum JitoVaultInstruction {
   SetDepositCapacity,
   SetFees,
   SetProgramFee,
-  SetConfigFeeWallet,
+  SetProgramFeeWallet,
   DelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
@@ -158,7 +158,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetProgramFee;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
-    return JitoVaultInstruction.SetConfigFeeWallet;
+    return JitoVaultInstruction.SetProgramFeeWallet;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
     return JitoVaultInstruction.DelegateTokenAccount;
@@ -262,8 +262,8 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.SetProgramFee;
     } & ParsedSetProgramFeeInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.SetConfigFeeWallet;
-    } & ParsedSetConfigFeeWalletInstruction<TProgram>)
+      instructionType: JitoVaultInstruction.SetProgramFeeWallet;
+    } & ParsedSetProgramFeeWalletInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.DelegateTokenAccount;
     } & ParsedDelegateTokenAccountInstruction<TProgram>)

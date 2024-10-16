@@ -917,7 +917,7 @@
       }
     },
     {
-      "name": "SetConfigFeeWallet",
+      "name": "SetProgramFeeWallet",
       "accounts": [
         {
           "name": "config",
@@ -925,17 +925,17 @@
           "isSigner": false
         },
         {
-          "name": "configFeeAdmin",
+          "name": "programFeeAdmin",
           "isMut": false,
           "isSigner": true
-        }
-      ],
-      "args": [
+        },
         {
           "name": "newFeeWallet",
-          "type": "publicKey"
+          "isMut": false,
+          "isSigner": false
         }
       ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 19
