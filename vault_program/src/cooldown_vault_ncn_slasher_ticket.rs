@@ -43,6 +43,7 @@ pub fn process_cooldown_vault_ncn_slasher_ticket(
 
     vault.check_slasher_admin(vault_slasher_admin.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // The vault slasher ticket must be active in order to cooldown the slasher
     if !vault_ncn_slasher_ticket

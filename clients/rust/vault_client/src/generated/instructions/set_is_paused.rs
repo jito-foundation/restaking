@@ -6,35 +6,29 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use crate::generated::types::WithdrawalAllocationMethod;
-
 /// Accounts.
-pub struct InitializeVaultUpdateStateTracker {
+pub struct SetIsPaused {
     pub config: solana_program::pubkey::Pubkey,
 
     pub vault: solana_program::pubkey::Pubkey,
 
-    pub vault_update_state_tracker: solana_program::pubkey::Pubkey,
-
-    pub payer: solana_program::pubkey::Pubkey,
-
-    pub system_program: solana_program::pubkey::Pubkey,
+    pub admin: solana_program::pubkey::Pubkey,
 }
 
-impl InitializeVaultUpdateStateTracker {
+impl SetIsPaused {
     pub fn instruction(
         &self,
-        args: InitializeVaultUpdateStateTrackerInstructionArgs,
+        args: SetIsPausedInstructionArgs,
     ) -> solana_program::instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: InitializeVaultUpdateStateTrackerInstructionArgs,
+        args: SetIsPausedInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -42,21 +36,11 @@ impl InitializeVaultUpdateStateTracker {
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault, false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_update_state_tracker,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.payer, false,
-        ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.system_program,
-            false,
+            self.admin, true,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = InitializeVaultUpdateStateTrackerInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = SetIsPausedInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -69,17 +53,17 @@ impl InitializeVaultUpdateStateTracker {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct InitializeVaultUpdateStateTrackerInstructionData {
+pub struct SetIsPausedInstructionData {
     discriminator: u8,
 }
 
-impl InitializeVaultUpdateStateTrackerInstructionData {
+impl SetIsPausedInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 25 }
+        Self { discriminator: 18 }
     }
 }
 
-impl Default for InitializeVaultUpdateStateTrackerInstructionData {
+impl Default for SetIsPausedInstructionData {
     fn default() -> Self {
         Self::new()
     }
@@ -87,31 +71,27 @@ impl Default for InitializeVaultUpdateStateTrackerInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct InitializeVaultUpdateStateTrackerInstructionArgs {
-    pub withdrawal_allocation_method: WithdrawalAllocationMethod,
+pub struct SetIsPausedInstructionArgs {
+    pub is_paused: bool,
 }
 
-/// Instruction builder for `InitializeVaultUpdateStateTracker`.
+/// Instruction builder for `SetIsPaused`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` vault_update_state_tracker
-///   3. `[writable]` payer
-///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   2. `[signer]` admin
 #[derive(Clone, Debug, Default)]
-pub struct InitializeVaultUpdateStateTrackerBuilder {
+pub struct SetIsPausedBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
-    vault_update_state_tracker: Option<solana_program::pubkey::Pubkey>,
-    payer: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
-    withdrawal_allocation_method: Option<WithdrawalAllocationMethod>,
+    admin: Option<solana_program::pubkey::Pubkey>,
+    is_paused: Option<bool>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl InitializeVaultUpdateStateTrackerBuilder {
+impl SetIsPausedBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -126,30 +106,13 @@ impl InitializeVaultUpdateStateTrackerBuilder {
         self
     }
     #[inline(always)]
-    pub fn vault_update_state_tracker(
-        &mut self,
-        vault_update_state_tracker: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_update_state_tracker = Some(vault_update_state_tracker);
+    pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.admin = Some(admin);
         self
     }
     #[inline(always)]
-    pub fn payer(&mut self, payer: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.payer = Some(payer);
-        self
-    }
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
-        self
-    }
-    #[inline(always)]
-    pub fn withdrawal_allocation_method(
-        &mut self,
-        withdrawal_allocation_method: WithdrawalAllocationMethod,
-    ) -> &mut Self {
-        self.withdrawal_allocation_method = Some(withdrawal_allocation_method);
+    pub fn is_paused(&mut self, is_paused: bool) -> &mut Self {
+        self.is_paused = Some(is_paused);
         self
     }
     /// Add an aditional account to the instruction.
@@ -172,43 +135,30 @@ impl InitializeVaultUpdateStateTrackerBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = InitializeVaultUpdateStateTracker {
+        let accounts = SetIsPaused {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
-            vault_update_state_tracker: self
-                .vault_update_state_tracker
-                .expect("vault_update_state_tracker is not set"),
-            payer: self.payer.expect("payer is not set"),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
+            admin: self.admin.expect("admin is not set"),
         };
-        let args = InitializeVaultUpdateStateTrackerInstructionArgs {
-            withdrawal_allocation_method: self
-                .withdrawal_allocation_method
-                .clone()
-                .expect("withdrawal_allocation_method is not set"),
+        let args = SetIsPausedInstructionArgs {
+            is_paused: self.is_paused.clone().expect("is_paused is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `initialize_vault_update_state_tracker` CPI accounts.
-pub struct InitializeVaultUpdateStateTrackerCpiAccounts<'a, 'b> {
+/// `set_is_paused` CPI accounts.
+pub struct SetIsPausedCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_update_state_tracker: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `initialize_vault_update_state_tracker` CPI instruction.
-pub struct InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
+/// `set_is_paused` CPI instruction.
+pub struct SetIsPausedCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -216,28 +166,22 @@ pub struct InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_update_state_tracker: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: InitializeVaultUpdateStateTrackerInstructionArgs,
+    pub __args: SetIsPausedInstructionArgs,
 }
 
-impl<'a, 'b> InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
+impl<'a, 'b> SetIsPausedCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: InitializeVaultUpdateStateTrackerCpiAccounts<'a, 'b>,
-        args: InitializeVaultUpdateStateTrackerInstructionArgs,
+        accounts: SetIsPausedCpiAccounts<'a, 'b>,
+        args: SetIsPausedInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
-            vault_update_state_tracker: accounts.vault_update_state_tracker,
-            payer: accounts.payer,
-            system_program: accounts.system_program,
+            admin: accounts.admin,
             __args: args,
         }
     }
@@ -274,7 +218,7 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -283,17 +227,9 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
             *self.vault.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_update_state_tracker.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.payer.key,
-            false,
-        ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
-            false,
+            *self.admin.key,
+            true,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
@@ -302,9 +238,7 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = InitializeVaultUpdateStateTrackerInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = SetIsPausedInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -313,13 +247,11 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(3 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
-        account_infos.push(self.vault_update_state_tracker.clone());
-        account_infos.push(self.payer.clone());
-        account_infos.push(self.system_program.clone());
+        account_infos.push(self.admin.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -332,30 +264,26 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `InitializeVaultUpdateStateTracker` via CPI.
+/// Instruction builder for `SetIsPaused` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` vault_update_state_tracker
-///   3. `[writable]` payer
-///   4. `[]` system_program
+///   2. `[signer]` admin
 #[derive(Clone, Debug)]
-pub struct InitializeVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
-    instruction: Box<InitializeVaultUpdateStateTrackerCpiBuilderInstruction<'a, 'b>>,
+pub struct SetIsPausedCpiBuilder<'a, 'b> {
+    instruction: Box<SetIsPausedCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> InitializeVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
+impl<'a, 'b> SetIsPausedCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(InitializeVaultUpdateStateTrackerCpiBuilderInstruction {
+        let instruction = Box::new(SetIsPausedCpiBuilderInstruction {
             __program: program,
             config: None,
             vault: None,
-            vault_update_state_tracker: None,
-            payer: None,
-            system_program: None,
-            withdrawal_allocation_method: None,
+            admin: None,
+            is_paused: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -374,32 +302,13 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn vault_update_state_tracker(
-        &mut self,
-        vault_update_state_tracker: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.vault_update_state_tracker = Some(vault_update_state_tracker);
+    pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.admin = Some(admin);
         self
     }
     #[inline(always)]
-    pub fn payer(&mut self, payer: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.payer = Some(payer);
-        self
-    }
-    #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
-        self
-    }
-    #[inline(always)]
-    pub fn withdrawal_allocation_method(
-        &mut self,
-        withdrawal_allocation_method: WithdrawalAllocationMethod,
-    ) -> &mut Self {
-        self.instruction.withdrawal_allocation_method = Some(withdrawal_allocation_method);
+    pub fn is_paused(&mut self, is_paused: bool) -> &mut Self {
+        self.instruction.is_paused = Some(is_paused);
         self
     }
     /// Add an additional account to the instruction.
@@ -443,31 +352,21 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = InitializeVaultUpdateStateTrackerInstructionArgs {
-            withdrawal_allocation_method: self
+        let args = SetIsPausedInstructionArgs {
+            is_paused: self
                 .instruction
-                .withdrawal_allocation_method
+                .is_paused
                 .clone()
-                .expect("withdrawal_allocation_method is not set"),
+                .expect("is_paused is not set"),
         };
-        let instruction = InitializeVaultUpdateStateTrackerCpi {
+        let instruction = SetIsPausedCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
 
             vault: self.instruction.vault.expect("vault is not set"),
 
-            vault_update_state_tracker: self
-                .instruction
-                .vault_update_state_tracker
-                .expect("vault_update_state_tracker is not set"),
-
-            payer: self.instruction.payer.expect("payer is not set"),
-
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
+            admin: self.instruction.admin.expect("admin is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -478,14 +377,12 @@ impl<'a, 'b> InitializeVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct InitializeVaultUpdateStateTrackerCpiBuilderInstruction<'a, 'b> {
+struct SetIsPausedCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_update_state_tracker: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    withdrawal_allocation_method: Option<WithdrawalAllocationMethod>,
+    admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    is_paused: Option<bool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

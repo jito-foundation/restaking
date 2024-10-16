@@ -50,6 +50,7 @@ pub fn process_cooldown_delegation(
 
     vault.check_delegation_admin(vault_delegation_admin.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     vault_operator_delegation
         .delegation_state

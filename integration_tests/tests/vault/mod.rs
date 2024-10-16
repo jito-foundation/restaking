@@ -16,6 +16,7 @@ mod reward_fee;
 mod set_admin;
 mod set_capacity;
 mod set_fees;
+mod set_is_paused;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
