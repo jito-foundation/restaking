@@ -561,11 +561,6 @@ impl Vault {
             self.metadata_admin = *new_admin;
             msg!("Metadata admin set to {:?}", new_admin);
         }
-
-        if self.metadata_admin.eq(old_admin) {
-            self.metadata_admin = *new_admin;
-            msg!("Metadata admin set to {:?}", new_admin);
-        }
     }
 
     // ------------------------------------------
