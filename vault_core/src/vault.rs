@@ -2114,18 +2114,18 @@ mod tests {
                     let expected_rate = reward_fee as f64 / 100.0;
                     let difference = (effective_rate - expected_rate).abs();
 
-                    let indicator = if effective_rate >= expected_rate {
+                    let indicator = if difference <= 0.1 {
                         "🟩"
-                    // } else if difference <= 0.5 {
-                    //     "🟨"
-                    // } else if difference <= 1.0 {
-                    //     "🟧"
+                    } else if difference <= 1.0 {
+                        "🟨"
+                    } else if difference <= 5.0 {
+                        "🟧"
                     } else {
-                        "🟥"
+                        "🟥 WAIT UNTIL SUFFICIENT REWARDS"
                     };
 
                     println!(
-                        "{} ( x{} > x{} ) - effective {:.2}% expected {:.2}% - vrt rewards {:.2} fee {:.2} total reward st {} {}",
+                        "{} ( x{} > x{} ) - effective {:.2}% expected {:.2}% - vrt rewards {:.2} fee {:.2} total reward st {}",
                         indicator,
                         price_ratio,
                         price_ratio_after,
@@ -2134,7 +2134,6 @@ mod tests {
                         rewards_in_vrt,
                         fee,
                         reward,
-                        indicator
                     );
 
                     // println!(
