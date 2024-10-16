@@ -681,6 +681,30 @@ impl Vault {
     // Minting and burning
     // ------------------------------------------
 
+    pub fn calculate_recursive_fee_bps(fee_bps: u16) -> Option<u32> {
+        if fee_bps == 10000 {
+            return Some(10000);
+        }
+
+        let mut total_fee_bps = 0u32;
+        let mut current_fee_bps = fee_bps as u32;
+
+        while current_fee_bps > 0 {
+            total_fee_bps = total_fee_bps.checked_add(current_fee_bps)?;
+
+            // Calculate next level fee using checked operations
+            current_fee_bps = current_fee_bps
+                .checked_mul(fee_bps as u32)?
+                .checked_div(10000)?;
+        }
+
+        if total_fee_bps > 10000 {
+            return None;
+        }
+
+        Some(total_fee_bps)
+    }
+
     /// Calculate the rewards fee. This is used in `update_vault_balance` to mint
     /// the `fee` amount in VRTs to the `fee_wallet`.
     pub fn calculate_rewards_fee_in_vrt(&self, new_st_balance: u64) -> Result<u64, VaultError> {
@@ -725,14 +749,11 @@ impl Vault {
             .checked_sub(self.tokens_deposited())
             .ok_or(VaultError::VaultUnderflow)? as u64;
 
-        let rewards_in_vrt = if self.tokens_deposited() == 0 {
-            st_rewards
-        } else {
-            (st_rewards as u128)
-                .checked_mul(self.vrt_supply() as u128)
-                .and_then(|x| x.checked_div(new_st_balance as u128))
-                .ok_or(VaultError::VaultOverflow)? as u64
-        };
+        let rewards_in_vrt: u64 = (st_rewards as u128)
+            .checked_mul(self.vrt_supply() as u128)
+            .and_then(|x| x.checked_div(new_st_balance as u128))
+            .ok_or(VaultError::VaultOverflow)
+            .and_then(|result| result.try_into().map_err(|_| VaultError::VaultOverflow))?;
 
         if rewards_in_vrt == 0 {
             // If we always mint at least 1, this would allow the Vault to dilute it's supply
@@ -742,8 +763,10 @@ impl Vault {
             return Ok(0);
         }
 
+        let fee_bps = Self::calculate_recursive_fee_bps(self.reward_fee_bps()).unwrap();
+
         let vault_fee_in_vrt: u64 = (rewards_in_vrt as u128)
-            .checked_mul(self.reward_fee_bps() as u128)
+            .checked_mul(fee_bps as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
@@ -2082,7 +2105,8 @@ mod tests {
                 Ok(fee) => {
                     let price_ratio =
                         (vault.tokens_deposited() as f64) / (vault.vrt_supply() as f64);
-                    let price_ratio_after = (new_balance as f64) / (vault.vrt_supply() as f64);
+                    let price_ratio_after =
+                        (new_balance as f64) / ((vault.vrt_supply() + fee) as f64);
 
                     let rewards_in_vrt = (1.0 / price_ratio_after) * reward as f64;
 
@@ -2122,40 +2146,42 @@ mod tests {
             }
         }
 
+        let fee_bps = 1000;
+
         // Test cases
         let test_cases = [
-            (1000, 1, 1_000),
-            (1000, 2, 1_000),
-            (1000, 3, 1_000),
-            (1000, 5, 1_000),
-            (1000, 8, 1_000),
-            (1000, 10, 1_000),
-            (1000, 55, 1_000),
-            (1000, 100, 1_000),
-            (1000, 101, 1_000),
-            (1000, 102, 1_000),
-            (1000, 103, 1_000),
-            (1000, 104, 1_000),
-            (1000, 105, 1_000),
-            (1000, 1000, 1_000),
-            (1000, 10000, 1_000),
-            (1000, 100000, 1_000),
-            (1000, 123456, 1_000),
-            (1000, 1000000, 1_000),
-            (1000, 10000000, 1_000),
-            (1000, 100000000, 1_000),
-            (1000, 1000000000, 1_000),
-            (1000, 10000000000, 1_000),
-            (1000, 100000000000, 1_000),
-            (1000, 1000000000000, 1_000),
-            (1000, 10000000000000, 1_000),
-            (1000, 100000000000000, 1_000),
-            (1000, 1000000000000000, 1_000),
-            (1000, 10000000000000000, 1_000),
-            (1000, 100000000000000000, 1_000),
-            (1000, 1000000000000000000, 1_000),
-            (1000, 1234123488989128398, 1_000),
-            (1000, 10000000000000000000, 1_000),
+            (1000, 1, fee_bps),
+            (1000, 2, fee_bps),
+            (1000, 3, fee_bps),
+            (1000, 5, fee_bps),
+            (1000, 8, fee_bps),
+            (1000, 10, fee_bps),
+            (1000, 55, fee_bps),
+            (1000, 100, fee_bps),
+            (1000, 101, fee_bps),
+            (1000, 102, fee_bps),
+            (1000, 103, fee_bps),
+            (1000, 104, fee_bps),
+            (1000, 105, fee_bps),
+            (1000, 1000, fee_bps),
+            (1000, 10000, fee_bps),
+            (1000, 100000, fee_bps),
+            (1000, 123456, fee_bps),
+            (1000, 1000000, fee_bps),
+            (1000, 10000000, fee_bps),
+            (1000, 100000000, fee_bps),
+            (1000, 1000000000, fee_bps),
+            (1000, 10000000000, fee_bps),
+            (1000, 100000000000, fee_bps),
+            (1000, 1000000000000, fee_bps),
+            (1000, 10000000000000, fee_bps),
+            (1000, 100000000000000, fee_bps),
+            (1000, 1000000000000000, fee_bps),
+            (1000, 10000000000000000, fee_bps),
+            (1000, 100000000000000000, fee_bps),
+            (1000, 1000000000000000000, fee_bps),
+            (1000, 1234123488989128398, fee_bps),
+            (1000, 10000000000000000000, fee_bps),
             (1000, 1, 1),
             (1000, 10, 1),
             (1000, 5, 1),
@@ -2186,16 +2212,76 @@ mod tests {
         ];
 
         for (tokens_deposited, reward_amount, reward_fee_bps) in test_cases.iter() {
-            let vault = setup_test_vault(
-                *tokens_deposited + 1_000_000,
-                *tokens_deposited,
-                *reward_fee_bps,
-            ); // Assuming 1:1 ratio for tokens:VRT initially
-            calculate_and_print_fee(
-                &vault,
-                *reward_amount + tokens_deposited + 1_000_000,
-                *reward_fee_bps,
-            );
+            let vault = setup_test_vault(*tokens_deposited, *tokens_deposited, *reward_fee_bps); // Assuming 1:1 ratio for tokens:VRT initially
+            calculate_and_print_fee(&vault, *reward_amount + tokens_deposited, *reward_fee_bps);
         }
+    }
+
+    #[test]
+    fn test_calculate_recursive_fee_bps() {
+        // Test 10% (1000 bps)
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(1000),
+            Some(1111),
+            "10% recursive fee calculation failed"
+        );
+
+        // Test 1% (100 bps)
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(100),
+            Some(101),
+            "1% recursive fee calculation failed"
+        );
+
+        // Test 0.1% (10 bps)
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(10),
+            Some(10),
+            "0.1% recursive fee calculation failed"
+        );
+
+        // Test 50% (5000 bps)
+        // The recursive calculation for 50% fee:
+        // 5000 + 2500 + 1250 + 625 + 312 + 156 + 78 + 39 + 19 + 9 + 4 + 2 + 1 = 9995
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(5000),
+            Some(9995),
+            "50% recursive fee calculation failed"
+        );
+
+        // Over 50% results in a bps over 10k - so either cap it at 10k or fail
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(8000),
+            None,
+            "80% recursive fee calculation failed"
+        );
+
+        // Test 0% (0 bps)
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(0),
+            Some(0),
+            "0% fee should result in 0"
+        );
+
+        // Test max bps (10000)
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(10000),
+            Some(10000),
+            "100% fee should result in 10000"
+        );
+
+        // Test very small fee
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(1),
+            Some(1),
+            "Very small fee should not recurse"
+        );
+
+        // Test potential overflow
+        assert_eq!(
+            Vault::calculate_recursive_fee_bps(u16::MAX),
+            None,
+            "Should return None on potential overflow"
+        );
     }
 }
