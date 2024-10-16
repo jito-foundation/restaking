@@ -25,8 +25,8 @@ pub fn process_burn_withdrawal_ticket(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(11);
-    let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, token_program, system_program] =
+    let (required_accounts, optional_accounts) = accounts.split_at(12);
+    let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, vault_staker_withdrawal_ticket_info, vault_staker_withdrawal_ticket_token_account, vault_fee_token_account, program_fee_token_account, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -59,6 +59,11 @@ pub fn process_burn_withdrawal_ticket(
         &vault.vrt_mint,
     )?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.vrt_mint)?;
+    load_associated_token_account(
+        program_fee_token_account,
+        &config.program_fee_wallet,
+        &vault.vrt_mint,
+    )?;
     load_token_program(token_program)?;
     load_system_program(system_program)?;
 
@@ -75,10 +80,12 @@ pub fn process_burn_withdrawal_ticket(
     }
 
     let BurnSummary {
-        fee_amount,
+        vault_fee_amount,
+        program_fee_amount,
         burn_amount,
         out_amount,
     } = vault.burn_with_fee(
+        config.program_fee_bps(),
         vault_staker_withdrawal_ticket.vrt_amount(),
         vault_staker_withdrawal_ticket.min_amount_out(),
     )?;
@@ -106,7 +113,7 @@ pub fn process_burn_withdrawal_ticket(
             vault_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
             &[],
-            fee_amount,
+            vault_fee_amount,
         )?,
         &[
             vault_staker_withdrawal_ticket_token_account.clone(),
@@ -115,6 +122,24 @@ pub fn process_burn_withdrawal_ticket(
         ],
         &[&seed_slices],
     )?;
+    // Transfer program fee to program fee wallet
+    invoke_signed(
+        &transfer(
+            &spl_token::id(),
+            vault_staker_withdrawal_ticket_token_account.key,
+            program_fee_token_account.key,
+            vault_staker_withdrawal_ticket_info.key,
+            &[],
+            program_fee_amount,
+        )?,
+        &[
+            vault_staker_withdrawal_ticket_token_account.clone(),
+            program_fee_token_account.clone(),
+            vault_staker_withdrawal_ticket_info.clone(),
+        ],
+        &[&seed_slices],
+    )?;
+
     // burn the VRT tokens
     invoke_signed(
         &burn(

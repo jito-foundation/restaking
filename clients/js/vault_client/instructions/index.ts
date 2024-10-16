@@ -31,6 +31,8 @@ export * from './setAdmin';
 export * from './setDepositCapacity';
 export * from './setFees';
 export * from './setIsPaused';
+export * from './setProgramFee';
+export * from './setProgramFeeWallet';
 export * from './setSecondaryAdmin';
 export * from './slash';
 export * from './updateTokenMetadata';

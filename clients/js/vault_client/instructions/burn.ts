@@ -48,6 +48,7 @@ export type BurnInstruction<
   TAccountStakerTokenAccount extends string | IAccountMeta<string> = string,
   TAccountStakerVrtTokenAccount extends string | IAccountMeta<string> = string,
   TAccountVaultFeeTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountProgramFeeTokenAccount extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
@@ -86,6 +87,9 @@ export type BurnInstruction<
       TAccountVaultFeeTokenAccount extends string
         ? WritableAccount<TAccountVaultFeeTokenAccount>
         : TAccountVaultFeeTokenAccount,
+      TAccountProgramFeeTokenAccount extends string
+        ? WritableAccount<TAccountProgramFeeTokenAccount>
+        : TAccountProgramFeeTokenAccount,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
@@ -149,6 +153,7 @@ export type BurnInput<
   TAccountStakerTokenAccount extends string = string,
   TAccountStakerVrtTokenAccount extends string = string,
   TAccountVaultFeeTokenAccount extends string = string,
+  TAccountProgramFeeTokenAccount extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountBurnSigner extends string = string,
@@ -161,6 +166,7 @@ export type BurnInput<
   stakerTokenAccount: Address<TAccountStakerTokenAccount>;
   stakerVrtTokenAccount: TransactionSigner<TAccountStakerVrtTokenAccount>;
   vaultFeeTokenAccount: Address<TAccountVaultFeeTokenAccount>;
+  programFeeTokenAccount: Address<TAccountProgramFeeTokenAccount>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
   /** Signer for burning */
@@ -178,6 +184,7 @@ export function getBurnInstruction<
   TAccountStakerTokenAccount extends string,
   TAccountStakerVrtTokenAccount extends string,
   TAccountVaultFeeTokenAccount extends string,
+  TAccountProgramFeeTokenAccount extends string,
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
   TAccountBurnSigner extends string,
@@ -191,6 +198,7 @@ export function getBurnInstruction<
     TAccountStakerTokenAccount,
     TAccountStakerVrtTokenAccount,
     TAccountVaultFeeTokenAccount,
+    TAccountProgramFeeTokenAccount,
     TAccountTokenProgram,
     TAccountSystemProgram,
     TAccountBurnSigner
@@ -205,6 +213,7 @@ export function getBurnInstruction<
   TAccountStakerTokenAccount,
   TAccountStakerVrtTokenAccount,
   TAccountVaultFeeTokenAccount,
+  TAccountProgramFeeTokenAccount,
   TAccountTokenProgram,
   TAccountSystemProgram,
   TAccountBurnSigner
@@ -232,6 +241,10 @@ export function getBurnInstruction<
     },
     vaultFeeTokenAccount: {
       value: input.vaultFeeTokenAccount ?? null,
+      isWritable: true,
+    },
+    programFeeTokenAccount: {
+      value: input.programFeeTokenAccount ?? null,
       isWritable: true,
     },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
@@ -267,6 +280,7 @@ export function getBurnInstruction<
       getAccountMeta(accounts.stakerTokenAccount),
       getAccountMeta(accounts.stakerVrtTokenAccount),
       getAccountMeta(accounts.vaultFeeTokenAccount),
+      getAccountMeta(accounts.programFeeTokenAccount),
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.burnSigner),
@@ -285,6 +299,7 @@ export function getBurnInstruction<
     TAccountStakerTokenAccount,
     TAccountStakerVrtTokenAccount,
     TAccountVaultFeeTokenAccount,
+    TAccountProgramFeeTokenAccount,
     TAccountTokenProgram,
     TAccountSystemProgram,
     TAccountBurnSigner
@@ -307,10 +322,11 @@ export type ParsedBurnInstruction<
     stakerTokenAccount: TAccountMetas[5];
     stakerVrtTokenAccount: TAccountMetas[6];
     vaultFeeTokenAccount: TAccountMetas[7];
-    tokenProgram: TAccountMetas[8];
-    systemProgram: TAccountMetas[9];
+    programFeeTokenAccount: TAccountMetas[8];
+    tokenProgram: TAccountMetas[9];
+    systemProgram: TAccountMetas[10];
     /** Signer for burning */
-    burnSigner?: TAccountMetas[10] | undefined;
+    burnSigner?: TAccountMetas[11] | undefined;
   };
   data: BurnInstructionData;
 };
@@ -323,7 +339,7 @@ export function parseBurnInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedBurnInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+  if (instruction.accounts.length < 12) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -350,6 +366,7 @@ export function parseBurnInstruction<
       stakerTokenAccount: getNextAccount(),
       stakerVrtTokenAccount: getNextAccount(),
       vaultFeeTokenAccount: getNextAccount(),
+      programFeeTokenAccount: getNextAccount(),
       tokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),
       burnSigner: getNextOptionalAccount(),

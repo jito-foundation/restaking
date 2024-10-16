@@ -26,6 +26,8 @@ pub struct BurnWithdrawalTicket {
 
     pub vault_fee_token_account: solana_program::pubkey::Pubkey,
 
+    pub program_fee_token_account: solana_program::pubkey::Pubkey,
+
     pub token_program: solana_program::pubkey::Pubkey,
 
     pub system_program: solana_program::pubkey::Pubkey,
@@ -42,7 +44,7 @@ impl BurnWithdrawalTicket {
         &self,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -76,6 +78,10 @@ impl BurnWithdrawalTicket {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault_fee_token_account,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            self.program_fee_token_account,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -140,9 +146,10 @@ impl Default for BurnWithdrawalTicketInstructionData {
 ///   6. `[writable]` vault_staker_withdrawal_ticket
 ///   7. `[writable]` vault_staker_withdrawal_ticket_token_account
 ///   8. `[writable]` vault_fee_token_account
-///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   10. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   11. `[signer, optional]` burn_signer
+///   9. `[writable]` program_fee_token_account
+///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   11. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   12. `[signer, optional]` burn_signer
 #[derive(Clone, Debug, Default)]
 pub struct BurnWithdrawalTicketBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -154,6 +161,7 @@ pub struct BurnWithdrawalTicketBuilder {
     vault_staker_withdrawal_ticket: Option<solana_program::pubkey::Pubkey>,
     vault_staker_withdrawal_ticket_token_account: Option<solana_program::pubkey::Pubkey>,
     vault_fee_token_account: Option<solana_program::pubkey::Pubkey>,
+    program_fee_token_account: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
     burn_signer: Option<solana_program::pubkey::Pubkey>,
@@ -225,6 +233,14 @@ impl BurnWithdrawalTicketBuilder {
         self.vault_fee_token_account = Some(vault_fee_token_account);
         self
     }
+    #[inline(always)]
+    pub fn program_fee_token_account(
+        &mut self,
+        program_fee_token_account: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.program_fee_token_account = Some(program_fee_token_account);
+        self
+    }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
@@ -287,6 +303,9 @@ impl BurnWithdrawalTicketBuilder {
             vault_fee_token_account: self
                 .vault_fee_token_account
                 .expect("vault_fee_token_account is not set"),
+            program_fee_token_account: self
+                .program_fee_token_account
+                .expect("program_fee_token_account is not set"),
             token_program: self.token_program.unwrap_or(solana_program::pubkey!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
@@ -321,6 +340,8 @@ pub struct BurnWithdrawalTicketCpiAccounts<'a, 'b> {
 
     pub vault_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub program_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
@@ -352,6 +373,8 @@ pub struct BurnWithdrawalTicketCpi<'a, 'b> {
 
     pub vault_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub program_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
@@ -376,6 +399,7 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
             vault_staker_withdrawal_ticket_token_account: accounts
                 .vault_staker_withdrawal_ticket_token_account,
             vault_fee_token_account: accounts.vault_fee_token_account,
+            program_fee_token_account: accounts.program_fee_token_account,
             token_program: accounts.token_program,
             system_program: accounts.system_program,
             burn_signer: accounts.burn_signer,
@@ -414,7 +438,7 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -449,6 +473,10 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault_fee_token_account.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            *self.program_fee_token_account.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -486,7 +514,7 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(12 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(13 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
@@ -497,6 +525,7 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
         account_infos.push(self.vault_staker_withdrawal_ticket.clone());
         account_infos.push(self.vault_staker_withdrawal_ticket_token_account.clone());
         account_infos.push(self.vault_fee_token_account.clone());
+        account_infos.push(self.program_fee_token_account.clone());
         account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
         if let Some(burn_signer) = self.burn_signer {
@@ -527,9 +556,10 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
 ///   6. `[writable]` vault_staker_withdrawal_ticket
 ///   7. `[writable]` vault_staker_withdrawal_ticket_token_account
 ///   8. `[writable]` vault_fee_token_account
-///   9. `[]` token_program
-///   10. `[]` system_program
-///   11. `[signer, optional]` burn_signer
+///   9. `[writable]` program_fee_token_account
+///   10. `[]` token_program
+///   11. `[]` system_program
+///   12. `[signer, optional]` burn_signer
 #[derive(Clone, Debug)]
 pub struct BurnWithdrawalTicketCpiBuilder<'a, 'b> {
     instruction: Box<BurnWithdrawalTicketCpiBuilderInstruction<'a, 'b>>,
@@ -548,6 +578,7 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
             vault_staker_withdrawal_ticket: None,
             vault_staker_withdrawal_ticket_token_account: None,
             vault_fee_token_account: None,
+            program_fee_token_account: None,
             token_program: None,
             system_program: None,
             burn_signer: None,
@@ -626,6 +657,14 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
         vault_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.vault_fee_token_account = Some(vault_fee_token_account);
+        self
+    }
+    #[inline(always)]
+    pub fn program_fee_token_account(
+        &mut self,
+        program_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.program_fee_token_account = Some(program_fee_token_account);
         self
     }
     #[inline(always)]
@@ -731,6 +770,11 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
                 .vault_fee_token_account
                 .expect("vault_fee_token_account is not set"),
 
+            program_fee_token_account: self
+                .instruction
+                .program_fee_token_account
+                .expect("program_fee_token_account is not set"),
+
             token_program: self
                 .instruction
                 .token_program
@@ -763,6 +807,7 @@ struct BurnWithdrawalTicketCpiBuilderInstruction<'a, 'b> {
     vault_staker_withdrawal_ticket_token_account:
         Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_fee_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    program_fee_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,

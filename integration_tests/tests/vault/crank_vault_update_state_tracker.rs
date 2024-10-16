@@ -697,7 +697,11 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(
+                MINT_AMOUNT,
+                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
+                config.program_fee_bps(),
+            )
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -759,7 +763,7 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
             .await
             .unwrap();
 
@@ -844,7 +848,11 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(
+                MINT_AMOUNT,
+                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
+                config.program_fee_bps(),
+            )
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -886,7 +894,7 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
             .await
             .unwrap();
 
@@ -971,7 +979,11 @@ mod tests {
             .unwrap();
 
         let min_amount_out = vault
-            .calculate_min_supported_mint_out(MINT_AMOUNT, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(
+                MINT_AMOUNT,
+                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
+                config.program_fee_bps(),
+            )
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
@@ -1013,7 +1025,7 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base)
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
             .await
             .unwrap();
 

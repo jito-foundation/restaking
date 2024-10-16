@@ -74,7 +74,7 @@ pub struct UpdateVaultBalanceInstructionData {
 
 impl UpdateVaultBalanceInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 24 }
+        Self { discriminator: 26 }
     }
 }
 

@@ -38,6 +38,8 @@ import {
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
   type ParsedSetIsPausedInstruction,
+  type ParsedSetProgramFeeInstruction,
+  type ParsedSetProgramFeeWalletInstruction,
   type ParsedSetSecondaryAdminInstruction,
   type ParsedSlashInstruction,
   type ParsedUpdateTokenMetadataInstruction,
@@ -79,6 +81,8 @@ export enum JitoVaultInstruction {
   BurnWithdrawalTicket,
   SetDepositCapacity,
   SetFees,
+  SetProgramFee,
+  SetProgramFeeWallet,
   SetIsPaused,
   DelegateTokenAccount,
   SetAdmin,
@@ -153,42 +157,48 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetFees;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoVaultInstruction.SetIsPaused;
+    return JitoVaultInstruction.SetProgramFee;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
-    return JitoVaultInstruction.DelegateTokenAccount;
+    return JitoVaultInstruction.SetProgramFeeWallet;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
-    return JitoVaultInstruction.SetAdmin;
+    return JitoVaultInstruction.SetIsPaused;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoVaultInstruction.SetSecondaryAdmin;
+    return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoVaultInstruction.AddDelegation;
+    return JitoVaultInstruction.SetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
-    return JitoVaultInstruction.CooldownDelegation;
+    return JitoVaultInstruction.SetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(24), 0)) {
-    return JitoVaultInstruction.UpdateVaultBalance;
+    return JitoVaultInstruction.AddDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(25), 0)) {
-    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
+    return JitoVaultInstruction.CooldownDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(26), 0)) {
-    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
+    return JitoVaultInstruction.UpdateVaultBalance;
   }
   if (containsBytes(data, getU8Encoder().encode(27), 0)) {
-    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
+    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(28), 0)) {
-    return JitoVaultInstruction.CreateTokenMetadata;
+    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(29), 0)) {
-    return JitoVaultInstruction.UpdateTokenMetadata;
+    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
+    return JitoVaultInstruction.CreateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.UpdateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(32), 0)) {
     return JitoVaultInstruction.Slash;
   }
   throw new Error(
@@ -253,6 +263,12 @@ export type ParsedJitoVaultInstruction<
   | ({
       instructionType: JitoVaultInstruction.SetFees;
     } & ParsedSetFeesInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.SetProgramFee;
+    } & ParsedSetProgramFeeInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.SetProgramFeeWallet;
+    } & ParsedSetProgramFeeWalletInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetIsPaused;
     } & ParsedSetIsPausedInstruction<TProgram>)

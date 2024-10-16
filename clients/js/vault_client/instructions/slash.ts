@@ -32,7 +32,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SLASH_DISCRIMINATOR = 30;
+export const SLASH_DISCRIMINATOR = 32;
 
 export function getSlashDiscriminatorBytes() {
   return getU8Encoder().encode(SLASH_DISCRIMINATOR);
