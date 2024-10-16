@@ -67,6 +67,7 @@ export type Vault = {
   delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  metadataAdmin: Address;
   vaultIndex: bigint;
   ncnCount: bigint;
   operatorCount: bigint;
@@ -103,6 +104,7 @@ export type VaultArgs = {
   delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  metadataAdmin: Address;
   vaultIndex: number | bigint;
   ncnCount: number | bigint;
   operatorCount: number | bigint;
@@ -140,6 +142,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['delegateAssetAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
+    ['metadataAdmin', getAddressEncoder()],
     ['vaultIndex', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
@@ -178,6 +181,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['delegateAssetAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
+    ['metadataAdmin', getAddressDecoder()],
     ['vaultIndex', getU64Decoder()],
     ['ncnCount', getU64Decoder()],
     ['operatorCount', getU64Decoder()],

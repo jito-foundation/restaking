@@ -106,6 +106,9 @@ pub struct Vault {
     /// Optional mint signer
     pub mint_burn_admin: Pubkey,
 
+    /// ( For future use ) Authority to update the vault's metadata
+    pub metadata_admin: Pubkey,
+
     // ------------------------------------------
     // Indexing and counters
     // These are helpful when one needs to iterate through all the accounts
@@ -188,6 +191,7 @@ impl Vault {
             fee_admin: admin,
             delegate_asset_admin: admin,
             fee_wallet: admin,
+            metadata_admin: admin,
             mint_burn_admin: Pubkey::default(),
             deposit_capacity: PodU64::from(u64::MAX),
             vault_index: PodU64::from(vault_index),
@@ -551,6 +555,11 @@ impl Vault {
         if self.fee_admin.eq(old_admin) {
             self.fee_admin = *new_admin;
             msg!("Fee admin set to {:?}", new_admin);
+        }
+
+        if self.metadata_admin.eq(old_admin) {
+            self.metadata_admin = *new_admin;
+            msg!("Metadata admin set to {:?}", new_admin);
         }
     }
 
@@ -1282,6 +1291,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // delegate_asset_admin
             std::mem::size_of::<Pubkey>() + // fee_wallet
             std::mem::size_of::<Pubkey>() + // mint_burn_admin
+            std::mem::size_of::<Pubkey>() + // metadata_admin
             std::mem::size_of::<PodU64>() + // vault_index
             std::mem::size_of::<PodU64>() + // ncn_count
             std::mem::size_of::<PodU64>() + // operator_count
@@ -1338,6 +1348,7 @@ mod tests {
         assert_eq!(vault.mint_burn_admin, new_admin);
         assert_eq!(vault.delegate_asset_admin, new_admin);
         assert_eq!(vault.fee_admin, new_admin);
+        assert_eq!(vault.metadata_admin, new_admin);
     }
 
     #[test]

@@ -33,8 +33,14 @@ pub struct Ncn {
     /// The delegate admin of the NCN
     pub delegate_admin: Pubkey,
 
-    // Reserved space
-    reserved_1: [u8; 32],
+    /// ( For future use ) Authority to update the ncn's metadata
+    pub metadata_admin: Pubkey,
+
+    /// The weight table admin of the NCN
+    pub weight_table_admin: Pubkey,
+
+    /// Admin in charge of of any on-chain programs related to the NCN
+    pub ncn_program_admin: Pubkey,
 
     /// The index of the NCN
     index: PodU64,
@@ -69,7 +75,9 @@ impl Ncn {
             vault_admin: admin,
             slasher_admin: admin,
             delegate_admin: admin,
-            reserved_1: [0; 32],
+            metadata_admin: admin,
+            weight_table_admin: admin,
+            ncn_program_admin: admin,
             index: PodU64::from(ncn_index),
             operator_count: PodU64::from(0),
             vault_count: PodU64::from(0),
@@ -195,6 +203,21 @@ impl Ncn {
             self.delegate_admin = *new_admin;
             msg!("Delegate admin set to {:?}", new_admin);
         }
+
+        if self.metadata_admin.eq(old_admin) {
+            self.metadata_admin = *new_admin;
+            msg!("Metadata admin set to {:?}", new_admin);
+        }
+
+        if self.weight_table_admin.eq(old_admin) {
+            self.weight_table_admin = *new_admin;
+            msg!("Weight table admin set to {:?}", new_admin);
+        }
+
+        if self.ncn_program_admin.eq(old_admin) {
+            self.ncn_program_admin = *new_admin;
+            msg!("Ncn program admin set to {:?}", new_admin);
+        }
     }
 
     /// Returns the seeds for the PDA
@@ -275,7 +298,9 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // slasher_admin
             std::mem::size_of::<Pubkey>() + // delegate_admin
-            32 + // reserved
+            std::mem::size_of::<Pubkey>() + // metadata_admin
+            std::mem::size_of::<Pubkey>() + // weight_table_admin
+            std::mem::size_of::<Pubkey>() + // ncn_program_admin
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // operator_count
             std::mem::size_of::<PodU64>() + // vault_count
@@ -294,6 +319,9 @@ mod tests {
         assert_eq!(ncn.vault_admin, old_admin);
         assert_eq!(ncn.slasher_admin, old_admin);
         assert_eq!(ncn.delegate_admin, old_admin);
+        assert_eq!(ncn.metadata_admin, old_admin);
+        assert_eq!(ncn.weight_table_admin, old_admin);
+        assert_eq!(ncn.ncn_program_admin, old_admin);
 
         let new_admin = Pubkey::new_unique();
         ncn.update_secondary_admin(&old_admin, &new_admin);
@@ -302,5 +330,8 @@ mod tests {
         assert_eq!(ncn.vault_admin, new_admin);
         assert_eq!(ncn.slasher_admin, new_admin);
         assert_eq!(ncn.delegate_admin, new_admin);
+        assert_eq!(ncn.metadata_admin, new_admin);
+        assert_eq!(ncn.weight_table_admin, new_admin);
+        assert_eq!(ncn.ncn_program_admin, new_admin);
     }
 }
