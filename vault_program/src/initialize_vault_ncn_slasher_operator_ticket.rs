@@ -10,6 +10,7 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -46,10 +47,8 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     load_signer(payer, false)?;
     load_system_program(system_program)?;
 
-    let ncn_epoch = Clock::get()?
-        .slot
-        .checked_div(config.epoch_length())
-        .unwrap();
+    let slot = Clock::get()?.slot;
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
 
     // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (
@@ -75,6 +74,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
 
     // The vault shall be up-to-date before adding support for the NCN slasher operator
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing vault NCN slasher operator ticket at address {}",
@@ -88,7 +88,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultNcnSlasherOperatorTicket>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_ncn_slasher_operator_ticket_seeds,
     )?;
 

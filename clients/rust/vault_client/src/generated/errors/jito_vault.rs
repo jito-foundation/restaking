@@ -96,69 +96,96 @@ pub enum JitoVaultError {
     /// 1028 - SlippageError
     #[error("SlippageError")]
     SlippageError = 0x404,
-    /// 1029 - VaultStakerWithdrawalTicketNotWithdrawable
+    /// 1029 - SlippageTooLow
+    #[error("SlippageTooLow")]
+    SlippageTooLow = 0x405,
+    /// 1030 - VaultStakerWithdrawalTicketNotWithdrawable
     #[error("VaultStakerWithdrawalTicketNotWithdrawable")]
-    VaultStakerWithdrawalTicketNotWithdrawable = 0x405,
-    /// 1030 - VaultNcnSlasherTicketFailedCooldown
+    VaultStakerWithdrawalTicketNotWithdrawable = 0x406,
+    /// 1031 - VaultNcnSlasherTicketFailedCooldown
     #[error("VaultNcnSlasherTicketFailedCooldown")]
-    VaultNcnSlasherTicketFailedCooldown = 0x406,
-    /// 1031 - VaultNcnSlasherTicketFailedWarmup
+    VaultNcnSlasherTicketFailedCooldown = 0x407,
+    /// 1032 - VaultNcnSlasherTicketFailedWarmup
     #[error("VaultNcnSlasherTicketFailedWarmup")]
-    VaultNcnSlasherTicketFailedWarmup = 0x407,
-    /// 1032 - VaultNcnTicketFailedCooldown
+    VaultNcnSlasherTicketFailedWarmup = 0x408,
+    /// 1033 - VaultNcnTicketFailedCooldown
     #[error("VaultNcnTicketFailedCooldown")]
-    VaultNcnTicketFailedCooldown = 0x408,
-    /// 1033 - VaultNcnTicketFailedWarmup
+    VaultNcnTicketFailedCooldown = 0x409,
+    /// 1034 - VaultNcnTicketFailedWarmup
     #[error("VaultNcnTicketFailedWarmup")]
-    VaultNcnTicketFailedWarmup = 0x409,
-    /// 1034 - VaultNcnTicketUnslashable
+    VaultNcnTicketFailedWarmup = 0x40A,
+    /// 1035 - VaultNcnTicketUnslashable
     #[error("VaultNcnTicketUnslashable")]
-    VaultNcnTicketUnslashable = 0x40A,
-    /// 1035 - OperatorVaultTicketUnslashable
+    VaultNcnTicketUnslashable = 0x40B,
+    /// 1036 - OperatorVaultTicketUnslashable
     #[error("OperatorVaultTicketUnslashable")]
-    OperatorVaultTicketUnslashable = 0x40B,
-    /// 1036 - NcnOperatorStateUnslashable
+    OperatorVaultTicketUnslashable = 0x40C,
+    /// 1037 - NcnOperatorStateUnslashable
     #[error("NcnOperatorStateUnslashable")]
-    NcnOperatorStateUnslashable = 0x40C,
-    /// 1037 - VaultNcnSlasherTicketUnslashable
+    NcnOperatorStateUnslashable = 0x40D,
+    /// 1038 - VaultNcnSlasherTicketUnslashable
     #[error("VaultNcnSlasherTicketUnslashable")]
-    VaultNcnSlasherTicketUnslashable = 0x40D,
-    /// 1038 - NcnVaultTicketUnslashable
+    VaultNcnSlasherTicketUnslashable = 0x40E,
+    /// 1039 - NcnVaultTicketUnslashable
     #[error("NcnVaultTicketUnslashable")]
-    NcnVaultTicketUnslashable = 0x40E,
-    /// 1039 - NcnVaultSlasherTicketUnslashable
+    NcnVaultTicketUnslashable = 0x40F,
+    /// 1040 - NcnVaultSlasherTicketUnslashable
     #[error("NcnVaultSlasherTicketUnslashable")]
-    NcnVaultSlasherTicketUnslashable = 0x40F,
-    /// 1040 - VaultMaxSlashedPerOperatorExceeded
+    NcnVaultSlasherTicketUnslashable = 0x410,
+    /// 1041 - VaultMaxSlashedPerOperatorExceeded
     #[error("VaultMaxSlashedPerOperatorExceeded")]
-    VaultMaxSlashedPerOperatorExceeded = 0x410,
-    /// 1041 - VaultStakerWithdrawalTicketInvalidStaker
+    VaultMaxSlashedPerOperatorExceeded = 0x411,
+    /// 1042 - VaultStakerWithdrawalTicketInvalidStaker
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
-    VaultStakerWithdrawalTicketInvalidStaker = 0x411,
-    /// 1042 - SlasherOverflow
+    VaultStakerWithdrawalTicketInvalidStaker = 0x412,
+    /// 1043 - SlasherOverflow
     #[error("SlasherOverflow")]
-    SlasherOverflow = 0x412,
-    /// 1043 - NcnOverflow
+    SlasherOverflow = 0x413,
+    /// 1044 - NcnOverflow
     #[error("NcnOverflow")]
-    NcnOverflow = 0x413,
-    /// 1044 - OperatorOverflow
+    NcnOverflow = 0x414,
+    /// 1045 - OperatorOverflow
     #[error("OperatorOverflow")]
-    OperatorOverflow = 0x414,
-    /// 1045 - VaultDelegationZero
+    OperatorOverflow = 0x415,
+    /// 1046 - VaultDelegationZero
     #[error("VaultDelegationZero")]
-    VaultDelegationZero = 0x415,
-    /// 1046 - VaultCooldownZero
+    VaultDelegationZero = 0x416,
+    /// 1047 - VaultCooldownZero
     #[error("VaultCooldownZero")]
-    VaultCooldownZero = 0x416,
-    /// 1047 - VaultBurnZero
+    VaultCooldownZero = 0x417,
+    /// 1048 - VaultBurnZero
     #[error("VaultBurnZero")]
-    VaultBurnZero = 0x417,
-    /// 1048 - VaultEnqueueWithdrawalAmountZero
+    VaultBurnZero = 0x418,
+    /// 1049 - VaultEnqueueWithdrawalAmountZero
     #[error("VaultEnqueueWithdrawalAmountZero")]
-    VaultEnqueueWithdrawalAmountZero = 0x418,
-    /// 1049 - VaultMintZero
+    VaultEnqueueWithdrawalAmountZero = 0x419,
+    /// 1050 - VaultMintZero
     #[error("VaultMintZero")]
-    VaultMintZero = 0x419,
+    VaultMintZero = 0x41A,
+    /// 1051 - VaultIsPaused
+    #[error("VaultIsPaused")]
+    VaultIsPaused = 0x41B,
+    /// 1052 - InvalidDepositor
+    #[error("InvalidDepositor")]
+    InvalidDepositor = 0x41C,
+    /// 1053 - InvalidDepositTokenAccount
+    #[error("InvalidDepositTokenAccount")]
+    InvalidDepositTokenAccount = 0x41D,
+    /// 1054 - NoSupportedMintBalanceChange
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange = 0x41E,
+    /// 1055 - InvalidEpochLength
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength = 0x41F,
+    /// 3000 - ArithmeticOverflow
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 0xBB8,
+    /// 3001 - ArithmeticUnderflow
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow = 0xBB9,
+    /// 3002 - DivisionByZero
+    #[error("DivisionByZero")]
+    DivisionByZero = 0xBBA,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {

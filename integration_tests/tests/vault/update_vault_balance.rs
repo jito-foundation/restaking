@@ -4,16 +4,17 @@ mod tests {
         config::Config, vault_operator_delegation::VaultOperatorDelegation,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
+    use jito_vault_sdk::error::VaultError;
     use solana_sdk::{signature::Keypair, signer::Signer};
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
-        vault_client::VaultRoot,
+        vault_client::{assert_vault_error, VaultRoot},
     };
 
     const MINT_AMOUNT: u64 = 100_000;
     const DEPOSIT_FEE_BPS: u16 = 0;
-    const WITHDRAW_FEE_BPS: u16 = 0;
+    const WITHDRAWAL_FEE_BPS: u16 = 0;
     const REWARD_FEE_BPS: u16 = 1000; // 10%
 
     async fn setup() -> (TestBuilder, VaultRoot) {
@@ -33,7 +34,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 DEPOSIT_FEE_BPS,
-                WITHDRAW_FEE_BPS,
+                WITHDRAWAL_FEE_BPS,
                 REWARD_FEE_BPS,
                 num_operators,
                 &slasher_amounts,
@@ -130,5 +131,22 @@ mod tests {
         assert_eq!(vault.tokens_deposited(), MINT_AMOUNT);
         assert_eq!(reward_fee_account.amount, MINT_AMOUNT / 10);
         assert_eq!(vault.vrt_supply(), MINT_AMOUNT / 10);
+    }
+
+    #[tokio::test]
+    async fn test_update_vault_balance_vault_is_paused_fails() {
+        let (fixture, vault_root) = setup().await;
+        let mut vault_program_client = fixture.vault_program_client();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let test_error = vault_program_client
+            .update_vault_balance(&vault_root.vault_pubkey)
+            .await;
+
+        assert_vault_error(test_error, VaultError::VaultIsPaused);
     }
 }

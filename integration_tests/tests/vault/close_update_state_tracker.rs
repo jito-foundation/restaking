@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
+    use jito_vault_core::{
+        config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+    };
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -14,7 +16,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 0;
         let slasher_amounts = vec![];
@@ -26,7 +28,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -79,7 +81,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 2;
         let slasher_amounts = vec![];
@@ -92,7 +94,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -155,7 +157,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 2;
         let slasher_amounts = vec![];
@@ -168,7 +170,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -251,7 +253,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -264,7 +266,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -286,8 +288,27 @@ mod tests {
             .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 100_000)
             .await
             .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(
+                100_000,
+                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
+                config.program_fee_bps(),
+            )
+            .unwrap();
+
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
-            .do_enqueue_withdraw(&vault_root, &depositor, 100_000)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 100_000, min_amount_out)
             .await
             .unwrap();
         let vault = vault_program_client
@@ -298,10 +319,6 @@ mod tests {
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
 
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
         fixture
             .warp_slot_incremental(config.epoch_length())
             .await
@@ -338,5 +355,85 @@ mod tests {
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 100_000);
+    }
+
+    #[tokio::test]
+    async fn test_close_update_state_tracker_vault_is_paused_fails() {
+        let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 2;
+        let slasher_amounts = vec![];
+
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length();
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &VaultUpdateStateTracker::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    ncn_epoch,
+                )
+                .0,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .close_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &VaultUpdateStateTracker::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    ncn_epoch,
+                )
+                .0,
+                ncn_epoch,
+            )
+            .await;
+
+        assert_vault_error(result, VaultError::VaultIsPaused);
     }
 }

@@ -7,7 +7,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
-pub struct BurnWithdrawTicket {
+pub struct BurnWithdrawalTicket {
     pub config: solana_program::pubkey::Pubkey,
 
     pub vault: solana_program::pubkey::Pubkey,
@@ -35,17 +35,13 @@ pub struct BurnWithdrawTicket {
     pub burn_signer: Option<solana_program::pubkey::Pubkey>,
 }
 
-impl BurnWithdrawTicket {
-    pub fn instruction(
-        &self,
-        args: BurnWithdrawTicketInstructionArgs,
-    ) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(args, &[])
+impl BurnWithdrawalTicket {
+    pub fn instruction(&self) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(&[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: BurnWithdrawTicketInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
@@ -108,11 +104,9 @@ impl BurnWithdrawTicket {
             ));
         }
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = BurnWithdrawTicketInstructionData::new()
+        let data = BurnWithdrawalTicketInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -123,29 +117,23 @@ impl BurnWithdrawTicket {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct BurnWithdrawTicketInstructionData {
+pub struct BurnWithdrawalTicketInstructionData {
     discriminator: u8,
 }
 
-impl BurnWithdrawTicketInstructionData {
+impl BurnWithdrawalTicketInstructionData {
     pub fn new() -> Self {
         Self { discriminator: 15 }
     }
 }
 
-impl Default for BurnWithdrawTicketInstructionData {
+impl Default for BurnWithdrawalTicketInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct BurnWithdrawTicketInstructionArgs {
-    pub min_amount_out: u64,
-}
-
-/// Instruction builder for `BurnWithdrawTicket`.
+/// Instruction builder for `BurnWithdrawalTicket`.
 ///
 /// ### Accounts:
 ///
@@ -163,7 +151,7 @@ pub struct BurnWithdrawTicketInstructionArgs {
 ///   11. `[optional]` system_program (default to `11111111111111111111111111111111`)
 ///   12. `[signer, optional]` burn_signer
 #[derive(Clone, Debug, Default)]
-pub struct BurnWithdrawTicketBuilder {
+pub struct BurnWithdrawalTicketBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
     vault_token_account: Option<solana_program::pubkey::Pubkey>,
@@ -177,11 +165,10 @@ pub struct BurnWithdrawTicketBuilder {
     token_program: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
     burn_signer: Option<solana_program::pubkey::Pubkey>,
-    min_amount_out: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl BurnWithdrawTicketBuilder {
+impl BurnWithdrawalTicketBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -276,11 +263,6 @@ impl BurnWithdrawTicketBuilder {
         self.burn_signer = burn_signer;
         self
     }
-    #[inline(always)]
-    pub fn min_amount_out(&mut self, min_amount_out: u64) -> &mut Self {
-        self.min_amount_out = Some(min_amount_out);
-        self
-    }
     /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -301,7 +283,7 @@ impl BurnWithdrawTicketBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = BurnWithdrawTicket {
+        let accounts = BurnWithdrawalTicket {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
             vault_token_account: self
@@ -332,19 +314,13 @@ impl BurnWithdrawTicketBuilder {
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
             burn_signer: self.burn_signer,
         };
-        let args = BurnWithdrawTicketInstructionArgs {
-            min_amount_out: self
-                .min_amount_out
-                .clone()
-                .expect("min_amount_out is not set"),
-        };
 
-        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
     }
 }
 
-/// `burn_withdraw_ticket` CPI accounts.
-pub struct BurnWithdrawTicketCpiAccounts<'a, 'b> {
+/// `burn_withdrawal_ticket` CPI accounts.
+pub struct BurnWithdrawalTicketCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
@@ -373,8 +349,8 @@ pub struct BurnWithdrawTicketCpiAccounts<'a, 'b> {
     pub burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
 }
 
-/// `burn_withdraw_ticket` CPI instruction.
-pub struct BurnWithdrawTicketCpi<'a, 'b> {
+/// `burn_withdrawal_ticket` CPI instruction.
+pub struct BurnWithdrawalTicketCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -404,15 +380,12 @@ pub struct BurnWithdrawTicketCpi<'a, 'b> {
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// Signer for burning
     pub burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    /// The arguments for the instruction.
-    pub __args: BurnWithdrawTicketInstructionArgs,
 }
 
-impl<'a, 'b> BurnWithdrawTicketCpi<'a, 'b> {
+impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: BurnWithdrawTicketCpiAccounts<'a, 'b>,
-        args: BurnWithdrawTicketInstructionArgs,
+        accounts: BurnWithdrawalTicketCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
@@ -430,7 +403,6 @@ impl<'a, 'b> BurnWithdrawTicketCpi<'a, 'b> {
             token_program: accounts.token_program,
             system_program: accounts.system_program,
             burn_signer: accounts.burn_signer,
-            __args: args,
         }
     }
     #[inline(always)]
@@ -533,11 +505,9 @@ impl<'a, 'b> BurnWithdrawTicketCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = BurnWithdrawTicketInstructionData::new()
+        let data = BurnWithdrawalTicketInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = self.__args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -573,7 +543,7 @@ impl<'a, 'b> BurnWithdrawTicketCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `BurnWithdrawTicket` via CPI.
+/// Instruction builder for `BurnWithdrawalTicket` via CPI.
 ///
 /// ### Accounts:
 ///
@@ -591,13 +561,13 @@ impl<'a, 'b> BurnWithdrawTicketCpi<'a, 'b> {
 ///   11. `[]` system_program
 ///   12. `[signer, optional]` burn_signer
 #[derive(Clone, Debug)]
-pub struct BurnWithdrawTicketCpiBuilder<'a, 'b> {
-    instruction: Box<BurnWithdrawTicketCpiBuilderInstruction<'a, 'b>>,
+pub struct BurnWithdrawalTicketCpiBuilder<'a, 'b> {
+    instruction: Box<BurnWithdrawalTicketCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> BurnWithdrawTicketCpiBuilder<'a, 'b> {
+impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(BurnWithdrawTicketCpiBuilderInstruction {
+        let instruction = Box::new(BurnWithdrawalTicketCpiBuilderInstruction {
             __program: program,
             config: None,
             vault: None,
@@ -612,7 +582,6 @@ impl<'a, 'b> BurnWithdrawTicketCpiBuilder<'a, 'b> {
             token_program: None,
             system_program: None,
             burn_signer: None,
-            min_amount_out: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -724,11 +693,6 @@ impl<'a, 'b> BurnWithdrawTicketCpiBuilder<'a, 'b> {
         self.instruction.burn_signer = burn_signer;
         self
     }
-    #[inline(always)]
-    pub fn min_amount_out(&mut self, min_amount_out: u64) -> &mut Self {
-        self.instruction.min_amount_out = Some(min_amount_out);
-        self
-    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -770,14 +734,7 @@ impl<'a, 'b> BurnWithdrawTicketCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = BurnWithdrawTicketInstructionArgs {
-            min_amount_out: self
-                .instruction
-                .min_amount_out
-                .clone()
-                .expect("min_amount_out is not set"),
-        };
-        let instruction = BurnWithdrawTicketCpi {
+        let instruction = BurnWithdrawalTicketCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
@@ -829,7 +786,6 @@ impl<'a, 'b> BurnWithdrawTicketCpiBuilder<'a, 'b> {
                 .expect("system_program is not set"),
 
             burn_signer: self.instruction.burn_signer,
-            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -839,7 +795,7 @@ impl<'a, 'b> BurnWithdrawTicketCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct BurnWithdrawTicketCpiBuilderInstruction<'a, 'b> {
+struct BurnWithdrawalTicketCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
@@ -855,7 +811,6 @@ struct BurnWithdrawTicketCpiBuilderInstruction<'a, 'b> {
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    min_amount_out: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

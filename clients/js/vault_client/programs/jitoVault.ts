@@ -15,7 +15,7 @@ import {
 import {
   type ParsedAddDelegationInstruction,
   type ParsedBurnInstruction,
-  type ParsedBurnWithdrawTicketInstruction,
+  type ParsedBurnWithdrawalTicketInstruction,
   type ParsedChangeWithdrawalTicketOwnerInstruction,
   type ParsedCloseVaultUpdateStateTrackerInstruction,
   type ParsedCooldownDelegationInstruction,
@@ -37,6 +37,7 @@ import {
   type ParsedSetAdminInstruction,
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
+  type ParsedSetIsPausedInstruction,
   type ParsedSetProgramFeeInstruction,
   type ParsedSetProgramFeeWalletInstruction,
   type ParsedSetSecondaryAdminInstruction,
@@ -77,11 +78,12 @@ export enum JitoVaultInstruction {
   Burn,
   EnqueueWithdrawal,
   ChangeWithdrawalTicketOwner,
-  BurnWithdrawTicket,
+  BurnWithdrawalTicket,
   SetDepositCapacity,
   SetFees,
   SetProgramFee,
   SetProgramFeeWallet,
+  SetIsPaused,
   DelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
@@ -146,7 +148,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.ChangeWithdrawalTicketOwner;
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
-    return JitoVaultInstruction.BurnWithdrawTicket;
+    return JitoVaultInstruction.BurnWithdrawalTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(16), 0)) {
     return JitoVaultInstruction.SetDepositCapacity;
@@ -161,39 +163,42 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetProgramFeeWallet;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
-    return JitoVaultInstruction.DelegateTokenAccount;
+    return JitoVaultInstruction.SetIsPaused;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoVaultInstruction.SetAdmin;
+    return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoVaultInstruction.SetSecondaryAdmin;
+    return JitoVaultInstruction.SetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
-    return JitoVaultInstruction.AddDelegation;
+    return JitoVaultInstruction.SetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(24), 0)) {
-    return JitoVaultInstruction.CooldownDelegation;
+    return JitoVaultInstruction.AddDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(25), 0)) {
-    return JitoVaultInstruction.UpdateVaultBalance;
+    return JitoVaultInstruction.CooldownDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(26), 0)) {
-    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
+    return JitoVaultInstruction.UpdateVaultBalance;
   }
   if (containsBytes(data, getU8Encoder().encode(27), 0)) {
-    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
+    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(28), 0)) {
-    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
+    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(29), 0)) {
-    return JitoVaultInstruction.CreateTokenMetadata;
+    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
-    return JitoVaultInstruction.UpdateTokenMetadata;
+    return JitoVaultInstruction.CreateTokenMetadata;
   }
   if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.UpdateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(32), 0)) {
     return JitoVaultInstruction.Slash;
   }
   throw new Error(
@@ -250,8 +255,8 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.ChangeWithdrawalTicketOwner;
     } & ParsedChangeWithdrawalTicketOwnerInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.BurnWithdrawTicket;
-    } & ParsedBurnWithdrawTicketInstruction<TProgram>)
+      instructionType: JitoVaultInstruction.BurnWithdrawalTicket;
+    } & ParsedBurnWithdrawalTicketInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetDepositCapacity;
     } & ParsedSetDepositCapacityInstruction<TProgram>)
@@ -264,6 +269,9 @@ export type ParsedJitoVaultInstruction<
   | ({
       instructionType: JitoVaultInstruction.SetProgramFeeWallet;
     } & ParsedSetProgramFeeWalletInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.SetIsPaused;
+    } & ParsedSetIsPausedInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.DelegateTokenAccount;
     } & ParsedDelegateTokenAccountInstruction<TProgram>)

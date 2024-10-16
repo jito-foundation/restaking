@@ -65,7 +65,7 @@ pub fn process_initialize_ncn_vault_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<NcnVaultTicket>() as u64)
-            .unwrap(),
+            .ok_or(RestakingError::ArithmeticOverflow)?,
         &ncn_vault_ticket_seeds,
     )?;
 

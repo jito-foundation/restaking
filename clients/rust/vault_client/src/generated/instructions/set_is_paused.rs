@@ -7,32 +7,28 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
-pub struct CooldownDelegation {
+pub struct SetIsPaused {
     pub config: solana_program::pubkey::Pubkey,
 
     pub vault: solana_program::pubkey::Pubkey,
 
-    pub operator: solana_program::pubkey::Pubkey,
-
-    pub vault_operator_delegation: solana_program::pubkey::Pubkey,
-
     pub admin: solana_program::pubkey::Pubkey,
 }
 
-impl CooldownDelegation {
+impl SetIsPaused {
     pub fn instruction(
         &self,
-        args: CooldownDelegationInstructionArgs,
+        args: SetIsPausedInstructionArgs,
     ) -> solana_program::instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: CooldownDelegationInstructionArgs,
+        args: SetIsPausedInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -41,20 +37,10 @@ impl CooldownDelegation {
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.operator,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_operator_delegation,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = CooldownDelegationInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = SetIsPausedInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -67,17 +53,17 @@ impl CooldownDelegation {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct CooldownDelegationInstructionData {
+pub struct SetIsPausedInstructionData {
     discriminator: u8,
 }
 
-impl CooldownDelegationInstructionData {
+impl SetIsPausedInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 25 }
+        Self { discriminator: 20 }
     }
 }
 
-impl Default for CooldownDelegationInstructionData {
+impl Default for SetIsPausedInstructionData {
     fn default() -> Self {
         Self::new()
     }
@@ -85,31 +71,27 @@ impl Default for CooldownDelegationInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CooldownDelegationInstructionArgs {
-    pub amount: u64,
+pub struct SetIsPausedInstructionArgs {
+    pub is_paused: bool,
 }
 
-/// Instruction builder for `CooldownDelegation`.
+/// Instruction builder for `SetIsPaused`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[]` operator
-///   3. `[writable]` vault_operator_delegation
-///   4. `[signer]` admin
+///   2. `[signer]` admin
 #[derive(Clone, Debug, Default)]
-pub struct CooldownDelegationBuilder {
+pub struct SetIsPausedBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
-    operator: Option<solana_program::pubkey::Pubkey>,
-    vault_operator_delegation: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
-    amount: Option<u64>,
+    is_paused: Option<bool>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl CooldownDelegationBuilder {
+impl SetIsPausedBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -124,26 +106,13 @@ impl CooldownDelegationBuilder {
         self
     }
     #[inline(always)]
-    pub fn operator(&mut self, operator: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.operator = Some(operator);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
-        &mut self,
-        vault_operator_delegation: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_operator_delegation = Some(vault_operator_delegation);
-        self
-    }
-    #[inline(always)]
     pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
         self.admin = Some(admin);
         self
     }
     #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.amount = Some(amount);
+    pub fn is_paused(&mut self, is_paused: bool) -> &mut Self {
+        self.is_paused = Some(is_paused);
         self
     }
     /// Add an aditional account to the instruction.
@@ -166,38 +135,30 @@ impl CooldownDelegationBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = CooldownDelegation {
+        let accounts = SetIsPaused {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
-            operator: self.operator.expect("operator is not set"),
-            vault_operator_delegation: self
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
             admin: self.admin.expect("admin is not set"),
         };
-        let args = CooldownDelegationInstructionArgs {
-            amount: self.amount.clone().expect("amount is not set"),
+        let args = SetIsPausedInstructionArgs {
+            is_paused: self.is_paused.clone().expect("is_paused is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `cooldown_delegation` CPI accounts.
-pub struct CooldownDelegationCpiAccounts<'a, 'b> {
+/// `set_is_paused` CPI accounts.
+pub struct SetIsPausedCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `cooldown_delegation` CPI instruction.
-pub struct CooldownDelegationCpi<'a, 'b> {
+/// `set_is_paused` CPI instruction.
+pub struct SetIsPausedCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -205,27 +166,21 @@ pub struct CooldownDelegationCpi<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: CooldownDelegationInstructionArgs,
+    pub __args: SetIsPausedInstructionArgs,
 }
 
-impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
+impl<'a, 'b> SetIsPausedCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: CooldownDelegationCpiAccounts<'a, 'b>,
-        args: CooldownDelegationInstructionArgs,
+        accounts: SetIsPausedCpiAccounts<'a, 'b>,
+        args: SetIsPausedInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
-            operator: accounts.operator,
-            vault_operator_delegation: accounts.vault_operator_delegation,
             admin: accounts.admin,
             __args: args,
         }
@@ -263,21 +218,13 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.operator.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_operator_delegation.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -291,9 +238,7 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = CooldownDelegationInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = SetIsPausedInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -302,12 +247,10 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(3 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
-        account_infos.push(self.operator.clone());
-        account_infos.push(self.vault_operator_delegation.clone());
         account_infos.push(self.admin.clone());
         remaining_accounts
             .iter()
@@ -321,30 +264,26 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `CooldownDelegation` via CPI.
+/// Instruction builder for `SetIsPaused` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[]` operator
-///   3. `[writable]` vault_operator_delegation
-///   4. `[signer]` admin
+///   2. `[signer]` admin
 #[derive(Clone, Debug)]
-pub struct CooldownDelegationCpiBuilder<'a, 'b> {
-    instruction: Box<CooldownDelegationCpiBuilderInstruction<'a, 'b>>,
+pub struct SetIsPausedCpiBuilder<'a, 'b> {
+    instruction: Box<SetIsPausedCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
+impl<'a, 'b> SetIsPausedCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(CooldownDelegationCpiBuilderInstruction {
+        let instruction = Box::new(SetIsPausedCpiBuilderInstruction {
             __program: program,
             config: None,
             vault: None,
-            operator: None,
-            vault_operator_delegation: None,
             admin: None,
-            amount: None,
+            is_paused: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -363,29 +302,13 @@ impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn operator(
-        &mut self,
-        operator: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.operator = Some(operator);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
-        &mut self,
-        vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.vault_operator_delegation = Some(vault_operator_delegation);
-        self
-    }
-    #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.admin = Some(admin);
         self
     }
     #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.instruction.amount = Some(amount);
+    pub fn is_paused(&mut self, is_paused: bool) -> &mut Self {
+        self.instruction.is_paused = Some(is_paused);
         self
     }
     /// Add an additional account to the instruction.
@@ -429,22 +352,19 @@ impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = CooldownDelegationInstructionArgs {
-            amount: self.instruction.amount.clone().expect("amount is not set"),
+        let args = SetIsPausedInstructionArgs {
+            is_paused: self
+                .instruction
+                .is_paused
+                .clone()
+                .expect("is_paused is not set"),
         };
-        let instruction = CooldownDelegationCpi {
+        let instruction = SetIsPausedCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
 
             vault: self.instruction.vault.expect("vault is not set"),
-
-            operator: self.instruction.operator.expect("operator is not set"),
-
-            vault_operator_delegation: self
-                .instruction
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
             __args: args,
@@ -457,14 +377,12 @@ impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct CooldownDelegationCpiBuilderInstruction<'a, 'b> {
+struct SetIsPausedCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_operator_delegation: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    amount: Option<u64>,
+    is_paused: Option<bool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

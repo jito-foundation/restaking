@@ -22,6 +22,8 @@ mod tests {
         assert_eq!(config.restaking_program, jito_restaking_program::id());
         assert_eq!(config.epoch_length(), DEFAULT_SLOTS_PER_EPOCH);
         assert_eq!(config.num_vaults(), 0);
+
+        assert_ne!(config.epoch_length(), 0);
     }
 
     #[tokio::test]

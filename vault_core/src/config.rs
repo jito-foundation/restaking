@@ -14,7 +14,7 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey,
 };
 
-use crate::MAX_FEE_BPS;
+use crate::MAX_BPS;
 
 impl Discriminator for Config {
     const DISCRIMINATOR: u8 = 1;
@@ -64,8 +64,8 @@ pub struct Config {
 
 impl Config {
     /// Maximum fee cap in basis points
-    pub const DEFAULT_FEES_CAP_BPS: u16 = 2_000; // 2%
-    /// Maximum rate of change in fee baisis pointer per epoch
+    pub const DEFAULT_FEES_CAP_BPS: u16 = 2_000; // 20%
+    /// Maximum rate of change in fee basis pointer per epoch
     pub const DEFAULT_FEE_RATE_OF_CHANGE_BPS: u16 = 2_500; // 25%
     /// Maximum bump in fee change above the rate of change
     pub const DEFAULT_FEE_BUMP_BPS: u16 = 10; // 0.1%
@@ -94,6 +94,11 @@ impl Config {
         }
     }
 
+    pub fn get_epoch_from_slot(&self, slot: u64) -> Result<u64, VaultError> {
+        slot.checked_div(self.epoch_length())
+            .ok_or(VaultError::InvalidEpochLength)
+    }
+
     pub fn epoch_length(&self) -> u64 {
         self.epoch_length.into()
     }
@@ -103,11 +108,11 @@ impl Config {
     }
 
     pub fn deposit_withdrawal_fee_cap_bps(&self) -> u16 {
-        self.deposit_withdrawal_fee_cap_bps.into()
+        u16::from(self.deposit_withdrawal_fee_cap_bps)
     }
 
     pub fn fee_rate_of_change_bps(&self) -> u16 {
-        self.fee_rate_of_change_bps.into()
+        u16::from(self.fee_rate_of_change_bps)
     }
 
     pub fn program_fee_bps(&self) -> u16 {
@@ -115,7 +120,7 @@ impl Config {
     }
 
     pub fn set_program_fee_bps(&mut self, new_fee_bps: u16) -> Result<(), ProgramError> {
-        if new_fee_bps > MAX_FEE_BPS {
+        if new_fee_bps > MAX_BPS {
             msg!("New fee exceeds maximum allowed fee");
             return Err(ProgramError::InvalidInstructionData);
         }
@@ -124,7 +129,37 @@ impl Config {
     }
 
     pub fn fee_bump_bps(&self) -> u16 {
-        self.fee_bump_bps.into()
+        u16::from(self.fee_bump_bps)
+    }
+
+    pub fn set_deposit_withdrawal_fee_cap_bps(
+        &mut self,
+        fee_cap_bps: u16,
+    ) -> Result<(), VaultError> {
+        if fee_cap_bps > MAX_BPS {
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        self.deposit_withdrawal_fee_cap_bps = PodU16::from(fee_cap_bps);
+        Ok(())
+    }
+
+    pub fn set_fee_rate_of_change_bps(
+        &mut self,
+        fee_rate_of_change_bps: u16,
+    ) -> Result<(), VaultError> {
+        if fee_rate_of_change_bps > MAX_BPS {
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        self.fee_rate_of_change_bps = PodU16::from(fee_rate_of_change_bps);
+        Ok(())
+    }
+
+    pub fn set_fee_bump_bps(&mut self, fee_bump_bps: u16) -> Result<(), VaultError> {
+        if fee_bump_bps > MAX_BPS {
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        self.fee_bump_bps = PodU16::from(fee_bump_bps);
+        Ok(())
     }
 
     pub fn increment_num_vaults(&mut self) -> Result<(), VaultError> {
@@ -138,7 +173,7 @@ impl Config {
     pub fn calculate_program_fee(program_fee_bps: u16, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(program_fee_bps as u128)
-            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+            .map(|x| x.div_ceil(MAX_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
@@ -211,5 +246,63 @@ mod tests {
             std::mem::size_of::<u8>() + // bump
             263; // reserved
         assert_eq!(config_size, sum_of_fields);
+    }
+
+    #[test]
+    fn test_bps_are_within_bounds() {
+        assert!(Config::DEFAULT_FEES_CAP_BPS <= MAX_BPS);
+        assert!(Config::DEFAULT_FEE_RATE_OF_CHANGE_BPS <= MAX_BPS);
+        assert!(Config::DEFAULT_FEE_BUMP_BPS <= MAX_BPS);
+    }
+
+    #[test]
+    fn test_set_fee_cap_bps() {
+        let mut config = Config::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            0,
+        );
+        assert_eq!(config.set_deposit_withdrawal_fee_cap_bps(1), Ok(()));
+        assert_eq!(config.set_deposit_withdrawal_fee_cap_bps(MAX_BPS), Ok(()));
+        assert_eq!(
+            config.set_deposit_withdrawal_fee_cap_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
+    }
+
+    #[test]
+    fn test_set_fee_rate_of_change_bps() {
+        let mut config = Config::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            0,
+        );
+        assert_eq!(config.set_fee_rate_of_change_bps(1), Ok(()));
+        assert_eq!(config.set_fee_rate_of_change_bps(MAX_BPS), Ok(()));
+        assert_eq!(
+            config.set_fee_rate_of_change_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
+    }
+
+    #[test]
+    fn test_set_fee_bump_bps() {
+        let mut config = Config::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            0,
+        );
+        assert_eq!(config.set_fee_bump_bps(1), Ok(()));
+        assert_eq!(config.set_fee_bump_bps(MAX_BPS), Ok(()));
+        assert_eq!(
+            config.set_fee_bump_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
     }
 }

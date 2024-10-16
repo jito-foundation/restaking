@@ -20,16 +20,19 @@ import {
   type Decoder,
   type Encoder,
   type IAccountMeta,
+  type IAccountSignerMeta,
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
   type ReadonlyAccount,
+  type ReadonlySignerAccount,
+  type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SLASH_DISCRIMINATOR = 31;
+export const SLASH_DISCRIMINATOR = 32;
 
 export function getSlashDiscriminatorBytes() {
   return getU8Encoder().encode(SLASH_DISCRIMINATOR);
@@ -75,7 +78,8 @@ export type SlashInstruction<
         ? ReadonlyAccount<TAccountOperator>
         : TAccountOperator,
       TAccountSlasher extends string
-        ? ReadonlyAccount<TAccountSlasher>
+        ? ReadonlySignerAccount<TAccountSlasher> &
+            IAccountSignerMeta<TAccountSlasher>
         : TAccountSlasher,
       TAccountNcnOperatorState extends string
         ? ReadonlyAccount<TAccountNcnOperatorState>
@@ -167,7 +171,7 @@ export type SlashInput<
   vault: Address<TAccountVault>;
   ncn: Address<TAccountNcn>;
   operator: Address<TAccountOperator>;
-  slasher: Address<TAccountSlasher>;
+  slasher: TransactionSigner<TAccountSlasher>;
   ncnOperatorState: Address<TAccountNcnOperatorState>;
   ncnVaultTicket: Address<TAccountNcnVaultTicket>;
   operatorVaultTicket: Address<TAccountOperatorVaultTicket>;

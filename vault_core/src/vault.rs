@@ -1,7 +1,7 @@
 //! The vault is responsible for holding tokens and minting VRT tokens.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{
-    types::{PodU16, PodU64},
+    types::{PodBool, PodU16, PodU64},
     AccountDeserialize, Discriminator,
 };
 use jito_jsm_core::loader::load_signer;
@@ -9,7 +9,7 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{config::Config, delegation_state::DelegationState, MAX_FEE_BPS};
+use crate::{config::Config, delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -140,11 +140,15 @@ pub struct Vault {
     /// The bump seed for the PDA
     pub bump: u8,
 
+    is_paused: PodBool,
+
     /// Reserved space
     reserved: [u8; 263],
 }
 
 impl Vault {
+    pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         vrt_mint: Pubkey,
@@ -157,8 +161,21 @@ impl Vault {
         reward_fee_bps: u16,
         bump: u8,
         current_slot: u64,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, VaultError> {
+        if deposit_fee_bps > MAX_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        if withdrawal_fee_bps > MAX_BPS {
+            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+        if reward_fee_bps > MAX_BPS {
+            msg!("Reward fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
+        Ok(Self {
             base,
             vrt_mint,
             supported_mint,
@@ -189,8 +206,9 @@ impl Vault {
             slasher_count: PodU64::from(0),
             bump,
             delegation_state: DelegationState::default(),
+            is_paused: PodBool::from_bool(false),
             reserved: [0; 263],
-        }
+        })
     }
 
     pub fn ncn_count(&self) -> u64 {
@@ -285,15 +303,15 @@ impl Vault {
     }
 
     pub fn deposit_fee_bps(&self) -> u16 {
-        self.deposit_fee_bps.into()
+        u16::from(self.deposit_fee_bps)
     }
 
     pub fn withdrawal_fee_bps(&self) -> u16 {
-        self.withdrawal_fee_bps.into()
+        u16::from(self.withdrawal_fee_bps)
     }
 
     pub fn reward_fee_bps(&self) -> u16 {
-        self.reward_fee_bps.into()
+        u16::from(self.reward_fee_bps)
     }
 
     pub fn operator_count(&self) -> u64 {
@@ -371,6 +389,31 @@ impl Vault {
 
     pub fn set_vrt_supply(&mut self, vrt_supply: u64) {
         self.vrt_supply = PodU64::from(vrt_supply);
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.is_paused.into()
+    }
+
+    pub fn set_is_paused(&mut self, is_paused: bool) {
+        self.is_paused = PodBool::from_bool(is_paused);
+    }
+
+    /// Checks whether the vault is currently paused.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(())` if the vault is not paused.
+    ///
+    /// # Errors
+    /// * [`VaultError::VaultIsPaused`] - If the vault is currently paused.
+    pub fn check_is_paused(&self) -> Result<(), VaultError> {
+        if self.is_paused.into() {
+            msg!("Vault is currently paused.");
+            return Err(VaultError::VaultIsPaused);
+        }
+
+        Ok(())
     }
 
     pub fn check_vrt_mint(&self, vrt_mint: &Pubkey) -> Result<(), ProgramError> {
@@ -516,18 +559,20 @@ impl Vault {
     // ------------------------------------------
 
     #[inline(always)]
-    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> bool {
+    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
         let last_updated_epoch = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)
-            .unwrap();
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
-        last_updated_epoch < current_epoch
+            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        Ok(last_updated_epoch < current_epoch)
     }
 
     #[inline(always)]
     pub fn check_update_state_ok(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
-        if self.is_update_needed(slot, epoch_length) {
+        if self.is_update_needed(slot, epoch_length)? {
             msg!("Vault update is needed");
             return Err(VaultError::VaultUpdateNeeded.into());
         }
@@ -562,13 +607,19 @@ impl Vault {
     /// Fees can be changed at most one per epoch, and a **full** epoch must pass before a fee can be changed again.
     #[inline(always)]
     pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+        let current_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
         let last_fee_change_epoch = self
             .last_fee_change_slot()
             .checked_div(epoch_length)
-            .unwrap();
+            .ok_or(VaultError::DivisionByZero)?;
 
-        if current_epoch <= last_fee_change_epoch.checked_add(1).unwrap() {
+        if current_epoch
+            <= last_fee_change_epoch
+                .checked_add(1)
+                .ok_or(VaultError::ArithmeticOverflow)?
+        {
             msg!("Fee changes are only allowed once per epoch");
             return Err(VaultError::VaultFeeChangeTooSoon);
         }
@@ -650,6 +701,17 @@ impl Vault {
         fee_bump_bps: u16,
         fee_rate_of_change_bps: u16,
     ) -> Result<(), VaultError> {
+        if current_fee_bps > MAX_BPS
+            || new_fee_bps > MAX_BPS
+            || fee_cap_bps > MAX_BPS
+            || fee_bump_bps > MAX_BPS
+            || fee_rate_of_change_bps > MAX_BPS
+        {
+            // This is always false
+            msg!("BPS cannot be above {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
         let fee_delta = new_fee_bps.saturating_sub(current_fee_bps);
         let fee_cap_bps = fee_cap_bps.min(MAX_FEE_BPS);
 
@@ -728,7 +790,7 @@ impl Vault {
     }
 
     /// Calculate the amount of tokens collected as a fee for withdrawing tokens from the vault.
-    fn calculate_withdraw_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+    fn calculate_withdrawal_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
             .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
@@ -784,22 +846,13 @@ impl Vault {
         })
     }
 
-    pub fn burn_with_fee(
-        &mut self,
-        program_fee_bps: u16,
+    pub fn calculate_burn_summary(
+        &self,
         amount_in: u64,
-        min_amount_out: u64,
+        program_fee_bps: u16,
     ) -> Result<BurnSummary, VaultError> {
-        if amount_in == 0 {
-            msg!("Amount in is zero");
-            return Err(VaultError::VaultBurnZero);
-        } else if amount_in > self.vrt_supply() {
-            msg!("Amount exceeds vault VRT supply");
-            return Err(VaultError::VaultInsufficientFunds);
-        }
-
         let program_fee_amount = Config::calculate_program_fee(program_fee_bps, amount_in)?;
-        let mut vault_fee_amount = self.calculate_withdraw_fee(amount_in)?;
+        let mut vault_fee_amount = self.calculate_withdrawal_fee(amount_in)?;
 
         // Prioritize program fee over vault fee if together they exceed the amount in
         if program_fee_amount
@@ -823,45 +876,147 @@ impl Vault {
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        let max_withdrawable = self
-            .tokens_deposited()
-            .checked_sub(self.delegation_state.total_security()?)
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        // The vault shall not be able to withdraw more than the max withdrawable amount
-        if amount_out > max_withdrawable {
-            msg!("Amount out exceeds max withdrawable amount");
-            return Err(VaultError::VaultUnderflow);
-        }
-
-        // Slippage check
-        if amount_out < min_amount_out {
-            msg!(
-                "Slippage error, expected more than {} out, got {}",
-                min_amount_out,
-                amount_out
-            );
-            return Err(VaultError::SlippageError);
-        }
-
-        let vrt_supply = self
-            .vrt_supply()
-            .checked_sub(amount_to_burn)
-            .ok_or(VaultError::VaultUnderflow)?;
-        self.vrt_supply = PodU64::from(vrt_supply);
-
-        let tokens_deposited = self
-            .tokens_deposited()
-            .checked_sub(amount_out)
-            .ok_or(VaultError::VaultUnderflow)?;
-        self.tokens_deposited = PodU64::from(tokens_deposited);
-
         Ok(BurnSummary {
             program_fee_amount,
             vault_fee_amount,
             burn_amount: amount_to_burn,
             out_amount: amount_out,
         })
+    }
+
+    pub fn burn_with_fee(
+        &mut self,
+        program_fee_bps: u16,
+        amount_in: u64,
+        min_amount_out: u64,
+    ) -> Result<BurnSummary, VaultError> {
+        if amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        } else if amount_in > self.vrt_supply() {
+            msg!("Amount exceeds vault VRT supply");
+            return Err(VaultError::VaultInsufficientFunds);
+        }
+        let BurnSummary {
+            program_fee_amount,
+            vault_fee_amount,
+            burn_amount,
+            out_amount,
+        } = self.calculate_burn_summary(amount_in, program_fee_bps)?;
+
+        let max_withdrawable = self
+            .tokens_deposited()
+            .checked_sub(self.delegation_state.total_security()?)
+            .ok_or(VaultError::VaultUnderflow)?;
+
+        // The vault shall not be able to withdraw more than the max withdrawable amount
+        if out_amount > max_withdrawable {
+            msg!("Amount out exceeds max withdrawable amount");
+            return Err(VaultError::VaultUnderflow);
+        }
+
+        // Slippage check
+        if out_amount < min_amount_out {
+            msg!(
+                "Slippage error, expected more than {} out, got {}",
+                min_amount_out,
+                out_amount
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        let vrt_supply = self
+            .vrt_supply()
+            .checked_sub(burn_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+        self.vrt_supply = PodU64::from(vrt_supply);
+
+        let tokens_deposited = self
+            .tokens_deposited()
+            .checked_sub(out_amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+        self.tokens_deposited = PodU64::from(tokens_deposited);
+
+        Ok(BurnSummary {
+            program_fee_amount,
+            vault_fee_amount,
+            burn_amount,
+            out_amount,
+        })
+    }
+
+    /// Checks to see if the minimum amount out is acceptable
+    /// acceptable being defined as slippage being larger or equal to the minimum slippage
+    /// as well as accounting for withdraw fees
+    pub fn check_min_supported_mint_out(
+        &self,
+        vrt_amount_in: u64,
+        min_supported_mint_out: u64,
+        program_fee_bps: u16,
+    ) -> Result<(), VaultError> {
+        if vrt_amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        } else if vrt_amount_in > self.vrt_supply() {
+            msg!("Amount exceeds vault VRT supply");
+            return Err(VaultError::VaultInsufficientFunds);
+        }
+
+        let BurnSummary { out_amount, .. } =
+            self.calculate_burn_summary(vrt_amount_in, program_fee_bps)?;
+
+        let amount_out_delta = out_amount.saturating_sub(min_supported_mint_out);
+        let calculated_slippage = (amount_out_delta as u128)
+            .checked_mul(MAX_BPS as u128)
+            .and_then(|x| x.checked_div(out_amount.into()))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        if calculated_slippage < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS as u128 {
+            msg!(
+                "Calculated slippage {} is less that the minimum slippage {}",
+                calculated_slippage,
+                Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        Ok(())
+    }
+
+    /// Calculates the amount of the supported mint expected to be withdrawn
+    /// when withdrawing a given amount of VRT. This accounts for a slippage and
+    /// withdraw fees ( vault and program )
+    pub fn calculate_min_supported_mint_out(
+        &self,
+        vrt_amount_in: u64,
+        max_slippage_bps: u16,
+        program_fee_bps: u16,
+    ) -> Result<u64, VaultError> {
+        if vrt_amount_in == 0 {
+            msg!("Amount in is zero");
+            return Err(VaultError::VaultBurnZero);
+        }
+
+        if max_slippage_bps < Self::MIN_WITHDRAWAL_SLIPPAGE_BPS {
+            msg!(
+                "Slippage error, minimum slippage is {} bps",
+                Self::MIN_WITHDRAWAL_SLIPPAGE_BPS
+            );
+            return Err(VaultError::SlippageError);
+        }
+
+        let BurnSummary { out_amount, .. } =
+            self.calculate_burn_summary(vrt_amount_in, program_fee_bps)?;
+
+        let slippage = MAX_BPS
+            .checked_sub(max_slippage_bps)
+            .ok_or(VaultError::VaultUnderflow)?;
+        let min_amount_out = (slippage as u64)
+            .checked_mul(out_amount)
+            .and_then(|x| x.checked_div(MAX_BPS as u64))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        Ok(min_amount_out)
     }
 
     /// Calculates the amount of tokens, denominated in the supported_mint asset,
@@ -879,28 +1034,10 @@ impl Vault {
             .and_then(|x| x.checked_add(self.vrt_ready_to_claim_amount()))
             .ok_or(VaultError::VaultOverflow)?;
 
-        let vault_fee_amount = self.calculate_withdraw_fee(vrt_reserve)?;
-        let program_fee_amount = Config::calculate_program_fee(program_fee_bps, vrt_reserve)?;
-
-        let total_fee_amount = program_fee_amount
-            .checked_add(vault_fee_amount)
-            .ok_or(VaultError::VaultOverflow)?;
-        let adjusted_vault_fee = if total_fee_amount > vrt_reserve {
-            vrt_reserve.saturating_sub(program_fee_amount)
-        } else {
-            vault_fee_amount
-        };
-
-        let vrt_reserve_post_fee = vrt_reserve
-            .checked_sub(adjusted_vault_fee)
-            .and_then(|x| x.checked_sub(program_fee_amount))
-            .ok_or(VaultError::VaultUnderflow)?;
-
-        let amount_to_reserve_for_vrts: u64 = (vrt_reserve_post_fee as u128)
-            .checked_mul(self.tokens_deposited() as u128)
-            .and_then(|x| x.checked_div(self.vrt_supply() as u128))
-            .and_then(|result| result.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)?;
+        let BurnSummary {
+            out_amount: amount_to_reserve_for_vrts,
+            ..
+        } = self.calculate_burn_summary(vrt_reserve, program_fee_bps)?;
 
         Ok(amount_to_reserve_for_vrts)
     }
@@ -922,11 +1059,15 @@ impl Vault {
         let last_epoch_update = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)
-            .unwrap();
-        let this_epoch = slot.checked_div(epoch_length).unwrap();
+            .ok_or(VaultError::DivisionByZero)?;
+        let this_epoch = slot
+            .checked_div(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
 
         // Update the simulated delegation state based on the number of epochs passed
-        let epoch_diff = this_epoch.checked_sub(last_epoch_update).unwrap();
+        let epoch_diff = this_epoch
+            .checked_sub(last_epoch_update)
+            .ok_or(VaultError::ArithmeticUnderflow)?;
         match epoch_diff {
             0 => {
                 // no-op
@@ -1081,19 +1222,19 @@ impl Vault {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use jito_bytemuck::types::{PodU16, PodU64};
+    use jito_bytemuck::types::{PodBool, PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
     use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
     use crate::{
         delegation_state::DelegationState,
         vault::{BurnSummary, MintSummary, Vault},
-        MAX_FEE_BPS,
+        MAX_BPS, MAX_FEE_BPS,
     };
 
     fn make_test_vault(
         deposit_fee_bps: u16,
-        withdraw_fee_bps: u16,
+        withdrawal_fee_bps: u16,
         tokens_deposited: u64,
         vrt_supply: u64,
         delegation_state: DelegationState,
@@ -1105,11 +1246,12 @@ mod tests {
             0,
             Pubkey::new_unique(),
             deposit_fee_bps,
-            withdraw_fee_bps,
+            withdrawal_fee_bps,
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
 
         vault.set_tokens_deposited(tokens_deposited);
         vault.set_vrt_supply(vrt_supply);
@@ -1149,6 +1291,7 @@ mod tests {
             std::mem::size_of::<PodU16>() + // deposit_fee_bps
             std::mem::size_of::<PodU16>() + // withdrawal_fee_bps
             std::mem::size_of::<PodU16>() + // reward_fee_bps
+            std::mem::size_of::<PodBool>() + // is_paused
             1 + // bump
             263; // reserved
 
@@ -1169,7 +1312,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = old_admin;
 
         assert_eq!(vault.delegation_admin, old_admin);
@@ -1266,7 +1410,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         assert_eq!(vault.check_mint_burn_admin(None), Ok(()));
     }
 
@@ -1283,7 +1428,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
         let err = vault.check_mint_burn_admin(None).unwrap_err();
         assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
@@ -1302,7 +1448,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
@@ -1336,7 +1483,8 @@ mod tests {
             0,
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
@@ -1392,7 +1540,7 @@ mod tests {
 
     #[test]
     fn test_burn_with_program_fee_priority() {
-        let mut vault = make_test_vault(0, 15000, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 1500, 100, 100, DelegationState::default());
 
         let BurnSummary {
             vault_fee_amount,
@@ -1783,7 +1931,8 @@ mod tests {
             1000, //10%
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.set_tokens_deposited(0);
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
@@ -1804,7 +1953,8 @@ mod tests {
             1000, //10%
             0,
             0,
-        );
+        )
+        .unwrap();
         vault.set_tokens_deposited(1000);
 
         let fee = vault.calculate_rewards_fee(0).unwrap();
@@ -1825,7 +1975,8 @@ mod tests {
             10_000, //100%
             0,
             0,
-        );
+        )
+        .unwrap();
 
         let fee = vault.calculate_rewards_fee(1000).unwrap();
 
@@ -2043,7 +2194,7 @@ mod tests {
 
     #[test]
     fn test_max_decrease() {
-        let current_fee_bps = u16::MAX;
+        let current_fee_bps = MAX_BPS;
         let new_fee_bps = 0;
         let fee_cap_bps = 3000;
         let fee_bump_bps = 10;
@@ -2129,5 +2280,55 @@ mod tests {
     fn test_burn_with_fee_zero_amount() {
         let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(vault.burn_with_fee(0, 0, 0), Err(VaultError::VaultBurnZero));
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out() {
+        let vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(amount_out, 100, 0)
+            .unwrap();
+        assert_eq!(min_amount_out, 99);
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out_with_withdrawal_fee() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(amount_out, 100, 0)
+            .unwrap();
+        assert_eq!(min_amount_out, 98);
+    }
+
+    #[test]
+    fn test_calculate_min_amount_out_slippage_too_low() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        assert!(vault
+            .calculate_min_supported_mint_out(amount_out, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS - 1, 0)
+            .is_err());
+    }
+
+    #[test]
+    fn test_check_min_amount_out_ok() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        let min_amount_out = vault
+            .calculate_min_supported_mint_out(amount_out, 50, 0)
+            .unwrap();
+        assert!(vault
+            .check_min_supported_mint_out(amount_out, min_amount_out, 0)
+            .is_ok());
+    }
+
+    #[test]
+    fn test_check_min_amount_out_too_high() {
+        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let amount_out = 100;
+        assert!(vault
+            .check_min_supported_mint_out(amount_out, 99, 0)
+            .is_err());
     }
 }

@@ -36,10 +36,9 @@ pub fn process_initialize_vault_update_state_tracker(
     load_system_program(system_program)?;
 
     // The VaultUpdateStateTracker shall be at the canonical PDA
-    let ncn_epoch = Clock::get()?
-        .slot
-        .checked_div(config.epoch_length())
-        .unwrap();
+    let slot = Clock::get()?.slot;
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
     let (
         vault_update_state_tracker_pubkey,
         vault_update_state_tracker_bump,
@@ -58,6 +57,7 @@ pub fn process_initialize_vault_update_state_tracker(
         msg!("Vault update state tracker is not needed");
         return Err(VaultError::VaultIsUpdated.into());
     }
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing VaultUpdateDelegationsTicket at address {}",
@@ -71,7 +71,7 @@ pub fn process_initialize_vault_update_state_tracker(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultUpdateStateTracker>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_update_state_tracker_seeds,
     )?;
 

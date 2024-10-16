@@ -101,10 +101,9 @@ pub fn process_slash(
     let vault_ncn_slasher_ticket_data = vault_ncn_slasher_ticket.data.borrow();
     let vault_ncn_slasher_ticket =
         VaultNcnSlasherTicket::try_from_slice_unchecked(&vault_ncn_slasher_ticket_data)?;
-    let ncn_epoch = Clock::get()?
-        .slot
-        .checked_div(config.epoch_length())
-        .unwrap();
+    let slot = Clock::get()?.slot;
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
     VaultNcnSlasherOperatorTicket::load(
         program_id,
         vault_ncn_slasher_operator_ticket,
@@ -130,6 +129,7 @@ pub fn process_slash(
 
     // The vault shall be up-to-date before slashing
     vault.check_update_state_ok(Clock::get()?.slot, epoch_length)?;
+    vault.check_is_paused()?;
 
     // All ticket states shall be active or cooling down
     check_states_active_or_cooling_down(

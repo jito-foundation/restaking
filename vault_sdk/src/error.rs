@@ -61,6 +61,8 @@ pub enum VaultError {
     VaultSecurityUnderflow,
     #[error("SlippageError")]
     SlippageError,
+    #[error("SlippageTooLow")]
+    SlippageTooLow,
     #[error("VaultStakerWithdrawalTicketNotWithdrawable")]
     VaultStakerWithdrawalTicketNotWithdrawable,
     #[error("VaultNcnSlasherTicketFailedCooldown")]
@@ -103,6 +105,23 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
+    #[error("VaultIsPaused")]
+    VaultIsPaused,
+    #[error("InvalidDepositor")]
+    InvalidDepositor,
+    #[error("InvalidDepositTokenAccount")]
+    InvalidDepositTokenAccount,
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
+
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 3000,
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow,
+    #[error("DivisionByZero")]
+    DivisionByZero,
 }
 
 impl<T> DecodeError<T> for VaultError {

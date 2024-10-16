@@ -8,7 +8,7 @@
 
 export * from './addDelegation';
 export * from './burn';
-export * from './burnWithdrawTicket';
+export * from './burnWithdrawalTicket';
 export * from './changeWithdrawalTicketOwner';
 export * from './closeVaultUpdateStateTracker';
 export * from './cooldownDelegation';
@@ -30,6 +30,7 @@ export * from './mintTo';
 export * from './setAdmin';
 export * from './setDepositCapacity';
 export * from './setFees';
+export * from './setIsPaused';
 export * from './setProgramFee';
 export * from './setProgramFeeWallet';
 export * from './setSecondaryAdmin';

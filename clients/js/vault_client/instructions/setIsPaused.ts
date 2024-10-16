@@ -8,6 +8,8 @@
 
 import {
   combineCodec,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getStructDecoder,
   getStructEncoder,
   getU8Decoder,
@@ -29,25 +31,18 @@ import {
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
-import {
-  getVaultAdminRoleDecoder,
-  getVaultAdminRoleEncoder,
-  type VaultAdminRole,
-  type VaultAdminRoleArgs,
-} from '../types';
 
-export const SET_SECONDARY_ADMIN_DISCRIMINATOR = 23;
+export const SET_IS_PAUSED_DISCRIMINATOR = 20;
 
-export function getSetSecondaryAdminDiscriminatorBytes() {
-  return getU8Encoder().encode(SET_SECONDARY_ADMIN_DISCRIMINATOR);
+export function getSetIsPausedDiscriminatorBytes() {
+  return getU8Encoder().encode(SET_IS_PAUSED_DISCRIMINATOR);
 }
 
-export type SetSecondaryAdminInstruction<
+export type SetIsPausedInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
-  TAccountNewAdmin extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -63,80 +58,66 @@ export type SetSecondaryAdminInstruction<
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
         : TAccountAdmin,
-      TAccountNewAdmin extends string
-        ? ReadonlyAccount<TAccountNewAdmin>
-        : TAccountNewAdmin,
       ...TRemainingAccounts,
     ]
   >;
 
-export type SetSecondaryAdminInstructionData = {
+export type SetIsPausedInstructionData = {
   discriminator: number;
-  vaultAdminRole: VaultAdminRole;
+  isPaused: boolean;
 };
 
-export type SetSecondaryAdminInstructionDataArgs = {
-  vaultAdminRole: VaultAdminRoleArgs;
-};
+export type SetIsPausedInstructionDataArgs = { isPaused: boolean };
 
-export function getSetSecondaryAdminInstructionDataEncoder(): Encoder<SetSecondaryAdminInstructionDataArgs> {
+export function getSetIsPausedInstructionDataEncoder(): Encoder<SetIsPausedInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['vaultAdminRole', getVaultAdminRoleEncoder()],
+      ['isPaused', getBooleanEncoder()],
     ]),
-    (value) => ({ ...value, discriminator: SET_SECONDARY_ADMIN_DISCRIMINATOR })
+    (value) => ({ ...value, discriminator: SET_IS_PAUSED_DISCRIMINATOR })
   );
 }
 
-export function getSetSecondaryAdminInstructionDataDecoder(): Decoder<SetSecondaryAdminInstructionData> {
+export function getSetIsPausedInstructionDataDecoder(): Decoder<SetIsPausedInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['vaultAdminRole', getVaultAdminRoleDecoder()],
+    ['isPaused', getBooleanDecoder()],
   ]);
 }
 
-export function getSetSecondaryAdminInstructionDataCodec(): Codec<
-  SetSecondaryAdminInstructionDataArgs,
-  SetSecondaryAdminInstructionData
+export function getSetIsPausedInstructionDataCodec(): Codec<
+  SetIsPausedInstructionDataArgs,
+  SetIsPausedInstructionData
 > {
   return combineCodec(
-    getSetSecondaryAdminInstructionDataEncoder(),
-    getSetSecondaryAdminInstructionDataDecoder()
+    getSetIsPausedInstructionDataEncoder(),
+    getSetIsPausedInstructionDataDecoder()
   );
 }
 
-export type SetSecondaryAdminInput<
+export type SetIsPausedInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountAdmin extends string = string,
-  TAccountNewAdmin extends string = string,
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
   admin: TransactionSigner<TAccountAdmin>;
-  newAdmin: Address<TAccountNewAdmin>;
-  vaultAdminRole: SetSecondaryAdminInstructionDataArgs['vaultAdminRole'];
+  isPaused: SetIsPausedInstructionDataArgs['isPaused'];
 };
 
-export function getSetSecondaryAdminInstruction<
+export function getSetIsPausedInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountAdmin extends string,
-  TAccountNewAdmin extends string,
 >(
-  input: SetSecondaryAdminInput<
-    TAccountConfig,
-    TAccountVault,
-    TAccountAdmin,
-    TAccountNewAdmin
-  >
-): SetSecondaryAdminInstruction<
+  input: SetIsPausedInput<TAccountConfig, TAccountVault, TAccountAdmin>
+): SetIsPausedInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
-  TAccountAdmin,
-  TAccountNewAdmin
+  TAccountAdmin
 > {
   // Program address.
   const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
@@ -146,7 +127,6 @@ export function getSetSecondaryAdminInstruction<
     config: { value: input.config ?? null, isWritable: false },
     vault: { value: input.vault ?? null, isWritable: true },
     admin: { value: input.admin ?? null, isWritable: false },
-    newAdmin: { value: input.newAdmin ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -162,24 +142,22 @@ export function getSetSecondaryAdminInstruction<
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.vault),
       getAccountMeta(accounts.admin),
-      getAccountMeta(accounts.newAdmin),
     ],
     programAddress,
-    data: getSetSecondaryAdminInstructionDataEncoder().encode(
-      args as SetSecondaryAdminInstructionDataArgs
+    data: getSetIsPausedInstructionDataEncoder().encode(
+      args as SetIsPausedInstructionDataArgs
     ),
-  } as SetSecondaryAdminInstruction<
+  } as SetIsPausedInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
-    TAccountAdmin,
-    TAccountNewAdmin
+    TAccountAdmin
   >;
 
   return instruction;
 }
 
-export type ParsedSetSecondaryAdminInstruction<
+export type ParsedSetIsPausedInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -188,20 +166,19 @@ export type ParsedSetSecondaryAdminInstruction<
     config: TAccountMetas[0];
     vault: TAccountMetas[1];
     admin: TAccountMetas[2];
-    newAdmin: TAccountMetas[3];
   };
-  data: SetSecondaryAdminInstructionData;
+  data: SetIsPausedInstructionData;
 };
 
-export function parseSetSecondaryAdminInstruction<
+export function parseSetIsPausedInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedSetSecondaryAdminInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+): ParsedSetIsPausedInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 3) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -217,8 +194,7 @@ export function parseSetSecondaryAdminInstruction<
       config: getNextAccount(),
       vault: getNextAccount(),
       admin: getNextAccount(),
-      newAdmin: getNextAccount(),
     },
-    data: getSetSecondaryAdminInstructionDataDecoder().decode(instruction.data),
+    data: getSetIsPausedInstructionDataDecoder().decode(instruction.data),
   };
 }

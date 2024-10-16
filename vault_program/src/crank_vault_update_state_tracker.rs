@@ -28,6 +28,8 @@ pub fn process_crank_vault_update_state_tracker(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, false)?;
+    let vault_data = vault_info.data.borrow();
+    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     Operator::load(&config.restaking_program, operator, false)?;
     VaultOperatorDelegation::load(
         program_id,
@@ -39,7 +41,8 @@ pub fn process_crank_vault_update_state_tracker(
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
-    let ncn_epoch = slot.checked_div(config.epoch_length()).unwrap();
+    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,
@@ -51,6 +54,8 @@ pub fn process_crank_vault_update_state_tracker(
     let vault_update_state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked_mut(
         &mut vault_update_state_tracker_data,
     )?;
+
+    vault.check_is_paused()?;
 
     vault_operator_delegation.check_is_already_updated(slot, config.epoch_length())?;
     vault_update_state_tracker.check_and_update_index(vault_operator_delegation.index())?;
@@ -85,7 +90,7 @@ pub fn process_crank_vault_update_state_tracker(
         }
     }
 
-    vault_operator_delegation.update(slot, config.epoch_length());
+    vault_operator_delegation.update(slot, config.epoch_length())?;
     vault_update_state_tracker
         .delegation_state
         .accumulate(&vault_operator_delegation.delegation_state)?;

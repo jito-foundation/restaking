@@ -103,15 +103,20 @@ export type EnqueueWithdrawalInstruction<
 export type EnqueueWithdrawalInstructionData = {
   discriminator: number;
   amount: bigint;
+  minAmountOut: bigint;
 };
 
-export type EnqueueWithdrawalInstructionDataArgs = { amount: number | bigint };
+export type EnqueueWithdrawalInstructionDataArgs = {
+  amount: number | bigint;
+  minAmountOut: number | bigint;
+};
 
 export function getEnqueueWithdrawalInstructionDataEncoder(): Encoder<EnqueueWithdrawalInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
       ['amount', getU64Encoder()],
+      ['minAmountOut', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: ENQUEUE_WITHDRAWAL_DISCRIMINATOR })
   );
@@ -121,6 +126,7 @@ export function getEnqueueWithdrawalInstructionDataDecoder(): Decoder<EnqueueWit
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
     ['amount', getU64Decoder()],
+    ['minAmountOut', getU64Decoder()],
   ]);
 }
 
@@ -158,6 +164,7 @@ export type EnqueueWithdrawalInput<
   /** Signer for burning */
   burnSigner?: TransactionSigner<TAccountBurnSigner>;
   amount: EnqueueWithdrawalInstructionDataArgs['amount'];
+  minAmountOut: EnqueueWithdrawalInstructionDataArgs['minAmountOut'];
 };
 
 export function getEnqueueWithdrawalInstruction<

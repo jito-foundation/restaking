@@ -7,6 +7,7 @@ use jito_jsm_core::{
 };
 use jito_restaking_core::{ncn::Ncn, ncn_vault_ticket::NcnVaultTicket};
 use jito_vault_core::{config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -62,6 +63,7 @@ pub fn process_initialize_vault_ncn_ticket(
 
     vault.check_ncn_admin(vault_ncn_admin.key)?;
     vault.check_update_state_ok(slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // The NcnVaultTicket shall be active
     msg!(
@@ -76,7 +78,7 @@ pub fn process_initialize_vault_ncn_ticket(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultNcnTicket>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_ncn_ticket_seeds,
     )?;
     let mut vault_ncn_ticket_data = vault_ncn_ticket.try_borrow_mut_data()?;
