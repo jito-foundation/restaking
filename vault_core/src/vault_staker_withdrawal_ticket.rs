@@ -28,6 +28,11 @@ pub struct VaultStakerWithdrawalTicket {
     /// This is used to ensure the amount redeemed is the same as the amount allocated.
     vrt_amount: PodU64,
 
+    /// The minimum supported mint to be withdrawn when this ticket is burned
+    /// This is required to factor in a 0.5% slippage of the exchange rate at time of ticket creation
+    /// as well as account for the vault and program withdrawal fees
+    min_amount_out: PodU64,
+
     /// The slot the withdrawal was enqueued
     slot_unstaked: PodU64,
 
@@ -43,6 +48,7 @@ impl VaultStakerWithdrawalTicket {
         staker: Pubkey,
         base: Pubkey,
         vrt_amount: u64,
+        min_amount_out: u64,
         slot_unstaked: u64,
         bump: u8,
     ) -> Self {
@@ -51,6 +57,7 @@ impl VaultStakerWithdrawalTicket {
             staker,
             base,
             vrt_amount: PodU64::from(vrt_amount),
+            min_amount_out: PodU64::from(min_amount_out),
             slot_unstaked: PodU64::from(slot_unstaked),
             bump,
             reserved: [0; 263],
@@ -59,6 +66,10 @@ impl VaultStakerWithdrawalTicket {
 
     pub fn vrt_amount(&self) -> u64 {
         self.vrt_amount.into()
+    }
+
+    pub fn min_amount_out(&self) -> u64 {
+        self.min_amount_out.into()
     }
 
     pub fn slot_unstaked(&self) -> u64 {
@@ -187,6 +198,7 @@ mod tests {
             size_of::<Pubkey>() + // staker
             size_of::<Pubkey>() + // base
             size_of::<PodU64>() + // vrt_amount
+            size_of::<PodU64>() + // min_amount_out
             size_of::<PodU64>() + // slot_unstaked
             size_of::<u8>() + // bump
             263; // reserved

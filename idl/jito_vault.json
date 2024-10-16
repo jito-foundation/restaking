@@ -26,7 +26,12 @@
           "isSigner": false
         }
       ],
-      "args": [],
+      "args": [
+        {
+          "name": "programFeeBps",
+          "type": "u16"
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 0
@@ -585,6 +590,11 @@
           "isSigner": false
         },
         {
+          "name": "programFeeTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -681,6 +691,10 @@
         {
           "name": "amount",
           "type": "u64"
+        },
+        {
+          "name": "minAmountOut",
+          "type": "u64"
         }
       ],
       "discriminant": {
@@ -772,6 +786,11 @@
           "isSigner": false
         },
         {
+          "name": "programFeeTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -791,12 +810,7 @@
           ]
         }
       ],
-      "args": [
-        {
-          "name": "minAmountOut",
-          "type": "u64"
-        }
-      ],
+      "args": [],
       "discriminant": {
         "type": "u8",
         "value": 15
@@ -877,6 +891,86 @@
       }
     },
     {
+      "name": "SetProgramFee",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newFeeBps",
+          "type": "u16"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 18
+      }
+    },
+    {
+      "name": "SetProgramFeeWallet",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programFeeAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "newFeeWallet",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 19
+      }
+    },
+    {
+      "name": "SetIsPaused",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 20
+      }
+    },
+    {
       "name": "DelegateTokenAccount",
       "accounts": [
         {
@@ -918,7 +1012,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 18
+        "value": 21
       }
     },
     {
@@ -948,7 +1042,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 19
+        "value": 22
       }
     },
     {
@@ -985,7 +1079,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 20
+        "value": 23
       }
     },
     {
@@ -1025,7 +1119,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 21
+        "value": 24
       }
     },
     {
@@ -1065,7 +1159,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 22
+        "value": 25
       }
     },
     {
@@ -1105,7 +1199,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 23
+        "value": 26
       }
     },
     {
@@ -1147,7 +1241,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 24
+        "value": 27
       }
     },
     {
@@ -1182,7 +1276,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 25
+        "value": 28
       }
     },
     {
@@ -1217,7 +1311,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 26
+        "value": 29
       }
     },
     {
@@ -1275,7 +1369,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 27
+        "value": 30
       }
     },
     {
@@ -1323,7 +1417,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 28
+        "value": 31
       }
     },
     {
@@ -1352,7 +1446,7 @@
         {
           "name": "slasher",
           "isMut": false,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "ncnOperatorState",
@@ -1418,7 +1512,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 29
+        "value": 32
       }
     }
   ],
@@ -1467,6 +1561,20 @@
             }
           },
           {
+            "name": "programFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "programFeeWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "feeAdmin",
+            "type": "publicKey"
+          },
+          {
             "name": "bump",
             "type": "u8"
           },
@@ -1475,7 +1583,7 @@
             "type": {
               "array": [
                 "u8",
-                263
+                229
               ]
             }
           }
@@ -1642,6 +1750,12 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "isPaused",
+            "type": {
+              "defined": "PodBool"
+            }
           },
           {
             "name": "reserved",
@@ -1862,6 +1976,12 @@
           },
           {
             "name": "vrtAmount",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
+            "name": "minAmountOut",
             "type": {
               "defined": "PodU64"
             }
@@ -2221,196 +2341,216 @@
     },
     {
       "code": 1013,
+      "name": "VaultConfigAdminInvalid",
+      "msg": "VaultConfigAdminInvalid"
+    },
+    {
+      "code": 1014,
+      "name": "VaultConfigFeeAdminInvalid",
+      "msg": "VaultConfigFeeAdminInvalid"
+    },
+    {
+      "code": 1015,
       "name": "VaultFeeCapExceeded",
       "msg": "VaultFeeCapExceeded"
     },
     {
-      "code": 1014,
+      "code": 1016,
       "name": "VaultFeeChangeTooSoon",
       "msg": "VaultFeeChangeTooSoon"
     },
     {
-      "code": 1015,
+      "code": 1017,
       "name": "VaultFeeBumpTooLarge",
       "msg": "VaultFeeBumpTooLarge"
     },
     {
-      "code": 1016,
+      "code": 1018,
       "name": "VaultUnderflow",
       "msg": "VaultUnderflow"
     },
     {
-      "code": 1017,
+      "code": 1019,
       "name": "VaultUpdateNeeded",
       "msg": "VaultUpdateNeeded"
     },
     {
-      "code": 1018,
+      "code": 1020,
       "name": "VaultIsUpdated",
       "msg": "VaultIsUpdated"
     },
     {
-      "code": 1019,
+      "code": 1021,
       "name": "VaultOperatorDelegationUpdateNeeded",
       "msg": "VaultOperatorDelegationUpdateNeeded"
     },
     {
-      "code": 1020,
+      "code": 1022,
       "name": "VaultOperatorDelegationIsUpdated",
       "msg": "VaultOperatorDelegationIsUpdated"
     },
     {
-      "code": 1021,
+      "code": 1023,
       "name": "VaultUpdateIncorrectIndex",
       "msg": "VaultUpdateIncorrectIndex"
     },
     {
-      "code": 1022,
+      "code": 1024,
       "name": "VaultUpdateStateNotFinishedUpdating",
       "msg": "VaultUpdateStateNotFinishedUpdating"
     },
     {
-      "code": 1023,
+      "code": 1025,
       "name": "VaultSecurityOverflow",
       "msg": "VaultSecurityOverflow"
     },
     {
-      "code": 1024,
+      "code": 1026,
       "name": "VaultSlashIncomplete",
       "msg": "VaultSlashIncomplete"
     },
     {
-      "code": 1025,
+      "code": 1027,
       "name": "VaultSecurityUnderflow",
       "msg": "VaultSecurityUnderflow"
     },
     {
-      "code": 1026,
+      "code": 1028,
       "name": "SlippageError",
       "msg": "SlippageError"
     },
     {
-      "code": 1027,
+      "code": 1029,
+      "name": "SlippageTooLow",
+      "msg": "SlippageTooLow"
+    },
+    {
+      "code": 1030,
       "name": "VaultStakerWithdrawalTicketNotWithdrawable",
       "msg": "VaultStakerWithdrawalTicketNotWithdrawable"
     },
     {
-      "code": 1028,
+      "code": 1031,
       "name": "VaultNcnSlasherTicketFailedCooldown",
       "msg": "VaultNcnSlasherTicketFailedCooldown"
     },
     {
-      "code": 1029,
+      "code": 1032,
       "name": "VaultNcnSlasherTicketFailedWarmup",
       "msg": "VaultNcnSlasherTicketFailedWarmup"
     },
     {
-      "code": 1030,
+      "code": 1033,
       "name": "VaultNcnTicketFailedCooldown",
       "msg": "VaultNcnTicketFailedCooldown"
     },
     {
-      "code": 1031,
+      "code": 1034,
       "name": "VaultNcnTicketFailedWarmup",
       "msg": "VaultNcnTicketFailedWarmup"
     },
     {
-      "code": 1032,
+      "code": 1035,
       "name": "VaultNcnTicketUnslashable",
       "msg": "VaultNcnTicketUnslashable"
     },
     {
-      "code": 1033,
+      "code": 1036,
       "name": "OperatorVaultTicketUnslashable",
       "msg": "OperatorVaultTicketUnslashable"
     },
     {
-      "code": 1034,
+      "code": 1037,
       "name": "NcnOperatorStateUnslashable",
       "msg": "NcnOperatorStateUnslashable"
     },
     {
-      "code": 1035,
+      "code": 1038,
       "name": "VaultNcnSlasherTicketUnslashable",
       "msg": "VaultNcnSlasherTicketUnslashable"
     },
     {
-      "code": 1036,
+      "code": 1039,
       "name": "NcnVaultTicketUnslashable",
       "msg": "NcnVaultTicketUnslashable"
     },
     {
-      "code": 1037,
+      "code": 1040,
       "name": "NcnVaultSlasherTicketUnslashable",
       "msg": "NcnVaultSlasherTicketUnslashable"
     },
     {
-      "code": 1038,
+      "code": 1041,
       "name": "VaultMaxSlashedPerOperatorExceeded",
       "msg": "VaultMaxSlashedPerOperatorExceeded"
     },
     {
-      "code": 1039,
+      "code": 1042,
       "name": "VaultStakerWithdrawalTicketInvalidStaker",
       "msg": "VaultStakerWithdrawalTicketInvalidStaker"
     },
     {
-      "code": 1040,
+      "code": 1043,
       "name": "SlasherOverflow",
       "msg": "SlasherOverflow"
     },
     {
-      "code": 1041,
+      "code": 1044,
       "name": "NcnOverflow",
       "msg": "NcnOverflow"
     },
     {
-      "code": 1042,
+      "code": 1045,
       "name": "OperatorOverflow",
       "msg": "OperatorOverflow"
     },
     {
-      "code": 1043,
+      "code": 1046,
       "name": "VaultDelegationZero",
       "msg": "VaultDelegationZero"
     },
     {
-      "code": 1044,
+      "code": 1047,
       "name": "VaultCooldownZero",
       "msg": "VaultCooldownZero"
     },
     {
-      "code": 1045,
+      "code": 1048,
       "name": "VaultBurnZero",
       "msg": "VaultBurnZero"
     },
     {
-      "code": 1046,
+      "code": 1049,
       "name": "VaultEnqueueWithdrawalAmountZero",
       "msg": "VaultEnqueueWithdrawalAmountZero"
     },
     {
-      "code": 1047,
+      "code": 1050,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
     },
     {
-      "code": 1048,
+      "code": 1051,
+      "name": "VaultIsPaused",
+      "msg": "VaultIsPaused"
+    },
+    {
+      "code": 1052,
       "name": "InvalidDepositor",
       "msg": "InvalidDepositor"
     },
     {
-      "code": 1049,
+      "code": 1053,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
     },
     {
-      "code": 1050,
+      "code": 1054,
       "name": "NoSupportedMintBalanceChange",
       "msg": "NoSupportedMintBalanceChange"
     },
     {
-      "code": 1051,
+      "code": 1055,
       "name": "InvalidEpochLength",
       "msg": "InvalidEpochLength"
     },

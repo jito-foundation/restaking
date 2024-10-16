@@ -27,7 +27,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const CRANK_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 25;
+export const CRANK_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 28;
 
 export function getCrankVaultUpdateStateTrackerDiscriminatorBytes() {
   return getU8Encoder().encode(CRANK_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR);

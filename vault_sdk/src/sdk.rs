@@ -15,17 +15,22 @@ pub fn initialize_config(
     config: &Pubkey,
     admin: &Pubkey,
     restaking_program: &Pubkey,
+    program_fee_wallet: &Pubkey,
+    program_fee_bps: u16,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*restaking_program, false),
+        AccountMeta::new_readonly(*program_fee_wallet, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeConfig.try_to_vec().unwrap(),
+        data: VaultInstruction::InitializeConfig { program_fee_bps }
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -203,6 +208,7 @@ pub fn burn(
     staker_token_account: &Pubkey,
     staker_vrt_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
+    program_fee_vrt_token_account: &Pubkey,
     burn_signer: Option<&Pubkey>,
     amount_in: u64,
     min_amount_out: u64,
@@ -216,6 +222,7 @@ pub fn burn(
         AccountMeta::new(*staker_token_account, false),
         AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new(*program_fee_vrt_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
@@ -279,6 +286,25 @@ pub fn set_fees(
         }
         .try_to_vec()
         .unwrap(),
+    }
+}
+
+pub fn set_program_fee(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    admin: &Pubkey,
+    new_fee_bps: u16,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetProgramFee { new_fee_bps }
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
@@ -575,7 +601,7 @@ pub fn slash(
         AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*ncn, false),
         AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*slasher, false),
+        AccountMeta::new_readonly(*slasher, true),
         AccountMeta::new_readonly(*ncn_operator_state, false),
         AccountMeta::new_readonly(*ncn_vault_ticket, false),
         AccountMeta::new_readonly(*operator_vault_ticket, false),
@@ -606,6 +632,7 @@ pub fn enqueue_withdrawal(
     staker_vrt_token_account: &Pubkey,
     base: &Pubkey,
     amount: u64,
+    min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -621,9 +648,12 @@ pub fn enqueue_withdrawal(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::EnqueueWithdrawal { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::EnqueueWithdrawal {
+            amount,
+            min_amount_out,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 
@@ -639,7 +669,7 @@ pub fn burn_withdrawal_ticket(
     vault_staker_withdrawal_ticket: &Pubkey,
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
-    min_amount_out: u64,
+    program_fee_vrt_token_account: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -651,15 +681,14 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
+        AccountMeta::new(*program_fee_vrt_token_account, false),
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawalTicket { min_amount_out }
-            .try_to_vec()
-            .unwrap(),
+        data: VaultInstruction::BurnWithdrawalTicket.try_to_vec().unwrap(),
     }
 }
 
@@ -779,6 +808,45 @@ pub fn warmup_vault_ncn_slasher_ticket(
         program_id: *program_id,
         accounts,
         data: VaultInstruction::WarmupVaultNcnSlasherTicket
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn set_program_fee_wallet(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    program_fee_admin: &Pubkey,
+    new_fee_wallet: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*program_fee_admin, true),
+        AccountMeta::new_readonly(*new_fee_wallet, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetProgramFeeWallet.try_to_vec().unwrap(),
+    }
+}
+
+pub fn set_is_paused(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    admin: &Pubkey,
+    is_paused: bool,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new_readonly(*admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetIsPaused { is_paused }
             .try_to_vec()
             .unwrap(),
     }

@@ -42,6 +42,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
 
     vault.check_slasher_admin(vault_slasher_admin.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // The VaultNcnSlasherTicket shall be ready to be activated
     if !vault_ncn_slasher_ticket

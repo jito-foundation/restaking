@@ -131,7 +131,7 @@ impl TestBuilder {
                 token_program_id,
                 &account.pubkey(),
                 pool_mint,
-                &owner,
+                owner,
             )
             .map_err(|_e| BanksClientError::ClientError("failed to initialize account"))?,
         );
@@ -182,7 +182,6 @@ impl TestBuilder {
             .banks_client
             .process_transaction(transaction)
             .await
-            .map_err(|e| e.into())
     }
 
     pub async fn get_token_account(
@@ -253,7 +252,7 @@ impl TestBuilder {
             vec![spl_token_2022::instruction::mint_to(
                 token_program,
                 mint,
-                &to,
+                to,
                 &self.context.payer.pubkey(),
                 &[],
                 amount,
