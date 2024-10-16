@@ -198,49 +198,49 @@ fn check_states_active_or_cooling_down(
 ) -> ProgramResult {
     if !vault_ncn_slasher_ticket
         .state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("Vault NCN slasher ticket is not active or in cooldown");
         return Err(VaultError::VaultNcnSlasherTicketUnslashable.into());
     }
     if !ncn_vault_slasher_ticket
         .state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("NCN vault slasher ticket is not active or in cooldown");
         return Err(VaultError::NcnVaultSlasherTicketUnslashable.into());
     }
     if !ncn_operator_state
         .ncn_opt_in_state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("NCN opt-in to operator is not active or in cooldown");
         return Err(VaultError::NcnOperatorStateUnslashable.into());
     }
     if !ncn_operator_state
         .operator_opt_in_state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("Operator opt-in to NCN is not active or in cooldown");
         return Err(VaultError::NcnOperatorStateUnslashable.into());
     }
     if !operator_vault_ticket
         .state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("Operator vault ticket is not active or in cooldown");
         return Err(VaultError::OperatorVaultTicketUnslashable.into());
     }
     if !vault_ncn_ticket
         .state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("Vault NCN ticket is not active or in cooldown");
         return Err(VaultError::VaultNcnTicketUnslashable.into());
     }
     if !ncn_vault_ticket
         .state
-        .is_active_or_cooldown(slot, epoch_length)
+        .is_active_or_cooldown(slot, epoch_length)?
     {
         msg!("NCN vault ticket is not active or in cooldown");
         return Err(VaultError::NcnVaultTicketUnslashable.into());

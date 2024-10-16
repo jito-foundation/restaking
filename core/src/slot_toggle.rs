@@ -66,19 +66,21 @@ impl SlotToggle {
     ///
     /// # Returns
     /// * `bool` - Whether the feature was successfully activated
-    pub fn activate(&mut self, slot: u64, epoch_length: u64) -> bool {
-        match self.state(slot, epoch_length) {
-            Ok(SlotToggleState::Inactive) => {
+    pub fn activate(&mut self, slot: u64, epoch_length: u64) -> Result<bool, JsmCoreError> {
+        match self.state(slot, epoch_length)? {
+            SlotToggleState::Inactive => {
                 if self.slot_added() == slot {
                     // this should only be possible if the feature is being activated for the first time
                     // and the slot is the same as the slot it was created at
-                    false
+                    Ok(false)
                 } else {
                     self.slot_added = PodU64::from(slot);
-                    true
+                    Ok(true)
                 }
             }
-            _ => false,
+            SlotToggleState::WarmUp | SlotToggleState::Active | SlotToggleState::Cooldown => {
+                Ok(false)
+            }
         }
     }
 
@@ -92,27 +94,36 @@ impl SlotToggle {
     ///
     /// # Returns
     /// * `bool` - Whether the feature was successfully deactivated
-    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> bool {
-        match self.state(slot, epoch_length) {
-            Ok(SlotToggleState::Active) => {
+    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> Result<bool, JsmCoreError> {
+        match self.state(slot, epoch_length)? {
+            SlotToggleState::Active => {
                 self.slot_removed = PodU64::from(slot);
-                true
+                Ok(true)
             }
-            _ => false,
+            SlotToggleState::Inactive | SlotToggleState::WarmUp | SlotToggleState::Cooldown => {
+                Ok(false)
+            }
         }
     }
 
     /// Check if the feature is active or in cooldown state at the given slot.
-    pub fn is_active_or_cooldown(&self, slot: u64, epoch_length: u64) -> bool {
-        matches!(
-            self.state(slot, epoch_length),
-            Ok(SlotToggleState::Active) | Ok(SlotToggleState::Cooldown)
-        )
+    pub fn is_active_or_cooldown(
+        &self,
+        slot: u64,
+        epoch_length: u64,
+    ) -> Result<bool, JsmCoreError> {
+        Ok(matches!(
+            self.state(slot, epoch_length)?,
+            SlotToggleState::Active | SlotToggleState::Cooldown
+        ))
     }
 
     /// Check if the feature is active at the given slot.
-    pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
-        matches!(self.state(slot, epoch_length), Ok(SlotToggleState::Active))
+    pub fn is_active(&self, slot: u64, epoch_length: u64) -> Result<bool, JsmCoreError> {
+        Ok(matches!(
+            self.state(slot, epoch_length)?,
+            SlotToggleState::Active
+        ))
     }
 
     /// Get the state of the feature at the given slot.
@@ -215,8 +226,8 @@ mod tests {
         let mut toggle = SlotToggle::new(creation_slot);
 
         // can't transition to activate the same slot it was created at
-        assert!(!toggle.activate(creation_slot, epoch_length));
-        assert!(!toggle.deactivate(creation_slot, epoch_length));
+        assert!(!toggle.activate(creation_slot, epoch_length).unwrap());
+        assert!(!toggle.deactivate(creation_slot, epoch_length).unwrap());
     }
 
     #[test]
@@ -235,7 +246,7 @@ mod tests {
 
         // Transition to warming up
         current_slot += 1;
-        assert!(toggle.activate(current_slot, epoch_length));
+        assert!(toggle.activate(current_slot, epoch_length).unwrap());
         assert_eq!(
             toggle.state(current_slot, epoch_length),
             Ok(SlotToggleState::WarmUp)
@@ -256,7 +267,7 @@ mod tests {
         );
 
         // Assert Deactivate
-        assert!(toggle.deactivate(current_slot, epoch_length));
+        assert!(toggle.deactivate(current_slot, epoch_length).unwrap());
         assert_eq!(
             toggle.state(current_slot, epoch_length),
             Ok(SlotToggleState::Cooldown)
