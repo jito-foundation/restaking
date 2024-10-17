@@ -153,7 +153,7 @@ mod tests {
             VaultNcnTicket::new(Pubkey::default(), Pubkey::default(), slot, 0, slot);
         assert_eq!(
             vault_ncn_ticket.state.state(slot + 1, 100),
-            SlotToggleState::Inactive
+            Ok(SlotToggleState::Inactive)
         );
     }
 }

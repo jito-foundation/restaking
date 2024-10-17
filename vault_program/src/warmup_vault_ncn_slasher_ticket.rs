@@ -47,7 +47,7 @@ pub fn process_warmup_vault_ncn_slasher_ticket(
     // The VaultNcnSlasherTicket shall be ready to be activated
     if !vault_ncn_slasher_ticket
         .state
-        .activate(Clock::get()?.slot, config.epoch_length())
+        .activate(Clock::get()?.slot, config.epoch_length())?
     {
         msg!("Slasher is not ready to be activated");
         return Err(VaultError::VaultNcnSlasherTicketFailedWarmup.into());

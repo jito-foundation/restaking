@@ -53,7 +53,7 @@ mod tests {
             .unwrap();
         let slot = fixture.get_current_slot().await.unwrap();
         assert_eq!(
-            ticket.state.state(slot, config.epoch_length()),
+            ticket.state.state(slot, config.epoch_length()).unwrap(),
             SlotToggleState::Inactive
         );
     }
