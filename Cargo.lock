@@ -2505,6 +2505,60 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-reward-tests"
+version = "0.0.2"
+dependencies = [
+ "anchor-lang",
+ "anyhow",
+ "assert_matches",
+ "borsh 0.10.3",
+ "bytemuck",
+ "cfg-if",
+ "chrono",
+ "clap 4.5.16",
+ "clap-markdown",
+ "const_str_to_pubkey",
+ "env_logger 0.10.2",
+ "envfile",
+ "jito-account-traits-derive",
+ "jito-bytemuck",
+ "jito-jsm-core",
+ "jito-restaking-client",
+ "jito-restaking-core",
+ "jito-restaking-program",
+ "jito-restaking-sdk",
+ "jito-vault-client",
+ "jito-vault-core",
+ "jito-vault-program",
+ "jito-vault-sdk",
+ "log",
+ "matches",
+ "num-derive 0.4.2",
+ "num-traits",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_with 3.9.0",
+ "shank",
+ "shank_idl",
+ "solana-account-decoder",
+ "solana-cli-config",
+ "solana-program",
+ "solana-program-test",
+ "solana-rpc-client",
+ "solana-rpc-client-api",
+ "solana-sdk",
+ "solana-security-txt",
+ "spl-associated-token-account",
+ "spl-token",
+ "spl-token-2022 3.0.4",
+ "syn 2.0.72",
+ "test-case",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "jito-shank-cli"
 version = "0.0.2"
 dependencies = [
@@ -2763,6 +2817,12 @@ dependencies = [
  "cc",
  "libc",
 ]
+
+[[package]]
+name = "matches"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "memchr"

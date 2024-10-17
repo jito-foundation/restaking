@@ -7,6 +7,7 @@ members = [
     "clients/rust/vault_client",
     "core",
     "integration_tests",
+    "reward_tests",
     "restaking_core",
     "restaking_program",
     "restaking_sdk",
