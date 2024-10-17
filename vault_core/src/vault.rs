@@ -2145,7 +2145,8 @@ mod tests {
             }
         }
 
-        let fee_bps = 1000;
+        let fee_bps = 5000;
+        let starting_balance = 1_000_000;
 
         // Test cases
         let test_cases = [
@@ -2211,8 +2212,16 @@ mod tests {
         ];
 
         for (tokens_deposited, reward_amount, reward_fee_bps) in test_cases.iter() {
-            let vault = setup_test_vault(*tokens_deposited, *tokens_deposited, *reward_fee_bps); // Assuming 1:1 ratio for tokens:VRT initially
-            calculate_and_print_fee(&vault, *reward_amount + tokens_deposited, *reward_fee_bps);
+            let vault = setup_test_vault(
+                *tokens_deposited + starting_balance,
+                *tokens_deposited,
+                *reward_fee_bps,
+            ); // Assuming 1:1 ratio for tokens:VRT initially
+            calculate_and_print_fee(
+                &vault,
+                *reward_amount + tokens_deposited + starting_balance,
+                *reward_fee_bps,
+            );
         }
     }
 
