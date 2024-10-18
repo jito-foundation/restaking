@@ -99,6 +99,10 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
+    #[error("VaultRewardFeeDeltaTooLarge")]
+    VaultRewardFeeDeltaTooLarge,
+    #[error("VaultFeeIsZero")]
+    VaultRewardFeeIsZero,
 }
 
 impl<T> DecodeError<T> for VaultError {

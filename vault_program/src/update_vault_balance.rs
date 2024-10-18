@@ -6,7 +6,10 @@ use solana_program::{
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::{instruction::mint_to, state::Account};
+use spl_token_2022::{
+    instruction::mint_to,
+    state::{Account, Mint},
+};
 
 pub fn process_update_vault_balance(
     program_id: &Pubkey,
@@ -38,20 +41,22 @@ pub fn process_update_vault_balance(
     // Calculate rewards
     let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
-    let reward_fee = vault.calculate_rewards_fee_in_vrt(new_balance)?;
+    let reward_fee = if new_balance > vault.tokens_deposited() {
+        let reward_fee_in_vrt = vault.calculate_rewards_fee_in_vrt(new_balance)?;
+        vault.check_reward_fee_effective_rate(new_balance, reward_fee_in_vrt, 50)?;
+        reward_fee_in_vrt
+    } else {
+        0
+    };
 
-    // Update state
-    vault.set_tokens_deposited(new_balance);
-    vault.increment_vrt_supply(reward_fee)?;
+    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
+    vault_seeds.push(vec![vault_bump]);
+    let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+
+    drop(vault_data);
 
     // Mint rewards
     if reward_fee > 0 {
-        let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-        vault_seeds.push(vec![vault_bump]);
-        let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
-
-        drop(vault_data);
-
         msg!("Minting {} VRT rewards to the fee wallet", reward_fee);
 
         invoke_signed(
@@ -70,6 +75,15 @@ pub fn process_update_vault_balance(
             ],
             &[&seed_slices],
         )?;
+    }
+
+    {
+        // Update state
+        let mut vault_data = vault_info.data.borrow_mut();
+        let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
+        let vrt_mint_account = Mint::unpack(&vrt_mint.data.borrow())?;
+        vault.set_tokens_deposited(new_balance);
+        vault.set_vrt_supply(vrt_mint_account.supply);
     }
 
     Ok(())
