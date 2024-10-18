@@ -764,7 +764,6 @@ impl Vault {
     ///             (fee_bps / MAX_FEE_BPS) * st_reward * vrt_supply
     /// fee =  --------------------------------------------------------------
     ///         st_supply + st_reward - (fee_bps / MAX_FEE_BPS) * st_reward
-    ///
     pub fn calculate_rewards_fee_in_vrt(&self, new_st_balance: u64) -> Result<u64, VaultError> {
         let st_supply_u128: u128 = self.tokens_deposited().into();
         let st_reward_u128: u128 = (new_st_balance as u128)
@@ -795,7 +794,7 @@ impl Vault {
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        return Ok(fee);
+        Ok(fee)
     }
 
     /// Calculate the amount of VRT tokens to mint based on the amount of tokens deposited in the vault.

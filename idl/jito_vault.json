@@ -2386,6 +2386,16 @@
       "code": 1047,
       "name": "VaultMintZero",
       "msg": "VaultMintZero"
+    },
+    {
+      "code": 1048,
+      "name": "VaultRewardFeeDeltaTooLarge",
+      "msg": "VaultRewardFeeDeltaTooLarge"
+    },
+    {
+      "code": 1049,
+      "name": "VaultRewardFeeIsZero",
+      "msg": "VaultFeeIsZero"
     }
   ],
   "metadata": {

@@ -153,6 +153,12 @@ pub enum JitoVaultError {
     /// 1047 - VaultMintZero
     #[error("VaultMintZero")]
     VaultMintZero = 0x417,
+    /// 1048 - VaultRewardFeeDeltaTooLarge
+    #[error("VaultRewardFeeDeltaTooLarge")]
+    VaultRewardFeeDeltaTooLarge = 0x418,
+    /// 1049 - VaultFeeIsZero
+    #[error("VaultFeeIsZero")]
+    VaultRewardFeeIsZero = 0x419,
 }
 
 impl solana_program::program_error::PrintProgramError for JitoVaultError {
