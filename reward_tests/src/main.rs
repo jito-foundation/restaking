@@ -9,13 +9,14 @@ pub fn main() {
     // reward size
     // fee
 
-    let reward_fee_bps = [1000];
+    let reward_fee_bps = [1234]; // 10%
 
-    let starting_balances = [1000];
+    // let starting_balances = [0, 1000_u64]; // 100k sol
+    let starting_balances = [1_000_000_000_000_000_000_u64]; // 100k sol
 
     let ratios = [1.0];
 
-    let max_delta_bps: u16 = 100;
+    let max_delta_bps: u16 = 50;
 
     for reward_fee_bps in reward_fee_bps {
         println!(
@@ -28,7 +29,8 @@ pub fn main() {
 
             for ratio in ratios {
                 println!("\n\n\n\n\n\n ----- Ratio x{:.2}", ratio);
-                for st_rewards in 0..1_000_000 {
+                // for st_rewards in (1..100_000).step_by(1) {
+                for st_rewards in (1_000_000_000..100_000_000_000).step_by(10_000_000) {
                     let vrt_balance = starting_balance as u64;
                     let st_balance = (starting_balance as f64 * ratio).round() as u64;
 

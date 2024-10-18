@@ -9,6 +9,18 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[workspace]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.2"
+authors = ["Jito Network Maintainers <support@jito.network>"]
+repository = "https://github.com/jito-foundation/restaking"
+homepage = "https://jito.network/"
+license = "BSL"
+edition = "2021"
+readme = "README.md"
+
 [dependencies]
 anchor-lang = { version = "0.30.1", features = ["idl-build"] }
 anyhow = "1.0.86"

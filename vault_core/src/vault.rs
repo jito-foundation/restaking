@@ -725,7 +725,7 @@ impl Vault {
             return Err(VaultError::VaultFeeCapExceeded);
         }
 
-        let precision_factor = 1;
+        let precision_factor = 1_000_000;
 
         let st_rewards = new_st_balance
             .checked_sub(self.tokens_deposited())
@@ -743,7 +743,7 @@ impl Vault {
 
         let st_vrt_ratio = new_st_balance_u128
             .checked_mul(precision_factor)
-            .and_then(|v| v.checked_div(vrt_supply_after_fees_added))
+            .and_then(|v: u128| v.checked_div(vrt_supply_after_fees_added))
             .ok_or(VaultError::VaultOverflow)?;
 
         // Calculate rewards_in_vrt
@@ -801,33 +801,65 @@ impl Vault {
     /// Calculate the rewards fee. This is used in `update_vault_balance` to mint
     /// the `fee` amount in VRTs to the `fee_wallet`.
     pub fn calculate_rewards_fee_in_vrt(&self, new_st_balance: u64) -> Result<u64, VaultError> {
-        if new_st_balance <= self.tokens_deposited() {
-            return Ok(0);
-        }
+        let st_supply_u128: u128 = self.tokens_deposited().into();
+        let st_reward_u128: u128 = (new_st_balance as u128)
+            .checked_sub(st_supply_u128)
+            .ok_or(VaultError::VaultUnderflow)?;
+        let vrt_supply_u128: u128 = self.vrt_supply().into();
+        let fee_percentage_numerator: u128 = self.reward_fee_bps().into();
+        let fee_percentage_denominator: u128 = MAX_FEE_BPS.into();
 
-        let st_rewards = new_st_balance
-            .checked_sub(self.tokens_deposited())
-            .ok_or(VaultError::VaultUnderflow)? as u64;
+        let numerator = st_reward_u128
+            .checked_mul(vrt_supply_u128)
+            .and_then(|x| x.checked_mul(fee_percentage_numerator))
+            .and_then(|x| x.checked_div(fee_percentage_denominator))
+            .ok_or(VaultError::VaultOverflow)?;
 
-        let rewards_in_vrt: u64 = (st_rewards as u128)
-            .checked_mul(self.vrt_supply() as u128)
-            .and_then(|x| x.checked_div(new_st_balance as u128))
-            .ok_or(VaultError::VaultOverflow)
-            .and_then(|result| result.try_into().map_err(|_| VaultError::VaultOverflow))?;
+        let denominator_righthand = st_reward_u128
+            .checked_mul(fee_percentage_numerator)
+            .and_then(|x| x.checked_div(fee_percentage_denominator))
+            .ok_or(VaultError::VaultOverflow)?;
 
-        if rewards_in_vrt == 0 {
-            return Ok(0);
-        }
+        let denominator = st_supply_u128
+            .checked_add(st_reward_u128)
+            .and_then(|x| x.checked_sub(denominator_righthand))
+            .ok_or(VaultError::VaultOverflow)?;
 
-        let fee_bps = Self::calculate_recursive_fee_bps(self.reward_fee_bps())?;
-
-        let vault_fee_in_vrt: u64 = (rewards_in_vrt as u128)
-            .checked_mul(fee_bps as u128)
-            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+        let fee: u64 = numerator
+            .checked_div(denominator)
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
-        Ok(vault_fee_in_vrt)
+        return Ok(fee);
+
+        // if new_st_balance <= self.tokens_deposited() {
+        //     return Ok(0);
+        // }
+
+        // let st_rewards = new_st_balance
+        //     .checked_sub(self.tokens_deposited())
+        //     .ok_or(VaultError::VaultUnderflow)? as u64;
+
+        // let rewards_in_vrt: u64 = (st_rewards as u128)
+        //     .checked_mul(self.vrt_supply() as u128)
+        //     .and_then(|x| x.checked_div(new_st_balance as u128))
+        //     .ok_or(VaultError::VaultOverflow)
+        //     .and_then(|result| result.try_into().map_err(|_| VaultError::VaultOverflow))?;
+
+        // if rewards_in_vrt == 0 {
+        //     return Ok(0);
+        // }
+
+        // // let fee_bps = Self::calculate_recursive_fee_bps(self.reward_fee_bps())?;
+        // let fee_bps = self.reward_fee_bps();
+
+        // let vault_fee_in_vrt: u64 = (rewards_in_vrt as u128)
+        //     .checked_mul(fee_bps as u128)
+        //     .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+        //     .and_then(|x| x.try_into().ok())
+        //     .ok_or(VaultError::VaultOverflow)?;
+
+        // Ok(vault_fee_in_vrt)
     }
 
     /// Calculate the amount of VRT tokens to mint based on the amount of tokens deposited in the vault.
@@ -2177,7 +2209,7 @@ mod tests {
             }
         }
 
-        let fee_bps = 5000;
+        let fee_bps = 1000;
         let starting_balance = 1_000_000;
 
         // Test cases
