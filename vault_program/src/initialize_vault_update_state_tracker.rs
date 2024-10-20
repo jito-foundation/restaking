@@ -57,6 +57,7 @@ pub fn process_initialize_vault_update_state_tracker(
         msg!("Vault update state tracker is not needed");
         return Err(VaultError::VaultIsUpdated.into());
     }
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing VaultUpdateDelegationsTicket at address {}",
@@ -78,6 +79,7 @@ pub fn process_initialize_vault_update_state_tracker(
         .calculate_additional_supported_assets_needed_to_unstake(
             Clock::get()?.slot,
             config.epoch_length(),
+            config.program_fee_bps(),
         )?;
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;

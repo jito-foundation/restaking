@@ -33,7 +33,7 @@ mod tests {
 
         let random_mint = Keypair::new();
         vault_program_client
-            .create_token_mint(&random_mint, &token_program_id)
+            .create_token_mint(&random_mint, token_program_id)
             .await
             .unwrap();
 
@@ -44,14 +44,14 @@ mod tests {
                     &random_mint.pubkey(),
                     &vault_pubkey,
                     MINT_AMOUNT,
-                    &token_program_id,
+                    token_program_id,
                 )
                 .await
                 .unwrap();
         } else {
             fixture
                 .create_token_account(
-                    &token_program_id,
+                    token_program_id,
                     &vault_token_account,
                     &random_mint.pubkey(),
                     &vault_pubkey,
@@ -64,7 +64,7 @@ mod tests {
                     &random_mint.pubkey(),
                     &vault_token_account.pubkey(),
                     MINT_AMOUNT,
-                    &token_program_id,
+                    token_program_id,
                 )
                 .await
                 .unwrap();
@@ -195,7 +195,7 @@ mod tests {
                     &vault_pubkey,
                     &vault_admin,
                     &vault.supported_mint,
-                    &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
+                    &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
                 )
@@ -241,7 +241,7 @@ mod tests {
                     &vault_pubkey,
                     &vault_admin,
                     &fake_mint,
-                    &get_associated_token_address(&&vault_pubkey, &random_mint.pubkey()),
+                    &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
                     &bob,
                     &token_program_id,
                 )

@@ -40,6 +40,8 @@ pub fn process_close_vault_update_state_tracker(
         VaultUpdateStateTracker::try_from_slice_unchecked(&vault_update_state_tracker_data)?;
     load_signer(payer, true)?;
 
+    vault.check_is_paused()?;
+
     let current_ncn_epoch = config.get_epoch_from_slot(slot)?;
     let last_updated_epoch = config.get_epoch_from_slot(vault.last_full_state_update_slot())?;
 

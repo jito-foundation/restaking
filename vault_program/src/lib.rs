@@ -22,6 +22,9 @@ mod mint_to;
 mod set_admin;
 mod set_capacity;
 mod set_fees;
+mod set_is_paused;
+mod set_program_fee;
+mod set_program_fee_wallet;
 mod set_secondary_admin;
 mod slash;
 mod update_token_metadata;
@@ -32,6 +35,7 @@ mod warmup_vault_ncn_ticket;
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
+use set_program_fee::process_set_program_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -59,8 +63,10 @@ use crate::{
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
-    set_fees::process_set_fees, set_secondary_admin::process_set_secondary_admin,
-    slash::process_slash, update_token_metadata::process_update_token_metadata,
+    set_fees::process_set_fees, set_is_paused::process_set_is_paused,
+    set_program_fee_wallet::process_set_program_fee_wallet,
+    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    update_token_metadata::process_update_token_metadata,
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
@@ -98,9 +104,9 @@ pub fn process_instruction(
         // ------------------------------------------
         // Initialization
         // ------------------------------------------
-        VaultInstruction::InitializeConfig => {
+        VaultInstruction::InitializeConfig { program_fee_bps } => {
             msg!("Instruction: InitializeConfig");
-            process_initialize_config(program_id, accounts)
+            process_initialize_config(program_id, accounts, program_fee_bps)
         }
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
@@ -173,6 +179,18 @@ pub fn process_instruction(
                 reward_fee_bps,
             )
         }
+        VaultInstruction::SetProgramFee { new_fee_bps } => {
+            msg!("Instruction: SetProgramFee");
+            process_set_program_fee(program_id, accounts, new_fee_bps)
+        }
+        VaultInstruction::SetProgramFeeWallet => {
+            msg!("Instruction: SetProgramFeeWallet");
+            process_set_program_fee_wallet(program_id, accounts)
+        }
+        VaultInstruction::SetIsPaused { is_paused } => {
+            msg!("Instruction: SetIsPaused");
+            process_set_is_paused(program_id, accounts, is_paused)
+        }
         // ------------------------------------------
         // Vault minting and burning
         // ------------------------------------------
@@ -190,17 +208,20 @@ pub fn process_instruction(
             msg!("Instruction: Burn");
             process_burn(program_id, accounts, amount_in, min_amount_out)
         }
-        VaultInstruction::EnqueueWithdrawal { amount } => {
+        VaultInstruction::EnqueueWithdrawal {
+            amount,
+            min_amount_out,
+        } => {
             msg!("Instruction: EnqueueWithdrawal");
-            process_enqueue_withdrawal(program_id, accounts, amount)
+            process_enqueue_withdrawal(program_id, accounts, amount, min_amount_out)
         }
         VaultInstruction::ChangeWithdrawalTicketOwner => {
             msg!("Instruction: ChangeWithdrawalTicketOwner");
             process_change_withdrawal_ticket_owner(program_id, accounts)
         }
-        VaultInstruction::BurnWithdrawalTicket { min_amount_out } => {
+        VaultInstruction::BurnWithdrawalTicket => {
             msg!("Instruction: BurnWithdrawalTicket");
-            process_burn_withdrawal_ticket(program_id, accounts, min_amount_out)
+            process_burn_withdrawal_ticket(program_id, accounts)
         }
         // ------------------------------------------
         // Vault-NCN operations

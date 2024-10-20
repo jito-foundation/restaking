@@ -43,9 +43,9 @@ pub fn process_burn(
     amount_in: u64,
     min_amount_out: u64,
 ) -> ProgramResult {
-    let (required_accounts, optional_accounts) = accounts.split_at(10);
+    let (required_accounts, optional_accounts) = accounts.split_at(11);
 
-    let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_fee_token_account, token_program, system_program] =
+    let [config, vault_info, vault_token_account, vrt_mint, staker, staker_token_account, staker_vrt_token_account, vault_fee_token_account, program_fee_token_account, token_program, system_program] =
         required_accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -64,6 +64,11 @@ pub fn process_burn(
     load_signer(staker, false)?;
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
     load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
+    load_associated_token_account(
+        program_fee_token_account,
+        &config.program_fee_wallet,
+        &vault.vrt_mint,
+    )?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.vrt_mint)?;
     load_token_program(token_program)?;
     load_system_program(system_program)?;
@@ -73,12 +78,14 @@ pub fn process_burn(
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(clock.slot, config.epoch_length())?;
     vault.check_mint_burn_admin(optional_accounts.first())?;
+    vault.check_is_paused()?;
 
     let BurnSummary {
-        fee_amount,
+        vault_fee_amount,
+        program_fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(amount_in, min_amount_out)?;
+    } = vault.burn_with_fee(config.program_fee_bps(), amount_in, min_amount_out)?;
 
     vault.check_withdrawal_allowed(out_amount)?;
     vault.increment_epoch_withdraw_supported_token_amount(out_amount)?;
@@ -107,11 +114,27 @@ pub fn process_burn(
             vault_fee_token_account.key,
             staker.key,
             &[],
-            fee_amount,
+            vault_fee_amount,
         )?,
         &[
             staker_vrt_token_account.clone(),
             vault_fee_token_account.clone(),
+            staker.clone(),
+        ],
+    )?;
+    // Transfer the program fee from the staker to the program fee account
+    invoke(
+        &transfer(
+            &spl_token::id(),
+            staker_vrt_token_account.key,
+            program_fee_token_account.key,
+            staker.key,
+            &[],
+            program_fee_amount,
+        )?,
+        &[
+            staker_vrt_token_account.clone(),
+            program_fee_token_account.clone(),
             staker.clone(),
         ],
     )?;

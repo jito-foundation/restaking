@@ -4,24 +4,28 @@ mod tests {
         config::Config, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
         vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     };
+    use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
 
-    use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
+    use crate::fixtures::{
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::assert_vault_error,
+    };
+
+    const MAX_SLASH_AMOUNT: u64 = 100;
+    const MINT_AMOUNT: u64 = 100_000;
+    const DELEGATION_AMOUNT: u64 = 10_000;
+
+    const ZERO_DEPOSIT_FEE_BPS: u16 = 0;
+    const ZERO_WITHDRAW_FEE_BPS: u16 = 0;
+    const ZERO_REWARD_FEE_BPS: u16 = 0;
+    const ZERO_EPOCH_WITHDRAW_CAP_BPS: u16 = 0;
+    const ONE_OPERATOR: u16 = 1;
+    const SLASHER_AMOUNTS: &[u64] = &[MAX_SLASH_AMOUNT];
 
     #[tokio::test]
     async fn test_slash_ok() {
         let mut fixture = TestBuilder::new().await;
-
-        const MAX_SLASH_AMOUNT: u64 = 100;
-        const MINT_AMOUNT: u64 = 100_000;
-        const DELEGATION_AMOUNT: u64 = 10_000;
-
-        let deposit_fee_bps = 0;
-        let withdrawal_fee_bps = 0;
-        let reward_fee_bps = 0;
-        let epoch_withdraw_cap_bps = 0;
-        let num_operators = 1;
-        let slasher_amounts = vec![MAX_SLASH_AMOUNT];
 
         let ConfiguredVault {
             mut vault_program_client,
@@ -33,12 +37,12 @@ mod tests {
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
-                deposit_fee_bps,
-                withdrawal_fee_bps,
-                reward_fee_bps,
-                epoch_withdraw_cap_bps,
-                num_operators,
-                &slasher_amounts,
+                ZERO_DEPOSIT_FEE_BPS,
+                ZERO_WITHDRAW_FEE_BPS,
+                ZERO_REWARD_FEE_BPS,
+                ZERO_EPOCH_WITHDRAW_CAP_BPS,
+                ONE_OPERATOR,
+                SLASHER_AMOUNTS,
             )
             .await
             .unwrap();
@@ -175,5 +179,121 @@ mod tests {
             vault_ncn_slasher_operator_ticket.operator,
             operator_root.operator_pubkey
         );
+    }
+
+    #[tokio::test]
+    async fn test_slash_vault_is_paused_fails() {
+        let mut fixture = TestBuilder::new().await;
+
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_config_admin,
+            vault_root,
+            ncn_root,
+            operator_roots,
+            slashers_amounts,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                ZERO_DEPOSIT_FEE_BPS,
+                ZERO_WITHDRAW_FEE_BPS,
+                ZERO_REWARD_FEE_BPS,
+                ONE_OPERATOR,
+                SLASHER_AMOUNTS,
+            )
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let operator_root = &operator_roots[0];
+        vault_program_client
+            .do_add_delegation(
+                &vault_root,
+                &operator_root.operator_pubkey,
+                DELEGATION_AMOUNT,
+            )
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+        let operator_root_pubkeys: Vec<_> =
+            operator_roots.iter().map(|r| r.operator_pubkey).collect();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        // configure slasher and slash
+        let slasher = &slashers_amounts[0].0;
+        fixture
+            .create_ata(&vault.supported_mint, &slasher.pubkey())
+            .await
+            .unwrap();
+        let epoch = fixture.get_current_slot().await.unwrap() / config.epoch_length();
+        vault_program_client
+            .initialize_vault_ncn_slasher_operator_ticket(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &ncn_root.ncn_pubkey,
+                &slasher.pubkey(),
+                &operator_root.operator_pubkey,
+                &VaultNcnSlasherTicket::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    &ncn_root.ncn_pubkey,
+                    &slasher.pubkey(),
+                )
+                .0,
+                &VaultNcnSlasherOperatorTicket::find_program_address(
+                    &jito_vault_program::id(),
+                    &vault_root.vault_pubkey,
+                    &ncn_root.ncn_pubkey,
+                    &slasher.pubkey(),
+                    &operator_root.operator_pubkey,
+                    epoch,
+                )
+                .0,
+                &vault_config_admin,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let test_error = vault_program_client
+            .do_slash(
+                &vault_root,
+                &ncn_root.ncn_pubkey,
+                &slasher,
+                &operator_root.operator_pubkey,
+                MAX_SLASH_AMOUNT,
+            )
+            .await;
+
+        assert_vault_error(test_error, VaultError::VaultIsPaused);
     }
 }

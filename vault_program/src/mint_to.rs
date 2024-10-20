@@ -70,6 +70,7 @@ pub fn process_mint(
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     // Currently, this is not possible, since the there are currently no instructions that allow the
     // vault to deposit tokens into the vault token account. This check is for future proofing.

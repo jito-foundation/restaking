@@ -67,13 +67,21 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(10001, 100, 100, 0, 9)
+            .do_initialize_vault(10001, 100, 100, 0, 9, &config.program_fee_wallet)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
             .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 0, 9)
+            .do_initialize_vault(
+                config.deposit_withdrawal_fee_cap_bps() + 1,
+                0,
+                0,
+                0,
+                9,
+                &config.program_fee_wallet,
+            )
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
@@ -93,13 +101,20 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(100, 10001, 100, 0, 9)
+            .do_initialize_vault(100, 10001, 100, 0, 9, &config.program_fee_wallet)
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
-            .do_initialize_vault(0, config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 9)
+            .do_initialize_vault(
+                0,
+                config.deposit_withdrawal_fee_cap_bps() + 1,
+                0,
+                0,
+                9,
+                &config.program_fee_wallet,
+            )
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
@@ -114,7 +129,7 @@ mod tests {
         vault_program_client.do_initialize_config().await.unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(0, 0, 10001, 0, 9)
+            .do_initialize_vault(0, 0, 10001, 0, 9, &Pubkey::new_unique())
             .await;
 
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);

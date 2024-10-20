@@ -17,6 +17,8 @@ import {
   getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
+  getBoolDecoder,
+  getBoolEncoder,
   getStructDecoder,
   getStructEncoder,
   getU16Decoder,
@@ -65,6 +67,7 @@ export type Vault = {
   delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  metadataAdmin: Address;
   vaultIndex: bigint;
   ncnCount: bigint;
   operatorCount: bigint;
@@ -78,6 +81,7 @@ export type Vault = {
   rewardFeeBps: number;
   epochWithdrawCapBps: number;
   bump: number;
+  isPaused: number;
   reserved: Array<number>;
 };
 
@@ -103,6 +107,7 @@ export type VaultArgs = {
   delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  metadataAdmin: Address;
   vaultIndex: number | bigint;
   ncnCount: number | bigint;
   operatorCount: number | bigint;
@@ -116,6 +121,7 @@ export type VaultArgs = {
   rewardFeeBps: number;
   epochWithdrawCapBps: number;
   bump: number;
+  isPaused: number;
   reserved: Array<number>;
 };
 
@@ -142,6 +148,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['delegateAssetAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
+    ['metadataAdmin', getAddressEncoder()],
     ['vaultIndex', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
@@ -155,6 +162,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['rewardFeeBps', getU16Encoder()],
     ['epochWithdrawCapBps', getU16Encoder()],
     ['bump', getU8Encoder()],
+    ['isPaused', getBoolEncoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
   ]);
 }
@@ -182,6 +190,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['delegateAssetAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
+    ['metadataAdmin', getAddressDecoder()],
     ['vaultIndex', getU64Decoder()],
     ['ncnCount', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
@@ -195,6 +204,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['rewardFeeBps', getU16Decoder()],
     ['epochWithdrawCapBps', getU16Decoder()],
     ['bump', getU8Decoder()],
+    ['isPaused', getBoolDecoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
   ]);
 }

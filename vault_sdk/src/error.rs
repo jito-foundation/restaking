@@ -29,6 +29,10 @@ pub enum VaultError {
     VaultNcnAdminInvalid,
     #[error("VaultFeeAdminInvalid")]
     VaultFeeAdminInvalid,
+    #[error("VaultConfigAdminInvalid")]
+    VaultConfigAdminInvalid,
+    #[error("VaultConfigFeeAdminInvalid")]
+    VaultConfigFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
     #[error("VaultEpochWithdrawCapExceeded")]
@@ -59,6 +63,8 @@ pub enum VaultError {
     VaultSecurityUnderflow,
     #[error("SlippageError")]
     SlippageError,
+    #[error("SlippageTooLow")]
+    SlippageTooLow,
     #[error("VaultStakerWithdrawalTicketNotWithdrawable")]
     VaultStakerWithdrawalTicketNotWithdrawable,
     #[error("VaultNcnSlasherTicketFailedCooldown")]
@@ -103,6 +109,8 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
+    #[error("VaultIsPaused")]
+    VaultIsPaused,
     #[error("InvalidDepositor")]
     InvalidDepositor,
     #[error("InvalidDepositTokenAccount")]
