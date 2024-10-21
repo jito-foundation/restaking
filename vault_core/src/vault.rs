@@ -753,22 +753,149 @@ impl Vault {
     // Minting and burning
     // ------------------------------------------
 
+    /// Checks that reward fee's actual rate is within the expected rate
+    pub fn check_reward_fee_effective_rate(
+        &self,
+        new_st_balance: u64,
+        reward_fee_in_vrt: u64,
+        max_delta_bps: u16,
+    ) -> Result<(), VaultError> {
+        let new_st_balance_u128 = u128::from(new_st_balance);
+
+        // If rewards are zero, it's okay to return 0
+        let st_rewards_u128 = new_st_balance_u128.saturating_sub(self.tokens_deposited() as u128);
+        let vrt_supply_u128 = u128::from(self.vrt_supply());
+        let reward_fee_in_vrt_u128 = u128::from(reward_fee_in_vrt);
+
+        // ----- Checks -------
+        // { bps is too large }
+        if max_delta_bps > MAX_FEE_BPS {
+            msg!("Max delta bps exceeds maximum allowed of {}", MAX_FEE_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
+
+        // { reward is zero }
+        if (st_rewards_u128 == 0 || self.reward_fee_bps() == 0) && reward_fee_in_vrt == 0 {
+            return Ok(());
+        }
+
+        // { reward should be non-zero }
+        if reward_fee_in_vrt == 0 {
+            // If fee is larger than 0, it should always return a non-zero reward
+            return Err(VaultError::VaultRewardFeeIsZero);
+        }
+
+        // ---- Calculations -------
+        let precision_factor = MAX_FEE_BPS as u128;
+
+        // Calculate st_vrt_ratio with higher precision (multiply by 1e6 for 6 decimal places)
+        let vrt_supply_after_fees_added = vrt_supply_u128
+            .checked_add(reward_fee_in_vrt_u128)
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let st_vrt_ratio = new_st_balance_u128
+            .checked_mul(precision_factor)
+            .and_then(|v: u128| v.checked_div(vrt_supply_after_fees_added))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        // Calculate rewards_in_vrt
+        let rewards_in_vrt = st_rewards_u128
+            .checked_mul(precision_factor)
+            .and_then(|v| v.checked_div(st_vrt_ratio))
+            .ok_or(VaultError::VaultOverflow)?;
+
+        // Calculate effective_rate_bps
+        let effective_rate_bps = reward_fee_in_vrt_u128
+            .checked_mul(MAX_FEE_BPS as u128)
+            .and_then(|v| v.checked_div(rewards_in_vrt))
+            .and_then(|v| u16::try_from(v).ok())
+            .ok_or(VaultError::VaultOverflow)?;
+
+        let expected_rate_bps = self.reward_fee_bps();
+
+        let delta = if effective_rate_bps > expected_rate_bps {
+            effective_rate_bps.checked_sub(expected_rate_bps)
+        } else {
+            expected_rate_bps.checked_sub(effective_rate_bps)
+        }
+        .ok_or(VaultError::VaultOverflow)?;
+
+        if delta > max_delta_bps {
+            msg!(
+                "Effective rate {} bps is too far from expected rate {} bps",
+                effective_rate_bps,
+                expected_rate_bps,
+            );
+            return Err(VaultError::VaultRewardFeeDeltaTooLarge);
+        }
+
+        Ok(())
+    }
+
     /// Calculate the rewards fee. This is used in `update_vault_balance` to mint
     /// the `fee` amount in VRTs to the `fee_wallet`.
-    pub fn calculate_rewards_fee(&self, new_balance: u64) -> Result<u64, VaultError> {
-        let rewards = new_balance.saturating_sub(self.tokens_deposited());
+    /// We take into account the resulting ST/VRT ratio to determine the fee:
+    ///
+    ///                      fee_bps         vrt_supply + fee
+    /// fee = st_reward * ------------- * -----------------------
+    ///                    MAX_FEE_BPS     st_supply + st_reward
+    ///
+    ///
+    /// Solve for fee:
+    ///
+    ///             (fee_bps / MAX_FEE_BPS) * st_reward * vrt_supply
+    /// fee =  --------------------------------------------------------------
+    ///         st_supply + st_reward - (fee_bps / MAX_FEE_BPS) * st_reward
+    pub fn calculate_rewards_fee_in_vrt(&self, new_st_balance: u64) -> Result<u64, VaultError> {
+        let st_supply_u128: u128 = self.tokens_deposited().into();
 
-        let vrt_rewards = self.calculate_vrt_mint_amount(rewards)?;
+        // If the new st balance is less than the current supply, there will be no reward
+        // and we'll return 0 instead of an error in the checks
+        let st_reward_u128: u128 = (new_st_balance as u128).saturating_sub(st_supply_u128);
+        let vrt_supply_u128: u128 = self.vrt_supply().into();
+        let fee_percentage_numerator: u128 = self.reward_fee_bps().into();
+        let fee_percentage_denominator: u128 = MAX_FEE_BPS.into();
 
-        if vrt_rewards == 0 {
+        // ---- Checks -------
+        // { No rewards }
+        if st_reward_u128 == 0 || self.reward_fee_bps() == 0 {
             return Ok(0);
         }
 
-        let fee = (vrt_rewards as u128)
-            .checked_mul(self.reward_fee_bps() as u128)
-            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+        // { Resolution }
+        let smallest_supply = st_supply_u128.min(st_reward_u128);
+
+        if smallest_supply
+            .checked_mul(vrt_supply_u128)
+            .ok_or(VaultError::ArithmeticOverflow)?
+            < MAX_BPS as u128
+        {
+            // For resolution, we need at least 10_000 ( max bps ) from the product
+            // of the smallest supply, else we'll always return a 0 fee
+            return Err(VaultError::VaultDoesNotHaveEnoughTokensToDetermineRewards);
+        }
+
+        // ----- Calculations -------
+        let numerator = st_reward_u128
+            .checked_mul(vrt_supply_u128)
+            .and_then(|x| x.checked_mul(fee_percentage_numerator))
+            .and_then(|x| x.checked_div(fee_percentage_denominator))
+            .ok_or(VaultError::ArithmeticOverflow)?;
+
+        let denominator_righthand = st_reward_u128
+            .checked_mul(fee_percentage_numerator)
+            .and_then(|x| x.checked_div(fee_percentage_denominator))
+            .ok_or(VaultError::ArithmeticOverflow)?;
+
+        let denominator = st_supply_u128
+            .checked_add(st_reward_u128)
+            .and_then(|x| x.checked_sub(denominator_righthand))
+            .ok_or(VaultError::ArithmeticOverflow)?;
+
+        let fee: u64 = numerator
+            .checked_div(denominator)
             .and_then(|x| x.try_into().ok())
-            .ok_or(VaultError::VaultOverflow)?;
+            .ok_or(VaultError::DivisionByZero)?;
 
         Ok(fee)
     }
@@ -1243,7 +1370,8 @@ mod tests {
 
     fn make_test_vault(
         deposit_fee_bps: u16,
-        withdrawal_fee_bps: u16,
+        withdraw_fee_bps: u16,
+        reward_fee_bps: u16,
         tokens_deposited: u64,
         vrt_supply: u64,
         delegation_state: DelegationState,
@@ -1255,8 +1383,8 @@ mod tests {
             0,
             Pubkey::new_unique(),
             deposit_fee_bps,
-            withdrawal_fee_bps,
-            0,
+            withdraw_fee_bps,
+            reward_fee_bps,
             0,
             0,
         )
@@ -1353,7 +1481,7 @@ mod tests {
 
     #[test]
     fn test_mint_simple_ok() {
-        let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 0, 0, DelegationState::default());
         let MintSummary {
             vrt_to_depositor,
             vrt_to_fee_wallet,
@@ -1364,7 +1492,7 @@ mod tests {
 
     #[test]
     fn test_mint_with_deposit_fee_ok() {
-        let mut vault = make_test_vault(100, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(100, 0, 0, 0, 0, DelegationState::default());
         let MintSummary {
             vrt_to_depositor,
             vrt_to_fee_wallet,
@@ -1377,7 +1505,7 @@ mod tests {
 
     #[test]
     fn test_mint_less_than_slippage_fails() {
-        let mut vault = make_test_vault(100, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(100, 0, 0, 0, 0, DelegationState::default());
         assert_eq!(
             vault.mint_with_fee(100, 100),
             Err(VaultError::SlippageError)
@@ -1386,7 +1514,7 @@ mod tests {
 
     #[test]
     fn test_deposit_ratio_after_slashed_ok() {
-        let mut vault = make_test_vault(0, 0, 90, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 90, 100, DelegationState::default());
 
         let MintSummary {
             vrt_to_depositor, ..
@@ -1398,7 +1526,7 @@ mod tests {
 
     #[test]
     fn test_deposit_ratio_after_reward_ok() {
-        let mut vault = make_test_vault(0, 0, 200, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 200, 100, DelegationState::default());
 
         let MintSummary {
             vrt_to_depositor, ..
@@ -1520,7 +1648,7 @@ mod tests {
 
     #[test]
     fn test_burn_with_fee_ok() {
-        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
 
         let BurnSummary {
             vault_fee_amount: fee_amount,
@@ -1535,7 +1663,7 @@ mod tests {
 
     #[test]
     fn test_burn_with_program_fee_ok() {
-        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
 
         let BurnSummary {
             vault_fee_amount,
@@ -1551,7 +1679,7 @@ mod tests {
 
     #[test]
     fn test_burn_with_program_fee_priority() {
-        let mut vault = make_test_vault(0, 1500, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 1500, 0, 100, 100, DelegationState::default());
 
         let BurnSummary {
             vault_fee_amount,
@@ -1567,7 +1695,7 @@ mod tests {
 
     #[test]
     fn test_burn_with_max_program_fee() {
-        let mut vault = make_test_vault(0, 0, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 100, 100, DelegationState::default());
 
         let BurnSummary {
             vault_fee_amount,
@@ -1583,7 +1711,7 @@ mod tests {
 
     #[test]
     fn test_burn_too_much_fails() {
-        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
 
         assert_eq!(
             vault.burn_with_fee(0, 101, 100),
@@ -1593,13 +1721,13 @@ mod tests {
 
     #[test]
     fn test_burn_zero_fails() {
-        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
         assert_eq!(vault.burn_with_fee(0, 0, 0), Err(VaultError::VaultBurnZero));
     }
 
     #[test]
     fn test_burn_slippage_exceeded_fails() {
-        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
         assert_eq!(
             vault.burn_with_fee(0, 100, 100),
             Err(VaultError::SlippageError)
@@ -1608,7 +1736,7 @@ mod tests {
 
     #[test]
     fn test_burn_with_delegation_ok() {
-        let mut vault = make_test_vault(0, 0, 100, 100, DelegationState::new(10, 10, 0));
+        let mut vault = make_test_vault(0, 0, 0, 100, 100, DelegationState::new(10, 10, 0));
 
         let BurnSummary {
             vault_fee_amount: fee_amount,
@@ -1625,7 +1753,7 @@ mod tests {
 
     #[test]
     fn test_burn_more_than_withdrawable_fails() {
-        let mut vault = make_test_vault(0, 0, 100, 100, DelegationState::new(50, 0, 0));
+        let mut vault = make_test_vault(0, 0, 0, 100, 100, DelegationState::new(50, 0, 0));
 
         assert_eq!(
             vault.burn_with_fee(0, 51, 50),
@@ -1635,7 +1763,7 @@ mod tests {
 
     #[test]
     fn test_burn_all_delegated() {
-        let mut vault = make_test_vault(0, 0, 100, 100, DelegationState::new(100, 0, 0));
+        let mut vault = make_test_vault(0, 0, 0, 100, 100, DelegationState::new(100, 0, 0));
 
         let result = vault.burn_with_fee(0, 1, 0);
         assert_eq!(result, Err(VaultError::VaultUnderflow));
@@ -1643,7 +1771,7 @@ mod tests {
 
     #[test]
     fn test_burn_rounding_issues() {
-        let mut vault = make_test_vault(0, 0, 1_000_000, 1_000_000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1_000_000, 1_000_000, DelegationState::default());
 
         let result = vault.burn_with_fee(0, 1, 0).unwrap();
         assert_eq!(result.out_amount, 1);
@@ -1653,7 +1781,7 @@ mod tests {
 
     #[test]
     fn test_burn_max_values() {
-        let mut vault = make_test_vault(0, 100, u64::MAX, u64::MAX, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, u64::MAX, u64::MAX, DelegationState::default());
         let result = vault.burn_with_fee(0, u64::MAX, 0).unwrap();
         let fee_amount = (((u64::MAX as u128) * 100).div_ceil(10000)) as u64;
         assert_eq!(result.vault_fee_amount, fee_amount);
@@ -1661,7 +1789,7 @@ mod tests {
 
     #[test]
     fn test_burn_different_fees() {
-        let mut vault = make_test_vault(0, 500, 10000, 10000, DelegationState::default());
+        let mut vault = make_test_vault(0, 500, 0, 10000, 10000, DelegationState::default());
 
         let result = vault.burn_with_fee(0, 1000, 900).unwrap();
         assert_eq!(result.vault_fee_amount, 50);
@@ -1671,7 +1799,7 @@ mod tests {
 
     #[test]
     fn test_mint_at_max_capacity() {
-        let mut vault = make_test_vault(0, 0, 900, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 900, 1000, DelegationState::default());
         vault.set_capacity(1000);
 
         let result = vault.mint_with_fee(100, 111).unwrap();
@@ -1685,7 +1813,7 @@ mod tests {
 
     #[test]
     fn test_mint_small_amounts() {
-        let mut vault = make_test_vault(0, 0, 1_000_000, 1_000_000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1_000_000, 1_000_000, DelegationState::default());
 
         let result = vault.mint_with_fee(1, 1).unwrap();
         assert_eq!(result.vrt_to_depositor, 1);
@@ -1695,7 +1823,7 @@ mod tests {
 
     #[test]
     fn test_mint_different_fees() {
-        let mut vault = make_test_vault(500, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(500, 0, 0, 0, 0, DelegationState::default());
 
         let result = vault.mint_with_fee(1000, 950).unwrap();
         assert_eq!(result.vrt_to_depositor, 950);
@@ -1706,7 +1834,7 @@ mod tests {
 
     #[test]
     fn test_mint_empty_vault() {
-        let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 0, 0, DelegationState::default());
 
         let result = vault.mint_with_fee(1000, 1000).unwrap();
         assert_eq!(result.vrt_to_depositor, 1000);
@@ -1717,7 +1845,7 @@ mod tests {
 
     #[test]
     fn test_mint_slippage_protection() {
-        let mut vault = make_test_vault(100, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(100, 0, 0, 0, 0, DelegationState::default());
 
         // Successful mint within slippage tolerance
         let result = vault.mint_with_fee(1000, 990).unwrap();
@@ -1730,7 +1858,7 @@ mod tests {
 
     #[test]
     fn test_mint_small_fee() {
-        let mut vault = make_test_vault(1, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(1, 0, 0, 0, 0, DelegationState::default());
         let MintSummary {
             vrt_to_depositor,
             vrt_to_fee_wallet,
@@ -1741,7 +1869,7 @@ mod tests {
 
     #[test]
     fn test_burn_small_fee() {
-        let mut vault = make_test_vault(0, 1, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 1, 0, 0, 0, DelegationState::default());
 
         vault.mint_with_fee(1, 1).unwrap();
         let BurnSummary {
@@ -1757,14 +1885,14 @@ mod tests {
 
     #[test]
     fn test_delegate_ok() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
 
         vault.delegate(1000, 0).unwrap();
     }
 
     #[test]
     fn test_delegate_more_than_available_fails() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(
             vault.delegate(1001, 0),
             Err(VaultError::VaultInsufficientFunds)
@@ -1773,7 +1901,7 @@ mod tests {
 
     #[test]
     fn test_delegate_more_than_available_with_delegate_state_fails() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(500, 200, 200));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(500, 200, 200));
         assert_eq!(
             vault.delegate(101, 0),
             Err(VaultError::VaultInsufficientFunds)
@@ -1782,13 +1910,13 @@ mod tests {
 
     #[test]
     fn test_delegate_with_delegate_state_ok() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(500, 200, 100));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(500, 200, 100));
         vault.delegate(100, 0).unwrap();
     }
 
     #[test]
     fn test_delegate_with_vrt_reserves_ok() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
         vault.delegate(900, 0).unwrap();
@@ -1796,7 +1924,7 @@ mod tests {
 
     #[test]
     fn test_delegate_more_than_vrt_reserves_fails() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
         assert_eq!(
@@ -1807,7 +1935,7 @@ mod tests {
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_ok() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(100, 100, 100));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(100, 100, 100));
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
         vault.delegate(400, 0).unwrap();
@@ -1815,7 +1943,7 @@ mod tests {
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_too_much_fails() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(100, 100, 100));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(100, 100, 100));
         vault.increment_vrt_ready_to_claim_amount(100).unwrap();
 
         assert_eq!(
@@ -1826,14 +1954,14 @@ mod tests {
 
     #[test]
     fn test_delegate_with_vrt_reserves_and_delegated_assets_cooling_down_fails() {
-        let mut vault = make_test_vault(0, 0, 1000, 900, DelegationState::new(0, 500, 0));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 900, DelegationState::new(0, 500, 0));
         vault.increment_vrt_ready_to_claim_amount(500).unwrap();
         assert_eq!(vault.delegate(100, 0), Err(VaultError::VaultUnderflow));
     }
 
     #[test]
     fn test_calculate_supported_assets_requested_for_withdrawal_ok() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
         let result = vault
             .calculate_supported_assets_requested_for_withdrawal(0)
@@ -1843,7 +1971,7 @@ mod tests {
 
     #[test]
     fn test_calculate_supported_assets_requested_for_withdrawal_with_fee() {
-        let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 1000, 1000, DelegationState::default());
         vault.set_vrt_cooling_down_amount(100);
         let result = vault
             .calculate_supported_assets_requested_for_withdrawal(0)
@@ -1857,7 +1985,7 @@ mod tests {
 
     #[test]
     fn test_calculate_vrt_reserve_amount_with_fee_with_assets_in_different_stages() {
-        let mut vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 100, 0, 1000, 1000, DelegationState::default());
         vault.set_vrt_enqueued_for_cooldown_amount(50);
         vault.set_vrt_cooling_down_amount(25);
         vault.vrt_ready_to_claim_amount = PodU64::from(25);
@@ -1870,7 +1998,7 @@ mod tests {
 
     #[test]
     fn test_calculate_assets_need_undelegating_ok() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(1000, 0, 0));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(1000, 0, 0));
         vault.set_vrt_cooling_down_amount(100);
         let result = vault
             .calculate_additional_supported_assets_needed_to_unstake(100, 100, 0)
@@ -1892,7 +2020,7 @@ mod tests {
 
     #[test]
     fn test_calculate_assets_need_undelegating_with_assets_cooling_down() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(900, 0, 100));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(900, 0, 100));
         vault.set_vrt_cooling_down_amount(100);
 
         let result = vault
@@ -1908,7 +2036,7 @@ mod tests {
 
     #[test]
     fn test_calculate_assets_need_undelegating_with_assets_cooling_down_2() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::new(800, 100, 100));
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::new(800, 100, 100));
         vault.set_vrt_cooling_down_amount(300);
 
         let result = vault
@@ -1930,80 +2058,15 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_reward_fee() {
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            1000, //10%
-            0,
-            0,
-        )
-        .unwrap();
-        vault.set_tokens_deposited(0);
-
-        let fee = vault.calculate_rewards_fee(1000).unwrap();
-
-        assert_eq!(fee, 100);
-    }
-
-    #[test]
-    fn test_calculate_negative_balance() {
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            1000, //10%
-            0,
-            0,
-        )
-        .unwrap();
-        vault.set_tokens_deposited(1000);
-
-        let fee = vault.calculate_rewards_fee(0).unwrap();
-
-        assert_eq!(fee, 0);
-    }
-
-    #[test]
-    fn test_calculate_100_percent_rewards() {
-        let vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            10_000, //100%
-            0,
-            0,
-        )
-        .unwrap();
-
-        let fee = vault.calculate_rewards_fee(1000).unwrap();
-
-        assert_eq!(fee, 1000);
-    }
-
-    #[test]
     fn test_fee_change_after_two_epochs() {
-        let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(vault.check_can_modify_fees(200, 100), Ok(()));
     }
 
     #[test]
     fn test_fee_change_within_same_epoch() {
-        let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(101);
         assert_eq!(
             vault.check_can_modify_fees(102, 100),
@@ -2013,7 +2076,7 @@ mod tests {
 
     #[test]
     fn test_fee_change_in_next_epoch() {
-        let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(
             vault.check_can_modify_fees(101, 100),
@@ -2023,7 +2086,7 @@ mod tests {
 
     #[test]
     fn test_fee_change_at_epoch_boundary() {
-        let mut vault = make_test_vault(0, 0, 0, 0, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 0, 0, DelegationState::default());
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(
             vault.check_can_modify_fees(100, 100),
@@ -2277,25 +2340,25 @@ mod tests {
 
     #[test]
     fn test_delegation_too_small() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(vault.delegate(0, 0), Err(VaultError::VaultDelegationZero));
     }
 
     #[test]
     fn test_mint_with_fee_zero_amount() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(vault.mint_with_fee(0, 0), Err(VaultError::VaultMintZero));
     }
 
     #[test]
     fn test_burn_with_fee_zero_amount() {
-        let mut vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         assert_eq!(vault.burn_with_fee(0, 0, 0), Err(VaultError::VaultBurnZero));
     }
 
     #[test]
     fn test_calculate_min_amount_out() {
-        let vault = make_test_vault(0, 0, 1000, 1000, DelegationState::default());
+        let vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
         let amount_out = 100;
         let min_amount_out = vault
             .calculate_min_supported_mint_out(amount_out, 100, 0)
@@ -2305,7 +2368,7 @@ mod tests {
 
     #[test]
     fn test_calculate_min_amount_out_with_withdrawal_fee() {
-        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let vault = make_test_vault(0, 100, 0, 1000, 1000, DelegationState::default());
         let amount_out = 100;
         let min_amount_out = vault
             .calculate_min_supported_mint_out(amount_out, 100, 0)
@@ -2315,7 +2378,7 @@ mod tests {
 
     #[test]
     fn test_calculate_min_amount_out_slippage_too_low() {
-        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let vault = make_test_vault(0, 100, 0, 1000, 1000, DelegationState::default());
         let amount_out = 100;
         assert!(vault
             .calculate_min_supported_mint_out(amount_out, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS - 1, 0)
@@ -2324,7 +2387,7 @@ mod tests {
 
     #[test]
     fn test_check_min_amount_out_ok() {
-        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let vault = make_test_vault(0, 100, 0, 1000, 1000, DelegationState::default());
         let amount_out = 100;
         let min_amount_out = vault
             .calculate_min_supported_mint_out(amount_out, 50, 0)
@@ -2336,10 +2399,138 @@ mod tests {
 
     #[test]
     fn test_check_min_amount_out_too_high() {
-        let vault = make_test_vault(0, 100, 1000, 1000, DelegationState::default());
+        let vault = make_test_vault(0, 100, 0, 1000, 1000, DelegationState::default());
         let amount_out = 100;
         assert!(vault
             .check_min_supported_mint_out(amount_out, 99, 0)
             .is_err());
+    }
+
+    #[test]
+    fn test_calculate_reward_fee() {
+        let vault = make_test_vault(0, 0, 1_000, 1_000, 1_000, DelegationState::default());
+
+        let fee = vault.calculate_rewards_fee_in_vrt(1000 + 1000).unwrap();
+
+        // st 1000, vrt 1000, rewards 1000, fee_bps 1000
+        // fee calculated to 52
+        // This is correct because our new ratio is 2000 / 1052 = 0.526
+        // This ratio times the rewards of 1000 = 526
+        // 10 % fee of those rewards = 52.6
+        // So the fee should be 52
+
+        assert_eq!(fee, 52);
+    }
+
+    #[test]
+    fn test_calculate_negative_balance_rewards() {
+        let vault = make_test_vault(0, 0, 10_000, 1000, 1000, DelegationState::default());
+
+        let fee = vault.calculate_rewards_fee_in_vrt(0).unwrap();
+
+        assert_eq!(fee, 0);
+    }
+
+    #[test]
+    fn test_calculate_zero_rewards() {
+        let vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
+
+        let fee = vault.calculate_rewards_fee_in_vrt(0).unwrap();
+
+        assert_eq!(fee, 0);
+    }
+
+    fn check_fee(
+        st_supply: u64,
+        vrt_supply: u64,
+        st_rewards: i64,
+        reward_fee_bps: u16,
+        max_delta_bps: u16,
+    ) -> Result<(), VaultError> {
+        let vault = make_test_vault(
+            0,
+            0,
+            reward_fee_bps,
+            st_supply,
+            vrt_supply,
+            DelegationState::default(),
+        );
+
+        let new_st_balance = (st_supply as i64 + st_rewards) as u64;
+        let reward_fee_in_vrt_result = vault.calculate_rewards_fee_in_vrt(new_st_balance);
+
+        match reward_fee_in_vrt_result {
+            Err(e) => return Err(e),
+            Ok(reward_fee_in_vrt) => {
+                return vault.check_reward_fee_effective_rate(
+                    new_st_balance,
+                    reward_fee_in_vrt,
+                    max_delta_bps,
+                )
+            }
+        }
+    }
+
+    #[test]
+    fn test_check_reward_fee_effective_rate_okay_amount() {
+        let result = check_fee(1000, 1000, 100, 1000, 50);
+        assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn test_check_reward_fee_effective_rate_realistic_amount() {
+        let result = check_fee(
+            100_000_000_000_000,
+            95_000_000_000_000,
+            5_000_000_000,
+            1000,
+            50,
+        );
+        assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn test_check_reward_fee_effective_rate_zero_starting_balance() {
+        let result = check_fee(0, 0, 1000, 10, 50);
+        assert_eq!(
+            result,
+            Err(VaultError::VaultDoesNotHaveEnoughTokensToDetermineRewards)
+        );
+    }
+
+    #[test]
+    fn test_check_fee_100_percent() {
+        let result = check_fee(1000, 1000, 10_000, 1000, 50);
+        assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn test_check_negative_rewards_ok() {
+        let result = check_fee(1000, 1000, -1, 1000, 50);
+        assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn test_check_zero_fee_okay() {
+        let result = check_fee(1000, 1000, 1000, 0, 50);
+        assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn test_check_reward_fee_effective_rate_large_delta() {
+        let result = check_fee(100_000_000_000_000, 95_000_000_000_000, 50, 1000, 50);
+        assert_eq!(result, Err(VaultError::VaultRewardFeeDeltaTooLarge));
+    }
+
+    #[test]
+    fn test_check_reward_fee_effective_rate_zero_rewards() {
+        let result = check_fee(10000, 10000, 1, 800, 50);
+        assert_eq!(result, Err(VaultError::VaultRewardFeeIsZero));
+    }
+
+    #[test]
+    fn test_check_reward_fee_effective_rate_max_delta_bps_too_large() {
+        let result = check_fee(10000, 10000, 1000, 1000, MAX_FEE_BPS + 1);
+        assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
     }
 }

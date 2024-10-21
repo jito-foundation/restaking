@@ -115,6 +115,12 @@ pub enum VaultError {
     NoSupportedMintBalanceChange,
     #[error("InvalidEpochLength")]
     InvalidEpochLength,
+    #[error("VaultRewardFeeDeltaTooLarge")]
+    VaultRewardFeeDeltaTooLarge,
+    #[error("VaultRewardFeeIsZero")]
+    VaultRewardFeeIsZero,
+    #[error("VaultDoesNotHaveEnoughTokensToDetermineRewards")]
+    VaultDoesNotHaveEnoughTokensToDetermineRewards,
 
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
