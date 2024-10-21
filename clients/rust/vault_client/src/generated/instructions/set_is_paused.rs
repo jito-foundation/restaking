@@ -59,7 +59,7 @@ pub struct SetIsPausedInstructionData {
 
 impl SetIsPausedInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 20 }
+        Self { discriminator: 19 }
     }
 }
 
