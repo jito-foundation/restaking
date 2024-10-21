@@ -69,6 +69,8 @@ pub fn process_enqueue_withdrawal(
         return Err(VaultError::VaultEnqueueWithdrawalAmountZero.into());
     }
 
+    let supported_token_amount_to_withdraw = vault.calculate_assets_returned_amount(vrt_amount)?;
+    vault.check_withdrawal_allowed(supported_token_amount_to_withdraw)?;
     // Check that min_amount_out is acceptable
     vault.check_min_supported_mint_out(vrt_amount, min_amount_out, config.program_fee_bps())?;
 
@@ -119,6 +121,7 @@ pub fn process_enqueue_withdrawal(
     );
 
     vault.increment_vrt_enqueued_for_cooldown_amount(vrt_amount)?;
+    vault.increment_epoch_withdraw_supported_token_amount(supported_token_amount_to_withdraw)?;
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket

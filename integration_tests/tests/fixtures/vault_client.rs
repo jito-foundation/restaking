@@ -267,6 +267,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
     ) -> Result<(Keypair, VaultRoot), TestError> {
         let config_admin = self.do_initialize_config().await?;
         let vault_root = self
@@ -274,6 +275,7 @@ impl VaultProgramClient {
                 deposit_fee_bps,
                 withdrawal_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 9,
                 &config_admin.pubkey(),
             )
@@ -287,6 +289,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
         decimals: u8,
         program_fee_wallet: &Pubkey,
     ) -> Result<VaultRoot, TestError> {
@@ -313,6 +316,7 @@ impl VaultProgramClient {
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            epoch_withdraw_cap_bps,
             decimals,
         )
         .await?;
@@ -739,6 +743,7 @@ impl VaultProgramClient {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
+        epoch_withdraw_cap_bps: u16,
         decimals: u8,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -755,6 +760,7 @@ impl VaultProgramClient {
                 deposit_fee_bps,
                 withdrawal_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 decimals,
             )],
             Some(&vault_admin.pubkey()),

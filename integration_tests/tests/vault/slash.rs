@@ -19,6 +19,7 @@ mod tests {
     const ZERO_DEPOSIT_FEE_BPS: u16 = 0;
     const ZERO_WITHDRAW_FEE_BPS: u16 = 0;
     const ZERO_REWARD_FEE_BPS: u16 = 0;
+    const ZERO_EPOCH_WITHDRAW_CAP_BPS: u16 = 0;
     const ONE_OPERATOR: u16 = 1;
     const SLASHER_AMOUNTS: &[u64] = &[MAX_SLASH_AMOUNT];
 
@@ -39,6 +40,7 @@ mod tests {
                 ZERO_DEPOSIT_FEE_BPS,
                 ZERO_WITHDRAW_FEE_BPS,
                 ZERO_REWARD_FEE_BPS,
+                ZERO_EPOCH_WITHDRAW_CAP_BPS,
                 ONE_OPERATOR,
                 SLASHER_AMOUNTS,
             )
@@ -196,6 +198,7 @@ mod tests {
                 ZERO_DEPOSIT_FEE_BPS,
                 ZERO_WITHDRAW_FEE_BPS,
                 ZERO_REWARD_FEE_BPS,
+                ZERO_EPOCH_WITHDRAW_CAP_BPS,
                 ONE_OPERATOR,
                 SLASHER_AMOUNTS,
             )

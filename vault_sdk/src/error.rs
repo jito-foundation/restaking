@@ -35,6 +35,8 @@ pub enum VaultError {
     VaultConfigFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
+    #[error("VaultEpochWithdrawCapExceeded")]
+    VaultEpochWithdrawCapExceeded,
     #[error("VaultFeeChangeTooSoon")]
     VaultFeeChangeTooSoon,
     #[error("VaultFeeBumpTooLarge")]
@@ -89,6 +91,8 @@ pub enum VaultError {
     VaultMaxSlashedPerOperatorExceeded,
     #[error("VaultStakerWithdrawalTicketInvalidStaker")]
     VaultStakerWithdrawalTicketInvalidStaker,
+    #[error("VaultWithdrawalLimitExceeded")]
+    VaultWithdrawalLimitExceeded,
     #[error("SlasherOverflow")]
     SlasherOverflow,
     #[error("NcnOverflow")]

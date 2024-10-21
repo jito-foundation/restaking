@@ -24,7 +24,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(99, 100, 0, 0)
             .await
             .unwrap();
 
@@ -75,7 +75,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(99, 100, 0, 0)
             .await
             .unwrap();
 
@@ -124,7 +124,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(99, 100, 0, 0)
             .await
             .unwrap();
 
@@ -164,7 +164,7 @@ mod tests {
                 vault_admin,
             },
         ) = vault_program_client
-            .setup_config_and_vault(99, 100, 0)
+            .setup_config_and_vault(99, 100, 0, 0)
             .await
             .unwrap();
 

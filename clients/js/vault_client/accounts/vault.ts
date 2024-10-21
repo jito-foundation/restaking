@@ -74,9 +74,12 @@ export type Vault = {
   slasherCount: bigint;
   lastFeeChangeSlot: bigint;
   lastFullStateUpdateSlot: bigint;
+  epochWithdrawSupportedTokenAmount: bigint;
+  epochSnapshotSupportedTokenAmount: bigint;
   depositFeeBps: number;
   withdrawalFeeBps: number;
   rewardFeeBps: number;
+  epochWithdrawCapBps: number;
   bump: number;
   isPaused: number;
   reserved: Array<number>;
@@ -111,9 +114,12 @@ export type VaultArgs = {
   slasherCount: number | bigint;
   lastFeeChangeSlot: number | bigint;
   lastFullStateUpdateSlot: number | bigint;
+  epochWithdrawSupportedTokenAmount: number | bigint;
+  epochSnapshotSupportedTokenAmount: number | bigint;
   depositFeeBps: number;
   withdrawalFeeBps: number;
   rewardFeeBps: number;
+  epochWithdrawCapBps: number;
   bump: number;
   isPaused: number;
   reserved: Array<number>;
@@ -149,9 +155,12 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['slasherCount', getU64Encoder()],
     ['lastFeeChangeSlot', getU64Encoder()],
     ['lastFullStateUpdateSlot', getU64Encoder()],
+    ['epochWithdrawSupportedTokenAmount', getU64Encoder()],
+    ['epochSnapshotSupportedTokenAmount', getU64Encoder()],
     ['depositFeeBps', getU16Encoder()],
     ['withdrawalFeeBps', getU16Encoder()],
     ['rewardFeeBps', getU16Encoder()],
+    ['epochWithdrawCapBps', getU16Encoder()],
     ['bump', getU8Encoder()],
     ['isPaused', getBoolEncoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
@@ -188,9 +197,12 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['slasherCount', getU64Decoder()],
     ['lastFeeChangeSlot', getU64Decoder()],
     ['lastFullStateUpdateSlot', getU64Decoder()],
+    ['epochWithdrawSupportedTokenAmount', getU64Decoder()],
+    ['epochSnapshotSupportedTokenAmount', getU64Decoder()],
     ['depositFeeBps', getU16Decoder()],
     ['withdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
+    ['epochWithdrawCapBps', getU16Decoder()],
     ['bump', getU8Decoder()],
     ['isPaused', getBoolDecoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
