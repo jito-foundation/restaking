@@ -1,124 +1,191 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_sdk::{
-        error::VaultError,
-        inline_mpl_token_metadata::{self, pda::find_metadata_account},
+    use jito_vault_core::{
+        config::Config, vault_operator_delegation::VaultOperatorDelegation,
+        vault_update_state_tracker::VaultUpdateStateTracker,
     };
-    use solana_program::pubkey::Pubkey;
-    use solana_sdk::signature::Keypair;
+    use jito_vault_sdk::error::VaultError;
+    use solana_sdk::{signature::Keypair, signer::Signer};
 
     use crate::fixtures::{
-        fixture::TestBuilder,
-        vault_client::{assert_vault_error, VaultProgramClient, VaultRoot},
+        fixture::{ConfiguredVault, TestBuilder},
+        vault_client::{assert_vault_error, VaultRoot},
     };
 
-    async fn setup() -> (VaultProgramClient, Pubkey, Keypair) {
-        let fixture = TestBuilder::new().await;
+    async fn setup_with_reward(
+        reward_amount: u64,
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+        reward_fee_bps: u16,
+    ) -> (TestBuilder, VaultRoot) {
+        let num_operators = 1;
+        let slasher_amounts = vec![];
 
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin: _,
+            vault_root,
+            restaking_config_admin: _,
+            ncn_root: _,
+            operator_roots,
+            slashers_amounts: _,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), reward_amount)
+            .await
+            .unwrap();
+
+        // Reward vault instead of staking
+        vault_program_client
+            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &depositor, reward_amount)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        let slot = fixture.get_current_slot().await.unwrap();
+        let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            slot / config.epoch_length(),
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker,
+            )
+            .await
+            .unwrap();
+
+        for operator in operator_roots {
+            vault_program_client
+                .crank_vault_update_state_tracker(
+                    &vault_root.vault_pubkey,
+                    &operator.operator_pubkey,
+                    &VaultOperatorDelegation::find_program_address(
+                        &jito_vault_program::id(),
+                        &vault_root.vault_pubkey,
+                        &operator.operator_pubkey,
+                    )
+                    .0,
+                    &vault_update_state_tracker,
+                )
+                .await
+                .unwrap();
+        }
+
+        vault_program_client
+            .close_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker,
+                slot / config.epoch_length(),
+            )
+            .await
+            .unwrap();
+
+        (fixture, vault_root)
+    }
+
+    #[tokio::test]
+    async fn test_update_vault_balance_ok() {
+        const MINT_AMOUNT: u64 = 1000;
+        // Match's unit test in vault.rs: test_calculate_reward_fee
+        const EXPECTED_FEE: u64 = 52;
+
+        let (fixture, vault_root) = setup_with_reward(
+            MINT_AMOUNT,
+            0,
+            0,
+            1000, //10%
+        )
+        .await;
         let mut vault_program_client = fixture.vault_program_client();
 
-        let deposit_fee_bps = 99;
-        let withdrawal_fee_bps = 100;
-        let reward_fee_bps = 101;
-
-        let (
-            _config_admin,
-            VaultRoot {
-                vault_pubkey,
-                vault_admin,
-            },
-        ) = vault_program_client
-            .setup_config_and_vault(deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
             .await
             .unwrap();
-
-        let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
-
-        // Create token metadata
-        let name = "restaking JTO";
-        let symbol = "rJTO";
-        let uri = "https://www.jito.network/restaking/";
-
-        let metadata_pubkey =
-            inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
         vault_program_client
-            .create_token_metadata(
-                &vault_pubkey,
-                &vault_admin,
-                &vault.vrt_mint,
-                &vault_admin,
-                &metadata_pubkey,
-                name.to_string(),
-                symbol.to_string(),
-                uri.to_string(),
-            )
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
             .await
             .unwrap();
 
-        (vault_program_client, vault_pubkey, vault_admin)
+        vault_program_client
+            .update_vault_balance(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let reward_fee_account = vault_program_client
+            .get_reward_fee_token_account(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.tokens_deposited(), MINT_AMOUNT * 2);
+        assert_eq!(reward_fee_account.amount, EXPECTED_FEE);
+        assert_eq!(vault.vrt_supply(), MINT_AMOUNT + EXPECTED_FEE);
     }
 
     #[tokio::test]
-    async fn success_update_token_metadata() {
-        let (mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
+    async fn test_update_vault_balance_no_initial_supply() {
+        let (fixture, vault_root) = setup_with_reward(
+            1000, 0, 0, 1000, //10%
+        )
+        .await;
+        let mut vault_program_client = fixture.vault_program_client();
 
-        let updated_name = "updated_name";
-        let updated_symbol = "USYM";
-        let updated_uri = "updated_uri";
-
-        let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
-
-        let metadata_pubkey = find_metadata_account(&vault.vrt_mint).0;
-
-        vault_program_client
-            .update_token_metadata(
-                &vault_pubkey,
-                &vault_admin,
-                &vault.vrt_mint,
-                &metadata_pubkey,
-                updated_name.to_string(),
-                updated_symbol.to_string(),
-                updated_uri.to_string(),
-            )
-            .await
-            .unwrap();
-
-        let token_metadata = vault_program_client
-            .get_token_metadata(&vault.vrt_mint)
-            .await
-            .unwrap();
-
-        assert!(token_metadata.name.starts_with(updated_name));
-        assert!(token_metadata.symbol.starts_with(updated_symbol));
-        assert!(token_metadata.uri.starts_with(updated_uri));
-    }
-
-    #[tokio::test]
-    async fn test_wrong_admin_signed() {
-        let (mut vault_program_client, vault_pubkey, _) = setup().await;
-
-        let updated_name = "updated_name";
-        let updated_symbol = "USYM";
-        let updated_uri = "updated_uri";
-
-        let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
-
-        let metadata_pubkey = find_metadata_account(&vault.vrt_mint).0;
-
-        let bad_admin = Keypair::new();
-        let response = vault_program_client
-            .update_token_metadata(
-                &vault_pubkey,
-                &bad_admin,
-                &vault.vrt_mint,
-                &metadata_pubkey,
-                updated_name.to_string(),
-                updated_symbol.to_string(),
-                updated_uri.to_string(),
-            )
+        let test_error = vault_program_client
+            .update_vault_balance(&vault_root.vault_pubkey)
             .await;
 
-        assert_vault_error(response, VaultError::VaultAdminInvalid);
+        assert_vault_error(test_error, VaultError::VaultRewardFeeIsZero);
+    }
+
+    #[tokio::test]
+    async fn test_update_vault_balance_vault_is_paused_fails() {
+        let (fixture, vault_root) = setup_with_reward(
+            1000, 0, 0, 1000, //10%
+        )
+        .await;
+        let mut vault_program_client = fixture.vault_program_client();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let test_error = vault_program_client
+            .update_vault_balance(&vault_root.vault_pubkey)
+            .await;
+
+        assert_vault_error(test_error, VaultError::VaultIsPaused);
     }
 }
