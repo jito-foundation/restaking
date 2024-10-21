@@ -126,6 +126,10 @@ export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x41d; // 1053
 export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41e; // 1054
 /** InvalidEpochLength: InvalidEpochLength */
 export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x41f; // 1055
+/** VaultRewardFeeDeltaTooLarge: VaultRewardFeeDeltaTooLarge */
+export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_DELTA_TOO_LARGE = 0x420; // 1056
+/** VaultRewardFeeIsZero: VaultRewardFeeIsZero */
+export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_IS_ZERO = 0x421; // 1057
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */
@@ -182,6 +186,8 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_IS_UPDATED
   | typeof JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_UPDATE_NEEDED
   | typeof JITO_VAULT_ERROR__VAULT_OVERFLOW
+  | typeof JITO_VAULT_ERROR__VAULT_REWARD_FEE_DELTA_TOO_LARGE
+  | typeof JITO_VAULT_ERROR__VAULT_REWARD_FEE_IS_ZERO
   | typeof JITO_VAULT_ERROR__VAULT_SECURITY_OVERFLOW
   | typeof JITO_VAULT_ERROR__VAULT_SECURITY_UNDERFLOW
   | typeof JITO_VAULT_ERROR__VAULT_SLASHER_ADMIN_INVALID
@@ -245,6 +251,8 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_IS_UPDATED]: `VaultOperatorDelegationIsUpdated`,
     [JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_UPDATE_NEEDED]: `VaultOperatorDelegationUpdateNeeded`,
     [JITO_VAULT_ERROR__VAULT_OVERFLOW]: `VaultOverflow`,
+    [JITO_VAULT_ERROR__VAULT_REWARD_FEE_DELTA_TOO_LARGE]: `VaultRewardFeeDeltaTooLarge`,
+    [JITO_VAULT_ERROR__VAULT_REWARD_FEE_IS_ZERO]: `VaultRewardFeeIsZero`,
     [JITO_VAULT_ERROR__VAULT_SECURITY_OVERFLOW]: `VaultSecurityOverflow`,
     [JITO_VAULT_ERROR__VAULT_SECURITY_UNDERFLOW]: `VaultSecurityUnderflow`,
     [JITO_VAULT_ERROR__VAULT_SLASHER_ADMIN_INVALID]: `VaultSlasherAdminInvalid`,

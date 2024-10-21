@@ -2555,6 +2555,16 @@
       "msg": "InvalidEpochLength"
     },
     {
+      "code": 1056,
+      "name": "VaultRewardFeeDeltaTooLarge",
+      "msg": "VaultRewardFeeDeltaTooLarge"
+    },
+    {
+      "code": 1057,
+      "name": "VaultRewardFeeIsZero",
+      "msg": "VaultRewardFeeIsZero"
+    },
+    {
       "code": 3000,
       "name": "ArithmeticOverflow",
       "msg": "ArithmeticOverflow"

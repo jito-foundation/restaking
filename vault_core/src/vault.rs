@@ -2351,7 +2351,7 @@ mod tests {
             .is_err());
     }
 
-    /// ---------- REWARD FEE HELPERS ------------
+    // ---------- REWARD FEE HELPERS ------------
     fn apply_vrt_reward_fee(vault: &mut Vault, st_rewards: i64) -> (u64, u64) {
         // allow for negative rewards
         let new_st_supply = (vault.tokens_deposited() as i64 + st_rewards) as u64;
@@ -2399,7 +2399,7 @@ mod tests {
         );
     }
 
-    /// ---------- REWARD FEE TESTS ------------
+    // ---------- REWARD FEE TESTS ------------
 
     #[test]
     fn test_calculate_reward_fee_st() {
