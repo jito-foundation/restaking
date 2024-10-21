@@ -80,7 +80,7 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
                 data: {
                     ...node.data,
                     fields: [
-                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        kinobi.structFieldTypeNode({ name: 'discriminator', type: kinobi.numberTypeNode('u64') }),
                         ...node.data.fields
                     ]
                 }
@@ -180,7 +180,7 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
                 data: {
                     ...node.data,
                     fields: [
-                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        kinobi.structFieldTypeNode({ name: 'discriminator', type: kinobi.numberTypeNode('u64') }),
                         ...node.data.fields
                     ]
                 }

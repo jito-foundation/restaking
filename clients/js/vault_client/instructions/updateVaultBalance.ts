@@ -41,31 +41,31 @@ export type UpdateVaultBalanceInstruction<
   TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountVaultFeeTokenAccount extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
-  | string
-  | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    | string
+    | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
       TAccountConfig extends string
-      ? ReadonlyAccount<TAccountConfig>
-      : TAccountConfig,
+        ? ReadonlyAccount<TAccountConfig>
+        : TAccountConfig,
       TAccountVault extends string
-      ? WritableAccount<TAccountVault>
-      : TAccountVault,
+        ? WritableAccount<TAccountVault>
+        : TAccountVault,
       TAccountVaultTokenAccount extends string
-      ? ReadonlyAccount<TAccountVaultTokenAccount>
-      : TAccountVaultTokenAccount,
+        ? ReadonlyAccount<TAccountVaultTokenAccount>
+        : TAccountVaultTokenAccount,
       TAccountVrtMint extends string
-      ? WritableAccount<TAccountVrtMint>
-      : TAccountVrtMint,
+        ? WritableAccount<TAccountVrtMint>
+        : TAccountVrtMint,
       TAccountVaultFeeTokenAccount extends string
-      ? WritableAccount<TAccountVaultFeeTokenAccount>
-      : TAccountVaultFeeTokenAccount,
+        ? WritableAccount<TAccountVaultFeeTokenAccount>
+        : TAccountVaultFeeTokenAccount,
       TAccountTokenProgram extends string
-      ? ReadonlyAccount<TAccountTokenProgram>
-      : TAccountTokenProgram,
+        ? ReadonlyAccount<TAccountTokenProgram>
+        : TAccountTokenProgram,
       ...TRemainingAccounts,
     ]
   >;
