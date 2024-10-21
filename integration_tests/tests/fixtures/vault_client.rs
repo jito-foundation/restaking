@@ -1412,69 +1412,6 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn do_burn(
-        &mut self,
-        vault_root: &VaultRoot,
-        depositor: &Keypair,
-        amount_in: u64,
-        min_amount_out: u64,
-    ) -> TestResult<()> {
-        let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
-        self.burn(
-            &vault_root.vault_pubkey,
-            &vault.vrt_mint,
-            &depositor,
-            &get_associated_token_address(&depositor.pubkey(), &vault.supported_mint),
-            &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
-            &get_associated_token_address(&depositor.pubkey(), &vault.vrt_mint),
-            &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
-            None,
-            amount_in,
-            min_amount_out,
-        )
-        .await
-    }
-
-    pub async fn burn(
-        &mut self,
-        vault: &Pubkey,
-        vrt_mint: &Pubkey,
-        depositor: &Keypair,
-        depositor_token_account: &Pubkey,
-        vault_token_account: &Pubkey,
-        depositor_vrt_token_account: &Pubkey,
-        vault_fee_token_account: &Pubkey,
-        mint_signer: Option<&Keypair>,
-        amount_in: u64,
-        min_amount_out: u64,
-    ) -> Result<(), TestError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
-        let mut signers = vec![depositor];
-        if let Some(signer) = mint_signer {
-            signers.push(signer);
-        }
-        self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::burn(
-                &jito_vault_program::id(),
-                &Config::find_program_address(&jito_vault_program::id()).0,
-                vault,
-                vault_token_account,
-                vrt_mint,
-                &depositor.pubkey(),
-                depositor_token_account,
-                depositor_vrt_token_account,
-                vault_fee_token_account,
-                None,
-                amount_in,
-                min_amount_out,
-            )],
-            Some(&depositor.pubkey()),
-            &signers,
-            blockhash,
-        ))
-        .await
-    }
-
     pub async fn initialize_vault_ncn_slasher_ticket(
         &mut self,
         config: &Pubkey,

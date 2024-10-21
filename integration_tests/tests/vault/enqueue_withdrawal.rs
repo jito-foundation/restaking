@@ -217,7 +217,7 @@ mod tests {
             operator_roots,
             ..
         } = fixture
-            .setup_vault_with_ncn_and_operators(0, 0, 0, 1, &[])
+            .setup_vault_with_ncn_and_operators(0, 0, 0, 0, 1, &[])
             .await
             .unwrap();
 

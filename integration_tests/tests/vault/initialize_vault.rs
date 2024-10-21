@@ -73,7 +73,6 @@ mod tests {
         assert_vault_error(err, VaultError::VaultFeeCapExceeded);
 
         let err = vault_program_client
-            .do_initialize_vault(config.deposit_withdrawal_fee_cap_bps() + 1, 0, 0, 0, 9)
             .do_initialize_vault(
                 config.deposit_withdrawal_fee_cap_bps() + 1,
                 0,
@@ -144,7 +143,7 @@ mod tests {
         vault_program_client.do_initialize_config().await.unwrap();
 
         let err = vault_program_client
-            .do_initialize_vault(0, 0, 0, 10001, 9)
+            .do_initialize_vault(0, 0, 0, 10001, 9, &Pubkey::new_unique())
             .await;
 
         assert_vault_error(err, VaultError::VaultEpochWithdrawCapExceeded);

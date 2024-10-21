@@ -9,7 +9,9 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{config::Config, delegation_state::DelegationState, MAX_BPS, MAX_EPOCH_WITHDRAW_BPS, MAX_FEE_BPS};
+use crate::{
+    config::Config, delegation_state::DelegationState, MAX_BPS, MAX_EPOCH_WITHDRAW_BPS, MAX_FEE_BPS,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -456,6 +458,8 @@ impl Vault {
             .checked_add(amount)
             .ok_or(VaultError::VaultOverflow)?;
         self.epoch_withdraw_supported_token_amount = PodU64::from(epoch_withdraw_amount);
+
+        Ok(())
     }
 
     pub fn is_paused(&self) -> bool {

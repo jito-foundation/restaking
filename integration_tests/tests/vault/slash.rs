@@ -198,6 +198,7 @@ mod tests {
                 ZERO_DEPOSIT_FEE_BPS,
                 ZERO_WITHDRAW_FEE_BPS,
                 ZERO_REWARD_FEE_BPS,
+                ZERO_EPOCH_WITHDRAW_CAP_BPS,
                 ONE_OPERATOR,
                 SLASHER_AMOUNTS,
             )

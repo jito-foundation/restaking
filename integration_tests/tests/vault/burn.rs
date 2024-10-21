@@ -26,12 +26,14 @@ mod tests {
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
+            operator_roots,
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -67,7 +69,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn(&vault_root, &depositor, HALF_MINT_AMOUNT, HALF_MINT_AMOUNT)
+            .do_burn(&vault_root, &depositor, BURN_AMOUNT, BURN_AMOUNT)
             .await
             .unwrap();
 
@@ -105,6 +107,7 @@ mod tests {
         let ConfiguredVault {
             mut vault_program_client,
             vault_root,
+            operator_roots,
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
@@ -179,6 +182,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 100; // 1%
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 5_000; // 50%
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -192,6 +196,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -226,6 +231,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 100; // 1%
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 5_000; // 50%
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -234,12 +240,14 @@ mod tests {
             mut vault_program_client,
             vault_root,
             vault_config_admin,
+            operator_roots,
             ..
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -260,6 +268,24 @@ mod tests {
             .unwrap();
         vault_program_client
             .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
             .await
             .unwrap();
 

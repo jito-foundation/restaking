@@ -12,7 +12,9 @@ mod tests {
         let mut vault_program_client = context.vault_program_client();
 
         // Initialize config and vault
-        let (config_admin, _) = vault_program_client.setup_config_and_vault(0, 0, 0).await?;
+        let (config_admin, _) = vault_program_client
+            .setup_config_and_vault(0, 0, 0, 0)
+            .await?;
 
         // Set a new fee wallet
         let new_fee_wallet = Keypair::new().pubkey();

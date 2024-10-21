@@ -18,7 +18,12 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS, ZERO_REWARD_FEE_BPS, ZERO_EPOCH_WITHDRAW_CAP_BPS)
+            .setup_config_and_vault(
+                DEPOSIT_FEE_BPS,
+                WITHDRAW_FEE_BPS,
+                ZERO_REWARD_FEE_BPS,
+                ZERO_EPOCH_WITHDRAW_CAP_BPS,
+            )
             .await
             .unwrap();
 
@@ -61,7 +66,12 @@ mod tests {
         let mut vault_program_client = fixture.vault_program_client();
 
         let (_config_admin, vault_root) = vault_program_client
-            .setup_config_and_vault(DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS, ZERO_REWARD_FEE_BPS)
+            .setup_config_and_vault(
+                DEPOSIT_FEE_BPS,
+                WITHDRAW_FEE_BPS,
+                ZERO_REWARD_FEE_BPS,
+                ZERO_EPOCH_WITHDRAW_CAP_BPS,
+            )
             .await
             .unwrap();
 

@@ -318,7 +318,8 @@ mod tests {
 
         vault_program_client
             .do_full_vault_update(&vault_root.vault_pubkey, &operator_pubkeys)
-            .await.unwrap();
+            .await
+            .unwrap();
 
         let min_amount_out = vault
             .calculate_min_supported_mint_out(
@@ -385,6 +386,7 @@ mod tests {
         let deposit_fee_bps = 0;
         let withdraw_fee_bps = 0;
         let reward_fee_bps = 0;
+        let epoch_withdraw_cap_bps = 2500; // 25%
         let num_operators = 2;
         let slasher_amounts = vec![];
 
@@ -398,6 +400,7 @@ mod tests {
                 deposit_fee_bps,
                 withdraw_fee_bps,
                 reward_fee_bps,
+                epoch_withdraw_cap_bps,
                 num_operators,
                 &slasher_amounts,
             )

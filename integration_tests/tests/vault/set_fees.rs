@@ -1065,7 +1065,7 @@ mod tests {
 
         // Initialize config and vault
         let (config_admin, _) = vault_program_client
-            .setup_config_and_vault(0, 0, 0)
+            .setup_config_and_vault(0, 0, 0, 0)
             .await
             .unwrap();
 
