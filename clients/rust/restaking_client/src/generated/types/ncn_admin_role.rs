@@ -21,8 +21,11 @@ use num_derive::FromPrimitive;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum NcnAdminRole {
-    Operator,
-    Vault,
-    Slasher,
-    Delegate,
+    OperatorAdmin,
+    VaultAdmin,
+    SlasherAdmin,
+    DelegateAdmin,
+    MetadataAdmin,
+    WeightTableAdmin,
+    NcnProgramAdmin,
 }

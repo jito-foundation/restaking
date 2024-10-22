@@ -36,12 +36,12 @@ pub struct Operator {
     /// The delegate admin can delegate assets from the operator
     pub delegate_admin: Pubkey,
 
+    /// ( For future use ) Authority to update the operators's metadata
+    pub metadata_admin: Pubkey,
+
     /// The voter pubkey can be used as the voter for signing transactions for interacting
     /// with various NCN programs. NCNs can also opt for their own signing infrastructure.
     pub voter: Pubkey,
-
-    /// Reserved space
-    reserved_1: [u8; 32],
 
     /// The operator index
     index: PodU64,
@@ -78,7 +78,7 @@ impl Operator {
             ncn_admin: admin,
             vault_admin: admin,
             delegate_admin: admin,
-            reserved_1: [0; 32],
+            metadata_admin: admin,
             voter: admin,
             index: PodU64::from(index),
             ncn_count: PodU64::from(0),
@@ -192,6 +192,11 @@ impl Operator {
             self.delegate_admin = *new_admin;
             msg!("Delegate admin set to {:?}", new_admin);
         }
+
+        if self.metadata_admin.eq(old_admin) {
+            self.metadata_admin = *new_admin;
+            msg!("Metadata admin set to {:?}", new_admin);
+        }
     }
 
     /// Returns the seeds for the PDA
@@ -279,7 +284,7 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // ncn_admin
             std::mem::size_of::<Pubkey>() + // vault_admin
             std::mem::size_of::<Pubkey>() + // delegate_admin
-            32 + // reserved_space
+            std::mem::size_of::<Pubkey>() + // metadata_admin
             std::mem::size_of::<Pubkey>() + // voter
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // ncn_count
@@ -306,5 +311,6 @@ mod tests {
         assert_eq!(operator.vault_admin, new_admin);
         assert_eq!(operator.voter, new_admin);
         assert_eq!(operator.delegate_admin, new_admin);
+        assert_eq!(operator.metadata_admin, new_admin);
     }
 }

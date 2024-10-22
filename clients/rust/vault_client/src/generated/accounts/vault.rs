@@ -85,6 +85,11 @@ pub struct Vault {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub mint_burn_admin: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub metadata_admin: Pubkey,
     pub vault_index: u64,
     pub ncn_count: u64,
     pub operator_count: u64,

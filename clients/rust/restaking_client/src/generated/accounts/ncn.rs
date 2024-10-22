@@ -41,7 +41,21 @@ pub struct Ncn {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub delegate_admin: Pubkey,
-    pub reserved1: [u8; 32],
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub metadata_admin: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub weight_table_admin: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub ncn_program_admin: Pubkey,
     pub index: u64,
     pub operator_count: u64,
     pub vault_count: u64,

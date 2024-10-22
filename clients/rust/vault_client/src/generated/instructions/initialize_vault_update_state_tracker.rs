@@ -75,7 +75,7 @@ pub struct InitializeVaultUpdateStateTrackerInstructionData {
 
 impl InitializeVaultUpdateStateTrackerInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 25 }
+        Self { discriminator: 26 }
     }
 }
 

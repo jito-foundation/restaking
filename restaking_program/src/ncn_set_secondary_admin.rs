@@ -28,17 +28,26 @@ pub fn process_ncn_set_secondary_admin(
     }
 
     match role {
-        NcnAdminRole::Operator => {
+        NcnAdminRole::OperatorAdmin => {
             ncn.operator_admin = *new_admin.key;
         }
-        NcnAdminRole::Vault => {
+        NcnAdminRole::VaultAdmin => {
             ncn.vault_admin = *new_admin.key;
         }
-        NcnAdminRole::Slasher => {
+        NcnAdminRole::SlasherAdmin => {
             ncn.slasher_admin = *new_admin.key;
         }
-        NcnAdminRole::Delegate => {
+        NcnAdminRole::DelegateAdmin => {
             ncn.delegate_admin = *new_admin.key;
+        }
+        NcnAdminRole::MetadataAdmin => {
+            ncn.metadata_admin = *new_admin.key;
+        }
+        NcnAdminRole::WeightTableAdmin => {
+            ncn.weight_table_admin = *new_admin.key;
+        }
+        NcnAdminRole::NcnProgramAdmin => {
+            ncn.ncn_program_admin = *new_admin.key;
         }
     }
 

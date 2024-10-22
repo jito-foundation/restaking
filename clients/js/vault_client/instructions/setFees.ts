@@ -36,7 +36,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SET_FEES_DISCRIMINATOR = 17;
+export const SET_FEES_DISCRIMINATOR = 16;
 
 export function getSetFeesDiscriminatorBytes() {
   return getU8Encoder().encode(SET_FEES_DISCRIMINATOR);

@@ -59,7 +59,8 @@ pub fn process_add_delegation(
 
     vault.check_is_paused()?;
 
-    vault.delegate(amount)?;
+    vault.delegate(amount, config.program_fee_bps())?;
+
     vault_operator_delegation
         .delegation_state
         .delegate(amount)?;

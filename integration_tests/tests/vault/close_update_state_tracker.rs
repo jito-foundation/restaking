@@ -294,8 +294,17 @@ mod tests {
             .await
             .unwrap();
 
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
         let min_amount_out = vault
-            .calculate_min_supported_mint_out(100_000, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
+            .calculate_min_supported_mint_out(
+                100_000,
+                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
+                config.program_fee_bps(),
+            )
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
@@ -310,10 +319,6 @@ mod tests {
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
 
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
         fixture
             .warp_slot_incremental(config.epoch_length())
             .await

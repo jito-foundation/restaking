@@ -25,4 +25,5 @@ pub enum OperatorAdminRole {
     VaultAdmin,
     VoterAdmin,
     DelegateAdmin,
+    MetadataAdmin,
 }

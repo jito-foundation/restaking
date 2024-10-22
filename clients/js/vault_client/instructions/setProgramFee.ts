@@ -10,8 +10,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
+  getU16Decoder,
+  getU16Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -24,7 +24,6 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
-  type ReadonlyAccount,
   type ReadonlySignerAccount,
   type TransactionSigner,
   type WritableAccount,
@@ -32,16 +31,15 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SET_DEPOSIT_CAPACITY_DISCRIMINATOR = 15;
+export const SET_PROGRAM_FEE_DISCRIMINATOR = 17;
 
-export function getSetDepositCapacityDiscriminatorBytes() {
-  return getU8Encoder().encode(SET_DEPOSIT_CAPACITY_DISCRIMINATOR);
+export function getSetProgramFeeDiscriminatorBytes() {
+  return getU8Encoder().encode(SET_PROGRAM_FEE_DISCRIMINATOR);
 }
 
-export type SetDepositCapacityInstruction<
+export type SetProgramFeeInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
-  TAccountVault extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
@@ -49,11 +47,8 @@ export type SetDepositCapacityInstruction<
   IInstructionWithAccounts<
     [
       TAccountConfig extends string
-        ? ReadonlyAccount<TAccountConfig>
+        ? WritableAccount<TAccountConfig>
         : TAccountConfig,
-      TAccountVault extends string
-        ? WritableAccount<TAccountVault>
-        : TAccountVault,
       TAccountAdmin extends string
         ? ReadonlySignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
@@ -62,61 +57,57 @@ export type SetDepositCapacityInstruction<
     ]
   >;
 
-export type SetDepositCapacityInstructionData = {
+export type SetProgramFeeInstructionData = {
   discriminator: number;
-  amount: bigint;
+  newFeeBps: number;
 };
 
-export type SetDepositCapacityInstructionDataArgs = { amount: number | bigint };
+export type SetProgramFeeInstructionDataArgs = { newFeeBps: number };
 
-export function getSetDepositCapacityInstructionDataEncoder(): Encoder<SetDepositCapacityInstructionDataArgs> {
+export function getSetProgramFeeInstructionDataEncoder(): Encoder<SetProgramFeeInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['amount', getU64Encoder()],
+      ['newFeeBps', getU16Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: SET_DEPOSIT_CAPACITY_DISCRIMINATOR })
+    (value) => ({ ...value, discriminator: SET_PROGRAM_FEE_DISCRIMINATOR })
   );
 }
 
-export function getSetDepositCapacityInstructionDataDecoder(): Decoder<SetDepositCapacityInstructionData> {
+export function getSetProgramFeeInstructionDataDecoder(): Decoder<SetProgramFeeInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['amount', getU64Decoder()],
+    ['newFeeBps', getU16Decoder()],
   ]);
 }
 
-export function getSetDepositCapacityInstructionDataCodec(): Codec<
-  SetDepositCapacityInstructionDataArgs,
-  SetDepositCapacityInstructionData
+export function getSetProgramFeeInstructionDataCodec(): Codec<
+  SetProgramFeeInstructionDataArgs,
+  SetProgramFeeInstructionData
 > {
   return combineCodec(
-    getSetDepositCapacityInstructionDataEncoder(),
-    getSetDepositCapacityInstructionDataDecoder()
+    getSetProgramFeeInstructionDataEncoder(),
+    getSetProgramFeeInstructionDataDecoder()
   );
 }
 
-export type SetDepositCapacityInput<
+export type SetProgramFeeInput<
   TAccountConfig extends string = string,
-  TAccountVault extends string = string,
   TAccountAdmin extends string = string,
 > = {
   config: Address<TAccountConfig>;
-  vault: Address<TAccountVault>;
   admin: TransactionSigner<TAccountAdmin>;
-  amount: SetDepositCapacityInstructionDataArgs['amount'];
+  newFeeBps: SetProgramFeeInstructionDataArgs['newFeeBps'];
 };
 
-export function getSetDepositCapacityInstruction<
+export function getSetProgramFeeInstruction<
   TAccountConfig extends string,
-  TAccountVault extends string,
   TAccountAdmin extends string,
 >(
-  input: SetDepositCapacityInput<TAccountConfig, TAccountVault, TAccountAdmin>
-): SetDepositCapacityInstruction<
+  input: SetProgramFeeInput<TAccountConfig, TAccountAdmin>
+): SetProgramFeeInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
-  TAccountVault,
   TAccountAdmin
 > {
   // Program address.
@@ -124,8 +115,7 @@ export function getSetDepositCapacityInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    config: { value: input.config ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: true },
+    config: { value: input.config ?? null, isWritable: true },
     admin: { value: input.admin ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -138,47 +128,41 @@ export function getSetDepositCapacityInstruction<
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
-    accounts: [
-      getAccountMeta(accounts.config),
-      getAccountMeta(accounts.vault),
-      getAccountMeta(accounts.admin),
-    ],
+    accounts: [getAccountMeta(accounts.config), getAccountMeta(accounts.admin)],
     programAddress,
-    data: getSetDepositCapacityInstructionDataEncoder().encode(
-      args as SetDepositCapacityInstructionDataArgs
+    data: getSetProgramFeeInstructionDataEncoder().encode(
+      args as SetProgramFeeInstructionDataArgs
     ),
-  } as SetDepositCapacityInstruction<
+  } as SetProgramFeeInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
-    TAccountVault,
     TAccountAdmin
   >;
 
   return instruction;
 }
 
-export type ParsedSetDepositCapacityInstruction<
+export type ParsedSetProgramFeeInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
     config: TAccountMetas[0];
-    vault: TAccountMetas[1];
-    admin: TAccountMetas[2];
+    admin: TAccountMetas[1];
   };
-  data: SetDepositCapacityInstructionData;
+  data: SetProgramFeeInstructionData;
 };
 
-export function parseSetDepositCapacityInstruction<
+export function parseSetProgramFeeInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedSetDepositCapacityInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 3) {
+): ParsedSetProgramFeeInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 2) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -192,11 +176,8 @@ export function parseSetDepositCapacityInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       config: getNextAccount(),
-      vault: getNextAccount(),
       admin: getNextAccount(),
     },
-    data: getSetDepositCapacityInstructionDataDecoder().decode(
-      instruction.data
-    ),
+    data: getSetProgramFeeInstructionDataDecoder().decode(instruction.data),
   };
 }

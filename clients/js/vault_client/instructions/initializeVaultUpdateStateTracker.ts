@@ -33,7 +33,7 @@ import {
   type WithdrawalAllocationMethodArgs,
 } from '../types';
 
-export const INITIALIZE_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 25;
+export const INITIALIZE_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 26;
 
 export function getInitializeVaultUpdateStateTrackerDiscriminatorBytes() {
   return getU8Encoder().encode(

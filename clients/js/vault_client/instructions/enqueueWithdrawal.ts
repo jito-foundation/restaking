@@ -33,7 +33,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const ENQUEUE_WITHDRAWAL_DISCRIMINATOR = 13;
+export const ENQUEUE_WITHDRAWAL_DISCRIMINATOR = 12;
 
 export function getEnqueueWithdrawalDiscriminatorBytes() {
   return getU8Encoder().encode(ENQUEUE_WITHDRAWAL_DISCRIMINATOR);
