@@ -16,9 +16,6 @@ use solana_program::{
 
 use crate::MAX_BPS;
 
-impl Discriminator for Config {
-    const DISCRIMINATOR: u8 = 1;
-}
 
 /// The vault configuration account for the vault program.
 /// Manages program-wide settings and state.
