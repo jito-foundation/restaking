@@ -75,18 +75,25 @@ impl VaultUpdateStateTracker {
         Ok(())
     }
 
-    pub fn check_and_update_index(&mut self, index: u64) -> Result<(), VaultError> {
+    pub fn check_and_update_index(
+        &mut self,
+        index: u64,
+        ncn_epoch: u64,
+        epoch_length: u64,
+    ) -> Result<(), VaultError> {
+        let start_index = ncn_epoch
+            .checked_rem(epoch_length)
+            .ok_or(VaultError::DivisionByZero)?;
+        let next_index = index
+            .checked_add(1)
+            .and_then(|i| i.checked_rem(epoch_length))
+            .ok_or(VaultError::ArithmeticOverflow)?;
         if self.last_updated_index() == u64::MAX {
-            if index != 0 {
+            if index != start_index {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-        } else if index
-            != self
-                .last_updated_index()
-                .checked_add(1)
-                .ok_or(VaultError::ArithmeticOverflow)?
-        {
+        } else if index != next_index {
             msg!("VaultUpdateStateTracker incorrect index");
             return Err(VaultError::VaultUpdateIncorrectIndex);
         }
