@@ -187,7 +187,6 @@ mod tests {
             size_of::<Pubkey>() + // staker
             size_of::<Pubkey>() + // base
             size_of::<PodU64>() + // vrt_amount
-            size_of::<PodU64>() + // min_amount_out
             size_of::<PodU64>() + // slot_unstaked
             size_of::<u8>() + // bump
             263; // reserved

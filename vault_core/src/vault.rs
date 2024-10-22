@@ -1513,12 +1513,6 @@ mod tests {
     }
 
     #[test]
-    fn test_burn_slippage_exceeded_fails() {
-        let mut vault = make_test_vault(0, 100, 100, 100, DelegationState::default());
-        assert_eq!(vault.burn_with_fee(0, 100), Err(VaultError::SlippageError));
-    }
-
-    #[test]
     fn test_burn_with_delegation_ok() {
         let mut vault = make_test_vault(0, 0, 100, 100, DelegationState::new(10, 10, 0));
 
