@@ -43,7 +43,7 @@ pub fn process_cooldown_vault_ncn_ticket(
     // The VaultNcnTicket must be active in order to cooldown the NCN
     if !vault_ncn_ticket
         .state
-        .deactivate(Clock::get()?.slot, config.epoch_length())
+        .deactivate(Clock::get()?.slot, config.epoch_length())?
     {
         msg!("NCN is not ready to be deactivated");
         return Err(VaultError::VaultNcnTicketFailedCooldown.into());

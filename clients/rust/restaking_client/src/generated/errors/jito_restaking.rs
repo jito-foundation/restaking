@@ -9,6 +9,15 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
 pub enum JitoRestakingError {
+    /// 0 - JsmCoreArithmeticOverflow
+    #[error("JsmCoreArithmeticOverflow")]
+    JsmCoreArithmeticOverflow = 0x0,
+    /// 1 - JsmCoreArithmeticUnderflow
+    #[error("JsmCoreArithmeticUnderflow")]
+    JsmCoreArithmeticUnderflow = 0x1,
+    /// 2 - JsmCoreDivisionByZero
+    #[error("JsmCoreDivisionByZero")]
+    JsmCoreDivisionByZero = 0x2,
     /// 1000 - NcnOperatorAdminInvalid
     #[error("NcnOperatorAdminInvalid")]
     NcnOperatorAdminInvalid = 0x3E8,

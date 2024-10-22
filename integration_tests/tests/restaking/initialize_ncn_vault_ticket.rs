@@ -48,7 +48,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            ticket.state.state(slot, config.epoch_length()),
+            ticket.state.state(slot, config.epoch_length()).unwrap(),
             SlotToggleState::Inactive
         );
     }

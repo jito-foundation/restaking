@@ -9,6 +9,15 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
 pub enum JitoVaultError {
+    /// 0 - JsmCoreArithmeticOverflow
+    #[error("JsmCoreArithmeticOverflow")]
+    JsmCoreArithmeticOverflow = 0x0,
+    /// 1 - JsmCoreArithmeticUnderflow
+    #[error("JsmCoreArithmeticUnderflow")]
+    JsmCoreArithmeticUnderflow = 0x1,
+    /// 2 - JsmCoreDivisionByZero
+    #[error("JsmCoreDivisionByZero")]
+    JsmCoreDivisionByZero = 0x2,
     /// 1000 - VaultSlashUnderflow
     #[error("VaultSlashUnderflow")]
     VaultSlashUnderflow = 0x3E8,

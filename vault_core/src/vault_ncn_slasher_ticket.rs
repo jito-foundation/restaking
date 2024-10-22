@@ -189,7 +189,7 @@ mod tests {
         );
         assert_eq!(
             vault_ncn_slasher_ticket.state.state(slot + 1, 100),
-            SlotToggleState::Inactive
+            Ok(SlotToggleState::Inactive)
         );
     }
 }
