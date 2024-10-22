@@ -159,7 +159,6 @@ pub enum VaultInstruction {
     #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
         amount: u64,
-        min_amount_out: u64
     },
 
     #[account(0, name = "config")]

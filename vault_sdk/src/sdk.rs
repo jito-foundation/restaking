@@ -632,7 +632,6 @@ pub fn enqueue_withdrawal(
     staker_vrt_token_account: &Pubkey,
     base: &Pubkey,
     amount: u64,
-    min_amount_out: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -648,12 +647,9 @@ pub fn enqueue_withdrawal(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::EnqueueWithdrawal {
-            amount,
-            min_amount_out,
-        }
-        .try_to_vec()
-        .unwrap(),
+        data: VaultInstruction::EnqueueWithdrawal { amount }
+            .try_to_vec()
+            .unwrap(),
     }
 }
 

@@ -206,12 +206,9 @@ pub fn process_instruction(
             msg!("Instruction: Burn");
             process_burn(program_id, accounts, amount_in, min_amount_out)
         }
-        VaultInstruction::EnqueueWithdrawal {
-            amount,
-            min_amount_out,
-        } => {
+        VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
-            process_enqueue_withdrawal(program_id, accounts, amount, min_amount_out)
+            process_enqueue_withdrawal(program_id, accounts, amount)
         }
         VaultInstruction::ChangeWithdrawalTicketOwner => {
             msg!("Instruction: ChangeWithdrawalTicketOwner");

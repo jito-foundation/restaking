@@ -85,7 +85,8 @@ pub fn process_burn(
         program_fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(config.program_fee_bps(), amount_in, min_amount_out)?;
+        // } = vault.burn_with_fee(config.program_fee_bps(), amount_in, min_amount_out)?;
+    } = vault.burn_with_fee(config.program_fee_bps(), amount_in)?;
 
     // Burn the VRT tokens from the staker's account
     invoke(
