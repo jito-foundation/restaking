@@ -153,7 +153,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_wrong_admin_signed() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -177,6 +177,10 @@ mod tests {
 
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
+
+        // Getting errors: RpcError(DeadlineExceeded)
+        // https://solana.stackexchange.com/questions/3114/bpf-test-crashes-if-duration-10s
+        fixture.warp_slot_incremental(10000).await.unwrap();
 
         let bad_admin = Keypair::new();
         let response = vault_program_client
