@@ -127,10 +127,12 @@ mod tests {
             .await
             .unwrap();
 
+        let operator_index = (ncn_epoch % num_operators as u64) as usize;
+
         vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                &operator_roots[0].operator_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
             )
             .await
             .unwrap();
@@ -214,18 +216,22 @@ mod tests {
             .await
             .unwrap();
 
-        vault_program_client
-            .do_crank_vault_update_state_tracker(
-                &vault_root.vault_pubkey,
-                &operator_roots[0].operator_pubkey,
-            )
-            .await
-            .unwrap();
+        let operator_index = (old_ncn_epoch % num_operators as u64) as usize;
 
         vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                &operator_roots[1].operator_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
+            )
+            .await
+            .unwrap();
+
+        let operator_index = (operator_index + 1) % num_operators as usize;
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
             )
             .await
             .unwrap();
@@ -408,10 +414,12 @@ mod tests {
             .await
             .unwrap();
 
+        let operator_index = (ncn_epoch % num_operators as u64) as usize;
+
         vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                &operator_roots[0].operator_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
             )
             .await
             .unwrap();

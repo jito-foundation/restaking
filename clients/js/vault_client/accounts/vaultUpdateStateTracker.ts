@@ -45,7 +45,7 @@ export type VaultUpdateStateTracker = {
   discriminator: bigint;
   vault: Address;
   ncnEpoch: bigint;
-  lastUpdatedIndex: bigint;
+  updateCounter: bigint;
   additionalAssetsNeedUnstaking: bigint;
   delegationState: DelegationState;
   withdrawalAllocationMethod: number;
@@ -56,7 +56,7 @@ export type VaultUpdateStateTrackerArgs = {
   discriminator: number | bigint;
   vault: Address;
   ncnEpoch: number | bigint;
-  lastUpdatedIndex: number | bigint;
+  updateCounter: number | bigint;
   additionalAssetsNeedUnstaking: number | bigint;
   delegationState: DelegationStateArgs;
   withdrawalAllocationMethod: number;
@@ -68,7 +68,7 @@ export function getVaultUpdateStateTrackerEncoder(): Encoder<VaultUpdateStateTra
     ['discriminator', getU64Encoder()],
     ['vault', getAddressEncoder()],
     ['ncnEpoch', getU64Encoder()],
-    ['lastUpdatedIndex', getU64Encoder()],
+    ['updateCounter', getU64Encoder()],
     ['additionalAssetsNeedUnstaking', getU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
     ['withdrawalAllocationMethod', getU8Encoder()],
@@ -81,7 +81,7 @@ export function getVaultUpdateStateTrackerDecoder(): Decoder<VaultUpdateStateTra
     ['discriminator', getU64Decoder()],
     ['vault', getAddressDecoder()],
     ['ncnEpoch', getU64Decoder()],
-    ['lastUpdatedIndex', getU64Decoder()],
+    ['updateCounter', getU64Decoder()],
     ['additionalAssetsNeedUnstaking', getU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
     ['withdrawalAllocationMethod', getU8Decoder()],

@@ -19,7 +19,7 @@ pub struct VaultUpdateStateTracker {
     )]
     pub vault: Pubkey,
     pub ncn_epoch: u64,
-    pub last_updated_index: u64,
+    pub update_counter: u64,
     pub additional_assets_need_unstaking: u64,
     pub delegation_state: DelegationState,
     pub withdrawal_allocation_method: u8,
