@@ -127,24 +127,6 @@ pub enum VaultInstruction {
         min_amount_out: u64,
     },
 
-    /// Burns VRT by withdrawing tokens from the vault
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_token_account")]
-    #[account(3, writable, name = "vrt_mint")]
-    #[account(4, signer, name = "staker")]
-    #[account(5, writable, name = "staker_token_account")]
-    #[account(6, signer, name = "staker_vrt_token_account")]
-    #[account(7, writable, name = "vault_fee_token_account")]
-    #[account(8, writable, name = "program_fee_token_account")]
-    #[account(9, name = "token_program")]
-    #[account(10, name = "system_program")]
-    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
-    Burn {
-        amount_in: u64,
-        min_amount_out: u64
-    },
-
     /// Enqueues a withdrawal of VRT tokens
     /// Used when there aren't enough idle assets in the vault to cover a withdrawal
     #[account(0, name = "config")]

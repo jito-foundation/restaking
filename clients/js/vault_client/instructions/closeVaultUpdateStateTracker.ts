@@ -32,7 +32,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const CLOSE_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 29;
+export const CLOSE_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 28;
 
 export function getCloseVaultUpdateStateTrackerDiscriminatorBytes() {
   return getU8Encoder().encode(CLOSE_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR);

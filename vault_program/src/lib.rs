@@ -1,5 +1,4 @@
 mod add_delegation;
-mod burn;
 mod burn_withdrawal_ticket;
 mod change_withdrawal_ticket_owner;
 mod close_update_state_tracker;
@@ -44,8 +43,7 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
-    add_delegation::process_add_delegation, burn::process_burn,
-    burn_withdrawal_ticket::process_burn_withdrawal_ticket,
+    add_delegation::process_add_delegation, burn_withdrawal_ticket::process_burn_withdrawal_ticket,
     change_withdrawal_ticket_owner::process_change_withdrawal_ticket_owner,
     close_update_state_tracker::process_close_vault_update_state_tracker,
     cooldown_delegation::process_cooldown_delegation,
@@ -198,13 +196,6 @@ pub fn process_instruction(
         } => {
             msg!("Instruction: MintTo");
             process_mint(program_id, accounts, amount_in, min_amount_out)
-        }
-        VaultInstruction::Burn {
-            amount_in,
-            min_amount_out,
-        } => {
-            msg!("Instruction: Burn");
-            process_burn(program_id, accounts, amount_in, min_amount_out)
         }
         VaultInstruction::EnqueueWithdrawal {
             amount,

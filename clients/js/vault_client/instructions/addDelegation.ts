@@ -32,7 +32,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const ADD_DELEGATION_DISCRIMINATOR = 24;
+export const ADD_DELEGATION_DISCRIMINATOR = 23;
 
 export function getAddDelegationDiscriminatorBytes() {
   return getU8Encoder().encode(ADD_DELEGATION_DISCRIMINATOR);

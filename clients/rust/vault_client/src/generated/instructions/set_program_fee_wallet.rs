@@ -57,7 +57,7 @@ pub struct SetProgramFeeWalletInstructionData {
 
 impl SetProgramFeeWalletInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 19 }
+        Self { discriminator: 18 }
     }
 }
 
