@@ -73,7 +73,7 @@ pub struct CooldownDelegationInstructionData {
 
 impl CooldownDelegationInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 25 }
+        Self { discriminator: 24 }
     }
 }
 

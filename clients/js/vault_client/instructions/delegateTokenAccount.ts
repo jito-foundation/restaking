@@ -30,7 +30,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 21;
+export const DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 20;
 
 export function getDelegateTokenAccountDiscriminatorBytes() {
   return getU8Encoder().encode(DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR);

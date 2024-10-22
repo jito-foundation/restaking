@@ -197,50 +197,6 @@ pub fn mint_to(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn burn(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    vault: &Pubkey,
-    vault_token_account: &Pubkey,
-    vrt_mint: &Pubkey,
-    staker: &Pubkey,
-    staker_token_account: &Pubkey,
-    staker_vrt_token_account: &Pubkey,
-    vault_fee_token_account: &Pubkey,
-    program_fee_vrt_token_account: &Pubkey,
-    burn_signer: Option<&Pubkey>,
-    amount_in: u64,
-    min_amount_out: u64,
-) -> Instruction {
-    let mut accounts = vec![
-        AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*vault, false),
-        AccountMeta::new(*vault_token_account, false),
-        AccountMeta::new(*vrt_mint, false),
-        AccountMeta::new(*staker, true),
-        AccountMeta::new(*staker_token_account, false),
-        AccountMeta::new(*staker_vrt_token_account, false),
-        AccountMeta::new(*vault_fee_token_account, false),
-        AccountMeta::new(*program_fee_vrt_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
-        AccountMeta::new_readonly(system_program::id(), false),
-    ];
-    if let Some(signer) = burn_signer {
-        accounts.push(AccountMeta::new_readonly(*signer, true));
-    }
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: VaultInstruction::Burn {
-            amount_in,
-            min_amount_out,
-        }
-        .try_to_vec()
-        .unwrap(),
-    }
-}
-
 pub fn set_deposit_capacity(
     program_id: &Pubkey,
     config: &Pubkey,
