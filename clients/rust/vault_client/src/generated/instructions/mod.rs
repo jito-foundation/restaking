@@ -5,7 +5,6 @@
 //! <https://github.com/kinobi-so/kinobi>
 
 pub(crate) mod r#add_delegation;
-pub(crate) mod r#burn;
 pub(crate) mod r#burn_withdrawal_ticket;
 pub(crate) mod r#change_withdrawal_ticket_owner;
 pub(crate) mod r#close_vault_update_state_tracker;
@@ -39,12 +38,11 @@ pub(crate) mod r#warmup_vault_ncn_slasher_ticket;
 pub(crate) mod r#warmup_vault_ncn_ticket;
 
 pub use self::{
-    r#add_delegation::*, r#burn::*, r#burn_withdrawal_ticket::*,
-    r#change_withdrawal_ticket_owner::*, r#close_vault_update_state_tracker::*,
-    r#cooldown_delegation::*, r#cooldown_vault_ncn_slasher_ticket::*,
-    r#cooldown_vault_ncn_ticket::*, r#crank_vault_update_state_tracker::*,
-    r#create_token_metadata::*, r#delegate_token_account::*, r#enqueue_withdrawal::*,
-    r#initialize_config::*, r#initialize_vault::*,
+    r#add_delegation::*, r#burn_withdrawal_ticket::*, r#change_withdrawal_ticket_owner::*,
+    r#close_vault_update_state_tracker::*, r#cooldown_delegation::*,
+    r#cooldown_vault_ncn_slasher_ticket::*, r#cooldown_vault_ncn_ticket::*,
+    r#crank_vault_update_state_tracker::*, r#create_token_metadata::*, r#delegate_token_account::*,
+    r#enqueue_withdrawal::*, r#initialize_config::*, r#initialize_vault::*,
     r#initialize_vault_ncn_slasher_operator_ticket::*, r#initialize_vault_ncn_slasher_ticket::*,
     r#initialize_vault_ncn_ticket::*, r#initialize_vault_operator_delegation::*,
     r#initialize_vault_update_state_tracker::*, r#initialize_vault_with_mint::*, r#mint_to::*,

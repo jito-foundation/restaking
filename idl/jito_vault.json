@@ -547,89 +547,6 @@
       }
     },
     {
-      "name": "Burn",
-      "accounts": [
-        {
-          "name": "config",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vrtMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "staker",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "stakerTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "stakerVrtTokenAccount",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "vaultFeeTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programFeeTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "burnSigner",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true,
-          "docs": [
-            "Signer for burning"
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "amountIn",
-          "type": "u64"
-        },
-        {
-          "name": "minAmountOut",
-          "type": "u64"
-        }
-      ],
-      "discriminant": {
-        "type": "u8",
-        "value": 12
-      }
-    },
-    {
       "name": "EnqueueWithdrawal",
       "accounts": [
         {
@@ -699,7 +616,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 13
+        "value": 12
       }
     },
     {
@@ -734,7 +651,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 14
+        "value": 13
       }
     },
     {
@@ -813,7 +730,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 15
+        "value": 14
       }
     },
     {
@@ -843,7 +760,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 16
+        "value": 15
       }
     },
     {
@@ -887,7 +804,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 17
+        "value": 16
       }
     },
     {
@@ -912,7 +829,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 18
+        "value": 17
       }
     },
     {
@@ -937,7 +854,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 19
+        "value": 18
       }
     },
     {
@@ -967,7 +884,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 20
+        "value": 19
       }
     },
     {
@@ -1012,7 +929,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 21
+        "value": 20
       }
     },
     {
@@ -1042,7 +959,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 22
+        "value": 21
       }
     },
     {
@@ -1079,7 +996,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 23
+        "value": 22
       }
     },
     {
@@ -1119,7 +1036,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 24
+        "value": 23
       }
     },
     {
@@ -1159,7 +1076,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 25
+        "value": 24
       }
     },
     {
@@ -1199,7 +1116,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 26
+        "value": 25
       }
     },
     {
@@ -1241,7 +1158,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 27
+        "value": 26
       }
     },
     {
@@ -1276,7 +1193,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 28
+        "value": 27
       }
     },
     {
@@ -1311,7 +1228,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 29
+        "value": 28
       }
     },
     {
@@ -1369,7 +1286,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 30
+        "value": 29
       }
     },
     {
@@ -1417,7 +1334,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 31
+        "value": 30
       }
     },
     {
@@ -1512,7 +1429,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 32
+        "value": 31
       }
     }
   ],

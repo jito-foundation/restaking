@@ -7,7 +7,6 @@
  */
 
 export * from './addDelegation';
-export * from './burn';
 export * from './burnWithdrawalTicket';
 export * from './changeWithdrawalTicketOwner';
 export * from './closeVaultUpdateStateTracker';
