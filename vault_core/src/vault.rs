@@ -150,6 +150,7 @@ pub struct Vault {
 }
 
 impl Vault {
+    pub const MAX_REWARD_DELTA_BPS: u16 = 50; // 0.5%
     pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
 
     #[allow(clippy::too_many_arguments)]

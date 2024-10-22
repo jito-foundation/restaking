@@ -54,7 +54,11 @@ pub fn process_update_vault_balance(
     vault.increment_vrt_supply(vrt_reward_fee)?;
 
     // 5. Check for rewards not substantial enough
-    vault.check_reward_fee_effective_rate(st_rewards, vrt_reward_fee, 50)?;
+    vault.check_reward_fee_effective_rate(
+        st_rewards,
+        vrt_reward_fee,
+        Vault::MAX_REWARD_DELTA_BPS,
+    )?;
 
     // Mint rewards
     if vrt_reward_fee > 0 {
