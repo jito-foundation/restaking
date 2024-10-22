@@ -16,7 +16,7 @@ use spl_associated_token_account::{
 use spl_token_2022::extension::{ExtensionType, StateWithExtensionsOwned};
 
 use crate::fixtures::{
-    restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
+    restaking_client::{OperatorRoot, RestakingProgramClient},
     vault_client::{VaultProgramClient, VaultRoot},
     TestResult,
 };
@@ -39,9 +39,7 @@ pub struct ConfiguredVault {
     pub vault_root: VaultRoot,
     #[allow(dead_code)]
     pub restaking_config_admin: Keypair,
-    pub ncn_root: NcnRoot,
     pub operator_roots: Vec<OperatorRoot>,
-    pub slashers_amounts: Vec<(Keypair, u64)>,
 }
 
 impl TestBuilder {
@@ -451,9 +449,7 @@ impl TestBuilder {
             vault_root,
             vault_config_admin,
             restaking_config_admin,
-            ncn_root,
             operator_roots,
-            slashers_amounts,
         })
     }
 }
