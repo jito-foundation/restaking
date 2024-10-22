@@ -112,8 +112,10 @@ jobs:
           path: config
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Debug SSL Issues
+        run: curl -v https://release.solana.com/v1.18.22/install
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
+        run: curl --cacert /etc/ssl/certs/ca-certificates.crt -sSfL https://release.solana.com/v1.18.22/install | sh
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Building programs
