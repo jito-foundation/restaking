@@ -6,7 +6,6 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-
 /// The [`VaultNcnTicket`] account tracks a vault supporting a node consensus network. It can be
 /// enabled and disabled over time by the vault NCN admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
