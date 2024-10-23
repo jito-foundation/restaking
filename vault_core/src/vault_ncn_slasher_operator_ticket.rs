@@ -9,10 +9,6 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-impl Discriminator for VaultNcnSlasherOperatorTicket {
-    const DISCRIMINATOR: u8 = 6;
-}
-
 /// The [`VaultNcnSlasherOperatorTicket`] account tracks the amount an operator has been slashed
 /// by a slasher for a given node consensus network (NCN) and vault for a given epoch. It helps
 /// ensure that the operator is held accountable for their actions and that slashing conditions

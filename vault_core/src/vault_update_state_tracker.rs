@@ -6,10 +6,6 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 use crate::delegation_state::DelegationState;
 
-impl Discriminator for VaultUpdateStateTracker {
-    const DISCRIMINATOR: u8 = 9;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultUpdateStateTracker {
