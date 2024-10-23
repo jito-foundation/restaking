@@ -27,9 +27,9 @@ pub fn process_crank_vault_update_state_tracker(
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
-    Vault::load(program_id, vault_info, false)?;
-    let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    Vault::load(program_id, vault_info, true)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     Operator::load(&config.restaking_program, operator, false)?;
     VaultOperatorDelegation::load(
         program_id,
@@ -64,21 +64,21 @@ pub fn process_crank_vault_update_state_tracker(
         vault_update_state_tracker.withdrawal_allocation_method,
     ) {
         Ok(WithdrawalAllocationMethod::Greedy) => {
-            if vault_update_state_tracker.additional_assets_need_unstaking() > 0 {
+            if vault.additional_assets_need_unstaking() > 0 {
                 let max_cooldown = min(
                     vault_operator_delegation.delegation_state.staked_amount(),
-                    vault_update_state_tracker.additional_assets_need_unstaking(),
+                    vault.additional_assets_need_unstaking(),
                 );
                 msg!(
                     "Force cooling down {} assets from operator {}",
                     max_cooldown,
                     vault_operator_delegation.operator
                 );
+
                 vault_operator_delegation
                     .delegation_state
                     .cooldown(max_cooldown)?;
-                vault_update_state_tracker
-                    .decrement_additional_assets_need_unstaking(max_cooldown)?;
+                vault.decrement_additional_assets_need_unstaking(max_cooldown)?;
             }
         }
         Err(e) => {

@@ -57,6 +57,9 @@ pub struct Vault {
     /// Rolled-up stake state for all operators in the set
     pub delegation_state: DelegationState,
 
+    /// The amount of additional assets that need unstaking to fulfill VRT withdrawals
+    additional_assets_need_unstaking: PodU64,
+
     /// The amount of VRT tokens in VaultStakerWithdrawalTickets enqueued for cooldown
     vrt_enqueued_for_cooldown_amount: PodU64,
 
@@ -203,6 +206,7 @@ impl Vault {
             slasher_count: PodU64::from(0),
             bump,
             delegation_state: DelegationState::default(),
+            additional_assets_need_unstaking: PodU64::from(0),
             is_paused: PodBool::from_bool(false),
             reserved: [0; 263],
         })
@@ -386,6 +390,26 @@ impl Vault {
 
     pub fn set_vrt_supply(&mut self, vrt_supply: u64) {
         self.vrt_supply = PodU64::from(vrt_supply);
+    }
+
+    pub fn additional_assets_need_unstaking(&self) -> u64 {
+        self.additional_assets_need_unstaking.into()
+    }
+
+    pub fn set_additional_assets_need_unstaking(&mut self, additional_assets_need_unstaking: u64) {
+        self.additional_assets_need_unstaking = PodU64::from(additional_assets_need_unstaking);
+    }
+
+    pub fn decrement_additional_assets_need_unstaking(
+        &mut self,
+        amount: u64,
+    ) -> Result<(), VaultError> {
+        let new_amount = self
+            .additional_assets_need_unstaking()
+            .checked_sub(amount)
+            .ok_or(VaultError::VaultUnderflow)?;
+        self.additional_assets_need_unstaking = PodU64::from(new_amount);
+        Ok(())
     }
 
     pub fn is_paused(&self) -> bool {
@@ -1186,6 +1210,7 @@ mod tests {
             std::mem::size_of::<PodU64>() + // tokens_deposited
             std::mem::size_of::<PodU64>() + // capacity
             std::mem::size_of::<DelegationState>() + // delegation_state
+            std::mem::size_of::<PodU64>() + // additional_assets_needed_to_unstake
             std::mem::size_of::<PodU64>() + // vrt_enqueued_for_cooldown_amount
             std::mem::size_of::<PodU64>() + // vrt_cooling_down_amount
             std::mem::size_of::<PodU64>() + // vrt_ready_to_claim_amount
