@@ -31,7 +31,7 @@ use solana_program::{
     rent::Rent,
     system_instruction::{create_account, transfer},
 };
-use solana_program_test::{BanksClient, BanksClientError, ProgramTestBanksClientExt};
+use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{
     commitment_config::CommitmentLevel,
     instruction::InstructionError,
@@ -1395,7 +1395,7 @@ impl VaultProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
-            new_blockhash,
+            blockhash,
         ))
         .await
     }
