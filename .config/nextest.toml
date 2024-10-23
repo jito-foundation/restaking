@@ -1,6 +1,6 @@
 [profile.default]
-retries = 2
-test-threads = "num-cpus"
+retries = { backoff = "fixed", count = 3, delay = "5s" }
+test-threads = 1
 threads-required = 1
-fail-fast = true
+fail-fast = false
 

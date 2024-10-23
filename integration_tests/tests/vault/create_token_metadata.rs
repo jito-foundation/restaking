@@ -13,7 +13,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_token_metadata_ok() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -37,8 +37,6 @@ mod tests {
 
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
-
-        fixture.warp_slot_incremental(100).await.unwrap();
 
         vault_program_client
             .create_token_metadata(
@@ -66,7 +64,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_token_metadata_wrong_vrt_mint_fails() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -97,8 +95,6 @@ mod tests {
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
-        fixture.warp_slot_incremental(100).await.unwrap();
-
         let result = vault_program_client
             .create_token_metadata(
                 &vault_pubkey,
@@ -117,7 +113,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_token_metadata_wrong_metadata_fails() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -139,8 +135,6 @@ mod tests {
         let symbol = "rJTO";
         let uri = "https://www.jito.network/restaking/";
 
-        fixture.warp_slot_incremental(100).await.unwrap();
-
         let result = vault_program_client
             .create_token_metadata(
                 &vault_pubkey,
@@ -159,7 +153,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_wrong_admin_signed() {
-        let mut fixture = TestBuilder::new().await;
+        let fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -183,8 +177,6 @@ mod tests {
 
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
-
-        fixture.warp_slot_incremental(100).await.unwrap();
 
         let bad_admin = Keypair::new();
         let response = vault_program_client
