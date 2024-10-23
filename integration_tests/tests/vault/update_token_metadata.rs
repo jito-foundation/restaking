@@ -12,8 +12,8 @@ mod tests {
         vault_client::{assert_vault_error, VaultProgramClient, VaultRoot},
     };
 
-    async fn setup() -> (VaultProgramClient, Pubkey, Keypair) {
-        let fixture = TestBuilder::new().await;
+    async fn setup() -> (TestBuilder, VaultProgramClient, Pubkey, Keypair) {
+        let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -42,6 +42,8 @@ mod tests {
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
+        fixture.warp_slot_incremental(100).await.unwrap();
+
         vault_program_client
             .create_token_metadata(
                 &vault_pubkey,
@@ -56,12 +58,12 @@ mod tests {
             .await
             .unwrap();
 
-        (vault_program_client, vault_pubkey, vault_admin)
+        (fixture, vault_program_client, vault_pubkey, vault_admin)
     }
 
     #[tokio::test]
     async fn success_update_token_metadata() {
-        let (mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
+        let (mut fixture, mut vault_program_client, vault_pubkey, vault_admin) = setup().await;
 
         let updated_name = "updated_name";
         let updated_symbol = "USYM";
@@ -70,6 +72,8 @@ mod tests {
         let vault = vault_program_client.get_vault(&vault_pubkey).await.unwrap();
 
         let metadata_pubkey = find_metadata_account(&vault.vrt_mint).0;
+
+        fixture.warp_slot_incremental(100).await.unwrap();
 
         vault_program_client
             .update_token_metadata(
@@ -96,7 +100,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_wrong_admin_signed() {
-        let (mut vault_program_client, vault_pubkey, _) = setup().await;
+        let (mut fixture, mut vault_program_client, vault_pubkey, _) = setup().await;
 
         let updated_name = "updated_name";
         let updated_symbol = "USYM";
@@ -107,6 +111,9 @@ mod tests {
         let metadata_pubkey = find_metadata_account(&vault.vrt_mint).0;
 
         let bad_admin = Keypair::new();
+
+        fixture.warp_slot_incremental(100).await.unwrap();
+
         let response = vault_program_client
             .update_token_metadata(
                 &vault_pubkey,
