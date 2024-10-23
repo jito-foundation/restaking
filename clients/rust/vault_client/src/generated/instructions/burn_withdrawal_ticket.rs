@@ -123,7 +123,7 @@ pub struct BurnWithdrawalTicketInstructionData {
 
 impl BurnWithdrawalTicketInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 15 }
+        Self { discriminator: 14 }
     }
 }
 
