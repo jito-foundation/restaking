@@ -41,7 +41,6 @@ export type VaultStakerWithdrawalTicket = {
   staker: Address;
   base: Address;
   vrtAmount: bigint;
-  minAmountOut: bigint;
   slotUnstaked: bigint;
   bump: number;
   reserved: Array<number>;
@@ -53,7 +52,6 @@ export type VaultStakerWithdrawalTicketArgs = {
   staker: Address;
   base: Address;
   vrtAmount: number | bigint;
-  minAmountOut: number | bigint;
   slotUnstaked: number | bigint;
   bump: number;
   reserved: Array<number>;
@@ -66,7 +64,6 @@ export function getVaultStakerWithdrawalTicketEncoder(): Encoder<VaultStakerWith
     ['staker', getAddressEncoder()],
     ['base', getAddressEncoder()],
     ['vrtAmount', getU64Encoder()],
-    ['minAmountOut', getU64Encoder()],
     ['slotUnstaked', getU64Encoder()],
     ['bump', getU8Encoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
@@ -80,7 +77,6 @@ export function getVaultStakerWithdrawalTicketDecoder(): Decoder<VaultStakerWith
     ['staker', getAddressDecoder()],
     ['base', getAddressDecoder()],
     ['vrtAmount', getU64Decoder()],
-    ['minAmountOut', getU64Decoder()],
     ['slotUnstaked', getU64Decoder()],
     ['bump', getU8Decoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],

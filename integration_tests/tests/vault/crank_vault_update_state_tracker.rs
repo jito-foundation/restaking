@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, delegation_state::DelegationState, vault::Vault,
+        config::Config, delegation_state::DelegationState,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
@@ -689,21 +689,8 @@ mod tests {
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(
-                MINT_AMOUNT,
-                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
-                config.program_fee_bps(),
-            )
-            .unwrap();
-
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -838,21 +825,8 @@ mod tests {
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(
-                MINT_AMOUNT,
-                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
-                config.program_fee_bps(),
-            )
-            .unwrap();
-
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -967,21 +941,8 @@ mod tests {
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(
-                MINT_AMOUNT,
-                Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS,
-                config.program_fee_bps(),
-            )
-            .unwrap();
-
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
             .await
             .unwrap();
 
