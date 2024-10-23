@@ -294,6 +294,16 @@ mod tests {
         tracker.last_updated_index = PodU64::from(3);
         assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
 
+        // start_index = operators - 1
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n - 1, 0, 0);
+        tracker.last_updated_index = PodU64::from(n - 2);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
+
+        // start_index = operators, last_updated = start_index - 1
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
+
         // All operators updated, start_index != 0
         let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 1, 0, 0);
         tracker.last_updated_index = PodU64::from(0);
