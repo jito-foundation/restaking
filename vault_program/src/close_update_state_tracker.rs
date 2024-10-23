@@ -55,8 +55,7 @@ pub fn process_close_vault_update_state_tracker(
     } else {
         // The VaultUpdateStateTracker shall have updated every operator ticket before closing
         if vault.operator_count() > 0
-            && vault_update_state_tracker.update_counter()
-                != vault.operator_count().saturating_sub(1)
+            && !vault_update_state_tracker.all_operators_updated(vault.operator_count())?
         {
             msg!("VaultUpdateStateTracker is not fully updated");
             return Err(VaultError::VaultUpdateStateNotFinishedUpdating.into());

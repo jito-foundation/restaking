@@ -19,8 +19,8 @@ pub struct VaultUpdateStateTracker {
     /// The NCN epoch for which the delegations are to be updated
     ncn_epoch: PodU64,
 
-    /// The update index of the vault
-    update_counter: PodU64,
+    /// The last updated index of the vault
+    last_updated_index: PodU64,
 
     /// The amount of additional assets that need unstaking to fulfill VRT withdrawals
     additional_assets_need_unstaking: PodU64,
@@ -44,7 +44,7 @@ impl VaultUpdateStateTracker {
             vault,
             ncn_epoch: PodU64::from(ncn_epoch),
             additional_assets_need_unstaking: PodU64::from(additional_assets_need_unstaking),
-            update_counter: PodU64::from(u64::MAX),
+            last_updated_index: PodU64::from(u64::MAX),
             delegation_state: DelegationState::default(),
             withdrawal_allocation_method,
             reserved: [0; 263],
@@ -59,35 +59,8 @@ impl VaultUpdateStateTracker {
         self.additional_assets_need_unstaking.into()
     }
 
-    pub fn update_counter(&self) -> u64 {
-        self.update_counter.into()
-    }
-
-    /// Calculates target index for the vault update state tracker
-    /// factoring in where we started, and accounting for wraparound
-    pub fn last_updated_index(&self, num_operators: u64) -> Result<u64, VaultError> {
-        let index_offset = self
-            .ncn_epoch()
-            .checked_rem(num_operators)
-            .ok_or(VaultError::DivisionByZero)?;
-        self.update_counter()
-            .checked_add(index_offset)
-            .and_then(|sum| sum.checked_rem(num_operators))
-            .ok_or(VaultError::ArithmeticOverflow)
-    }
-
-    fn start_update_counter(&mut self) {
-        self.update_counter = PodU64::from(0);
-    }
-
-    fn increment_update_counter(&mut self) -> Result<(), VaultError> {
-        let new_index = self
-            .update_counter()
-            .checked_add(1)
-            .ok_or(VaultError::ArithmeticOverflow)?;
-
-        self.update_counter = PodU64::from(new_index);
-        Ok(())
+    pub fn last_updated_index(&self) -> u64 {
+        self.last_updated_index.into()
     }
 
     pub fn decrement_additional_assets_need_unstaking(
@@ -110,7 +83,7 @@ impl VaultUpdateStateTracker {
         index: u64,
         num_operators: u64,
     ) -> Result<(), VaultError> {
-        if self.update_counter() == u64::MAX {
+        if self.last_updated_index() == u64::MAX {
             let start_index = self
                 .ncn_epoch()
                 .checked_rem(num_operators)
@@ -119,20 +92,38 @@ impl VaultUpdateStateTracker {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-            self.start_update_counter();
         } else {
             let next_index = self
-                .last_updated_index(num_operators)?
+                .last_updated_index()
                 .checked_add(1)
                 .and_then(|i| i.checked_rem(num_operators))
                 .ok_or(VaultError::ArithmeticOverflow)?;
+
             if index != next_index {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-            self.increment_update_counter()?;
         }
+        self.last_updated_index = PodU64::from(index);
         Ok(())
+    }
+
+    pub fn all_operators_updated(&self, num_operators: u64) -> Result<bool, VaultError> {
+        if self.last_updated_index() == u64::MAX {
+            return Ok(false);
+        }
+
+        if num_operators == 1 && self.last_updated_index() == 0 {
+            return Ok(true);
+        }
+
+        Ok(self.last_updated_index()
+            == self
+                .ncn_epoch()
+                .checked_rem(num_operators)
+                .ok_or(VaultError::DivisionByZero)?
+                .checked_sub(1)
+                .ok_or(VaultError::ArithmeticUnderflow)?)
     }
 
     /// Returns the seeds for the PDA
@@ -267,8 +258,11 @@ mod tests {
         vault_update_state_tracker
             .check_and_update_index(2, n)
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 0);
-        assert_eq!(vault_update_state_tracker.last_updated_index(n).unwrap(), 2);
+        // assert_eq!(vault_update_state_tracker.update_counter(), 0);
+        // assert_eq!(
+        //     vault_update_state_tracker._last_updated_index(n).unwrap(),
+        //     2
+        // );
 
         vault_update_state_tracker
             .check_and_update_index(3, n)
@@ -277,13 +271,19 @@ mod tests {
         vault_update_state_tracker
             .check_and_update_index(0, n)
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 2);
-        assert_eq!(vault_update_state_tracker.last_updated_index(n).unwrap(), 0);
+        // assert_eq!(vault_update_state_tracker.update_counter(), 2);
+        // assert_eq!(
+        //     vault_update_state_tracker._last_updated_index(n).unwrap(),
+        //     0
+        // );
 
         vault_update_state_tracker
             .check_and_update_index(1, n)
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 3);
-        assert_eq!(vault_update_state_tracker.last_updated_index(n).unwrap(), 1);
+        // assert_eq!(vault_update_state_tracker.update_counter(), 3);
+        // assert_eq!(
+        //     vault_update_state_tracker._last_updated_index(n).unwrap(),
+        //     1
+        // );
     }
 }

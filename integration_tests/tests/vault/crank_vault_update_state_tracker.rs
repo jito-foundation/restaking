@@ -81,7 +81,7 @@ mod tests {
             .unwrap();
         assert_eq!(vault_update_state_tracker.vault, vault_root.vault_pubkey);
         assert_eq!(vault_update_state_tracker.ncn_epoch(), ncn_epoch);
-        assert_eq!(vault_update_state_tracker.update_counter(), u64::MAX);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), u64::MAX);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::default()
@@ -98,7 +98,7 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 0);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::default()
@@ -207,7 +207,10 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 0);
+        assert_eq!(
+            vault_update_state_tracker.last_updated_index(),
+            operator_index as u64
+        );
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::new(50000, 0, 0)
@@ -226,7 +229,10 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 1);
+        assert_eq!(
+            vault_update_state_tracker.last_updated_index(),
+            operator_index as u64
+        );
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::new(100000, 0, 0)
@@ -621,7 +627,7 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 0);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::new(25000, 0, 0)
@@ -641,7 +647,7 @@ mod tests {
             .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
             .await
             .unwrap();
-        assert_eq!(vault_update_state_tracker.update_counter(), 1);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
         assert_eq!(
             vault_update_state_tracker.delegation_state,
             DelegationState::new(50000, 0, 0)

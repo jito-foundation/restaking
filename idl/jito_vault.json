@@ -1941,7 +1941,7 @@
             }
           },
           {
-            "name": "updateCounter",
+            "name": "lastUpdatedIndex",
             "type": {
               "defined": "PodU64"
             }

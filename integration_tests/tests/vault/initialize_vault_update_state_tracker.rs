@@ -73,7 +73,7 @@ mod tests {
             vault_update_state_tracker.ncn_epoch(),
             slot / vault_config.epoch_length()
         );
-        assert_eq!(vault_update_state_tracker.update_counter(), u64::MAX);
+        assert_eq!(vault_update_state_tracker.last_updated_index(), u64::MAX);
         assert_eq!(
             vault_update_state_tracker
                 .delegation_state
