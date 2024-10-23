@@ -1167,7 +1167,7 @@
         },
         {
           "name": "vault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1542,6 +1542,12 @@
             "name": "delegationState",
             "type": {
               "defined": "DelegationState"
+            }
+          },
+          {
+            "name": "additionalAssetsNeedUnstaking",
+            "type": {
+              "defined": "PodU64"
             }
           },
           {
@@ -1932,12 +1938,6 @@
           },
           {
             "name": "lastUpdatedIndex",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "additionalAssetsNeedUnstaking",
             "type": {
               "defined": "PodU64"
             }

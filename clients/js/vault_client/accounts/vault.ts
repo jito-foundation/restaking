@@ -54,6 +54,7 @@ export type Vault = {
   tokensDeposited: bigint;
   depositCapacity: bigint;
   delegationState: DelegationState;
+  additionalAssetsNeedUnstaking: bigint;
   vrtEnqueuedForCooldownAmount: bigint;
   vrtCoolingDownAmount: bigint;
   vrtReadyToClaimAmount: bigint;
@@ -91,6 +92,7 @@ export type VaultArgs = {
   tokensDeposited: number | bigint;
   depositCapacity: number | bigint;
   delegationState: DelegationStateArgs;
+  additionalAssetsNeedUnstaking: number | bigint;
   vrtEnqueuedForCooldownAmount: number | bigint;
   vrtCoolingDownAmount: number | bigint;
   vrtReadyToClaimAmount: number | bigint;
@@ -129,6 +131,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['tokensDeposited', getU64Encoder()],
     ['depositCapacity', getU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
+    ['additionalAssetsNeedUnstaking', getU64Encoder()],
     ['vrtEnqueuedForCooldownAmount', getU64Encoder()],
     ['vrtCoolingDownAmount', getU64Encoder()],
     ['vrtReadyToClaimAmount', getU64Encoder()],
@@ -168,6 +171,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['tokensDeposited', getU64Decoder()],
     ['depositCapacity', getU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
+    ['additionalAssetsNeedUnstaking', getU64Decoder()],
     ['vrtEnqueuedForCooldownAmount', getU64Decoder()],
     ['vrtCoolingDownAmount', getU64Decoder()],
     ['vrtReadyToClaimAmount', getU64Decoder()],

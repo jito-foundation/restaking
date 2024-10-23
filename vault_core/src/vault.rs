@@ -1024,6 +1024,14 @@ impl Vault {
             }
         }
 
+        msg!("Delegation State ");
+        msg!("{} ", delegation_state_after_update.staked_amount());
+        msg!("{} ", delegation_state_after_update.cooling_down_amount());
+        msg!(
+            "{} \n",
+            delegation_state_after_update.enqueued_for_cooldown_amount()
+        );
+
         // Calculate the total amount of assets delegated after the simulated update
         let total_delegated_after_update = delegation_state_after_update.total_security()?;
 
@@ -1050,6 +1058,15 @@ impl Vault {
         // If available assets exceed the needed amount, this will be zero due to saturating subtraction
         let additional_assets_need_undelegating =
             amount_requested_for_withdrawals.saturating_sub(available_for_withdrawal);
+
+        msg!("{} ", additional_assets_need_undelegating);
+        msg!("{} ", total_delegated_after_update);
+        msg!("{} ", amount_requested_for_withdrawals);
+        msg!("{} ", available_for_withdrawal);
+        msg!("{} ", undelegated_after_update);
+        msg!("{} ", assets_withdrawing_after_update);
+        msg!("{} ", last_epoch_update);
+        msg!("SOLANA");
 
         Ok(additional_assets_need_undelegating)
     }

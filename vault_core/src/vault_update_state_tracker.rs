@@ -133,12 +133,11 @@ mod tests {
     };
 
     #[test]
-    fn test_vault_update_state_tracker_sno_padding() {
+    fn test_vault_update_state_tracker_no_padding() {
         let vault_update_state_tracker_size = std::mem::size_of::<VaultUpdateStateTracker>();
         let sum_of_fields = size_of::<Pubkey>() + // vault
             size_of::<PodU64>() + // ncn_epoch
             size_of::<PodU64>() + // last_updated_index
-            size_of::<PodU64>() + // additional_assets_need_unstaking
             size_of::<DelegationState>() + // delegation_state
             size_of::<u8>() + // withdrawal_allocation_method
             263; // reserved

@@ -53,7 +53,7 @@ export type CrankVaultUpdateStateTrackerInstruction<
         ? ReadonlyAccount<TAccountConfig>
         : TAccountConfig,
       TAccountVault extends string
-        ? ReadonlyAccount<TAccountVault>
+        ? WritableAccount<TAccountVault>
         : TAccountVault,
       TAccountOperator extends string
         ? ReadonlyAccount<TAccountOperator>
@@ -140,7 +140,7 @@ export function getCrankVaultUpdateStateTrackerInstruction<
   // Original accounts.
   const originalAccounts = {
     config: { value: input.config ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: false },
+    vault: { value: input.vault ?? null, isWritable: true },
     operator: { value: input.operator ?? null, isWritable: false },
     vaultOperatorDelegation: {
       value: input.vaultOperatorDelegation ?? null,
