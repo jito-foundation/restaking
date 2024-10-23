@@ -952,7 +952,6 @@ impl VaultProgramClient {
         vault_root: &VaultRoot,
         depositor: &Keypair,
         amount: u64,
-        min_amount_out: u64,
     ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let depositor_vrt_token_account =
@@ -984,7 +983,6 @@ impl VaultProgramClient {
             &depositor_vrt_token_account,
             &base,
             amount,
-            min_amount_out,
         )
         .await?;
 
@@ -1226,7 +1224,6 @@ impl VaultProgramClient {
         staker_vrt_token_account: &Pubkey,
         base: &Keypair,
         amount: u64,
-        min_amount_out: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -1240,7 +1237,6 @@ impl VaultProgramClient {
                 staker_vrt_token_account,
                 &base.pubkey(),
                 amount,
-                min_amount_out,
             )],
             Some(&staker.pubkey()),
             &[staker, base],
