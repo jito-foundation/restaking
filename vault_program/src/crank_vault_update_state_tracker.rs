@@ -69,16 +69,20 @@ pub fn process_crank_vault_update_state_tracker(
                     vault_operator_delegation.delegation_state.staked_amount(),
                     vault.additional_assets_need_unstaking(),
                 );
-                msg!(
-                    "Force cooling down {} assets from operator {}",
-                    max_cooldown,
-                    vault_operator_delegation.operator
-                );
 
-                vault_operator_delegation
-                    .delegation_state
-                    .cooldown(max_cooldown)?;
-                vault.decrement_additional_assets_need_unstaking(max_cooldown)?;
+                // Can be 0 if there was a previous partial update state
+                if max_cooldown > 0 {
+                    msg!(
+                        "Force cooling down {} assets from operator {}",
+                        max_cooldown,
+                        vault_operator_delegation.operator
+                    );
+
+                    vault_operator_delegation
+                        .delegation_state
+                        .cooldown(max_cooldown)?;
+                    vault.decrement_additional_assets_need_unstaking(max_cooldown)?;
+                }
             }
         }
         Err(e) => {

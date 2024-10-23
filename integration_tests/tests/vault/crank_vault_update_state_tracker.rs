@@ -1,9 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config,
-        delegation_state::DelegationState,
-        vault::{self, Vault},
+        config::Config, delegation_state::DelegationState,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
@@ -677,16 +675,16 @@ mod tests {
 
         // 25k active each
         vault_program_client
-            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 25_000)
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
             .await
             .unwrap();
         vault_program_client
-            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 25_000)
+            .do_add_delegation(&vault_root, &operator_roots[1].operator_pubkey, 50_000)
             .await
             .unwrap();
 
         vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 25_000 * 2)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 75_000)
             .await
             .unwrap();
 
@@ -694,7 +692,7 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 50_000);
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 75_000);
 
         let config_address = Config::find_program_address(&jito_vault_program::id()).0;
         let config = vault_program_client
@@ -731,7 +729,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.additional_assets_need_unstaking(), 50_000);
+        assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
 
         vault_program_client
             .do_crank_vault_update_state_tracker(
@@ -756,55 +754,71 @@ mod tests {
 
         assert_eq!(vault.additional_assets_need_unstaking(), 25_000);
 
-        // let slot = fixture.get_current_slot().await.unwrap();
-        // let ncn_epoch = slot / config.epoch_length();
-        // let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
-        //     &jito_vault_program::id(),
-        //     &vault_root.vault_pubkey,
-        //     ncn_epoch,
-        // )
-        // .0;
-        // vault_program_client
-        //     .initialize_vault_update_state_tracker(
-        //         &vault_root.vault_pubkey,
-        //         &vault_update_state_tracker_pubkey,
-        //     )
-        //     .await
-        //     .unwrap();
-        // vault_program_client
-        //     .do_crank_vault_update_state_tracker(
-        //         &vault_root.vault_pubkey,
-        //         &operator_roots[0].operator_pubkey,
-        //     )
-        //     .await
-        //     .unwrap();
-        // let vault_update_state_tracker = vault_program_client
-        //     .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
-        //     .await
-        //     .unwrap();
-        // assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
-        // assert_eq!(
-        //     vault_update_state_tracker.delegation_state,
-        //     DelegationState::new(25000, 0, 0)
-        // );
+        let slot = fixture.get_current_slot().await.unwrap();
+        let ncn_epoch = slot / config.epoch_length();
 
-        // // active -> cooldown (2 epochs since last update)
-        // vault_program_client
-        //     .do_crank_vault_update_state_tracker(
-        //         &vault_root.vault_pubkey,
-        //         &operator_roots[1].operator_pubkey,
-        //     )
-        //     .await
-        //     .unwrap();
-        // let vault_update_state_tracker = vault_program_client
-        //     .get_vault_update_state_tracker(&vault_root.vault_pubkey, ncn_epoch)
-        //     .await
-        //     .unwrap();
-        // assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
-        // assert_eq!(
-        //     vault_update_state_tracker.delegation_state,
-        //     DelegationState::new(50000, 0, 0)
-        // );
+        let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn_epoch,
+        )
+        .0;
+        vault_program_client
+            .initialize_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+            )
+            .await
+            .unwrap();
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.additional_assets_need_unstaking(), 25_000);
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[1].operator_pubkey,
+            )
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.additional_assets_need_unstaking(), 0);
+
+        vault_program_client
+            .close_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &vault_update_state_tracker_pubkey,
+                ncn_epoch,
+            )
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        assert_eq!(vault.delegation_state.staked_amount(), 0);
+        assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount(), 0);
+
+        //TODO check if this is correct behavior
+        assert_eq!(vault.delegation_state.cooling_down_amount(), 25_000);
     }
 
     /// Test that the vrt withdrawal process if updating with normal crank operations
