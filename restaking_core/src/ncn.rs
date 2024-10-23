@@ -61,10 +61,6 @@ pub struct Ncn {
     reserved: [u8; 263],
 }
 
-impl Discriminator for Ncn {
-    const DISCRIMINATOR: u8 = 2;
-}
-
 impl Ncn {
     #[allow(clippy::too_many_arguments)]
     pub fn new(base: Pubkey, admin: Pubkey, ncn_index: u64, bump: u8) -> Self {
