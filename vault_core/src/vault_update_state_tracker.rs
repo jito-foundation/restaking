@@ -258,11 +258,7 @@ mod tests {
         vault_update_state_tracker
             .check_and_update_index(2, n)
             .unwrap();
-        // assert_eq!(vault_update_state_tracker.update_counter(), 0);
-        // assert_eq!(
-        //     vault_update_state_tracker._last_updated_index(n).unwrap(),
-        //     2
-        // );
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 2);
 
         vault_update_state_tracker
             .check_and_update_index(3, n)
@@ -271,19 +267,13 @@ mod tests {
         vault_update_state_tracker
             .check_and_update_index(0, n)
             .unwrap();
-        // assert_eq!(vault_update_state_tracker.update_counter(), 2);
-        // assert_eq!(
-        //     vault_update_state_tracker._last_updated_index(n).unwrap(),
-        //     0
-        // );
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
 
         vault_update_state_tracker
             .check_and_update_index(1, n)
             .unwrap();
-        // assert_eq!(vault_update_state_tracker.update_counter(), 3);
-        // assert_eq!(
-        //     vault_update_state_tracker._last_updated_index(n).unwrap(),
-        //     1
-        // );
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
+
+        assert!(vault_update_state_tracker.all_operators_updated(n).unwrap());
     }
 }
