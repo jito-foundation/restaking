@@ -12,10 +12,6 @@ use jito_restaking_sdk::error::RestakingError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-impl Discriminator for Operator {
-    const DISCRIMINATOR: u8 = 3;
-}
-
 /// The Operator account stores global information for a particular operator
 /// including the admin, voter, and the number of NCN and vault accounts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
