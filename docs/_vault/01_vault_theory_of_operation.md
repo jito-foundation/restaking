@@ -45,7 +45,7 @@ Here's a list of different admins that control the vault:
 - `slasher_admin`: Add and removal of slashers.
 - `capacity_admin`: Set the vault's max token capacity.
 - `fee_admin`: Set and adjust deposit, withdrawal, and reward fees.
-- `withdraw_admin`: Initiate token withdrawals from the vault.
+- `withdrawal_admin`: Initiate token withdrawals from the vault.
 - `mint_burn_admin`: An optional admin for minting and burning operations.
 
 # 4. Vault Configuration
@@ -217,7 +217,7 @@ The withdrawal enqueueing process is a crucial part of the vault's operation, al
 Key points:
 - The vault keeps track of all the enqueued withdrawals in `vrt_enqueued_for_cooldown_amount`, `vrt_cooling_down_amount` and `vrt_ready_to_claim_amount` amounts. This is a safeguard to ensure the vault can meet its withdrawal obligations.
 - Withdrawals are not immediately available for withdrawal. They must complete the cooldown period of one full epoch before they can be withdrawn.
-- Anyone can complete the withdrawal process by calling the `BurnWithdrawTicket` instruction.
+- Anyone can complete the withdrawal process by calling the `BurnWithdrawalTicket` instruction.
   - This ensures that squatters can't prevent delegation by holding VRTs that can be withdrawn but aren't.
 - The amount of VRTs cooling down is tracked in `vrt_cooling_down_amount`, as opposed to assets equal to the redemption price at the time of withdrawal. This is because the redemption price at the time of withdrawal is unknown at the time of enqueuing. This attempts to guarantee that the vault can meet its withdrawal obligations even if the redemption price at the time of withdrawal is lower than the redemption price at the time of enqueuing.
 
@@ -256,27 +256,7 @@ This last look ensures that the vault remains responsive to withdrawal requests 
 
 # 11. Burning
 
-## 11.1. Burning VRT
-
-Burning is the process of redeeming VRT tokens for the underlying assets in the vault. Here's a high-level overview of the burning process:
-
-1. The user initiates a burn transaction, specifying the amount of VRT to burn and the minimum amount of underlying assets they expect to receive.
-2. The vault performs several checks:
-   - Ensures the VRT mint is correct
-   - Verifies that the vault state doesn't need an update
-   - Checks if a mint burn admin is required and present
-3. The vault calculates the burn summary, which includes:
-   - The fee amount to be collected
-   - The amount of VRT to be burned
-   - The amount of underlying assets to be returned to the user
-4. The specified amount of VRT is burned from the user's account.
-5. The fee amount of VRT is transferred to the vault's fee account.
-6. The calculated amount of underlying assets is transferred from the vault to the user's account.
-7. The vault's internal state is updated to reflect the burn:
-   - The VRT supply is decreased
-   - The total tokens deposited in the vault is reduced
-
-## 11.2. Burning VRT Withdrawal Tickets
+## 11.1. Burning VRT Withdrawal Tickets
 
 Burning a VRT Withdrawal Ticket is the process of finalizing a withdrawal from the vault. VRTs that have been withdrawn for more than one full epoch can be burned to receive the underlying assets.
 

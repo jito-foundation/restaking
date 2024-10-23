@@ -14,7 +14,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -27,7 +27,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -58,7 +58,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -71,7 +71,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -105,7 +105,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -118,7 +118,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -162,7 +162,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -175,7 +175,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -244,7 +244,7 @@ mod tests {
         let mut fixture = TestBuilder::new().await;
 
         let deposit_fee_bps = 0;
-        let withdraw_fee_bps = 0;
+        let withdrawal_fee_bps = 0;
         let reward_fee_bps = 0;
         let num_operators = 1;
         let slasher_amounts = vec![];
@@ -257,7 +257,7 @@ mod tests {
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
-                withdraw_fee_bps,
+                withdrawal_fee_bps,
                 reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
@@ -319,5 +319,58 @@ mod tests {
                 .enqueued_for_cooldown_amount(),
             50_000
         );
+    }
+
+    #[tokio::test]
+    async fn test_cooldown_delegation_vault_vault_is_paused_ok() {
+        let mut fixture = TestBuilder::new().await;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
+        let ConfiguredVault {
+            mut vault_program_client,
+            operator_roots,
+            vault_root,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100_000, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 100_000)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let test_error = vault_program_client
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .await;
+
+        assert_vault_error(test_error, VaultError::VaultIsPaused);
     }
 }

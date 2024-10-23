@@ -19,6 +19,8 @@ pub enum VaultError {
     VaultMintBurnAdminInvalid,
     #[error("VaultDelegationAdminInvalid")]
     VaultDelegationAdminInvalid,
+    #[error("VaultDelegateAssetAdminInvalid")]
+    VaultDelegateAssetAdminInvalid,
     #[error("VaultCapacityExceeded")]
     VaultCapacityExceeded,
     #[error("VaultSlasherAdminInvalid")]
@@ -27,6 +29,10 @@ pub enum VaultError {
     VaultNcnAdminInvalid,
     #[error("VaultFeeAdminInvalid")]
     VaultFeeAdminInvalid,
+    #[error("VaultConfigAdminInvalid")]
+    VaultConfigAdminInvalid,
+    #[error("VaultConfigFeeAdminInvalid")]
+    VaultConfigFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
     #[error("VaultFeeChangeTooSoon")]
@@ -97,6 +103,23 @@ pub enum VaultError {
     VaultEnqueueWithdrawalAmountZero,
     #[error("VaultMintZero")]
     VaultMintZero,
+    #[error("VaultIsPaused")]
+    VaultIsPaused,
+    #[error("InvalidDepositor")]
+    InvalidDepositor,
+    #[error("InvalidDepositTokenAccount")]
+    InvalidDepositTokenAccount,
+    #[error("NoSupportedMintBalanceChange")]
+    NoSupportedMintBalanceChange,
+    #[error("InvalidEpochLength")]
+    InvalidEpochLength,
+
+    #[error("ArithmeticOverflow")]
+    ArithmeticOverflow = 3000,
+    #[error("ArithmeticUnderflow")]
+    ArithmeticUnderflow,
+    #[error("DivisionByZero")]
+    DivisionByZero,
 }
 
 impl<T> DecodeError<T> for VaultError {

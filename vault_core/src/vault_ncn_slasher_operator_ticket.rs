@@ -9,10 +9,6 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-impl Discriminator for VaultNcnSlasherOperatorTicket {
-    const DISCRIMINATOR: u8 = 6;
-}
-
 /// The [`VaultNcnSlasherOperatorTicket`] account tracks the amount an operator has been slashed
 /// by a slasher for a given node consensus network (NCN) and vault for a given epoch. It helps
 /// ensure that the operator is held accountable for their actions and that slashing conditions
@@ -92,7 +88,7 @@ impl VaultNcnSlasherOperatorTicket {
         let amount_after_slash = self
             .slashed()
             .checked_add(slash_amount)
-            .ok_or(ProgramError::ArithmeticOverflow)?;
+            .ok_or(VaultError::ArithmeticOverflow)?;
         if amount_after_slash > max_slashable_per_epoch {
             msg!("Slash amount exceeds the maximum slashable amount per epoch");
             return Err(VaultError::VaultMaxSlashedPerOperatorExceeded.into());

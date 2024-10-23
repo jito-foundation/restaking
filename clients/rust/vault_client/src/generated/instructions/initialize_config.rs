@@ -18,12 +18,16 @@ pub struct InitializeConfig {
 }
 
 impl InitializeConfig {
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+    pub fn instruction(
+        &self,
+        args: InitializeConfigInstructionArgs,
+    ) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: InitializeConfigInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
@@ -43,7 +47,9 @@ impl InitializeConfig {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = InitializeConfigInstructionData::new().try_to_vec().unwrap();
+        let mut data = InitializeConfigInstructionData::new().try_to_vec().unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -70,6 +76,12 @@ impl Default for InitializeConfigInstructionData {
     }
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InitializeConfigInstructionArgs {
+    pub program_fee_bps: u16,
+}
+
 /// Instruction builder for `InitializeConfig`.
 ///
 /// ### Accounts:
@@ -84,6 +96,7 @@ pub struct InitializeConfigBuilder {
     admin: Option<solana_program::pubkey::Pubkey>,
     restaking_program: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
+    program_fee_bps: Option<u16>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -113,6 +126,11 @@ impl InitializeConfigBuilder {
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.system_program = Some(system_program);
+        self
+    }
+    #[inline(always)]
+    pub fn program_fee_bps(&mut self, program_fee_bps: u16) -> &mut Self {
+        self.program_fee_bps = Some(program_fee_bps);
         self
     }
     /// Add an aditional account to the instruction.
@@ -145,8 +163,14 @@ impl InitializeConfigBuilder {
                 .system_program
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
         };
+        let args = InitializeConfigInstructionArgs {
+            program_fee_bps: self
+                .program_fee_bps
+                .clone()
+                .expect("program_fee_bps is not set"),
+        };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
@@ -173,12 +197,15 @@ pub struct InitializeConfigCpi<'a, 'b> {
     pub restaking_program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: InitializeConfigInstructionArgs,
 }
 
 impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
         accounts: InitializeConfigCpiAccounts<'a, 'b>,
+        args: InitializeConfigInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
@@ -186,6 +213,7 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
             admin: accounts.admin,
             restaking_program: accounts.restaking_program,
             system_program: accounts.system_program,
+            __args: args,
         }
     }
     #[inline(always)]
@@ -245,7 +273,9 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = InitializeConfigInstructionData::new().try_to_vec().unwrap();
+        let mut data = InitializeConfigInstructionData::new().try_to_vec().unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -291,6 +321,7 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
             admin: None,
             restaking_program: None,
             system_program: None,
+            program_fee_bps: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -322,6 +353,11 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
         system_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.system_program = Some(system_program);
+        self
+    }
+    #[inline(always)]
+    pub fn program_fee_bps(&mut self, program_fee_bps: u16) -> &mut Self {
+        self.instruction.program_fee_bps = Some(program_fee_bps);
         self
     }
     /// Add an additional account to the instruction.
@@ -365,6 +401,13 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
+        let args = InitializeConfigInstructionArgs {
+            program_fee_bps: self
+                .instruction
+                .program_fee_bps
+                .clone()
+                .expect("program_fee_bps is not set"),
+        };
         let instruction = InitializeConfigCpi {
             __program: self.instruction.__program,
 
@@ -381,6 +424,7 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
                 .instruction
                 .system_program
                 .expect("system_program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -396,6 +440,7 @@ struct InitializeConfigCpiBuilderInstruction<'a, 'b> {
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     restaking_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    program_fee_bps: Option<u16>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

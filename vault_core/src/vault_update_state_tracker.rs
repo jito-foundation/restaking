@@ -6,10 +6,6 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 use crate::delegation_state::DelegationState;
 
-impl Discriminator for VaultUpdateStateTracker {
-    const DISCRIMINATOR: u8 = 9;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultUpdateStateTracker {
@@ -81,7 +77,12 @@ impl VaultUpdateStateTracker {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-        } else if index != self.last_updated_index().checked_add(1).unwrap() {
+        } else if index
+            != self
+                .last_updated_index()
+                .checked_add(1)
+                .ok_or(VaultError::ArithmeticOverflow)?
+        {
             msg!("VaultUpdateStateTracker incorrect index");
             return Err(VaultError::VaultUpdateIncorrectIndex);
         }

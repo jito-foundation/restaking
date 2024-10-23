@@ -10,6 +10,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -71,19 +73,28 @@ export type InitializeOperatorInstruction<
     ]
   >;
 
-export type InitializeOperatorInstructionData = { discriminator: number };
+export type InitializeOperatorInstructionData = {
+  discriminator: number;
+  operatorFeeBps: number;
+};
 
-export type InitializeOperatorInstructionDataArgs = {};
+export type InitializeOperatorInstructionDataArgs = { operatorFeeBps: number };
 
 export function getInitializeOperatorInstructionDataEncoder(): Encoder<InitializeOperatorInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([['discriminator', getU8Encoder()]]),
+    getStructEncoder([
+      ['discriminator', getU8Encoder()],
+      ['operatorFeeBps', getU16Encoder()],
+    ]),
     (value) => ({ ...value, discriminator: INITIALIZE_OPERATOR_DISCRIMINATOR })
   );
 }
 
 export function getInitializeOperatorInstructionDataDecoder(): Decoder<InitializeOperatorInstructionData> {
-  return getStructDecoder([['discriminator', getU8Decoder()]]);
+  return getStructDecoder([
+    ['discriminator', getU8Decoder()],
+    ['operatorFeeBps', getU16Decoder()],
+  ]);
 }
 
 export function getInitializeOperatorInstructionDataCodec(): Codec<
@@ -108,6 +119,7 @@ export type InitializeOperatorInput<
   admin: TransactionSigner<TAccountAdmin>;
   base: TransactionSigner<TAccountBase>;
   systemProgram?: Address<TAccountSystemProgram>;
+  operatorFeeBps: InitializeOperatorInstructionDataArgs['operatorFeeBps'];
 };
 
 export function getInitializeOperatorInstruction<
@@ -148,6 +160,9 @@ export function getInitializeOperatorInstruction<
     ResolvedAccount
   >;
 
+  // Original args.
+  const args = { ...input };
+
   // Resolve default values.
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
@@ -164,7 +179,9 @@ export function getInitializeOperatorInstruction<
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getInitializeOperatorInstructionDataEncoder().encode({}),
+    data: getInitializeOperatorInstructionDataEncoder().encode(
+      args as InitializeOperatorInstructionDataArgs
+    ),
   } as InitializeOperatorInstruction<
     typeof JITO_RESTAKING_PROGRAM_ADDRESS,
     TAccountConfig,

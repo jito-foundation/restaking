@@ -10,8 +10,6 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -32,13 +30,13 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const BURN_DISCRIMINATOR = 12;
+export const BURN_WITHDRAWAL_TICKET_DISCRIMINATOR = 14;
 
-export function getBurnDiscriminatorBytes() {
-  return getU8Encoder().encode(BURN_DISCRIMINATOR);
+export function getBurnWithdrawalTicketDiscriminatorBytes() {
+  return getU8Encoder().encode(BURN_WITHDRAWAL_TICKET_DISCRIMINATOR);
 }
 
-export type BurnInstruction<
+export type BurnWithdrawalTicketInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
@@ -46,8 +44,14 @@ export type BurnInstruction<
   TAccountVrtMint extends string | IAccountMeta<string> = string,
   TAccountStaker extends string | IAccountMeta<string> = string,
   TAccountStakerTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountStakerVrtTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountVaultStakerWithdrawalTicket extends
+    | string
+    | IAccountMeta<string> = string,
+  TAccountVaultStakerWithdrawalTicketTokenAccount extends
+    | string
+    | IAccountMeta<string> = string,
   TAccountVaultFeeTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountProgramFeeTokenAccount extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
@@ -73,19 +77,23 @@ export type BurnInstruction<
         ? WritableAccount<TAccountVrtMint>
         : TAccountVrtMint,
       TAccountStaker extends string
-        ? ReadonlySignerAccount<TAccountStaker> &
-            IAccountSignerMeta<TAccountStaker>
+        ? WritableAccount<TAccountStaker>
         : TAccountStaker,
       TAccountStakerTokenAccount extends string
         ? WritableAccount<TAccountStakerTokenAccount>
         : TAccountStakerTokenAccount,
-      TAccountStakerVrtTokenAccount extends string
-        ? ReadonlySignerAccount<TAccountStakerVrtTokenAccount> &
-            IAccountSignerMeta<TAccountStakerVrtTokenAccount>
-        : TAccountStakerVrtTokenAccount,
+      TAccountVaultStakerWithdrawalTicket extends string
+        ? WritableAccount<TAccountVaultStakerWithdrawalTicket>
+        : TAccountVaultStakerWithdrawalTicket,
+      TAccountVaultStakerWithdrawalTicketTokenAccount extends string
+        ? WritableAccount<TAccountVaultStakerWithdrawalTicketTokenAccount>
+        : TAccountVaultStakerWithdrawalTicketTokenAccount,
       TAccountVaultFeeTokenAccount extends string
         ? WritableAccount<TAccountVaultFeeTokenAccount>
         : TAccountVaultFeeTokenAccount,
+      TAccountProgramFeeTokenAccount extends string
+        ? WritableAccount<TAccountProgramFeeTokenAccount>
+        : TAccountProgramFeeTokenAccount,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
@@ -100,55 +108,45 @@ export type BurnInstruction<
     ]
   >;
 
-export type BurnInstructionData = {
-  discriminator: number;
-  amountIn: bigint;
-  minAmountOut: bigint;
-};
+export type BurnWithdrawalTicketInstructionData = { discriminator: number };
 
-export type BurnInstructionDataArgs = {
-  amountIn: number | bigint;
-  minAmountOut: number | bigint;
-};
+export type BurnWithdrawalTicketInstructionDataArgs = {};
 
-export function getBurnInstructionDataEncoder(): Encoder<BurnInstructionDataArgs> {
+export function getBurnWithdrawalTicketInstructionDataEncoder(): Encoder<BurnWithdrawalTicketInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([
-      ['discriminator', getU8Encoder()],
-      ['amountIn', getU64Encoder()],
-      ['minAmountOut', getU64Encoder()],
-    ]),
-    (value) => ({ ...value, discriminator: BURN_DISCRIMINATOR })
+    getStructEncoder([['discriminator', getU8Encoder()]]),
+    (value) => ({
+      ...value,
+      discriminator: BURN_WITHDRAWAL_TICKET_DISCRIMINATOR,
+    })
   );
 }
 
-export function getBurnInstructionDataDecoder(): Decoder<BurnInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getU8Decoder()],
-    ['amountIn', getU64Decoder()],
-    ['minAmountOut', getU64Decoder()],
-  ]);
+export function getBurnWithdrawalTicketInstructionDataDecoder(): Decoder<BurnWithdrawalTicketInstructionData> {
+  return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
-export function getBurnInstructionDataCodec(): Codec<
-  BurnInstructionDataArgs,
-  BurnInstructionData
+export function getBurnWithdrawalTicketInstructionDataCodec(): Codec<
+  BurnWithdrawalTicketInstructionDataArgs,
+  BurnWithdrawalTicketInstructionData
 > {
   return combineCodec(
-    getBurnInstructionDataEncoder(),
-    getBurnInstructionDataDecoder()
+    getBurnWithdrawalTicketInstructionDataEncoder(),
+    getBurnWithdrawalTicketInstructionDataDecoder()
   );
 }
 
-export type BurnInput<
+export type BurnWithdrawalTicketInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountVaultTokenAccount extends string = string,
   TAccountVrtMint extends string = string,
   TAccountStaker extends string = string,
   TAccountStakerTokenAccount extends string = string,
-  TAccountStakerVrtTokenAccount extends string = string,
+  TAccountVaultStakerWithdrawalTicket extends string = string,
+  TAccountVaultStakerWithdrawalTicketTokenAccount extends string = string,
   TAccountVaultFeeTokenAccount extends string = string,
+  TAccountProgramFeeTokenAccount extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountBurnSigner extends string = string,
@@ -157,45 +155,49 @@ export type BurnInput<
   vault: Address<TAccountVault>;
   vaultTokenAccount: Address<TAccountVaultTokenAccount>;
   vrtMint: Address<TAccountVrtMint>;
-  staker: TransactionSigner<TAccountStaker>;
+  staker: Address<TAccountStaker>;
   stakerTokenAccount: Address<TAccountStakerTokenAccount>;
-  stakerVrtTokenAccount: TransactionSigner<TAccountStakerVrtTokenAccount>;
+  vaultStakerWithdrawalTicket: Address<TAccountVaultStakerWithdrawalTicket>;
+  vaultStakerWithdrawalTicketTokenAccount: Address<TAccountVaultStakerWithdrawalTicketTokenAccount>;
   vaultFeeTokenAccount: Address<TAccountVaultFeeTokenAccount>;
+  programFeeTokenAccount: Address<TAccountProgramFeeTokenAccount>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
   /** Signer for burning */
   burnSigner?: TransactionSigner<TAccountBurnSigner>;
-  amountIn: BurnInstructionDataArgs['amountIn'];
-  minAmountOut: BurnInstructionDataArgs['minAmountOut'];
 };
 
-export function getBurnInstruction<
+export function getBurnWithdrawalTicketInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountVaultTokenAccount extends string,
   TAccountVrtMint extends string,
   TAccountStaker extends string,
   TAccountStakerTokenAccount extends string,
-  TAccountStakerVrtTokenAccount extends string,
+  TAccountVaultStakerWithdrawalTicket extends string,
+  TAccountVaultStakerWithdrawalTicketTokenAccount extends string,
   TAccountVaultFeeTokenAccount extends string,
+  TAccountProgramFeeTokenAccount extends string,
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
   TAccountBurnSigner extends string,
 >(
-  input: BurnInput<
+  input: BurnWithdrawalTicketInput<
     TAccountConfig,
     TAccountVault,
     TAccountVaultTokenAccount,
     TAccountVrtMint,
     TAccountStaker,
     TAccountStakerTokenAccount,
-    TAccountStakerVrtTokenAccount,
+    TAccountVaultStakerWithdrawalTicket,
+    TAccountVaultStakerWithdrawalTicketTokenAccount,
     TAccountVaultFeeTokenAccount,
+    TAccountProgramFeeTokenAccount,
     TAccountTokenProgram,
     TAccountSystemProgram,
     TAccountBurnSigner
   >
-): BurnInstruction<
+): BurnWithdrawalTicketInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
@@ -203,8 +205,10 @@ export function getBurnInstruction<
   TAccountVrtMint,
   TAccountStaker,
   TAccountStakerTokenAccount,
-  TAccountStakerVrtTokenAccount,
+  TAccountVaultStakerWithdrawalTicket,
+  TAccountVaultStakerWithdrawalTicketTokenAccount,
   TAccountVaultFeeTokenAccount,
+  TAccountProgramFeeTokenAccount,
   TAccountTokenProgram,
   TAccountSystemProgram,
   TAccountBurnSigner
@@ -221,17 +225,25 @@ export function getBurnInstruction<
       isWritable: true,
     },
     vrtMint: { value: input.vrtMint ?? null, isWritable: true },
-    staker: { value: input.staker ?? null, isWritable: false },
+    staker: { value: input.staker ?? null, isWritable: true },
     stakerTokenAccount: {
       value: input.stakerTokenAccount ?? null,
       isWritable: true,
     },
-    stakerVrtTokenAccount: {
-      value: input.stakerVrtTokenAccount ?? null,
-      isWritable: false,
+    vaultStakerWithdrawalTicket: {
+      value: input.vaultStakerWithdrawalTicket ?? null,
+      isWritable: true,
+    },
+    vaultStakerWithdrawalTicketTokenAccount: {
+      value: input.vaultStakerWithdrawalTicketTokenAccount ?? null,
+      isWritable: true,
     },
     vaultFeeTokenAccount: {
       value: input.vaultFeeTokenAccount ?? null,
+      isWritable: true,
+    },
+    programFeeTokenAccount: {
+      value: input.programFeeTokenAccount ?? null,
       isWritable: true,
     },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
@@ -242,9 +254,6 @@ export function getBurnInstruction<
     keyof typeof originalAccounts,
     ResolvedAccount
   >;
-
-  // Original args.
-  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
@@ -265,17 +274,17 @@ export function getBurnInstruction<
       getAccountMeta(accounts.vrtMint),
       getAccountMeta(accounts.staker),
       getAccountMeta(accounts.stakerTokenAccount),
-      getAccountMeta(accounts.stakerVrtTokenAccount),
+      getAccountMeta(accounts.vaultStakerWithdrawalTicket),
+      getAccountMeta(accounts.vaultStakerWithdrawalTicketTokenAccount),
       getAccountMeta(accounts.vaultFeeTokenAccount),
+      getAccountMeta(accounts.programFeeTokenAccount),
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.burnSigner),
     ],
     programAddress,
-    data: getBurnInstructionDataEncoder().encode(
-      args as BurnInstructionDataArgs
-    ),
-  } as BurnInstruction<
+    data: getBurnWithdrawalTicketInstructionDataEncoder().encode({}),
+  } as BurnWithdrawalTicketInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
@@ -283,8 +292,10 @@ export function getBurnInstruction<
     TAccountVrtMint,
     TAccountStaker,
     TAccountStakerTokenAccount,
-    TAccountStakerVrtTokenAccount,
+    TAccountVaultStakerWithdrawalTicket,
+    TAccountVaultStakerWithdrawalTicketTokenAccount,
     TAccountVaultFeeTokenAccount,
+    TAccountProgramFeeTokenAccount,
     TAccountTokenProgram,
     TAccountSystemProgram,
     TAccountBurnSigner
@@ -293,7 +304,7 @@ export function getBurnInstruction<
   return instruction;
 }
 
-export type ParsedBurnInstruction<
+export type ParsedBurnWithdrawalTicketInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -305,25 +316,27 @@ export type ParsedBurnInstruction<
     vrtMint: TAccountMetas[3];
     staker: TAccountMetas[4];
     stakerTokenAccount: TAccountMetas[5];
-    stakerVrtTokenAccount: TAccountMetas[6];
-    vaultFeeTokenAccount: TAccountMetas[7];
-    tokenProgram: TAccountMetas[8];
-    systemProgram: TAccountMetas[9];
+    vaultStakerWithdrawalTicket: TAccountMetas[6];
+    vaultStakerWithdrawalTicketTokenAccount: TAccountMetas[7];
+    vaultFeeTokenAccount: TAccountMetas[8];
+    programFeeTokenAccount: TAccountMetas[9];
+    tokenProgram: TAccountMetas[10];
+    systemProgram: TAccountMetas[11];
     /** Signer for burning */
-    burnSigner?: TAccountMetas[10] | undefined;
+    burnSigner?: TAccountMetas[12] | undefined;
   };
-  data: BurnInstructionData;
+  data: BurnWithdrawalTicketInstructionData;
 };
 
-export function parseBurnInstruction<
+export function parseBurnWithdrawalTicketInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedBurnInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+): ParsedBurnWithdrawalTicketInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 13) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -348,12 +361,16 @@ export function parseBurnInstruction<
       vrtMint: getNextAccount(),
       staker: getNextAccount(),
       stakerTokenAccount: getNextAccount(),
-      stakerVrtTokenAccount: getNextAccount(),
+      vaultStakerWithdrawalTicket: getNextAccount(),
+      vaultStakerWithdrawalTicketTokenAccount: getNextAccount(),
       vaultFeeTokenAccount: getNextAccount(),
+      programFeeTokenAccount: getNextAccount(),
       tokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),
       burnSigner: getNextOptionalAccount(),
     },
-    data: getBurnInstructionDataDecoder().decode(instruction.data),
+    data: getBurnWithdrawalTicketInstructionDataDecoder().decode(
+      instruction.data
+    ),
   };
 }

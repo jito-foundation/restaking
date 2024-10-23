@@ -7,9 +7,7 @@
  */
 
 export * from './addDelegation';
-export * from './adminWithdraw';
-export * from './burn';
-export * from './burnWithdrawTicket';
+export * from './burnWithdrawalTicket';
 export * from './changeWithdrawalTicketOwner';
 export * from './closeVaultUpdateStateTracker';
 export * from './cooldownDelegation';
@@ -17,6 +15,7 @@ export * from './cooldownVaultNcnSlasherTicket';
 export * from './cooldownVaultNcnTicket';
 export * from './crankVaultUpdateStateTracker';
 export * from './createTokenMetadata';
+export * from './delegateTokenAccount';
 export * from './enqueueWithdrawal';
 export * from './initializeConfig';
 export * from './initializeVault';
@@ -30,6 +29,9 @@ export * from './mintTo';
 export * from './setAdmin';
 export * from './setDepositCapacity';
 export * from './setFees';
+export * from './setIsPaused';
+export * from './setProgramFee';
+export * from './setProgramFeeWallet';
 export * from './setSecondaryAdmin';
 export * from './slash';
 export * from './updateTokenMetadata';

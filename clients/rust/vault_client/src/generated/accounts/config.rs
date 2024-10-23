@@ -26,9 +26,20 @@ pub struct Config {
     pub deposit_withdrawal_fee_cap_bps: u16,
     pub fee_rate_of_change_bps: u16,
     pub fee_bump_bps: u16,
+    pub program_fee_bps: u16,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub program_fee_wallet: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub fee_admin: Pubkey,
     pub bump: u8,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved: [u8; 263],
+    pub reserved: [u8; 229],
 }
 
 impl Config {

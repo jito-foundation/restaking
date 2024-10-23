@@ -61,6 +61,8 @@ pub fn process_enqueue_withdrawal(
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
+    vault.check_is_paused()?;
+
     if vrt_amount == 0 {
         msg!("VRT amount must be greater than zero");
         return Err(VaultError::VaultEnqueueWithdrawalAmountZero.into());
@@ -83,7 +85,7 @@ pub fn process_enqueue_withdrawal(
 
     // Create the VaultStakerWithdrawalTicket account
     msg!(
-        "Initializing vault staker withdraw ticket at address {}",
+        "Initializing vault staker withdrawal ticket at address {}",
         vault_staker_withdrawal_ticket.key
     );
     create_account(
@@ -94,7 +96,7 @@ pub fn process_enqueue_withdrawal(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultStakerWithdrawalTicket>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_staker_withdrawal_ticket_seeds,
     )?;
     let mut vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow_mut();

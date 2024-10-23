@@ -24,6 +24,6 @@ pub enum OperatorAdminRole {
     NcnAdmin,
     VaultAdmin,
     VoterAdmin,
-    WithdrawAdmin,
-    WithdrawWallet,
+    DelegateAdmin,
+    MetadataAdmin,
 }

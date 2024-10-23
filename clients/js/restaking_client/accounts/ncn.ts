@@ -42,8 +42,10 @@ export type Ncn = {
   operatorAdmin: Address;
   vaultAdmin: Address;
   slasherAdmin: Address;
-  withdrawAdmin: Address;
-  withdrawFeeWallet: Address;
+  delegateAdmin: Address;
+  metadataAdmin: Address;
+  weightTableAdmin: Address;
+  ncnProgramAdmin: Address;
   index: bigint;
   operatorCount: bigint;
   vaultCount: bigint;
@@ -59,8 +61,10 @@ export type NcnArgs = {
   operatorAdmin: Address;
   vaultAdmin: Address;
   slasherAdmin: Address;
-  withdrawAdmin: Address;
-  withdrawFeeWallet: Address;
+  delegateAdmin: Address;
+  metadataAdmin: Address;
+  weightTableAdmin: Address;
+  ncnProgramAdmin: Address;
   index: number | bigint;
   operatorCount: number | bigint;
   vaultCount: number | bigint;
@@ -77,8 +81,10 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['operatorAdmin', getAddressEncoder()],
     ['vaultAdmin', getAddressEncoder()],
     ['slasherAdmin', getAddressEncoder()],
-    ['withdrawAdmin', getAddressEncoder()],
-    ['withdrawFeeWallet', getAddressEncoder()],
+    ['delegateAdmin', getAddressEncoder()],
+    ['metadataAdmin', getAddressEncoder()],
+    ['weightTableAdmin', getAddressEncoder()],
+    ['ncnProgramAdmin', getAddressEncoder()],
     ['index', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
     ['vaultCount', getU64Encoder()],
@@ -96,8 +102,10 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['operatorAdmin', getAddressDecoder()],
     ['vaultAdmin', getAddressDecoder()],
     ['slasherAdmin', getAddressDecoder()],
-    ['withdrawAdmin', getAddressDecoder()],
-    ['withdrawFeeWallet', getAddressDecoder()],
+    ['delegateAdmin', getAddressDecoder()],
+    ['metadataAdmin', getAddressDecoder()],
+    ['weightTableAdmin', getAddressDecoder()],
+    ['ncnProgramAdmin', getAddressDecoder()],
     ['index', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
     ['vaultCount', getU64Decoder()],

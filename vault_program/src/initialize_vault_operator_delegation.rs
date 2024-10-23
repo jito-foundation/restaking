@@ -9,6 +9,7 @@ use jito_restaking_core::{operator::Operator, operator_vault_ticket::OperatorVau
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
 };
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
@@ -60,6 +61,7 @@ pub fn process_initialize_vault_operator_delegation(
 
     vault.check_operator_admin(vault_operator_admin.key)?;
     vault.check_update_state_ok(slot, config.epoch_length())?;
+    vault.check_is_paused()?;
 
     msg!(
         "Initializing VaultOperatorDelegation at address {}",
@@ -73,7 +75,7 @@ pub fn process_initialize_vault_operator_delegation(
         &Rent::get()?,
         8_u64
             .checked_add(size_of::<VaultOperatorDelegation>() as u64)
-            .unwrap(),
+            .ok_or(VaultError::ArithmeticOverflow)?,
         &vault_operator_delegation_seeds,
     )?;
 
