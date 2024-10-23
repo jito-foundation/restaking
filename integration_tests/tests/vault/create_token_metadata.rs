@@ -13,7 +13,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_token_metadata_ok() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -37,6 +37,8 @@ mod tests {
 
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
+
+        fixture.warp_slot_incremental(1000).await.unwrap();
 
         vault_program_client
             .create_token_metadata(
@@ -64,7 +66,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_token_metadata_wrong_vrt_mint_fails() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -95,6 +97,8 @@ mod tests {
         let metadata_pubkey =
             inline_mpl_token_metadata::pda::find_metadata_account(&vault.vrt_mint).0;
 
+        fixture.warp_slot_incremental(1000).await.unwrap();
+
         let result = vault_program_client
             .create_token_metadata(
                 &vault_pubkey,
@@ -113,7 +117,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_token_metadata_wrong_metadata_fails() {
-        let fixture = TestBuilder::new().await;
+        let mut fixture = TestBuilder::new().await;
 
         let mut vault_program_client = fixture.vault_program_client();
 
@@ -134,6 +138,8 @@ mod tests {
         let name = "restaking JTO";
         let symbol = "rJTO";
         let uri = "https://www.jito.network/restaking/";
+
+        fixture.warp_slot_incremental(1000).await.unwrap();
 
         let result = vault_program_client
             .create_token_metadata(
