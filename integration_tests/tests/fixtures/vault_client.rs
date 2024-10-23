@@ -31,7 +31,7 @@ use solana_program::{
     rent::Rent,
     system_instruction::{create_account, transfer},
 };
-use solana_program_test::{BanksClient, BanksClientError};
+use solana_program_test::{BanksClient, BanksClientError, ProgramTestBanksClientExt};
 use solana_sdk::{
     commitment_config::CommitmentLevel,
     instruction::InstructionError,
@@ -1529,6 +1529,13 @@ impl VaultProgramClient {
         uri: String,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        let new_blockhash = self
+            .banks_client
+            .get_new_latest_blockhash(&blockhash)
+            .await
+            .unwrap();
+
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::create_token_metadata(
                 &jito_vault_program::id(),
@@ -1543,7 +1550,7 @@ impl VaultProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
-            blockhash,
+            new_blockhash,
         ))
         .await
     }
