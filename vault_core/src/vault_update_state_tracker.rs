@@ -113,15 +113,20 @@ impl VaultUpdateStateTracker {
             return Ok(false);
         }
 
-        if num_operators == 1 && self.last_updated_index() == 0 {
-            return Ok(true);
+        let start_index = self
+            .ncn_epoch()
+            .checked_rem(num_operators)
+            .ok_or(VaultError::DivisionByZero)?;
+
+        if start_index == 0 {
+            return Ok(self.last_updated_index()
+                == num_operators
+                    .checked_sub(1)
+                    .ok_or(VaultError::ArithmeticUnderflow)?);
         }
 
         Ok(self.last_updated_index()
-            == self
-                .ncn_epoch()
-                .checked_rem(num_operators)
-                .ok_or(VaultError::DivisionByZero)?
+            == start_index
                 .checked_sub(1)
                 .ok_or(VaultError::ArithmeticUnderflow)?)
     }
@@ -275,5 +280,40 @@ mod tests {
         assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
 
         assert!(vault_update_state_tracker.all_operators_updated(n).unwrap());
+    }
+
+    #[test]
+    fn test_all_operators_updated() {
+        let n = 4;
+
+        // Cranking not started
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
+
+        // Middle of cranking
+        tracker.last_updated_index = PodU64::from(1);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
+
+        // All operators updated, start_index = 0
+        tracker.last_updated_index = PodU64::from(3);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
+
+        // All operators updated, start_index != 0
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 1, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
+
+        // Single operator
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 2, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(tracker.all_operators_updated(1).unwrap(), true);
+
+        // Error - division by zero
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(
+            tracker.all_operators_updated(0),
+            Err(VaultError::DivisionByZero)
+        );
     }
 }
