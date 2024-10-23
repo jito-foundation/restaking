@@ -29,13 +29,6 @@ pub struct MintSummary {
     pub vrt_to_fee_wallet: u64,
 }
 
-impl Discriminator for Vault {
-    const DISCRIMINATOR: u8 = 2;
-}
-
-/// The vault is responsible for holding tokens and minting VRT tokens
-/// based on the amount of tokens deposited.
-/// It also contains several administrative functions for features inside the vault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct Vault {

@@ -9,11 +9,6 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-/// The discriminator for the global configuration account
-impl Discriminator for Config {
-    const DISCRIMINATOR: u8 = 1;
-}
-
 /// The global configuration account for the restaking program. Manages
 /// program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]

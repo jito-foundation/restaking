@@ -6,10 +6,6 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-impl Discriminator for VaultStakerWithdrawalTicket {
-    const DISCRIMINATOR: u8 = 7;
-}
-
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 /// For every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]

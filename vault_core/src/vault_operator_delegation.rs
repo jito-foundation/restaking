@@ -11,10 +11,6 @@ use solana_program::{
 
 use crate::delegation_state::DelegationState;
 
-impl Discriminator for VaultOperatorDelegation {
-    const DISCRIMINATOR: u8 = 4;
-}
-
 /// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
