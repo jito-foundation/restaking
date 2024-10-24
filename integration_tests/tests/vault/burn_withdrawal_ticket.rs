@@ -1200,4 +1200,136 @@ mod tests {
 
         assert_vault_error(result, VaultError::VaultIsPaused);
     }
+
+    #[tokio::test]
+    async fn test_burn_withdrawal_ticket_fee_change_unaffected() {
+        const MINT_AMOUNT: u64 = 100_000;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin,
+            vault_root,
+            restaking_config_admin: _,
+            ncn_root: _,
+            operator_roots,
+            slashers_amounts: _,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config_address = Config::find_program_address(&jito_vault_program::id()).0;
+        let config = vault_program_client
+            .get_config(&config_address)
+            .await
+            .unwrap();
+
+        // Delegate all funds to the operator
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+
+        // Set program and withdrawal fees to 90.1%
+        vault_program_client
+            .set_program_fee(&vault_config_admin, 9_000)
+            .await
+            .unwrap();
+        vault_program_client
+            .set_fees(
+                &config_address,
+                &vault_root.vault_pubkey,
+                &vault_root.vault_admin,
+                None,
+                Some(10),
+                None,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+        assert_eq!(vault.tokens_deposited(), 0);
+        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(vault.delegation_state, DelegationState::default());
+        assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
+        assert_eq!(vault.vrt_cooling_down_amount(), 0);
+
+        let depositor_token_account = fixture
+            .get_token_account(&get_associated_token_address(
+                &depositor.pubkey(),
+                &vault.supported_mint,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(depositor_token_account.amount, MINT_AMOUNT);
+        // assert!(false);
+    }
 }

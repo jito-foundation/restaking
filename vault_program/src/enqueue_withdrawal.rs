@@ -110,6 +110,8 @@ pub fn process_enqueue_withdrawal(
         *base.key,
         vrt_amount,
         Clock::get()?.slot,
+        config.program_fee_bps(),
+        vault.withdrawal_fee_bps(),
         vault_staker_withdrawal_ticket_bump,
     );
 

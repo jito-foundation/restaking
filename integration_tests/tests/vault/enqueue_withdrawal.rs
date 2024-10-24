@@ -134,6 +134,14 @@ mod tests {
             vault_staker_withdrawal_ticket.vrt_amount(),
             amount_to_dequeue
         );
+        assert_eq!(
+            vault_staker_withdrawal_ticket.program_fee_bps(),
+            reward_fee_bps
+        );
+        assert_eq!(
+            vault_staker_withdrawal_ticket.vault_withdrawal_fee_bps(),
+            withdrawal_fee_bps
+        );
 
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)

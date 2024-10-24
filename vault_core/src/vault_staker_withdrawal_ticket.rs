@@ -1,7 +1,10 @@
 //! The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
-use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_bytemuck::{
+    types::{PodU16, PodU64},
+    AccountDeserialize, Discriminator,
+};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -27,10 +30,16 @@ pub struct VaultStakerWithdrawalTicket {
     /// The slot the withdrawal was enqueued
     slot_unstaked: PodU64,
 
+    /// The program fee in basis points at the time of ticket creation
+    program_fee_bps: PodU16,
+
+    /// The vault withdrawal fee in basis points at the time of ticket creation
+    vault_withdrawal_fee_bps: PodU16,
+
     /// The bump seed used to create the PDA
     pub bump: u8,
 
-    reserved: [u8; 263],
+    reserved: [u8; 259],
 }
 
 impl VaultStakerWithdrawalTicket {
@@ -40,6 +49,8 @@ impl VaultStakerWithdrawalTicket {
         base: Pubkey,
         vrt_amount: u64,
         slot_unstaked: u64,
+        program_fee_bps: u16,
+        vault_withdrawal_fee_bps: u16,
         bump: u8,
     ) -> Self {
         Self {
@@ -48,8 +59,10 @@ impl VaultStakerWithdrawalTicket {
             base,
             vrt_amount: PodU64::from(vrt_amount),
             slot_unstaked: PodU64::from(slot_unstaked),
+            program_fee_bps: PodU16::from(program_fee_bps),
+            vault_withdrawal_fee_bps: PodU16::from(vault_withdrawal_fee_bps),
             bump,
-            reserved: [0; 263],
+            reserved: [0; 259],
         }
     }
 
@@ -115,7 +128,7 @@ impl VaultStakerWithdrawalTicket {
     /// # Returns
     /// * [`Pubkey`] - The program address
     /// * `u8` - The bump seed
-    /// * `Vec<Vec<u8>` - The seeds used to generate the PDA
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,
@@ -169,6 +182,15 @@ impl VaultStakerWithdrawalTicket {
         }
         Ok(())
     }
+
+    // Add getters for the new fields
+    pub fn program_fee_bps(&self) -> u16 {
+        self.program_fee_bps.into()
+    }
+
+    pub fn vault_withdrawal_fee_bps(&self) -> u16 {
+        self.vault_withdrawal_fee_bps.into()
+    }
 }
 
 #[cfg(test)]
@@ -184,8 +206,10 @@ mod tests {
             size_of::<Pubkey>() + // base
             size_of::<PodU64>() + // vrt_amount
             size_of::<PodU64>() + // slot_unstaked
+            size_of::<PodU16>() + // program_fee_bps
+            size_of::<PodU16>() + // vault_withdrawal_fee_bps
             size_of::<u8>() + // bump
-            263; // reserved
+            259; // reserved
         assert_eq!(vault_staker_withdrawal_ticket_size, sum_of_fields);
     }
 }

@@ -92,7 +92,8 @@ pub fn process_burn_withdrawal_ticket(
         burn_amount,
         out_amount,
     } = vault.burn_with_fee(
-        config.program_fee_bps(),
+        vault_staker_withdrawal_ticket.program_fee_bps(),
+        vault_staker_withdrawal_ticket.vault_withdrawal_fee_bps(),
         vault_staker_withdrawal_ticket.vrt_amount(),
     )?;
 
