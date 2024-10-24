@@ -537,51 +537,6 @@ pub fn initialize_vault_ncn_slasher_operator_ticket(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn slash(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    vault: &Pubkey,
-    ncn: &Pubkey,
-    operator: &Pubkey,
-    slasher: &Pubkey,
-    ncn_operator_state: &Pubkey,
-    ncn_vault_ticket: &Pubkey,
-    operator_vault_ticket: &Pubkey,
-    vault_ncn_ticket: &Pubkey,
-    vault_operator_delegation: &Pubkey,
-    ncn_vault_slasher_ticket: &Pubkey,
-    vault_ncn_slasher_ticket: &Pubkey,
-    vault_ncn_slasher_operator_ticket: &Pubkey,
-    vault_token_account: &Pubkey,
-    slasher_token_account: &Pubkey,
-    amount: u64,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new_readonly(*config, false),
-        AccountMeta::new(*vault, false),
-        AccountMeta::new_readonly(*ncn, false),
-        AccountMeta::new_readonly(*operator, false),
-        AccountMeta::new_readonly(*slasher, true),
-        AccountMeta::new_readonly(*ncn_operator_state, false),
-        AccountMeta::new_readonly(*ncn_vault_ticket, false),
-        AccountMeta::new_readonly(*operator_vault_ticket, false),
-        AccountMeta::new_readonly(*vault_ncn_ticket, false),
-        AccountMeta::new(*vault_operator_delegation, false),
-        AccountMeta::new_readonly(*ncn_vault_slasher_ticket, false),
-        AccountMeta::new_readonly(*vault_ncn_slasher_ticket, false),
-        AccountMeta::new(*vault_ncn_slasher_operator_ticket, false),
-        AccountMeta::new(*vault_token_account, false),
-        AccountMeta::new(*slasher_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
-    ];
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: VaultInstruction::Slash { amount }.try_to_vec().unwrap(),
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
 pub fn enqueue_withdrawal(
     program_id: &Pubkey,
     config: &Pubkey,

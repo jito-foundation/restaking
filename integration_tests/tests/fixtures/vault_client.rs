@@ -3,8 +3,8 @@ use std::{fmt, fmt::Debug};
 use borsh::BorshDeserialize;
 use jito_bytemuck::AccountDeserialize;
 use jito_restaking_core::{
-    ncn_operator_state::NcnOperatorState, ncn_vault_slasher_ticket::NcnVaultSlasherTicket,
-    ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
+    ncn_vault_slasher_ticket::NcnVaultSlasherTicket, ncn_vault_ticket::NcnVaultTicket,
+    operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
     config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
@@ -31,7 +31,7 @@ use solana_program::{
     rent::Rent,
     system_instruction::{create_account, transfer},
 };
-use solana_program_test::{BanksClient, BanksClientError, ProgramTestBanksClientExt};
+use solana_program_test::{BanksClient, BanksClientError};
 use solana_sdk::{
     commitment_config::CommitmentLevel,
     instruction::InstructionError,
@@ -491,104 +491,6 @@ impl VaultProgramClient {
         )
         .await
         .unwrap();
-
-        Ok(())
-    }
-
-    pub async fn do_slash(
-        &mut self,
-        vault_root: &VaultRoot,
-        ncn_pubkey: &Pubkey,
-        slasher: &Keypair,
-        operator_pubkey: &Pubkey,
-        amount: u64,
-    ) -> Result<(), TestError> {
-        let ncn_operator_state_pubkey = NcnOperatorState::find_program_address(
-            &jito_restaking_program::id(),
-            ncn_pubkey,
-            operator_pubkey,
-        )
-        .0;
-        let ncn_vault_ticket_pubkey = NcnVaultTicket::find_program_address(
-            &jito_restaking_program::id(),
-            ncn_pubkey,
-            &vault_root.vault_pubkey,
-        )
-        .0;
-        let operator_vault_ticket_pubkey = OperatorVaultTicket::find_program_address(
-            &jito_restaking_program::id(),
-            operator_pubkey,
-            &vault_root.vault_pubkey,
-        )
-        .0;
-        let vault_ncn_ticket_pubkey = VaultNcnTicket::find_program_address(
-            &jito_vault_program::id(),
-            &vault_root.vault_pubkey,
-            ncn_pubkey,
-        )
-        .0;
-        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
-            &jito_vault_program::id(),
-            &vault_root.vault_pubkey,
-            operator_pubkey,
-        )
-        .0;
-        let ncn_slasher_ticket_pubkey = NcnVaultSlasherTicket::find_program_address(
-            &jito_restaking_program::id(),
-            ncn_pubkey,
-            &vault_root.vault_pubkey,
-            &slasher.pubkey(),
-        )
-        .0;
-        let vault_slasher_ticket_pubkey = VaultNcnSlasherTicket::find_program_address(
-            &jito_vault_program::id(),
-            &vault_root.vault_pubkey,
-            ncn_pubkey,
-            &slasher.pubkey(),
-        )
-        .0;
-        let config = self
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
-        let clock: Clock = self.banks_client.get_sysvar().await?;
-
-        let vault_ncn_slasher_operator_ticket =
-            VaultNcnSlasherOperatorTicket::find_program_address(
-                &jito_vault_program::id(),
-                &vault_root.vault_pubkey,
-                ncn_pubkey,
-                &slasher.pubkey(),
-                operator_pubkey,
-                clock.slot / config.epoch_length(),
-            )
-            .0;
-
-        let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
-        let vault_token_account =
-            get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint);
-        let slasher_token_account =
-            get_associated_token_address(&slasher.pubkey(), &vault.supported_mint);
-
-        self.slash(
-            &Config::find_program_address(&jito_vault_program::id()).0,
-            &vault_root.vault_pubkey,
-            ncn_pubkey,
-            operator_pubkey,
-            slasher,
-            &ncn_operator_state_pubkey,
-            &ncn_vault_ticket_pubkey,
-            &operator_vault_ticket_pubkey,
-            &vault_ncn_ticket_pubkey,
-            &vault_operator_delegation,
-            &ncn_slasher_ticket_pubkey,
-            &vault_slasher_ticket_pubkey,
-            &vault_ncn_slasher_operator_ticket,
-            &vault_token_account,
-            &slasher_token_account,
-            amount,
-        )
-        .await?;
 
         Ok(())
     }
@@ -1481,53 +1383,6 @@ impl VaultProgramClient {
         .await
     }
 
-    pub async fn slash(
-        &mut self,
-        config: &Pubkey,
-        vault: &Pubkey,
-        ncn: &Pubkey,
-        operator: &Pubkey,
-        slasher: &Keypair,
-        ncn_operator_state: &Pubkey,
-        ncn_vault_ticket: &Pubkey,
-        operator_vault_ticket: &Pubkey,
-        vault_ncn_ticket: &Pubkey,
-        vault_operator_delegation: &Pubkey,
-        ncn_vault_slasher_ticket: &Pubkey,
-        vault_ncn_slasher_ticket: &Pubkey,
-        vault_ncn_slasher_operator_ticket: &Pubkey,
-        vault_token_account: &Pubkey,
-        slasher_token_account: &Pubkey,
-        amount: u64,
-    ) -> Result<(), TestError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
-        self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::slash(
-                &jito_vault_program::id(),
-                config,
-                vault,
-                ncn,
-                operator,
-                &slasher.pubkey(),
-                ncn_operator_state,
-                ncn_vault_ticket,
-                operator_vault_ticket,
-                vault_ncn_ticket,
-                vault_operator_delegation,
-                ncn_vault_slasher_ticket,
-                vault_ncn_slasher_ticket,
-                vault_ncn_slasher_operator_ticket,
-                vault_token_account,
-                slasher_token_account,
-                amount,
-            )],
-            Some(&slasher.pubkey()),
-            &[slasher],
-            blockhash,
-        ))
-        .await
-    }
-
     pub async fn create_token_metadata(
         &mut self,
         vault: &Pubkey,
@@ -1540,12 +1395,6 @@ impl VaultProgramClient {
         uri: String,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
-
-        let new_blockhash = self
-            .banks_client
-            .get_new_latest_blockhash(&blockhash)
-            .await
-            .unwrap();
 
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::create_token_metadata(
@@ -1561,7 +1410,7 @@ impl VaultProgramClient {
             )],
             Some(&payer.pubkey()),
             &[admin, payer],
-            new_blockhash,
+            blockhash,
         ))
         .await
     }
