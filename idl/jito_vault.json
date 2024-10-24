@@ -1900,6 +1900,18 @@
             }
           },
           {
+            "name": "programFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "vaultWithdrawalFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
             "name": "bump",
             "type": "u8"
           },
@@ -1908,7 +1920,7 @@
             "type": {
               "array": [
                 "u8",
-                263
+                259
               ]
             }
           }

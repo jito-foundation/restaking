@@ -19,6 +19,8 @@ import {
   getArrayEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
@@ -42,6 +44,8 @@ export type VaultStakerWithdrawalTicket = {
   base: Address;
   vrtAmount: bigint;
   slotUnstaked: bigint;
+  programFeeBps: number;
+  vaultWithdrawalFeeBps: number;
   bump: number;
   reserved: Array<number>;
 };
@@ -53,6 +57,8 @@ export type VaultStakerWithdrawalTicketArgs = {
   base: Address;
   vrtAmount: number | bigint;
   slotUnstaked: number | bigint;
+  programFeeBps: number;
+  vaultWithdrawalFeeBps: number;
   bump: number;
   reserved: Array<number>;
 };
@@ -65,8 +71,10 @@ export function getVaultStakerWithdrawalTicketEncoder(): Encoder<VaultStakerWith
     ['base', getAddressEncoder()],
     ['vrtAmount', getU64Encoder()],
     ['slotUnstaked', getU64Encoder()],
+    ['programFeeBps', getU16Encoder()],
+    ['vaultWithdrawalFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 259 })],
   ]);
 }
 
@@ -78,8 +86,10 @@ export function getVaultStakerWithdrawalTicketDecoder(): Decoder<VaultStakerWith
     ['base', getAddressDecoder()],
     ['vrtAmount', getU64Decoder()],
     ['slotUnstaked', getU64Decoder()],
+    ['programFeeBps', getU16Decoder()],
+    ['vaultWithdrawalFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 259 })],
   ]);
 }
 

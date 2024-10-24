@@ -43,6 +43,7 @@ pub struct VaultStakerWithdrawalTicket {
 }
 
 impl VaultStakerWithdrawalTicket {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         vault: Pubkey,
         staker: Pubkey,
