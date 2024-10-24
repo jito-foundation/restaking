@@ -7,10 +7,6 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-impl Discriminator for NcnVaultSlasherTicket {
-    const DISCRIMINATOR: u8 = 7;
-}
-
 /// The NcnVaultSlasherTicket is created by the NCN and it tracks the state of a node consensus network
 /// opting-in to a vault slasher. The NcnVaultSlasherTicket can be activated and deactivated over time.
 /// The NcnVaultSlasherTicket can slash a specific operator that's receiving delegation from a

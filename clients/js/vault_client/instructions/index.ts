@@ -33,7 +33,6 @@ export * from './setIsPaused';
 export * from './setProgramFee';
 export * from './setProgramFeeWallet';
 export * from './setSecondaryAdmin';
-export * from './slash';
 export * from './updateTokenMetadata';
 export * from './updateVaultBalance';
 export * from './warmupVaultNcnSlasherTicket';

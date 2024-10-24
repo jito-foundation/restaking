@@ -19,6 +19,5 @@ mod set_fees;
 mod set_is_paused;
 mod set_program_fee_wallet;
 mod set_secondary_admin;
-mod slash;
 mod update_token_metadata;
 mod update_vault_balance;

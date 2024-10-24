@@ -141,7 +141,6 @@ pub enum VaultInstruction {
     #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
         amount: u64,
-        min_amount_out: u64
     },
 
     #[account(0, name = "config")]
@@ -308,26 +307,7 @@ pub enum VaultInstruction {
         uri: String,
     },
 
-    /// Slashes an amount of tokens from the vault
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, name = "operator")]
-    #[account(4, signer, name = "slasher")]
-    #[account(5, name = "ncn_operator_state")]
-    #[account(6, name = "ncn_vault_ticket")]
-    #[account(7, name = "operator_vault_ticket")]
-    #[account(8, name = "vault_ncn_ticket")]
-    #[account(9, writable, name = "vault_operator_delegation")]
-    #[account(10, name = "ncn_vault_slasher_ticket")]
-    #[account(11, name = "vault_ncn_slasher_ticket")]
-    #[account(12, writable, name = "vault_ncn_slasher_operator_ticket")]
-    #[account(13, writable, name = "vault_token_account")]
-    #[account(14, name = "slasher_token_account")]
-    #[account(15, name = "token_program")]
-    Slash {
-        amount: u64
-    },
+
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
