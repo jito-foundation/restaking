@@ -2457,6 +2457,11 @@
       "msg": "InvalidEpochLength"
     },
     {
+      "code": 1055,
+      "name": "NoZeroReturnMintTo",
+      "msg": "NoZeroReturnMintTo"
+    },
+    {
       "code": 3000,
       "name": "ArithmeticOverflow",
       "msg": "ArithmeticOverflow"

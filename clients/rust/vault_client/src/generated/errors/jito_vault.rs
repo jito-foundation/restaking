@@ -174,6 +174,9 @@ pub enum JitoVaultError {
     /// 1054 - InvalidEpochLength
     #[error("InvalidEpochLength")]
     InvalidEpochLength = 0x41E,
+    /// 1055 - NoZeroReturnMintTo
+    #[error("NoZeroReturnMintTo")]
+    NoZeroReturnMintTo = 0x41F,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,
