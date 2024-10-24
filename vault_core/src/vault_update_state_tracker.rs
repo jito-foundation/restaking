@@ -15,7 +15,7 @@ pub struct VaultUpdateStateTracker {
     /// The NCN epoch for which the delegations are to be updated
     ncn_epoch: PodU64,
 
-    /// The update index of the vault
+    /// The last updated index of the vault
     last_updated_index: PodU64,
 
     /// The amount of additional assets that need unstaking to fulfill VRT withdrawals
@@ -71,23 +71,60 @@ impl VaultUpdateStateTracker {
         Ok(())
     }
 
-    pub fn check_and_update_index(&mut self, index: u64) -> Result<(), VaultError> {
+    /// Checks and updates the index of the vault update state tracker
+    /// Index starts at different values depending on the NCN epoch to prevent
+    /// any single operator from getting starved
+    pub fn check_and_update_index(
+        &mut self,
+        index: u64,
+        num_operators: u64,
+    ) -> Result<(), VaultError> {
         if self.last_updated_index() == u64::MAX {
-            if index != 0 {
+            let start_index = self
+                .ncn_epoch()
+                .checked_rem(num_operators)
+                .ok_or(VaultError::DivisionByZero)?;
+            if index != start_index {
                 msg!("VaultUpdateStateTracker incorrect index");
                 return Err(VaultError::VaultUpdateIncorrectIndex);
             }
-        } else if index
-            != self
+        } else {
+            let next_index = self
                 .last_updated_index()
                 .checked_add(1)
-                .ok_or(VaultError::ArithmeticOverflow)?
-        {
-            msg!("VaultUpdateStateTracker incorrect index");
-            return Err(VaultError::VaultUpdateIncorrectIndex);
+                .and_then(|i| i.checked_rem(num_operators))
+                .ok_or(VaultError::ArithmeticOverflow)?;
+
+            if index != next_index {
+                msg!("VaultUpdateStateTracker incorrect index");
+                return Err(VaultError::VaultUpdateIncorrectIndex);
+            }
         }
         self.last_updated_index = PodU64::from(index);
         Ok(())
+    }
+
+    pub fn all_operators_updated(&self, num_operators: u64) -> Result<bool, VaultError> {
+        if self.last_updated_index() == u64::MAX {
+            return Ok(false);
+        }
+
+        let start_index = self
+            .ncn_epoch()
+            .checked_rem(num_operators)
+            .ok_or(VaultError::DivisionByZero)?;
+
+        if start_index == 0 {
+            return Ok(self.last_updated_index()
+                == num_operators
+                    .checked_sub(1)
+                    .ok_or(VaultError::ArithmeticUnderflow)?);
+        }
+
+        Ok(self.last_updated_index()
+            == start_index
+                .checked_sub(1)
+                .ok_or(VaultError::ArithmeticUnderflow)?)
     }
 
     /// Returns the seeds for the PDA
@@ -175,7 +212,9 @@ mod tests {
         let mut vault_update_state_tracker =
             VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
 
-        assert!(vault_update_state_tracker.check_and_update_index(0).is_ok());
+        assert!(vault_update_state_tracker
+            .check_and_update_index(0, 1)
+            .is_ok());
     }
 
     #[test]
@@ -183,7 +222,7 @@ mod tests {
         let mut vault_update_state_tracker =
             VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
         assert_eq!(
-            vault_update_state_tracker.check_and_update_index(1),
+            vault_update_state_tracker.check_and_update_index(1, 2),
             Err(VaultError::VaultUpdateIncorrectIndex)
         );
     }
@@ -192,15 +231,95 @@ mod tests {
     fn test_update_index_skip_index_fails() {
         let mut vault_update_state_tracker =
             VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        let n = 4;
         vault_update_state_tracker
-            .check_and_update_index(0)
+            .check_and_update_index(0, n)
             .unwrap();
         vault_update_state_tracker
-            .check_and_update_index(1)
+            .check_and_update_index(1, n)
             .unwrap();
         assert_eq!(
-            vault_update_state_tracker.check_and_update_index(3),
+            vault_update_state_tracker.check_and_update_index(3, n),
             Err(VaultError::VaultUpdateIncorrectIndex)
+        );
+    }
+
+    #[test]
+    fn test_update_index_wraparound() {
+        let n = 4;
+        // Epoch 6, offset is 6 % 4 = 2
+        let mut vault_update_state_tracker =
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 6, 0, 0);
+
+        assert_eq!(
+            vault_update_state_tracker.check_and_update_index(0, n),
+            Err(VaultError::VaultUpdateIncorrectIndex)
+        );
+
+        vault_update_state_tracker
+            .check_and_update_index(2, n)
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 2);
+
+        vault_update_state_tracker
+            .check_and_update_index(3, n)
+            .unwrap();
+
+        vault_update_state_tracker
+            .check_and_update_index(0, n)
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 0);
+
+        vault_update_state_tracker
+            .check_and_update_index(1, n)
+            .unwrap();
+        assert_eq!(vault_update_state_tracker.last_updated_index(), 1);
+
+        assert!(vault_update_state_tracker.all_operators_updated(n).unwrap());
+    }
+
+    #[test]
+    fn test_all_operators_updated() {
+        let n = 4;
+
+        // Cranking not started
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
+
+        // Middle of cranking
+        tracker.last_updated_index = PodU64::from(1);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
+
+        // All operators updated, start_index = 0
+        tracker.last_updated_index = PodU64::from(3);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
+
+        // start_index = operators - 1
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n - 1, 0, 0);
+        tracker.last_updated_index = PodU64::from(n - 2);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
+
+        // start_index = operators, last_updated = start_index - 1
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
+
+        // All operators updated, start_index != 0
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 1, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
+
+        // Single operator
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 2, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(tracker.all_operators_updated(1).unwrap(), true);
+
+        // Error - division by zero
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        tracker.last_updated_index = PodU64::from(0);
+        assert_eq!(
+            tracker.all_operators_updated(0),
+            Err(VaultError::DivisionByZero)
         );
     }
 }
