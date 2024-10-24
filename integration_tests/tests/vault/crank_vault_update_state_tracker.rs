@@ -655,9 +655,7 @@ mod tests {
             vault_config_admin: _,
             vault_root,
             restaking_config_admin: _,
-            ncn_root: _,
             operator_roots,
-            slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
@@ -793,9 +791,7 @@ mod tests {
             vault_config_admin: _,
             vault_root,
             restaking_config_admin: _,
-            ncn_root: _,
             operator_roots,
-            slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
@@ -911,9 +907,7 @@ mod tests {
             vault_config_admin: _,
             vault_root,
             restaking_config_admin: _,
-            ncn_root: _,
             operator_roots,
-            slashers_amounts: _,
         } = fixture
             .setup_vault_with_ncn_and_operators(
                 deposit_fee_bps,
