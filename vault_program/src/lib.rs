@@ -25,7 +25,6 @@ mod set_is_paused;
 mod set_program_fee;
 mod set_program_fee_wallet;
 mod set_secondary_admin;
-mod slash;
 mod update_token_metadata;
 mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
@@ -63,7 +62,7 @@ use crate::{
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
     set_fees::process_set_fees, set_is_paused::process_set_is_paused,
     set_program_fee_wallet::process_set_program_fee_wallet,
-    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    set_secondary_admin::process_set_secondary_admin,
     update_token_metadata::process_update_token_metadata,
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
@@ -263,13 +262,6 @@ pub fn process_instruction(
         VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch } => {
             msg!("Instruction: CloseVaultUpdateStateTracker");
             process_close_vault_update_state_tracker(program_id, accounts, ncn_epoch)
-        }
-        // ------------------------------------------
-        // Vault slashing
-        // ------------------------------------------
-        VaultInstruction::Slash { amount } => {
-            msg!("Instruction: Slash");
-            process_slash(program_id, accounts, amount)
         }
         // ------------------------------------------
         // VRT metadata

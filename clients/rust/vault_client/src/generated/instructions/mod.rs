@@ -31,7 +31,6 @@ pub(crate) mod r#set_is_paused;
 pub(crate) mod r#set_program_fee;
 pub(crate) mod r#set_program_fee_wallet;
 pub(crate) mod r#set_secondary_admin;
-pub(crate) mod r#slash;
 pub(crate) mod r#update_token_metadata;
 pub(crate) mod r#update_vault_balance;
 pub(crate) mod r#warmup_vault_ncn_slasher_ticket;
@@ -47,7 +46,7 @@ pub use self::{
     r#initialize_vault_ncn_ticket::*, r#initialize_vault_operator_delegation::*,
     r#initialize_vault_update_state_tracker::*, r#initialize_vault_with_mint::*, r#mint_to::*,
     r#set_admin::*, r#set_deposit_capacity::*, r#set_fees::*, r#set_is_paused::*,
-    r#set_program_fee::*, r#set_program_fee_wallet::*, r#set_secondary_admin::*, r#slash::*,
+    r#set_program_fee::*, r#set_program_fee_wallet::*, r#set_secondary_admin::*,
     r#update_token_metadata::*, r#update_vault_balance::*, r#warmup_vault_ncn_slasher_ticket::*,
     r#warmup_vault_ncn_ticket::*,
 };
