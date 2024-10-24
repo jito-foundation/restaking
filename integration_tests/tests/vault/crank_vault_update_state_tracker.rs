@@ -752,7 +752,45 @@ mod tests {
             .await
             .unwrap();
 
+        let last_full_update_epoch = vault.last_full_state_update_slot() / config.epoch_length();
+        assert_eq!(last_full_update_epoch, 0);
         assert_eq!(vault.additional_assets_need_unstaking(), 25_000);
+
+        let first_operator_delegation = vault_program_client
+            .get_vault_operator_delegation(
+                &vault_root.vault_pubkey,
+                &operator_roots[0].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let first_operator_delegation_last_update_epoch =
+            first_operator_delegation.last_update_slot() / config.epoch_length();
+
+        assert_eq!(
+            first_operator_delegation
+                .delegation_state
+                .cooling_down_amount(),
+            50_000
+        );
+        assert_eq!(first_operator_delegation_last_update_epoch, 1);
+
+        let second_operator_delegation = vault_program_client
+            .get_vault_operator_delegation(
+                &vault_root.vault_pubkey,
+                &operator_roots[1].operator_pubkey,
+            )
+            .await
+            .unwrap();
+        let second_operator_delegation_last_update_epoch =
+            second_operator_delegation.last_update_slot() / config.epoch_length();
+
+        assert_eq!(
+            second_operator_delegation
+                .delegation_state
+                .cooling_down_amount(),
+            0
+        );
+        assert_eq!(second_operator_delegation_last_update_epoch, 0);
 
         let slot = fixture.get_current_slot().await.unwrap();
         let ncn_epoch = slot / config.epoch_length();
@@ -783,6 +821,8 @@ mod tests {
             .await
             .unwrap();
 
+        // Since the first operator was partially updated, the left over assets that need unstaking
+        // get's pulled from an operator that has not been updated yet
         assert_eq!(vault.additional_assets_need_unstaking(), 25_000);
 
         vault_program_client
@@ -814,11 +854,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.delegation_state.staked_amount(), 0);
+        assert_eq!(vault.delegation_state.staked_amount(), 25_000);
         assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount(), 0);
-
-        //TODO check if this is correct behavior
-        assert_eq!(vault.delegation_state.cooling_down_amount(), 25_000);
+        assert_eq!(vault.vrt_ready_to_claim_amount(), 75_000);
     }
 
     /// Test that the vrt withdrawal process if updating with normal crank operations
