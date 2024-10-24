@@ -77,7 +77,9 @@ export type Vault = {
   lastFullStateUpdateSlot: bigint;
   depositFeeBps: number;
   withdrawalFeeBps: number;
+  nextWithdrawalFeeBps: number;
   rewardFeeBps: number;
+  programFeeBps: number;
   bump: number;
   isPaused: number;
   reserved: Array<number>;
@@ -115,7 +117,9 @@ export type VaultArgs = {
   lastFullStateUpdateSlot: number | bigint;
   depositFeeBps: number;
   withdrawalFeeBps: number;
+  nextWithdrawalFeeBps: number;
   rewardFeeBps: number;
+  programFeeBps: number;
   bump: number;
   isPaused: number;
   reserved: Array<number>;
@@ -154,10 +158,12 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['lastFullStateUpdateSlot', getU64Encoder()],
     ['depositFeeBps', getU16Encoder()],
     ['withdrawalFeeBps', getU16Encoder()],
+    ['nextWithdrawalFeeBps', getU16Encoder()],
     ['rewardFeeBps', getU16Encoder()],
+    ['programFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
     ['isPaused', getBoolEncoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 259 })],
   ]);
 }
 
@@ -194,10 +200,12 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['lastFullStateUpdateSlot', getU64Decoder()],
     ['depositFeeBps', getU16Decoder()],
     ['withdrawalFeeBps', getU16Decoder()],
+    ['nextWithdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
+    ['programFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
     ['isPaused', getBoolDecoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 259 })],
   ]);
 }
 
