@@ -18,11 +18,13 @@ pub enum VaultInstruction {
     #[account(0, writable, name = "config")]
     #[account(1, writable, name = "vault")]
     #[account(2, writable, signer, name = "vrt_mint")]
-    #[account(3, name = "token_mint")]
-    #[account(4, writable, signer, name = "admin")]
-    #[account(5, signer, name = "base")]
-    #[account(6, name = "system_program")]
-    #[account(7, name = "token_program")]
+    #[account(3, name = "st_mint")]
+    #[account(4, writable, name = "admin_st_token_account")]
+    #[account(5, writable, name = "vault_st_token_account")]
+    #[account(6, writable, signer, name = "admin")]
+    #[account(7, signer, name = "base")]
+    #[account(8, name = "system_program")]
+    #[account(9, name = "token_program")]
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,

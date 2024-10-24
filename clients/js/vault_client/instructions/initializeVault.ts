@@ -44,7 +44,9 @@ export type InitializeVaultInstruction<
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
   TAccountVrtMint extends string | IAccountMeta<string> = string,
-  TAccountTokenMint extends string | IAccountMeta<string> = string,
+  TAccountStMint extends string | IAccountMeta<string> = string,
+  TAccountAdminStTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountVaultStTokenAccount extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountBase extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
@@ -68,9 +70,15 @@ export type InitializeVaultInstruction<
         ? WritableSignerAccount<TAccountVrtMint> &
             IAccountSignerMeta<TAccountVrtMint>
         : TAccountVrtMint,
-      TAccountTokenMint extends string
-        ? ReadonlyAccount<TAccountTokenMint>
-        : TAccountTokenMint,
+      TAccountStMint extends string
+        ? ReadonlyAccount<TAccountStMint>
+        : TAccountStMint,
+      TAccountAdminStTokenAccount extends string
+        ? WritableAccount<TAccountAdminStTokenAccount>
+        : TAccountAdminStTokenAccount,
+      TAccountVaultStTokenAccount extends string
+        ? WritableAccount<TAccountVaultStTokenAccount>
+        : TAccountVaultStTokenAccount,
       TAccountAdmin extends string
         ? WritableSignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
@@ -140,7 +148,9 @@ export type InitializeVaultInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountVrtMint extends string = string,
-  TAccountTokenMint extends string = string,
+  TAccountStMint extends string = string,
+  TAccountAdminStTokenAccount extends string = string,
+  TAccountVaultStTokenAccount extends string = string,
   TAccountAdmin extends string = string,
   TAccountBase extends string = string,
   TAccountSystemProgram extends string = string,
@@ -149,7 +159,9 @@ export type InitializeVaultInput<
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
   vrtMint: TransactionSigner<TAccountVrtMint>;
-  tokenMint: Address<TAccountTokenMint>;
+  stMint: Address<TAccountStMint>;
+  adminStTokenAccount: Address<TAccountAdminStTokenAccount>;
+  vaultStTokenAccount: Address<TAccountVaultStTokenAccount>;
   admin: TransactionSigner<TAccountAdmin>;
   base: TransactionSigner<TAccountBase>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -164,7 +176,9 @@ export function getInitializeVaultInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountVrtMint extends string,
-  TAccountTokenMint extends string,
+  TAccountStMint extends string,
+  TAccountAdminStTokenAccount extends string,
+  TAccountVaultStTokenAccount extends string,
   TAccountAdmin extends string,
   TAccountBase extends string,
   TAccountSystemProgram extends string,
@@ -174,7 +188,9 @@ export function getInitializeVaultInstruction<
     TAccountConfig,
     TAccountVault,
     TAccountVrtMint,
-    TAccountTokenMint,
+    TAccountStMint,
+    TAccountAdminStTokenAccount,
+    TAccountVaultStTokenAccount,
     TAccountAdmin,
     TAccountBase,
     TAccountSystemProgram,
@@ -185,7 +201,9 @@ export function getInitializeVaultInstruction<
   TAccountConfig,
   TAccountVault,
   TAccountVrtMint,
-  TAccountTokenMint,
+  TAccountStMint,
+  TAccountAdminStTokenAccount,
+  TAccountVaultStTokenAccount,
   TAccountAdmin,
   TAccountBase,
   TAccountSystemProgram,
@@ -199,7 +217,15 @@ export function getInitializeVaultInstruction<
     config: { value: input.config ?? null, isWritable: true },
     vault: { value: input.vault ?? null, isWritable: true },
     vrtMint: { value: input.vrtMint ?? null, isWritable: true },
-    tokenMint: { value: input.tokenMint ?? null, isWritable: false },
+    stMint: { value: input.stMint ?? null, isWritable: false },
+    adminStTokenAccount: {
+      value: input.adminStTokenAccount ?? null,
+      isWritable: true,
+    },
+    vaultStTokenAccount: {
+      value: input.vaultStTokenAccount ?? null,
+      isWritable: true,
+    },
     admin: { value: input.admin ?? null, isWritable: true },
     base: { value: input.base ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
@@ -229,7 +255,9 @@ export function getInitializeVaultInstruction<
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.vault),
       getAccountMeta(accounts.vrtMint),
-      getAccountMeta(accounts.tokenMint),
+      getAccountMeta(accounts.stMint),
+      getAccountMeta(accounts.adminStTokenAccount),
+      getAccountMeta(accounts.vaultStTokenAccount),
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.base),
       getAccountMeta(accounts.systemProgram),
@@ -244,7 +272,9 @@ export function getInitializeVaultInstruction<
     TAccountConfig,
     TAccountVault,
     TAccountVrtMint,
-    TAccountTokenMint,
+    TAccountStMint,
+    TAccountAdminStTokenAccount,
+    TAccountVaultStTokenAccount,
     TAccountAdmin,
     TAccountBase,
     TAccountSystemProgram,
@@ -263,11 +293,13 @@ export type ParsedInitializeVaultInstruction<
     config: TAccountMetas[0];
     vault: TAccountMetas[1];
     vrtMint: TAccountMetas[2];
-    tokenMint: TAccountMetas[3];
-    admin: TAccountMetas[4];
-    base: TAccountMetas[5];
-    systemProgram: TAccountMetas[6];
-    tokenProgram: TAccountMetas[7];
+    stMint: TAccountMetas[3];
+    adminStTokenAccount: TAccountMetas[4];
+    vaultStTokenAccount: TAccountMetas[5];
+    admin: TAccountMetas[6];
+    base: TAccountMetas[7];
+    systemProgram: TAccountMetas[8];
+    tokenProgram: TAccountMetas[9];
   };
   data: InitializeVaultInstructionData;
 };
@@ -280,7 +312,7 @@ export function parseInitializeVaultInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedInitializeVaultInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 8) {
+  if (instruction.accounts.length < 10) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -296,7 +328,9 @@ export function parseInitializeVaultInstruction<
       config: getNextAccount(),
       vault: getNextAccount(),
       vrtMint: getNextAccount(),
-      tokenMint: getNextAccount(),
+      stMint: getNextAccount(),
+      adminStTokenAccount: getNextAccount(),
+      vaultStTokenAccount: getNextAccount(),
       admin: getNextAccount(),
       base: getNextAccount(),
       systemProgram: getNextAccount(),

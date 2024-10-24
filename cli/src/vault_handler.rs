@@ -162,7 +162,7 @@ impl VaultCliHandler {
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
             .vrt_mint(vrt_mint.pubkey())
-            .token_mint(token_mint)
+            .st_mint(token_mint)
             .admin(keypair.pubkey())
             .base(base.pubkey())
             .deposit_fee_bps(deposit_fee_bps)
