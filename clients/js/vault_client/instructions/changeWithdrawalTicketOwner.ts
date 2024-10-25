@@ -54,7 +54,7 @@ export type ChangeWithdrawalTicketOwnerInstruction<
         ? ReadonlyAccount<TAccountConfig>
         : TAccountConfig,
       TAccountVault extends string
-        ? ReadonlyAccount<TAccountVault>
+        ? WritableAccount<TAccountVault>
         : TAccountVault,
       TAccountVaultStakerWithdrawalTicket extends string
         ? WritableAccount<TAccountVaultStakerWithdrawalTicket>
@@ -142,7 +142,7 @@ export function getChangeWithdrawalTicketOwnerInstruction<
   // Original accounts.
   const originalAccounts = {
     config: { value: input.config ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: false },
+    vault: { value: input.vault ?? null, isWritable: true },
     vaultStakerWithdrawalTicket: {
       value: input.vaultStakerWithdrawalTicket ?? null,
       isWritable: true,

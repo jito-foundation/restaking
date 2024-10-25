@@ -13,7 +13,8 @@ use jito_restaking_sdk::{
         initialize_ncn_vault_ticket, initialize_operator, initialize_operator_vault_ticket,
         ncn_cooldown_operator, ncn_set_admin, ncn_warmup_operator, operator_cooldown_ncn,
         operator_set_admin, operator_set_fee, operator_set_secondary_admin, operator_warmup_ncn,
-        warmup_ncn_vault_slasher_ticket, warmup_ncn_vault_ticket, warmup_operator_vault_ticket,
+        set_config_admin, warmup_ncn_vault_slasher_ticket, warmup_ncn_vault_ticket,
+        warmup_operator_vault_ticket,
     },
 };
 use solana_program::{
@@ -1056,6 +1057,27 @@ impl RestakingProgramClient {
             )
             .await?;
         Ok(())
+    }
+
+    pub async fn set_config_admin(
+        &mut self,
+        config: &Pubkey,
+        old_admin: &Keypair,
+        new_admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self.process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_restaking_sdk::sdk::set_config_admin(
+                &jito_restaking_program::id(),
+                config,
+                &old_admin.pubkey(),
+                &new_admin.pubkey(),
+            )],
+            Some(&old_admin.pubkey()),
+            &[old_admin, new_admin],
+            blockhash,
+        ))
+        .await
     }
 }
 

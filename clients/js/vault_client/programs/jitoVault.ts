@@ -34,6 +34,7 @@ import {
   type ParsedInitializeVaultWithMintInstruction,
   type ParsedMintToInstruction,
   type ParsedSetAdminInstruction,
+  type ParsedSetConfigAdminInstruction,
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
   type ParsedSetIsPausedInstruction,
@@ -92,6 +93,7 @@ export enum JitoVaultInstruction {
   CloseVaultUpdateStateTracker,
   CreateTokenMetadata,
   UpdateTokenMetadata,
+  SetConfigAdmin,
 }
 
 export function identifyJitoVaultInstruction(
@@ -190,6 +192,9 @@ export function identifyJitoVaultInstruction(
   }
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
     return JitoVaultInstruction.UpdateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.SetConfigAdmin;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoVault instruction.'
@@ -291,4 +296,7 @@ export type ParsedJitoVaultInstruction<
     } & ParsedCreateTokenMetadataInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.UpdateTokenMetadata;
-    } & ParsedUpdateTokenMetadataInstruction<TProgram>);
+    } & ParsedUpdateTokenMetadataInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.SetConfigAdmin;
+    } & ParsedSetConfigAdminInstruction<TProgram>);

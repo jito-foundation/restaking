@@ -222,6 +222,11 @@ impl Config {
         }
         Ok(())
     }
+
+    pub fn set_admin(&mut self, new_admin: Pubkey) {
+        self.admin = new_admin;
+        self.fee_admin = new_admin;
+    }
 }
 
 #[cfg(test)]

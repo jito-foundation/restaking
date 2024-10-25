@@ -27,6 +27,7 @@ export * from './initializeVaultUpdateStateTracker';
 export * from './initializeVaultWithMint';
 export * from './mintTo';
 export * from './setAdmin';
+export * from './setConfigAdmin';
 export * from './setDepositCapacity';
 export * from './setFees';
 export * from './setIsPaused';

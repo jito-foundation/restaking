@@ -19,6 +19,7 @@ mod operator_set_admin;
 mod operator_set_fee;
 mod operator_set_secondary_admin;
 mod operator_warmup_ncn;
+mod set_config_admin;
 mod warmup_ncn_vault_slasher_ticket;
 mod warmup_ncn_vault_ticket;
 mod warmup_operator_vault_ticket;
@@ -52,7 +53,7 @@ use crate::{
     operator_delegate_token_account::process_operator_delegate_token_account,
     operator_set_admin::process_set_node_operator_admin,
     operator_set_secondary_admin::process_set_operator_secondary_admin,
-    operator_warmup_ncn::process_operator_warmup_ncn,
+    operator_warmup_ncn::process_operator_warmup_ncn, set_config_admin::process_set_config_admin,
     warmup_ncn_vault_slasher_ticket::process_warmup_ncn_vault_slasher_ticket,
     warmup_ncn_vault_ticket::process_warmup_ncn_vault_ticket,
     warmup_operator_vault_ticket::process_warmup_operator_vault_ticket,
@@ -186,6 +187,10 @@ pub fn process_instruction(
         RestakingInstruction::OperatorDelegateTokenAccount => {
             msg!("Instruction: OperatorDelegateTokenAccount");
             process_operator_delegate_token_account(program_id, accounts)
+        }
+        RestakingInstruction::SetConfigAdmin => {
+            msg!("Instruction: SetConfigAdmin");
+            process_set_config_admin(program_id, accounts)
         }
     }
 }
