@@ -47,8 +47,15 @@ impl VaultCliHandler {
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
         match action {
             VaultCommands::Config {
-                action: ConfigActions::Initialize,
-            } => self.initialize_config().await,
+                action:
+                    ConfigActions::Initialize {
+                        program_fee_bps,
+                        program_fee_wallet,
+                    },
+            } => {
+                self.initialize_config(program_fee_bps, program_fee_wallet)
+                    .await
+            }
             VaultCommands::Config {
                 action: ConfigActions::Get,
             } => self.get_config().await,
@@ -89,7 +96,11 @@ impl VaultCliHandler {
         }
     }
 
-    pub async fn initialize_config(&self) -> Result<()> {
+    pub async fn initialize_config(
+        &self,
+        program_fee_bps: u16,
+        program_fee_wallet: Pubkey,
+    ) -> Result<()> {
         let keypair = self
             .cli_config
             .keypair
@@ -102,7 +113,9 @@ impl VaultCliHandler {
         let ix_builder = ix_builder
             .config(config_address)
             .admin(keypair.pubkey())
-            .restaking_program(self.restaking_program_id);
+            .restaking_program(self.restaking_program_id)
+            .program_fee_wallet(program_fee_wallet)
+            .program_fee_bps(program_fee_bps);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
