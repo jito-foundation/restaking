@@ -12,12 +12,12 @@ mod tests {
         vault_client::{assert_vault_error, VaultRoot},
     };
 
-    const MINT_AMOUNT: u64 = 100_000;
-    const DEPOSIT_FEE_BPS: u16 = 0;
-    const WITHDRAWAL_FEE_BPS: u16 = 0;
-    const REWARD_FEE_BPS: u16 = 1000; // 10%
-
-    async fn setup() -> (TestBuilder, VaultRoot) {
+    async fn setup_with_reward(
+        reward_amount: u64,
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+        reward_fee_bps: u16,
+    ) -> (TestBuilder, VaultRoot) {
         let num_operators = 1;
         let slasher_amounts = vec![];
 
@@ -31,9 +31,9 @@ mod tests {
             operator_roots,
         } = fixture
             .setup_vault_with_ncn_and_operators(
-                DEPOSIT_FEE_BPS,
-                WITHDRAWAL_FEE_BPS,
-                REWARD_FEE_BPS,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
                 num_operators,
                 &slasher_amounts,
             )
@@ -43,13 +43,13 @@ mod tests {
         // Initial deposit + mint
         let depositor = Keypair::new();
         vault_program_client
-            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .configure_depositor(&vault_root, &depositor.pubkey(), reward_amount)
             .await
             .unwrap();
 
         // Reward vault instead of staking
         vault_program_client
-            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &depositor, MINT_AMOUNT)
+            .create_and_fund_reward_vault(&vault_root.vault_pubkey, &depositor, reward_amount)
             .await
             .unwrap();
 
@@ -108,8 +108,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_vault_balance_ok() {
-        let (fixture, vault_root) = setup().await;
+        const MINT_AMOUNT: u64 = 1000;
+        // Match's unit test in vault.rs: test_calculate_reward_fee
+        // We have to account for the INITIALIZATION_TOKEN_AMOUNT
+        const EXPECTED_FEE: u64 = 92;
+
+        let (fixture, vault_root) = setup_with_reward(
+            MINT_AMOUNT,
+            0,
+            0,
+            1000, //10%
+        )
+        .await;
         let mut vault_program_client = fixture.vault_program_client();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
 
         vault_program_client
             .update_vault_balance(&vault_root.vault_pubkey)
@@ -128,18 +150,36 @@ mod tests {
 
         assert_eq!(
             vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
-            MINT_AMOUNT
+            MINT_AMOUNT * 2
         );
-        assert_eq!(reward_fee_account.amount, MINT_AMOUNT / 10);
+        assert_eq!(reward_fee_account.amount, EXPECTED_FEE);
         assert_eq!(
             vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
-            MINT_AMOUNT / 10
+            MINT_AMOUNT + EXPECTED_FEE
         );
     }
 
     #[tokio::test]
+    async fn test_update_vault_balance_no_initial_supply() {
+        // There will always be an initial supply of 10_000
+        let (fixture, vault_root) = setup_with_reward(
+            1000, 0, 0, 1000, //10%
+        )
+        .await;
+        let mut vault_program_client = fixture.vault_program_client();
+
+        vault_program_client
+            .update_vault_balance(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
     async fn test_update_vault_balance_vault_is_paused_fails() {
-        let (fixture, vault_root) = setup().await;
+        let (fixture, vault_root) = setup_with_reward(
+            1000, 0, 0, 1000, //10%
+        )
+        .await;
         let mut vault_program_client = fixture.vault_program_client();
 
         vault_program_client
