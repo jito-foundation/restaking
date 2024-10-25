@@ -2389,6 +2389,11 @@
       "msg": "VaultRewardFeeIsZero"
     },
     {
+      "code": 1057,
+      "name": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate",
+      "msg": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate"
+    },
+    {
       "code": 3000,
       "name": "ArithmeticOverflow",
       "msg": "ArithmeticOverflow"
