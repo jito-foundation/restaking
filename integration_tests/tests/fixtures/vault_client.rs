@@ -304,14 +304,14 @@ impl VaultProgramClient {
 
         // Needs to be created before initialize vault
         self.create_ata(&st_mint.pubkey(), &vault_pubkey).await?;
-        self.create_ata(&st_mint.pubkey(), &self.payer.pubkey())
+        self.create_ata(&st_mint.pubkey(), &vault_admin.pubkey())
             .await?;
 
-        self.mint_spl_to(&st_mint.pubkey(), &self.payer.pubkey(), 10_000)
+        self.mint_spl_to(&st_mint.pubkey(), &vault_admin.pubkey(), 10_000)
             .await?;
 
         let admin_st_token_account =
-            get_associated_token_address(&self.payer.pubkey(), &st_mint.pubkey());
+            get_associated_token_address(&vault_admin.pubkey(), &st_mint.pubkey());
         let vault_st_token_account = get_associated_token_address(&vault_pubkey, &st_mint.pubkey());
 
         self.initialize_vault(
