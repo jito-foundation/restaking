@@ -1566,7 +1566,19 @@
             }
           },
           {
+            "name": "nextWithdrawalFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
             "name": "rewardFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "programFeeBps",
             "type": {
               "defined": "PodU16"
             }
@@ -1586,7 +1598,7 @@
             "type": {
               "array": [
                 "u8",
-                263
+                259
               ]
             }
           }
