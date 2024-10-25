@@ -92,6 +92,11 @@ pub fn process_mint(
         vrt_to_fee_wallet,
     } = vault.mint_with_fee(amount_in, min_amount_out)?;
 
+    if vrt_to_depositor == 0 {
+        msg!("Depositor will not receive any VRT");
+        return Err(VaultError::NoZeroReturnMintTo.into());
+    }
+
     // transfer tokens from depositor to vault
     {
         invoke(
