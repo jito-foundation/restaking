@@ -77,7 +77,10 @@ pub fn process_crank_vault_update_state_tracker(
             // they should no longer be the destination for any remaining `additional_assets_need_unstaking`
             // additionally, this keeps all of the `additional_assets_need_unstaking` at the same cooldown level
             // since the operator_delegation is updated for X epochs since the operator's last update
-            if vault.additional_assets_need_unstaking() > 0 && !has_been_partially_updated {
+            if vault.additional_assets_need_unstaking() > 0
+                && !has_been_partially_updated
+                && vault_operator_delegation.delegation_state.staked_amount() > 0
+            {
                 let max_cooldown = min(
                     vault_operator_delegation.delegation_state.staked_amount(),
                     vault.additional_assets_need_unstaking(),
