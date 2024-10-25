@@ -114,20 +114,34 @@ jobs:
       - name: Building programs
         run: cargo-build-sbf
         env:
-          RESTAKING_PROGRAM_ID: ${{ env.RESTAKING_PROGRAM_ID }}
-          VAULT_PROGRAM_ID: ${{ env.VAULT_PROGRAM_ID }}
-      - name: Upload restaking program
+          RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
+          VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
+
+  verified_build:
+    name: verified_build
+    runs-on: big-runner-1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: docker pull --platform linux/amd64 ellipsislabs/solana:1.18.11
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install solana-verify from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: solana-verify
+      - run: solana-verify build --library-name jito_restaking_program --base-image ellipsislabs/solana:1.18.11
+      - run: solana-verify build --library-name jito_vault_program --base-image ellipsislabs/solana:1.18.11
+      - name: Upload jito_restaking_program.so
         uses: actions/upload-artifact@v4
         with:
           name: jito_restaking_program.so
-          path: target/sbf-solana-solana/release/jito_restaking_program.so
-          if-no-files-found: error
-      - name: Upload vault program
+          path: target/deploy/jito_restaking_program.so
+      - name: Upload jito_vault_program.so
         uses: actions/upload-artifact@v4
         with:
           name: jito_vault_program.so
-          path: target/sbf-solana-solana/release/jito_vault_program.so
-          if-no-files-found: error
+          path: target/deploy/jito_vault_program.so
 
   coverage:
     name: coverage
@@ -143,8 +157,8 @@ jobs:
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
         env:
-          RESTAKING_PROGRAM_ID: Cnp3S1G3JaaAoFpFR3FhM94DdEF1mMBqy5vjwtDaVZLi
-          VAULT_PROGRAM_ID: 94sqeuUnjJCmwZUp8nGK7Q7o8YnHSW9Y3TcPZJY2PycN
+          RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
+          VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.5.0
         with:
@@ -157,7 +171,7 @@ jobs:
     name: cargo test
     runs-on: ubuntu-latest
     needs:
-      - build
+      - verified_build
     steps:
       - uses: actions/checkout@v4
       - uses: aarcangeli/load-dotenv@v1.0.0
