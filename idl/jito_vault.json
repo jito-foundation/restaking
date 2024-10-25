@@ -21,6 +21,11 @@
           "isSigner": false
         },
         {
+          "name": "programFeeWallet",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
