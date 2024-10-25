@@ -129,6 +129,31 @@ jobs:
           path: target/sbf-solana-solana/release/jito_vault_program.so
           if-no-files-found: error
 
+  verified_build:
+    name: verified_build
+    runs-on: big-runner-1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install solana-verify from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: solana-verify
+      - run: solana-verify build --library-name jito_restaking_program
+      - run: solana-verify build --library-name jito_vault_program
+      - name: Upload jito_restaking_program.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/deploy/jito_restaking_program.so
+      - name: Upload jito_vault_program.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_vault_program.so
+          path: target/deploy/jito_vault_program.so
+
   coverage:
     name: coverage
     runs-on: ubuntu-latest
