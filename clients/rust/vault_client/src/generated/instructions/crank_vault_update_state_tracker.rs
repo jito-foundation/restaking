@@ -33,7 +33,7 @@ impl CrankVaultUpdateStateTracker {
             self.config,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -83,7 +83,7 @@ impl Default for CrankVaultUpdateStateTrackerInstructionData {
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[]` vault
+///   1. `[writable]` vault
 ///   2. `[]` operator
 ///   3. `[writable]` vault_operator_delegation
 ///   4. `[writable]` vault_update_state_tracker
@@ -249,7 +249,7 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpi<'a, 'b> {
             *self.config.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault.key,
             false,
         ));
@@ -305,7 +305,7 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[]` vault
+///   1. `[writable]` vault
 ///   2. `[]` operator
 ///   3. `[writable]` vault_operator_delegation
 ///   4. `[writable]` vault_update_state_tracker

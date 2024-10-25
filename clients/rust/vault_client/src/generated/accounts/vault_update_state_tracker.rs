@@ -20,7 +20,6 @@ pub struct VaultUpdateStateTracker {
     pub vault: Pubkey,
     pub ncn_epoch: u64,
     pub last_updated_index: u64,
-    pub additional_assets_need_unstaking: u64,
     pub delegation_state: DelegationState,
     pub withdrawal_allocation_method: u8,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]

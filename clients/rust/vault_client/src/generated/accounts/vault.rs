@@ -32,6 +32,7 @@ pub struct Vault {
     pub tokens_deposited: u64,
     pub deposit_capacity: u64,
     pub delegation_state: DelegationState,
+    pub additional_assets_need_unstaking: u64,
     pub vrt_enqueued_for_cooldown_amount: u64,
     pub vrt_cooling_down_amount: u64,
     pub vrt_ready_to_claim_amount: u64,

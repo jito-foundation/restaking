@@ -29,8 +29,8 @@ pub fn process_initialize_vault_update_state_tracker(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, true)?;
-    let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     load_system_account(vault_update_state_tracker, true)?;
     load_signer(payer, true)?;
     load_system_program(system_program)?;
@@ -75,12 +75,23 @@ pub fn process_initialize_vault_update_state_tracker(
         &vault_update_state_tracker_seeds,
     )?;
 
-    let additional_assets_need_unstaking = vault
-        .calculate_additional_supported_assets_needed_to_unstake(
+    let additional_assets_need_unstaking = if vault.additional_assets_need_unstaking() > 0 {
+        // indicates an old partially cranked state
+        // no vault operations can be done until a full update cycle has run
+        // this means that the `additional_assets_need_unstaking` will not change
+        // between epochs and we can effectively carry on where we left off
+        vault.additional_assets_need_unstaking()
+    } else {
+        // If the vault is not in the middle of unstaking, calculate the additional assets needed
+        // to unstake
+        vault.calculate_additional_supported_assets_needed_to_unstake(
             Clock::get()?.slot,
             config.epoch_length(),
             config.program_fee_bps(),
-        )?;
+        )?
+    };
+
+    vault.set_additional_assets_need_unstaking(additional_assets_need_unstaking);
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;
@@ -90,7 +101,6 @@ pub fn process_initialize_vault_update_state_tracker(
     *vault_update_state_tracker = VaultUpdateStateTracker::new(
         *vault_info.key,
         ncn_epoch,
-        additional_assets_need_unstaking,
         withdrawal_allocation_method as u8,
     );
 
