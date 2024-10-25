@@ -32,7 +32,7 @@ operators, and vaults. The following diagram shows the opt-in process for the Ji
 
 When a NCN, operator, and vault have all opted-in to each other and the vault has staked assets to the operator, those
 assets are considered staked to the NCN. The operator will then be able to participate in the NCN's consensus protocol.
-Assuming the vault has opted-in to the slasher, the staked assets can be slashed.
+Assuming the vault has opted-in to the slasher.
 
 ### Vault Interactions
 

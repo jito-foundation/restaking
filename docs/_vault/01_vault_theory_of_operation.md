@@ -62,7 +62,7 @@ These parameters allow for fine-tuning of the vault's behavior and economics.
 The Vault Program maintains several state variables to track various aspects of its operation. Here's an overview of some key state variables:
 
 1. `vrt_supply`: Tracks the total number of Vault Receipt Tokens (VRT) in circulation. This is updated whenever VRTs are minted or burned. It shall always match the total supply of VRTs tracked by the token mint.
-2. `tokens_deposited`: Represents the total number of supported tokens currently held by the vault. This is increased when users deposit tokens and decreased when tokens are withdrawn or slashed.
+2. `tokens_deposited`: Represents the total number of supported tokens currently held by the vault. This is increased when users deposit tokens and decreased when tokens are withdrawn.
 3. `delegation_state`: A complex state that tracks the aggregate delegation of tokens to operators. It includes:
    - `total_security`: The total amount of tokens delegated as security.
    - `enqueued_for_cooldown_amount`: Tokens that are scheduled to begin the cooldown process.
