@@ -1073,7 +1073,7 @@ mod tests {
             .await
             .unwrap();
         let result = vault_program_client.set_program_fee(&non_admin, 200).await;
-        assert_vault_error(result, VaultError::VaultConfigAdminInvalid);
+        assert_vault_error(result, VaultError::ConfigAdminInvalid);
 
         // Try to set fee above MAX_FEE_BPS
         let result = vault_program_client

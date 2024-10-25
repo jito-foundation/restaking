@@ -34,6 +34,7 @@ import {
   type ParsedOperatorSetFeeInstruction,
   type ParsedOperatorSetSecondaryAdminInstruction,
   type ParsedOperatorWarmupNcnInstruction,
+  type ParsedSetConfigAdminInstruction,
   type ParsedWarmupNcnVaultSlasherTicketInstruction,
   type ParsedWarmupNcnVaultTicketInstruction,
   type ParsedWarmupOperatorVaultTicketInstruction,
@@ -77,6 +78,7 @@ export enum JitoRestakingInstruction {
   OperatorSetFee,
   NcnDelegateTokenAccount,
   OperatorDelegateTokenAccount,
+  SetConfigAdmin,
 }
 
 export function identifyJitoRestakingInstruction(
@@ -154,6 +156,9 @@ export function identifyJitoRestakingInstruction(
   }
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
     return JitoRestakingInstruction.OperatorDelegateTokenAccount;
+  }
+  if (containsBytes(data, getU8Encoder().encode(24), 0)) {
+    return JitoRestakingInstruction.SetConfigAdmin;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoRestaking instruction.'
@@ -234,4 +239,7 @@ export type ParsedJitoRestakingInstruction<
     } & ParsedNcnDelegateTokenAccountInstruction<TProgram>)
   | ({
       instructionType: JitoRestakingInstruction.OperatorDelegateTokenAccount;
-    } & ParsedOperatorDelegateTokenAccountInstruction<TProgram>);
+    } & ParsedOperatorDelegateTokenAccountInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.SetConfigAdmin;
+    } & ParsedSetConfigAdminInstruction<TProgram>);

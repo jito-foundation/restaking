@@ -20,6 +20,7 @@ mod initialize_vault_with_mint;
 mod mint_to;
 mod set_admin;
 mod set_capacity;
+mod set_config_admin;
 mod set_fees;
 mod set_is_paused;
 mod set_program_fee;
@@ -60,8 +61,8 @@ use crate::{
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
-    set_fees::process_set_fees, set_is_paused::process_set_is_paused,
-    set_program_fee_wallet::process_set_program_fee_wallet,
+    set_config_admin::process_set_config_admin, set_fees::process_set_fees,
+    set_is_paused::process_set_is_paused, set_program_fee_wallet::process_set_program_fee_wallet,
     set_secondary_admin::process_set_secondary_admin,
     update_token_metadata::process_update_token_metadata,
     update_vault_balance::process_update_vault_balance,
@@ -273,6 +274,10 @@ pub fn process_instruction(
         VaultInstruction::UpdateTokenMetadata { name, symbol, uri } => {
             msg!("Instruction: UpdateTokenMetadata");
             process_update_token_metadata(program_id, accounts, name, symbol, uri)
+        }
+        VaultInstruction::SetConfigAdmin => {
+            msg!("Instruction: SetConfigAdmin");
+            process_set_config_admin(program_id, accounts)
         }
     }
 }

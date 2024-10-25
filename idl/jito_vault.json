@@ -1337,6 +1337,31 @@
         "type": "u8",
         "value": 30
       }
+    },
+    {
+      "name": "SetConfigAdmin",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oldAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "newAdmin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 31
+      }
     }
   ],
   "accounts": [
@@ -2170,13 +2195,13 @@
     },
     {
       "code": 1013,
-      "name": "VaultConfigAdminInvalid",
-      "msg": "VaultConfigAdminInvalid"
+      "name": "ConfigAdminInvalid",
+      "msg": "ConfigAdminInvalid"
     },
     {
       "code": 1014,
-      "name": "VaultConfigFeeAdminInvalid",
-      "msg": "VaultConfigFeeAdminInvalid"
+      "name": "ConfigFeeAdminInvalid",
+      "msg": "ConfigFeeAdminInvalid"
     },
     {
       "code": 1015,

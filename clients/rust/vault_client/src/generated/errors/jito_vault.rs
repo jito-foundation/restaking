@@ -48,12 +48,12 @@ pub enum JitoVaultError {
     /// 1012 - VaultFeeAdminInvalid
     #[error("VaultFeeAdminInvalid")]
     VaultFeeAdminInvalid = 0x3F4,
-    /// 1013 - VaultConfigAdminInvalid
-    #[error("VaultConfigAdminInvalid")]
-    VaultConfigAdminInvalid = 0x3F5,
-    /// 1014 - VaultConfigFeeAdminInvalid
-    #[error("VaultConfigFeeAdminInvalid")]
-    VaultConfigFeeAdminInvalid = 0x3F6,
+    /// 1013 - ConfigAdminInvalid
+    #[error("ConfigAdminInvalid")]
+    ConfigAdminInvalid = 0x3F5,
+    /// 1014 - ConfigFeeAdminInvalid
+    #[error("ConfigFeeAdminInvalid")]
+    ConfigFeeAdminInvalid = 0x3F6,
     /// 1015 - VaultFeeCapExceeded
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded = 0x3F7,
