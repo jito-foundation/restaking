@@ -172,6 +172,7 @@ impl VaultProgramClient {
         )?)
     }
 
+    #[allow(dead_code)]
     pub async fn get_vault_ncn_slasher_operator_ticket(
         &mut self,
         vault: &Pubkey,
@@ -438,6 +439,7 @@ impl VaultProgramClient {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn setup_vault_ncn_slasher_operator_ticket(
         &mut self,
         vault_root: &VaultRoot,
@@ -1339,6 +1341,7 @@ impl VaultProgramClient {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn initialize_vault_ncn_slasher_operator_ticket(
         &mut self,
         config: &Pubkey,
