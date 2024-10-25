@@ -116,18 +116,6 @@ jobs:
         env:
           RESTAKING_PROGRAM_ID: ${{ env.RESTAKING_PROGRAM_ID }}
           VAULT_PROGRAM_ID: ${{ env.VAULT_PROGRAM_ID }}
-      - name: Upload restaking program
-        uses: actions/upload-artifact@v4
-        with:
-          name: jito_restaking_program.so
-          path: target/sbf-solana-solana/release/jito_restaking_program.so
-          if-no-files-found: error
-      - name: Upload vault program
-        uses: actions/upload-artifact@v4
-        with:
-          name: jito_vault_program.so
-          path: target/sbf-solana-solana/release/jito_vault_program.so
-          if-no-files-found: error
 
   verified_build:
     name: verified_build
