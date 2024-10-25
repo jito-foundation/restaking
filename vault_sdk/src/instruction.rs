@@ -268,7 +268,7 @@ pub enum VaultInstruction {
 
     /// Shall be called on every vault_operator_delegation
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, writable, name = "vault_update_state_tracker")]

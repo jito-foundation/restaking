@@ -117,6 +117,8 @@ pub enum VaultError {
     VaultRewardFeeDeltaTooLarge,
     #[error("VaultRewardFeeIsZero")]
     VaultRewardFeeIsZero,
+    #[error("NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate")]
+    NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate,
 
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,

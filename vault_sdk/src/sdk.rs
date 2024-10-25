@@ -395,7 +395,7 @@ pub fn crank_vault_update_state_tracker(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new(*vault_update_state_tracker, false),

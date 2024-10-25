@@ -1172,7 +1172,7 @@
         },
         {
           "name": "vault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1480,6 +1480,12 @@
             }
           },
           {
+            "name": "additionalAssetsNeedUnstaking",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
             "name": "vrtEnqueuedForCooldownAmount",
             "type": {
               "defined": "PodU64"
@@ -1590,7 +1596,19 @@
             }
           },
           {
+            "name": "nextWithdrawalFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
             "name": "rewardFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "programFeeBps",
             "type": {
               "defined": "PodU16"
             }
@@ -1610,7 +1628,7 @@
             "type": {
               "array": [
                 "u8",
-                263
+                259
               ]
             }
           }
@@ -1867,12 +1885,6 @@
           },
           {
             "name": "lastUpdatedIndex",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "additionalAssetsNeedUnstaking",
             "type": {
               "defined": "PodU64"
             }
@@ -2400,6 +2412,11 @@
       "code": 1056,
       "name": "VaultRewardFeeIsZero",
       "msg": "VaultRewardFeeIsZero"
+    },
+    {
+      "code": 1057,
+      "name": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate",
+      "msg": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate"
     },
     {
       "code": 3000,
