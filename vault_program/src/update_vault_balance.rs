@@ -1,6 +1,7 @@
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_mint, load_token_program};
 use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
@@ -37,23 +38,44 @@ pub fn process_update_vault_balance(
     vault.check_is_paused()?;
 
     // Calculate rewards
-    let new_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
+    // - We take our fee in st
+    // - We add the reward ( total reward - fee in st )
+    // - We virtually call mint_to on the reward fee ob behalf of the vault
+    let new_st_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
-    let reward_fee = vault.calculate_rewards_fee(new_balance)?;
+    // 1. Calculate reward fee in ST
+    let st_rewards = new_st_balance.saturating_sub(vault.tokens_deposited());
+    let st_reward_fee = vault.calculate_st_reward_fee(new_st_balance)?;
 
-    // Update state
-    vault.set_tokens_deposited(new_balance);
-    vault.increment_vrt_supply(reward_fee)?;
+    // 2. Increment ST less the reward fee
+    let st_balance_after_fees = new_st_balance
+        .checked_sub(st_reward_fee)
+        .ok_or(VaultError::ArithmeticUnderflow)?;
+    vault.set_tokens_deposited(st_balance_after_fees);
+
+    // 3. Calculate the reward fee in VRT
+    let vrt_reward_fee = vault.calculate_vrt_mint_amount(st_reward_fee)?;
+
+    // 4. Update State, with the vrt fee and the new st balance
+    vault.set_tokens_deposited(new_st_balance);
+    vault.increment_vrt_supply(vrt_reward_fee)?;
+
+    // 5. Check for rewards not substantial enough
+    vault.check_reward_fee_effective_rate(
+        st_rewards,
+        vrt_reward_fee,
+        Vault::MAX_REWARD_DELTA_BPS,
+    )?;
 
     // Mint rewards
-    if reward_fee > 0 {
+    if vrt_reward_fee > 0 {
         let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
         vault_seeds.push(vec![vault_bump]);
         let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
 
         drop(vault_data);
 
-        msg!("Minting {} VRT rewards to the fee wallet", reward_fee);
+        msg!("Minting {} VRT rewards to the fee wallet", vrt_reward_fee);
 
         invoke_signed(
             &mint_to(
@@ -62,7 +84,7 @@ pub fn process_update_vault_balance(
                 vault_fee_token_account.key,
                 vault_info.key,
                 &[],
-                reward_fee,
+                vrt_reward_fee,
             )?,
             &[
                 vrt_mint.clone(),
