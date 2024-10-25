@@ -67,7 +67,7 @@ mod tests {
         assert!(result.is_err());
         assert_ix_error(
             result,
-            InstructionError::Custom(VaultError::VaultConfigAdminInvalid as u32),
+            InstructionError::Custom(VaultError::ConfigAdminInvalid as u32),
         );
     }
 }

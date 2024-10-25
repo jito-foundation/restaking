@@ -33,7 +33,7 @@ impl ChangeWithdrawalTicketOwner {
             self.config,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -83,7 +83,7 @@ impl Default for ChangeWithdrawalTicketOwnerInstructionData {
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[writable]` vault
+///   1. `[]` vault
 ///   2. `[writable]` vault_staker_withdrawal_ticket
 ///   3. `[signer]` old_owner
 ///   4. `[]` new_owner
@@ -244,7 +244,7 @@ impl<'a, 'b> ChangeWithdrawalTicketOwnerCpi<'a, 'b> {
             *self.config.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.vault.key,
             false,
         ));
@@ -300,7 +300,7 @@ impl<'a, 'b> ChangeWithdrawalTicketOwnerCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[writable]` vault
+///   1. `[]` vault
 ///   2. `[writable]` vault_staker_withdrawal_ticket
 ///   3. `[signer]` old_owner
 ///   4. `[]` new_owner

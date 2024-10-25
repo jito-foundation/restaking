@@ -630,7 +630,7 @@
         },
         {
           "name": "vault",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -2183,13 +2183,13 @@
     },
     {
       "code": 1013,
-      "name": "VaultConfigAdminInvalid",
-      "msg": "VaultConfigAdminInvalid"
+      "name": "ConfigAdminInvalid",
+      "msg": "ConfigAdminInvalid"
     },
     {
       "code": 1014,
-      "name": "VaultConfigFeeAdminInvalid",
-      "msg": "VaultConfigFeeAdminInvalid"
+      "name": "ConfigFeeAdminInvalid",
+      "msg": "ConfigFeeAdminInvalid"
     },
     {
       "code": 1015,

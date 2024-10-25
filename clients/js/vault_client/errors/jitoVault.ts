@@ -40,10 +40,10 @@ export const JITO_VAULT_ERROR__VAULT_SLASHER_ADMIN_INVALID = 0x3f2; // 1010
 export const JITO_VAULT_ERROR__VAULT_NCN_ADMIN_INVALID = 0x3f3; // 1011
 /** VaultFeeAdminInvalid: VaultFeeAdminInvalid */
 export const JITO_VAULT_ERROR__VAULT_FEE_ADMIN_INVALID = 0x3f4; // 1012
-/** VaultConfigAdminInvalid: VaultConfigAdminInvalid */
-export const JITO_VAULT_ERROR__VAULT_CONFIG_ADMIN_INVALID = 0x3f5; // 1013
-/** VaultConfigFeeAdminInvalid: VaultConfigFeeAdminInvalid */
-export const JITO_VAULT_ERROR__VAULT_CONFIG_FEE_ADMIN_INVALID = 0x3f6; // 1014
+/** ConfigAdminInvalid: ConfigAdminInvalid */
+export const JITO_VAULT_ERROR__CONFIG_ADMIN_INVALID = 0x3f5; // 1013
+/** ConfigFeeAdminInvalid: ConfigFeeAdminInvalid */
+export const JITO_VAULT_ERROR__CONFIG_FEE_ADMIN_INVALID = 0x3f6; // 1014
 /** VaultFeeCapExceeded: VaultFeeCapExceeded */
 export const JITO_VAULT_ERROR__VAULT_FEE_CAP_EXCEEDED = 0x3f7; // 1015
 /** VaultFeeChangeTooSoon: VaultFeeChangeTooSoon */
@@ -138,6 +138,8 @@ export const JITO_VAULT_ERROR__DIVISION_BY_ZERO = 0xbba; // 3002
 export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW
   | typeof JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW
+  | typeof JITO_VAULT_ERROR__CONFIG_ADMIN_INVALID
+  | typeof JITO_VAULT_ERROR__CONFIG_FEE_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__DIVISION_BY_ZERO
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSITOR
   | typeof JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT
@@ -155,8 +157,6 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__VAULT_BURN_ZERO
   | typeof JITO_VAULT_ERROR__VAULT_CAPACITY_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__VAULT_CAPACITY_EXCEEDED
-  | typeof JITO_VAULT_ERROR__VAULT_CONFIG_ADMIN_INVALID
-  | typeof JITO_VAULT_ERROR__VAULT_CONFIG_FEE_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__VAULT_COOLDOWN_ZERO
   | typeof JITO_VAULT_ERROR__VAULT_DELEGATE_ASSET_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__VAULT_DELEGATION_ADMIN_INVALID
@@ -202,6 +202,8 @@ if (process.env.NODE_ENV !== 'production') {
   jitoVaultErrorMessages = {
     [JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW]: `ArithmeticOverflow`,
     [JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW]: `ArithmeticUnderflow`,
+    [JITO_VAULT_ERROR__CONFIG_ADMIN_INVALID]: `ConfigAdminInvalid`,
+    [JITO_VAULT_ERROR__CONFIG_FEE_ADMIN_INVALID]: `ConfigFeeAdminInvalid`,
     [JITO_VAULT_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,
     [JITO_VAULT_ERROR__INVALID_DEPOSITOR]: `InvalidDepositor`,
     [JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT]: `InvalidDepositTokenAccount`,
@@ -219,8 +221,6 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__VAULT_BURN_ZERO]: `VaultBurnZero`,
     [JITO_VAULT_ERROR__VAULT_CAPACITY_ADMIN_INVALID]: `VaultCapacityAdminInvalid`,
     [JITO_VAULT_ERROR__VAULT_CAPACITY_EXCEEDED]: `VaultCapacityExceeded`,
-    [JITO_VAULT_ERROR__VAULT_CONFIG_ADMIN_INVALID]: `VaultConfigAdminInvalid`,
-    [JITO_VAULT_ERROR__VAULT_CONFIG_FEE_ADMIN_INVALID]: `VaultConfigFeeAdminInvalid`,
     [JITO_VAULT_ERROR__VAULT_COOLDOWN_ZERO]: `VaultCooldownZero`,
     [JITO_VAULT_ERROR__VAULT_DELEGATE_ASSET_ADMIN_INVALID]: `VaultDelegateAssetAdminInvalid`,
     [JITO_VAULT_ERROR__VAULT_DELEGATION_ADMIN_INVALID]: `VaultDelegationAdminInvalid`,

@@ -19,7 +19,7 @@ pub fn process_set_config_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -
     load_signer(new_admin, false)?;
 
     if config.admin != *old_admin.key {
-        return Err(VaultError::VaultConfigAdminInvalid.into());
+        return Err(VaultError::ConfigAdminInvalid.into());
     }
     config.set_admin(*new_admin.key);
 

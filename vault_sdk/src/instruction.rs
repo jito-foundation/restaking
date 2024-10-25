@@ -145,7 +145,7 @@ pub enum VaultInstruction {
     },
 
     #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
+    #[account(1, name = "vault")]
     #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(3, signer, name = "old_owner")]
     #[account(4, name = "new_owner")]
