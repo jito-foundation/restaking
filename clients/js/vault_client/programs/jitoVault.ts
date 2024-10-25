@@ -47,7 +47,7 @@ import {
 } from '../instructions';
 
 export const JITO_VAULT_PROGRAM_ADDRESS =
-  '34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx' as Address<'34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx'>;
+  'Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8' as Address<'Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8'>;
 
 export enum JitoVaultAccount {
   Config,
@@ -197,7 +197,7 @@ export function identifyJitoVaultInstruction(
 }
 
 export type ParsedJitoVaultInstruction<
-  TProgram extends string = '34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx',
+  TProgram extends string = 'Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8',
 > =
   | ({
       instructionType: JitoVaultInstruction.InitializeConfig;
