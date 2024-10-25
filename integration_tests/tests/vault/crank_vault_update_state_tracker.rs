@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, delegation_state::DelegationState,
+        config::Config, delegation_state::DelegationState, vault::Vault,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
@@ -758,8 +758,11 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), 0);
-        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
+        assert_eq!(vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT, 0);
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
@@ -876,8 +879,11 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), 0);
-        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
+        assert_eq!(vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT, 0);
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
@@ -994,8 +1000,11 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), 0);
-        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
+        assert_eq!(vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT, 0);
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::config::Config;
+    use jito_vault_core::{config::Config, vault::Vault};
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::Signer;
@@ -41,8 +41,8 @@ mod tests {
         assert_eq!(vault.vault_index(), 0);
 
         // Min initial deposit is 10_000
-        assert_eq!(vault.vrt_supply(), 10000);
-        assert_eq!(vault.tokens_deposited(), 10000);
+        assert_eq!(vault.vrt_supply(), Vault::INITIALIZATION_TOKEN_AMOUNT);
+        assert_eq!(vault.tokens_deposited(), Vault::INITIALIZATION_TOKEN_AMOUNT);
         assert_eq!(vault.deposit_fee_bps(), 99);
         assert_eq!(vault.withdrawal_fee_bps(), 100);
         assert_eq!(vault.ncn_count(), 0);

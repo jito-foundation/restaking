@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+        config::Config, vault::Vault,
+        vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
         vault_ncn_slasher_ticket::VaultNcnSlasherTicket,
     };
     use jito_vault_sdk::error::VaultError;
@@ -135,7 +136,10 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), MINT_AMOUNT - MAX_SLASH_AMOUNT);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            MINT_AMOUNT - MAX_SLASH_AMOUNT
+        );
         assert_eq!(
             vault.delegation_state.total_security().unwrap(),
             DELEGATION_AMOUNT - MAX_SLASH_AMOUNT

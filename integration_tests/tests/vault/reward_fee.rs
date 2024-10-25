@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::config::Config;
+    use jito_vault_core::{config::Config, vault::Vault};
     use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::fixture::{ConfiguredVault, TestBuilder};
@@ -70,9 +70,15 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT, vault.tokens_deposited());
+        assert_eq!(
+            MINT_AMOUNT,
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+        );
         assert_eq!(MINT_AMOUNT / 10, reward_fee_account.amount);
-        assert_eq!(MINT_AMOUNT / 10, vault.vrt_supply());
+        assert_eq!(
+            MINT_AMOUNT / 10,
+            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+        );
     }
 
     #[tokio::test]
@@ -140,9 +146,15 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT, vault.tokens_deposited());
+        assert_eq!(
+            MINT_AMOUNT,
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+        );
         assert_eq!(MINT_AMOUNT, reward_fee_account.amount);
-        assert_eq!(MINT_AMOUNT, vault.vrt_supply());
+        assert_eq!(
+            MINT_AMOUNT,
+            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+        );
     }
 
     #[tokio::test]
@@ -210,9 +222,12 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT, vault.tokens_deposited());
+        assert_eq!(
+            MINT_AMOUNT,
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT
+        );
         assert_eq!(0, reward_fee_account.amount);
-        assert_eq!(0, vault.vrt_supply());
+        assert_eq!(0, vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT);
     }
 
     #[tokio::test]
@@ -300,8 +315,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(MINT_AMOUNT * 2, vault.tokens_deposited());
+        assert_eq!(
+            MINT_AMOUNT * 2,
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+        );
         assert_eq!(MINT_AMOUNT / 10, reward_fee_account.amount);
-        assert_eq!(MINT_AMOUNT + MINT_AMOUNT / 10, vault.vrt_supply());
+        assert_eq!(
+            MINT_AMOUNT + MINT_AMOUNT / 10,
+            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+        );
     }
 }

@@ -35,8 +35,6 @@ pub fn process_initialize_vault(
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
 
-    const MIN_DEPOSIT: u64 = 10_000;
-
     load_system_account(vault, true)?;
     load_system_account(vrt_mint, true)?;
     load_signer(vrt_mint, true)?;
@@ -115,7 +113,7 @@ pub fn process_initialize_vault(
                 vault_st_token_account.key,
                 admin.key,
                 &[],
-                MIN_DEPOSIT,
+                Vault::INITIALIZATION_TOKEN_AMOUNT,
             )?,
             &[
                 vault_st_token_account.clone(),
@@ -160,8 +158,8 @@ pub fn process_initialize_vault(
         )?;
 
         // Mint initial VRT supply
-        vault.set_vrt_supply(MIN_DEPOSIT);
-        vault.set_tokens_deposited(MIN_DEPOSIT);
+        vault.set_vrt_supply(Vault::INITIALIZATION_TOKEN_AMOUNT);
+        vault.set_tokens_deposited(Vault::INITIALIZATION_TOKEN_AMOUNT);
     }
 
     config.increment_num_vaults()?;

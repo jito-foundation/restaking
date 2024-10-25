@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use jito_vault_core::vault::Vault;
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -80,8 +81,14 @@ mod tests {
             vault.delegation_state,
             vault_operator_delegation.delegation_state
         );
-        assert_eq!(vault.tokens_deposited(), AMOUNT_IN);
-        assert_eq!(vault.vrt_supply(), AMOUNT_IN);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            AMOUNT_IN
+        );
+        assert_eq!(
+            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            AMOUNT_IN
+        );
     }
 
     #[tokio::test]
@@ -124,7 +131,11 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, 50_000)
+            .do_add_delegation(
+                &vault_root,
+                &operator_roots[0].operator_pubkey,
+                50_000 + Vault::INITIALIZATION_TOKEN_AMOUNT,
+            )
             .await
             .unwrap();
 

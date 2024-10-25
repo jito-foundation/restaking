@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, vault_operator_delegation::VaultOperatorDelegation,
+        config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
@@ -128,9 +128,15 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.tokens_deposited(), MINT_AMOUNT);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            MINT_AMOUNT
+        );
         assert_eq!(reward_fee_account.amount, MINT_AMOUNT / 10);
-        assert_eq!(vault.vrt_supply(), MINT_AMOUNT / 10);
+        assert_eq!(
+            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            MINT_AMOUNT / 10
+        );
     }
 
     #[tokio::test]
