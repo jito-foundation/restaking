@@ -953,16 +953,20 @@ impl VaultProgramClient {
             .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await?;
 
+        let ncn_epoch = slot / config.epoch_length();
+
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
             vault_pubkey,
-            slot / config.epoch_length(),
+            ncn_epoch,
         )
         .0;
         self.initialize_vault_update_state_tracker(vault_pubkey, &vault_update_state_tracker)
             .await?;
 
-        for operator in operators {
+        for i in 0..operators.len() {
+            let operator_index = (i + ncn_epoch as usize) % operators.len();
+            let operator = &operators[operator_index];
             self.crank_vault_update_state_tracker(
                 vault_pubkey,
                 operator,
