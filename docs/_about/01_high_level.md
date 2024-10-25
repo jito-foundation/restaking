@@ -20,7 +20,7 @@ that can receive delegations from the vault, the NCNs supported by the vault, an
 
 - Universal framework for (re)staking SPL tokens to node consensus networks on Solana and SVM chains.
 - Staked assets are tokenized into Vault Receipt Tokens (VRT)
-- Flexible opt-in from node consensus networks, operators, and vaults for staking and slashing.
+- Flexible opt-in from node consensus networks, operators, and vaults for staking.
 
 ### Entity Opt-in
 

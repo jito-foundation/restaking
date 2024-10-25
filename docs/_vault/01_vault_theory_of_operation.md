@@ -14,7 +14,6 @@ Key features of the vault program include:
 - Fee handling: Managing deposit, withdrawal, and reward fees.
 - Administrative controls: Allowing authorized parties to manage vault parameters and perform administrative actions.
 - Delegation support: Facilitating delegation to operators and managing relationships with Node Consensus Networks (NCNs).
-- Slashing mechanism: Implementing a slashing feature to penalize misbehavior.
 - State tracking: Maintaining and updating the vault's state to ensure accurate token representation.
 
 The Vault Program is designed to be flexible and extensible, allowing for various configurations and supporting multiple roles such as admins, operators, and NCNs. It interacts with other components of the Solana ecosystem, including the System Program and Token Program, to provide a comprehensive liquid staking solution.
@@ -281,40 +280,3 @@ Here's a high-level overview of the process:
 Key points:
 - The burn process includes slippage protection to guard against unexpected price movements.
 
-# 12. Slashing
-
-Slashing is a mechanism designed to penalize malicious or negligent behavior in the vault system. It involves reducing the stake of participants who violate the protocol rules. Here's a high-level overview of how slashing works:
-
-## 12.1. Opt-in Requirement
-
-Slashing requires explicit opt-in from all involved parties:
-- The Vault
-- The NCN
-- The Operator
-
-Each party must create and maintain active tickets or states that indicate their willingness to participate in the slashing mechanism.
-
-## 12.2. Slashing Process
-
-1. A slasher initiates the slash instruction, specifying the amount to slash.
-2. The system performs several checks:
-   - Verifies that all required tickets and states are active or in cooldown.
-   - Ensures the vault is up-to-date.
-   - Checks that the slash amount doesn't exceed the maximum slashable amount per epoch.
-   - The slasher is signing the transaction.
-
-3. If all checks pass:
-   - The specified amount is deducted from the operator's delegation in the vault.
-   - The vault's total amount of deposited tokens is decreased.
-   - The slashed funds are transferred to the slasher's account.
-
-## 12.3. Key Components
-
-- VaultNcnSlasherTicket: Represents the vault's agreement to be slashed by a specific NCN and slasher.
-- NcnVaultSlasherTicket: Represents the NCN's agreement to slash a specific vault.
-- NcnOperatorState: Represents the mutual opt-in between an NCN and an operator.
-- OperatorVaultTicket: Represents the operator's stake in the vault.
-- VaultNcnTicket and NcnVaultTicket: Represent the relationship between the vault and the NCN.
-- VaultNcnSlasherOperatorTicket: Tracks the amount slashed for a specific combination of vault, NCN, slasher, and operator.
-
-This multi-party opt-in system ensures that slashing can only occur when all involved parties have explicitly agreed to participate, providing a fair and transparent mechanism for maintaining protocol integrity.
