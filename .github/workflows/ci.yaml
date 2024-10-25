@@ -114,8 +114,8 @@ jobs:
       - name: Building programs
         run: cargo-build-sbf
         env:
-          RESTAKING_PROGRAM_ID: ${{ env.RESTAKING_PROGRAM_ID }}
-          VAULT_PROGRAM_ID: ${{ env.VAULT_PROGRAM_ID }}
+          RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
+          VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
 
   verified_build:
     name: verified_build
@@ -157,8 +157,8 @@ jobs:
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
         env:
-          RESTAKING_PROGRAM_ID: Cnp3S1G3JaaAoFpFR3FhM94DdEF1mMBqy5vjwtDaVZLi
-          VAULT_PROGRAM_ID: 94sqeuUnjJCmwZUp8nGK7Q7o8YnHSW9Y3TcPZJY2PycN
+          RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
+          VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.5.0
         with:
