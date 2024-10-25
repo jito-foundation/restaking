@@ -139,6 +139,7 @@ impl RestakingProgramClient {
         )?)
     }
 
+    #[allow(dead_code)]
     pub async fn get_operator_ncn_ticket(
         &mut self,
         operator: &Pubkey,
@@ -368,6 +369,7 @@ impl RestakingProgramClient {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn do_cooldown_ncn_vault_ticket(
         &mut self,
         ncn_root: &NcnRoot,
@@ -389,6 +391,7 @@ impl RestakingProgramClient {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn cooldown_ncn_vault_ticket(
         &mut self,
         config: &Pubkey,
