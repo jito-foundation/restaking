@@ -890,6 +890,31 @@
         "type": "u8",
         "value": 23
       }
+    },
+    {
+      "name": "SetConfigAdmin",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oldAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "newAdmin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 24
+      }
     }
   ],
   "accounts": [
@@ -1483,6 +1508,11 @@
       "code": 2013,
       "name": "InvalidEpochLength",
       "msg": "InvalidEpochLength"
+    },
+    {
+      "code": 2014,
+      "name": "ConfigAdminInvalid",
+      "msg": "ConfigAdminInvalid"
     },
     {
       "code": 3000,
