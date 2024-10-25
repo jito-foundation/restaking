@@ -82,12 +82,17 @@ pub fn process_initialize_vault_update_state_tracker(
         // between epochs and we can effectively carry on where we left off
         vault.additional_assets_need_unstaking()
     } else {
+        // Update fees to new values
+        // Fees can only be updated here so `additional_assets_need_unstaking` will be static
+        // Otherwise there may be a mismatch between withdrawn assets and outstanding claim tickets
+        vault.set_withdrawal_fee_bps(vault.next_withdrawal_fee_bps());
+        vault.set_program_fee_bps(config.program_fee_bps());
+
         // If the vault is not in the middle of unstaking, calculate the additional assets needed
         // to unstake
         vault.calculate_additional_supported_assets_needed_to_unstake(
             Clock::get()?.slot,
             config.epoch_length(),
-            config.program_fee_bps(),
         )?
     };
 

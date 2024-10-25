@@ -99,11 +99,13 @@ pub struct Vault {
     pub last_full_state_update_slot: u64,
     pub deposit_fee_bps: u16,
     pub withdrawal_fee_bps: u16,
+    pub next_withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
+    pub program_fee_bps: u16,
     pub bump: u8,
     pub is_paused: bool,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved: [u8; 263],
+    pub reserved: [u8; 259],
 }
 
 impl Vault {

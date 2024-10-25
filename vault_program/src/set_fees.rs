@@ -51,7 +51,7 @@ pub fn process_set_fees(
     }
 
     if let Some(withdrawal_fee_bps) = withdrawal_fee_bps {
-        vault.set_withdrawal_fee_bps(
+        vault.set_next_withdrawal_fee_bps(
             withdrawal_fee_bps,
             config.deposit_withdrawal_fee_cap_bps(),
             config.fee_bump_bps(),
