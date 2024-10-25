@@ -174,18 +174,27 @@ Vault program commands
 
 ###### **Subcommands:**
 
-* `initialize` — 
-* `get` — 
+* `initialize` — Creates global config (can only be done once)
+* `get` — Fetches global config
 
 
 
 ## `jito-restaking-cli vault config initialize`
 
-**Usage:** `jito-restaking-cli vault config initialize`
+Creates global config (can only be done once)
+
+**Usage:** `jito-restaking-cli vault config initialize <PROGRAM_FEE_BPS> <PROGRAM_FEE_WALLET>`
+
+###### **Arguments:**
+
+* `<PROGRAM_FEE_BPS>` — The program fee in basis points
+* `<PROGRAM_FEE_WALLET>` — The program fee wallet pubkey
 
 
 
 ## `jito-restaking-cli vault config get`
+
+Fetches global config
 
 **Usage:** `jito-restaking-cli vault config get`
 

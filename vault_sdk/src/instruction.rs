@@ -9,7 +9,8 @@ pub enum VaultInstruction {
     #[account(0, writable, name = "config")]
     #[account(1, writable, signer, name = "admin")]
     #[account(2, name = "restaking_program")]
-    #[account(3, name = "system_program")]
+    #[account(3, name = "program_fee_wallet")]
+    #[account(4, name = "system_program")]
     InitializeConfig {
         program_fee_bps: u16,
     },
@@ -307,26 +308,7 @@ pub enum VaultInstruction {
         uri: String,
     },
 
-    /// Slashes an amount of tokens from the vault
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, name = "operator")]
-    #[account(4, signer, name = "slasher")]
-    #[account(5, name = "ncn_operator_state")]
-    #[account(6, name = "ncn_vault_ticket")]
-    #[account(7, name = "operator_vault_ticket")]
-    #[account(8, name = "vault_ncn_ticket")]
-    #[account(9, writable, name = "vault_operator_delegation")]
-    #[account(10, name = "ncn_vault_slasher_ticket")]
-    #[account(11, name = "vault_ncn_slasher_ticket")]
-    #[account(12, writable, name = "vault_ncn_slasher_operator_ticket")]
-    #[account(13, writable, name = "vault_token_account")]
-    #[account(14, name = "slasher_token_account")]
-    #[account(15, name = "token_program")]
-    Slash {
-        amount: u64
-    },
+
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]

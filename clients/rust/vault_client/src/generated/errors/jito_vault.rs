@@ -174,6 +174,12 @@ pub enum JitoVaultError {
     /// 1054 - InvalidEpochLength
     #[error("InvalidEpochLength")]
     InvalidEpochLength = 0x41E,
+    /// 1055 - VaultRewardFeeDeltaTooLarge
+    #[error("VaultRewardFeeDeltaTooLarge")]
+    VaultRewardFeeDeltaTooLarge = 0x41F,
+    /// 1056 - VaultRewardFeeIsZero
+    #[error("VaultRewardFeeIsZero")]
+    VaultRewardFeeIsZero = 0x420,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

@@ -40,7 +40,6 @@ import {
   type ParsedSetProgramFeeInstruction,
   type ParsedSetProgramFeeWalletInstruction,
   type ParsedSetSecondaryAdminInstruction,
-  type ParsedSlashInstruction,
   type ParsedUpdateTokenMetadataInstruction,
   type ParsedUpdateVaultBalanceInstruction,
   type ParsedWarmupVaultNcnSlasherTicketInstruction,
@@ -93,7 +92,6 @@ export enum JitoVaultInstruction {
   CloseVaultUpdateStateTracker,
   CreateTokenMetadata,
   UpdateTokenMetadata,
-  Slash,
 }
 
 export function identifyJitoVaultInstruction(
@@ -192,9 +190,6 @@ export function identifyJitoVaultInstruction(
   }
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
     return JitoVaultInstruction.UpdateTokenMetadata;
-  }
-  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
-    return JitoVaultInstruction.Slash;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoVault instruction.'
@@ -296,7 +291,4 @@ export type ParsedJitoVaultInstruction<
     } & ParsedCreateTokenMetadataInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.UpdateTokenMetadata;
-    } & ParsedUpdateTokenMetadataInstruction<TProgram>)
-  | ({
-      instructionType: JitoVaultInstruction.Slash;
-    } & ParsedSlashInstruction<TProgram>);
+    } & ParsedUpdateTokenMetadataInstruction<TProgram>);
