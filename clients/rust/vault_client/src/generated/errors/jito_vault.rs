@@ -180,6 +180,9 @@ pub enum JitoVaultError {
     /// 1056 - VaultRewardFeeIsZero
     #[error("VaultRewardFeeIsZero")]
     VaultRewardFeeIsZero = 0x420,
+    /// 1057 - NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate
+    #[error("NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate")]
+    NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate = 0x421,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

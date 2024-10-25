@@ -91,10 +91,7 @@ pub fn process_burn_withdrawal_ticket(
         program_fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(
-        config.program_fee_bps(),
-        vault_staker_withdrawal_ticket.vrt_amount(),
-    )?;
+    } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount())?;
 
     // To close the token account, the balance needs to be 0.
     // The only way for vault_staker_withdrawal_ticket.vrt_amount() != ticket_vrt_amount
