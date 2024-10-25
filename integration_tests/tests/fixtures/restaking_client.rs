@@ -1067,7 +1067,7 @@ impl RestakingProgramClient {
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self.process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_restaking_sdk::sdk::set_config_admin(
+            &[set_config_admin(
                 &jito_restaking_program::id(),
                 config,
                 &old_admin.pubkey(),
