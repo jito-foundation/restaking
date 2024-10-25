@@ -1,6 +1,7 @@
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::loader::{load_associated_token_account, load_token_mint, load_token_program};
 use jito_vault_core::{config::Config, vault::Vault};
+use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
@@ -37,14 +38,20 @@ pub fn process_update_vault_balance(
     vault.check_is_paused()?;
 
     // Calculate rewards
+    // - We take our fee in st
+    // - We add the reward ( total reward - fee in st )
+    // - We virtually call mint_to on the reward fee ob behalf of the vault
     let new_st_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
-    // 1. Calculate reward fee in VRT
+    // 1. Calculate reward fee in ST
     let st_rewards = new_st_balance.saturating_sub(vault.tokens_deposited());
     let st_reward_fee = vault.calculate_st_reward_fee(new_st_balance)?;
 
     // 2. Increment ST less the reward fee
-    vault.set_tokens_deposited(new_st_balance.checked_sub(st_reward_fee).unwrap());
+    let st_balance_after_fees = new_st_balance
+        .checked_sub(st_reward_fee)
+        .ok_or(VaultError::ArithmeticUnderflow)?;
+    vault.set_tokens_deposited(st_balance_after_fees);
 
     // 3. Calculate the reward fee in VRT
     let vrt_reward_fee = vault.calculate_vrt_mint_amount(st_reward_fee)?;
