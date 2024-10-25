@@ -41,7 +41,7 @@ import {
 } from '../instructions';
 
 export const JITO_RESTAKING_PROGRAM_ADDRESS =
-  '78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng' as Address<'78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng'>;
+  'RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q' as Address<'RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q'>;
 
 export enum JitoRestakingAccount {
   Config,
@@ -166,7 +166,7 @@ export function identifyJitoRestakingInstruction(
 }
 
 export type ParsedJitoRestakingInstruction<
-  TProgram extends string = '78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng',
+  TProgram extends string = 'RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q',
 > =
   | ({
       instructionType: JitoRestakingInstruction.InitializeConfig;
