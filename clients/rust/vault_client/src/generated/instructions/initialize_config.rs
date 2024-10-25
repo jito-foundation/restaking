@@ -14,6 +14,8 @@ pub struct InitializeConfig {
 
     pub restaking_program: solana_program::pubkey::Pubkey,
 
+    pub program_fee_wallet: solana_program::pubkey::Pubkey,
+
     pub system_program: solana_program::pubkey::Pubkey,
 }
 
@@ -30,7 +32,7 @@ impl InitializeConfig {
         args: InitializeConfigInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.config,
             false,
@@ -40,6 +42,10 @@ impl InitializeConfig {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.restaking_program,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.program_fee_wallet,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -89,12 +95,14 @@ pub struct InitializeConfigInstructionArgs {
 ///   0. `[writable]` config
 ///   1. `[writable, signer]` admin
 ///   2. `[]` restaking_program
-///   3. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   3. `[]` program_fee_wallet
+///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitializeConfigBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
     restaking_program: Option<solana_program::pubkey::Pubkey>,
+    program_fee_wallet: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
     program_fee_bps: Option<u16>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
@@ -120,6 +128,14 @@ impl InitializeConfigBuilder {
         restaking_program: solana_program::pubkey::Pubkey,
     ) -> &mut Self {
         self.restaking_program = Some(restaking_program);
+        self
+    }
+    #[inline(always)]
+    pub fn program_fee_wallet(
+        &mut self,
+        program_fee_wallet: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.program_fee_wallet = Some(program_fee_wallet);
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
@@ -159,6 +175,9 @@ impl InitializeConfigBuilder {
             restaking_program: self
                 .restaking_program
                 .expect("restaking_program is not set"),
+            program_fee_wallet: self
+                .program_fee_wallet
+                .expect("program_fee_wallet is not set"),
             system_program: self
                 .system_program
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
@@ -182,6 +201,8 @@ pub struct InitializeConfigCpiAccounts<'a, 'b> {
 
     pub restaking_program: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub program_fee_wallet: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
@@ -195,6 +216,8 @@ pub struct InitializeConfigCpi<'a, 'b> {
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub restaking_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub program_fee_wallet: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
@@ -212,6 +235,7 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
             config: accounts.config,
             admin: accounts.admin,
             restaking_program: accounts.restaking_program,
+            program_fee_wallet: accounts.program_fee_wallet,
             system_program: accounts.system_program,
             __args: args,
         }
@@ -249,7 +273,7 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.config.key,
             false,
@@ -260,6 +284,10 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.restaking_program.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.program_fee_wallet.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -282,11 +310,12 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(4 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.restaking_program.clone());
+        account_infos.push(self.program_fee_wallet.clone());
         account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
@@ -307,7 +336,8 @@ impl<'a, 'b> InitializeConfigCpi<'a, 'b> {
 ///   0. `[writable]` config
 ///   1. `[writable, signer]` admin
 ///   2. `[]` restaking_program
-///   3. `[]` system_program
+///   3. `[]` program_fee_wallet
+///   4. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitializeConfigCpiBuilder<'a, 'b> {
     instruction: Box<InitializeConfigCpiBuilderInstruction<'a, 'b>>,
@@ -320,6 +350,7 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
             config: None,
             admin: None,
             restaking_program: None,
+            program_fee_wallet: None,
             system_program: None,
             program_fee_bps: None,
             __remaining_accounts: Vec::new(),
@@ -345,6 +376,14 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
         restaking_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.restaking_program = Some(restaking_program);
+        self
+    }
+    #[inline(always)]
+    pub fn program_fee_wallet(
+        &mut self,
+        program_fee_wallet: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.program_fee_wallet = Some(program_fee_wallet);
         self
     }
     #[inline(always)]
@@ -420,6 +459,11 @@ impl<'a, 'b> InitializeConfigCpiBuilder<'a, 'b> {
                 .restaking_program
                 .expect("restaking_program is not set"),
 
+            program_fee_wallet: self
+                .instruction
+                .program_fee_wallet
+                .expect("program_fee_wallet is not set"),
+
             system_program: self
                 .instruction
                 .system_program
@@ -439,6 +483,7 @@ struct InitializeConfigCpiBuilderInstruction<'a, 'b> {
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     restaking_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    program_fee_wallet: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     program_fee_bps: Option<u16>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
