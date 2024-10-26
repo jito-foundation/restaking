@@ -52,9 +52,8 @@ pub fn process_update_token_metadata(
         Some(true),
     );
 
-    let (_vault_pubkey, vault_bump, mut vault_seeds) =
-        Vault::find_program_address(program_id, &vault.base);
-    vault_seeds.push(vec![vault_bump]);
+    let mut vault_seeds = Vault::seeds(&vault.base);
+    vault_seeds.push(vec![vault.bump]);
 
     drop(vault_data);
 

@@ -107,13 +107,9 @@ pub fn process_burn_withdrawal_ticket(
 
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
-    let (_, vault_staker_withdrawal_bump, mut vault_staker_withdrawal_seeds) =
-        VaultStakerWithdrawalTicket::find_program_address(
-            program_id,
-            vault_info.key,
-            &vault_staker_withdrawal_ticket.base,
-        );
-    vault_staker_withdrawal_seeds.push(vec![vault_staker_withdrawal_bump]);
+    let mut vault_staker_withdrawal_seeds =
+        VaultStakerWithdrawalTicket::seeds(vault_info.key, &vault_staker_withdrawal_ticket.base);
+    vault_staker_withdrawal_seeds.push(vec![vault_staker_withdrawal_ticket.bump]);
     let seed_slices: Vec<&[u8]> = vault_staker_withdrawal_seeds
         .iter()
         .map(|seed| seed.as_slice())
@@ -192,8 +188,8 @@ pub fn process_burn_withdrawal_ticket(
     close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
 
     // transfer the assets to the staker
-    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-    vault_seeds.push(vec![vault_bump]);
+    let mut vault_seeds = Vault::seeds(&vault.base);
+    vault_seeds.push(vec![vault.bump]);
     let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
     drop(vault_data); // avoid double borrow
     invoke_signed(
