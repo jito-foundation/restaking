@@ -56,8 +56,7 @@ pub fn process_delegate_token_account(
     // The Vault delegate_asset_admin shall be the signer of the transaction
     vault.check_delegate_asset_admin(delegate_asset_admin.key)?;
 
-    let mut vault_seeds = Vault::seeds(&vault.base);
-    vault_seeds.push(vec![vault.bump]);
+    let vault_seeds = vault.signing_seeds();
 
     drop(vault_data);
 

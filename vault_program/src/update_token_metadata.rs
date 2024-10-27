@@ -52,8 +52,7 @@ pub fn process_update_token_metadata(
         Some(true),
     );
 
-    let mut vault_seeds = Vault::seeds(&vault.base);
-    vault_seeds.push(vec![vault.bump]);
+    let vault_seeds = vault.signing_seeds();
 
     drop(vault_data);
 
