@@ -31,12 +31,22 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             .as_ref()
             .ok_or_else(|| anyhow!("unable to get config file path"))?;
         if let Ok(config) = Config::load(config_file) {
+            let keypair = if let Some(keypair_path) = &args.keypair {
+                read_keypair_file(keypair_path)
+            } else {
+                read_keypair_file(config.keypair_path)
+            }
+            .map_err(|e| anyhow!(e.to_string()))?;
+            let rpc = if let Some(rpc) = &args.rpc_url {
+                rpc.to_string()
+            } else {
+                config.json_rpc_url
+            };
+
             CliConfig {
-                rpc_url: config.json_rpc_url,
+                rpc_url: rpc,
                 commitment: CommitmentConfig::from_str(&config.commitment)?,
-                keypair: Some(
-                    read_keypair_file(config.keypair_path).map_err(|e| anyhow!(e.to_string()))?,
-                ),
+                keypair: Some(keypair),
             }
         } else {
             CliConfig {

@@ -28,7 +28,7 @@ pub fn process_set_program_fee(
 
     if config_admin.key != &config.admin {
         msg!("Config admin does not match");
-        return Err(VaultError::VaultConfigAdminInvalid.into());
+        return Err(VaultError::ConfigAdminInvalid.into());
     }
 
     config.set_program_fee_bps(new_fee_bps)?;

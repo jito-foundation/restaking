@@ -758,3 +758,21 @@ pub fn set_is_paused(
             .unwrap(),
     }
 }
+
+pub fn set_config_admin(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    old_admin: &Pubkey,
+    new_admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*old_admin, true),
+        AccountMeta::new_readonly(*new_admin, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetConfigAdmin.try_to_vec().unwrap(),
+    }
+}

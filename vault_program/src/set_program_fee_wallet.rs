@@ -26,7 +26,7 @@ pub fn process_set_program_fee_wallet(
 
     if config_fee_admin.key != &config.fee_admin {
         msg!("Config fee admin does not match");
-        return Err(VaultError::VaultConfigFeeAdminInvalid.into());
+        return Err(VaultError::ConfigFeeAdminInvalid.into());
     }
 
     config.program_fee_wallet = *new_fee_wallet.key;
