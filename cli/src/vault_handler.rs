@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_vault_client::instructions::{
     CreateTokenMetadataBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
+    SetConfigAdminBuilder,
 };
 use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::inline_mpl_token_metadata;
@@ -59,6 +60,13 @@ impl VaultCliHandler {
             VaultCommands::Config {
                 action: ConfigActions::Get,
             } => self.get_config().await,
+            VaultCommands::Config {
+                action:
+                    ConfigActions::SetAdmin {
+                        old_admin,
+                        new_admin,
+                    },
+            } => self.set_config_admin(old_admin, new_admin).await,
             VaultCommands::Vault {
                 action:
                     VaultActions::Initialize {
@@ -294,6 +302,38 @@ impl VaultCliHandler {
             .map_err(|e| anyhow!(e.to_string()))?;
         info!("Transaction confirmed: {:?}", tx.get_signature());
 
+        Ok(())
+    }
+
+    async fn set_config_admin(&self, old_admin: Pubkey, new_admin: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetConfigAdminBuilder::new();
+        ix_builder
+            .config(config_address)
+            .old_admin(old_admin)
+            .new_admin(new_admin);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Setting vault config admin parameters: {:?}", ix_builder);
+        info!(
+            "Setting vault config admin transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
         Ok(())
     }
 }

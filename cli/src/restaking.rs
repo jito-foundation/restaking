@@ -1,4 +1,5 @@
 use clap::{command, Subcommand};
+use solana_program::pubkey::Pubkey;
 
 /// The CLI handler for the restaking program
 #[derive(Subcommand)]
@@ -25,6 +26,13 @@ pub enum ConfigActions {
     Initialize,
     /// Get the config
     Get,
+    /// Set the config admin
+    SetAdmin {
+        /// The old admin's pubkey
+        old_admin: Pubkey,
+        /// The new admin's pubkey
+        new_admin: Pubkey,
+    },
 }
 
 #[derive(Subcommand)]

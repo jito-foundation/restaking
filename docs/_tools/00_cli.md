@@ -56,6 +56,7 @@ Initialize, get, and set the config struct
 
 * `initialize` — Initialize the config
 * `get` — Get the config
+* `set-admin` — Set the config admin
 
 
 
@@ -72,6 +73,19 @@ Initialize the config
 Get the config
 
 **Usage:** `jito-restaking-cli restaking config get`
+
+
+
+## `jito-restaking-cli restaking config set-admin`
+
+Set the config admin
+
+**Usage:** `jito-restaking-cli restaking config set-admin <OLD_ADMIN> <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<OLD_ADMIN>` — The old admin's pubkey
+* `<NEW_ADMIN>` — The new admin's pubkey
 
 
 
@@ -176,6 +190,7 @@ Vault program commands
 
 * `initialize` — Creates global config (can only be done once)
 * `get` — Fetches global config
+* `set-admin` — Set the config admin
 
 
 
@@ -197,6 +212,19 @@ Creates global config (can only be done once)
 Fetches global config
 
 **Usage:** `jito-restaking-cli vault config get`
+
+
+
+## `jito-restaking-cli vault config set-admin`
+
+Set the config admin
+
+**Usage:** `jito-restaking-cli vault config set-admin <OLD_ADMIN> <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<OLD_ADMIN>` — The old admin's pubkey
+* `<NEW_ADMIN>` — The new admin's pubkey
 
 
 
