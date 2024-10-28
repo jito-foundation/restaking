@@ -32,7 +32,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SET_IS_PAUSED_DISCRIMINATOR = 18;
+export const SET_IS_PAUSED_DISCRIMINATOR = 19;
 
 export function getSetIsPausedDiscriminatorBytes() {
   return getU8Encoder().encode(SET_IS_PAUSED_DISCRIMINATOR);

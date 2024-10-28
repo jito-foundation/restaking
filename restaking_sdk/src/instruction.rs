@@ -191,14 +191,23 @@ pub enum RestakingInstruction {
     #[account(4, name = "delegate")]
     #[account(5, name = "token_program")]
     OperatorDelegateTokenAccount,
+
+    /// Changes the admin for the config
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "old_admin")]
+    #[account(2, signer, name = "new_admin")]
+    SetConfigAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 pub enum NcnAdminRole {
-    Operator,
-    Vault,
-    Slasher,
-    Delegate,
+    OperatorAdmin,
+    VaultAdmin,
+    SlasherAdmin,
+    DelegateAdmin,
+    MetadataAdmin,
+    WeightTableAdmin,
+    NcnProgramAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -207,4 +216,5 @@ pub enum OperatorAdminRole {
     VaultAdmin,
     VoterAdmin,
     DelegateAdmin,
+    MetadataAdmin,
 }

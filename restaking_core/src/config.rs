@@ -9,11 +9,6 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-/// The discriminator for the global configuration account
-impl Discriminator for Config {
-    const DISCRIMINATOR: u8 = 1;
-}
-
 /// The global configuration account for the restaking program. Manages
 /// program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
@@ -38,7 +33,7 @@ pub struct Config {
     pub bump: u8,
 
     /// Reserved space
-    reserved_1: [u8; 263],
+    reserved: [u8; 263],
 }
 
 impl Config {
@@ -50,7 +45,7 @@ impl Config {
             ncn_count: PodU64::from(0),
             operator_count: PodU64::from(0),
             bump,
-            reserved_1: [0; 263],
+            reserved: [0; 263],
         }
     }
 
@@ -144,6 +139,10 @@ impl Config {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
+    }
+
+    pub fn set_admin(&mut self, new_admin: Pubkey) {
+        self.admin = new_admin;
     }
 }
 

@@ -54,6 +54,7 @@ export type Vault = {
   tokensDeposited: bigint;
   depositCapacity: bigint;
   delegationState: DelegationState;
+  additionalAssetsNeedUnstaking: bigint;
   vrtEnqueuedForCooldownAmount: bigint;
   vrtCoolingDownAmount: bigint;
   vrtReadyToClaimAmount: bigint;
@@ -67,6 +68,7 @@ export type Vault = {
   delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  metadataAdmin: Address;
   vaultIndex: bigint;
   ncnCount: bigint;
   operatorCount: bigint;
@@ -75,7 +77,9 @@ export type Vault = {
   lastFullStateUpdateSlot: bigint;
   depositFeeBps: number;
   withdrawalFeeBps: number;
+  nextWithdrawalFeeBps: number;
   rewardFeeBps: number;
+  programFeeBps: number;
   bump: number;
   isPaused: number;
   reserved: Array<number>;
@@ -90,6 +94,7 @@ export type VaultArgs = {
   tokensDeposited: number | bigint;
   depositCapacity: number | bigint;
   delegationState: DelegationStateArgs;
+  additionalAssetsNeedUnstaking: number | bigint;
   vrtEnqueuedForCooldownAmount: number | bigint;
   vrtCoolingDownAmount: number | bigint;
   vrtReadyToClaimAmount: number | bigint;
@@ -103,6 +108,7 @@ export type VaultArgs = {
   delegateAssetAdmin: Address;
   feeWallet: Address;
   mintBurnAdmin: Address;
+  metadataAdmin: Address;
   vaultIndex: number | bigint;
   ncnCount: number | bigint;
   operatorCount: number | bigint;
@@ -111,7 +117,9 @@ export type VaultArgs = {
   lastFullStateUpdateSlot: number | bigint;
   depositFeeBps: number;
   withdrawalFeeBps: number;
+  nextWithdrawalFeeBps: number;
   rewardFeeBps: number;
+  programFeeBps: number;
   bump: number;
   isPaused: number;
   reserved: Array<number>;
@@ -127,6 +135,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['tokensDeposited', getU64Encoder()],
     ['depositCapacity', getU64Encoder()],
     ['delegationState', getDelegationStateEncoder()],
+    ['additionalAssetsNeedUnstaking', getU64Encoder()],
     ['vrtEnqueuedForCooldownAmount', getU64Encoder()],
     ['vrtCoolingDownAmount', getU64Encoder()],
     ['vrtReadyToClaimAmount', getU64Encoder()],
@@ -140,6 +149,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['delegateAssetAdmin', getAddressEncoder()],
     ['feeWallet', getAddressEncoder()],
     ['mintBurnAdmin', getAddressEncoder()],
+    ['metadataAdmin', getAddressEncoder()],
     ['vaultIndex', getU64Encoder()],
     ['ncnCount', getU64Encoder()],
     ['operatorCount', getU64Encoder()],
@@ -148,10 +158,12 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['lastFullStateUpdateSlot', getU64Encoder()],
     ['depositFeeBps', getU16Encoder()],
     ['withdrawalFeeBps', getU16Encoder()],
+    ['nextWithdrawalFeeBps', getU16Encoder()],
     ['rewardFeeBps', getU16Encoder()],
+    ['programFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
     ['isPaused', getBoolEncoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 259 })],
   ]);
 }
 
@@ -165,6 +177,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['tokensDeposited', getU64Decoder()],
     ['depositCapacity', getU64Decoder()],
     ['delegationState', getDelegationStateDecoder()],
+    ['additionalAssetsNeedUnstaking', getU64Decoder()],
     ['vrtEnqueuedForCooldownAmount', getU64Decoder()],
     ['vrtCoolingDownAmount', getU64Decoder()],
     ['vrtReadyToClaimAmount', getU64Decoder()],
@@ -178,6 +191,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['delegateAssetAdmin', getAddressDecoder()],
     ['feeWallet', getAddressDecoder()],
     ['mintBurnAdmin', getAddressDecoder()],
+    ['metadataAdmin', getAddressDecoder()],
     ['vaultIndex', getU64Decoder()],
     ['ncnCount', getU64Decoder()],
     ['operatorCount', getU64Decoder()],
@@ -186,10 +200,12 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['lastFullStateUpdateSlot', getU64Decoder()],
     ['depositFeeBps', getU16Decoder()],
     ['withdrawalFeeBps', getU16Decoder()],
+    ['nextWithdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
+    ['programFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
     ['isPaused', getBoolDecoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 259 })],
   ]);
 }
 

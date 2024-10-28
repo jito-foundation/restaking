@@ -27,7 +27,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const UPDATE_VAULT_BALANCE_DISCRIMINATOR = 24;
+export const UPDATE_VAULT_BALANCE_DISCRIMINATOR = 25;
 
 export function getUpdateVaultBalanceDiscriminatorBytes() {
   return getU8Encoder().encode(UPDATE_VAULT_BALANCE_DISCRIMINATOR);

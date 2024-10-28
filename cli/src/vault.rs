@@ -1,4 +1,5 @@
 use clap::{command, Subcommand};
+use solana_program::pubkey::Pubkey;
 
 #[derive(Subcommand)]
 pub enum VaultCommands {
@@ -14,7 +15,14 @@ pub enum VaultCommands {
 
 #[derive(Subcommand)]
 pub enum ConfigActions {
-    Initialize,
+    /// Creates global config (can only be done once)
+    Initialize {
+        /// The program fee in basis points
+        program_fee_bps: u16,
+        /// The program fee wallet pubkey
+        program_fee_wallet: Pubkey,
+    },
+    /// Fetches global config
     Get,
 }
 
@@ -52,4 +60,11 @@ pub enum VaultActions {
     },
     /// List all vaults
     List,
+    /// Sets the deposit capacity in the vault
+    SetCapacity {
+        /// The vault pubkey
+        vault: String,
+        /// The new capacity
+        amount: u64,
+    },
 }

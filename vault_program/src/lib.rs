@@ -1,5 +1,4 @@
 mod add_delegation;
-mod burn;
 mod burn_withdrawal_ticket;
 mod change_withdrawal_ticket_owner;
 mod close_update_state_tracker;
@@ -21,10 +20,12 @@ mod initialize_vault_with_mint;
 mod mint_to;
 mod set_admin;
 mod set_capacity;
+mod set_config_admin;
 mod set_fees;
 mod set_is_paused;
+mod set_program_fee;
+mod set_program_fee_wallet;
 mod set_secondary_admin;
-mod slash;
 mod update_token_metadata;
 mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
@@ -33,6 +34,7 @@ mod warmup_vault_ncn_ticket;
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
+use set_program_fee::process_set_program_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey,
@@ -41,8 +43,7 @@ use solana_program::{
 use solana_security_txt::security_txt;
 
 use crate::{
-    add_delegation::process_add_delegation, burn::process_burn,
-    burn_withdrawal_ticket::process_burn_withdrawal_ticket,
+    add_delegation::process_add_delegation, burn_withdrawal_ticket::process_burn_withdrawal_ticket,
     change_withdrawal_ticket_owner::process_change_withdrawal_ticket_owner,
     close_update_state_tracker::process_close_vault_update_state_tracker,
     cooldown_delegation::process_cooldown_delegation,
@@ -60,8 +61,9 @@ use crate::{
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
-    set_fees::process_set_fees, set_is_paused::process_set_is_paused,
-    set_secondary_admin::process_set_secondary_admin, slash::process_slash,
+    set_config_admin::process_set_config_admin, set_fees::process_set_fees,
+    set_is_paused::process_set_is_paused, set_program_fee_wallet::process_set_program_fee_wallet,
+    set_secondary_admin::process_set_secondary_admin,
     update_token_metadata::process_update_token_metadata,
     update_vault_balance::process_update_vault_balance,
     warmup_vault_ncn_slasher_ticket::process_warmup_vault_ncn_slasher_ticket,
@@ -100,9 +102,9 @@ pub fn process_instruction(
         // ------------------------------------------
         // Initialization
         // ------------------------------------------
-        VaultInstruction::InitializeConfig => {
+        VaultInstruction::InitializeConfig { program_fee_bps } => {
             msg!("Instruction: InitializeConfig");
-            process_initialize_config(program_id, accounts)
+            process_initialize_config(program_id, accounts, program_fee_bps)
         }
         VaultInstruction::InitializeVault {
             deposit_fee_bps,
@@ -173,6 +175,14 @@ pub fn process_instruction(
                 reward_fee_bps,
             )
         }
+        VaultInstruction::SetProgramFee { new_fee_bps } => {
+            msg!("Instruction: SetProgramFee");
+            process_set_program_fee(program_id, accounts, new_fee_bps)
+        }
+        VaultInstruction::SetProgramFeeWallet => {
+            msg!("Instruction: SetProgramFeeWallet");
+            process_set_program_fee_wallet(program_id, accounts)
+        }
         VaultInstruction::SetIsPaused { is_paused } => {
             msg!("Instruction: SetIsPaused");
             process_set_is_paused(program_id, accounts, is_paused)
@@ -187,19 +197,9 @@ pub fn process_instruction(
             msg!("Instruction: MintTo");
             process_mint(program_id, accounts, amount_in, min_amount_out)
         }
-        VaultInstruction::Burn {
-            amount_in,
-            min_amount_out,
-        } => {
-            msg!("Instruction: Burn");
-            process_burn(program_id, accounts, amount_in, min_amount_out)
-        }
-        VaultInstruction::EnqueueWithdrawal {
-            amount,
-            min_amount_out,
-        } => {
+        VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
-            process_enqueue_withdrawal(program_id, accounts, amount, min_amount_out)
+            process_enqueue_withdrawal(program_id, accounts, amount)
         }
         VaultInstruction::ChangeWithdrawalTicketOwner => {
             msg!("Instruction: ChangeWithdrawalTicketOwner");
@@ -265,13 +265,6 @@ pub fn process_instruction(
             process_close_vault_update_state_tracker(program_id, accounts, ncn_epoch)
         }
         // ------------------------------------------
-        // Vault slashing
-        // ------------------------------------------
-        VaultInstruction::Slash { amount } => {
-            msg!("Instruction: Slash");
-            process_slash(program_id, accounts, amount)
-        }
-        // ------------------------------------------
         // VRT metadata
         // ------------------------------------------
         VaultInstruction::CreateTokenMetadata { name, symbol, uri } => {
@@ -281,6 +274,10 @@ pub fn process_instruction(
         VaultInstruction::UpdateTokenMetadata { name, symbol, uri } => {
             msg!("Instruction: UpdateTokenMetadata");
             process_update_token_metadata(program_id, accounts, name, symbol, uri)
+        }
+        VaultInstruction::SetConfigAdmin => {
+            msg!("Instruction: SetConfigAdmin");
+            process_set_config_admin(program_id, accounts)
         }
     }
 }

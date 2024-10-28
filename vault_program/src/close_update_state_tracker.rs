@@ -55,12 +55,17 @@ pub fn process_close_vault_update_state_tracker(
     } else {
         // The VaultUpdateStateTracker shall have updated every operator ticket before closing
         if vault.operator_count() > 0
-            && vault_update_state_tracker.last_updated_index()
-                != vault.operator_count().saturating_sub(1)
+            && !vault_update_state_tracker.all_operators_updated(vault.operator_count())?
         {
             msg!("VaultUpdateStateTracker is not fully updated");
             return Err(VaultError::VaultUpdateStateNotFinishedUpdating.into());
         }
+
+        if vault.additional_assets_need_unstaking() > 0 {
+            msg!("This should not happen: additional assets need unstaking cannot be non-zero at the end of an update");
+            return Err(VaultError::NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate.into());
+        }
+
         msg!("Finished updating VaultUpdateStateTracker");
 
         vault.delegation_state = vault_update_state_tracker.delegation_state;

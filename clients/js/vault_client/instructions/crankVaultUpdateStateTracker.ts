@@ -27,7 +27,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const CRANK_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 26;
+export const CRANK_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR = 27;
 
 export function getCrankVaultUpdateStateTrackerDiscriminatorBytes() {
   return getU8Encoder().encode(CRANK_VAULT_UPDATE_STATE_TRACKER_DISCRIMINATOR);
@@ -53,7 +53,7 @@ export type CrankVaultUpdateStateTrackerInstruction<
         ? ReadonlyAccount<TAccountConfig>
         : TAccountConfig,
       TAccountVault extends string
-        ? ReadonlyAccount<TAccountVault>
+        ? WritableAccount<TAccountVault>
         : TAccountVault,
       TAccountOperator extends string
         ? ReadonlyAccount<TAccountOperator>
@@ -140,7 +140,7 @@ export function getCrankVaultUpdateStateTrackerInstruction<
   // Original accounts.
   const originalAccounts = {
     config: { value: input.config ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: false },
+    vault: { value: input.vault ?? null, isWritable: true },
     operator: { value: input.operator ?? null, isWritable: false },
     vaultOperatorDelegation: {
       value: input.vaultOperatorDelegation ?? null,

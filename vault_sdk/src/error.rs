@@ -29,6 +29,10 @@ pub enum VaultError {
     VaultNcnAdminInvalid,
     #[error("VaultFeeAdminInvalid")]
     VaultFeeAdminInvalid,
+    #[error("ConfigAdminInvalid")]
+    ConfigAdminInvalid,
+    #[error("ConfigFeeAdminInvalid")]
+    ConfigFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
     #[error("VaultFeeChangeTooSoon")]
@@ -57,8 +61,6 @@ pub enum VaultError {
     VaultSecurityUnderflow,
     #[error("SlippageError")]
     SlippageError,
-    #[error("SlippageTooLow")]
-    SlippageTooLow,
     #[error("VaultStakerWithdrawalTicketNotWithdrawable")]
     VaultStakerWithdrawalTicketNotWithdrawable,
     #[error("VaultNcnSlasherTicketFailedCooldown")]
@@ -111,6 +113,12 @@ pub enum VaultError {
     NoSupportedMintBalanceChange,
     #[error("InvalidEpochLength")]
     InvalidEpochLength,
+    #[error("VaultRewardFeeDeltaTooLarge")]
+    VaultRewardFeeDeltaTooLarge,
+    #[error("VaultRewardFeeIsZero")]
+    VaultRewardFeeIsZero,
+    #[error("NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate")]
+    NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate,
 
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,

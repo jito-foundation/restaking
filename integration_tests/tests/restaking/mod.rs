@@ -15,3 +15,4 @@ mod operator_set_admin;
 mod operator_set_fee;
 mod operator_set_secondary_admin;
 mod operator_warmup_ncn;
+mod set_config_admin;

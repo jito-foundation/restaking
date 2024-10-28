@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, vault::Vault};
+    use jito_vault_core::config::Config;
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
@@ -117,17 +117,8 @@ mod tests {
         // 98010 tokens will be undeleged for withdraw
         let amount_to_dequeue = MINT_AMOUNT * (10_000 - WITHDRAWAL_FEE_BPS) as u64 / 10_000;
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
-
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(amount_to_dequeue, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
-            .unwrap();
-
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, amount_to_dequeue, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, amount_to_dequeue)
             .await
             .unwrap();
 
@@ -194,7 +185,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 0, 0)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 0)
             .await;
 
         assert_vault_error(err, VaultError::VaultEnqueueWithdrawalAmountZero);
@@ -248,7 +239,7 @@ mod tests {
             .unwrap();
 
         let test_error = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 0, 0)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 0)
             .await;
 
         assert_vault_error(test_error, VaultError::VaultIsPaused);

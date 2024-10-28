@@ -27,6 +27,7 @@ export * from './operatorSetAdmin';
 export * from './operatorSetFee';
 export * from './operatorSetSecondaryAdmin';
 export * from './operatorWarmupNcn';
+export * from './setConfigAdmin';
 export * from './warmupNcnVaultSlasherTicket';
 export * from './warmupNcnVaultTicket';
 export * from './warmupOperatorVaultTicket';

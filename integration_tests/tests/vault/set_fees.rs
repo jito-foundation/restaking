@@ -141,7 +141,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.next_withdrawal_fee_bps(), new_withdrawal_fee_bps);
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
@@ -233,7 +234,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.next_withdrawal_fee_bps(), new_withdrawal_fee_bps);
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
 
         // Warp again
@@ -266,7 +268,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.next_withdrawal_fee_bps(), new_withdrawal_fee_bps);
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
@@ -371,7 +374,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.next_withdrawal_fee_bps(), new_withdrawal_fee_bps);
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
@@ -551,7 +555,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.next_withdrawal_fee_bps(), new_withdrawal_fee_bps);
         assert_eq!(vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
@@ -661,7 +666,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(vault.next_withdrawal_fee_bps(), new_withdrawal_fee_bps);
     }
 
     #[tokio::test]
@@ -776,7 +782,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(updated_vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(
+            updated_vault.next_withdrawal_fee_bps(),
+            new_withdrawal_fee_bps
+        );
     }
 
     #[tokio::test]
@@ -829,7 +839,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(updated_vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(
+            updated_vault.next_withdrawal_fee_bps(),
+            new_withdrawal_fee_bps
+        );
         assert_eq!(updated_vault.reward_fee_bps(), reward_fee_bps);
     }
 
@@ -883,6 +897,7 @@ mod tests {
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps(), new_deposit_fee_bps);
         assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(updated_vault.next_withdrawal_fee_bps(), withdrawal_fee_bps);
         assert_eq!(updated_vault.reward_fee_bps(), reward_fee_bps);
 
         let new_withdrawal_fee_bps = withdrawal_fee_bps + 1;
@@ -911,7 +926,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(updated_vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(
+            updated_vault.next_withdrawal_fee_bps(),
+            new_withdrawal_fee_bps
+        );
         assert_eq!(updated_vault.reward_fee_bps(), reward_fee_bps);
 
         let new_reward_fee_bps = reward_fee_bps + 1;
@@ -940,7 +959,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_vault.deposit_fee_bps(), new_deposit_fee_bps);
-        assert_eq!(updated_vault.withdrawal_fee_bps(), new_withdrawal_fee_bps);
+        assert_eq!(updated_vault.withdrawal_fee_bps(), withdrawal_fee_bps);
+        assert_eq!(
+            updated_vault.next_withdrawal_fee_bps(),
+            new_withdrawal_fee_bps
+        );
         assert_eq!(updated_vault.reward_fee_bps(), new_reward_fee_bps);
     }
 
@@ -1016,5 +1039,52 @@ mod tests {
             .await;
 
         assert_vault_error(result, VaultError::VaultFeeCapExceeded);
+    }
+
+    #[tokio::test]
+    async fn test_set_program_fee() {
+        let fixture = TestBuilder::new().await;
+        let mut vault_program_client = fixture.vault_program_client();
+
+        // Initialize config and vault
+        let (config_admin, _) = vault_program_client
+            .setup_config_and_vault(0, 0, 0)
+            .await
+            .unwrap();
+
+        // Set a new program fee
+        let new_fee_bps = 10;
+        vault_program_client
+            .set_program_fee(&config_admin, new_fee_bps)
+            .await
+            .unwrap();
+
+        // Check if the program fee was updated
+        let updated_config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        assert_eq!(updated_config.program_fee_bps(), new_fee_bps);
+
+        // Try to set fee with non-admin account
+        let non_admin = Keypair::new();
+        vault_program_client
+            .airdrop(&non_admin.pubkey(), 1.0)
+            .await
+            .unwrap();
+        let result = vault_program_client.set_program_fee(&non_admin, 200).await;
+        assert_vault_error(result, VaultError::ConfigAdminInvalid);
+
+        // Try to set fee above MAX_FEE_BPS
+        let result = vault_program_client
+            .set_program_fee(&config_admin, MAX_FEE_BPS + 1)
+            .await;
+        assert!(result.is_err());
+
+        // Set fee to the same value (should succeed)
+        vault_program_client
+            .set_program_fee(&config_admin, new_fee_bps)
+            .await
+            .unwrap();
     }
 }

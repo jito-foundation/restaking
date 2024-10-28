@@ -13,10 +13,13 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token_2022::extension::{ExtensionType, StateWithExtensionsOwned};
+use spl_token_2022::{
+    extension::{ExtensionType, StateWithExtensionsOwned},
+    instruction::transfer_checked,
+};
 
 use crate::fixtures::{
-    restaking_client::{NcnRoot, OperatorRoot, RestakingProgramClient},
+    restaking_client::{OperatorRoot, RestakingProgramClient},
     vault_client::{VaultProgramClient, VaultRoot},
     TestResult,
 };
@@ -39,9 +42,7 @@ pub struct ConfiguredVault {
     pub vault_root: VaultRoot,
     #[allow(dead_code)]
     pub restaking_config_admin: Keypair,
-    pub ncn_root: NcnRoot,
     pub operator_roots: Vec<OperatorRoot>,
-    pub slashers_amounts: Vec<(Keypair, u64)>,
 }
 
 impl TestBuilder {
@@ -77,6 +78,56 @@ impl TestBuilder {
                     )],
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],
+                    blockhash,
+                ),
+                CommitmentLevel::Processed,
+            )
+            .await
+    }
+
+    /// Transfers tokens from the source to the destination
+    /// source: the source account - ( not the associated token account )
+    /// destination: the destination account - ( not the associated token account )
+    pub async fn transfer_token(
+        &mut self,
+        token_program_id: &Pubkey,
+        source: &Keypair,
+        destination: &Pubkey,
+        mint: &Pubkey,
+        amount: u64,
+    ) -> Result<(), BanksClientError> {
+        let blockhash = self.context.banks_client.get_latest_blockhash().await?;
+
+        let mint_account_raw = self
+            .context
+            .banks_client
+            .get_account(*mint)
+            .await?
+            .ok_or(BanksClientError::ClientError("failed to get mint account"))?;
+        let mint_account =
+            StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(mint_account_raw.data)
+                .unwrap();
+
+        let source_token_account = get_associated_token_address(&source.pubkey(), mint);
+        let destination_token_account = get_associated_token_address(destination, mint);
+
+        self.context
+            .banks_client
+            .process_transaction_with_preflight_and_commitment(
+                Transaction::new_signed_with_payer(
+                    &[transfer_checked(
+                        token_program_id,
+                        &source_token_account,
+                        mint,
+                        &destination_token_account,
+                        &source.pubkey(),
+                        &[],
+                        amount,
+                        mint_account.base.decimals,
+                    )
+                    .unwrap()],
+                    Some(&self.context.payer.pubkey()),
+                    &[&source, &self.context.payer],
                     blockhash,
                 ),
                 CommitmentLevel::Processed,
@@ -131,7 +182,7 @@ impl TestBuilder {
                 token_program_id,
                 &account.pubkey(),
                 pool_mint,
-                &owner,
+                owner,
             )
             .map_err(|_e| BanksClientError::ClientError("failed to initialize account"))?,
         );
@@ -182,7 +233,6 @@ impl TestBuilder {
             .banks_client
             .process_transaction(transaction)
             .await
-            .map_err(|e| e.into())
     }
 
     pub async fn get_token_account(
@@ -253,7 +303,7 @@ impl TestBuilder {
             vec![spl_token_2022::instruction::mint_to(
                 token_program,
                 mint,
-                &to,
+                to,
                 &self.context.payer.pubkey(),
                 &[],
                 amount,
@@ -452,9 +502,7 @@ impl TestBuilder {
             vault_root,
             vault_config_admin,
             restaking_config_admin,
-            ncn_root,
             operator_roots,
-            slashers_amounts,
         })
     }
 }

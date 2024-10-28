@@ -70,6 +70,8 @@ export const JITO_RESTAKING_ERROR__VAULT_OVERFLOW = 0x7db; // 2011
 export const JITO_RESTAKING_ERROR__SLASHER_OVERFLOW = 0x7dc; // 2012
 /** InvalidEpochLength: InvalidEpochLength */
 export const JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH = 0x7dd; // 2013
+/** ConfigAdminInvalid: ConfigAdminInvalid */
+export const JITO_RESTAKING_ERROR__CONFIG_ADMIN_INVALID = 0x7de; // 2014
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_RESTAKING_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */
@@ -80,6 +82,7 @@ export const JITO_RESTAKING_ERROR__DIVISION_BY_ZERO = 0xbba; // 3002
 export type JitoRestakingError =
   | typeof JITO_RESTAKING_ERROR__ARITHMETIC_OVERFLOW
   | typeof JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW
+  | typeof JITO_RESTAKING_ERROR__CONFIG_ADMIN_INVALID
   | typeof JITO_RESTAKING_ERROR__DIVISION_BY_ZERO
   | typeof JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH
   | typeof JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW
@@ -115,6 +118,7 @@ if (process.env.NODE_ENV !== 'production') {
   jitoRestakingErrorMessages = {
     [JITO_RESTAKING_ERROR__ARITHMETIC_OVERFLOW]: `ArithmeticOverflow`,
     [JITO_RESTAKING_ERROR__ARITHMETIC_UNDERFLOW]: `ArithmeticUnderflow`,
+    [JITO_RESTAKING_ERROR__CONFIG_ADMIN_INVALID]: `ConfigAdminInvalid`,
     [JITO_RESTAKING_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,
     [JITO_RESTAKING_ERROR__INVALID_EPOCH_LENGTH]: `InvalidEpochLength`,
     [JITO_RESTAKING_ERROR__JSM_CORE_ARITHMETIC_OVERFLOW]: `JsmCoreArithmeticOverflow`,

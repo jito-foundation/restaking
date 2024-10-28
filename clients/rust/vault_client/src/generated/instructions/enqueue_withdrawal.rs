@@ -110,7 +110,7 @@ pub struct EnqueueWithdrawalInstructionData {
 
 impl EnqueueWithdrawalInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 13 }
+        Self { discriminator: 12 }
     }
 }
 
@@ -124,7 +124,6 @@ impl Default for EnqueueWithdrawalInstructionData {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EnqueueWithdrawalInstructionArgs {
     pub amount: u64,
-    pub min_amount_out: u64,
 }
 
 /// Instruction builder for `EnqueueWithdrawal`.
@@ -154,7 +153,6 @@ pub struct EnqueueWithdrawalBuilder {
     system_program: Option<solana_program::pubkey::Pubkey>,
     burn_signer: Option<solana_program::pubkey::Pubkey>,
     amount: Option<u64>,
-    min_amount_out: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -234,11 +232,6 @@ impl EnqueueWithdrawalBuilder {
         self.amount = Some(amount);
         self
     }
-    #[inline(always)]
-    pub fn min_amount_out(&mut self, min_amount_out: u64) -> &mut Self {
-        self.min_amount_out = Some(min_amount_out);
-        self
-    }
     /// Add an aditional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -283,10 +276,6 @@ impl EnqueueWithdrawalBuilder {
         };
         let args = EnqueueWithdrawalInstructionArgs {
             amount: self.amount.clone().expect("amount is not set"),
-            min_amount_out: self
-                .min_amount_out
-                .clone()
-                .expect("min_amount_out is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -527,7 +516,6 @@ impl<'a, 'b> EnqueueWithdrawalCpiBuilder<'a, 'b> {
             system_program: None,
             burn_signer: None,
             amount: None,
-            min_amount_out: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -617,11 +605,6 @@ impl<'a, 'b> EnqueueWithdrawalCpiBuilder<'a, 'b> {
         self.instruction.amount = Some(amount);
         self
     }
-    #[inline(always)]
-    pub fn min_amount_out(&mut self, min_amount_out: u64) -> &mut Self {
-        self.instruction.min_amount_out = Some(min_amount_out);
-        self
-    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -665,11 +648,6 @@ impl<'a, 'b> EnqueueWithdrawalCpiBuilder<'a, 'b> {
     ) -> solana_program::entrypoint::ProgramResult {
         let args = EnqueueWithdrawalInstructionArgs {
             amount: self.instruction.amount.clone().expect("amount is not set"),
-            min_amount_out: self
-                .instruction
-                .min_amount_out
-                .clone()
-                .expect("min_amount_out is not set"),
         };
         let instruction = EnqueueWithdrawalCpi {
             __program: self.instruction.__program,
@@ -732,7 +710,6 @@ struct EnqueueWithdrawalCpiBuilderInstruction<'a, 'b> {
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     amount: Option<u64>,
-    min_amount_out: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

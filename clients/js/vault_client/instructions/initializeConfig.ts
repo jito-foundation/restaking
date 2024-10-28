@@ -10,6 +10,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -41,6 +43,7 @@ export type InitializeConfigInstruction<
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountRestakingProgram extends string | IAccountMeta<string> = string,
+  TAccountProgramFeeWallet extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
@@ -59,6 +62,9 @@ export type InitializeConfigInstruction<
       TAccountRestakingProgram extends string
         ? ReadonlyAccount<TAccountRestakingProgram>
         : TAccountRestakingProgram,
+      TAccountProgramFeeWallet extends string
+        ? ReadonlyAccount<TAccountProgramFeeWallet>
+        : TAccountProgramFeeWallet,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
@@ -66,19 +72,28 @@ export type InitializeConfigInstruction<
     ]
   >;
 
-export type InitializeConfigInstructionData = { discriminator: number };
+export type InitializeConfigInstructionData = {
+  discriminator: number;
+  programFeeBps: number;
+};
 
-export type InitializeConfigInstructionDataArgs = {};
+export type InitializeConfigInstructionDataArgs = { programFeeBps: number };
 
 export function getInitializeConfigInstructionDataEncoder(): Encoder<InitializeConfigInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([['discriminator', getU8Encoder()]]),
+    getStructEncoder([
+      ['discriminator', getU8Encoder()],
+      ['programFeeBps', getU16Encoder()],
+    ]),
     (value) => ({ ...value, discriminator: INITIALIZE_CONFIG_DISCRIMINATOR })
   );
 }
 
 export function getInitializeConfigInstructionDataDecoder(): Decoder<InitializeConfigInstructionData> {
-  return getStructDecoder([['discriminator', getU8Decoder()]]);
+  return getStructDecoder([
+    ['discriminator', getU8Decoder()],
+    ['programFeeBps', getU16Decoder()],
+  ]);
 }
 
 export function getInitializeConfigInstructionDataCodec(): Codec<
@@ -95,24 +110,29 @@ export type InitializeConfigInput<
   TAccountConfig extends string = string,
   TAccountAdmin extends string = string,
   TAccountRestakingProgram extends string = string,
+  TAccountProgramFeeWallet extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
   admin: TransactionSigner<TAccountAdmin>;
   restakingProgram: Address<TAccountRestakingProgram>;
+  programFeeWallet: Address<TAccountProgramFeeWallet>;
   systemProgram?: Address<TAccountSystemProgram>;
+  programFeeBps: InitializeConfigInstructionDataArgs['programFeeBps'];
 };
 
 export function getInitializeConfigInstruction<
   TAccountConfig extends string,
   TAccountAdmin extends string,
   TAccountRestakingProgram extends string,
+  TAccountProgramFeeWallet extends string,
   TAccountSystemProgram extends string,
 >(
   input: InitializeConfigInput<
     TAccountConfig,
     TAccountAdmin,
     TAccountRestakingProgram,
+    TAccountProgramFeeWallet,
     TAccountSystemProgram
   >
 ): InitializeConfigInstruction<
@@ -120,6 +140,7 @@ export function getInitializeConfigInstruction<
   TAccountConfig,
   TAccountAdmin,
   TAccountRestakingProgram,
+  TAccountProgramFeeWallet,
   TAccountSystemProgram
 > {
   // Program address.
@@ -133,12 +154,19 @@ export function getInitializeConfigInstruction<
       value: input.restakingProgram ?? null,
       isWritable: false,
     },
+    programFeeWallet: {
+      value: input.programFeeWallet ?? null,
+      isWritable: false,
+    },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
     ResolvedAccount
   >;
+
+  // Original args.
+  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.systemProgram.value) {
@@ -152,15 +180,19 @@ export function getInitializeConfigInstruction<
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.restakingProgram),
+      getAccountMeta(accounts.programFeeWallet),
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getInitializeConfigInstructionDataEncoder().encode({}),
+    data: getInitializeConfigInstructionDataEncoder().encode(
+      args as InitializeConfigInstructionDataArgs
+    ),
   } as InitializeConfigInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountAdmin,
     TAccountRestakingProgram,
+    TAccountProgramFeeWallet,
     TAccountSystemProgram
   >;
 
@@ -176,7 +208,8 @@ export type ParsedInitializeConfigInstruction<
     config: TAccountMetas[0];
     admin: TAccountMetas[1];
     restakingProgram: TAccountMetas[2];
-    systemProgram: TAccountMetas[3];
+    programFeeWallet: TAccountMetas[3];
+    systemProgram: TAccountMetas[4];
   };
   data: InitializeConfigInstructionData;
 };
@@ -189,7 +222,7 @@ export function parseInitializeConfigInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedInitializeConfigInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+  if (instruction.accounts.length < 5) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -205,6 +238,7 @@ export function parseInitializeConfigInstruction<
       config: getNextAccount(),
       admin: getNextAccount(),
       restakingProgram: getNextAccount(),
+      programFeeWallet: getNextAccount(),
       systemProgram: getNextAccount(),
     },
     data: getInitializeConfigInstructionDataDecoder().decode(instruction.data),

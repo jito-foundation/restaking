@@ -32,7 +32,6 @@ pub fn process_enqueue_withdrawal(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     vrt_amount: u64,
-    min_amount_out: u64,
 ) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(9);
 
@@ -68,9 +67,6 @@ pub fn process_enqueue_withdrawal(
         msg!("VRT amount must be greater than zero");
         return Err(VaultError::VaultEnqueueWithdrawalAmountZero.into());
     }
-
-    // Check that min_amount_out is acceptable
-    vault.check_min_supported_mint_out(vrt_amount, min_amount_out)?;
 
     // The VaultStakerWithdrawalTicket shall be at the canonical PDA
     let (
@@ -113,7 +109,6 @@ pub fn process_enqueue_withdrawal(
         *staker.key,
         *base.key,
         vrt_amount,
-        min_amount_out,
         Clock::get()?.slot,
         vault_staker_withdrawal_ticket_bump,
     );

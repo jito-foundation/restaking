@@ -34,13 +34,14 @@ import {
   type ParsedOperatorSetFeeInstruction,
   type ParsedOperatorSetSecondaryAdminInstruction,
   type ParsedOperatorWarmupNcnInstruction,
+  type ParsedSetConfigAdminInstruction,
   type ParsedWarmupNcnVaultSlasherTicketInstruction,
   type ParsedWarmupNcnVaultTicketInstruction,
   type ParsedWarmupOperatorVaultTicketInstruction,
 } from '../instructions';
 
 export const JITO_RESTAKING_PROGRAM_ADDRESS =
-  '78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng' as Address<'78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng'>;
+  'RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q' as Address<'RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q'>;
 
 export enum JitoRestakingAccount {
   Config,
@@ -77,6 +78,7 @@ export enum JitoRestakingInstruction {
   OperatorSetFee,
   NcnDelegateTokenAccount,
   OperatorDelegateTokenAccount,
+  SetConfigAdmin,
 }
 
 export function identifyJitoRestakingInstruction(
@@ -155,13 +157,16 @@ export function identifyJitoRestakingInstruction(
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
     return JitoRestakingInstruction.OperatorDelegateTokenAccount;
   }
+  if (containsBytes(data, getU8Encoder().encode(24), 0)) {
+    return JitoRestakingInstruction.SetConfigAdmin;
+  }
   throw new Error(
     'The provided instruction could not be identified as a jitoRestaking instruction.'
   );
 }
 
 export type ParsedJitoRestakingInstruction<
-  TProgram extends string = '78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng',
+  TProgram extends string = 'RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q',
 > =
   | ({
       instructionType: JitoRestakingInstruction.InitializeConfig;
@@ -234,4 +239,7 @@ export type ParsedJitoRestakingInstruction<
     } & ParsedNcnDelegateTokenAccountInstruction<TProgram>)
   | ({
       instructionType: JitoRestakingInstruction.OperatorDelegateTokenAccount;
-    } & ParsedOperatorDelegateTokenAccountInstruction<TProgram>);
+    } & ParsedOperatorDelegateTokenAccountInstruction<TProgram>)
+  | ({
+      instructionType: JitoRestakingInstruction.SetConfigAdmin;
+    } & ParsedSetConfigAdminInstruction<TProgram>);

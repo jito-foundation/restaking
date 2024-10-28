@@ -27,9 +27,9 @@ pub fn process_crank_vault_update_state_tracker(
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
-    Vault::load(program_id, vault_info, false)?;
-    let vault_data = vault_info.data.borrow();
-    let vault = Vault::try_from_slice_unchecked(&vault_data)?;
+    Vault::load(program_id, vault_info, true)?;
+    let mut vault_data = vault_info.data.borrow_mut();
+    let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     Operator::load(&config.restaking_program, operator, false)?;
     VaultOperatorDelegation::load(
         program_id,
@@ -42,6 +42,14 @@ pub fn process_crank_vault_update_state_tracker(
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
     let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
+    let last_full_state_update_slot = vault.last_full_state_update_slot();
+    let last_full_state_update_epoch = config.get_epoch_from_slot(last_full_state_update_slot)?;
+
+    let operator_last_update_slot = vault_operator_delegation.last_update_slot();
+    let operator_last_updated_epoch = config.get_epoch_from_slot(operator_last_update_slot)?;
+
+    let has_been_partially_updated = last_full_state_update_epoch < operator_last_updated_epoch;
 
     VaultUpdateStateTracker::load(
         program_id,
@@ -58,27 +66,36 @@ pub fn process_crank_vault_update_state_tracker(
     vault.check_is_paused()?;
 
     vault_operator_delegation.check_is_already_updated(slot, config.epoch_length())?;
-    vault_update_state_tracker.check_and_update_index(vault_operator_delegation.index())?;
+    vault_update_state_tracker
+        .check_and_update_index(vault_operator_delegation.index(), vault.operator_count())?;
 
     match WithdrawalAllocationMethod::try_from(
         vault_update_state_tracker.withdrawal_allocation_method,
     ) {
         Ok(WithdrawalAllocationMethod::Greedy) => {
-            if vault_update_state_tracker.additional_assets_need_unstaking() > 0 {
+            // If an operator has been updated in a previous, partial update cycle,
+            // they should no longer be the destination for any remaining `additional_assets_need_unstaking`
+            // additionally, this keeps all of the `additional_assets_need_unstaking` at the same cooldown level
+            // since the operator_delegation is updated for X epochs since the operator's last update
+            if vault.additional_assets_need_unstaking() > 0
+                && !has_been_partially_updated
+                && vault_operator_delegation.delegation_state.staked_amount() > 0
+            {
                 let max_cooldown = min(
                     vault_operator_delegation.delegation_state.staked_amount(),
-                    vault_update_state_tracker.additional_assets_need_unstaking(),
+                    vault.additional_assets_need_unstaking(),
                 );
+
                 msg!(
                     "Force cooling down {} assets from operator {}",
                     max_cooldown,
                     vault_operator_delegation.operator
                 );
+
                 vault_operator_delegation
                     .delegation_state
                     .cooldown(max_cooldown)?;
-                vault_update_state_tracker
-                    .decrement_additional_assets_need_unstaking(max_cooldown)?;
+                vault.decrement_additional_assets_need_unstaking(max_cooldown)?;
             }
         }
         Err(e) => {

@@ -174,18 +174,27 @@ Vault program commands
 
 ###### **Subcommands:**
 
-* `initialize` — 
-* `get` — 
+* `initialize` — Creates global config (can only be done once)
+* `get` — Fetches global config
 
 
 
 ## `jito-restaking-cli vault config initialize`
 
-**Usage:** `jito-restaking-cli vault config initialize`
+Creates global config (can only be done once)
+
+**Usage:** `jito-restaking-cli vault config initialize <PROGRAM_FEE_BPS> <PROGRAM_FEE_WALLET>`
+
+###### **Arguments:**
+
+* `<PROGRAM_FEE_BPS>` — The program fee in basis points
+* `<PROGRAM_FEE_WALLET>` — The program fee wallet pubkey
 
 
 
 ## `jito-restaking-cli vault config get`
+
+Fetches global config
 
 **Usage:** `jito-restaking-cli vault config get`
 
@@ -203,6 +212,7 @@ Vault commands
 * `create-token-metadata` — Creates token metadata for the vault's LRT token
 * `get` — Gets a vault
 * `list` — List all vaults
+* `set-capacity` — Sets the deposit capacity in the vault
 
 
 
@@ -254,6 +264,19 @@ Gets a vault
 List all vaults
 
 **Usage:** `jito-restaking-cli vault vault list`
+
+
+
+## `jito-restaking-cli vault vault set-capacity`
+
+Sets the deposit capacity in the vault
+
+**Usage:** `jito-restaking-cli vault vault set-capacity <VAULT> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<AMOUNT>` — The new capacity
 
 
 

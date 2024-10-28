@@ -9,8 +9,11 @@ pub enum VaultInstruction {
     #[account(0, writable, name = "config")]
     #[account(1, writable, signer, name = "admin")]
     #[account(2, name = "restaking_program")]
-    #[account(3, name = "system_program")]
-    InitializeConfig,
+    #[account(3, name = "program_fee_wallet")]
+    #[account(4, name = "system_program")]
+    InitializeConfig {
+        program_fee_bps: u16,
+    },
 
     /// Initializes the vault
     #[account(0, writable, name = "config")]
@@ -125,23 +128,6 @@ pub enum VaultInstruction {
         min_amount_out: u64,
     },
 
-    /// Burns VRT by withdrawing tokens from the vault
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, writable, name = "vault_token_account")]
-    #[account(3, writable, name = "vrt_mint")]
-    #[account(4, signer, name = "staker")]
-    #[account(5, writable, name = "staker_token_account")]
-    #[account(6, signer, name = "staker_vrt_token_account")]
-    #[account(7, writable, name = "vault_fee_token_account")]
-    #[account(8, name = "token_program")]
-    #[account(9, name = "system_program")]
-    #[account(10, signer, optional, name = "burn_signer", description = "Signer for burning")]
-    Burn {
-        amount_in: u64,
-        min_amount_out: u64
-    },
-
     /// Enqueues a withdrawal of VRT tokens
     /// Used when there aren't enough idle assets in the vault to cover a withdrawal
     #[account(0, name = "config")]
@@ -156,7 +142,6 @@ pub enum VaultInstruction {
     #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
         amount: u64,
-        min_amount_out: u64
     },
 
     #[account(0, name = "config")]
@@ -177,9 +162,10 @@ pub enum VaultInstruction {
     #[account(6, writable, name = "vault_staker_withdrawal_ticket")]
     #[account(7, writable, name = "vault_staker_withdrawal_ticket_token_account")]
     #[account(8, writable, name = "vault_fee_token_account")]
-    #[account(9, name = "token_program")]
-    #[account(10, name = "system_program")]
-    #[account(11, signer, optional, name = "burn_signer", description = "Signer for burning")]
+    #[account(9, writable, name = "program_fee_token_account")]
+    #[account(10, name = "token_program")]
+    #[account(11, name = "system_program")]
+    #[account(12, signer, optional, name = "burn_signer", description = "Signer for burning")]
     BurnWithdrawalTicket,
 
     /// Sets the max tokens that can be deposited into the VRT
@@ -199,6 +185,19 @@ pub enum VaultInstruction {
         withdrawal_fee_bps: Option<u16>,
         reward_fee_bps: Option<u16>,
     },
+
+    /// Sets the program fee for the vault program
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "admin")]
+    SetProgramFee {
+        new_fee_bps: u16
+    },
+
+    /// Sets the program fee wallet for the vault program
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "program_fee_admin")]
+    #[account(2, name = "new_fee_wallet")]
+    SetProgramFeeWallet,
 
     /// Sets `is_paused`
     #[account(0, name = "config")]
@@ -269,7 +268,7 @@ pub enum VaultInstruction {
 
     /// Shall be called on every vault_operator_delegation
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, writable, name = "vault_update_state_tracker")]
@@ -309,26 +308,12 @@ pub enum VaultInstruction {
         uri: String,
     },
 
-    /// Slashes an amount of tokens from the vault
-    #[account(0, name = "config")]
-    #[account(1, writable, name = "vault")]
-    #[account(2, name = "ncn")]
-    #[account(3, name = "operator")]
-    #[account(4, signer, name = "slasher")]
-    #[account(5, name = "ncn_operator_state")]
-    #[account(6, name = "ncn_vault_ticket")]
-    #[account(7, name = "operator_vault_ticket")]
-    #[account(8, name = "vault_ncn_ticket")]
-    #[account(9, writable, name = "vault_operator_delegation")]
-    #[account(10, name = "ncn_vault_slasher_ticket")]
-    #[account(11, name = "vault_ncn_slasher_ticket")]
-    #[account(12, writable, name = "vault_ncn_slasher_operator_ticket")]
-    #[account(13, writable, name = "vault_token_account")]
-    #[account(14, name = "slasher_token_account")]
-    #[account(15, name = "token_program")]
-    Slash {
-        amount: u64
-    },
+    /// Changes the admin for the config
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "old_admin")]
+    #[account(2, signer, name = "new_admin")]
+    SetConfigAdmin,
+
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
@@ -342,6 +327,7 @@ pub enum VaultAdminRole {
     MintBurnAdmin,
     DelegateAssetAdmin,
     FeeAdmin,
+    MetadataAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]

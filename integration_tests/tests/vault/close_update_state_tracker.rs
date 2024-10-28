@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{
-        config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
-    };
+    use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -127,10 +125,12 @@ mod tests {
             .await
             .unwrap();
 
+        let operator_index = (ncn_epoch % num_operators as u64) as usize;
+
         vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                &operator_roots[0].operator_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
             )
             .await
             .unwrap();
@@ -214,18 +214,22 @@ mod tests {
             .await
             .unwrap();
 
-        vault_program_client
-            .do_crank_vault_update_state_tracker(
-                &vault_root.vault_pubkey,
-                &operator_roots[0].operator_pubkey,
-            )
-            .await
-            .unwrap();
+        let operator_index = (old_ncn_epoch % num_operators as u64) as usize;
 
         vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                &operator_roots[1].operator_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
+            )
+            .await
+            .unwrap();
+
+        let operator_index = (operator_index + 1) % num_operators as usize;
+
+        vault_program_client
+            .do_crank_vault_update_state_tracker(
+                &vault_root.vault_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
             )
             .await
             .unwrap();
@@ -289,17 +293,13 @@ mod tests {
             .await
             .unwrap();
 
-        let vault = vault_program_client
-            .get_vault(&vault_root.vault_pubkey)
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
             .await
             .unwrap();
 
-        let min_amount_out = vault
-            .calculate_min_supported_mint_out(100_000, Vault::MIN_WITHDRAWAL_SLIPPAGE_BPS)
-            .unwrap();
-
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 100_000, min_amount_out)
+            .do_enqueue_withdrawal(&vault_root, &depositor, 100_000)
             .await
             .unwrap();
         let vault = vault_program_client
@@ -310,10 +310,6 @@ mod tests {
         assert_eq!(vault.vrt_cooling_down_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
 
-        let config = vault_program_client
-            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
-            .await
-            .unwrap();
         fixture
             .warp_slot_incremental(config.epoch_length())
             .await
@@ -403,10 +399,12 @@ mod tests {
             .await
             .unwrap();
 
+        let operator_index = (ncn_epoch % num_operators as u64) as usize;
+
         vault_program_client
             .do_crank_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
-                &operator_roots[0].operator_pubkey,
+                &operator_roots[operator_index].operator_pubkey,
             )
             .await
             .unwrap();

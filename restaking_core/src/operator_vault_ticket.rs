@@ -6,10 +6,6 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-impl Discriminator for OperatorVaultTicket {
-    const DISCRIMINATOR: u8 = 5;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct OperatorVaultTicket {

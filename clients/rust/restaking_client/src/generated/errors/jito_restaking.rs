@@ -93,6 +93,9 @@ pub enum JitoRestakingError {
     /// 2013 - InvalidEpochLength
     #[error("InvalidEpochLength")]
     InvalidEpochLength = 0x7DD,
+    /// 2014 - ConfigAdminInvalid
+    #[error("ConfigAdminInvalid")]
+    ConfigAdminInvalid = 0x7DE,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

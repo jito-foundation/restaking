@@ -6,10 +6,6 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-impl Discriminator for VaultNcnSlasherTicket {
-    const DISCRIMINATOR: u8 = 5;
-}
-
 /// The [`VaultNcnSlasherTicket`] account tracks a vault's support for a node consensus network
 /// slasher. It can be enabled and disabled over time by the vault slasher admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]

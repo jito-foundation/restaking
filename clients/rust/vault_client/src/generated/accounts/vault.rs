@@ -32,6 +32,7 @@ pub struct Vault {
     pub tokens_deposited: u64,
     pub deposit_capacity: u64,
     pub delegation_state: DelegationState,
+    pub additional_assets_need_unstaking: u64,
     pub vrt_enqueued_for_cooldown_amount: u64,
     pub vrt_cooling_down_amount: u64,
     pub vrt_ready_to_claim_amount: u64,
@@ -85,6 +86,11 @@ pub struct Vault {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub mint_burn_admin: Pubkey,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub metadata_admin: Pubkey,
     pub vault_index: u64,
     pub ncn_count: u64,
     pub operator_count: u64,
@@ -93,11 +99,13 @@ pub struct Vault {
     pub last_full_state_update_slot: u64,
     pub deposit_fee_bps: u16,
     pub withdrawal_fee_bps: u16,
+    pub next_withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
+    pub program_fee_bps: u16,
     pub bump: u8,
     pub is_paused: bool,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved: [u8; 263],
+    pub reserved: [u8; 259],
 }
 
 impl Vault {
