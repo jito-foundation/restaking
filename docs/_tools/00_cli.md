@@ -238,6 +238,7 @@ Vault commands
 * `create-token-metadata` — Creates token metadata for the vault's LRT token
 * `get` — Gets a vault
 * `list` — List all vaults
+* `set-capacity` — Sets the deposit capacity in the vault
 
 
 
@@ -289,6 +290,19 @@ Gets a vault
 List all vaults
 
 **Usage:** `jito-restaking-cli vault vault list`
+
+
+
+## `jito-restaking-cli vault vault set-capacity`
+
+Sets the deposit capacity in the vault
+
+**Usage:** `jito-restaking-cli vault vault set-capacity <VAULT> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<AMOUNT>` — The new capacity
 
 
 
