@@ -197,6 +197,7 @@ impl VaultCliHandler {
         info!("Initializing vault transaction: {:?}", tx.get_signature());
         rpc_client.send_and_confirm_transaction(&tx).await?;
         info!("Transaction confirmed: {:?}", tx.get_signature());
+        info!("Vault initialized at address: {}", vault);
 
         Ok(())
     }

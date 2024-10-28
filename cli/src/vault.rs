@@ -53,6 +53,74 @@ pub enum VaultActions {
         /// The URI for the token metadata
         uri: String,
     },
+    InitializeUpdateStateTracker {
+        /// Vault account
+        vault: String,
+    },
+    CloseUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// Optional NCN epoch to close
+        ncn_epoch: Option<u64>,
+    },
+    MintVRT {
+        /// Vault account
+        vault: String,
+        /// Amount to deposit
+        amount_in: u64,
+        /// Minimum amount of VRT to mint
+        min_amount_out: u64,
+    },
+    InitializeOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    DelegateToOperator {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// Amount to delegate
+        amount: u64,
+    },
+    EnqueueWithdrawal {
+        /// Vault account
+        vault: String,
+        /// Amount to withdraw
+        amount: u64,
+    },
+    CrankUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// NCN epoch to crank
+        ncn_epoch: Option<u64>,
+    },
+    BurnWithdrawalTicket {
+        /// Vault account
+        withdrawal_ticket: String,
+    },
+    GetStateTracker {
+        /// Vault account
+        vault: String,
+        /// NCN epoch
+        ncn_epoch: u64,
+    },
+    GetOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    GetWithdrawalTicket {
+        /// Vault account
+        vault: String,
+        /// Staker account
+        staker: Option<String>,
+    },
     /// Gets a vault
     Get {
         /// The vault pubkey
