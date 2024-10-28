@@ -52,12 +52,8 @@ impl RestakingCliHandler {
                 action: ConfigActions::Get,
             } => self.get_config().await,
             RestakingCommands::Config {
-                action:
-                    ConfigActions::SetAdmin {
-                        old_admin,
-                        new_admin,
-                    },
-            } => self.set_config_admin(old_admin, new_admin).await,
+                action: ConfigActions::SetAdmin { new_admin },
+            } => self.set_config_admin(new_admin).await,
             RestakingCommands::Ncn {
                 action: NcnActions::Initialize,
             } => self.initialize_ncn().await,
@@ -296,7 +292,7 @@ impl RestakingCliHandler {
         RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
     }
 
-    async fn set_config_admin(&self, old_admin: Pubkey, new_admin: Pubkey) -> Result<()> {
+    async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
         let keypair = self
             .cli_config
             .keypair
@@ -308,7 +304,7 @@ impl RestakingCliHandler {
         let mut ix_builder = SetConfigAdminBuilder::new();
         ix_builder
             .config(config_address)
-            .old_admin(old_admin)
+            .old_admin(keypair.pubkey())
             .new_admin(new_admin);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;

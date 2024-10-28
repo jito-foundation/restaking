@@ -80,11 +80,10 @@ Get the config
 
 Set the config admin
 
-**Usage:** `jito-restaking-cli restaking config set-admin <OLD_ADMIN> <NEW_ADMIN>`
+**Usage:** `jito-restaking-cli restaking config set-admin <NEW_ADMIN>`
 
 ###### **Arguments:**
 
-* `<OLD_ADMIN>` — The old admin's pubkey
 * `<NEW_ADMIN>` — The new admin's pubkey
 
 
@@ -219,11 +218,10 @@ Fetches global config
 
 Set the config admin
 
-**Usage:** `jito-restaking-cli vault config set-admin <OLD_ADMIN> <NEW_ADMIN>`
+**Usage:** `jito-restaking-cli vault config set-admin <NEW_ADMIN>`
 
 ###### **Arguments:**
 
-* `<OLD_ADMIN>` — The old admin's pubkey
 * `<NEW_ADMIN>` — The new admin's pubkey
 
 

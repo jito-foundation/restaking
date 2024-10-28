@@ -26,8 +26,6 @@ pub enum ConfigActions {
     Get,
     /// Set the config admin
     SetAdmin {
-        /// The old admin's pubkey
-        old_admin: Pubkey,
         /// The new admin's pubkey
         new_admin: Pubkey,
     },
