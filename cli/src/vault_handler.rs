@@ -97,6 +97,9 @@ impl VaultCliHandler {
                         uri,
                     },
             } => self.create_token_metadata(vault, name, symbol, uri).await,
+            VaultCommands::Vault {
+                action: VaultActions::SetCapacity { vault, amount },
+            } => self.set_capacity(vault, amount).await,
         }
     }
 
