@@ -7,19 +7,15 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
-pub struct CrankVaultUpdateStateTracker {
+pub struct SetConfigAdmin {
     pub config: solana_program::pubkey::Pubkey,
 
-    pub vault: solana_program::pubkey::Pubkey,
+    pub old_admin: solana_program::pubkey::Pubkey,
 
-    pub operator: solana_program::pubkey::Pubkey,
-
-    pub vault_operator_delegation: solana_program::pubkey::Pubkey,
-
-    pub vault_update_state_tracker: solana_program::pubkey::Pubkey,
+    pub new_admin: solana_program::pubkey::Pubkey,
 }
 
-impl CrankVaultUpdateStateTracker {
+impl SetConfigAdmin {
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -28,33 +24,24 @@ impl CrankVaultUpdateStateTracker {
         &self,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
+        accounts.push(solana_program::instruction::AccountMeta::new(
             self.config,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault, false,
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.old_admin,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.operator,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_operator_delegation,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_update_state_tracker,
-            false,
+            self.new_admin,
+            true,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = CrankVaultUpdateStateTrackerInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = SetConfigAdminInstructionData::new().try_to_vec().unwrap();
 
         solana_program::instruction::Instruction {
-            program_id: crate::JITO_VAULT_ID,
+            program_id: crate::JITO_RESTAKING_ID,
             accounts,
             data,
         }
@@ -62,42 +49,38 @@ impl CrankVaultUpdateStateTracker {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct CrankVaultUpdateStateTrackerInstructionData {
+pub struct SetConfigAdminInstructionData {
     discriminator: u8,
 }
 
-impl CrankVaultUpdateStateTrackerInstructionData {
+impl SetConfigAdminInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 27 }
+        Self { discriminator: 24 }
     }
 }
 
-impl Default for CrankVaultUpdateStateTrackerInstructionData {
+impl Default for SetConfigAdminInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `CrankVaultUpdateStateTracker`.
+/// Instruction builder for `SetConfigAdmin`.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` config
-///   1. `[writable]` vault
-///   2. `[]` operator
-///   3. `[writable]` vault_operator_delegation
-///   4. `[writable]` vault_update_state_tracker
+///   0. `[writable]` config
+///   1. `[signer]` old_admin
+///   2. `[signer]` new_admin
 #[derive(Clone, Debug, Default)]
-pub struct CrankVaultUpdateStateTrackerBuilder {
+pub struct SetConfigAdminBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
-    vault: Option<solana_program::pubkey::Pubkey>,
-    operator: Option<solana_program::pubkey::Pubkey>,
-    vault_operator_delegation: Option<solana_program::pubkey::Pubkey>,
-    vault_update_state_tracker: Option<solana_program::pubkey::Pubkey>,
+    old_admin: Option<solana_program::pubkey::Pubkey>,
+    new_admin: Option<solana_program::pubkey::Pubkey>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl CrankVaultUpdateStateTrackerBuilder {
+impl SetConfigAdminBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -107,29 +90,13 @@ impl CrankVaultUpdateStateTrackerBuilder {
         self
     }
     #[inline(always)]
-    pub fn vault(&mut self, vault: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.vault = Some(vault);
+    pub fn old_admin(&mut self, old_admin: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.old_admin = Some(old_admin);
         self
     }
     #[inline(always)]
-    pub fn operator(&mut self, operator: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.operator = Some(operator);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
-        &mut self,
-        vault_operator_delegation: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_operator_delegation = Some(vault_operator_delegation);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_update_state_tracker(
-        &mut self,
-        vault_update_state_tracker: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_update_state_tracker = Some(vault_update_state_tracker);
+    pub fn new_admin(&mut self, new_admin: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.new_admin = Some(new_admin);
         self
     }
     /// Add an aditional account to the instruction.
@@ -152,63 +119,47 @@ impl CrankVaultUpdateStateTrackerBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = CrankVaultUpdateStateTracker {
+        let accounts = SetConfigAdmin {
             config: self.config.expect("config is not set"),
-            vault: self.vault.expect("vault is not set"),
-            operator: self.operator.expect("operator is not set"),
-            vault_operator_delegation: self
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
-            vault_update_state_tracker: self
-                .vault_update_state_tracker
-                .expect("vault_update_state_tracker is not set"),
+            old_admin: self.old_admin.expect("old_admin is not set"),
+            new_admin: self.new_admin.expect("new_admin is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
     }
 }
 
-/// `crank_vault_update_state_tracker` CPI accounts.
-pub struct CrankVaultUpdateStateTrackerCpiAccounts<'a, 'b> {
+/// `set_config_admin` CPI accounts.
+pub struct SetConfigAdminCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault: &'b solana_program::account_info::AccountInfo<'a>,
+    pub old_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_update_state_tracker: &'b solana_program::account_info::AccountInfo<'a>,
+    pub new_admin: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `crank_vault_update_state_tracker` CPI instruction.
-pub struct CrankVaultUpdateStateTrackerCpi<'a, 'b> {
+/// `set_config_admin` CPI instruction.
+pub struct SetConfigAdminCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault: &'b solana_program::account_info::AccountInfo<'a>,
+    pub old_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_update_state_tracker: &'b solana_program::account_info::AccountInfo<'a>,
+    pub new_admin: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> CrankVaultUpdateStateTrackerCpi<'a, 'b> {
+impl<'a, 'b> SetConfigAdminCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: CrankVaultUpdateStateTrackerCpiAccounts<'a, 'b>,
+        accounts: SetConfigAdminCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
             config: accounts.config,
-            vault: accounts.vault,
-            operator: accounts.operator,
-            vault_operator_delegation: accounts.vault_operator_delegation,
-            vault_update_state_tracker: accounts.vault_update_state_tracker,
+            old_admin: accounts.old_admin,
+            new_admin: accounts.new_admin,
         }
     }
     #[inline(always)]
@@ -244,26 +195,18 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        let mut accounts = Vec::with_capacity(3 + remaining_accounts.len());
+        accounts.push(solana_program::instruction::AccountMeta::new(
             *self.config.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault.key,
-            false,
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.old_admin.key,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.operator.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_operator_delegation.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_update_state_tracker.key,
-            false,
+            *self.new_admin.key,
+            true,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
@@ -272,22 +215,18 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = CrankVaultUpdateStateTrackerInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = SetConfigAdminInstructionData::new().try_to_vec().unwrap();
 
         let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_VAULT_ID,
+            program_id: crate::JITO_RESTAKING_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(3 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
-        account_infos.push(self.vault.clone());
-        account_infos.push(self.operator.clone());
-        account_infos.push(self.vault_operator_delegation.clone());
-        account_infos.push(self.vault_update_state_tracker.clone());
+        account_infos.push(self.old_admin.clone());
+        account_infos.push(self.new_admin.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -300,29 +239,25 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `CrankVaultUpdateStateTracker` via CPI.
+/// Instruction builder for `SetConfigAdmin` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` config
-///   1. `[writable]` vault
-///   2. `[]` operator
-///   3. `[writable]` vault_operator_delegation
-///   4. `[writable]` vault_update_state_tracker
+///   0. `[writable]` config
+///   1. `[signer]` old_admin
+///   2. `[signer]` new_admin
 #[derive(Clone, Debug)]
-pub struct CrankVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
-    instruction: Box<CrankVaultUpdateStateTrackerCpiBuilderInstruction<'a, 'b>>,
+pub struct SetConfigAdminCpiBuilder<'a, 'b> {
+    instruction: Box<SetConfigAdminCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> CrankVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
+impl<'a, 'b> SetConfigAdminCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(CrankVaultUpdateStateTrackerCpiBuilderInstruction {
+        let instruction = Box::new(SetConfigAdminCpiBuilderInstruction {
             __program: program,
             config: None,
-            vault: None,
-            operator: None,
-            vault_operator_delegation: None,
-            vault_update_state_tracker: None,
+            old_admin: None,
+            new_admin: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -336,32 +271,19 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn vault(&mut self, vault: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.vault = Some(vault);
+    pub fn old_admin(
+        &mut self,
+        old_admin: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.old_admin = Some(old_admin);
         self
     }
     #[inline(always)]
-    pub fn operator(
+    pub fn new_admin(
         &mut self,
-        operator: &'b solana_program::account_info::AccountInfo<'a>,
+        new_admin: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.operator = Some(operator);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
-        &mut self,
-        vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.vault_operator_delegation = Some(vault_operator_delegation);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_update_state_tracker(
-        &mut self,
-        vault_update_state_tracker: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.vault_update_state_tracker = Some(vault_update_state_tracker);
+        self.instruction.new_admin = Some(new_admin);
         self
     }
     /// Add an additional account to the instruction.
@@ -405,24 +327,14 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let instruction = CrankVaultUpdateStateTrackerCpi {
+        let instruction = SetConfigAdminCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
 
-            vault: self.instruction.vault.expect("vault is not set"),
+            old_admin: self.instruction.old_admin.expect("old_admin is not set"),
 
-            operator: self.instruction.operator.expect("operator is not set"),
-
-            vault_operator_delegation: self
-                .instruction
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
-
-            vault_update_state_tracker: self
-                .instruction
-                .vault_update_state_tracker
-                .expect("vault_update_state_tracker is not set"),
+            new_admin: self.instruction.new_admin.expect("new_admin is not set"),
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -432,13 +344,11 @@ impl<'a, 'b> CrankVaultUpdateStateTrackerCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct CrankVaultUpdateStateTrackerCpiBuilderInstruction<'a, 'b> {
+struct SetConfigAdminCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_operator_delegation: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_update_state_tracker: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    old_admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    new_admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

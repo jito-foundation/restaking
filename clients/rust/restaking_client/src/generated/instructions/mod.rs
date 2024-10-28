@@ -25,6 +25,7 @@ pub(crate) mod r#operator_set_admin;
 pub(crate) mod r#operator_set_fee;
 pub(crate) mod r#operator_set_secondary_admin;
 pub(crate) mod r#operator_warmup_ncn;
+pub(crate) mod r#set_config_admin;
 pub(crate) mod r#warmup_ncn_vault_slasher_ticket;
 pub(crate) mod r#warmup_ncn_vault_ticket;
 pub(crate) mod r#warmup_operator_vault_ticket;
@@ -38,6 +39,6 @@ pub use self::{
     r#ncn_delegate_token_account::*, r#ncn_set_admin::*, r#ncn_set_secondary_admin::*,
     r#ncn_warmup_operator::*, r#operator_cooldown_ncn::*, r#operator_delegate_token_account::*,
     r#operator_set_admin::*, r#operator_set_fee::*, r#operator_set_secondary_admin::*,
-    r#operator_warmup_ncn::*, r#warmup_ncn_vault_slasher_ticket::*, r#warmup_ncn_vault_ticket::*,
-    r#warmup_operator_vault_ticket::*,
+    r#operator_warmup_ncn::*, r#set_config_admin::*, r#warmup_ncn_vault_slasher_ticket::*,
+    r#warmup_ncn_vault_ticket::*, r#warmup_operator_vault_ticket::*,
 };

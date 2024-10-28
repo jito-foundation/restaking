@@ -1,4 +1,4 @@
 # placeholders for clippy and other tools
 [env]
-RESTAKING_PROGRAM_ID = "GGZVdfqbuT2MpAVcaen3npXhtJ2Tgk8TwEnvXJcqer7a"
-VAULT_PROGRAM_ID = "GzKVJyvn8dmHqU9pEgoYRGrRVBptyBS6UqyTi1LzBPS7"
+RESTAKING_PROGRAM_ID = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q"
+VAULT_PROGRAM_ID = "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8"

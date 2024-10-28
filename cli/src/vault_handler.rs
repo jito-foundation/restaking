@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_vault_client::instructions::{
     CreateTokenMetadataBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
+    SetDepositCapacityBuilder,
 };
 use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::inline_mpl_token_metadata;
@@ -93,6 +94,9 @@ impl VaultCliHandler {
                         uri,
                     },
             } => self.create_token_metadata(vault, name, symbol, uri).await,
+            VaultCommands::Vault {
+                action: VaultActions::SetCapacity { vault, amount },
+            } => self.set_capacity(vault, amount).await,
         }
     }
 
@@ -286,6 +290,44 @@ impl VaultCliHandler {
 
         info!(
             "Creating token metadata transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client
+            .send_and_confirm_transaction(&tx)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    pub async fn set_capacity(&self, vault: String, amount: u64) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let vault_pubkey = Pubkey::from_str(&vault)?;
+        let rpc_client = self.get_rpc_client();
+
+        let mut builder = SetDepositCapacityBuilder::new();
+        builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault_pubkey)
+            .admin(keypair.pubkey())
+            .amount(amount);
+
+        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            recent_blockhash,
+        );
+
+        info!("Vault capacity instruction: {:?}", builder);
+        info!(
+            "Vault capacity transaction signature: {:?}",
             tx.get_signature()
         );
         rpc_client

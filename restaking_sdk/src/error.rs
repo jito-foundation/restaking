@@ -55,6 +55,9 @@ pub enum RestakingError {
     #[error("InvalidEpochLength")]
     InvalidEpochLength,
 
+    #[error("ConfigAdminInvalid")]
+    ConfigAdminInvalid,
+
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
     #[error("ArithmeticUnderflow")]

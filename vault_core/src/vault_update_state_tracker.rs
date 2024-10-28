@@ -18,9 +18,6 @@ pub struct VaultUpdateStateTracker {
     /// The last updated index of the vault
     last_updated_index: PodU64,
 
-    /// The amount of additional assets that need unstaking to fulfill VRT withdrawals
-    additional_assets_need_unstaking: PodU64,
-
     /// The total amount delegated across all the operators in the vault
     pub delegation_state: DelegationState,
 
@@ -30,16 +27,10 @@ pub struct VaultUpdateStateTracker {
 }
 
 impl VaultUpdateStateTracker {
-    pub fn new(
-        vault: Pubkey,
-        ncn_epoch: u64,
-        additional_assets_need_unstaking: u64,
-        withdrawal_allocation_method: u8,
-    ) -> Self {
+    pub fn new(vault: Pubkey, ncn_epoch: u64, withdrawal_allocation_method: u8) -> Self {
         Self {
             vault,
             ncn_epoch: PodU64::from(ncn_epoch),
-            additional_assets_need_unstaking: PodU64::from(additional_assets_need_unstaking),
             last_updated_index: PodU64::from(u64::MAX),
             delegation_state: DelegationState::default(),
             withdrawal_allocation_method,
@@ -51,24 +42,8 @@ impl VaultUpdateStateTracker {
         self.ncn_epoch.into()
     }
 
-    pub fn additional_assets_need_unstaking(&self) -> u64 {
-        self.additional_assets_need_unstaking.into()
-    }
-
     pub fn last_updated_index(&self) -> u64 {
         self.last_updated_index.into()
-    }
-
-    pub fn decrement_additional_assets_need_unstaking(
-        &mut self,
-        amount: u64,
-    ) -> Result<(), VaultError> {
-        let new_amount = self
-            .additional_assets_need_unstaking()
-            .checked_sub(amount)
-            .ok_or(VaultError::VaultUnderflow)?;
-        self.additional_assets_need_unstaking = PodU64::from(new_amount);
-        Ok(())
     }
 
     /// Checks and updates the index of the vault update state tracker
@@ -195,12 +170,11 @@ mod tests {
     };
 
     #[test]
-    fn test_vault_update_state_tracker_sno_padding() {
+    fn test_vault_update_state_tracker_no_padding() {
         let vault_update_state_tracker_size = std::mem::size_of::<VaultUpdateStateTracker>();
         let sum_of_fields = size_of::<Pubkey>() + // vault
             size_of::<PodU64>() + // ncn_epoch
             size_of::<PodU64>() + // last_updated_index
-            size_of::<PodU64>() + // additional_assets_need_unstaking
             size_of::<DelegationState>() + // delegation_state
             size_of::<u8>() + // withdrawal_allocation_method
             263; // reserved
@@ -210,7 +184,7 @@ mod tests {
     #[test]
     fn test_update_index_zero_ok() {
         let mut vault_update_state_tracker =
-            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0);
 
         assert!(vault_update_state_tracker
             .check_and_update_index(0, 1)
@@ -220,7 +194,7 @@ mod tests {
     #[test]
     fn test_update_index_skip_zero_fails() {
         let mut vault_update_state_tracker =
-            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0);
         assert_eq!(
             vault_update_state_tracker.check_and_update_index(1, 2),
             Err(VaultError::VaultUpdateIncorrectIndex)
@@ -230,7 +204,7 @@ mod tests {
     #[test]
     fn test_update_index_skip_index_fails() {
         let mut vault_update_state_tracker =
-            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0);
         let n = 4;
         vault_update_state_tracker
             .check_and_update_index(0, n)
@@ -249,7 +223,7 @@ mod tests {
         let n = 4;
         // Epoch 6, offset is 6 % 4 = 2
         let mut vault_update_state_tracker =
-            VaultUpdateStateTracker::new(Pubkey::new_unique(), 6, 0, 0);
+            VaultUpdateStateTracker::new(Pubkey::new_unique(), 6, 0);
 
         assert_eq!(
             vault_update_state_tracker.check_and_update_index(0, n),
@@ -283,7 +257,7 @@ mod tests {
         let n = 4;
 
         // Cranking not started
-        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0);
         assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
 
         // Middle of cranking
@@ -295,27 +269,27 @@ mod tests {
         assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
 
         // start_index = operators - 1
-        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n - 1, 0, 0);
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n - 1, 0);
         tracker.last_updated_index = PodU64::from(n - 2);
         assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
 
         // start_index = operators, last_updated = start_index - 1
-        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n, 0, 0);
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), n, 0);
         tracker.last_updated_index = PodU64::from(0);
         assert_eq!(tracker.all_operators_updated(n).unwrap(), false);
 
         // All operators updated, start_index != 0
-        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 1, 0, 0);
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 1, 0);
         tracker.last_updated_index = PodU64::from(0);
         assert_eq!(tracker.all_operators_updated(n).unwrap(), true);
 
         // Single operator
-        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 2, 0, 0);
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 2, 0);
         tracker.last_updated_index = PodU64::from(0);
         assert_eq!(tracker.all_operators_updated(1).unwrap(), true);
 
         // Error - division by zero
-        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0, 0);
+        let mut tracker = VaultUpdateStateTracker::new(Pubkey::new_unique(), 0, 0);
         tracker.last_updated_index = PodU64::from(0);
         assert_eq!(
             tracker.all_operators_updated(0),

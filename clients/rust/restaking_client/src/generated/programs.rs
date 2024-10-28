@@ -7,4 +7,4 @@
 use solana_program::{pubkey, pubkey::Pubkey};
 
 /// `jito_restaking` program ID.
-pub const JITO_RESTAKING_ID: Pubkey = pubkey!("78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng");
+pub const JITO_RESTAKING_ID: Pubkey = pubkey!("RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q");

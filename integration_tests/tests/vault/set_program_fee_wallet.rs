@@ -34,7 +34,7 @@ mod tests {
         let result = vault_program_client
             .set_program_fee_wallet(&non_admin, &Keypair::new().pubkey())
             .await;
-        assert_vault_error(result, VaultError::VaultConfigFeeAdminInvalid);
+        assert_vault_error(result, VaultError::ConfigFeeAdminInvalid);
 
         // Try to set fee wallet to the same address (should succeed)
         vault_program_client

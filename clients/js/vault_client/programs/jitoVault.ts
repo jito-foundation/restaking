@@ -34,6 +34,7 @@ import {
   type ParsedInitializeVaultWithMintInstruction,
   type ParsedMintToInstruction,
   type ParsedSetAdminInstruction,
+  type ParsedSetConfigAdminInstruction,
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
   type ParsedSetIsPausedInstruction,
@@ -47,7 +48,7 @@ import {
 } from '../instructions';
 
 export const JITO_VAULT_PROGRAM_ADDRESS =
-  '34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx' as Address<'34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx'>;
+  'Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8' as Address<'Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8'>;
 
 export enum JitoVaultAccount {
   Config,
@@ -92,6 +93,7 @@ export enum JitoVaultInstruction {
   CloseVaultUpdateStateTracker,
   CreateTokenMetadata,
   UpdateTokenMetadata,
+  SetConfigAdmin,
 }
 
 export function identifyJitoVaultInstruction(
@@ -191,13 +193,16 @@ export function identifyJitoVaultInstruction(
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
     return JitoVaultInstruction.UpdateTokenMetadata;
   }
+  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.SetConfigAdmin;
+  }
   throw new Error(
     'The provided instruction could not be identified as a jitoVault instruction.'
   );
 }
 
 export type ParsedJitoVaultInstruction<
-  TProgram extends string = '34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx',
+  TProgram extends string = 'Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8',
 > =
   | ({
       instructionType: JitoVaultInstruction.InitializeConfig;
@@ -291,4 +296,7 @@ export type ParsedJitoVaultInstruction<
     } & ParsedCreateTokenMetadataInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.UpdateTokenMetadata;
-    } & ParsedUpdateTokenMetadataInstruction<TProgram>);
+    } & ParsedUpdateTokenMetadataInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.SetConfigAdmin;
+    } & ParsedSetConfigAdminInstruction<TProgram>);
