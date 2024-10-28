@@ -618,7 +618,7 @@ pub fn set_config_admin(
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new_readonly(*old_admin, true),
-        AccountMeta::new_readonly(*new_admin, true),
+        AccountMeta::new_readonly(*new_admin, false),
     ];
     Instruction {
         program_id: *program_id,
