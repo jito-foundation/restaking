@@ -60,6 +60,12 @@ pub fn process_close_vault_update_state_tracker(
             msg!("VaultUpdateStateTracker is not fully updated");
             return Err(VaultError::VaultUpdateStateNotFinishedUpdating.into());
         }
+
+        if vault.additional_assets_need_unstaking() > 0 {
+            msg!("This should not happen: additional assets need unstaking cannot be non-zero at the end of an update");
+            return Err(VaultError::NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate.into());
+        }
+
         msg!("Finished updating VaultUpdateStateTracker");
 
         vault.delegation_state = vault_update_state_tracker.delegation_state;

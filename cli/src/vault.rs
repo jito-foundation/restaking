@@ -60,4 +60,11 @@ pub enum VaultActions {
     },
     /// List all vaults
     List,
+    /// Sets the deposit capacity in the vault
+    SetCapacity {
+        /// The vault pubkey
+        vault: String,
+        /// The new capacity
+        amount: u64,
+    },
 }
