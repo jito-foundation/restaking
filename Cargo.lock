@@ -1953,7 +1953,18 @@ checksum = "a7666983ed0dd8d21a6f6576ee00053ca0926fb281a5522577a4dbd0f1b54143"
 dependencies = [
  "log",
  "plain",
- "scroll",
+ "scroll 0.11.0",
+]
+
+[[package]]
+name = "goblin"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b363a30c165f666402fe6a3024d3bec7ebc898f96a4a23bd1c99f8dbf3f4f47"
+dependencies = [
+ "log",
+ "plain",
+ "scroll 0.12.0",
 ]
 
 [[package]]
@@ -2235,6 +2246,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "include-idl"
+version = "0.1.0"
+dependencies = [
+ "clap 4.5.16",
+ "flate2",
+ "goblin 0.8.2",
+ "serde_json",
+]
+
+[[package]]
 name = "include_dir"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2474,6 +2495,7 @@ dependencies = [
  "borsh 0.10.3",
  "cfg-if",
  "const_str_to_pubkey",
+ "include-idl",
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
@@ -2512,6 +2534,7 @@ dependencies = [
  "clap 4.5.16",
  "env_logger 0.10.2",
  "envfile",
+ "include-idl",
  "log",
  "shank",
  "shank_idl",
@@ -2558,6 +2581,7 @@ dependencies = [
  "borsh 0.10.3",
  "cfg-if",
  "const_str_to_pubkey",
+ "include-idl",
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
@@ -3882,7 +3906,16 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04c565b551bafbef4157586fa379538366e4385d42082f255bfd96e4fe8519da"
 dependencies = [
- "scroll_derive",
+ "scroll_derive 0.11.1",
+]
+
+[[package]]
+name = "scroll"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ab8598aa408498679922eff7fa985c25d58a90771bd6be794434c5277eab1a6"
+dependencies = [
+ "scroll_derive 0.12.0",
 ]
 
 [[package]]
@@ -3890,6 +3923,17 @@ name = "scroll_derive"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1db149f81d46d2deba7cd3c50772474707729550221e69588478ebf9ada425ae"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
+name = "scroll_derive"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f81c2fde025af7e69b1d1420531c8a8811ca898919db177141a85313b1cb932"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5419,13 +5463,13 @@ checksum = "3d457cc2ba742c120492a64b7fa60e22c575e891f6b55039f4d736568fb112a3"
 dependencies = [
  "byteorder",
  "combine",
- "goblin",
+ "goblin 0.5.4",
  "hash32",
  "libc",
  "log",
  "rand 0.8.5",
  "rustc-demangle",
- "scroll",
+ "scroll 0.11.0",
  "thiserror",
  "winapi",
 ]

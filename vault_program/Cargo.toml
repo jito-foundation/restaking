@@ -28,6 +28,7 @@ localhost = []
 borsh = { workspace = true }
 cfg-if = { workspace = true }
 const_str_to_pubkey = { workspace = true }
+include-idl = { workspace = true }
 jito-bytemuck = { workspace = true }
 jito-jsm-core = { workspace = true }
 jito-restaking-core = { workspace = true }

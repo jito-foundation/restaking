@@ -26,6 +26,7 @@ mod warmup_operator_vault_ticket;
 
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
+use include_idl::include_kinobi_idl;
 use jito_restaking_sdk::instruction::RestakingInstruction;
 use operator_set_fee::process_operator_set_fee;
 use solana_program::{
@@ -72,6 +73,8 @@ security_txt! {
     preferred_languages: "en",
     source_code: "https://github.com/jito-foundation/restaking"
 }
+
+include_kinobi_idl!("../../idl/jito_restaking.json.zip");
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_program::entrypoint!(process_instruction);

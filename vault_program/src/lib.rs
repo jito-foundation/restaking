@@ -33,6 +33,7 @@ mod warmup_vault_ncn_ticket;
 
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
+use include_idl::include_kinobi_idl;
 use jito_vault_sdk::instruction::VaultInstruction;
 use set_program_fee::process_set_program_fee;
 use solana_program::{
@@ -83,6 +84,8 @@ security_txt! {
     preferred_languages: "en",
     source_code: "https://github.com/jito-foundation/restaking"
 }
+
+include_kinobi_idl!("../../idl/jito_vault.json.zip");
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_program::entrypoint!(process_instruction);

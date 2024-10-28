@@ -6,6 +6,7 @@ node_modules
 test-ledger
 .idea
 docs/api
+idl/*.zip
 
 .yarn
 !.yarn/patches

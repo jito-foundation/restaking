@@ -2,6 +2,7 @@ use std::{fs::File, io::Write};
 
 use anyhow::{anyhow, Result};
 use env_logger::Env;
+use include_idl::compress_idl;
 use log::{debug, info};
 use shank_idl::{extract_idl, manifest::Manifest, ParseIdlOpts};
 
@@ -111,8 +112,12 @@ fn main() -> Result<()> {
         idl_path.set_extension("json");
 
         info!("Writing IDL to {:?}", idl_path);
-        let mut idl_json_file = File::create(idl_path)?;
+        let mut idl_json_file = File::create(idl_path.clone())?;
         idl_json_file.write_all(idl_json.as_bytes())?;
+
+        let compressed_idl_path = idl_path.with_extension("json.zip");
+        info!("Writing compressed IDL to {:?}", compressed_idl_path);
+        compress_idl(&idl_path, &compressed_idl_path);
     }
 
     Ok(())

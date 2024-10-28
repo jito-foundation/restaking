@@ -1,0 +1,20 @@
+[package]
+name = "include-idl"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+shrink = ["flate2"]
+parse = ["flate2", "goblin", "serde_json"]
+
+[dependencies]
+clap = { version = "4.5.7", features = ["derive"] }
+flate2 = { version = "1.0", optional = true }
+goblin = { version = "0.8.2", optional = true }
+serde_json = { version = "^1.0", optional = true }
+
+[[bin]]
+name = "include-idl-cli"
+path = "src/bin/cli.rs"
+required-features = ["parse", "shrink"]
