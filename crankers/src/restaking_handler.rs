@@ -1,7 +1,11 @@
+use std::sync::Arc;
+
 use jito_bytemuck::AccountDeserialize;
 use jito_restaking_core::operator::Operator;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+
+use crate::core::get_multiple_accounts_batched;
 
 pub struct RestakingHandler {
     rpc_url: String,
@@ -44,7 +48,8 @@ impl RestakingHandler {
     pub async fn get_operators(&self, operator_pubkeys: &[Pubkey]) -> anyhow::Result<Vec<Pubkey>> {
         let rpc_client = self.get_rpc_client();
 
-        let accounts = rpc_client.get_multiple_accounts(operator_pubkeys).await?;
+        let accounts =
+            get_multiple_accounts_batched(operator_pubkeys, &Arc::new(rpc_client)).await?;
 
         let mut operators: Vec<(Pubkey, Operator)> = accounts
             .into_iter()

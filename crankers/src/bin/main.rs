@@ -26,6 +26,14 @@ struct Args {
     /// Restaking program ID (Pubkey as base58 string)
     #[arg(long, default_value = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q")]
     restaking_program_id: Pubkey,
+
+    /// Interval in seconds between cranking attempts (default: 5 minutes)
+    #[arg(long, default_value = "300")]
+    crank_interval: u64,
+
+    /// Priority fees (in microlamports per compute unit)
+    #[arg(long, default_value = "10000")]
+    priority_fees: u64,
 }
 
 #[tokio::main]
@@ -47,8 +55,13 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         .expect("Failed to deserialize Jito vault config");
 
     let restaking_handler = RestakingHandler::new(&args.rpc_url);
-    let vault_handler =
-        VaultHandler::new(&args.rpc_url, &payer, args.vault_program_id, config_address);
+    let vault_handler = VaultHandler::new(
+        &args.rpc_url,
+        &payer,
+        args.vault_program_id,
+        config_address,
+        args.priority_fees,
+    );
 
     loop {
         let slot = rpc_client.get_slot().await.context("get slot")?;
@@ -92,15 +105,16 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                 .collect();
             let operators = restaking_handler.get_operators(&operator_pubkeys).await?;
 
-            if let Err(e) = vault_handler
+            match vault_handler
                 .do_vault_update(epoch, &vault, &operators)
                 .await
             {
-                log::error!("{e}");
+                Err(e) => log::error!("Failed to update vault: {vault}, error: {e}"),
+                Ok(_) => info!("Successfully updated vault: {vault}"),
             }
         }
 
-        // ---------- SLEEP (1 hour)----------
-        tokio::time::sleep(Duration::from_secs(60 * 60)).await;
+        // ---------- SLEEP (crank_interval)----------
+        tokio::time::sleep(Duration::from_secs(args.crank_interval)).await;
     }
 }

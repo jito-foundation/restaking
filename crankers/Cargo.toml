@@ -13,10 +13,12 @@ readme = { workspace = true }
 name = "jito-vault-crank"
 path = "src/bin/main.rs"
 
+
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
 env_logger = { workspace = true }
+futures = { workspace = true }
 jito-account-traits-derive = { workspace = true }
 jito-bytemuck = { workspace = true }
 jito-restaking-client = { workspace = true }
@@ -31,3 +33,6 @@ solana-rpc-client-api = { workspace = true }
 solana-sdk = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+
+[lints.clippy]
+arithmetic_side_effects = "allow"
