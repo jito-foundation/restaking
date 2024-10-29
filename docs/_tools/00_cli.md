@@ -208,8 +208,19 @@ Vault commands
 
 ###### **Subcommands:**
 
-* `initialize` — Initializes the vault
+* `initialize` — Creates a new vault
 * `create-token-metadata` — Creates token metadata for the vault's LRT token
+* `initialize-vault-update-state-tracker` — Starts the vault update cycle
+* `crank-vault-update-state-tracker` — Cranks the vault update state tracker, needs to be run per operator
+* `close-vault-update-state-tracker` — Ends the vault update cycle
+* `mint-vrt` — Mints VRT tokens
+* `initialize-operator-delegation` — Sets up the delegations for an operator
+* `delegate-to-operator` — Delegates tokens to an operator
+* `enqueue-withdrawal` — Starts the withdrawal process
+* `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
+* `get-vault-update-state-tracker` — Gets the update state tracker for a vault
+* `get-operator-delegation` — Gets the
+* `get-withdrawal-ticket` — 
 * `get` — Gets a vault
 * `list` — List all vaults
 * `set-capacity` — Sets the deposit capacity in the vault
@@ -218,7 +229,7 @@ Vault commands
 
 ## `jito-restaking-cli vault vault initialize`
 
-Initializes the vault
+Creates a new vault
 
 **Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>`
 
@@ -244,6 +255,148 @@ Creates token metadata for the vault's LRT token
 * `<NAME>` — The name of the token
 * `<SYMBOL>` — The symbol of the token
 * `<URI>` — The URI for the token metadata
+
+
+
+## `jito-restaking-cli vault vault initialize-vault-update-state-tracker`
+
+Starts the vault update cycle
+
+**Usage:** `jito-restaking-cli vault vault initialize-vault-update-state-tracker <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+
+
+
+## `jito-restaking-cli vault vault crank-vault-update-state-tracker`
+
+Cranks the vault update state tracker, needs to be run per operator
+
+**Usage:** `jito-restaking-cli vault vault crank-vault-update-state-tracker <VAULT> <OPERATOR> [NCN_EPOCH]`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<OPERATOR>` — Operator account
+* `<NCN_EPOCH>` — NCN epoch to crank
+
+
+
+## `jito-restaking-cli vault vault close-vault-update-state-tracker`
+
+Ends the vault update cycle
+
+**Usage:** `jito-restaking-cli vault vault close-vault-update-state-tracker <VAULT> [NCN_EPOCH]`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<NCN_EPOCH>` — Optional NCN epoch to close
+
+
+
+## `jito-restaking-cli vault vault mint-vrt`
+
+Mints VRT tokens
+
+**Usage:** `jito-restaking-cli vault vault mint-vrt <VAULT> <AMOUNT_IN> <MIN_AMOUNT_OUT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<AMOUNT_IN>` — Amount to deposit
+* `<MIN_AMOUNT_OUT>` — Minimum amount of VRT to mint
+
+
+
+## `jito-restaking-cli vault vault initialize-operator-delegation`
+
+Sets up the delegations for an operator
+
+**Usage:** `jito-restaking-cli vault vault initialize-operator-delegation <VAULT> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<OPERATOR>` — Operator account
+
+
+
+## `jito-restaking-cli vault vault delegate-to-operator`
+
+Delegates tokens to an operator
+
+**Usage:** `jito-restaking-cli vault vault delegate-to-operator <VAULT> <OPERATOR> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<OPERATOR>` — Operator account
+* `<AMOUNT>` — Amount to delegate
+
+
+
+## `jito-restaking-cli vault vault enqueue-withdrawal`
+
+Starts the withdrawal process
+
+**Usage:** `jito-restaking-cli vault vault enqueue-withdrawal <VAULT> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<AMOUNT>` — Amount to withdraw
+
+
+
+## `jito-restaking-cli vault vault burn-withdrawal-ticket`
+
+Burns the withdrawal ticket, ending the withdrawal process
+
+**Usage:** `jito-restaking-cli vault vault burn-withdrawal-ticket <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+
+
+
+## `jito-restaking-cli vault vault get-vault-update-state-tracker`
+
+Gets the update state tracker for a vault
+
+**Usage:** `jito-restaking-cli vault vault get-vault-update-state-tracker <VAULT> <NCN_EPOCH>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<NCN_EPOCH>` — NCN epoch
+
+
+
+## `jito-restaking-cli vault vault get-operator-delegation`
+
+Gets the
+
+**Usage:** `jito-restaking-cli vault vault get-operator-delegation <VAULT> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<OPERATOR>` — Operator account
+
+
+
+## `jito-restaking-cli vault vault get-withdrawal-ticket`
+
+**Usage:** `jito-restaking-cli vault vault get-withdrawal-ticket <VAULT> [STAKER]`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<STAKER>` — Staker account
 
 
 
