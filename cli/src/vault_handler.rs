@@ -140,6 +140,17 @@ impl VaultCliHandler {
                     },
             } => self.delegate_to_operator(vault, operator, amount).await,
             VaultCommands::Vault {
+                action:
+                    VaultActions::CooldownOperatorDelegation {
+                        vault,
+                        operator,
+                        amount,
+                    },
+            } => {
+                self.cooldown_operator_delegation(vault, operator, amount)
+                    .await
+            }
+            VaultCommands::Vault {
                 action: VaultActions::EnqueueWithdrawal { vault, amount },
             } => self.enqueue_withdrawal(vault, amount).await,
             VaultCommands::Vault {
@@ -711,10 +722,7 @@ impl VaultCliHandler {
             &[keypair],
             blockhash,
         );
-        info!(
-            "Initializing vault operator delegation transaction: {:?}",
-            tx.get_signature()
-        );
+        info!("Delegating to operator: {:?}", tx.get_signature());
         let result = rpc_client.send_and_confirm_transaction(&tx).await;
 
         if result.is_err() {
@@ -722,6 +730,59 @@ impl VaultCliHandler {
         }
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
+        info!("Delegated {} tokens to {}", amount, operator);
+
+        Ok(())
+    }
+
+    pub async fn cooldown_operator_delegation(
+        &self,
+        vault: String,
+        operator: String,
+        amount: u64,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let operator = Pubkey::from_str(&operator)?;
+
+        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+            &self.vault_program_id,
+            &vault,
+            &operator,
+        )
+        .0;
+
+        let mut ix_builder = CooldownDelegationBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .operator(operator)
+            .vault_operator_delegation(vault_operator_delegation)
+            .admin(keypair.pubkey())
+            .amount(amount);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Cooling down delegation: {:?}", tx.get_signature());
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+        info!("Cooldown {} tokens for {}", amount, operator);
 
         Ok(())
     }

@@ -26,6 +26,7 @@ This is a Jito Test Vault, which uses JitoSOL as its supported token.
 THIS IS FOR TESTING PURPOSES ONLY
 Example Vault: `jkHHVMhQefVuEiFKEyEZgcDZoXv8ZZyjUiK11e61oVY`
 Example VRT: `5rN9m6TkyPkzMGVpdmbRVYct1RKa7VssV1AwsHVPFaxJ`
+Example Operator: `EN7drMzCkZqpuyMVW1QBu8Ciw4Se76KNxNvFZYhDnyUH`
 
 ### Initialize Vault
 
@@ -112,58 +113,98 @@ jito-restaking-cli --rpc-url <RPC_URL> vault vault mint-vrt <VAULT> <AMOUNT_IN> 
 
 ### Initialize an Operator
 
-Note: This command will output the operator's public key. You will need to save this to use in other commands.
+Note: This command will output the operator's public key.
+
+- `<RPC_URL>`: RPC url
+- `<OPERATOR_FEE_BPS>`: On-chain operator fee used for external reward calculations
 
 ```bash
-jito-restaking-cli restaking operator initialize
+jito-restaking-cli --rpc-url <RPC_URL> restaking operator initialize <OPERATOR_FEE_BPS>
 ```
 
 ### Initialize Operator Vault Ticket
 
+This ticket is a the operator telling the vault that it's ready to receive delegation.
+
+- `<RPC_URL>`: RPC url
+- `<OPERATOR>`: Pubkey of the operator
+- `<VAULT>`: Pubkey of the vault
+
 ```bash
-jito-restaking-cli restaking operator initialize-operator-vault-ticket OPERATOR VAULT
+jito-restaking-cli --rpc-url <RPC_URL> restaking operator initialize-operator-vault-ticket <OPERATOR> <VAULT>
 ```
 
 ### Warmup Operator Vault Ticket
 
+To allow the operator to receive delegation.
+
+- `<RPC_URL>`: RPC url
+- `<OPERATOR>`: Pubkey of the operator
+- `<VAULT>`: Pubkey of the vault
+
 ```bash
-jito-restaking-cli restaking operator warmup-operator-vault-ticket OPERATOR VAULT
+jito-restaking-cli --rpc-url <RPC_URL> restaking operator warmup-operator-vault-ticket <OPERATOR> <VAULT>
 ```
 
 ### Initialize Vault Operator Delegation
 
-Note: Since this uses the vault program instead of the restaking program, it requires the vault's key before the operator's key.
+To complete the handshake, the vault has to allow delegation to the operator.
+
+Note: vault comes first since this is a vault program ix
+
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: Pubkey of the vault
+- `<OPERATOR>`: Pubkey of the operator
 
 ```bash
-jito-restaking-cli vault vault initialize-operator-delegation VAULT OPERATOR
+jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize-operator-delegation <VAULT> <OPERATOR>
 ```
 
 ### Delegate to Operator
 
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `<OPERATOR>`: Pubkey of the operator
+- `<AMOUNT>`: In st tokens with no decimals
+
 ```bash
-jito-restaking-cli vault vault delegate-to-operator VAULT OPERATOR AMOUNT
+jito-restaking-cli --rpc-url <RPC_URL> vault vault delegate-to-operator <VAULT> <OPERATOR> <AMOUNT>
+```
+
+### Cooldown Delegation
+
+Undelegating stake requires a cooldown of one epoch, so this IX starts the undelegation process. The funds will be undelegated during the update vault process.
+
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `<OPERATOR>`: Pubkey of the operator
+- `<AMOUNT>`: In st tokens with no decimals
+
+```bash
+jito-restaking-cli --rpc-url <RPC_URL> vault vault cooldown-operator-delegation <VAULT> <OPERATOR> <AMOUNT>
 ```
 
 ## Withdraw from Vault
 
 ### Enqueue withdrawal
 
-```bash
-jito-restaking-cli vault vault enqueue-withdrawal VAULT AMOUNT
-```
+Withdrawing the supported mint from the vault, involves a full epoch cooldown period and then burning the equivalent VRT. To finish the withdrawal, call `burn-withdrawal-ticket`.
 
-### (Informational Only) Crank Vault Update State Tracker
-
-Note: The update state tracker must exist, and since we closed it to mint the VRT, we don't need to crank it. It's just good to know that it exists.
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `<AMOUNT>`: To burn in VRT tokens with no decimals
 
 ```bash
-jito-restaking-cli vault vault crank-update-state-tracker VAULT OPERATOR
+jito-restaking-cli --rpc-url <RPC_URL> vault vault enqueue-withdrawal <VAULT> <AMOUNT>
 ```
 
 ### Burn Withdrawal Ticket
 
-Note: you must wait for the cooldown period ( 1 epoch) to pass before you can burn the withdrawal ticket.
+Burn the withdrawal ticket after the cooldown period to complete the withdrawal.
+
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
 
 ```bash
-jito-restaking-cli vault vault burn-withdrawal-ticket VAULT MIN_AMOUNT_OUT
+jito-restaking-cli --rpc-url <RPC_URL> vault vault burn-withdrawal-ticket <VAULT>
 ```

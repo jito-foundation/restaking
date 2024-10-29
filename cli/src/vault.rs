@@ -97,6 +97,15 @@ pub enum VaultActions {
         /// Amount to delegate
         amount: u64,
     },
+    /// Cooldown delegation for an operator
+    CooldownOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// Amount to cooldown
+        amount: u64,
+    },
     /// Starts the withdrawal process
     EnqueueWithdrawal {
         /// Vault account
