@@ -122,6 +122,8 @@ List all NCNs
 ###### **Subcommands:**
 
 * `initialize` — Initialize Operator
+* `initialize-operator-vault-ticket` — Initialize Operator Vault Ticket
+* `warmup-operator-vault-ticket` — Warmup Operator Vault Ticket
 * `get` — Get operator
 * `list` — List all operators
 
@@ -131,7 +133,37 @@ List all NCNs
 
 Initialize Operator
 
-**Usage:** `jito-restaking-cli restaking operator initialize`
+**Usage:** `jito-restaking-cli restaking operator initialize <OPERATOR_FEE_BPS>`
+
+###### **Arguments:**
+
+* `<OPERATOR_FEE_BPS>`
+
+
+
+## `jito-restaking-cli restaking operator initialize-operator-vault-ticket`
+
+Initialize Operator Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking operator initialize-operator-vault-ticket <OPERATOR> <VAULT>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<VAULT>`
+
+
+
+## `jito-restaking-cli restaking operator warmup-operator-vault-ticket`
+
+Warmup Operator Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking operator warmup-operator-vault-ticket <OPERATOR> <VAULT>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<VAULT>`
 
 
 
@@ -216,6 +248,7 @@ Vault commands
 * `mint-vrt` — Mints VRT tokens
 * `initialize-operator-delegation` — Sets up the delegations for an operator
 * `delegate-to-operator` — Delegates tokens to an operator
+* `cooldown-operator-delegation` — Cooldown delegation for an operator
 * `enqueue-withdrawal` — Starts the withdrawal process
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
@@ -274,13 +307,12 @@ Starts the vault update cycle
 
 Cranks the vault update state tracker, needs to be run per operator
 
-**Usage:** `jito-restaking-cli vault vault crank-vault-update-state-tracker <VAULT> <OPERATOR> [NCN_EPOCH]`
+**Usage:** `jito-restaking-cli vault vault crank-vault-update-state-tracker <VAULT> <OPERATOR>`
 
 ###### **Arguments:**
 
 * `<VAULT>` — Vault account
 * `<OPERATOR>` — Operator account
-* `<NCN_EPOCH>` — NCN epoch to crank
 
 
 
@@ -335,6 +367,20 @@ Delegates tokens to an operator
 * `<VAULT>` — Vault account
 * `<OPERATOR>` — Operator account
 * `<AMOUNT>` — Amount to delegate
+
+
+
+## `jito-restaking-cli vault vault cooldown-operator-delegation`
+
+Cooldown delegation for an operator
+
+**Usage:** `jito-restaking-cli vault vault cooldown-operator-delegation <VAULT> <OPERATOR> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<OPERATOR>` — Operator account
+* `<AMOUNT>` — Amount to cooldown
 
 
 
