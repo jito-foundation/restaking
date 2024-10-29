@@ -2441,29 +2441,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jito-restaking-cranker"
-version = "0.0.2"
-dependencies = [
- "anyhow",
- "clap 4.5.16",
- "env_logger 0.10.2",
- "jito-account-traits-derive",
- "jito-bytemuck",
- "jito-restaking-client",
- "jito-restaking-core",
- "jito-vault-client",
- "jito-vault-core",
- "jito-vault-sdk",
- "log",
- "solana-account-decoder",
- "solana-rpc-client",
- "solana-rpc-client-api",
- "solana-sdk",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "jito-restaking-integration-tests"
 version = "0.0.2"
 dependencies = [
@@ -2572,6 +2549,29 @@ dependencies = [
  "spl-token",
  "spl-token-2022 3.0.4",
  "thiserror",
+]
+
+[[package]]
+name = "jito-vault-cranker"
+version = "0.0.2"
+dependencies = [
+ "anyhow",
+ "clap 4.5.16",
+ "env_logger 0.10.2",
+ "jito-account-traits-derive",
+ "jito-bytemuck",
+ "jito-restaking-client",
+ "jito-restaking-core",
+ "jito-vault-client",
+ "jito-vault-core",
+ "jito-vault-sdk",
+ "log",
+ "solana-account-decoder",
+ "solana-rpc-client",
+ "solana-rpc-client-api",
+ "solana-sdk",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

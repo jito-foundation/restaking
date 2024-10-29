@@ -3,11 +3,8 @@ use std::{collections::HashMap, path::PathBuf, time::Duration};
 use anyhow::Context;
 use clap::Parser;
 use jito_bytemuck::AccountDeserialize;
-use jito_restaking_cranker::{
-    restaking_handler::RestakingHandler, vault_handler::VaultHandler,
-    vault_update_state_tracker_handler::VaultUpdateStateTrackerHandler,
-};
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
+use jito_vault_cranker::{restaking_handler::RestakingHandler, vault_handler::VaultHandler};
 use log::info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
@@ -23,11 +20,11 @@ struct Args {
     keypair: PathBuf,
 
     /// Vault program ID (Pubkey as base58 string)
-    #[arg(long, default_value = "34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx")]
+    #[arg(long, default_value = "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8")]
     vault_program_id: Pubkey,
 
     /// Restaking program ID (Pubkey as base58 string)
-    #[arg(long, default_value = "78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng")]
+    #[arg(long, default_value = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q")]
     restaking_program_id: Pubkey,
 }
 
@@ -52,14 +49,12 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let restaking_handler = RestakingHandler::new(&args.rpc_url);
     let vault_handler =
         VaultHandler::new(&args.rpc_url, &payer, args.vault_program_id, config_address);
-    let vault_update_state_tracker_handler =
-        VaultUpdateStateTrackerHandler::new(&args.rpc_url, args.vault_program_id);
 
     loop {
         let slot = rpc_client.get_slot().await.context("get slot")?;
         let epoch = slot.checked_div(config.epoch_length()).unwrap();
 
-        log::info!("Slot: {slot}, Current Epoch: {epoch}");
+        info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
 
         let vaults = vault_handler.get_vaults().await?;
         let delegations = vault_handler.get_vault_operator_delegation().await?;
@@ -68,27 +63,15 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             .into_iter()
             .filter(|(_pubkey, vault)| {
                 vault
-                    .last_full_state_update_slot()
-                    .checked_div(config.epoch_length())
-                    .unwrap()
-                    != epoch
+                    .is_update_needed(slot, config.epoch_length())
+                    .expect("Config epoch length is 0")
             })
             .collect();
 
-        let delegations_need_update: Vec<(Pubkey, VaultOperatorDelegation)> = delegations
-            .into_iter()
-            .filter(|(_pubkey, delegation)| {
-                delegation
-                    .last_update_slot()
-                    .checked_div(config.epoch_length())
-                    .unwrap()
-                    != epoch
-            })
-            .collect();
-
+        // All delegations are passed along. Delegation filtering logic is handled in `VaultHandler::crank`
         let mut grouped_delegations: HashMap<Pubkey, Vec<(Pubkey, VaultOperatorDelegation)>> =
             HashMap::new();
-        for (pubkey, delegation) in delegations_need_update {
+        for (pubkey, delegation) in delegations {
             if vaults_need_update
                 .iter()
                 .any(|(vault_pubkey, _)| *vault_pubkey == delegation.vault)
@@ -100,34 +83,24 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             }
         }
 
-        for grouped_delegation in grouped_delegations {
-            let operator_pubkeys: Vec<Pubkey> = grouped_delegation
-                .1
+        for (vault, mut delegations) in grouped_delegations {
+            // Sort by VaultOperatorDelegation index for correct cranking order
+            delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
+            let operator_pubkeys: Vec<Pubkey> = delegations
                 .iter()
                 .map(|(_pubkey, delegation)| delegation.operator)
                 .collect();
             let operators = restaking_handler.get_operators(&operator_pubkeys).await?;
 
-            match vault_update_state_tracker_handler
-                .get_update_state_tracker(&grouped_delegation.0, epoch)
+            if let Err(e) = vault_handler
+                .do_vault_update(epoch, &vault, &operators)
                 .await
             {
-                Ok(_) => {
-                    if let Err(e) = vault_handler
-                        .crank(epoch, &grouped_delegation.0, &operators)
-                        .await
-                    {
-                        log::error!("{e}");
-                    }
-                }
-                Err(e) => {
-                    log::error!("{e}");
-                }
+                log::error!("{e}");
             }
         }
 
         // ---------- SLEEP (1 hour)----------
-        info!("Sleep 1 hour");
         tokio::time::sleep(Duration::from_secs(60 * 60)).await;
     }
 }

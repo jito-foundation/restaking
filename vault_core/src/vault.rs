@@ -607,7 +607,7 @@ impl Vault {
     // ------------------------------------------
 
     #[inline(always)]
-    fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
+    pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
         let last_updated_epoch = self
             .last_full_state_update_slot()
             .checked_div(epoch_length)

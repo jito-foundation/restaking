@@ -1,5 +1,9 @@
+use anyhow::Context;
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_vault_client::instructions::CrankVaultUpdateStateTrackerBuilder;
+use jito_vault_client::instructions::{
+    CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
+    InitializeVaultUpdateStateTrackerBuilder,
+};
 use jito_vault_core::{
     vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
@@ -126,6 +130,93 @@ impl<'a> VaultHandler<'a> {
         Ok(delegations)
     }
 
+    /// Retrieves the `VaultUpdateStateTracker` for a specific vault and epoch.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `anyhow::Result<VaultUpdateStateTracker>` containing the deserialized state tracker
+    /// for the given vault and epoch. If successful, the state tracker is returned; otherwise,
+    /// an error is returned with contextual information.
+    pub async fn get_update_state_tracker(
+        &self,
+        vault: &Pubkey,
+        ncn_epoch: u64,
+    ) -> anyhow::Result<VaultUpdateStateTracker> {
+        let rpc_client = self.get_rpc_client();
+
+        let pubkey =
+            VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, ncn_epoch)
+                .0;
+
+        match rpc_client.get_account(&pubkey).await {
+            Ok(account) => match VaultUpdateStateTracker::try_from_slice_unchecked(&account.data) {
+                Ok(tracker) => Ok(*tracker),
+                Err(e) => {
+                    let context = format!("Failed deserializing VaultUpdateStateTracker: {pubkey}");
+                    Err(anyhow::Error::new(e).context(context))
+                }
+            },
+            Err(e) => {
+                let context =
+                    format!("Error: Failed to get VaultUpdateStateTracker account: {pubkey}");
+                Err(anyhow::Error::new(e).context(context))
+            }
+        }
+    }
+
+    /// Performs a complete vault update cycle: initializes tracker, cranks it, and closes it.
+    ///
+    /// # Returns
+    ///
+    /// Returns `anyhow::Result<()>` indicating success or failure of the update operation.
+    pub async fn do_vault_update(
+        &self,
+        epoch: u64,
+        vault: &Pubkey,
+        operators: &[Pubkey],
+    ) -> anyhow::Result<()> {
+        let tracker_pubkey =
+            VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch).0;
+
+        self.initialize_vault_update_state_tracker(vault, tracker_pubkey)
+            .await?;
+        self.crank(epoch, vault, operators, tracker_pubkey).await?;
+        self.close_vault_update_state_tracker(vault, tracker_pubkey)
+            .await?;
+        Ok(())
+    }
+
+    /// Initializes a vault update state tracker for a given epoch and vault.
+    ///
+    /// # Returns
+    ///
+    /// Returns `anyhow::Result<()>` indicating success or failure of initialization.
+    pub async fn initialize_vault_update_state_tracker(
+        &self,
+        vault: &Pubkey,
+        tracker_pubkey: Pubkey,
+    ) -> anyhow::Result<()> {
+        let rpc_client = self.get_rpc_client();
+
+        let mut init_ix_builder = InitializeVaultUpdateStateTrackerBuilder::new();
+        init_ix_builder
+            .config(self.config_address)
+            .vault(*vault)
+            .vault_update_state_tracker(tracker_pubkey);
+        let mut init_ix = init_ix_builder.instruction();
+        init_ix.program_id = self.vault_program_id;
+
+        let init_tx = Transaction::new_signed_with_payer(
+            &[init_ix],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
+            rpc_client.get_latest_blockhash().await?,
+        );
+
+        rpc_client.send_and_confirm_transaction(&init_tx).await?;
+        Ok(())
+    }
+
     /// Cranks the [`VaultUpdateStateTracker`] for a specific epoch and list of operators.
     ///
     /// # Returns
@@ -137,20 +228,37 @@ impl<'a> VaultHandler<'a> {
         epoch: u64,
         vault: &Pubkey,
         operators: &[Pubkey],
+        tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
         let rpc_client = self.get_rpc_client();
 
-        for operator in operators {
+        let tracker = self.get_update_state_tracker(vault, epoch).await?;
+
+        let end_index = (epoch as usize)
+            .checked_rem(operators.len())
+            .context("No operators to crank")?;
+
+        // Skip updated operators if cranking has already started
+        let start_index = if tracker.last_updated_index() == u64::MAX {
+            end_index
+        } else {
+            tracker.last_updated_index() as usize
+        };
+
+        // Crank through operators from start index to operators.len() and then 0 to end_index
+        let operators_iter = operators
+            .iter()
+            .skip(start_index)
+            .chain(operators.iter().take(end_index));
+
+        // Need to send each transaction in serial since strict sequence is required
+        for operator in operators_iter {
             let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
                 &self.vault_program_id,
                 vault,
                 operator,
             )
             .0;
-
-            let tracker_pubkey =
-                VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch)
-                    .0;
 
             log::info!(
                 "Crank Vault Operator Delegation: {}, Vault Update State Tracker: {}",
@@ -193,6 +301,37 @@ impl<'a> VaultHandler<'a> {
             }
         }
 
+        Ok(())
+    }
+
+    /// Closes a vault update state tracker for a given epoch and vault.
+    ///
+    /// # Returns
+    ///
+    /// Returns `anyhow::Result<()>` indicating success or failure of closing.
+    pub async fn close_vault_update_state_tracker(
+        &self,
+        vault: &Pubkey,
+        tracker_pubkey: Pubkey,
+    ) -> anyhow::Result<()> {
+        let rpc_client = self.get_rpc_client();
+
+        let mut close_ix_builder = CloseVaultUpdateStateTrackerBuilder::new();
+        close_ix_builder
+            .config(self.config_address)
+            .vault(*vault)
+            .vault_update_state_tracker(tracker_pubkey);
+        let mut close_ix = close_ix_builder.instruction();
+        close_ix.program_id = self.vault_program_id;
+
+        let close_tx = Transaction::new_signed_with_payer(
+            &[close_ix],
+            Some(&self.payer.pubkey()),
+            &[&self.payer],
+            rpc_client.get_latest_blockhash().await?,
+        );
+
+        rpc_client.send_and_confirm_transaction(&close_tx).await?;
         Ok(())
     }
 }
