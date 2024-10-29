@@ -309,6 +309,10 @@ impl<'a> VaultHandler<'a> {
     ) -> anyhow::Result<()> {
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
 
+        if tracker.all_operators_updated(operators.len() as u64)? {
+            return Ok(());
+        }
+
         let end_index = (epoch as usize)
             .checked_rem(operators.len())
             .context("No operators to crank")?;
@@ -320,11 +324,23 @@ impl<'a> VaultHandler<'a> {
             tracker.last_updated_index() as usize
         };
 
-        // Crank through operators from start index to operators.len() and then 0 to end_index
-        let operators_iter = operators
-            .iter()
-            .skip(start_index)
-            .chain(operators.iter().take(end_index));
+        let operators_iter = if start_index < end_index {
+            // Crank from start index to end index
+            operators
+                .iter()
+                .take(end_index)
+                .skip(start_index)
+                .collect::<Vec<_>>()
+                .into_iter()
+        } else {
+            // Crank through operators from start index to operators.len() and then 0 to end_index
+            operators
+                .iter()
+                .skip(start_index)
+                .chain(operators.iter().take(end_index))
+                .collect::<Vec<_>>()
+                .into_iter()
+        };
 
         // Need to send each transaction in serial since strict sequence is required
         for operator in operators_iter {
