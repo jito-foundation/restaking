@@ -12,10 +12,12 @@ customize staking parameters, slashing conditions, and economic incentives to ta
 
 | Network | Program   | Address                                      | Version |
 |---------|-----------|----------------------------------------------|---------|
-| Testnet | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
-| Testnet | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
-| Devnet  | Restaking | 78J8YzXGGNynLRpn85MH77PVLBZsWyLCHZAXRvKaB6Ng | 0.0.1   |
-| Devnet  | Vault     | 34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx | 0.0.1   |
+| Mainnet | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q  | 0.0.2   |
+| Mainnet | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8  | 0.0.2   |
+| Testnet | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q  | 0.0.2   |
+| Testnet | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8  | 0.0.2   |
+| Devnet  | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q  | 0.0.2   |
+| Devnet  | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8  | 0.0.2   |
 
 ## API Documentation
 
