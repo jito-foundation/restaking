@@ -64,8 +64,6 @@ pub enum VaultActions {
         vault: String,
         /// Operator account
         operator: String,
-        /// NCN epoch to crank
-        ncn_epoch: Option<u64>,
     },
     /// Ends the vault update cycle
     CloseVaultUpdateStateTracker {

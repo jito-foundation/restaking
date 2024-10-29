@@ -109,16 +109,8 @@ impl VaultCliHandler {
                 action: VaultActions::InitializeVaultUpdateStateTracker { vault },
             } => self.initialize_vault_update_state_tracker(vault).await,
             VaultCommands::Vault {
-                action:
-                    VaultActions::CrankVaultUpdateStateTracker {
-                        vault,
-                        operator,
-                        ncn_epoch,
-                    },
-            } => {
-                self.crank_vault_update_state_tracker(vault, operator, ncn_epoch)
-                    .await
-            }
+                action: VaultActions::CrankVaultUpdateStateTracker { vault, operator },
+            } => self.crank_vault_update_state_tracker(vault, operator).await,
             VaultCommands::Vault {
                 action: VaultActions::CloseVaultUpdateStateTracker { vault, ncn_epoch },
             } => {
@@ -396,8 +388,9 @@ impl VaultCliHandler {
         &self,
         vault: String,
         operator: String,
-        ncn_epoch: Option<u64>,
     ) -> Result<()> {
+        //TODO V2: Make it so the operator needed is automatically fetched from the vault
+
         let keypair = self
             .cli_config
             .keypair
@@ -417,16 +410,13 @@ impl VaultCliHandler {
         )
         .0;
 
-        let ncn_epoch = match ncn_epoch {
-            Some(ncn_epoch) => ncn_epoch,
-            None => {
-                let config_account_raw = rpc_client.get_account(&config).await?;
-                let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
+        let ncn_epoch = {
+            let config_account_raw = rpc_client.get_account(&config).await?;
+            let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
 
-                let current_slot = rpc_client.get_slot().await?;
-                let epoch_length = config_account.epoch_length();
-                current_slot.checked_div(epoch_length).unwrap()
-            }
+            let current_slot = rpc_client.get_slot().await?;
+            let epoch_length = config_account.epoch_length();
+            current_slot.checked_div(epoch_length).unwrap()
         };
 
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(

@@ -21,6 +21,12 @@ jito-restaking-cli --help
 
 ## Create a Vault
 
+This is a Jito Test Vault, which uses JitoSOL as its supported token.
+
+THIS IS FOR TESTING PURPOSES ONLY
+Example Vault: `jkHHVMhQefVuEiFKEyEZgcDZoXv8ZZyjUiK11e61oVY`
+Example VRT: `5rN9m6TkyPkzMGVpdmbRVYct1RKa7VssV1AwsHVPFaxJ`
+
 ### Initialize Vault
 
 Creating a vault requires:
@@ -58,25 +64,48 @@ It is the vault's responsibility to update it once per epoch. If a vault is not 
 
 ### Initialize Vault Update State Tracker
 
+Starts the update process, this should be the first IX called at the start of an epoch.
+
 - `<RPC_URL>`: RPC url
 - `<VAULT>`: The vault Pubkey
 
 ```bash
-jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize-update-state-tracker <VAULT>
+jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize-vault-update-state-tracker <VAULT>
 ```
 
 ### Crank Vault Update State Tracker
 
-### Close Vault Update State Tracker
+Needs to be called for each operator. If there are no operators, this IX can be skipped. Operators need to be called in order.
+
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `<OPERATOR>`: The operator that is being updated
 
 ```bash
-jito-restaking-cli vault vault close-update-state-tracker VAULT
+jito-restaking-cli --rpc-url <RPC_URL> vault vault crank-vault-update-state-tracker <VAULT> <OPERATOR>
 ```
+
+### Close Vault Update State Tracker
+
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `[NCN_EPOCH]`: Optional NCN Epoch, for closing older, still-open, vault update state trackers
+
+```bash
+jito-restaking-cli --rpc-url <RPC_URL> vault vault close-vault-update-state-tracker <VAULT> <OPERATOR> [NCN_EPOCH]
+```
+
+## Vault Functions
 
 ### Mint VRT
 
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `<AMOUNT_IN>`: In st tokens with no decimals ( lamports instead of SOL )
+- `<MIN_AMOUNT_OUT>`: In vrt tokens with no decimals
+
 ```bash
-jito-restaking-cli vault vault mint-vrt VAULT AMOUNT_IN MIN_AMOUNT_OUT
+jito-restaking-cli --rpc-url <RPC_URL> vault vault mint-vrt <VAULT> <AMOUNT_IN> <MIN_AMOUNT_OUT>
 ```
 
 ## Create and Delegate to Operator
@@ -137,30 +166,4 @@ Note: you must wait for the cooldown period ( 1 epoch) to pass before you can bu
 
 ```bash
 jito-restaking-cli vault vault burn-withdrawal-ticket VAULT MIN_AMOUNT_OUT
-```
-
-## Printing Accounts
-
-### Get Vault
-
-```bash
-jito-restaking-cli vault vault get VAULT
-```
-
-### Get State Tracker
-
-```bash
-jito-restaking-cli vault vault get-state-tracker VAULT NCN_EPOCH
-```
-
-### Get Operator Delegation
-
-```bash
-jito-restaking-cli vault vault get-operator-delegation VAULT OPERATOR
-```
-
-### Get Withdrawal Ticket
-
-```bash
-jito-restaking-cli vault vault get-withdrawal-ticket VAULT
 ```
