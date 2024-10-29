@@ -6,9 +6,10 @@ use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_client::{
     instructions::{
         AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
-        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder, EnqueueWithdrawalBuilder,
-        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultOperatorDelegationBuilder,
-        InitializeVaultUpdateStateTrackerBuilder, MintToBuilder, SetDepositCapacityBuilder,
+        CooldownDelegationBuilder, CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
+        EnqueueWithdrawalBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
+        InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
+        MintToBuilder, SetDepositCapacityBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
