@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf, time::Duration};
 
-use anyhow::Context;
-use clap::Parser;
+use anyhow::{anyhow, Context};
+use clap::{arg, Parser};
 use jito_bytemuck::AccountDeserialize;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
 use jito_vault_cranker::{restaking_handler::RestakingHandler, vault_handler::VaultHandler};
@@ -12,27 +12,35 @@ use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 #[derive(Parser)]
 struct Args {
     /// RPC URL for the cluster
-    #[arg(short, long, default_value = "https://api.devnet.solana.com")]
+    #[arg(short, long, env, default_value = "https://api.devnet.solana.com")]
     rpc_url: String,
 
     /// Path to keypair used to pay
-    #[arg(short, long)]
+    #[arg(short, long, env = "KEYPAIR_PATH")]
     keypair: PathBuf,
 
     /// Vault program ID (Pubkey as base58 string)
-    #[arg(long, default_value = "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8")]
+    #[arg(
+        long,
+        env,
+        default_value = "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8"
+    )]
     vault_program_id: Pubkey,
 
     /// Restaking program ID (Pubkey as base58 string)
-    #[arg(long, default_value = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q")]
+    #[arg(
+        long,
+        env,
+        default_value = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q"
+    )]
     restaking_program_id: Pubkey,
 
     /// Interval in seconds between cranking attempts (default: 5 minutes)
-    #[arg(long, default_value = "300")]
+    #[arg(long, env, default_value = "300")]
     crank_interval: u64,
 
     /// Priority fees (in microlamports per compute unit)
-    #[arg(long, default_value = "10000")]
+    #[arg(long, env, default_value = "10000")]
     priority_fees: u64,
 }
 
@@ -42,7 +50,8 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     let args = Args::parse();
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
-    let payer = read_keypair_file(args.keypair).expect("read keypair file");
+    let payer = read_keypair_file(&args.keypair)
+        .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
 
     let config_address =
         jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
@@ -50,9 +59,9 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let account = rpc_client
         .get_account(&config_address)
         .await
-        .expect("Failed to read Jito vault config address");
+        .context("Failed to read Jito vault config address")?;
     let config = jito_vault_core::config::Config::try_from_slice_unchecked(&account.data)
-        .expect("Failed to deserialize Jito vault config");
+        .context("Failed to deserialize Jito vault config")?;
 
     let restaking_handler = RestakingHandler::new(&args.rpc_url);
     let vault_handler = VaultHandler::new(
@@ -103,7 +112,12 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                 .iter()
                 .map(|(_pubkey, delegation)| delegation.operator)
                 .collect();
-            let operators = restaking_handler.get_operators(&operator_pubkeys).await?;
+            let operators: Vec<Pubkey> = restaking_handler
+                .get_operators(&operator_pubkeys)
+                .await?
+                .into_iter()
+                .map(|(pubkey, _)| pubkey)
+                .collect();
 
             match vault_handler
                 .do_vault_update(epoch, &vault, &operators)
