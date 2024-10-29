@@ -45,7 +45,10 @@ impl RestakingHandler {
     ///
     /// Returns an error if the Solana RPC client fails to retrieve the accounts or if deserialization
     /// of the account data into the `Operator` struct fails.
-    pub async fn get_operators(&self, operator_pubkeys: &[Pubkey]) -> anyhow::Result<Vec<(Pubkey, Operator)>> {
+    pub async fn get_operators(
+        &self,
+        operator_pubkeys: &[Pubkey],
+    ) -> anyhow::Result<Vec<(Pubkey, Operator)>> {
         let rpc_client = self.get_rpc_client();
 
         let accounts =
