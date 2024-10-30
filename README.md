@@ -36,6 +36,10 @@ cargo-build-sbf
 
 ## Usage
 
+### Quickstart
+
+To create a vault, mint vrt, and delegate to an operator, follow this [guide](cli/getting_started.md).
+
 ### Building the software
 
 ```bash

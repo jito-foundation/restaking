@@ -34,7 +34,7 @@ pub enum ConfigActions {
 /// Vault commands
 #[derive(Subcommand)]
 pub enum VaultActions {
-    /// Initializes the vault
+    /// Creates a new vault
     Initialize {
         /// The token which is allowed to be deposited into the vault
         token_mint: String,
@@ -57,6 +57,91 @@ pub enum VaultActions {
         symbol: String,
         /// The URI for the token metadata
         uri: String,
+    },
+    /// Starts the vault update cycle
+    InitializeVaultUpdateStateTracker {
+        /// Vault account
+        vault: String,
+    },
+    /// Cranks the vault update state tracker, needs to be run per operator
+    CrankVaultUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    /// Ends the vault update cycle
+    CloseVaultUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// Optional NCN epoch to close
+        ncn_epoch: Option<u64>,
+    },
+    /// Mints VRT tokens
+    MintVRT {
+        /// Vault account
+        vault: String,
+        /// Amount to deposit
+        amount_in: u64,
+        /// Minimum amount of VRT to mint
+        min_amount_out: u64,
+    },
+    /// Sets up the delegations for an operator
+    InitializeOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    /// Delegates tokens to an operator
+    DelegateToOperator {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// Amount to delegate
+        amount: u64,
+    },
+    /// Cooldown delegation for an operator
+    CooldownOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+        /// Amount to cooldown
+        amount: u64,
+    },
+    /// Starts the withdrawal process
+    EnqueueWithdrawal {
+        /// Vault account
+        vault: String,
+        /// Amount to withdraw
+        amount: u64,
+    },
+    /// Burns the withdrawal ticket, ending the withdrawal process
+    BurnWithdrawalTicket {
+        /// Vault account
+        vault: String,
+    },
+    /// Gets the update state tracker for a vault
+    GetVaultUpdateStateTracker {
+        /// Vault account
+        vault: String,
+        /// NCN epoch
+        ncn_epoch: u64,
+    },
+    /// Gets the operator delegation for a vault
+    GetOperatorDelegation {
+        /// Vault account
+        vault: String,
+        /// Operator account
+        operator: String,
+    },
+    GetWithdrawalTicket {
+        /// Vault account
+        vault: String,
+        /// Staker account
+        staker: Option<String>,
     },
     /// Gets a vault
     Get {

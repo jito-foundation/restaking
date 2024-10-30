@@ -46,7 +46,11 @@ pub enum NcnActions {
 #[derive(Subcommand)]
 pub enum OperatorActions {
     /// Initialize Operator
-    Initialize,
+    Initialize { operator_fee_bps: u16 },
+    /// Initialize Operator Vault Ticket
+    InitializeOperatorVaultTicket { operator: String, vault: String },
+    /// Warmup Operator Vault Ticket
+    WarmupOperatorVaultTicket { operator: String, vault: String },
     /// Get operator
     Get { pubkey: String },
     /// List all operators
