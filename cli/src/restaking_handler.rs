@@ -4,7 +4,7 @@ use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_client::instructions::{
     InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
-    InitializeOperatorVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+    InitializeOperatorVaultTicketBuilder, SetConfigAdminBuilder, WarmupOperatorVaultTicketBuilder,
 };
 use jito_restaking_core::{
     config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
@@ -58,6 +58,9 @@ impl RestakingCliHandler {
             RestakingCommands::Config {
                 action: ConfigActions::Get,
             } => self.get_config().await,
+            RestakingCommands::Config {
+                action: ConfigActions::SetAdmin { new_admin },
+            } => self.set_config_admin(new_admin).await,
             RestakingCommands::Ncn {
                 action: NcnActions::Initialize,
             } => self.initialize_ncn().await,
@@ -400,6 +403,41 @@ impl RestakingCliHandler {
             let operator = Operator::try_from_slice_unchecked(&operator.data)?;
             info!("Operator at address {}: {:?}", operator_pubkey, operator);
         }
+        Ok(())
+    }
+
+    async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.restaking_program_id).0;
+        let mut ix_builder = SetConfigAdminBuilder::new();
+        ix_builder
+            .config(config_address)
+            .old_admin(keypair.pubkey())
+            .new_admin(new_admin);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Setting restaking config admin parameters: {:?}",
+            ix_builder
+        );
+        info!(
+            "Setting restaking config admin transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
         Ok(())
     }
 }

@@ -24,6 +24,11 @@ pub enum ConfigActions {
     },
     /// Fetches global config
     Get,
+    /// Set the config admin
+    SetAdmin {
+        /// The new admin's pubkey
+        new_admin: Pubkey,
+    },
 }
 
 /// Vault commands
