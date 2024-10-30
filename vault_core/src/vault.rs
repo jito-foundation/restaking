@@ -145,10 +145,14 @@ pub struct Vault {
     /// The bump seed for the PDA
     pub bump: u8,
 
+    /// Whether the vault is paused
     is_paused: PodBool,
 
+    /// last
+    last_start_state_update_slot: PodU64,
+
     /// Reserved space
-    reserved: [u8; 259],
+    reserved: [u8; 251],
 }
 
 impl Vault {
@@ -206,6 +210,7 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(current_slot),
             last_full_state_update_slot: PodU64::from(current_slot),
+            last_start_state_update_slot: PodU64::from(current_slot),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             next_withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
@@ -218,7 +223,7 @@ impl Vault {
             delegation_state: DelegationState::default(),
             additional_assets_need_unstaking: PodU64::from(0),
             is_paused: PodBool::from_bool(false),
-            reserved: [0; 259],
+            reserved: [0; 251],
         })
     }
 
@@ -244,6 +249,10 @@ impl Vault {
 
     pub fn last_full_state_update_slot(&self) -> u64 {
         self.last_full_state_update_slot.into()
+    }
+
+    pub fn last_start_state_update_slot(&self) -> u64 {
+        self.last_start_state_update_slot.into()
     }
 
     pub fn vrt_supply(&self) -> u64 {
@@ -369,6 +378,10 @@ impl Vault {
 
     pub fn set_last_full_state_update_slot(&mut self, slot: u64) {
         self.last_full_state_update_slot = PodU64::from(slot);
+    }
+
+    pub fn set_last_start_state_update_slot(&mut self, slot: u64) {
+        self.last_start_state_update_slot = PodU64::from(slot);
     }
 
     pub fn decrement_vrt_ready_to_claim_amount(&mut self, amount: u64) -> Result<(), VaultError> {
@@ -1325,8 +1338,9 @@ mod tests {
             std::mem::size_of::<PodU16>() + // reward_fee_bps
             std::mem::size_of::<PodU16>() + // program_fee_bps
             std::mem::size_of::<PodBool>() + // is_paused
+            std::mem::size_of::<PodU64>() + // last_start_state_update_slot
             1 + // bump
-            261; // reserved
+            253; // reserved
 
         assert_eq!(vault_size, sum_of_fields);
     }
