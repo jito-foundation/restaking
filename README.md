@@ -70,6 +70,12 @@ cargo nextest run
 cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run --all-features
 ```
 
+## Releasing
+
+```bash
+./release
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+set -euo pipefail
+
+cargo set-version --bump patch
+
+# get the version
+# xargs strips quotations
+VERSION=$(cargo metadata --format-version=1 --no-deps | jq '.packages[0].version' | xargs)
+echo "Bumped workspace version to $VERSION"
+
+# Ensure auto-generated code gets new version
+echo "Autogenerating new code"
+cargo b && \
+  ./target/debug/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md && \
+  ./target/debug/jito-shank-cli && \
+  yarn generate-clients && \
+  cargo b
+git add Cargo.lock Cargo.toml idl
+git commit -m "Bump version to $VERSION"
+git tag -a "v$VERSION" -m "v$VERSION"
+git push origin master
+git push origin tags/v"$VERSION"
