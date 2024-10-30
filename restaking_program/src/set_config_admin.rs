@@ -16,7 +16,6 @@ pub fn process_set_config_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -
     let mut config_data = config.data.borrow_mut();
     let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
     load_signer(old_admin, false)?;
-    load_signer(new_admin, false)?;
 
     if config.admin != *old_admin.key {
         return Err(RestakingError::ConfigAdminInvalid.into());
