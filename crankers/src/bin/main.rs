@@ -13,22 +13,17 @@ use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 #[derive(Parser)]
 struct Args {
     /// RPC URL for the cluster
-    #[arg(
-        short,
-        long,
-        env = "RPC_URL",
-        default_value = "https://api.devnet.solana.com"
-    )]
+    #[arg(short, long, env, default_value = "https://api.devnet.solana.com")]
     rpc_url: String,
 
     /// Path to keypair used to pay
-    #[arg(short, long, env = "KEYPAIR_PATH")]
+    #[arg(short, long, env)]
     keypair_path: PathBuf,
 
     /// Vault program ID (Pubkey as base58 string)
     #[arg(
         long,
-        env = "VAULT_PROGRAM_ID",
+        env,
         default_value = "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8"
     )]
     vault_program_id: Pubkey,
@@ -36,21 +31,21 @@ struct Args {
     /// Restaking program ID (Pubkey as base58 string)
     #[arg(
         long,
-        env = "RESTAKING_PROGRAM_ID",
+        env,
         default_value = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q"
     )]
     restaking_program_id: Pubkey,
 
     /// Interval in seconds between cranking attempts (default: 5 minutes)
-    #[arg(long, env = "CRANK_INTERVAL", default_value = "300")]
+    #[arg(long, env, default_value = "300")]
     crank_interval: u64,
 
     /// Interval in seconds between metrics emission (default: 5 minutes)
-    #[arg(long, env = "METRICS_INTERVAL", default_value = "300")]
+    #[arg(long, env, default_value = "300")]
     metrics_interval: u64,
 
     /// Priority fees (in microlamports per compute unit)
-    #[arg(long, env = "PRIORITY_FEES", default_value = "10000")]
+    #[arg(long, env, default_value = "10000")]
     priority_fees: u64,
 }
 
