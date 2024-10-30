@@ -1,7 +1,8 @@
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
 
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser};
+use dotenv::dotenv;
 use jito_bytemuck::AccountDeserialize;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
 use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
@@ -12,17 +13,22 @@ use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 #[derive(Parser)]
 struct Args {
     /// RPC URL for the cluster
-    #[arg(short, long, env, default_value = "https://api.devnet.solana.com")]
+    #[arg(
+        short,
+        long,
+        env = "RPC_URL",
+        default_value = "https://api.devnet.solana.com"
+    )]
     rpc_url: String,
 
     /// Path to keypair used to pay
-    #[arg(short, long, env)]
+    #[arg(short, long, env = "KEYPAIR_PATH")]
     keypair_path: PathBuf,
 
     /// Vault program ID (Pubkey as base58 string)
     #[arg(
         long,
-        env,
+        env = "VAULT_PROGRAM_ID",
         default_value = "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8"
     )]
     vault_program_id: Pubkey,
@@ -30,29 +36,59 @@ struct Args {
     /// Restaking program ID (Pubkey as base58 string)
     #[arg(
         long,
-        env,
+        env = "RESTAKING_PROGRAM_ID",
         default_value = "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q"
     )]
     restaking_program_id: Pubkey,
 
     /// Interval in seconds between cranking attempts (default: 5 minutes)
-    #[arg(long, env, default_value = "300")]
+    #[arg(long, env = "CRANK_INTERVAL", default_value = "300")]
     crank_interval: u64,
 
     /// Interval in seconds between metrics emission (default: 5 minutes)
-    #[arg(long, env, default_value = "300")]
+    #[arg(long, env = "METRICS_INTERVAL", default_value = "300")]
     metrics_interval: u64,
 
     /// Priority fees (in microlamports per compute unit)
-    #[arg(long, env, default_value = "10000")]
+    #[arg(long, env = "PRIORITY_FEES", default_value = "10000")]
     priority_fees: u64,
+}
+
+impl fmt::Display for Args {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Jito Vault Cranker Configuration:\n\
+            -------------------------------\n\
+            RPC URL: {}\n\
+            Keypair Path: {:?}\n\
+            Vault Program ID: {}\n\
+            Restaking Program ID: {}\n\
+            Crank Interval: {} seconds\n\
+            Metrics Interval: {} seconds\n\
+            Priority Fees: {} microlamports\n\
+            -------------------------------",
+            self.rpc_url,
+            self.keypair_path,
+            self.vault_program_id,
+            self.restaking_program_id,
+            self.crank_interval,
+            self.metrics_interval,
+            self.priority_fees,
+        )
+    }
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
+    dotenv().ok();
+
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let args = Args::parse();
+
+    info!("{}", args);
+
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
     let payer = read_keypair_file(&args.keypair_path)
         .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
