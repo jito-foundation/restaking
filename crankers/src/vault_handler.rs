@@ -254,7 +254,8 @@ impl<'a> VaultHandler<'a> {
         log::info!("Updating vault: {vault}");
 
         // Initialize
-        if self.get_update_state_tracker(vault, epoch).await.is_err() {
+        if let Err(e) = self.get_update_state_tracker(vault, epoch).await {
+            log::info!("Get tracker failed, initializing. Expecting AccountNotFound: {e}");
             self.initialize_vault_update_state_tracker(vault, tracker_pubkey)
                 .await?;
         }

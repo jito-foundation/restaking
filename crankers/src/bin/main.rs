@@ -4,7 +4,7 @@ use anyhow::{anyhow, Context};
 use clap::{arg, Parser};
 use jito_bytemuck::AccountDeserialize;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
-use jito_vault_cranker::{restaking_handler::RestakingHandler, vault_handler::VaultHandler};
+use jito_vault_cranker::vault_handler::VaultHandler;
 use log::info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
@@ -16,8 +16,8 @@ struct Args {
     rpc_url: String,
 
     /// Path to keypair used to pay
-    #[arg(short, long, env = "KEYPAIR_PATH")]
-    keypair: PathBuf,
+    #[arg(short, long, env)]
+    keypair_path: PathBuf,
 
     /// Vault program ID (Pubkey as base58 string)
     #[arg(
@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     let args = Args::parse();
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
-    let payer = read_keypair_file(&args.keypair)
+    let payer = read_keypair_file(&args.keypair_path)
         .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
 
     let config_address =
@@ -63,7 +63,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let config = jito_vault_core::config::Config::try_from_slice_unchecked(&account.data)
         .context("Failed to deserialize Jito vault config")?;
 
-    let restaking_handler = RestakingHandler::new(&args.rpc_url);
     let vault_handler = VaultHandler::new(
         &args.rpc_url,
         &payer,
@@ -110,16 +109,9 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         for (vault, mut delegations) in grouped_delegations {
             // Sort by VaultOperatorDelegation index for correct cranking order
             delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
-            let operator_pubkeys: Vec<Pubkey> = delegations
+            let operators: Vec<Pubkey> = delegations
                 .iter()
                 .map(|(_pubkey, delegation)| delegation.operator)
-                .collect();
-
-            let operators: Vec<Pubkey> = restaking_handler
-                .get_operators(&operator_pubkeys)
-                .await?
-                .into_iter()
-                .map(|(pubkey, _)| pubkey)
                 .collect();
 
             match vault_handler
