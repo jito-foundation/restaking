@@ -125,7 +125,7 @@ pub enum VaultActions {
         /// NCN epoch
         ncn_epoch: u64,
     },
-    /// Gets the
+    /// Gets the operator delegation for a vault
     GetOperatorDelegation {
         /// Vault account
         vault: String,

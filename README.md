@@ -70,6 +70,10 @@ cargo nextest run
 cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run --all-features
 ```
 
+## Getting Started
+
+To create a vault, mint vrt, and delegate to an operator, follow this [guide](cli/getting_started.md).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

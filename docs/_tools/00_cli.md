@@ -252,7 +252,7 @@ Vault commands
 * `enqueue-withdrawal` — Starts the withdrawal process
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
-* `get-operator-delegation` — Gets the
+* `get-operator-delegation` — Gets the operator delegation for a vault
 * `get-withdrawal-ticket` — 
 * `get` — Gets a vault
 * `list` — List all vaults
@@ -424,7 +424,7 @@ Gets the update state tracker for a vault
 
 ## `jito-restaking-cli vault vault get-operator-delegation`
 
-Gets the
+Gets the operator delegation for a vault
 
 **Usage:** `jito-restaking-cli vault vault get-operator-delegation <VAULT> <OPERATOR>`
 
