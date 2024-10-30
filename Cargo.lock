@@ -2343,7 +2343,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jito-account-traits-derive"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2352,7 +2352,7 @@ dependencies = [
 
 [[package]]
 name = "jito-bytemuck"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "borsh 0.10.3",
  "bytemuck",
@@ -2362,7 +2362,7 @@ dependencies = [
 
 [[package]]
 name = "jito-jsm-core"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
@@ -2378,7 +2378,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-cli"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -2409,7 +2409,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-client"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.3",
@@ -2425,7 +2425,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-core"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
@@ -2442,7 +2442,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-integration-tests"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "borsh 0.10.3",
  "jito-bytemuck",
@@ -2469,7 +2469,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-program"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "borsh 0.10.3",
  "cfg-if",
@@ -2493,7 +2493,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-sdk"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "borsh 0.10.3",
  "shank",
@@ -2506,7 +2506,7 @@ dependencies = [
 
 [[package]]
 name = "jito-shank-cli"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "clap 4.5.16",
@@ -2519,7 +2519,7 @@ dependencies = [
 
 [[package]]
 name = "jito-vault-client"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.3",
@@ -2535,7 +2535,7 @@ dependencies = [
 
 [[package]]
 name = "jito-vault-core"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
@@ -2553,7 +2553,7 @@ dependencies = [
 
 [[package]]
 name = "jito-vault-program"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "borsh 0.10.3",
  "cfg-if",
@@ -2577,7 +2577,7 @@ dependencies = [
 
 [[package]]
 name = "jito-vault-sdk"
-version = "0.0.4"
+version = "0.0.2"
 dependencies = [
  "borsh 0.10.3",
  "shank",
