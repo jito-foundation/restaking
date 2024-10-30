@@ -4,8 +4,11 @@ use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_client::instructions::{
     InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
+    InitializeOperatorVaultTicketBuilder, SetConfigAdminBuilder, WarmupOperatorVaultTicketBuilder,
 };
-use jito_restaking_core::{config::Config, ncn::Ncn, operator::Operator};
+use jito_restaking_core::{
+    config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
+};
 use log::{debug, info};
 use solana_account_decoder::UiAccountEncoding;
 use solana_program::pubkey::Pubkey;
@@ -43,6 +46,10 @@ impl RestakingCliHandler {
         }
     }
 
+    fn get_rpc_client(&self) -> RpcClient {
+        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
+    }
+
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
         match action {
             RestakingCommands::Config {
@@ -51,6 +58,9 @@ impl RestakingCliHandler {
             RestakingCommands::Config {
                 action: ConfigActions::Get,
             } => self.get_config().await,
+            RestakingCommands::Config {
+                action: ConfigActions::SetAdmin { new_admin },
+            } => self.set_config_admin(new_admin).await,
             RestakingCommands::Ncn {
                 action: NcnActions::Initialize,
             } => self.initialize_ncn().await,
@@ -61,33 +71,21 @@ impl RestakingCliHandler {
                 action: NcnActions::List,
             } => self.list_ncn().await,
             RestakingCommands::Operator {
-                action: OperatorActions::Initialize,
-            } => self.initialize_operator().await,
+                action: OperatorActions::Initialize { operator_fee_bps },
+            } => self.initialize_operator(operator_fee_bps).await,
+            RestakingCommands::Operator {
+                action: OperatorActions::InitializeOperatorVaultTicket { operator, vault },
+            } => self.initialize_operator_vault_ticket(operator, vault).await,
+            RestakingCommands::Operator {
+                action: OperatorActions::WarmupOperatorVaultTicket { operator, vault },
+            } => self.warmup_operator_vault_ticket(operator, vault).await,
             RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
-            } => self.operator_get(pubkey).await,
+            } => self.get_operator(pubkey).await,
             RestakingCommands::Operator {
                 action: OperatorActions::List,
-            } => self.operator_list().await,
+            } => self.list_operator().await,
         }
-    }
-
-    pub async fn get_config(&self) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
-
-        let config_address = Config::find_program_address(&self.restaking_program_id).0;
-        debug!(
-            "Reading the restaking configuration account at address: {}",
-            config_address
-        );
-
-        let account = rpc_client.get_account(&config_address).await?;
-        let config = Config::try_from_slice_unchecked(&account.data)?;
-        info!(
-            "Restaking config at address {}: {:?}",
-            config_address, config
-        );
-        Ok(())
     }
 
     async fn initialize_config(&self) -> Result<()> {
@@ -162,7 +160,178 @@ impl RestakingCliHandler {
             .as_ref()
             .ok_or_else(|| anyhow!("No signature status"))?;
         info!("Transaction status: {:?}", tx_status);
+        info!("NCN initialized at address: {:?}", ncn);
 
+        Ok(())
+    }
+
+    pub async fn initialize_operator(&self, operator_fee_bps: u16) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let base = Keypair::new();
+        let operator = Operator::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
+
+        let mut ix_builder = InitializeOperatorBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .operator(operator)
+            .admin(keypair.pubkey())
+            .base(base.pubkey())
+            .operator_fee_bps(operator_fee_bps)
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair, &base],
+            blockhash,
+        );
+        info!("Initializing operator: {:?}", operator);
+        info!(
+            "Initializing operator transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed");
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+        info!("Operator initialized at address: {:?}", operator);
+
+        Ok(())
+    }
+
+    pub async fn initialize_operator_vault_ticket(
+        &self,
+        operator: String,
+        vault: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let vault = Pubkey::from_str(&vault)?;
+
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &self.restaking_program_id,
+            &operator,
+            &vault,
+        )
+        .0;
+
+        let mut ix_builder = InitializeOperatorVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .operator(operator)
+            .vault(vault)
+            .admin(keypair.pubkey())
+            .operator_vault_ticket(operator_vault_ticket)
+            .payer(keypair.pubkey());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Initializing operator vault ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        info!("\nCreated Operator Vault Ticket");
+        info!("Operator address: {}", operator);
+        info!("Vault address: {}", vault);
+        info!("Operator Vault Ticket address: {}", operator_vault_ticket);
+
+        Ok(())
+    }
+
+    pub async fn warmup_operator_vault_ticket(
+        &self,
+        operator: String,
+        vault: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let vault = Pubkey::from_str(&vault)?;
+
+        let operator_vault_ticket = OperatorVaultTicket::find_program_address(
+            &self.restaking_program_id,
+            &operator,
+            &vault,
+        )
+        .0;
+
+        let mut ix_builder = WarmupOperatorVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .operator(operator)
+            .vault(vault)
+            .operator_vault_ticket(operator_vault_ticket)
+            .admin(keypair.pubkey());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Warming up operator vault ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        Ok(())
+    }
+
+    pub async fn get_config(&self) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.restaking_program_id).0;
+        debug!(
+            "Reading the restaking configuration account at address: {}",
+            config_address
+        );
+
+        let account = rpc_client.get_account(&config_address).await?;
+        let config = Config::try_from_slice_unchecked(&account.data)?;
+        info!(
+            "Restaking config at address {}: {:?}",
+            config_address, config
+        );
         Ok(())
     }
 
@@ -201,55 +370,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    pub async fn initialize_operator(&self) -> Result<()> {
-        let keypair = self
-            .cli_config
-            .keypair
-            .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
-        let rpc_client = self.get_rpc_client();
-
-        let base = Keypair::new();
-        let operator = Operator::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
-
-        let mut ix_builder = InitializeOperatorBuilder::new();
-        ix_builder
-            .config(Config::find_program_address(&self.restaking_program_id).0)
-            .operator(operator)
-            .admin(keypair.pubkey())
-            .base(base.pubkey())
-            .instruction();
-
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair, &base],
-            blockhash,
-        );
-        info!("Initializing operator: {:?}", operator);
-        info!(
-            "Initializing operator transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed");
-        let statuses = rpc_client
-            .get_signature_statuses(&[*tx.get_signature()])
-            .await?;
-
-        let tx_status = statuses
-            .value
-            .first()
-            .unwrap()
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signature status"))?;
-        info!("Transaction status: {:?}", tx_status);
-
-        Ok(())
-    }
-
-    pub async fn operator_get(&self, pubkey: String) -> Result<()> {
+    pub async fn get_operator(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
         let operator = Operator::try_from_slice_unchecked(&account.data)?;
@@ -258,7 +379,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    pub async fn operator_list(&self) -> Result<()> {
+    pub async fn list_operator(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let accounts = rpc_client
             .get_program_accounts_with_config(
@@ -285,7 +406,38 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
+    async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.restaking_program_id).0;
+        let mut ix_builder = SetConfigAdminBuilder::new();
+        ix_builder
+            .config(config_address)
+            .old_admin(keypair.pubkey())
+            .new_admin(new_admin);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Setting restaking config admin parameters: {:?}",
+            ix_builder
+        );
+        info!(
+            "Setting restaking config admin transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+        Ok(())
     }
 }
