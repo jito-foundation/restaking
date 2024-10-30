@@ -1,0 +1,34 @@
+[package]
+name = "jito-vault-cranker"
+description = "Jito Vault Cranker"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[[bin]]
+name = "jito-vault-crank"
+path = "src/bin/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+env_logger = { workspace = true }
+futures = { workspace = true }
+jito-account-traits-derive = { workspace = true }
+jito-bytemuck = { workspace = true }
+jito-restaking-client = { workspace = true }
+jito-restaking-core = { workspace = true }
+jito-vault-client = { workspace = true }
+jito-vault-core = { workspace = true }
+jito-vault-sdk = { workspace = true }
+log = { workspace = true }
+solana-account-decoder = { workspace = true }
+solana-rpc-client = { workspace = true }
+solana-rpc-client-api = { workspace = true }
+solana-sdk = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
