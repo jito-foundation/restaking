@@ -4,8 +4,8 @@ use anyhow::{anyhow, Context};
 use clap::{arg, Parser};
 use jito_bytemuck::AccountDeserialize;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
-use jito_vault_cranker::vault_handler::VaultHandler;
-use log::info;
+use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
+use log::{error, info};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 
@@ -39,6 +39,10 @@ struct Args {
     #[arg(long, env, default_value = "300")]
     crank_interval: u64,
 
+    /// Interval in seconds between metrics emission (default: 5 minutes)
+    #[arg(long, env, default_value = "300")]
+    metrics_interval: u64,
+
     /// Priority fees (in microlamports per compute unit)
     #[arg(long, env, default_value = "10000")]
     priority_fees: u64,
@@ -71,6 +75,20 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         args.priority_fees,
     );
 
+    // Track vault metrics in separate thread
+    tokio::spawn({
+        let epoch_length = config.epoch_length();
+        async move {
+            let metrics_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
+            loop {
+                if let Err(e) = emit_vault_metrics(&metrics_client, epoch_length).await {
+                    error!("Failed to emit metrics: {}", e);
+                }
+                tokio::time::sleep(Duration::from_secs(args.metrics_interval)).await;
+            }
+        }
+    });
+
     loop {
         let slot = rpc_client.get_slot().await.context("get slot")?;
         let epoch = slot.checked_div(config.epoch_length()).unwrap();
@@ -78,7 +96,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
 
         let vaults = vault_handler.get_vaults().await?;
-        let delegations = vault_handler.get_vault_operator_delegation().await?;
+        let delegations = vault_handler.get_vault_operator_delegations().await?;
 
         let vaults_need_update: Vec<(Pubkey, Vault)> = vaults
             .into_iter()

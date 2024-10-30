@@ -2568,6 +2568,7 @@ dependencies = [
  "jito-vault-sdk",
  "log",
  "solana-account-decoder",
+ "solana-metrics",
  "solana-rpc-client",
  "solana-rpc-client-api",
  "solana-sdk",
