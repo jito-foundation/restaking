@@ -36,6 +36,10 @@ cargo-build-sbf
 
 ## Usage
 
+### Quickstart
+
+To create a vault, mint vrt, and delegate to an operator, follow this [guide](cli/getting_started.md).
+
 ### Building the software
 
 ```bash
@@ -68,6 +72,12 @@ cargo nextest run
 
 ```bash
 cargo-build-sbf && SBF_OUT_DIR=$(pwd)/target/sbf-solana-solana/release cargo nextest run --all-features
+```
+
+## Releasing
+
+```bash
+./release
 ```
 
 ## Contributing
