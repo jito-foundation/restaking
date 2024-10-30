@@ -49,8 +49,6 @@ pub fn process_crank_vault_update_state_tracker(
     let operator_last_update_slot = vault_operator_delegation.last_update_slot();
     let operator_last_updated_epoch = config.get_epoch_from_slot(operator_last_update_slot)?;
 
-    let has_been_partially_updated = last_full_state_update_epoch < operator_last_updated_epoch;
-
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,
@@ -78,7 +76,6 @@ pub fn process_crank_vault_update_state_tracker(
             // additionally, this keeps all of the `additional_assets_need_unstaking` at the same cooldown level
             // since the operator_delegation is updated for X epochs since the operator's last update
             if vault.additional_assets_need_unstaking() > 0
-                && !has_been_partially_updated
                 && vault_operator_delegation.delegation_state.staked_amount() > 0
             {
                 let max_cooldown = min(

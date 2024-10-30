@@ -75,7 +75,22 @@ pub fn process_initialize_vault_update_state_tracker(
         &vault_update_state_tracker_seeds,
     )?;
 
-    let additional_assets_need_unstaking = if vault.additional_assets_need_unstaking() > 0 {
+    let needs_to_recover_from_partial_or_late_update = {
+        let has_rollover_assets_to_be_unstaked = vault.additional_assets_need_unstaking() > 0;
+
+        let last_full_state_update_slot = vault.last_full_state_update_slot();
+        let last_full_state_update_epoch =
+            config.get_epoch_from_slot(last_full_state_update_slot)?;
+
+        let last_full_update_was_last_epoch = last_full_state_update_epoch
+            == ncn_epoch
+                .checked_sub(1)
+                .ok_or(VaultError::ArithmeticUnderflow)?;
+
+        has_rollover_assets_to_be_unstaked || !last_full_update_was_last_epoch
+    };
+
+    let additional_assets_need_unstaking = if needs_to_recover_from_partial_or_late_update {
         // indicates an old partially cranked state
         // no vault operations can be done until a full update cycle has run
         // this means that the `additional_assets_need_unstaking` will not change
