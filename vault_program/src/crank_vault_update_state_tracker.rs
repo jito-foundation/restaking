@@ -49,6 +49,14 @@ pub fn process_crank_vault_update_state_tracker(
     let operator_last_update_slot = vault_operator_delegation.last_update_slot();
     let operator_last_updated_epoch = config.get_epoch_from_slot(operator_last_update_slot)?;
 
+    // If an operator has been updated in an epoch where the vault has not been fully updated,
+    // it would have unstaked it's fair share of assets. So no further unstaking is needed, however,
+    // the vault_operator_delegation should be updated to reflect the new state. In the case that
+    // all operators have been updated and close_vault_update_state_tracker has not been called,
+    // there should be zero additional_assets_need_unstaking, and it'd be okay to 'skip' withdrawing
+    // the assets from the operator.
+    let has_been_partially_updated = last_full_state_update_epoch < operator_last_updated_epoch;
+
     VaultUpdateStateTracker::load(
         program_id,
         vault_update_state_tracker,
@@ -75,7 +83,8 @@ pub fn process_crank_vault_update_state_tracker(
             // they should no longer be the destination for any remaining `additional_assets_need_unstaking`
             // additionally, this keeps all of the `additional_assets_need_unstaking` at the same cooldown level
             // since the operator_delegation is updated for X epochs since the operator's last update
-            if vault.additional_assets_need_unstaking() > 0
+            if !has_been_partially_updated
+                && vault.additional_assets_need_unstaking() > 0
                 && vault_operator_delegation.delegation_state.staked_amount() > 0
             {
                 let max_cooldown = min(
