@@ -92,7 +92,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
         // All delegations are passed along. Delegation filtering logic is handled in `VaultHandler::crank`
         let mut grouped_delegations: HashMap<Pubkey, Vec<(Pubkey, VaultOperatorDelegation)>> =
-            HashMap::new();
+            HashMap::from_iter(vaults_need_update.iter().map(|(vault, _)| (*vault, vec![])));
         for (pubkey, delegation) in delegations {
             if vaults_need_update
                 .iter()
@@ -105,6 +105,8 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             }
         }
 
+        info!("Updating {} vaults", vaults_need_update.len());
+
         for (vault, mut delegations) in grouped_delegations {
             // Sort by VaultOperatorDelegation index for correct cranking order
             delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
@@ -112,6 +114,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                 .iter()
                 .map(|(_pubkey, delegation)| delegation.operator)
                 .collect();
+
             let operators: Vec<Pubkey> = restaking_handler
                 .get_operators(&operator_pubkeys)
                 .await?
@@ -128,6 +131,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             }
         }
 
+        info!("Sleeping for {} seconds", args.crank_interval);
         // ---------- SLEEP (crank_interval)----------
         tokio::time::sleep(Duration::from_secs(args.crank_interval)).await;
     }

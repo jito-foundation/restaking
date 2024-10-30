@@ -2,9 +2,12 @@ use std::time::Duration;
 
 use anyhow::Context;
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_vault_client::instructions::{
-    CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
-    InitializeVaultUpdateStateTrackerBuilder,
+use jito_vault_client::{
+    instructions::{
+        CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
+        InitializeVaultUpdateStateTrackerBuilder,
+    },
+    types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
     vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
@@ -248,19 +251,25 @@ impl<'a> VaultHandler<'a> {
         let tracker_pubkey =
             VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch).0;
 
+        log::info!("Updating vault: {vault}");
+
         // Initialize
         if self.get_update_state_tracker(vault, epoch).await.is_err() {
             self.initialize_vault_update_state_tracker(vault, tracker_pubkey)
                 .await?;
         }
 
+        log::info!("Initialized tracker for vault: {vault}, tracker: {tracker_pubkey}");
+
         // Crank
         self.crank(epoch, vault, operators, tracker_pubkey).await?;
 
+        log::info!("Cranked vault: {vault}");
+
         // Close
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
-        if tracker.all_operators_updated(operators.len() as u64)? {
-            self.close_vault_update_state_tracker(vault, tracker_pubkey)
+        if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
+            self.close_vault_update_state_tracker(vault, epoch, tracker_pubkey)
                 .await?;
         } else {
             let context = format!(
@@ -268,6 +277,9 @@ impl<'a> VaultHandler<'a> {
             );
             return Err(anyhow::anyhow!(context));
         }
+
+        log::info!("Closed tracker for vault: {vault}");
+
         Ok(())
     }
 
@@ -285,7 +297,9 @@ impl<'a> VaultHandler<'a> {
         init_ix_builder
             .config(self.config_address)
             .vault(*vault)
-            .vault_update_state_tracker(tracker_pubkey);
+            .vault_update_state_tracker(tracker_pubkey)
+            .payer(self.payer.pubkey())
+            .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy);
         let mut init_ix = init_ix_builder.instruction();
         init_ix.program_id = self.vault_program_id;
 
@@ -309,7 +323,7 @@ impl<'a> VaultHandler<'a> {
     ) -> anyhow::Result<()> {
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
 
-        if tracker.all_operators_updated(operators.len() as u64)? {
+        if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
             return Ok(());
         }
 
@@ -376,13 +390,16 @@ impl<'a> VaultHandler<'a> {
     pub async fn close_vault_update_state_tracker(
         &self,
         vault: &Pubkey,
+        epoch: u64,
         tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
         let mut close_ix_builder = CloseVaultUpdateStateTrackerBuilder::new();
         close_ix_builder
             .config(self.config_address)
             .vault(*vault)
-            .vault_update_state_tracker(tracker_pubkey);
+            .payer(self.payer.pubkey())
+            .vault_update_state_tracker(tracker_pubkey)
+            .ncn_epoch(epoch);
         let mut close_ix = close_ix_builder.instruction();
         close_ix.program_id = self.vault_program_id;
 
