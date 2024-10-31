@@ -22,6 +22,7 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
+  type ReadonlyAccount,
   type ReadonlySignerAccount,
   type TransactionSigner,
   type WritableAccount,
@@ -53,8 +54,7 @@ export type SetConfigAdminInstruction<
             IAccountSignerMeta<TAccountOldAdmin>
         : TAccountOldAdmin,
       TAccountNewAdmin extends string
-        ? ReadonlySignerAccount<TAccountNewAdmin> &
-            IAccountSignerMeta<TAccountNewAdmin>
+        ? ReadonlyAccount<TAccountNewAdmin>
         : TAccountNewAdmin,
       ...TRemainingAccounts,
     ]
@@ -92,7 +92,7 @@ export type SetConfigAdminInput<
 > = {
   config: Address<TAccountConfig>;
   oldAdmin: TransactionSigner<TAccountOldAdmin>;
-  newAdmin: TransactionSigner<TAccountNewAdmin>;
+  newAdmin: Address<TAccountNewAdmin>;
 };
 
 export function getSetConfigAdminInstruction<
