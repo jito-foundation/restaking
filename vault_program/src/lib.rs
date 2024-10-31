@@ -31,8 +31,12 @@ mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
 
+use std::str::FromStr;
+
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
+use jito_bytemuck::AccountDeserialize;
+use jito_vault_core::config::Config;
 use jito_vault_sdk::instruction::VaultInstruction;
 use set_program_fee::process_set_program_fee;
 use solana_program::{
@@ -278,6 +282,19 @@ pub fn process_instruction(
         VaultInstruction::SetConfigAdmin => {
             msg!("Instruction: SetConfigAdmin");
             process_set_config_admin(program_id, accounts)
+        }
+        // Temporary instruction to set program fee wallet to DAO, will be reverted
+        VaultInstruction::SetConfigProgramFeeWallet => {
+            msg!("Instruction: SetConfigProgramFeeWallet");
+            let [config] = accounts else {
+                return Err(ProgramError::NotEnoughAccountKeys);
+            };
+            Config::load(program_id, config, true)?;
+            let mut config_data = config.data.borrow_mut();
+            let config = Config::try_from_slice_unchecked_mut(&mut config_data)?;
+            config.program_fee_wallet =
+                Pubkey::from_str("5eosrve6LktMZgVNszYzebgmmC7BjLK8NoWyRQtcmGTF").unwrap();
+            Ok(())
         }
     }
 }

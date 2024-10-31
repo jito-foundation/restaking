@@ -1362,6 +1362,21 @@
         "type": "u8",
         "value": 31
       }
+    },
+    {
+      "name": "SetConfigProgramFeeWallet",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 32
+      }
     }
   ],
   "accounts": [

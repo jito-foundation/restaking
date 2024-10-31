@@ -314,6 +314,9 @@ pub enum VaultInstruction {
     #[account(2, name = "new_admin")]
     SetConfigAdmin,
 
+    /// Temporary instruction to switch program fee wallet to DAO before transferring ownership
+    #[account(0, writable, name = "config")]
+    SetConfigProgramFeeWallet,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
