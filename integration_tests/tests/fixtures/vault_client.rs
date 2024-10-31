@@ -67,7 +67,7 @@ pub struct VaultStakerWithdrawalTicketRoot {
 }
 
 pub struct VaultProgramClient {
-    banks_client: BanksClient,
+    pub banks_client: BanksClient,
     payer: Keypair,
 }
 
@@ -1436,7 +1436,7 @@ impl VaultProgramClient {
         .await
     }
 
-    async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
+    pub async fn _process_transaction(&mut self, tx: &Transaction) -> Result<(), TestError> {
         self.banks_client
             .process_transaction_with_preflight_and_commitment(
                 tx.clone(),

@@ -776,3 +776,13 @@ pub fn set_config_admin(
         data: VaultInstruction::SetConfigAdmin.try_to_vec().unwrap(),
     }
 }
+
+pub fn set_config_program_fee_wallet(program_id: &Pubkey, config: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: *program_id,
+        accounts: vec![AccountMeta::new(*config, false)],
+        data: VaultInstruction::SetConfigProgramFeeWallet
+            .try_to_vec()
+            .unwrap(),
+    }
+}

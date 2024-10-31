@@ -6,6 +6,7 @@ mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod delegate_token_account;
 mod enqueue_withdrawal;
+mod force_overwrite_fee_program_wallet;
 mod initialize_config;
 mod initialize_vault;
 mod initialize_vault_ncn_slasher_ticket;
