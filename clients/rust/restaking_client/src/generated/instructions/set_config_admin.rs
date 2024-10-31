@@ -35,7 +35,7 @@ impl SetConfigAdmin {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.new_admin,
-            true,
+            false,
         ));
         accounts.extend_from_slice(remaining_accounts);
         let data = SetConfigAdminInstructionData::new().try_to_vec().unwrap();
@@ -71,7 +71,7 @@ impl Default for SetConfigAdminInstructionData {
 ///
 ///   0. `[writable]` config
 ///   1. `[signer]` old_admin
-///   2. `[signer]` new_admin
+///   2. `[]` new_admin
 #[derive(Clone, Debug, Default)]
 pub struct SetConfigAdminBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -206,7 +206,7 @@ impl<'a, 'b> SetConfigAdminCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.new_admin.key,
-            true,
+            false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
@@ -245,7 +245,7 @@ impl<'a, 'b> SetConfigAdminCpi<'a, 'b> {
 ///
 ///   0. `[writable]` config
 ///   1. `[signer]` old_admin
-///   2. `[signer]` new_admin
+///   2. `[]` new_admin
 #[derive(Clone, Debug)]
 pub struct SetConfigAdminCpiBuilder<'a, 'b> {
     instruction: Box<SetConfigAdminCpiBuilderInstruction<'a, 'b>>,

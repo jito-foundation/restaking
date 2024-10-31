@@ -311,7 +311,7 @@ pub enum VaultInstruction {
     /// Changes the admin for the config
     #[account(0, writable, name = "config")]
     #[account(1, signer, name = "old_admin")]
-    #[account(2, signer, name = "new_admin")]
+    #[account(2, name = "new_admin")]
     SetConfigAdmin,
 
 }

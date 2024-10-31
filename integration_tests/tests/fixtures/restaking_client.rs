@@ -1077,7 +1077,7 @@ impl RestakingProgramClient {
                 &new_admin.pubkey(),
             )],
             Some(&old_admin.pubkey()),
-            &[old_admin, new_admin],
+            &[old_admin],
             blockhash,
         ))
         .await
