@@ -1354,7 +1354,7 @@
         {
           "name": "newAdmin",
           "isMut": false,
-          "isSigner": true
+          "isSigner": false
         }
       ],
       "args": [],
