@@ -1,20 +1,15 @@
 use std::str::FromStr;
 
-use crate::{
-    vault::{ConfigActions, VaultActions, VaultCommands},
-    CliConfig,
-};
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
-use jito_vault_client::instructions::SetConfigAdminBuilder;
 use jito_vault_client::{
     instructions::{
         AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
         CooldownDelegationBuilder, CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
         EnqueueWithdrawalBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetDepositCapacityBuilder,
+        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
@@ -38,6 +33,11 @@ use solana_sdk::{
 };
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
+};
+
+use crate::{
+    vault::{ConfigActions, VaultActions, VaultCommands},
+    CliConfig,
 };
 
 pub struct VaultCliHandler {
