@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_restaking_client::instructions::SetConfigAdminBuilder;
 use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
 use jito_vault_client::{
     instructions::{
@@ -10,7 +9,7 @@ use jito_vault_client::{
         CooldownDelegationBuilder, CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
         EnqueueWithdrawalBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetDepositCapacityBuilder,
+        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
