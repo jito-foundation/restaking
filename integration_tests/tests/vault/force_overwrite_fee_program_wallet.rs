@@ -1,12 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use crate::fixtures::fixture::TestBuilder;
+    use std::str::FromStr;
+
     use jito_vault_core::config::Config;
     use jito_vault_sdk::sdk::set_config_program_fee_wallet;
     use solana_program::pubkey::Pubkey;
-    use solana_sdk::signer::Signer;
-    use solana_sdk::transaction::Transaction;
-    use std::str::FromStr;
+    use solana_sdk::{signer::Signer, transaction::Transaction};
+
+    use crate::fixtures::fixture::TestBuilder;
 
     #[tokio::test]
     async fn test_force_overwrite_config_ok() {
