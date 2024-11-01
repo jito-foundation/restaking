@@ -1,0 +1,19 @@
+services:
+  jito-vault-cranker:
+    build:
+      context: .
+      dockerfile: crankers/Dockerfile
+    container_name: jito-vault-cranker
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - RPC_URL=${RPC_URL}
+      - KEYPAIR_PATH=${KEYPAIR_PATH}
+      - VAULT_PROGRAM_ID=${VAULT_PROGRAM_ID}
+      - RESTAKING_PROGRAM_ID=${RESTAKING_PROGRAM_ID}
+      - CRANK_INTERVAL=${CRANK_INTERVAL}
+      - METRICS_INTERVAL=${METRICS_INTERVAL}
+      - PRIORITY_FEES=${PRIORITY_FEES}
+      - SOLANA_METRICS_CONFIG=${SOLANA_METRICS_CONFIG}
+    volumes:
+      - ./credentials:/credentials
+    restart: on-failure:5

@@ -16,6 +16,7 @@ path = "src/bin/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+dotenv = { workspace = true }
 env_logger = { workspace = true }
 futures = { workspace = true }
 jito-account-traits-derive = { workspace = true }
@@ -27,6 +28,7 @@ jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 log = { workspace = true }
 solana-account-decoder = { workspace = true }
+solana-metrics = { workspace = true }
 solana-rpc-client = { workspace = true }
 solana-rpc-client-api = { workspace = true }
 solana-sdk = { workspace = true }
