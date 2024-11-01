@@ -16,10 +16,6 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-# Remove cache mounts and build directly
-RUN cargo build --release --bin jito-vault-crank
-
-
 RUN cargo build --release --bin jito-vault-crank
 
 ##### Final image
