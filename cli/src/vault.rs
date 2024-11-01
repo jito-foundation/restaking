@@ -29,6 +29,8 @@ pub enum ConfigActions {
         /// The new admin's pubkey
         new_admin: Pubkey,
     },
+    /// Set the config program fee wallet
+    SetProgramFeeWallet,
 }
 
 /// Vault commands

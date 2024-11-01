@@ -9,7 +9,8 @@ use jito_vault_client::{
         CooldownDelegationBuilder, CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
         EnqueueWithdrawalBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        MintToBuilder, SetConfigAdminBuilder, SetConfigProgramFeeWalletBuilder,
+        SetDepositCapacityBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
@@ -81,6 +82,9 @@ impl VaultCliHandler {
             VaultCommands::Config {
                 action: ConfigActions::SetAdmin { new_admin },
             } => self.set_config_admin(new_admin).await,
+            VaultCommands::Config {
+                action: ConfigActions::SetProgramFeeWallet,
+            } => self.set_config_program_fee_wallet().await,
             VaultCommands::Vault {
                 action:
                     VaultActions::Initialize {
@@ -1111,6 +1115,35 @@ impl VaultCliHandler {
         info!("Setting vault config admin parameters: {:?}", ix_builder);
         info!(
             "Setting vault config admin transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+        Ok(())
+    }
+
+    async fn set_config_program_fee_wallet(&self) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetConfigProgramFeeWalletBuilder::new();
+        ix_builder.config(config_address);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Setting config program fee wallet transaction: {:?}",
             tx.get_signature()
         );
         rpc_client.send_and_confirm_transaction(&tx).await?;
