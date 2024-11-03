@@ -12,6 +12,8 @@ use jito_restaking_sdk::error::RestakingError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+const RESERVED_SPACE_LEN: usize = 261;
+
 /// The Operator account stores global information for a particular operator
 /// including the admin, voter, and the number of NCN and vault accounts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
@@ -81,7 +83,7 @@ impl Operator {
             vault_count: PodU64::from(0),
             operator_fee_bps: PodU16::from(operator_fee_bps),
             bump,
-            reserved_space: [0; 261],
+            reserved_space: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -270,7 +272,7 @@ mod tests {
     use jito_bytemuck::types::{PodU16, PodU64};
     use solana_program::pubkey::Pubkey;
 
-    use crate::operator::Operator;
+    use super::{Operator, RESERVED_SPACE_LEN};
 
     #[test]
     fn test_operator_no_padding() {
@@ -287,7 +289,7 @@ mod tests {
             std::mem::size_of::<PodU64>() + // vault_count
             std::mem::size_of::<PodU16>() + // operator_fee_bps
             std::mem::size_of::<u8>() + // bump
-            261; // reserved_space
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(operator_size, sum_of_fields);
     }
 

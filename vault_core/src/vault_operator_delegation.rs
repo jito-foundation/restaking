@@ -11,6 +11,8 @@ use solana_program::{
 
 use crate::delegation_state::DelegationState;
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 /// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
@@ -45,7 +47,7 @@ impl VaultOperatorDelegation {
             delegation_state: DelegationState::default(),
             index: PodU64::from(index),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -195,7 +197,7 @@ mod tests {
             size_of::<PodU64>() + // last_update_slot
             size_of::<PodU64>() + // index
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_operator_delegation_size, sum_of_fields);
     }
 

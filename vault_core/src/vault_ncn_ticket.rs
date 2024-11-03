@@ -6,6 +6,8 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 /// The [`VaultNcnTicket`] account tracks a vault supporting a node consensus network. It can be
 /// enabled and disabled over time by the vault NCN admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
@@ -38,7 +40,7 @@ impl VaultNcnTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -138,7 +140,7 @@ mod tests {
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<SlotToggle>() + // state
             std::mem::size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_ncn_ticket_size, sum_of_fields);
     }
 
