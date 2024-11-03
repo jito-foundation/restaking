@@ -267,7 +267,7 @@ impl Operator {
 
 #[cfg(test)]
 mod tests {
-    use jito_bytemuck::types::PodU64;
+    use jito_bytemuck::types::{PodU16, PodU64};
     use solana_program::pubkey::Pubkey;
 
     use crate::operator::Operator;
@@ -285,8 +285,9 @@ mod tests {
             std::mem::size_of::<PodU64>() + // index
             std::mem::size_of::<PodU64>() + // ncn_count
             std::mem::size_of::<PodU64>() + // vault_count
+            std::mem::size_of::<PodU16>() + // operator_fee_bps
             std::mem::size_of::<u8>() + // bump
-            263; // reserved_space
+            261; // reserved_space
         assert_eq!(operator_size, sum_of_fields);
     }
 
