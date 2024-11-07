@@ -3,47 +3,6 @@ use std::fmt::{Debug, Formatter};
 // https://github.com/solana-labs/solana-program-library/tree/master/libraries/pod
 use bytemuck::{Pod, Zeroable};
 
-/// The standard `bool` is not a `Pod`, define a replacement that is
-#[derive(Clone, Copy, Default, PartialEq, Eq, Pod, Zeroable)]
-#[repr(transparent)]
-pub struct PodBool(pub u8);
-impl PodBool {
-    pub const fn from_bool(b: bool) -> Self {
-        Self(if b { 1 } else { 0 })
-    }
-}
-
-impl From<bool> for PodBool {
-    fn from(b: bool) -> Self {
-        Self::from_bool(b)
-    }
-}
-
-impl From<&bool> for PodBool {
-    fn from(b: &bool) -> Self {
-        Self(if *b { 1 } else { 0 })
-    }
-}
-
-impl From<&PodBool> for bool {
-    fn from(b: &PodBool) -> Self {
-        b.0 != 0
-    }
-}
-
-impl From<PodBool> for bool {
-    fn from(b: PodBool) -> Self {
-        b.0 != 0
-    }
-}
-
-impl Debug for PodBool {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let v: bool = bool::from(self);
-        f.debug_tuple("PodBool").field(&v).finish()
-    }
-}
-
 /// Simple macro for implementing conversion functions between Pod* ints and
 /// standard ints.
 ///
@@ -108,5 +67,58 @@ impl Debug for PodU64 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let v: u64 = u64::from(self);
         f.debug_tuple("PodU64").field(&v).finish()
+    }
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq)]
+#[repr(transparent)]
+pub struct PodU128([u8; 16]);
+impl_int_conversion!(PodU128, u128);
+
+impl Debug for PodU128 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let v: u128 = u128::from(self);
+        f.debug_tuple("PodU128").field(&v).finish()
+    }
+}
+
+/// The standard `bool` is not a `Pod`, define a replacement that is
+#[derive(Clone, Copy, Default, PartialEq, Eq, Pod, Zeroable)]
+#[repr(transparent)]
+pub struct PodBool(pub u8);
+impl PodBool {
+    pub const fn from_bool(b: bool) -> Self {
+        Self(if b { 1 } else { 0 })
+    }
+}
+
+impl From<bool> for PodBool {
+    fn from(b: bool) -> Self {
+        Self::from_bool(b)
+    }
+}
+
+impl From<&bool> for PodBool {
+    fn from(b: &bool) -> Self {
+        Self(if *b { 1 } else { 0 })
+    }
+}
+
+impl From<&PodBool> for bool {
+    fn from(b: &PodBool) -> Self {
+        b.0 != 0
+    }
+}
+
+impl From<PodBool> for bool {
+    fn from(b: PodBool) -> Self {
+        b.0 != 0
+    }
+}
+
+impl Debug for PodBool {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let v: bool = bool::from(self);
+        f.debug_tuple("PodBool").field(&v).finish()
     }
 }
