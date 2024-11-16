@@ -90,7 +90,7 @@ export function getNcnEncoder(): Encoder<NcnArgs> {
     ['vaultCount', getU64Encoder()],
     ['slasherCount', getU64Encoder()],
     ['bump', getU8Encoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 263 })],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 199 })],
   ]);
 }
 
@@ -111,7 +111,7 @@ export function getNcnDecoder(): Decoder<Ncn> {
     ['vaultCount', getU64Decoder()],
     ['slasherCount', getU64Decoder()],
     ['bump', getU8Decoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 263 })],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 199 })],
   ]);
 }
 

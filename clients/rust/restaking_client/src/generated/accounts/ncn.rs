@@ -62,7 +62,7 @@ pub struct Ncn {
     pub slasher_count: u64,
     pub bump: u8,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved: [u8; 263],
+    pub reserved: [u8; 199],
 }
 
 impl Ncn {

@@ -58,7 +58,7 @@ pub struct Ncn {
     pub bump: u8,
 
     /// Reserved space
-    reserved: [u8; 263],
+    reserved: [u8; 199],
 }
 
 impl Ncn {
@@ -79,7 +79,7 @@ impl Ncn {
             vault_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
             bump,
-            reserved: [0; 263],
+            reserved: [0; 199],
         }
     }
 
@@ -302,7 +302,7 @@ mod tests {
             std::mem::size_of::<PodU64>() + // vault_count
             std::mem::size_of::<PodU64>() + // slasher_count
             std::mem::size_of::<u8>() + // bump
-            263; // reserved
+            199; // reserved
         assert_eq!(ncn_size, sum_of_fields);
     }
 
