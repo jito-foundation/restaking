@@ -158,7 +158,7 @@
       ],
       "args": [
         {
-          "name": "args",
+          "name": "maxSlashablePerEpoch",
           "type": "u64"
         }
       ],
