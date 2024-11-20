@@ -1,5 +1,5 @@
 use jito_vault_core::config::Config;
-use solana_metrics::{datapoint, datapoint_info};
+use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
 
