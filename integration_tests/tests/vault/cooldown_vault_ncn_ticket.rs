@@ -69,22 +69,6 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
-            .await
-            .unwrap();
-
-        let result = vault_program_client
-            .do_warmup_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
-            .await;
-
-        assert_vault_error(result, VaultError::VaultIsPaused);
-
-        vault_program_client
-            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, false)
-            .await
-            .unwrap();
-
-        vault_program_client
             .do_warmup_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
@@ -125,22 +109,6 @@ mod tests {
                 .state(slot, config.epoch_length()),
             SlotToggleState::Active
         );
-
-        vault_program_client
-            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
-            .await
-            .unwrap();
-
-        let result = vault_program_client
-            .do_cooldown_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
-            .await;
-
-        assert_vault_error(result, VaultError::VaultIsPaused);
-
-        vault_program_client
-            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, false)
-            .await
-            .unwrap();
 
         vault_program_client
             .do_cooldown_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
@@ -244,6 +212,22 @@ mod tests {
             .unwrap();
 
         vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_warmup_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
+            .await;
+
+        assert_vault_error(result, VaultError::VaultIsPaused);
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, false)
+            .await
+            .unwrap();
+
+        vault_program_client
             .do_warmup_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
             .await
             .unwrap();
@@ -284,6 +268,22 @@ mod tests {
                 .state(slot, config.epoch_length()),
             SlotToggleState::Active
         );
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, true)
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .do_cooldown_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
+            .await;
+
+        assert_vault_error(result, VaultError::VaultIsPaused);
+
+        vault_program_client
+            .set_is_paused(&vault_root.vault_pubkey, &vault_root.vault_admin, false)
+            .await
+            .unwrap();
 
         vault_program_client
             .do_cooldown_vault_ncn_ticket(&vault_root, &ncn_root.ncn_pubkey)
