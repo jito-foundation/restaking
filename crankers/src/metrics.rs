@@ -1,5 +1,5 @@
 use jito_vault_core::config::Config;
-use solana_metrics::datapoint_info;
+use solana_metrics::{datapoint, datapoint_info};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
 
@@ -52,6 +52,17 @@ pub async fn emit_vault_metrics(
                 == epoch
         })
         .count() as i64;
+
+    for (address, vault) in vaults.iter() {
+        datapoint_info!(
+            "restaking-vault-supply",
+            ("slot", slot as i64, i64),
+            ("slot_index", slot_index as i64, i64),
+            ("vault", address.to_string(), String),
+            ("vrt_mint", vault.vrt_mint.to_string(), String),
+            ("total_supply", vault.vrt_supply() as i64, i64),
+        );
+    }
 
     datapoint_info!(
         "restaking-vault-stats",
