@@ -2,3 +2,4 @@ ignore:
   - "clients/"
   - "shank-cli"
   - "cli"
+  - "crankers"
