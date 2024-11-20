@@ -6,6 +6,8 @@ node_modules
 test-ledger
 .idea
 docs/api
+credentials
+**/.env
 
 .yarn
 !.yarn/patches

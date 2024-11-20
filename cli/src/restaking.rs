@@ -1,4 +1,5 @@
 use clap::{command, Subcommand};
+use solana_program::pubkey::Pubkey;
 
 /// The CLI handler for the restaking program
 #[derive(Subcommand)]
@@ -25,6 +26,11 @@ pub enum ConfigActions {
     Initialize,
     /// Get the config
     Get,
+    /// Set the config admin
+    SetAdmin {
+        /// The new admin's pubkey
+        new_admin: Pubkey,
+    },
 }
 
 #[derive(Subcommand)]
@@ -40,7 +46,11 @@ pub enum NcnActions {
 #[derive(Subcommand)]
 pub enum OperatorActions {
     /// Initialize Operator
-    Initialize,
+    Initialize { operator_fee_bps: u16 },
+    /// Initialize Operator Vault Ticket
+    InitializeOperatorVaultTicket { operator: String, vault: String },
+    /// Warmup Operator Vault Ticket
+    WarmupOperatorVaultTicket { operator: String, vault: String },
     /// Get operator
     Get { pubkey: String },
     /// List all operators

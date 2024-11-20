@@ -172,6 +172,7 @@ impl VaultProgramClient {
         )?)
     }
 
+    #[allow(dead_code)]
     pub async fn get_vault_ncn_slasher_operator_ticket(
         &mut self,
         vault: &Pubkey,
@@ -449,6 +450,7 @@ impl VaultProgramClient {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn setup_vault_ncn_slasher_operator_ticket(
         &mut self,
         vault_root: &VaultRoot,
@@ -1354,6 +1356,7 @@ impl VaultProgramClient {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn initialize_vault_ncn_slasher_operator_ticket(
         &mut self,
         config: &Pubkey,
@@ -1700,6 +1703,27 @@ impl VaultProgramClient {
             )],
             Some(&admin.pubkey()),
             &[admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn set_config_admin(
+        &mut self,
+        config: &Pubkey,
+        old_admin: &Keypair,
+        new_admin: &Keypair,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_config_admin(
+                &jito_vault_program::id(),
+                config,
+                &old_admin.pubkey(),
+                &new_admin.pubkey(),
+            )],
+            Some(&old_admin.pubkey()),
+            &[old_admin],
             blockhash,
         ))
         .await

@@ -399,7 +399,7 @@ pub fn crank_vault_update_state_tracker(
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new(*vault, false),
         AccountMeta::new_readonly(*operator, false),
         AccountMeta::new(*vault_operator_delegation, false),
         AccountMeta::new(*vault_update_state_tracker, false),
@@ -760,5 +760,23 @@ pub fn set_is_paused(
         data: VaultInstruction::SetIsPaused { is_paused }
             .try_to_vec()
             .unwrap(),
+    }
+}
+
+pub fn set_config_admin(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    old_admin: &Pubkey,
+    new_admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*old_admin, true),
+        AccountMeta::new_readonly(*new_admin, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetConfigAdmin.try_to_vec().unwrap(),
     }
 }

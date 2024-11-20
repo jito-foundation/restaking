@@ -153,6 +153,7 @@ pub fn process_initialize_vault(
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
+            config.program_fee_bps(),
             vault_bump,
             slot,
         )?;

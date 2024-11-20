@@ -26,7 +26,7 @@ pub fn process_close_vault_update_state_tracker(
     let config_data = config.data.borrow();
     let config = Config::try_from_slice_unchecked(&config_data)?;
     Vault::load(program_id, vault_info, true)?;
-    let mut vault_data = vault_info.data.borrow_mut();
+    let mut vault_data: std::cell::RefMut<'_, &mut [u8]> = vault_info.data.borrow_mut();
     let vault = Vault::try_from_slice_unchecked_mut(&mut vault_data)?;
     VaultUpdateStateTracker::load(
         program_id,
@@ -60,6 +60,12 @@ pub fn process_close_vault_update_state_tracker(
             msg!("VaultUpdateStateTracker is not fully updated");
             return Err(VaultError::VaultUpdateStateNotFinishedUpdating.into());
         }
+
+        if vault.additional_assets_need_unstaking() > 0 {
+            msg!("This should not happen: additional assets need unstaking cannot be non-zero at the end of an update");
+            return Err(VaultError::NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate.into());
+        }
+
         msg!("Finished updating VaultUpdateStateTracker");
 
         vault.delegation_state = vault_update_state_tracker.delegation_state;

@@ -608,3 +608,21 @@ pub fn warmup_ncn_vault_slasher_ticket(
             .unwrap(),
     }
 }
+
+pub fn set_config_admin(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    old_admin: &Pubkey,
+    new_admin: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*old_admin, true),
+        AccountMeta::new_readonly(*new_admin, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: RestakingInstruction::SetConfigAdmin.try_to_vec().unwrap(),
+    }
+}

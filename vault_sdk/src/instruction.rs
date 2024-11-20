@@ -270,7 +270,7 @@ pub enum VaultInstruction {
 
     /// Shall be called on every vault_operator_delegation
     #[account(0, name = "config")]
-    #[account(1, name = "vault")]
+    #[account(1, writable, name = "vault")]
     #[account(2, name = "operator")]
     #[account(3, writable, name = "vault_operator_delegation")]
     #[account(4, writable, name = "vault_update_state_tracker")]
@@ -310,6 +310,11 @@ pub enum VaultInstruction {
         uri: String,
     },
 
+    /// Changes the admin for the config
+    #[account(0, writable, name = "config")]
+    #[account(1, signer, name = "old_admin")]
+    #[account(2, name = "new_admin")]
+    SetConfigAdmin,
 
 }
 

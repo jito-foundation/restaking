@@ -1,5 +1,5 @@
 {
-  "version": "0.0.2",
+  "version": "0.0.3",
   "name": "jito_vault",
   "instructions": [
     {
@@ -1182,7 +1182,7 @@
         },
         {
           "name": "vault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1347,6 +1347,31 @@
         "type": "u8",
         "value": 30
       }
+    },
+    {
+      "name": "SetConfigAdmin",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oldAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "newAdmin",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 31
+      }
     }
   ],
   "accounts": [
@@ -1465,6 +1490,12 @@
             }
           },
           {
+            "name": "additionalAssetsNeedUnstaking",
+            "type": {
+              "defined": "PodU64"
+            }
+          },
+          {
             "name": "vrtEnqueuedForCooldownAmount",
             "type": {
               "defined": "PodU64"
@@ -1575,7 +1606,19 @@
             }
           },
           {
+            "name": "nextWithdrawalFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
             "name": "rewardFeeBps",
+            "type": {
+              "defined": "PodU16"
+            }
+          },
+          {
+            "name": "programFeeBps",
             "type": {
               "defined": "PodU16"
             }
@@ -1595,7 +1638,7 @@
             "type": {
               "array": [
                 "u8",
-                263
+                259
               ]
             }
           }
@@ -1852,12 +1895,6 @@
           },
           {
             "name": "lastUpdatedIndex",
-            "type": {
-              "defined": "PodU64"
-            }
-          },
-          {
-            "name": "additionalAssetsNeedUnstaking",
             "type": {
               "defined": "PodU64"
             }
@@ -2168,13 +2205,13 @@
     },
     {
       "code": 1013,
-      "name": "VaultConfigAdminInvalid",
-      "msg": "VaultConfigAdminInvalid"
+      "name": "ConfigAdminInvalid",
+      "msg": "ConfigAdminInvalid"
     },
     {
       "code": 1014,
-      "name": "VaultConfigFeeAdminInvalid",
-      "msg": "VaultConfigFeeAdminInvalid"
+      "name": "ConfigFeeAdminInvalid",
+      "msg": "ConfigFeeAdminInvalid"
     },
     {
       "code": 1015,
@@ -2387,6 +2424,11 @@
       "msg": "VaultRewardFeeIsZero"
     },
     {
+      "code": 1057,
+      "name": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate",
+      "msg": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate"
+    },
+    {
       "code": 3000,
       "name": "ArithmeticOverflow",
       "msg": "ArithmeticOverflow"
@@ -2404,6 +2446,6 @@
   ],
   "metadata": {
     "origin": "shank",
-    "address": "34X2uqBhEGiWHu43RDEMwrMqXF4CpCPEZNaKdAaUS9jx"
+    "address": "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8"
   }
 }

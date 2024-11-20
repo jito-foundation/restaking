@@ -29,10 +29,10 @@ pub enum VaultError {
     VaultNcnAdminInvalid,
     #[error("VaultFeeAdminInvalid")]
     VaultFeeAdminInvalid,
-    #[error("VaultConfigAdminInvalid")]
-    VaultConfigAdminInvalid,
-    #[error("VaultConfigFeeAdminInvalid")]
-    VaultConfigFeeAdminInvalid,
+    #[error("ConfigAdminInvalid")]
+    ConfigAdminInvalid,
+    #[error("ConfigFeeAdminInvalid")]
+    ConfigFeeAdminInvalid,
     #[error("VaultFeeCapExceeded")]
     VaultFeeCapExceeded,
     #[error("VaultFeeChangeTooSoon")]
@@ -119,7 +119,8 @@ pub enum VaultError {
     VaultRewardFeeIsZero,
     #[error("VrtOutCannotBeZero")]
     VrtOutCannotBeZero,
-
+    #[error("NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate")]
+    NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate,
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
     #[error("ArithmeticUnderflow")]
