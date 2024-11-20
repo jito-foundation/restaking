@@ -23,7 +23,6 @@ Expect breaking changes.**
 
 - Universal framework for staking, restaking, and liquid restaking
 - VRT construction and management
-- Customizable slashing conditions
 - Flexible NCN and operator management
 
 ## Installation

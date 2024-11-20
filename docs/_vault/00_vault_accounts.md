@@ -8,7 +8,7 @@ weight: 1
 
 ## 1. About the program
 
-The vault program manages the vault receipt tokens (VRTs) and associated deposits. The program stores deposited funds and handles the minting and burning of tokenized stake. It also manages the vault's stake in an NCN, including delegation and slashing.
+The vault program manages the vault receipt tokens (VRTs) and associated deposits. The program stores deposited funds and handles the minting and burning of tokenized stake. It also manages the vault's stake in an NCN, including delegation.
 
 ## 2. Diagram
 
@@ -124,9 +124,5 @@ Assets are considered staked iff:
 - The NCN has opted-in to the vault
 - The Vault is delegated to that operator
 
-When assets are staked and the following conditions are met, the vault can be slashed by a given slasher:
-
-- The NCN has opted in to a slasher for the given vault.
-- The vault has agreed to the conditions set by the NCN for slashing the vault.
 
 ![img.png](/assets/images/staked_venn_diagram.png)
