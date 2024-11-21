@@ -71,7 +71,7 @@ pub async fn emit_vault_metrics(
     for (address, vault) in vaults.iter() {
         let vrt_mint = vrt_mint_map
             .get(&vault.vrt_mint)
-            .ok_or(anyhow::anyhow!("Mint not found in map"))?;
+            .ok_or_else(|| anyhow::anyhow!("Mint not found in map"))?;
 
         datapoint_info!(
             "restaking-vault-supply",
