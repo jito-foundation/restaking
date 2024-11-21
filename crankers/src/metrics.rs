@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use jito_vault_core::config::Config;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::signature::Keypair;
+use solana_sdk::{program_pack::Pack, pubkey::Pubkey, signature::Keypair};
+use spl_token::state::Mint;
 
 use crate::vault_handler::VaultHandler;
 
@@ -53,14 +56,31 @@ pub async fn emit_vault_metrics(
         })
         .count() as i64;
 
+    let vrt_mint_pubkeys: Vec<Pubkey> = vaults.iter().map(|(_, vault)| vault.vrt_mint).collect();
+    let vrt_mint_accounts = rpc_client.get_multiple_accounts(&vrt_mint_pubkeys).await?;
+    let vrt_mint_map: HashMap<Pubkey, Mint> = vrt_mint_pubkeys
+        .into_iter()
+        .zip(vrt_mint_accounts.into_iter())
+        .filter_map(|(pubkey, account)| account.map(|acc| (pubkey, acc)))
+        .map(|(pubkey, account)| {
+            let mint = Mint::unpack(&account.data).expect("Failed to unpack Mint");
+            (pubkey, mint)
+        })
+        .collect();
+
     for (address, vault) in vaults.iter() {
+        let vrt_mint = vrt_mint_map
+            .get(&vault.vrt_mint)
+            .ok_or(anyhow::anyhow!("Mint not found in map"))?;
+
         datapoint_info!(
             "restaking-vault-supply",
             ("slot", slot as i64, i64),
             ("slot_index", slot_index as i64, i64),
             ("vault", address.to_string(), String),
             ("vrt_mint", vault.vrt_mint.to_string(), String),
-            ("total_supply", vault.vrt_supply() as i64, i64),
+            ("total_supply_internal", vault.vrt_supply() as i64, i64),
+            ("total_supply_from_mint", vrt_mint.supply as i64, i64),
         );
     }
 
