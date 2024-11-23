@@ -17,8 +17,8 @@ import {
   getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
-  getBoolDecoder,
-  getBoolEncoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getStructDecoder,
   getStructEncoder,
   getU16Decoder,
@@ -81,7 +81,7 @@ export type Vault = {
   rewardFeeBps: number;
   programFeeBps: number;
   bump: number;
-  isPaused: number;
+  isPaused: boolean;
   reserved: Array<number>;
 };
 
@@ -121,7 +121,7 @@ export type VaultArgs = {
   rewardFeeBps: number;
   programFeeBps: number;
   bump: number;
-  isPaused: number;
+  isPaused: boolean;
   reserved: Array<number>;
 };
 
@@ -162,7 +162,7 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['rewardFeeBps', getU16Encoder()],
     ['programFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
-    ['isPaused', getBoolEncoder()],
+    ['isPaused', getBooleanEncoder()],
     ['reserved', getArrayEncoder(getU8Encoder(), { size: 259 })],
   ]);
 }
@@ -204,7 +204,7 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['rewardFeeBps', getU16Decoder()],
     ['programFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
-    ['isPaused', getBoolDecoder()],
+    ['isPaused', getBooleanDecoder()],
     ['reserved', getArrayDecoder(getU8Decoder(), { size: 259 })],
   ]);
 }
