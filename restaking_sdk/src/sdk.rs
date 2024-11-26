@@ -161,8 +161,7 @@ pub fn initialize_ncn_vault_slasher_ticket(
     ncn_vault_slasher_ticket: &Pubkey,
     admin: &Pubkey,
     payer: &Pubkey,
-
-    max_slash_amount: u64,
+    max_slashable_per_epoch: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -178,9 +177,11 @@ pub fn initialize_ncn_vault_slasher_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeNcnVaultSlasherTicket(max_slash_amount)
-            .try_to_vec()
-            .unwrap(),
+        data: RestakingInstruction::InitializeNcnVaultSlasherTicket {
+            max_slashable_per_epoch,
+        }
+        .try_to_vec()
+        .unwrap(),
     }
 }
 

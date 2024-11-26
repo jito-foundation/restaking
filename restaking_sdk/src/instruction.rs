@@ -39,7 +39,7 @@ pub enum RestakingInstruction {
     #[account(6, signer, name = "admin")]
     #[account(7, writable, signer, name = "payer")]
     #[account(8, name = "system_program")]
-    InitializeNcnVaultSlasherTicket(u64),
+    InitializeNcnVaultSlasherTicket { max_slashable_per_epoch: u64 },
 
     /// NCN adds support for receiving delegation from a vault
     #[account(0, name = "config")]
