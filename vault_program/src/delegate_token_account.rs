@@ -1,5 +1,5 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint};
+use jito_jsm_core::loader::{load_signer, load_token_account, load_token_mint, load_token_program};
 use jito_vault_core::{config::Config, vault::Vault};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
@@ -38,7 +38,8 @@ pub fn process_delegate_token_account(
         token_mint.key,
         token_program_info,
     )?;
-    spl_token_2022::check_spl_token_program_account(token_program_info.key)?;
+    // Only the original spl token program is allowed
+    load_token_program(token_program_info)?;
 
     // We support SPL Token and SPL Token 2022 standards
     // The owner of token mint and token account must match
