@@ -94,7 +94,6 @@ impl VaultStakerWithdrawalTicket {
     ///
     /// # Arguments
     /// * `vault` - The vault
-    /// * `staker` - The staker
     /// * `base` - The base account used as a PDA seed
     pub fn seeds(vault: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
@@ -102,6 +101,13 @@ impl VaultStakerWithdrawalTicket {
             vault.to_bytes().to_vec(),
             base.to_bytes().to_vec(),
         ])
+    }
+
+    /// Returns the seeds for the PDA used for signing
+    pub fn signing_seeds(&self, vault: &Pubkey) -> Vec<Vec<u8>> {
+        let mut vault_seeds = Self::seeds(vault, &self.base);
+        vault_seeds.push(vec![self.bump]);
+        vault_seeds
     }
 
     /// Find the program address for the PDA
