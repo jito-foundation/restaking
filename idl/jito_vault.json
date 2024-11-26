@@ -61,8 +61,18 @@
           "isSigner": true
         },
         {
-          "name": "tokenMint",
+          "name": "stMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "adminStTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultStTokenAccount",
+          "isMut": true,
           "isSigner": false
         },
         {

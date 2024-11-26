@@ -92,6 +92,11 @@ pub fn process_mint(
         vrt_to_fee_wallet,
     } = vault.mint_with_fee(amount_in, min_amount_out)?;
 
+    if vrt_to_depositor == 0 {
+        msg!("Some VRT must be minted to the depositor. If you wish to donate to the vault, please send ST directly to the vault token account");
+        return Err(VaultError::VrtOutCannotBeZero.into());
+    }
+
     // transfer tokens from depositor to vault
     {
         invoke(
