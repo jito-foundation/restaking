@@ -37,7 +37,7 @@ pub fn process_cooldown_ncn_vault_ticket(
         NcnVaultTicket::try_from_slice_unchecked_mut(&mut ncn_vault_ticket_data)?;
     if !ncn_vault_ticket
         .state
-        .deactivate(Clock::get()?.slot, config.epoch_length())
+        .deactivate(Clock::get()?.slot, config.epoch_length())?
     {
         msg!("Vault is not ready to be deactivated");
         return Err(RestakingError::NcnVaultTicketFailedCooldown.into());
