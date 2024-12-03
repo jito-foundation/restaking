@@ -16,6 +16,8 @@ use solana_program::{
 
 use crate::MAX_BPS;
 
+const RESERVED_SPACE_LEN: usize = 229;
+
 /// The vault configuration account for the vault program.
 /// Manages program-wide settings and state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
@@ -86,7 +88,7 @@ impl Config {
             program_fee_wallet,
             fee_admin: admin,
             bump,
-            reserved: [0; 229],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -240,12 +242,14 @@ mod tests {
             std::mem::size_of::<Pubkey>() + // restaking_program
             std::mem::size_of::<PodU64>() + // epoch_length
             std::mem::size_of::<PodU64>() + // num_vaults
-            std::mem::size_of::<PodU16>() + // fee_cap_bps
+            std::mem::size_of::<PodU16>() + // deposit_withdrawal_fee_cap_bps
             std::mem::size_of::<PodU16>() + // fee_rate_of_change_bps
             std::mem::size_of::<PodU16>() + // fee_bump_bps
-            std::mem::size_of::<Pubkey>() + // program_fee_bps
+            std::mem::size_of::<PodU16>() + // program_fee_bps
+            std::mem::size_of::<Pubkey>() + // program_fee_wallet
+            std::mem::size_of::<Pubkey>() + // fee_admin
             std::mem::size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(config_size, sum_of_fields);
     }
 
