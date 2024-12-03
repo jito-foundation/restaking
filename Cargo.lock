@@ -2579,6 +2579,7 @@ dependencies = [
  "solana-rpc-client",
  "solana-rpc-client-api",
  "solana-sdk",
+ "spl-token",
  "thiserror",
  "tokio",
 ]
