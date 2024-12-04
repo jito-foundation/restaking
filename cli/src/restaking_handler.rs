@@ -3,11 +3,16 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_restaking_client::instructions::{
-    InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
-    InitializeOperatorVaultTicketBuilder, SetConfigAdminBuilder, WarmupOperatorVaultTicketBuilder,
+    CooldownNcnVaultTicketBuilder, InitializeConfigBuilder, InitializeNcnBuilder,
+    InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder, InitializeOperatorBuilder,
+    InitializeOperatorVaultTicketBuilder, NcnCooldownOperatorBuilder, NcnWarmupOperatorBuilder,
+    OperatorCooldownNcnBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
+    WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
 };
 use jito_restaking_core::{
-    config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
+    config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
+    ncn_vault_ticket::NcnVaultTicket, operator::Operator,
+    operator_vault_ticket::OperatorVaultTicket,
 };
 use log::{debug, info};
 use solana_account_decoder::UiAccountEncoding;
@@ -64,6 +69,30 @@ impl RestakingCliHandler {
             RestakingCommands::Ncn {
                 action: NcnActions::Initialize,
             } => self.initialize_ncn().await,
+            RestakingCommands::Ncn {
+                action: NcnActions::InitializeNcnOperatorState { ncn, operator },
+            } => self.initialize_ncn_operator_state(ncn, operator).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::NcnWarmupOperator { ncn, operator },
+            } => self.ncn_warmup_operator(ncn, operator).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::NcnCooldownOperator { ncn, operator },
+            } => self.ncn_cooldown_operator(ncn, operator).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::OperatorWarmupNcn { ncn, operator },
+            } => self.operator_warmup_ncn(ncn, operator).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::OperatorCooldownNcn { ncn, operator },
+            } => self.operator_cooldown_ncn(ncn, operator).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::InitializeNcnVaultTicket { ncn, vault },
+            } => self.initialize_ncn_vault_ticket(ncn, vault).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::WarmupNcnVaultTicket { ncn, vault },
+            } => self.warmup_ncn_vault_ticket(ncn, vault).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::CooldownNcnVaultTicket { ncn, vault },
+            } => self.cooldown_ncn_vault_ticket(ncn, vault).await,
             RestakingCommands::Ncn {
                 action: NcnActions::Get { pubkey },
             } => self.get_ncn(pubkey).await,
@@ -161,6 +190,404 @@ impl RestakingCliHandler {
             .ok_or_else(|| anyhow!("No signature status"))?;
         info!("Transaction status: {:?}", tx_status);
         info!("NCN initialized at address: {:?}", ncn);
+
+        Ok(())
+    }
+
+    pub async fn initialize_ncn_operator_state(&self, ncn: Pubkey, operator: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_operator_state =
+            NcnOperatorState::find_program_address(&self.restaking_program_id, &ncn, &operator).0;
+
+        let mut ix_builder = InitializeNcnOperatorStateBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .operator(operator)
+            .ncn_operator_state(ncn_operator_state)
+            .admin(keypair.pubkey())
+            .payer(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Initializing NCN Operator State transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        info!("\nCreated NCN Operator State");
+        info!("NCN address: {}", ncn);
+        info!("Operator address: {}", operator);
+        info!("NCN Operator State address: {}", ncn_operator_state);
+
+        Ok(())
+    }
+
+    pub async fn ncn_warmup_operator(&self, ncn: Pubkey, operator: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_operator_state =
+            NcnOperatorState::find_program_address(&self.restaking_program_id, &ncn, &operator).0;
+
+        let mut ix_builder = NcnWarmupOperatorBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .operator(operator)
+            .ncn_operator_state(ncn_operator_state)
+            .admin(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!("NCN Warmup Operator transaction: {:?}", tx.get_signature());
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        Ok(())
+    }
+
+    pub async fn ncn_cooldown_operator(&self, ncn: Pubkey, operator: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_operator_state =
+            NcnOperatorState::find_program_address(&self.restaking_program_id, &ncn, &operator).0;
+
+        let mut ix_builder = NcnCooldownOperatorBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .operator(operator)
+            .ncn_operator_state(ncn_operator_state)
+            .admin(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "NCN Cooldown Operator transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        Ok(())
+    }
+
+    pub async fn operator_warmup_ncn(&self, ncn: Pubkey, operator: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_operator_state =
+            NcnOperatorState::find_program_address(&self.restaking_program_id, &ncn, &operator).0;
+
+        let mut ix_builder = OperatorWarmupNcnBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .operator(operator)
+            .ncn_operator_state(ncn_operator_state)
+            .admin(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!("Operator Warmup NCN transaction: {:?}", tx.get_signature());
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        Ok(())
+    }
+
+    pub async fn operator_cooldown_ncn(&self, ncn: Pubkey, operator: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_operator_state =
+            NcnOperatorState::find_program_address(&self.restaking_program_id, &ncn, &operator).0;
+
+        let mut ix_builder = OperatorCooldownNcnBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .operator(operator)
+            .ncn_operator_state(ncn_operator_state)
+            .admin(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Operator Cooldown NCN transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        Ok(())
+    }
+
+    pub async fn initialize_ncn_vault_ticket(&self, ncn: Pubkey, vault: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_vault_ticket =
+            NcnVaultTicket::find_program_address(&self.restaking_program_id, &ncn, &vault).0;
+
+        let mut ix_builder = InitializeNcnVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .vault(vault)
+            .ncn_vault_ticket(ncn_vault_ticket)
+            .admin(keypair.pubkey())
+            .payer(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Initializing NCN Vault Ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        info!("\nCreated NCN Vault Ticket");
+        info!("NCN address: {}", ncn);
+        info!("Vault address: {}", vault);
+        info!("NCN Vault Ticket address: {}", ncn_vault_ticket);
+
+        Ok(())
+    }
+
+    pub async fn warmup_ncn_vault_ticket(&self, ncn: Pubkey, vault: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_vault_ticket =
+            NcnVaultTicket::find_program_address(&self.restaking_program_id, &ncn, &vault).0;
+
+        let mut ix_builder = WarmupNcnVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .vault(vault)
+            .ncn_vault_ticket(ncn_vault_ticket)
+            .admin(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Warming up NCN Vault Ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
+
+        Ok(())
+    }
+
+    pub async fn cooldown_ncn_vault_ticket(&self, ncn: Pubkey, vault: Pubkey) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn_vault_ticket =
+            NcnVaultTicket::find_program_address(&self.restaking_program_id, &ncn, &vault).0;
+
+        let mut ix_builder = CooldownNcnVaultTicketBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.restaking_program_id).0)
+            .ncn(ncn)
+            .vault(vault)
+            .ncn_vault_ticket(ncn_vault_ticket)
+            .admin(keypair.pubkey())
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Cooling down NCN Vault Ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
 
         Ok(())
     }
