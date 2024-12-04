@@ -37,6 +37,22 @@ pub enum ConfigActions {
 pub enum NcnActions {
     /// Initialize NCN
     Initialize,
+    /// Initialize NCN Operator State
+    InitializeNcnOperatorState { ncn: Pubkey, operator: Pubkey },
+    /// NCN warmpup Operator
+    NcnWarmupOperator { ncn: Pubkey, operator: Pubkey },
+    /// NCN cooldown Operator
+    NcnCooldownOperator { ncn: Pubkey, operator: Pubkey },
+    /// Operator warmup NCN
+    OperatorWarmupNcn { ncn: Pubkey, operator: Pubkey },
+    /// Operator cooldown NCN
+    OperatorCooldownNcn { ncn: Pubkey, operator: Pubkey },
+    /// Initialize NCN Vault Ticket
+    InitializeNcnVaultTicket { ncn: Pubkey, vault: Pubkey },
+    /// Warmup NCN Vault Ticket
+    WarmupNcnVaultTicket { ncn: Pubkey, vault: Pubkey },
+    /// Cooldown NCN Vault Ticket
+    CooldownNcnVaultTicket { ncn: Pubkey, vault: Pubkey },
     /// Get NCN
     Get { pubkey: String },
     /// List all NCNs
