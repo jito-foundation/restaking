@@ -946,7 +946,7 @@ impl VaultProgramClient {
         })
     }
 
-    pub async fn change_withdrawal_ticket_owner(
+    pub async fn do_change_withdrawal_ticket_owner(
         &mut self,
         config: &Pubkey,
         vault: &Pubkey,
