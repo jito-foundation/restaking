@@ -13,4 +13,5 @@ readme = { workspace = true }
 borsh = { workspace = true }
 bytemuck = { workspace = true }
 jito-account-traits-derive = { workspace = true }
+serde = { workspace = true }
 solana-program = { workspace = true }

@@ -2,9 +2,10 @@ use std::fmt::{Debug, Formatter};
 
 // https://github.com/solana-labs/solana-program-library/tree/master/libraries/pod
 use bytemuck::{Pod, Zeroable};
+use serde::{Deserialize, Serialize};
 
 /// The standard `bool` is not a `Pod`, define a replacement that is
-#[derive(Clone, Copy, Default, PartialEq, Eq, Pod, Zeroable)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Pod, Zeroable, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct PodBool(pub u8);
 impl PodBool {
@@ -75,7 +76,7 @@ macro_rules! impl_int_conversion {
     };
 }
 
-#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct PodU16([u8; 2]);
 impl_int_conversion!(PodU16, u16);
@@ -87,7 +88,7 @@ impl Debug for PodU16 {
     }
 }
 
-#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct PodU32([u8; 4]);
 impl_int_conversion!(PodU32, u32);
@@ -99,7 +100,7 @@ impl Debug for PodU32 {
     }
 }
 
-#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct PodU64([u8; 8]);
 impl_int_conversion!(PodU64, u64);

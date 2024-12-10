@@ -2363,6 +2363,7 @@ dependencies = [
  "borsh 0.10.3",
  "bytemuck",
  "jito-account-traits-derive",
+ "serde",
  "solana-program",
 ]
 
