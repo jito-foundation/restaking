@@ -18,6 +18,22 @@ const restakingRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir,
 const restakingKinobi = kinobi.createFromRoot(restakingRootNode);
 restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
     {
+        // PodU128 -> u128
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU128"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u128"),
+            };
+        },
+    },
+    {
         // PodU64 -> u64
         select: (node) => {
             return (
@@ -80,7 +96,7 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
                 data: {
                     ...node.data,
                     fields: [
-                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        kinobi.structFieldTypeNode({ name: 'discriminator', type: kinobi.numberTypeNode('u64') }),
                         ...node.data.fields
                     ]
                 }
@@ -102,6 +118,22 @@ const jsVaultClientDir = path.join(jsClientsDir, "vault_client");
 const vaultRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_vault.json")));
 const vaultKinobi = kinobi.createFromRoot(vaultRootNode);
 vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
+    {
+        // PodU128 -> u128
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU128"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u128"),
+            };
+        },
+    },
     {
         // PodU64 -> u64
         select: (node) => {
@@ -180,7 +212,7 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
                 data: {
                     ...node.data,
                     fields: [
-                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        kinobi.structFieldTypeNode({ name: 'discriminator', type: kinobi.numberTypeNode('u64') }),
                         ...node.data.fields
                     ]
                 }
