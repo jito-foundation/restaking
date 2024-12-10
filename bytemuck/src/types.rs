@@ -111,3 +111,15 @@ impl Debug for PodU64 {
         f.debug_tuple("PodU64").field(&v).finish()
     }
 }
+
+#[derive(Clone, Copy, Default, PartialEq, Pod, Zeroable, Eq, Serialize, Deserialize)]
+#[repr(transparent)]
+pub struct PodU128([u8; 16]);
+impl_int_conversion!(PodU128, u128);
+
+impl Debug for PodU128 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let v: u128 = u128::from(self);
+        f.debug_tuple("PodU128").field(&v).finish()
+    }
+}
