@@ -128,8 +128,10 @@ export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x41e; // 1054
 export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_DELTA_TOO_LARGE = 0x41f; // 1055
 /** VaultRewardFeeIsZero: VaultRewardFeeIsZero */
 export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_IS_ZERO = 0x420; // 1056
+/** VrtOutCannotBeZero: VrtOutCannotBeZero */
+export const JITO_VAULT_ERROR__VRT_OUT_CANNOT_BE_ZERO = 0x421; // 1057
 /** NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate: NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate */
-export const JITO_VAULT_ERROR__NON_ZERO_ADDITIONAL_ASSETS_NEEDED_FOR_WITHDRAWAL_AT_END_OF_UPDATE = 0x421; // 1057
+export const JITO_VAULT_ERROR__NON_ZERO_ADDITIONAL_ASSETS_NEEDED_FOR_WITHDRAWAL_AT_END_OF_UPDATE = 0x422; // 1058
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */
@@ -198,7 +200,8 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__VAULT_UNDERFLOW
   | typeof JITO_VAULT_ERROR__VAULT_UPDATE_INCORRECT_INDEX
   | typeof JITO_VAULT_ERROR__VAULT_UPDATE_NEEDED
-  | typeof JITO_VAULT_ERROR__VAULT_UPDATE_STATE_NOT_FINISHED_UPDATING;
+  | typeof JITO_VAULT_ERROR__VAULT_UPDATE_STATE_NOT_FINISHED_UPDATING
+  | typeof JITO_VAULT_ERROR__VRT_OUT_CANNOT_BE_ZERO;
 
 let jitoVaultErrorMessages: Record<JitoVaultError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
@@ -264,6 +267,7 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__VAULT_UPDATE_INCORRECT_INDEX]: `VaultUpdateIncorrectIndex`,
     [JITO_VAULT_ERROR__VAULT_UPDATE_NEEDED]: `VaultUpdateNeeded`,
     [JITO_VAULT_ERROR__VAULT_UPDATE_STATE_NOT_FINISHED_UPDATING]: `VaultUpdateStateNotFinishedUpdating`,
+    [JITO_VAULT_ERROR__VRT_OUT_CANNOT_BE_ZERO]: `VrtOutCannotBeZero`,
   };
 }
 
