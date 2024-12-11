@@ -41,7 +41,6 @@ pub fn process_delegate_token_account(
     // Only the original spl token program is allowed
     load_token_program(token_program_info)?;
 
-    // We support SPL Token and SPL Token 2022 standards
     // The owner of token mint and token account must match
     if token_mint.owner.ne(token_account.owner) {
         return Err(ProgramError::InvalidAccountData);
