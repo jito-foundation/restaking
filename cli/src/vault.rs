@@ -162,9 +162,9 @@ pub enum VaultActions {
     SetSecondaryAdmin {
         /// The vault pubkey
         vault: Pubkey,
-        /// New Admin
+        /// New admin pubkey
         new_admin: Pubkey,
-        /// Secondary Admin
+        /// Vault admin role
         #[clap(value_enum)]
         role: VaultAdminRole,
     },

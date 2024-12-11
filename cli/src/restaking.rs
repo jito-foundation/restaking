@@ -42,8 +42,11 @@ pub enum NcnActions {
     Get { pubkey: String },
     /// Set Secondary Admin
     SetSecondaryAdmin {
+        /// The NCN pubkey
         ncn: Pubkey,
+        /// New admin pubkey
         new_admin: Pubkey,
+        /// NCN Admin role
         role: NcnAdminRole,
     },
     /// List all NCNs
@@ -58,10 +61,13 @@ pub enum OperatorActions {
     InitializeOperatorVaultTicket { operator: String, vault: String },
     /// Warmup Operator Vault Ticket
     WarmupOperatorVaultTicket { operator: String, vault: String },
-    /// Warmup Operator Vault Ticket
+    /// Set Secondary Admin
     SetSecondaryAdmin {
+        /// The operator pubkey
         operator: Pubkey,
+        /// New admin pubkey
         new_admin: Pubkey,
+        /// Operator Admin role
         role: OperatorAdminRole,
     },
     /// Get operator
