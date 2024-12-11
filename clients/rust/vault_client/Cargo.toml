@@ -18,6 +18,7 @@ anchor-idl-build = []
 anchor-lang = { workspace = true }
 borsh = { workspace = true }
 bytemuck = { workspace = true }
+clap = { workspace = true }
 num-derive = { workspace = true }
 num-traits = { workspace = true }
 serde = { workspace = true }

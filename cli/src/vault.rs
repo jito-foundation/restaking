@@ -1,4 +1,5 @@
 use clap::{command, Subcommand};
+use jito_vault_client::types::VaultAdminRole;
 use solana_program::pubkey::Pubkey;
 
 #[derive(Subcommand)]
@@ -156,5 +157,15 @@ pub enum VaultActions {
         vault: String,
         /// The new capacity
         amount: u64,
+    },
+    /// Set Secondary Admin
+    SetSecondaryAdmin {
+        /// The vault pubkey
+        vault: Pubkey,
+        /// New Admin
+        new_admin: Pubkey,
+        /// Secondary Admin
+        #[clap(value_enum)]
+        role: VaultAdminRole,
     },
 }

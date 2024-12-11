@@ -9,9 +9,9 @@ use jito_vault_client::{
         CooldownDelegationBuilder, CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
         EnqueueWithdrawalBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder, SetSecondaryAdminBuilder,
     },
-    types::WithdrawalAllocationMethod,
+    types::{VaultAdminRole, WithdrawalAllocationMethod},
 };
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
@@ -178,6 +178,14 @@ impl VaultCliHandler {
             VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::SetSecondaryAdmin {
+                        vault,
+                        new_admin,
+                        role,
+                    },
+            } => self.set_secondary_admin(vault, new_admin, role).await,
         }
     }
 
@@ -1075,6 +1083,49 @@ impl VaultCliHandler {
         info!("Vault capacity instruction: {:?}", builder);
         info!(
             "Vault capacity transaction signature: {:?}",
+            tx.get_signature()
+        );
+        rpc_client
+            .send_and_confirm_transaction(&tx)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    pub async fn set_secondary_admin(
+        &self,
+        vault: Pubkey,
+        new_admin: Pubkey,
+        role: VaultAdminRole,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let mut builder = SetSecondaryAdminBuilder::new();
+        builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .admin(keypair.pubkey())
+            .new_admin(new_admin)
+            .vault_admin_role(role);
+
+        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            recent_blockhash,
+        );
+
+        info!("Vault secondary admin instruction: {:?}", builder);
+        info!(
+            "Vault secondary admin transaction signature: {:?}",
             tx.get_signature()
         );
         rpc_client

@@ -59,7 +59,7 @@ jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.
 jito-restaking-core = { path = "restaking_core", version = "=0.0.3" }
 jito-restaking-program = { path = "restaking_program", version = "=0.0.3" }
 jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.3" }
-jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.3" }
+jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.3", features = ["serde"] }
 jito-vault-core = { path = "vault_core", version = "=0.0.3" }
 jito-vault-program = { path = "vault_program", version = "=0.0.3" }
 jito-vault-sdk = { path = "vault_sdk", version = "=0.0.3" }
