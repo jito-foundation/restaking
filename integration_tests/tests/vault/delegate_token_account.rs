@@ -247,7 +247,7 @@ mod tests {
                 )
                 .await;
 
-            assert_ix_error(test_error, InstructionError::IncorrectProgramId);
+            assert_ix_error(test_error, InstructionError::InvalidAccountOwner);
         } else {
             let test_error = vault_program_client
                 .delegate_token_account(

@@ -162,14 +162,14 @@ pub fn load_token_account(
     mint: &Pubkey,
     token_program: &AccountInfo,
 ) -> Result<(), ProgramError> {
+    if token_program.key.ne(&spl_token::id()) {
+        msg!("Account data is empty");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+
     if token_account.owner.ne(&spl_token::id()) {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
-    }
-
-    if token_program.key.ne(&spl_token::id()) {
-        msg!("Token program is not the token program");
-        return Err(ProgramError::InvalidAccountData);
     }
 
     if token_account.data_is_empty() {
