@@ -2,9 +2,13 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_restaking_client::instructions::{
-    InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
-    InitializeOperatorVaultTicketBuilder, SetConfigAdminBuilder, WarmupOperatorVaultTicketBuilder,
+use jito_restaking_client::{
+    instructions::{
+        InitializeConfigBuilder, InitializeNcnBuilder, InitializeOperatorBuilder,
+        InitializeOperatorVaultTicketBuilder, NcnSetSecondaryAdminBuilder,
+        OperatorSetSecondaryAdminBuilder, SetConfigAdminBuilder, WarmupOperatorVaultTicketBuilder,
+    },
+    types::{NcnAdminRole, OperatorAdminRole},
 };
 use jito_restaking_core::{
     config::Config, ncn::Ncn, operator::Operator, operator_vault_ticket::OperatorVaultTicket,
@@ -65,6 +69,14 @@ impl RestakingCliHandler {
                 action: NcnActions::Initialize,
             } => self.initialize_ncn().await,
             RestakingCommands::Ncn {
+                action:
+                    NcnActions::SetSecondaryAdmin {
+                        ncn,
+                        new_admin,
+                        role,
+                    },
+            } => self.ncn_set_secondary_admin(ncn, new_admin, role).await,
+            RestakingCommands::Ncn {
                 action: NcnActions::Get { pubkey },
             } => self.get_ncn(pubkey).await,
             RestakingCommands::Ncn {
@@ -79,6 +91,17 @@ impl RestakingCliHandler {
             RestakingCommands::Operator {
                 action: OperatorActions::WarmupOperatorVaultTicket { operator, vault },
             } => self.warmup_operator_vault_ticket(operator, vault).await,
+            RestakingCommands::Operator {
+                action:
+                    OperatorActions::SetSecondaryAdmin {
+                        operator,
+                        new_admin,
+                        role,
+                    },
+            } => {
+                self.operator_set_secondary_admin(operator, new_admin, role)
+                    .await
+            }
             RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
             } => self.get_operator(pubkey).await,
@@ -161,6 +184,56 @@ impl RestakingCliHandler {
             .ok_or_else(|| anyhow!("No signature status"))?;
         info!("Transaction status: {:?}", tx_status);
         info!("NCN initialized at address: {:?}", ncn);
+
+        Ok(())
+    }
+
+    pub async fn ncn_set_secondary_admin(
+        &self,
+        ncn: Pubkey,
+        new_admin: Pubkey,
+        role: NcnAdminRole,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let mut ix_builder = NcnSetSecondaryAdminBuilder::new();
+        ix_builder
+            .ncn(ncn)
+            .admin(keypair.pubkey())
+            .new_admin(new_admin)
+            .ncn_admin_role(role)
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "NCN Set Secondary Admin transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+        let statuses = rpc_client
+            .get_signature_statuses(&[*tx.get_signature()])
+            .await?;
+
+        let tx_status = statuses
+            .value
+            .first()
+            .unwrap()
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signature status"))?;
+        info!("Transaction status: {:?}", tx_status);
 
         Ok(())
     }
@@ -309,6 +382,44 @@ impl RestakingCliHandler {
 
         info!(
             "Warming up operator vault ticket transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        Ok(())
+    }
+
+    pub async fn operator_set_secondary_admin(
+        &self,
+        operator: Pubkey,
+        new_admin: Pubkey,
+        role: OperatorAdminRole,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let mut ix_builder = OperatorSetSecondaryAdminBuilder::new();
+        ix_builder
+            .operator(operator)
+            .admin(keypair.pubkey())
+            .new_admin(new_admin)
+            .operator_admin_role(role);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!(
+            "Operator Set Secondary Admin transaction: {:?}",
             tx.get_signature()
         );
         let result = rpc_client.send_and_confirm_transaction(&tx).await?;

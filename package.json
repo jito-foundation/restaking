@@ -5,10 +5,6 @@
   "dependencies": {
     "@codama/nodes-from-anchor": "^1.0.1",
     "@codama/renderers": "^1.0.4",
-    "@kinobi-so/nodes-from-anchor": "^0.21.1",
-    "@kinobi-so/renderers": "^0.21.1",
-    "@kinobi-so/renderers-js-umi": "^0.21.1",
-    "@kinobi-so/renderers-rust": "^0.21.1",
     "codama": "^1.1.0",
     "corepack": "^0.29.3",
     "yarn": "2.4.3"
