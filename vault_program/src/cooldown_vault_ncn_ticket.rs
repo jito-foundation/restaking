@@ -30,7 +30,7 @@ pub fn process_cooldown_vault_ncn_ticket(
     let vault_data = vault_info.data.borrow();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     Ncn::load(&config.restaking_program, ncn, false)?;
-    VaultNcnTicket::load(program_id, vault_ncn_ticket, ncn, vault_info, true)?;
+    VaultNcnTicket::load(program_id, vault_ncn_ticket, vault_info, ncn, true)?;
     let mut vault_ncn_ticket_data = vault_ncn_ticket.data.borrow_mut();
     let vault_ncn_ticket =
         VaultNcnTicket::try_from_slice_unchecked_mut(&mut vault_ncn_ticket_data)?;

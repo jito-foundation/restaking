@@ -18,8 +18,9 @@ use jito_vault_sdk::{
     inline_mpl_token_metadata,
     instruction::{VaultAdminRole, WithdrawalAllocationMethod},
     sdk::{
-        add_delegation, cooldown_delegation, initialize_config, initialize_vault,
-        set_deposit_capacity, warmup_vault_ncn_slasher_ticket, warmup_vault_ncn_ticket,
+        add_delegation, cooldown_delegation, cooldown_vault_ncn_ticket, initialize_config,
+        initialize_vault, set_deposit_capacity, warmup_vault_ncn_slasher_ticket,
+        warmup_vault_ncn_ticket,
     },
 };
 use log::info;
@@ -425,6 +426,56 @@ impl VaultProgramClient {
 
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[warmup_vault_ncn_ticket(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                ncn,
+                vault_ncn_ticket,
+                &ncn_vault_admin.pubkey(),
+            )],
+            Some(&ncn_vault_admin.pubkey()),
+            &[&ncn_vault_admin],
+            blockhash,
+        ))
+        .await
+    }
+
+    pub async fn do_cooldown_vault_ncn_ticket(
+        &mut self,
+        vault_root: &VaultRoot,
+        ncn: &Pubkey,
+    ) -> Result<(), TestError> {
+        let vault_ncn_ticket = VaultNcnTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            ncn,
+        )
+        .0;
+
+        self.cooldown_vault_ncn_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root.vault_pubkey,
+            ncn,
+            &vault_ncn_ticket,
+            &vault_root.vault_admin,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn cooldown_vault_ncn_ticket(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        ncn: &Pubkey,
+        vault_ncn_ticket: &Pubkey,
+        ncn_vault_admin: &Keypair,
+    ) -> TestResult<()> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[cooldown_vault_ncn_ticket(
                 &jito_vault_program::id(),
                 config,
                 vault,
