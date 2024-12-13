@@ -171,7 +171,7 @@ impl<'a> VaultHandler<'a> {
     /// tuple represents a vault operator delegation account and includes:
     /// - `Pubkey`: The public key of the vault operator delegation account.
     /// - `VaultOperatorDelegation`: The deserialized vault operator delegation data.
-    pub async fn get_vault_operator_delegation(
+    pub async fn get_vault_operator_delegations(
         &self,
     ) -> anyhow::Result<Vec<(Pubkey, VaultOperatorDelegation)>> {
         let rpc_client = self.get_rpc_client();

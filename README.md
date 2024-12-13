@@ -89,6 +89,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Push to the branch (git push origin username/feature_name)
 - Open a Pull Request
 
+## Security Audits
+
+| Group    | Date       | Commit                                                                 |
+|----------|------------|------------------------------------------------------------------------|
+| Offside  | 2024-11-20 | [60b3884](security_audits/offside_jito_vault_audit.pdf)                |
+| Ottersec | 2024-10-25 | [f04242f](security_audits/ottersec_jito_restaking_audit.pdf)           |
+
 ## License
 
 This project is licensed under the Business Source License 1.1 - see the [LICENSE](./LICENSE.md) file for details.

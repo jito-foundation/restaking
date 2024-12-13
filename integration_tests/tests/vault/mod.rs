@@ -2,6 +2,7 @@ mod add_delegation;
 mod burn_withdrawal_ticket;
 mod close_update_state_tracker;
 mod cooldown_delegation;
+mod cooldown_vault_ncn_ticket;
 mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod delegate_token_account;
