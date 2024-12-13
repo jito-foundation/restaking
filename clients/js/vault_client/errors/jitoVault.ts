@@ -14,6 +14,8 @@ import {
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 
+/** BadEpochLength: Bad epoch length */
+export const JITO_VAULT_ERROR__BAD_EPOCH_LENGTH = 0x0; // 0
 /** VaultSlashUnderflow: VaultSlashUnderflow */
 export const JITO_VAULT_ERROR__VAULT_SLASH_UNDERFLOW = 0x3e8; // 1000
 /** VaultInsufficientFunds: VaultInsufficientFunds */
@@ -140,6 +142,7 @@ export const JITO_VAULT_ERROR__DIVISION_BY_ZERO = 0xbba; // 3002
 export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW
   | typeof JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW
+  | typeof JITO_VAULT_ERROR__BAD_EPOCH_LENGTH
   | typeof JITO_VAULT_ERROR__CONFIG_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__CONFIG_FEE_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__DIVISION_BY_ZERO
@@ -205,6 +208,7 @@ if (process.env.NODE_ENV !== 'production') {
   jitoVaultErrorMessages = {
     [JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW]: `ArithmeticOverflow`,
     [JITO_VAULT_ERROR__ARITHMETIC_UNDERFLOW]: `ArithmeticUnderflow`,
+    [JITO_VAULT_ERROR__BAD_EPOCH_LENGTH]: `Bad epoch length`,
     [JITO_VAULT_ERROR__CONFIG_ADMIN_INVALID]: `ConfigAdminInvalid`,
     [JITO_VAULT_ERROR__CONFIG_FEE_ADMIN_INVALID]: `ConfigFeeAdminInvalid`,
     [JITO_VAULT_ERROR__DIVISION_BY_ZERO]: `DivisionByZero`,

@@ -2568,6 +2568,7 @@ dependencies = [
  "futures",
  "jito-account-traits-derive",
  "jito-bytemuck",
+ "jito-jsm-core",
  "jito-restaking-client",
  "jito-restaking-core",
  "jito-vault-client",

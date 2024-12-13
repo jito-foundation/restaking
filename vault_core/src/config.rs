@@ -7,6 +7,7 @@ use jito_bytemuck::{
     types::{PodU16, PodU64},
     AccountDeserialize, Discriminator,
 };
+use jito_jsm_core::{error::CoreError, get_epoch};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{
@@ -90,9 +91,8 @@ impl Config {
         }
     }
 
-    pub fn get_epoch_from_slot(&self, slot: u64) -> Result<u64, VaultError> {
-        slot.checked_div(self.epoch_length())
-            .ok_or(VaultError::InvalidEpochLength)
+    pub fn get_epoch_from_slot(&self, slot: u64) -> Result<u64, CoreError> {
+        get_epoch(slot, self.epoch_length())
     }
 
     pub fn epoch_length(&self) -> u64 {

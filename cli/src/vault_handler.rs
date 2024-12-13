@@ -349,8 +349,7 @@ impl VaultCliHandler {
         let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
 
         let current_slot = rpc_client.get_slot().await?;
-        let epoch_length = config_account.epoch_length();
-        let ncn_epoch = current_slot.checked_div(epoch_length).unwrap();
+        let ncn_epoch = config_account.get_epoch_from_slot(current_slot)?;
 
         let vault = Pubkey::from_str(&vault)?;
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
@@ -430,8 +429,7 @@ impl VaultCliHandler {
             let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
 
             let current_slot = rpc_client.get_slot().await?;
-            let epoch_length = config_account.epoch_length();
-            current_slot.checked_div(epoch_length).unwrap()
+            config_account.get_epoch_from_slot(current_slot).unwrap()
         };
 
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
@@ -492,8 +490,7 @@ impl VaultCliHandler {
                 let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
 
                 let current_slot = rpc_client.get_slot().await?;
-                let epoch_length = config_account.epoch_length();
-                current_slot.checked_div(epoch_length).unwrap()
+                config_account.get_epoch_from_slot(current_slot).unwrap()
             }
         };
 

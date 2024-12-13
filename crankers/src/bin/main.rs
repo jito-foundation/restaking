@@ -122,7 +122,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     loop {
         let slot = rpc_client.get_slot().await.context("get slot")?;
-        let epoch = slot.checked_div(config.epoch_length()).unwrap();
+        let epoch = config.get_epoch_from_slot(slot)?;
 
         info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
 
