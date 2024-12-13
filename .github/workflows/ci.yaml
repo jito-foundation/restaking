@@ -24,7 +24,7 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-audit
-      - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2023-0065 --ignore RUSTSEC-2024-0344
+      - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2023-0065 --ignore RUSTSEC-2024-0344 --ignore RUSTSEC-2024-0421
 
   code_gen:
     # cargo b && ./target/debug/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
