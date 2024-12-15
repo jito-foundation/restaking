@@ -31,6 +31,22 @@ pub enum VaultInstruction {
         decimals: u8,
     },
 
+    /// Initializes a frozen vault
+    #[account(0, writable, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, signer, name = "vrt_mint")]
+    #[account(3, name = "token_mint")]
+    #[account(4, writable, signer, name = "admin")]
+    #[account(5, signer, name = "base")]
+    #[account(6, name = "system_program")]
+    #[account(7, name = "token_program")]
+    InitializeFrozenVault {
+        deposit_fee_bps: u16,
+        withdrawal_fee_bps: u16,
+        reward_fee_bps: u16,
+        decimals: u8,
+    },
+
     /// Initializes a vault with an already-created VRT mint
     InitializeVaultWithMint,
 
@@ -128,6 +144,21 @@ pub enum VaultInstruction {
         min_amount_out: u64,
     },
 
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vrt_mint")]
+    #[account(3, writable, signer, name = "depositor")]
+    #[account(4, writable, name = "depositor_token_account")]
+    #[account(5, writable, name = "vault_token_account")]
+    #[account(6, writable, name = "depositor_vrt_token_account")]
+    #[account(7, writable, name = "vault_fee_token_account")]
+    #[account(8, name = "token_program")]
+    #[account(9, signer, optional, name = "mint_signer", description = "Signer for minting")]
+    MintToFrozen {
+        amount_in: u64,
+        min_amount_out: u64,
+    },
+
     /// Enqueues a withdrawal of VRT tokens
     /// Used when there aren't enough idle assets in the vault to cover a withdrawal
     #[account(0, name = "config")]
@@ -141,6 +172,23 @@ pub enum VaultInstruction {
     #[account(8, name = "system_program")]
     #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
     EnqueueWithdrawal {
+        amount: u64,
+    },
+
+    /// Enqueues a withdrawal of VRT tokens
+    /// Used when there aren't enough idle assets in the vault to cover a withdrawal
+    #[account(0, name = "config")]
+    #[account(1, writable, name = "vault")]
+    #[account(2, writable, name = "vault_staker_withdrawal_ticket")]
+    #[account(3, writable, name = "vault_staker_withdrawal_ticket_token_account")]
+    #[account(4, writable, signer, name = "staker")]
+    #[account(5, writable, name = "staker_vrt_token_account")]
+    #[account(6, signer, name = "base")]
+    #[account(7, name = "token_program")]
+    #[account(8, name = "system_program")]
+    #[account(9, signer, optional, name = "burn_signer", description = "Signer for burning")]
+    #[account(10, name = "vrt_mint")]
+    EnqueueWithdrawalFrozen {
         amount: u64,
     },
 

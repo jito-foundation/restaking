@@ -83,7 +83,7 @@ pub fn process_initialize_vault(
                 &spl_token::id(),
                 vrt_mint.key,
                 vault.key,
-                None,
+                Some(vault.key),
                 decimals,
             )?,
             &[vrt_mint.clone()],

@@ -107,6 +107,10 @@ pub enum VaultError {
     VaultIsPaused,
     #[error("InvalidDepositor")]
     InvalidDepositor,
+    #[error("VaultNotFrozen")]
+    VaultNotFrozen,
+    #[error("VaultIsFrozen")]
+    VaultIsFrozen,
     #[error("InvalidDepositTokenAccount")]
     InvalidDepositTokenAccount,
     #[error("NoSupportedMintBalanceChange")]

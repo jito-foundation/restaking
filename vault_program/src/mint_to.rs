@@ -39,6 +39,7 @@ pub fn process_mint(
     accounts: &[AccountInfo],
     amount_in: u64,
     min_amount_out: u64,
+    minting_frozen: bool,
 ) -> ProgramResult {
     let (required_accounts, optional_accounts) = accounts.split_at(9);
 
@@ -71,6 +72,11 @@ pub fn process_mint(
     vault.check_vrt_mint(vrt_mint.key)?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
     vault.check_is_paused()?;
+
+    if vault.is_frozen() && !minting_frozen {
+        msg!("Vault is frozen, use MintToFrozen instruction");
+        return Err(VaultError::VaultIsFrozen.into());
+    }
 
     // Currently, this is not possible, since the there are currently no instructions that allow the
     // vault to deposit tokens into the vault token account. This check is for future proofing.

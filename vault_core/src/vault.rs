@@ -147,8 +147,10 @@ pub struct Vault {
 
     is_paused: PodBool,
 
+    is_frozen: PodBool,
+
     /// Reserved space
-    reserved: [u8; 259],
+    reserved: [u8; 258],
 }
 
 impl Vault {
@@ -218,7 +220,8 @@ impl Vault {
             delegation_state: DelegationState::default(),
             additional_assets_need_unstaking: PodU64::from(0),
             is_paused: PodBool::from_bool(false),
-            reserved: [0; 259],
+            is_frozen: PodBool::from_bool(false),
+            reserved: [0; 258],
         })
     }
 
@@ -236,6 +239,14 @@ impl Vault {
 
     pub fn vault_index(&self) -> u64 {
         self.vault_index.into()
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        self.is_frozen.into()
+    }
+
+    pub fn set_is_frozen(&mut self) {
+        self.is_frozen = PodBool::from_bool(true);
     }
 
     pub fn set_last_fee_change_slot(&mut self, slot: u64) {
