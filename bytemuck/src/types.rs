@@ -122,3 +122,163 @@ impl Debug for PodBool {
         f.debug_tuple("PodBool").field(&v).finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pod_u16() {
+        // Test zero
+        let zero = PodU16::default();
+        assert_eq!(u16::from(zero), 0);
+
+        // Test conversion from u16
+        let n: u16 = 12345;
+        let pod = PodU16::from(n);
+        assert_eq!(u16::from(pod), n);
+
+        // Test reference conversion
+        let pod_from_ref = PodU16::from(&n);
+        assert_eq!(u16::from(pod_from_ref), n);
+
+        // Test max value
+        let max = PodU16::from(u16::MAX);
+        assert_eq!(u16::from(max), u16::MAX);
+    }
+
+    #[test]
+    fn test_pod_u32() {
+        // Test zero
+        let zero = PodU32::default();
+        assert_eq!(u32::from(zero), 0);
+
+        // Test conversion from u32
+        let n: u32 = 305_419_896;
+        let pod = PodU32::from(n);
+        assert_eq!(u32::from(pod), n);
+
+        // Test reference conversion
+        let pod_from_ref = PodU32::from(&n);
+        assert_eq!(u32::from(pod_from_ref), n);
+
+        // Test max value
+        let max = PodU32::from(u32::MAX);
+        assert_eq!(u32::from(max), u32::MAX);
+    }
+
+    #[test]
+    fn test_pod_u64() {
+        // Test zero
+        let zero = PodU64::default();
+        assert_eq!(u64::from(zero), 0);
+
+        // Test conversion from u64
+        let n: u64 = 1_311_768_467_294_899_695;
+        let pod = PodU64::from(n);
+        assert_eq!(u64::from(pod), n);
+
+        // Test reference conversion
+        let pod_from_ref = PodU64::from(&n);
+        assert_eq!(u64::from(pod_from_ref), n);
+
+        // Test max value
+        let max = PodU64::from(u64::MAX);
+        assert_eq!(u64::from(max), u64::MAX);
+    }
+
+    #[test]
+    fn test_pod_u128() {
+        // Test zero
+        let zero = PodU128::default();
+        assert_eq!(u128::from(zero), 0);
+
+        // Test conversion from u128
+        let n: u128 = 170_141_183_460_469_231_731_687_303_715_884_105_727;
+        let pod = PodU128::from(n);
+        assert_eq!(u128::from(pod), n);
+
+        // Test reference conversion
+        let pod_from_ref = PodU128::from(&n);
+        assert_eq!(u128::from(pod_from_ref), n);
+
+        // Test max value
+        let max = PodU128::from(u128::MAX);
+        assert_eq!(u128::from(max), u128::MAX);
+    }
+
+    #[test]
+    fn test_pod_bool() {
+        // Test default is false
+        let default_bool = PodBool::default();
+        assert_eq!(bool::from(default_bool), false);
+
+        // Test true conversion
+        let true_bool = PodBool::from(true);
+        assert_eq!(bool::from(true_bool), true);
+
+        // Test false conversion
+        let false_bool = PodBool::from(false);
+        assert_eq!(bool::from(false_bool), false);
+
+        // Test reference conversion
+        let true_ref = true;
+        let pod_from_ref = PodBool::from(&true_ref);
+        assert_eq!(bool::from(pod_from_ref), true);
+
+        // Test non-zero values are true
+        let non_zero = PodBool(2);
+        assert_eq!(bool::from(non_zero), true);
+    }
+
+    #[test]
+    fn test_debug_formatting() {
+        // Test debug formatting for all types
+        assert_eq!(format!("{:?}", PodU16::from(12345)), "PodU16(12345)");
+        assert_eq!(
+            format!("{:?}", PodU32::from(305419896)),
+            "PodU32(305419896)"
+        );
+        assert_eq!(
+            format!("{:?}", PodU64::from(1311768467294899695)),
+            "PodU64(1311768467294899695)"
+        );
+        assert_eq!(
+            format!(
+                "{:?}",
+                PodU128::from(170141183460469231731687303715884105727)
+            ),
+            "PodU128(170141183460469231731687303715884105727)"
+        );
+        assert_eq!(format!("{:?}", PodBool::from(true)), "PodBool(true)");
+        assert_eq!(format!("{:?}", PodBool::from(false)), "PodBool(false)");
+    }
+
+    #[test]
+    fn test_byte_representation() {
+        // Test that the byte representation is correct (little-endian)
+        let n: u16 = 0x1234;
+        let pod = PodU16::from(n);
+        assert_eq!(pod.0, [0x34, 0x12]);
+
+        let n: u32 = 0x12345678;
+        let pod = PodU32::from(n);
+        assert_eq!(pod.0, [0x78, 0x56, 0x34, 0x12]);
+
+        let n: u64 = 0x1234567890ABCDEF;
+        let pod = PodU64::from(n);
+        assert_eq!(pod.0, [0xEF, 0xCD, 0xAB, 0x90, 0x78, 0x56, 0x34, 0x12]);
+    }
+
+    #[test]
+    fn test_pod_properties() {
+        // Test that Pod types implement expected traits
+        fn assert_pod<T: Pod + Default + Copy + Clone + PartialEq + Eq>() {}
+
+        assert_pod::<PodU16>();
+        assert_pod::<PodU32>();
+        assert_pod::<PodU64>();
+        assert_pod::<PodU128>();
+        assert_pod::<PodBool>();
+    }
+}
