@@ -163,7 +163,7 @@ pub fn load_token_account(
     token_program: &AccountInfo,
 ) -> Result<(), ProgramError> {
     if token_program.key.ne(&spl_token::id()) {
-        msg!("Account data is empty");
+        msg!("Account is not owned by the spl token program");
         return Err(ProgramError::IncorrectProgramId);
     }
 

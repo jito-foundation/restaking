@@ -55,11 +55,10 @@ pub fn process_enqueue_withdrawal(
     )?;
     load_signer(staker, false)?;
     load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
+    load_token_program(token_program)?;
+
     load_signer(base, false)?;
     load_system_program(system_program)?;
-
-    // Only the original spl token program is allowed
-    load_token_program(token_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
     vault.check_update_state_ok(Clock::get()?.slot, config.epoch_length())?;
