@@ -65,6 +65,8 @@ pub fn process_mint(
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_associated_token_account(depositor_vrt_token_account, depositor.key, vrt_mint.key)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
+
+    // Only the original spl token program is allowed
     load_token_program(token_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
