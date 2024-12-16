@@ -9,6 +9,9 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
 pub enum JitoRestakingError {
+    /// 0 - Bad epoch length
+    #[error("Bad epoch length")]
+    BadEpochLength = 0x0,
     /// 1000 - NcnOperatorAdminInvalid
     #[error("NcnOperatorAdminInvalid")]
     NcnOperatorAdminInvalid = 0x3E8,

@@ -61,13 +61,15 @@ mod tests {
         assert_eq!(
             ncn_operator_state
                 .ncn_opt_in_state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
         assert_eq!(
             ncn_operator_state
                 .operator_opt_in_state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
     }
