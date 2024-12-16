@@ -68,7 +68,7 @@ pub struct CrankVaultUpdateStateTrackerInstructionData {
 
 impl CrankVaultUpdateStateTrackerInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 27 }
+        Self { discriminator: 30 }
     }
 }
 

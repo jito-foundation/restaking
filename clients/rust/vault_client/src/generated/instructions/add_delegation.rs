@@ -71,7 +71,7 @@ pub struct AddDelegationInstructionData {
 
 impl AddDelegationInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 23 }
+        Self { discriminator: 26 }
     }
 }
 

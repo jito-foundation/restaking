@@ -31,7 +31,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const INITIALIZE_VAULT_OPERATOR_DELEGATION_DISCRIMINATOR = 3;
+export const INITIALIZE_VAULT_OPERATOR_DELEGATION_DISCRIMINATOR = 4;
 
 export function getInitializeVaultOperatorDelegationDiscriminatorBytes() {
   return getU8Encoder().encode(

@@ -30,7 +30,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const CHANGE_WITHDRAWAL_TICKET_OWNER_DISCRIMINATOR = 13;
+export const CHANGE_WITHDRAWAL_TICKET_OWNER_DISCRIMINATOR = 16;
 
 export function getChangeWithdrawalTicketOwnerDiscriminatorBytes() {
   return getU8Encoder().encode(CHANGE_WITHDRAWAL_TICKET_OWNER_DISCRIMINATOR);

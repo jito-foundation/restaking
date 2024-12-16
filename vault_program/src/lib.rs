@@ -9,7 +9,9 @@ mod crank_vault_update_state_tracker;
 mod create_token_metadata;
 mod delegate_token_account;
 mod enqueue_withdrawal;
+mod enqueue_withdrawal_frozen;
 mod initialize_config;
+mod initialize_frozen_vault;
 mod initialize_vault;
 mod initialize_vault_ncn_slasher_operator_ticket;
 mod initialize_vault_ncn_slasher_ticket;
@@ -18,6 +20,7 @@ mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
 mod initialize_vault_with_mint;
 mod mint_to;
+mod mint_to_frozen;
 mod set_admin;
 mod set_capacity;
 mod set_config_admin;
@@ -33,7 +36,9 @@ mod warmup_vault_ncn_ticket;
 
 use borsh::BorshDeserialize;
 use const_str_to_pubkey::str_to_pubkey;
+use initialize_frozen_vault::process_initialize_frozen_vault;
 use jito_vault_sdk::instruction::VaultInstruction;
+use mint_to_frozen::process_mint_frozen;
 use set_program_fee::process_set_program_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
@@ -52,8 +57,9 @@ use crate::{
     crank_vault_update_state_tracker::process_crank_vault_update_state_tracker,
     create_token_metadata::process_create_token_metadata,
     delegate_token_account::process_delegate_token_account,
-    enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
-    initialize_vault::process_initialize_vault,
+    enqueue_withdrawal::process_enqueue_withdrawal,
+    enqueue_withdrawal_frozen::process_enqueue_withdrawal_frozen,
+    initialize_config::process_initialize_config, initialize_vault::process_initialize_vault,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_ncn_slasher_ticket::process_initialize_vault_ncn_slasher_ticket,
     initialize_vault_ncn_ticket::process_initialize_vault_ncn_ticket,
@@ -114,6 +120,22 @@ pub fn process_instruction(
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(
+                program_id,
+                accounts,
+                deposit_fee_bps,
+                withdrawal_fee_bps,
+                reward_fee_bps,
+                decimals,
+            )
+        }
+        VaultInstruction::InitializeFrozenVault {
+            deposit_fee_bps,
+            withdrawal_fee_bps,
+            reward_fee_bps,
+            decimals,
+        } => {
+            msg!("Instruction: InitializeFrozenVault");
+            process_initialize_frozen_vault(
                 program_id,
                 accounts,
                 deposit_fee_bps,
@@ -195,11 +217,22 @@ pub fn process_instruction(
             min_amount_out,
         } => {
             msg!("Instruction: MintTo");
-            process_mint(program_id, accounts, amount_in, min_amount_out)
+            process_mint(program_id, accounts, amount_in, min_amount_out, false)
+        }
+        VaultInstruction::MintToFrozen {
+            amount_in,
+            min_amount_out,
+        } => {
+            msg!("Instruction: MintToFrozen");
+            process_mint_frozen(program_id, accounts, amount_in, min_amount_out)
         }
         VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
+        }
+        VaultInstruction::EnqueueWithdrawalFrozen { amount } => {
+            msg!("Instruction: EnqueueWithdrawalFrozen");
+            process_enqueue_withdrawal_frozen(program_id, accounts, amount)
         }
         VaultInstruction::ChangeWithdrawalTicketOwner => {
             msg!("Instruction: ChangeWithdrawalTicketOwner");

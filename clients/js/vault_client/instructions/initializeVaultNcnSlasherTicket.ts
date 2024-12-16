@@ -31,7 +31,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const INITIALIZE_VAULT_NCN_SLASHER_TICKET_DISCRIMINATOR = 6;
+export const INITIALIZE_VAULT_NCN_SLASHER_TICKET_DISCRIMINATOR = 7;
 
 export function getInitializeVaultNcnSlasherTicketDiscriminatorBytes() {
   return getU8Encoder().encode(

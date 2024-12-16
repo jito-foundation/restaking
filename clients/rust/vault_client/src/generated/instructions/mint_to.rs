@@ -109,7 +109,7 @@ pub struct MintToInstructionData {
 
 impl MintToInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 11 }
+        Self { discriminator: 12 }
     }
 }
 

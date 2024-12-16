@@ -82,6 +82,7 @@ export type Vault = {
   programFeeBps: number;
   bump: number;
   isPaused: number;
+  isFrozen: number;
   reserved: Array<number>;
 };
 
@@ -122,6 +123,7 @@ export type VaultArgs = {
   programFeeBps: number;
   bump: number;
   isPaused: number;
+  isFrozen: number;
   reserved: Array<number>;
 };
 
@@ -163,7 +165,8 @@ export function getVaultEncoder(): Encoder<VaultArgs> {
     ['programFeeBps', getU16Encoder()],
     ['bump', getU8Encoder()],
     ['isPaused', getBoolEncoder()],
-    ['reserved', getArrayEncoder(getU8Encoder(), { size: 259 })],
+    ['isFrozen', getBoolEncoder()],
+    ['reserved', getArrayEncoder(getU8Encoder(), { size: 258 })],
   ]);
 }
 
@@ -205,7 +208,8 @@ export function getVaultDecoder(): Decoder<Vault> {
     ['programFeeBps', getU16Decoder()],
     ['bump', getU8Decoder()],
     ['isPaused', getBoolDecoder()],
-    ['reserved', getArrayDecoder(getU8Decoder(), { size: 259 })],
+    ['isFrozen', getBoolDecoder()],
+    ['reserved', getArrayDecoder(getU8Decoder(), { size: 258 })],
   ]);
 }
 

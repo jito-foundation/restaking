@@ -59,7 +59,7 @@ pub struct SetFeesInstructionData {
 
 impl SetFeesInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 16 }
+        Self { discriminator: 19 }
     }
 }
 

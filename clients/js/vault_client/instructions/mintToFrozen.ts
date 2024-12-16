@@ -33,13 +33,13 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const MINT_TO_DISCRIMINATOR = 12;
+export const MINT_TO_FROZEN_DISCRIMINATOR = 13;
 
-export function getMintToDiscriminatorBytes() {
-  return getU8Encoder().encode(MINT_TO_DISCRIMINATOR);
+export function getMintToFrozenDiscriminatorBytes() {
+  return getU8Encoder().encode(MINT_TO_FROZEN_DISCRIMINATOR);
 }
 
-export type MintToInstruction<
+export type MintToFrozenInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
@@ -96,29 +96,29 @@ export type MintToInstruction<
     ]
   >;
 
-export type MintToInstructionData = {
+export type MintToFrozenInstructionData = {
   discriminator: number;
   amountIn: bigint;
   minAmountOut: bigint;
 };
 
-export type MintToInstructionDataArgs = {
+export type MintToFrozenInstructionDataArgs = {
   amountIn: number | bigint;
   minAmountOut: number | bigint;
 };
 
-export function getMintToInstructionDataEncoder(): Encoder<MintToInstructionDataArgs> {
+export function getMintToFrozenInstructionDataEncoder(): Encoder<MintToFrozenInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
       ['amountIn', getU64Encoder()],
       ['minAmountOut', getU64Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: MINT_TO_DISCRIMINATOR })
+    (value) => ({ ...value, discriminator: MINT_TO_FROZEN_DISCRIMINATOR })
   );
 }
 
-export function getMintToInstructionDataDecoder(): Decoder<MintToInstructionData> {
+export function getMintToFrozenInstructionDataDecoder(): Decoder<MintToFrozenInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
     ['amountIn', getU64Decoder()],
@@ -126,17 +126,17 @@ export function getMintToInstructionDataDecoder(): Decoder<MintToInstructionData
   ]);
 }
 
-export function getMintToInstructionDataCodec(): Codec<
-  MintToInstructionDataArgs,
-  MintToInstructionData
+export function getMintToFrozenInstructionDataCodec(): Codec<
+  MintToFrozenInstructionDataArgs,
+  MintToFrozenInstructionData
 > {
   return combineCodec(
-    getMintToInstructionDataEncoder(),
-    getMintToInstructionDataDecoder()
+    getMintToFrozenInstructionDataEncoder(),
+    getMintToFrozenInstructionDataDecoder()
   );
 }
 
-export type MintToInput<
+export type MintToFrozenInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountVrtMint extends string = string,
@@ -159,11 +159,11 @@ export type MintToInput<
   tokenProgram?: Address<TAccountTokenProgram>;
   /** Signer for minting */
   mintSigner?: TransactionSigner<TAccountMintSigner>;
-  amountIn: MintToInstructionDataArgs['amountIn'];
-  minAmountOut: MintToInstructionDataArgs['minAmountOut'];
+  amountIn: MintToFrozenInstructionDataArgs['amountIn'];
+  minAmountOut: MintToFrozenInstructionDataArgs['minAmountOut'];
 };
 
-export function getMintToInstruction<
+export function getMintToFrozenInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountVrtMint extends string,
@@ -175,7 +175,7 @@ export function getMintToInstruction<
   TAccountTokenProgram extends string,
   TAccountMintSigner extends string,
 >(
-  input: MintToInput<
+  input: MintToFrozenInput<
     TAccountConfig,
     TAccountVault,
     TAccountVrtMint,
@@ -187,7 +187,7 @@ export function getMintToInstruction<
     TAccountTokenProgram,
     TAccountMintSigner
   >
-): MintToInstruction<
+): MintToFrozenInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
@@ -257,10 +257,10 @@ export function getMintToInstruction<
       getAccountMeta(accounts.mintSigner),
     ],
     programAddress,
-    data: getMintToInstructionDataEncoder().encode(
-      args as MintToInstructionDataArgs
+    data: getMintToFrozenInstructionDataEncoder().encode(
+      args as MintToFrozenInstructionDataArgs
     ),
-  } as MintToInstruction<
+  } as MintToFrozenInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
@@ -277,7 +277,7 @@ export function getMintToInstruction<
   return instruction;
 }
 
-export type ParsedMintToInstruction<
+export type ParsedMintToFrozenInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -295,17 +295,17 @@ export type ParsedMintToInstruction<
     /** Signer for minting */
     mintSigner?: TAccountMetas[9] | undefined;
   };
-  data: MintToInstructionData;
+  data: MintToFrozenInstructionData;
 };
 
-export function parseMintToInstruction<
+export function parseMintToFrozenInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedMintToInstruction<TProgram, TAccountMetas> {
+): ParsedMintToFrozenInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 10) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
@@ -336,6 +336,6 @@ export function parseMintToInstruction<
       tokenProgram: getNextAccount(),
       mintSigner: getNextOptionalAccount(),
     },
-    data: getMintToInstructionDataDecoder().decode(instruction.data),
+    data: getMintToFrozenInstructionDataDecoder().decode(instruction.data),
   };
 }

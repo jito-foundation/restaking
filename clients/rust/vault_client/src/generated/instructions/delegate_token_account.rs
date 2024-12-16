@@ -80,7 +80,7 @@ pub struct DelegateTokenAccountInstructionData {
 
 impl DelegateTokenAccountInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 20 }
+        Self { discriminator: 23 }
     }
 }
 

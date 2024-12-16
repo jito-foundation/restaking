@@ -165,24 +165,30 @@ pub enum JitoVaultError {
     /// 1051 - InvalidDepositor
     #[error("InvalidDepositor")]
     InvalidDepositor = 0x41B,
-    /// 1052 - InvalidDepositTokenAccount
+    /// 1052 - VaultNotFrozen
+    #[error("VaultNotFrozen")]
+    VaultNotFrozen = 0x41C,
+    /// 1053 - VaultIsFrozen
+    #[error("VaultIsFrozen")]
+    VaultIsFrozen = 0x41D,
+    /// 1054 - InvalidDepositTokenAccount
     #[error("InvalidDepositTokenAccount")]
-    InvalidDepositTokenAccount = 0x41C,
-    /// 1053 - NoSupportedMintBalanceChange
+    InvalidDepositTokenAccount = 0x41E,
+    /// 1055 - NoSupportedMintBalanceChange
     #[error("NoSupportedMintBalanceChange")]
-    NoSupportedMintBalanceChange = 0x41D,
-    /// 1054 - InvalidEpochLength
+    NoSupportedMintBalanceChange = 0x41F,
+    /// 1056 - InvalidEpochLength
     #[error("InvalidEpochLength")]
-    InvalidEpochLength = 0x41E,
-    /// 1055 - VaultRewardFeeDeltaTooLarge
+    InvalidEpochLength = 0x420,
+    /// 1057 - VaultRewardFeeDeltaTooLarge
     #[error("VaultRewardFeeDeltaTooLarge")]
-    VaultRewardFeeDeltaTooLarge = 0x41F,
-    /// 1056 - VaultRewardFeeIsZero
+    VaultRewardFeeDeltaTooLarge = 0x421,
+    /// 1058 - VaultRewardFeeIsZero
     #[error("VaultRewardFeeIsZero")]
-    VaultRewardFeeIsZero = 0x420,
-    /// 1057 - NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate
+    VaultRewardFeeIsZero = 0x422,
+    /// 1059 - NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate
     #[error("NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate")]
-    NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate = 0x421,
+    NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate = 0x423,
     /// 3000 - ArithmeticOverflow
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 0xBB8,

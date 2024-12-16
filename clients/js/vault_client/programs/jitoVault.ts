@@ -23,8 +23,10 @@ import {
   type ParsedCrankVaultUpdateStateTrackerInstruction,
   type ParsedCreateTokenMetadataInstruction,
   type ParsedDelegateTokenAccountInstruction,
+  type ParsedEnqueueWithdrawalFrozenInstruction,
   type ParsedEnqueueWithdrawalInstruction,
   type ParsedInitializeConfigInstruction,
+  type ParsedInitializeFrozenVaultInstruction,
   type ParsedInitializeVaultInstruction,
   type ParsedInitializeVaultNcnSlasherOperatorTicketInstruction,
   type ParsedInitializeVaultNcnSlasherTicketInstruction,
@@ -32,6 +34,7 @@ import {
   type ParsedInitializeVaultOperatorDelegationInstruction,
   type ParsedInitializeVaultUpdateStateTrackerInstruction,
   type ParsedInitializeVaultWithMintInstruction,
+  type ParsedMintToFrozenInstruction,
   type ParsedMintToInstruction,
   type ParsedSetAdminInstruction,
   type ParsedSetConfigAdminInstruction,
@@ -64,6 +67,7 @@ export enum JitoVaultAccount {
 export enum JitoVaultInstruction {
   InitializeConfig,
   InitializeVault,
+  InitializeFrozenVault,
   InitializeVaultWithMint,
   InitializeVaultOperatorDelegation,
   InitializeVaultNcnTicket,
@@ -74,7 +78,9 @@ export enum JitoVaultInstruction {
   WarmupVaultNcnSlasherTicket,
   CooldownVaultNcnSlasherTicket,
   MintTo,
+  MintToFrozen,
   EnqueueWithdrawal,
+  EnqueueWithdrawalFrozen,
   ChangeWithdrawalTicketOwner,
   BurnWithdrawalTicket,
   SetDepositCapacity,
@@ -107,93 +113,102 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.InitializeVault;
   }
   if (containsBytes(data, getU8Encoder().encode(2), 0)) {
-    return JitoVaultInstruction.InitializeVaultWithMint;
+    return JitoVaultInstruction.InitializeFrozenVault;
   }
   if (containsBytes(data, getU8Encoder().encode(3), 0)) {
-    return JitoVaultInstruction.InitializeVaultOperatorDelegation;
+    return JitoVaultInstruction.InitializeVaultWithMint;
   }
   if (containsBytes(data, getU8Encoder().encode(4), 0)) {
-    return JitoVaultInstruction.InitializeVaultNcnTicket;
+    return JitoVaultInstruction.InitializeVaultOperatorDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(5), 0)) {
-    return JitoVaultInstruction.InitializeVaultNcnSlasherOperatorTicket;
+    return JitoVaultInstruction.InitializeVaultNcnTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(6), 0)) {
-    return JitoVaultInstruction.InitializeVaultNcnSlasherTicket;
+    return JitoVaultInstruction.InitializeVaultNcnSlasherOperatorTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(7), 0)) {
-    return JitoVaultInstruction.WarmupVaultNcnTicket;
+    return JitoVaultInstruction.InitializeVaultNcnSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(8), 0)) {
-    return JitoVaultInstruction.CooldownVaultNcnTicket;
+    return JitoVaultInstruction.WarmupVaultNcnTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(9), 0)) {
-    return JitoVaultInstruction.WarmupVaultNcnSlasherTicket;
+    return JitoVaultInstruction.CooldownVaultNcnTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(10), 0)) {
-    return JitoVaultInstruction.CooldownVaultNcnSlasherTicket;
+    return JitoVaultInstruction.WarmupVaultNcnSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(11), 0)) {
-    return JitoVaultInstruction.MintTo;
+    return JitoVaultInstruction.CooldownVaultNcnSlasherTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(12), 0)) {
-    return JitoVaultInstruction.EnqueueWithdrawal;
+    return JitoVaultInstruction.MintTo;
   }
   if (containsBytes(data, getU8Encoder().encode(13), 0)) {
-    return JitoVaultInstruction.ChangeWithdrawalTicketOwner;
+    return JitoVaultInstruction.MintToFrozen;
   }
   if (containsBytes(data, getU8Encoder().encode(14), 0)) {
-    return JitoVaultInstruction.BurnWithdrawalTicket;
+    return JitoVaultInstruction.EnqueueWithdrawal;
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
-    return JitoVaultInstruction.SetDepositCapacity;
+    return JitoVaultInstruction.EnqueueWithdrawalFrozen;
   }
   if (containsBytes(data, getU8Encoder().encode(16), 0)) {
-    return JitoVaultInstruction.SetFees;
+    return JitoVaultInstruction.ChangeWithdrawalTicketOwner;
   }
   if (containsBytes(data, getU8Encoder().encode(17), 0)) {
-    return JitoVaultInstruction.SetProgramFee;
+    return JitoVaultInstruction.BurnWithdrawalTicket;
   }
   if (containsBytes(data, getU8Encoder().encode(18), 0)) {
-    return JitoVaultInstruction.SetProgramFeeWallet;
+    return JitoVaultInstruction.SetDepositCapacity;
   }
   if (containsBytes(data, getU8Encoder().encode(19), 0)) {
-    return JitoVaultInstruction.SetIsPaused;
+    return JitoVaultInstruction.SetFees;
   }
   if (containsBytes(data, getU8Encoder().encode(20), 0)) {
-    return JitoVaultInstruction.DelegateTokenAccount;
+    return JitoVaultInstruction.SetProgramFee;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoVaultInstruction.SetAdmin;
+    return JitoVaultInstruction.SetProgramFeeWallet;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoVaultInstruction.SetSecondaryAdmin;
+    return JitoVaultInstruction.SetIsPaused;
   }
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
-    return JitoVaultInstruction.AddDelegation;
+    return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(24), 0)) {
-    return JitoVaultInstruction.CooldownDelegation;
+    return JitoVaultInstruction.SetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(25), 0)) {
-    return JitoVaultInstruction.UpdateVaultBalance;
+    return JitoVaultInstruction.SetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(26), 0)) {
-    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
+    return JitoVaultInstruction.AddDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(27), 0)) {
-    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
+    return JitoVaultInstruction.CooldownDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(28), 0)) {
-    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
+    return JitoVaultInstruction.UpdateVaultBalance;
   }
   if (containsBytes(data, getU8Encoder().encode(29), 0)) {
-    return JitoVaultInstruction.CreateTokenMetadata;
+    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
-    return JitoVaultInstruction.UpdateTokenMetadata;
+    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
+  }
+  if (containsBytes(data, getU8Encoder().encode(32), 0)) {
+    return JitoVaultInstruction.CreateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(33), 0)) {
+    return JitoVaultInstruction.UpdateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(34), 0)) {
     return JitoVaultInstruction.SetConfigAdmin;
   }
   throw new Error(
@@ -210,6 +225,9 @@ export type ParsedJitoVaultInstruction<
   | ({
       instructionType: JitoVaultInstruction.InitializeVault;
     } & ParsedInitializeVaultInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.InitializeFrozenVault;
+    } & ParsedInitializeFrozenVaultInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.InitializeVaultWithMint;
     } & ParsedInitializeVaultWithMintInstruction<TProgram>)
@@ -241,8 +259,14 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.MintTo;
     } & ParsedMintToInstruction<TProgram>)
   | ({
+      instructionType: JitoVaultInstruction.MintToFrozen;
+    } & ParsedMintToFrozenInstruction<TProgram>)
+  | ({
       instructionType: JitoVaultInstruction.EnqueueWithdrawal;
     } & ParsedEnqueueWithdrawalInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.EnqueueWithdrawalFrozen;
+    } & ParsedEnqueueWithdrawalFrozenInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.ChangeWithdrawalTicketOwner;
     } & ParsedChangeWithdrawalTicketOwnerInstruction<TProgram>)

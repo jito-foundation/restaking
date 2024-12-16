@@ -72,7 +72,7 @@ pub struct WarmupVaultNcnSlasherTicketInstructionData {
 
 impl WarmupVaultNcnSlasherTicketInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 9 }
+        Self { discriminator: 10 }
     }
 }
 
