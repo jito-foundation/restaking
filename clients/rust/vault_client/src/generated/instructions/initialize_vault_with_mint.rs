@@ -39,7 +39,7 @@ pub struct InitializeVaultWithMintInstructionData {
 
 impl InitializeVaultWithMintInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 2 }
+        Self { discriminator: 3 }
     }
 }
 

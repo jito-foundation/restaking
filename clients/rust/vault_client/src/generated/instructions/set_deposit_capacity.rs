@@ -61,7 +61,7 @@ pub struct SetDepositCapacityInstructionData {
 
 impl SetDepositCapacityInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 15 }
+        Self { discriminator: 18 }
     }
 }
 

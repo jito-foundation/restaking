@@ -30,7 +30,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const WARMUP_VAULT_NCN_TICKET_DISCRIMINATOR = 7;
+export const WARMUP_VAULT_NCN_TICKET_DISCRIMINATOR = 8;
 
 export function getWarmupVaultNcnTicketDiscriminatorBytes() {
   return getU8Encoder().encode(WARMUP_VAULT_NCN_TICKET_DISCRIMINATOR);

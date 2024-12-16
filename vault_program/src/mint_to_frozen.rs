@@ -1,5 +1,4 @@
 use jito_bytemuck::AccountDeserialize;
-
 use jito_vault_core::vault::Vault;
 use jito_vault_sdk::error::VaultError;
 use solana_program::{

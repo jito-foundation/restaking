@@ -110,7 +110,7 @@ pub struct EnqueueWithdrawalInstructionData {
 
 impl EnqueueWithdrawalInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 12 }
+        Self { discriminator: 14 }
     }
 }
 

@@ -90,7 +90,7 @@ pub struct InitializeVaultNcnSlasherOperatorTicketInstructionData {
 
 impl InitializeVaultNcnSlasherOperatorTicketInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 5 }
+        Self { discriminator: 6 }
     }
 }
 

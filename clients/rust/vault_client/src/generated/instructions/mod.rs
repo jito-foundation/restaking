@@ -15,7 +15,9 @@ pub(crate) mod r#crank_vault_update_state_tracker;
 pub(crate) mod r#create_token_metadata;
 pub(crate) mod r#delegate_token_account;
 pub(crate) mod r#enqueue_withdrawal;
+pub(crate) mod r#enqueue_withdrawal_frozen;
 pub(crate) mod r#initialize_config;
+pub(crate) mod r#initialize_frozen_vault;
 pub(crate) mod r#initialize_vault;
 pub(crate) mod r#initialize_vault_ncn_slasher_operator_ticket;
 pub(crate) mod r#initialize_vault_ncn_slasher_ticket;
@@ -24,6 +26,7 @@ pub(crate) mod r#initialize_vault_operator_delegation;
 pub(crate) mod r#initialize_vault_update_state_tracker;
 pub(crate) mod r#initialize_vault_with_mint;
 pub(crate) mod r#mint_to;
+pub(crate) mod r#mint_to_frozen;
 pub(crate) mod r#set_admin;
 pub(crate) mod r#set_config_admin;
 pub(crate) mod r#set_deposit_capacity;
@@ -42,12 +45,13 @@ pub use self::{
     r#close_vault_update_state_tracker::*, r#cooldown_delegation::*,
     r#cooldown_vault_ncn_slasher_ticket::*, r#cooldown_vault_ncn_ticket::*,
     r#crank_vault_update_state_tracker::*, r#create_token_metadata::*, r#delegate_token_account::*,
-    r#enqueue_withdrawal::*, r#initialize_config::*, r#initialize_vault::*,
+    r#enqueue_withdrawal::*, r#enqueue_withdrawal_frozen::*, r#initialize_config::*,
+    r#initialize_frozen_vault::*, r#initialize_vault::*,
     r#initialize_vault_ncn_slasher_operator_ticket::*, r#initialize_vault_ncn_slasher_ticket::*,
     r#initialize_vault_ncn_ticket::*, r#initialize_vault_operator_delegation::*,
     r#initialize_vault_update_state_tracker::*, r#initialize_vault_with_mint::*, r#mint_to::*,
-    r#set_admin::*, r#set_config_admin::*, r#set_deposit_capacity::*, r#set_fees::*,
-    r#set_is_paused::*, r#set_program_fee::*, r#set_program_fee_wallet::*,
+    r#mint_to_frozen::*, r#set_admin::*, r#set_config_admin::*, r#set_deposit_capacity::*,
+    r#set_fees::*, r#set_is_paused::*, r#set_program_fee::*, r#set_program_fee_wallet::*,
     r#set_secondary_admin::*, r#update_token_metadata::*, r#update_vault_balance::*,
     r#warmup_vault_ncn_slasher_ticket::*, r#warmup_vault_ncn_ticket::*,
 };

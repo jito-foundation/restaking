@@ -57,8 +57,9 @@ use crate::{
     crank_vault_update_state_tracker::process_crank_vault_update_state_tracker,
     create_token_metadata::process_create_token_metadata,
     delegate_token_account::process_delegate_token_account,
-    enqueue_withdrawal::process_enqueue_withdrawal, initialize_config::process_initialize_config,
-    initialize_vault::process_initialize_vault,
+    enqueue_withdrawal::process_enqueue_withdrawal,
+    enqueue_withdrawal_frozen::process_enqueue_withdrawal_frozen,
+    initialize_config::process_initialize_config, initialize_vault::process_initialize_vault,
     initialize_vault_ncn_slasher_operator_ticket::process_initialize_vault_ncn_slasher_operator_ticket,
     initialize_vault_ncn_slasher_ticket::process_initialize_vault_ncn_slasher_ticket,
     initialize_vault_ncn_ticket::process_initialize_vault_ncn_ticket,
@@ -228,6 +229,10 @@ pub fn process_instruction(
         VaultInstruction::EnqueueWithdrawal { amount } => {
             msg!("Instruction: EnqueueWithdrawal");
             process_enqueue_withdrawal(program_id, accounts, amount)
+        }
+        VaultInstruction::EnqueueWithdrawalFrozen { amount } => {
+            msg!("Instruction: EnqueueWithdrawalFrozen");
+            process_enqueue_withdrawal_frozen(program_id, accounts, amount)
         }
         VaultInstruction::ChangeWithdrawalTicketOwner => {
             msg!("Instruction: ChangeWithdrawalTicketOwner");

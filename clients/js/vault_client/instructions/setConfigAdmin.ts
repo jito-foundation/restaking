@@ -30,7 +30,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SET_CONFIG_ADMIN_DISCRIMINATOR = 31;
+export const SET_CONFIG_ADMIN_DISCRIMINATOR = 34;
 
 export function getSetConfigAdminDiscriminatorBytes() {
   return getU8Encoder().encode(SET_CONFIG_ADMIN_DISCRIMINATOR);

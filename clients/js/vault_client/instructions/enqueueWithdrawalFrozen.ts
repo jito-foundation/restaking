@@ -33,13 +33,13 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const ENQUEUE_WITHDRAWAL_DISCRIMINATOR = 14;
+export const ENQUEUE_WITHDRAWAL_FROZEN_DISCRIMINATOR = 15;
 
-export function getEnqueueWithdrawalDiscriminatorBytes() {
-  return getU8Encoder().encode(ENQUEUE_WITHDRAWAL_DISCRIMINATOR);
+export function getEnqueueWithdrawalFrozenDiscriminatorBytes() {
+  return getU8Encoder().encode(ENQUEUE_WITHDRAWAL_FROZEN_DISCRIMINATOR);
 }
 
-export type EnqueueWithdrawalInstruction<
+export type EnqueueWithdrawalFrozenInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
@@ -59,6 +59,7 @@ export type EnqueueWithdrawalInstruction<
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
   TAccountBurnSigner extends string | IAccountMeta<string> = string,
+  TAccountVrtMint extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -96,45 +97,53 @@ export type EnqueueWithdrawalInstruction<
         ? ReadonlySignerAccount<TAccountBurnSigner> &
             IAccountSignerMeta<TAccountBurnSigner>
         : TAccountBurnSigner,
+      TAccountVrtMint extends string
+        ? ReadonlyAccount<TAccountVrtMint>
+        : TAccountVrtMint,
       ...TRemainingAccounts,
     ]
   >;
 
-export type EnqueueWithdrawalInstructionData = {
+export type EnqueueWithdrawalFrozenInstructionData = {
   discriminator: number;
   amount: bigint;
 };
 
-export type EnqueueWithdrawalInstructionDataArgs = { amount: number | bigint };
+export type EnqueueWithdrawalFrozenInstructionDataArgs = {
+  amount: number | bigint;
+};
 
-export function getEnqueueWithdrawalInstructionDataEncoder(): Encoder<EnqueueWithdrawalInstructionDataArgs> {
+export function getEnqueueWithdrawalFrozenInstructionDataEncoder(): Encoder<EnqueueWithdrawalFrozenInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
       ['amount', getU64Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: ENQUEUE_WITHDRAWAL_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: ENQUEUE_WITHDRAWAL_FROZEN_DISCRIMINATOR,
+    })
   );
 }
 
-export function getEnqueueWithdrawalInstructionDataDecoder(): Decoder<EnqueueWithdrawalInstructionData> {
+export function getEnqueueWithdrawalFrozenInstructionDataDecoder(): Decoder<EnqueueWithdrawalFrozenInstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
     ['amount', getU64Decoder()],
   ]);
 }
 
-export function getEnqueueWithdrawalInstructionDataCodec(): Codec<
-  EnqueueWithdrawalInstructionDataArgs,
-  EnqueueWithdrawalInstructionData
+export function getEnqueueWithdrawalFrozenInstructionDataCodec(): Codec<
+  EnqueueWithdrawalFrozenInstructionDataArgs,
+  EnqueueWithdrawalFrozenInstructionData
 > {
   return combineCodec(
-    getEnqueueWithdrawalInstructionDataEncoder(),
-    getEnqueueWithdrawalInstructionDataDecoder()
+    getEnqueueWithdrawalFrozenInstructionDataEncoder(),
+    getEnqueueWithdrawalFrozenInstructionDataDecoder()
   );
 }
 
-export type EnqueueWithdrawalInput<
+export type EnqueueWithdrawalFrozenInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
   TAccountVaultStakerWithdrawalTicket extends string = string,
@@ -145,6 +154,7 @@ export type EnqueueWithdrawalInput<
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountBurnSigner extends string = string,
+  TAccountVrtMint extends string = string,
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
@@ -157,10 +167,11 @@ export type EnqueueWithdrawalInput<
   systemProgram?: Address<TAccountSystemProgram>;
   /** Signer for burning */
   burnSigner?: TransactionSigner<TAccountBurnSigner>;
-  amount: EnqueueWithdrawalInstructionDataArgs['amount'];
+  vrtMint: Address<TAccountVrtMint>;
+  amount: EnqueueWithdrawalFrozenInstructionDataArgs['amount'];
 };
 
-export function getEnqueueWithdrawalInstruction<
+export function getEnqueueWithdrawalFrozenInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountVaultStakerWithdrawalTicket extends string,
@@ -171,8 +182,9 @@ export function getEnqueueWithdrawalInstruction<
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
   TAccountBurnSigner extends string,
+  TAccountVrtMint extends string,
 >(
-  input: EnqueueWithdrawalInput<
+  input: EnqueueWithdrawalFrozenInput<
     TAccountConfig,
     TAccountVault,
     TAccountVaultStakerWithdrawalTicket,
@@ -182,9 +194,10 @@ export function getEnqueueWithdrawalInstruction<
     TAccountBase,
     TAccountTokenProgram,
     TAccountSystemProgram,
-    TAccountBurnSigner
+    TAccountBurnSigner,
+    TAccountVrtMint
   >
-): EnqueueWithdrawalInstruction<
+): EnqueueWithdrawalFrozenInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig,
   TAccountVault,
@@ -195,7 +208,8 @@ export function getEnqueueWithdrawalInstruction<
   TAccountBase,
   TAccountTokenProgram,
   TAccountSystemProgram,
-  TAccountBurnSigner
+  TAccountBurnSigner,
+  TAccountVrtMint
 > {
   // Program address.
   const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
@@ -221,6 +235,7 @@ export function getEnqueueWithdrawalInstruction<
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     burnSigner: { value: input.burnSigner ?? null, isWritable: false },
+    vrtMint: { value: input.vrtMint ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -253,12 +268,13 @@ export function getEnqueueWithdrawalInstruction<
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.burnSigner),
+      getAccountMeta(accounts.vrtMint),
     ],
     programAddress,
-    data: getEnqueueWithdrawalInstructionDataEncoder().encode(
-      args as EnqueueWithdrawalInstructionDataArgs
+    data: getEnqueueWithdrawalFrozenInstructionDataEncoder().encode(
+      args as EnqueueWithdrawalFrozenInstructionDataArgs
     ),
-  } as EnqueueWithdrawalInstruction<
+  } as EnqueueWithdrawalFrozenInstruction<
     typeof JITO_VAULT_PROGRAM_ADDRESS,
     TAccountConfig,
     TAccountVault,
@@ -269,13 +285,14 @@ export function getEnqueueWithdrawalInstruction<
     TAccountBase,
     TAccountTokenProgram,
     TAccountSystemProgram,
-    TAccountBurnSigner
+    TAccountBurnSigner,
+    TAccountVrtMint
   >;
 
   return instruction;
 }
 
-export type ParsedEnqueueWithdrawalInstruction<
+export type ParsedEnqueueWithdrawalFrozenInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -292,19 +309,20 @@ export type ParsedEnqueueWithdrawalInstruction<
     systemProgram: TAccountMetas[8];
     /** Signer for burning */
     burnSigner?: TAccountMetas[9] | undefined;
+    vrtMint: TAccountMetas[10];
   };
-  data: EnqueueWithdrawalInstructionData;
+  data: EnqueueWithdrawalFrozenInstructionData;
 };
 
-export function parseEnqueueWithdrawalInstruction<
+export function parseEnqueueWithdrawalFrozenInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedEnqueueWithdrawalInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 10) {
+): ParsedEnqueueWithdrawalFrozenInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 11) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -333,7 +351,10 @@ export function parseEnqueueWithdrawalInstruction<
       tokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),
       burnSigner: getNextOptionalAccount(),
+      vrtMint: getNextAccount(),
     },
-    data: getEnqueueWithdrawalInstructionDataDecoder().decode(instruction.data),
+    data: getEnqueueWithdrawalFrozenInstructionDataDecoder().decode(
+      instruction.data
+    ),
   };
 }

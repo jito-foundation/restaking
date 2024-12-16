@@ -104,8 +104,9 @@ pub struct Vault {
     pub program_fee_bps: u16,
     pub bump: u8,
     pub is_paused: bool,
+    pub is_frozen: bool,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved: [u8; 259],
+    pub reserved: [u8; 258],
 }
 
 impl Vault {

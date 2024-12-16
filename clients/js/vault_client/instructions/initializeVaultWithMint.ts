@@ -24,7 +24,7 @@ import {
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 
-export const INITIALIZE_VAULT_WITH_MINT_DISCRIMINATOR = 2;
+export const INITIALIZE_VAULT_WITH_MINT_DISCRIMINATOR = 3;
 
 export function getInitializeVaultWithMintDiscriminatorBytes() {
   return getU8Encoder().encode(INITIALIZE_VAULT_WITH_MINT_DISCRIMINATOR);

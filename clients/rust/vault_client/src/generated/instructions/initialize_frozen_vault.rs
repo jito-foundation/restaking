@@ -7,35 +7,39 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
-pub struct InitializeVaultOperatorDelegation {
+pub struct InitializeFrozenVault {
     pub config: solana_program::pubkey::Pubkey,
 
     pub vault: solana_program::pubkey::Pubkey,
 
-    pub operator: solana_program::pubkey::Pubkey,
+    pub vrt_mint: solana_program::pubkey::Pubkey,
 
-    pub operator_vault_ticket: solana_program::pubkey::Pubkey,
-
-    pub vault_operator_delegation: solana_program::pubkey::Pubkey,
+    pub token_mint: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
 
-    pub payer: solana_program::pubkey::Pubkey,
+    pub base: solana_program::pubkey::Pubkey,
 
     pub system_program: solana_program::pubkey::Pubkey,
+
+    pub token_program: solana_program::pubkey::Pubkey,
 }
 
-impl InitializeVaultOperatorDelegation {
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+impl InitializeFrozenVault {
+    pub fn instruction(
+        &self,
+        args: InitializeFrozenVaultInstructionArgs,
+    ) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: InitializeFrozenVaultInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_program::instruction::AccountMeta::new(
             self.config,
             false,
         ));
@@ -43,31 +47,33 @@ impl InitializeVaultOperatorDelegation {
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.operator,
-            false,
+            self.vrt_mint,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.operator_vault_ticket,
+            self.token_mint,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_operator_delegation,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.admin, true,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.payer, true,
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.base, true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.system_program,
             false,
         ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.token_program,
+            false,
+        ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = InitializeVaultOperatorDelegationInstructionData::new()
+        let mut data = InitializeFrozenVaultInstructionData::new()
             .try_to_vec()
             .unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -78,48 +84,61 @@ impl InitializeVaultOperatorDelegation {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct InitializeVaultOperatorDelegationInstructionData {
+pub struct InitializeFrozenVaultInstructionData {
     discriminator: u8,
 }
 
-impl InitializeVaultOperatorDelegationInstructionData {
+impl InitializeFrozenVaultInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 4 }
+        Self { discriminator: 2 }
     }
 }
 
-impl Default for InitializeVaultOperatorDelegationInstructionData {
+impl Default for InitializeFrozenVaultInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `InitializeVaultOperatorDelegation`.
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InitializeFrozenVaultInstructionArgs {
+    pub deposit_fee_bps: u16,
+    pub withdrawal_fee_bps: u16,
+    pub reward_fee_bps: u16,
+    pub decimals: u8,
+}
+
+/// Instruction builder for `InitializeFrozenVault`.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` config
+///   0. `[writable]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` operator
-///   3. `[]` operator_vault_ticket
-///   4. `[writable]` vault_operator_delegation
-///   5. `[signer]` admin
-///   6. `[writable, signer]` payer
-///   7. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   2. `[writable, signer]` vrt_mint
+///   3. `[]` token_mint
+///   4. `[writable, signer]` admin
+///   5. `[signer]` base
+///   6. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
-pub struct InitializeVaultOperatorDelegationBuilder {
+pub struct InitializeFrozenVaultBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
-    operator: Option<solana_program::pubkey::Pubkey>,
-    operator_vault_ticket: Option<solana_program::pubkey::Pubkey>,
-    vault_operator_delegation: Option<solana_program::pubkey::Pubkey>,
+    vrt_mint: Option<solana_program::pubkey::Pubkey>,
+    token_mint: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
-    payer: Option<solana_program::pubkey::Pubkey>,
+    base: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
+    token_program: Option<solana_program::pubkey::Pubkey>,
+    deposit_fee_bps: Option<u16>,
+    withdrawal_fee_bps: Option<u16>,
+    reward_fee_bps: Option<u16>,
+    decimals: Option<u8>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl InitializeVaultOperatorDelegationBuilder {
+impl InitializeFrozenVaultBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -134,24 +153,13 @@ impl InitializeVaultOperatorDelegationBuilder {
         self
     }
     #[inline(always)]
-    pub fn operator(&mut self, operator: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.operator = Some(operator);
+    pub fn vrt_mint(&mut self, vrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
-    pub fn operator_vault_ticket(
-        &mut self,
-        operator_vault_ticket: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.operator_vault_ticket = Some(operator_vault_ticket);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
-        &mut self,
-        vault_operator_delegation: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_operator_delegation = Some(vault_operator_delegation);
+    pub fn token_mint(&mut self, token_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
@@ -160,14 +168,40 @@ impl InitializeVaultOperatorDelegationBuilder {
         self
     }
     #[inline(always)]
-    pub fn payer(&mut self, payer: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.payer = Some(payer);
+    pub fn base(&mut self, base: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.base = Some(base);
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.system_program = Some(system_program);
+        self
+    }
+    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
+    #[inline(always)]
+    pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.token_program = Some(token_program);
+        self
+    }
+    #[inline(always)]
+    pub fn deposit_fee_bps(&mut self, deposit_fee_bps: u16) -> &mut Self {
+        self.deposit_fee_bps = Some(deposit_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) -> &mut Self {
+        self.withdrawal_fee_bps = Some(withdrawal_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn reward_fee_bps(&mut self, reward_fee_bps: u16) -> &mut Self {
+        self.reward_fee_bps = Some(reward_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn decimals(&mut self, decimals: u8) -> &mut Self {
+        self.decimals = Some(decimals);
         self
     }
     /// Add an aditional account to the instruction.
@@ -190,48 +224,61 @@ impl InitializeVaultOperatorDelegationBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = InitializeVaultOperatorDelegation {
+        let accounts = InitializeFrozenVault {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
-            operator: self.operator.expect("operator is not set"),
-            operator_vault_ticket: self
-                .operator_vault_ticket
-                .expect("operator_vault_ticket is not set"),
-            vault_operator_delegation: self
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
+            vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
+            token_mint: self.token_mint.expect("token_mint is not set"),
             admin: self.admin.expect("admin is not set"),
-            payer: self.payer.expect("payer is not set"),
+            base: self.base.expect("base is not set"),
             system_program: self
                 .system_program
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
+            token_program: self.token_program.unwrap_or(solana_program::pubkey!(
+                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+            )),
+        };
+        let args = InitializeFrozenVaultInstructionArgs {
+            deposit_fee_bps: self
+                .deposit_fee_bps
+                .clone()
+                .expect("deposit_fee_bps is not set"),
+            withdrawal_fee_bps: self
+                .withdrawal_fee_bps
+                .clone()
+                .expect("withdrawal_fee_bps is not set"),
+            reward_fee_bps: self
+                .reward_fee_bps
+                .clone()
+                .expect("reward_fee_bps is not set"),
+            decimals: self.decimals.clone().expect("decimals is not set"),
         };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `initialize_vault_operator_delegation` CPI accounts.
-pub struct InitializeVaultOperatorDelegationCpiAccounts<'a, 'b> {
+/// `initialize_frozen_vault` CPI accounts.
+pub struct InitializeFrozenVaultCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator_vault_ticket: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
+    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
+    pub base: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `initialize_vault_operator_delegation` CPI instruction.
-pub struct InitializeVaultOperatorDelegationCpi<'a, 'b> {
+/// `initialize_frozen_vault` CPI instruction.
+pub struct InitializeFrozenVaultCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -239,34 +286,38 @@ pub struct InitializeVaultOperatorDelegationCpi<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
+    pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator_vault_ticket: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
+    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
+    pub base: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: InitializeFrozenVaultInstructionArgs,
 }
 
-impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
+impl<'a, 'b> InitializeFrozenVaultCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: InitializeVaultOperatorDelegationCpiAccounts<'a, 'b>,
+        accounts: InitializeFrozenVaultCpiAccounts<'a, 'b>,
+        args: InitializeFrozenVaultInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
-            operator: accounts.operator,
-            operator_vault_ticket: accounts.operator_vault_ticket,
-            vault_operator_delegation: accounts.vault_operator_delegation,
+            vrt_mint: accounts.vrt_mint,
+            token_mint: accounts.token_mint,
             admin: accounts.admin,
-            payer: accounts.payer,
+            base: accounts.base,
             system_program: accounts.system_program,
+            token_program: accounts.token_program,
+            __args: args,
         }
     }
     #[inline(always)]
@@ -303,7 +354,7 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
         )],
     ) -> solana_program::entrypoint::ProgramResult {
         let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_program::instruction::AccountMeta::new(
             *self.config.key,
             false,
         ));
@@ -312,27 +363,27 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.operator.key,
-            false,
+            *self.vrt_mint.key,
+            true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.operator_vault_ticket.key,
+            *self.token_mint.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_operator_delegation.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.admin.key,
             true,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.payer.key,
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.base.key,
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.system_program.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.token_program.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
@@ -342,9 +393,11 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = InitializeVaultOperatorDelegationInstructionData::new()
+        let mut data = InitializeFrozenVaultInstructionData::new()
             .try_to_vec()
             .unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -355,12 +408,12 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
-        account_infos.push(self.operator.clone());
-        account_infos.push(self.operator_vault_ticket.clone());
-        account_infos.push(self.vault_operator_delegation.clone());
+        account_infos.push(self.vrt_mint.clone());
+        account_infos.push(self.token_mint.clone());
         account_infos.push(self.admin.clone());
-        account_infos.push(self.payer.clone());
+        account_infos.push(self.base.clone());
         account_infos.push(self.system_program.clone());
+        account_infos.push(self.token_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -373,35 +426,39 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `InitializeVaultOperatorDelegation` via CPI.
+/// Instruction builder for `InitializeFrozenVault` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` config
+///   0. `[writable]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` operator
-///   3. `[]` operator_vault_ticket
-///   4. `[writable]` vault_operator_delegation
-///   5. `[signer]` admin
-///   6. `[writable, signer]` payer
-///   7. `[]` system_program
+///   2. `[writable, signer]` vrt_mint
+///   3. `[]` token_mint
+///   4. `[writable, signer]` admin
+///   5. `[signer]` base
+///   6. `[]` system_program
+///   7. `[]` token_program
 #[derive(Clone, Debug)]
-pub struct InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
-    instruction: Box<InitializeVaultOperatorDelegationCpiBuilderInstruction<'a, 'b>>,
+pub struct InitializeFrozenVaultCpiBuilder<'a, 'b> {
+    instruction: Box<InitializeFrozenVaultCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
+impl<'a, 'b> InitializeFrozenVaultCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(InitializeVaultOperatorDelegationCpiBuilderInstruction {
+        let instruction = Box::new(InitializeFrozenVaultCpiBuilderInstruction {
             __program: program,
             config: None,
             vault: None,
-            operator: None,
-            operator_vault_ticket: None,
-            vault_operator_delegation: None,
+            vrt_mint: None,
+            token_mint: None,
             admin: None,
-            payer: None,
+            base: None,
             system_program: None,
+            token_program: None,
+            deposit_fee_bps: None,
+            withdrawal_fee_bps: None,
+            reward_fee_bps: None,
+            decimals: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -420,27 +477,19 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn operator(
+    pub fn vrt_mint(
         &mut self,
-        operator: &'b solana_program::account_info::AccountInfo<'a>,
+        vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.operator = Some(operator);
+        self.instruction.vrt_mint = Some(vrt_mint);
         self
     }
     #[inline(always)]
-    pub fn operator_vault_ticket(
+    pub fn token_mint(
         &mut self,
-        operator_vault_ticket: &'b solana_program::account_info::AccountInfo<'a>,
+        token_mint: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.operator_vault_ticket = Some(operator_vault_ticket);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
-        &mut self,
-        vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.vault_operator_delegation = Some(vault_operator_delegation);
+        self.instruction.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
@@ -449,8 +498,8 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn payer(&mut self, payer: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.payer = Some(payer);
+    pub fn base(&mut self, base: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.base = Some(base);
         self
     }
     #[inline(always)]
@@ -459,6 +508,34 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
         system_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.system_program = Some(system_program);
+        self
+    }
+    #[inline(always)]
+    pub fn token_program(
+        &mut self,
+        token_program: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.token_program = Some(token_program);
+        self
+    }
+    #[inline(always)]
+    pub fn deposit_fee_bps(&mut self, deposit_fee_bps: u16) -> &mut Self {
+        self.instruction.deposit_fee_bps = Some(deposit_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) -> &mut Self {
+        self.instruction.withdrawal_fee_bps = Some(withdrawal_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn reward_fee_bps(&mut self, reward_fee_bps: u16) -> &mut Self {
+        self.instruction.reward_fee_bps = Some(reward_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn decimals(&mut self, decimals: u8) -> &mut Self {
+        self.instruction.decimals = Some(decimals);
         self
     }
     /// Add an additional account to the instruction.
@@ -502,33 +579,53 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let instruction = InitializeVaultOperatorDelegationCpi {
+        let args = InitializeFrozenVaultInstructionArgs {
+            deposit_fee_bps: self
+                .instruction
+                .deposit_fee_bps
+                .clone()
+                .expect("deposit_fee_bps is not set"),
+            withdrawal_fee_bps: self
+                .instruction
+                .withdrawal_fee_bps
+                .clone()
+                .expect("withdrawal_fee_bps is not set"),
+            reward_fee_bps: self
+                .instruction
+                .reward_fee_bps
+                .clone()
+                .expect("reward_fee_bps is not set"),
+            decimals: self
+                .instruction
+                .decimals
+                .clone()
+                .expect("decimals is not set"),
+        };
+        let instruction = InitializeFrozenVaultCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
 
             vault: self.instruction.vault.expect("vault is not set"),
 
-            operator: self.instruction.operator.expect("operator is not set"),
+            vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
 
-            operator_vault_ticket: self
-                .instruction
-                .operator_vault_ticket
-                .expect("operator_vault_ticket is not set"),
-
-            vault_operator_delegation: self
-                .instruction
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
+            token_mint: self.instruction.token_mint.expect("token_mint is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
 
-            payer: self.instruction.payer.expect("payer is not set"),
+            base: self.instruction.base.expect("base is not set"),
 
             system_program: self
                 .instruction
                 .system_program
                 .expect("system_program is not set"),
+
+            token_program: self
+                .instruction
+                .token_program
+                .expect("token_program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -538,16 +635,20 @@ impl<'a, 'b> InitializeVaultOperatorDelegationCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct InitializeVaultOperatorDelegationCpiBuilderInstruction<'a, 'b> {
+struct InitializeFrozenVaultCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    operator_vault_ticket: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_operator_delegation: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    deposit_fee_bps: Option<u16>,
+    withdrawal_fee_bps: Option<u16>,
+    reward_fee_bps: Option<u16>,
+    decimals: Option<u8>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

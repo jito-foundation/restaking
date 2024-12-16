@@ -32,7 +32,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const SET_DEPOSIT_CAPACITY_DISCRIMINATOR = 15;
+export const SET_DEPOSIT_CAPACITY_DISCRIMINATOR = 18;
 
 export function getSetDepositCapacityDiscriminatorBytes() {
   return getU8Encoder().encode(SET_DEPOSIT_CAPACITY_DISCRIMINATOR);

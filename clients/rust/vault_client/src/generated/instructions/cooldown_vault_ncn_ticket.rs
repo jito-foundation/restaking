@@ -66,7 +66,7 @@ pub struct CooldownVaultNcnTicketInstructionData {
 
 impl CooldownVaultNcnTicketInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 8 }
+        Self { discriminator: 9 }
     }
 }
 

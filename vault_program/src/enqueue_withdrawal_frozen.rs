@@ -1,22 +1,12 @@
-use std::mem::size_of;
-
-use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_jsm_core::{
-    create_account,
-    loader::{
-        load_associated_token_account, load_signer, load_system_account, load_system_program,
-        load_token_mint, load_token_program,
-    },
-};
-use jito_vault_core::{
-    config::Config, vault::Vault, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
-};
+use jito_bytemuck::AccountDeserialize;
+use jito_jsm_core::loader::load_token_mint;
+use jito_vault_core::vault::Vault;
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke_signed,
+    program_error::ProgramError, pubkey::Pubkey,
 };
-use spl_token::instruction::{freeze_account, transfer};
+use spl_token::instruction::freeze_account;
 use spl_token_2022::instruction::thaw_account;
 
 use crate::enqueue_withdrawal::process_enqueue_withdrawal;
@@ -38,11 +28,7 @@ pub fn process_enqueue_withdrawal_frozen(
 ) -> ProgramResult {
     // Check Mint Okay
     {
-        let (required_accounts, optional_accounts) = accounts.split_at(10);
-
-        let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, staker, staker_vrt_token_account, base, token_program, system_program, vrt_mint] =
-            required_accounts
-        else {
+        let [_, vault_info, _, _, _, _, _, _, _, _, vrt_mint] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
@@ -62,8 +48,7 @@ pub fn process_enqueue_withdrawal_frozen(
 
     // Unfreeze Token Account
     {
-        let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, staker, staker_vrt_token_account, base, token_program, system_program, _, vrt_mint] =
-            accounts
+        let [_, vault_info, _, _, _, staker_vrt_token_account, _, _, _, _, vrt_mint] = accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
@@ -94,14 +79,16 @@ pub fn process_enqueue_withdrawal_frozen(
         }
     }
 
-    process_enqueue_withdrawal(program_id, accounts, vrt_amount)?;
+    let process_enqueue_withdrawal_accounts = accounts.split_at(10);
+    process_enqueue_withdrawal(
+        program_id,
+        process_enqueue_withdrawal_accounts.0,
+        vrt_amount,
+    )?;
 
     // Refreeze Token Account
     {
-        let (required_accounts, optional_accounts) = accounts.split_at(10);
-
-        let [config, vault_info, vault_staker_withdrawal_ticket, vault_staker_withdrawal_ticket_token_account, staker, staker_vrt_token_account, base, token_program, system_program, vrt_mint] =
-            required_accounts
+        let [_, vault_info, _, _, _, staker_vrt_token_account, _, _, _, _, vrt_mint] = accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };

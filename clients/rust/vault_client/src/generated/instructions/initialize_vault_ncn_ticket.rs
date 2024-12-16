@@ -83,7 +83,7 @@ pub struct InitializeVaultNcnTicketInstructionData {
 
 impl InitializeVaultNcnTicketInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 4 }
+        Self { discriminator: 5 }
     }
 }
 

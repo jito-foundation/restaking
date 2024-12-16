@@ -68,7 +68,7 @@ pub struct ChangeWithdrawalTicketOwnerInstructionData {
 
 impl ChangeWithdrawalTicketOwnerInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 13 }
+        Self { discriminator: 16 }
     }
 }
 

@@ -110,12 +110,79 @@
       }
     },
     {
+      "name": "InitializeFrozenVault",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vrtMint",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "depositFeeBps",
+          "type": "u16"
+        },
+        {
+          "name": "withdrawalFeeBps",
+          "type": "u16"
+        },
+        {
+          "name": "rewardFeeBps",
+          "type": "u16"
+        },
+        {
+          "name": "decimals",
+          "type": "u8"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 2
+      }
+    },
+    {
       "name": "InitializeVaultWithMint",
       "accounts": [],
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 2
+        "value": 3
       }
     },
     {
@@ -165,7 +232,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 3
+        "value": 4
       }
     },
     {
@@ -215,7 +282,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 4
+        "value": 5
       }
     },
     {
@@ -270,7 +337,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 5
+        "value": 6
       }
     },
     {
@@ -325,7 +392,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 6
+        "value": 7
       }
     },
     {
@@ -360,7 +427,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 7
+        "value": 8
       }
     },
     {
@@ -395,7 +462,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 8
+        "value": 9
       }
     },
     {
@@ -435,7 +502,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 9
+        "value": 10
       }
     },
     {
@@ -475,7 +542,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 10
+        "value": 11
       }
     },
     {
@@ -548,7 +615,80 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 11
+        "value": 12
+      }
+    },
+    {
+      "name": "MintToFrozen",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vrtMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositor",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "depositorTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositorVrtTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultFeeTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintSigner",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "Signer for minting"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minAmountOut",
+          "type": "u64"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 13
       }
     },
     {
@@ -617,7 +757,81 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 12
+        "value": 14
+      }
+    },
+    {
+      "name": "EnqueueWithdrawalFrozen",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultStakerWithdrawalTicket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultStakerWithdrawalTicketTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "staker",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakerVrtTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "burnSigner",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "Signer for burning"
+          ]
+        },
+        {
+          "name": "vrtMint",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 15
       }
     },
     {
@@ -652,7 +866,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 13
+        "value": 16
       }
     },
     {
@@ -731,7 +945,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 14
+        "value": 17
       }
     },
     {
@@ -761,7 +975,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 15
+        "value": 18
       }
     },
     {
@@ -805,7 +1019,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 16
+        "value": 19
       }
     },
     {
@@ -830,7 +1044,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 17
+        "value": 20
       }
     },
     {
@@ -855,7 +1069,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 18
+        "value": 21
       }
     },
     {
@@ -885,7 +1099,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 19
+        "value": 22
       }
     },
     {
@@ -930,7 +1144,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 20
+        "value": 23
       }
     },
     {
@@ -960,7 +1174,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 21
+        "value": 24
       }
     },
     {
@@ -997,7 +1211,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 22
+        "value": 25
       }
     },
     {
@@ -1037,7 +1251,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 23
+        "value": 26
       }
     },
     {
@@ -1077,7 +1291,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 24
+        "value": 27
       }
     },
     {
@@ -1117,7 +1331,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 25
+        "value": 28
       }
     },
     {
@@ -1159,7 +1373,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 26
+        "value": 29
       }
     },
     {
@@ -1194,7 +1408,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 27
+        "value": 30
       }
     },
     {
@@ -1229,7 +1443,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 28
+        "value": 31
       }
     },
     {
@@ -1287,7 +1501,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 29
+        "value": 32
       }
     },
     {
@@ -1335,7 +1549,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 30
+        "value": 33
       }
     },
     {
@@ -1360,7 +1574,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 31
+        "value": 34
       }
     }
   ],
@@ -1624,11 +1838,17 @@
             }
           },
           {
+            "name": "isFrozen",
+            "type": {
+              "defined": "PodBool"
+            }
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
                 "u8",
-                259
+                258
               ]
             }
           }
@@ -2390,31 +2610,41 @@
     },
     {
       "code": 1052,
+      "name": "VaultNotFrozen",
+      "msg": "VaultNotFrozen"
+    },
+    {
+      "code": 1053,
+      "name": "VaultIsFrozen",
+      "msg": "VaultIsFrozen"
+    },
+    {
+      "code": 1054,
       "name": "InvalidDepositTokenAccount",
       "msg": "InvalidDepositTokenAccount"
     },
     {
-      "code": 1053,
+      "code": 1055,
       "name": "NoSupportedMintBalanceChange",
       "msg": "NoSupportedMintBalanceChange"
     },
     {
-      "code": 1054,
+      "code": 1056,
       "name": "InvalidEpochLength",
       "msg": "InvalidEpochLength"
     },
     {
-      "code": 1055,
+      "code": 1057,
       "name": "VaultRewardFeeDeltaTooLarge",
       "msg": "VaultRewardFeeDeltaTooLarge"
     },
     {
-      "code": 1056,
+      "code": 1058,
       "name": "VaultRewardFeeIsZero",
       "msg": "VaultRewardFeeIsZero"
     },
     {
-      "code": 1057,
+      "code": 1059,
       "name": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate",
       "msg": "NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate"
     },

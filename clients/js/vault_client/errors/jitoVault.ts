@@ -118,18 +118,22 @@ export const JITO_VAULT_ERROR__VAULT_MINT_ZERO = 0x419; // 1049
 export const JITO_VAULT_ERROR__VAULT_IS_PAUSED = 0x41a; // 1050
 /** InvalidDepositor: InvalidDepositor */
 export const JITO_VAULT_ERROR__INVALID_DEPOSITOR = 0x41b; // 1051
+/** VaultNotFrozen: VaultNotFrozen */
+export const JITO_VAULT_ERROR__VAULT_NOT_FROZEN = 0x41c; // 1052
+/** VaultIsFrozen: VaultIsFrozen */
+export const JITO_VAULT_ERROR__VAULT_IS_FROZEN = 0x41d; // 1053
 /** InvalidDepositTokenAccount: InvalidDepositTokenAccount */
-export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x41c; // 1052
+export const JITO_VAULT_ERROR__INVALID_DEPOSIT_TOKEN_ACCOUNT = 0x41e; // 1054
 /** NoSupportedMintBalanceChange: NoSupportedMintBalanceChange */
-export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41d; // 1053
+export const JITO_VAULT_ERROR__NO_SUPPORTED_MINT_BALANCE_CHANGE = 0x41f; // 1055
 /** InvalidEpochLength: InvalidEpochLength */
-export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x41e; // 1054
+export const JITO_VAULT_ERROR__INVALID_EPOCH_LENGTH = 0x420; // 1056
 /** VaultRewardFeeDeltaTooLarge: VaultRewardFeeDeltaTooLarge */
-export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_DELTA_TOO_LARGE = 0x41f; // 1055
+export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_DELTA_TOO_LARGE = 0x421; // 1057
 /** VaultRewardFeeIsZero: VaultRewardFeeIsZero */
-export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_IS_ZERO = 0x420; // 1056
+export const JITO_VAULT_ERROR__VAULT_REWARD_FEE_IS_ZERO = 0x422; // 1058
 /** NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate: NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate */
-export const JITO_VAULT_ERROR__NON_ZERO_ADDITIONAL_ASSETS_NEEDED_FOR_WITHDRAWAL_AT_END_OF_UPDATE = 0x421; // 1057
+export const JITO_VAULT_ERROR__NON_ZERO_ADDITIONAL_ASSETS_NEEDED_FOR_WITHDRAWAL_AT_END_OF_UPDATE = 0x423; // 1059
 /** ArithmeticOverflow: ArithmeticOverflow */
 export const JITO_VAULT_ERROR__ARITHMETIC_OVERFLOW = 0xbb8; // 3000
 /** ArithmeticUnderflow: ArithmeticUnderflow */
@@ -170,6 +174,7 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__VAULT_FEE_CAP_EXCEEDED
   | typeof JITO_VAULT_ERROR__VAULT_FEE_CHANGE_TOO_SOON
   | typeof JITO_VAULT_ERROR__VAULT_INSUFFICIENT_FUNDS
+  | typeof JITO_VAULT_ERROR__VAULT_IS_FROZEN
   | typeof JITO_VAULT_ERROR__VAULT_IS_PAUSED
   | typeof JITO_VAULT_ERROR__VAULT_IS_UPDATED
   | typeof JITO_VAULT_ERROR__VAULT_MAX_SLASHED_PER_OPERATOR_EXCEEDED
@@ -182,6 +187,7 @@ export type JitoVaultError =
   | typeof JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_COOLDOWN
   | typeof JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_WARMUP
   | typeof JITO_VAULT_ERROR__VAULT_NCN_TICKET_UNSLASHABLE
+  | typeof JITO_VAULT_ERROR__VAULT_NOT_FROZEN
   | typeof JITO_VAULT_ERROR__VAULT_OPERATOR_ADMIN_INVALID
   | typeof JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_IS_UPDATED
   | typeof JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_UPDATE_NEEDED
@@ -235,6 +241,7 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__VAULT_FEE_CAP_EXCEEDED]: `VaultFeeCapExceeded`,
     [JITO_VAULT_ERROR__VAULT_FEE_CHANGE_TOO_SOON]: `VaultFeeChangeTooSoon`,
     [JITO_VAULT_ERROR__VAULT_INSUFFICIENT_FUNDS]: `VaultInsufficientFunds`,
+    [JITO_VAULT_ERROR__VAULT_IS_FROZEN]: `VaultIsFrozen`,
     [JITO_VAULT_ERROR__VAULT_IS_PAUSED]: `VaultIsPaused`,
     [JITO_VAULT_ERROR__VAULT_IS_UPDATED]: `VaultIsUpdated`,
     [JITO_VAULT_ERROR__VAULT_MAX_SLASHED_PER_OPERATOR_EXCEEDED]: `VaultMaxSlashedPerOperatorExceeded`,
@@ -247,6 +254,7 @@ if (process.env.NODE_ENV !== 'production') {
     [JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_COOLDOWN]: `VaultNcnTicketFailedCooldown`,
     [JITO_VAULT_ERROR__VAULT_NCN_TICKET_FAILED_WARMUP]: `VaultNcnTicketFailedWarmup`,
     [JITO_VAULT_ERROR__VAULT_NCN_TICKET_UNSLASHABLE]: `VaultNcnTicketUnslashable`,
+    [JITO_VAULT_ERROR__VAULT_NOT_FROZEN]: `VaultNotFrozen`,
     [JITO_VAULT_ERROR__VAULT_OPERATOR_ADMIN_INVALID]: `VaultOperatorAdminInvalid`,
     [JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_IS_UPDATED]: `VaultOperatorDelegationIsUpdated`,
     [JITO_VAULT_ERROR__VAULT_OPERATOR_DELEGATION_UPDATE_NEEDED]: `VaultOperatorDelegationUpdateNeeded`,

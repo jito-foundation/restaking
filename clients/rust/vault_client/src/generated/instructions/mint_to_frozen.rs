@@ -7,44 +7,42 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
-pub struct BurnWithdrawalTicket {
+pub struct MintToFrozen {
     pub config: solana_program::pubkey::Pubkey,
 
     pub vault: solana_program::pubkey::Pubkey,
 
-    pub vault_token_account: solana_program::pubkey::Pubkey,
-
     pub vrt_mint: solana_program::pubkey::Pubkey,
 
-    pub staker: solana_program::pubkey::Pubkey,
+    pub depositor: solana_program::pubkey::Pubkey,
 
-    pub staker_token_account: solana_program::pubkey::Pubkey,
+    pub depositor_token_account: solana_program::pubkey::Pubkey,
 
-    pub vault_staker_withdrawal_ticket: solana_program::pubkey::Pubkey,
+    pub vault_token_account: solana_program::pubkey::Pubkey,
 
-    pub vault_staker_withdrawal_ticket_token_account: solana_program::pubkey::Pubkey,
+    pub depositor_vrt_token_account: solana_program::pubkey::Pubkey,
 
     pub vault_fee_token_account: solana_program::pubkey::Pubkey,
 
-    pub program_fee_token_account: solana_program::pubkey::Pubkey,
-
     pub token_program: solana_program::pubkey::Pubkey,
-
-    pub system_program: solana_program::pubkey::Pubkey,
-    /// Signer for burning
-    pub burn_signer: Option<solana_program::pubkey::Pubkey>,
+    /// Signer for minting
+    pub mint_signer: Option<solana_program::pubkey::Pubkey>,
 }
 
-impl BurnWithdrawalTicket {
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+impl MintToFrozen {
+    pub fn instruction(
+        &self,
+        args: MintToFrozenInstructionArgs,
+    ) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: MintToFrozenInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -53,48 +51,36 @@ impl BurnWithdrawalTicket {
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_token_account,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
             self.vrt_mint,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.staker,
+            self.depositor,
+            true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            self.depositor_token_account,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.staker_token_account,
+            self.vault_token_account,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_staker_withdrawal_ticket,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_staker_withdrawal_ticket_token_account,
+            self.depositor_vrt_token_account,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.vault_fee_token_account,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.program_fee_token_account,
-            false,
-        ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.token_program,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.system_program,
-            false,
-        ));
-        if let Some(burn_signer) = self.burn_signer {
+        if let Some(mint_signer) = self.mint_signer {
             accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-                burn_signer,
+                mint_signer,
                 true,
             ));
         } else {
@@ -104,9 +90,9 @@ impl BurnWithdrawalTicket {
             ));
         }
         accounts.extend_from_slice(remaining_accounts);
-        let data = BurnWithdrawalTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = MintToFrozenInstructionData::new().try_to_vec().unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -117,58 +103,61 @@ impl BurnWithdrawalTicket {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct BurnWithdrawalTicketInstructionData {
+pub struct MintToFrozenInstructionData {
     discriminator: u8,
 }
 
-impl BurnWithdrawalTicketInstructionData {
+impl MintToFrozenInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 17 }
+        Self { discriminator: 13 }
     }
 }
 
-impl Default for BurnWithdrawalTicketInstructionData {
+impl Default for MintToFrozenInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `BurnWithdrawalTicket`.
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MintToFrozenInstructionArgs {
+    pub amount_in: u64,
+    pub min_amount_out: u64,
+}
+
+/// Instruction builder for `MintToFrozen`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` vault_token_account
-///   3. `[writable]` vrt_mint
-///   4. `[writable]` staker
-///   5. `[writable]` staker_token_account
-///   6. `[writable]` vault_staker_withdrawal_ticket
-///   7. `[writable]` vault_staker_withdrawal_ticket_token_account
-///   8. `[writable]` vault_fee_token_account
-///   9. `[writable]` program_fee_token_account
-///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   11. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   12. `[signer, optional]` burn_signer
+///   2. `[writable]` vrt_mint
+///   3. `[writable, signer]` depositor
+///   4. `[writable]` depositor_token_account
+///   5. `[writable]` vault_token_account
+///   6. `[writable]` depositor_vrt_token_account
+///   7. `[writable]` vault_fee_token_account
+///   8. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   9. `[signer, optional]` mint_signer
 #[derive(Clone, Debug, Default)]
-pub struct BurnWithdrawalTicketBuilder {
+pub struct MintToFrozenBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
-    vault_token_account: Option<solana_program::pubkey::Pubkey>,
     vrt_mint: Option<solana_program::pubkey::Pubkey>,
-    staker: Option<solana_program::pubkey::Pubkey>,
-    staker_token_account: Option<solana_program::pubkey::Pubkey>,
-    vault_staker_withdrawal_ticket: Option<solana_program::pubkey::Pubkey>,
-    vault_staker_withdrawal_ticket_token_account: Option<solana_program::pubkey::Pubkey>,
+    depositor: Option<solana_program::pubkey::Pubkey>,
+    depositor_token_account: Option<solana_program::pubkey::Pubkey>,
+    vault_token_account: Option<solana_program::pubkey::Pubkey>,
+    depositor_vrt_token_account: Option<solana_program::pubkey::Pubkey>,
     vault_fee_token_account: Option<solana_program::pubkey::Pubkey>,
-    program_fee_token_account: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
-    burn_signer: Option<solana_program::pubkey::Pubkey>,
+    mint_signer: Option<solana_program::pubkey::Pubkey>,
+    amount_in: Option<u64>,
+    min_amount_out: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl BurnWithdrawalTicketBuilder {
+impl MintToFrozenBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -183,6 +172,24 @@ impl BurnWithdrawalTicketBuilder {
         self
     }
     #[inline(always)]
+    pub fn vrt_mint(&mut self, vrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.vrt_mint = Some(vrt_mint);
+        self
+    }
+    #[inline(always)]
+    pub fn depositor(&mut self, depositor: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.depositor = Some(depositor);
+        self
+    }
+    #[inline(always)]
+    pub fn depositor_token_account(
+        &mut self,
+        depositor_token_account: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.depositor_token_account = Some(depositor_token_account);
+        self
+    }
+    #[inline(always)]
     pub fn vault_token_account(
         &mut self,
         vault_token_account: solana_program::pubkey::Pubkey,
@@ -191,38 +198,11 @@ impl BurnWithdrawalTicketBuilder {
         self
     }
     #[inline(always)]
-    pub fn vrt_mint(&mut self, vrt_mint: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.vrt_mint = Some(vrt_mint);
-        self
-    }
-    #[inline(always)]
-    pub fn staker(&mut self, staker: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.staker = Some(staker);
-        self
-    }
-    #[inline(always)]
-    pub fn staker_token_account(
+    pub fn depositor_vrt_token_account(
         &mut self,
-        staker_token_account: solana_program::pubkey::Pubkey,
+        depositor_vrt_token_account: solana_program::pubkey::Pubkey,
     ) -> &mut Self {
-        self.staker_token_account = Some(staker_token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_staker_withdrawal_ticket(
-        &mut self,
-        vault_staker_withdrawal_ticket: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_staker_withdrawal_ticket = Some(vault_staker_withdrawal_ticket);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_staker_withdrawal_ticket_token_account(
-        &mut self,
-        vault_staker_withdrawal_ticket_token_account: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.vault_staker_withdrawal_ticket_token_account =
-            Some(vault_staker_withdrawal_ticket_token_account);
+        self.depositor_vrt_token_account = Some(depositor_vrt_token_account);
         self
     }
     #[inline(always)]
@@ -233,34 +213,30 @@ impl BurnWithdrawalTicketBuilder {
         self.vault_fee_token_account = Some(vault_fee_token_account);
         self
     }
-    #[inline(always)]
-    pub fn program_fee_token_account(
-        &mut self,
-        program_fee_token_account: solana_program::pubkey::Pubkey,
-    ) -> &mut Self {
-        self.program_fee_token_account = Some(program_fee_token_account);
-        self
-    }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.token_program = Some(token_program);
         self
     }
-    /// `[optional account, default to '11111111111111111111111111111111']`
+    /// `[optional account]`
+    /// Signer for minting
     #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
+    pub fn mint_signer(
+        &mut self,
+        mint_signer: Option<solana_program::pubkey::Pubkey>,
+    ) -> &mut Self {
+        self.mint_signer = mint_signer;
         self
     }
-    /// `[optional account]`
-    /// Signer for burning
     #[inline(always)]
-    pub fn burn_signer(
-        &mut self,
-        burn_signer: Option<solana_program::pubkey::Pubkey>,
-    ) -> &mut Self {
-        self.burn_signer = burn_signer;
+    pub fn amount_in(&mut self, amount_in: u64) -> &mut Self {
+        self.amount_in = Some(amount_in);
+        self
+    }
+    #[inline(always)]
+    pub fn min_amount_out(&mut self, min_amount_out: u64) -> &mut Self {
+        self.min_amount_out = Some(min_amount_out);
         self
     }
     /// Add an aditional account to the instruction.
@@ -283,74 +259,65 @@ impl BurnWithdrawalTicketBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = BurnWithdrawalTicket {
+        let accounts = MintToFrozen {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
+            vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
+            depositor: self.depositor.expect("depositor is not set"),
+            depositor_token_account: self
+                .depositor_token_account
+                .expect("depositor_token_account is not set"),
             vault_token_account: self
                 .vault_token_account
                 .expect("vault_token_account is not set"),
-            vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
-            staker: self.staker.expect("staker is not set"),
-            staker_token_account: self
-                .staker_token_account
-                .expect("staker_token_account is not set"),
-            vault_staker_withdrawal_ticket: self
-                .vault_staker_withdrawal_ticket
-                .expect("vault_staker_withdrawal_ticket is not set"),
-            vault_staker_withdrawal_ticket_token_account: self
-                .vault_staker_withdrawal_ticket_token_account
-                .expect("vault_staker_withdrawal_ticket_token_account is not set"),
+            depositor_vrt_token_account: self
+                .depositor_vrt_token_account
+                .expect("depositor_vrt_token_account is not set"),
             vault_fee_token_account: self
                 .vault_fee_token_account
                 .expect("vault_fee_token_account is not set"),
-            program_fee_token_account: self
-                .program_fee_token_account
-                .expect("program_fee_token_account is not set"),
             token_program: self.token_program.unwrap_or(solana_program::pubkey!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
-            burn_signer: self.burn_signer,
+            mint_signer: self.mint_signer,
+        };
+        let args = MintToFrozenInstructionArgs {
+            amount_in: self.amount_in.clone().expect("amount_in is not set"),
+            min_amount_out: self
+                .min_amount_out
+                .clone()
+                .expect("min_amount_out is not set"),
         };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `burn_withdrawal_ticket` CPI accounts.
-pub struct BurnWithdrawalTicketCpiAccounts<'a, 'b> {
+/// `mint_to_frozen` CPI accounts.
+pub struct MintToFrozenCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub staker: &'b solana_program::account_info::AccountInfo<'a>,
+    pub depositor: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub staker_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    pub depositor_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_staker_withdrawal_ticket: &'b solana_program::account_info::AccountInfo<'a>,
+    pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_staker_withdrawal_ticket_token_account:
-        &'b solana_program::account_info::AccountInfo<'a>,
+    pub depositor_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub program_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
-    /// Signer for burning
-    pub burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    /// Signer for minting
+    pub mint_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
 }
 
-/// `burn_withdrawal_ticket` CPI instruction.
-pub struct BurnWithdrawalTicketCpi<'a, 'b> {
+/// `mint_to_frozen` CPI instruction.
+pub struct MintToFrozenCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -358,51 +325,44 @@ pub struct BurnWithdrawalTicketCpi<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub staker: &'b solana_program::account_info::AccountInfo<'a>,
+    pub depositor: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub staker_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    pub depositor_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_staker_withdrawal_ticket: &'b solana_program::account_info::AccountInfo<'a>,
+    pub vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_staker_withdrawal_ticket_token_account:
-        &'b solana_program::account_info::AccountInfo<'a>,
+    pub depositor_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub program_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
-    /// Signer for burning
-    pub burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    /// Signer for minting
+    pub mint_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    /// The arguments for the instruction.
+    pub __args: MintToFrozenInstructionArgs,
 }
 
-impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
+impl<'a, 'b> MintToFrozenCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: BurnWithdrawalTicketCpiAccounts<'a, 'b>,
+        accounts: MintToFrozenCpiAccounts<'a, 'b>,
+        args: MintToFrozenInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
-            vault_token_account: accounts.vault_token_account,
             vrt_mint: accounts.vrt_mint,
-            staker: accounts.staker,
-            staker_token_account: accounts.staker_token_account,
-            vault_staker_withdrawal_ticket: accounts.vault_staker_withdrawal_ticket,
-            vault_staker_withdrawal_ticket_token_account: accounts
-                .vault_staker_withdrawal_ticket_token_account,
+            depositor: accounts.depositor,
+            depositor_token_account: accounts.depositor_token_account,
+            vault_token_account: accounts.vault_token_account,
+            depositor_vrt_token_account: accounts.depositor_vrt_token_account,
             vault_fee_token_account: accounts.vault_fee_token_account,
-            program_fee_token_account: accounts.program_fee_token_account,
             token_program: accounts.token_program,
-            system_program: accounts.system_program,
-            burn_signer: accounts.burn_signer,
+            mint_signer: accounts.mint_signer,
+            __args: args,
         }
     }
     #[inline(always)]
@@ -438,7 +398,7 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -448,48 +408,36 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_token_account.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vrt_mint.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.staker.key,
+            *self.depositor.key,
+            true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            *self.depositor_token_account.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.staker_token_account.key,
+            *self.vault_token_account.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_staker_withdrawal_ticket.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_staker_withdrawal_ticket_token_account.key,
+            *self.depositor_vrt_token_account.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.vault_fee_token_account.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.program_fee_token_account.key,
-            false,
-        ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.token_program.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
-            false,
-        ));
-        if let Some(burn_signer) = self.burn_signer {
+        if let Some(mint_signer) = self.mint_signer {
             accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-                *burn_signer.key,
+                *mint_signer.key,
                 true,
             ));
         } else {
@@ -505,31 +453,28 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = BurnWithdrawalTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = MintToFrozenInstructionData::new().try_to_vec().unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(13 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(10 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
-        account_infos.push(self.vault_token_account.clone());
         account_infos.push(self.vrt_mint.clone());
-        account_infos.push(self.staker.clone());
-        account_infos.push(self.staker_token_account.clone());
-        account_infos.push(self.vault_staker_withdrawal_ticket.clone());
-        account_infos.push(self.vault_staker_withdrawal_ticket_token_account.clone());
+        account_infos.push(self.depositor.clone());
+        account_infos.push(self.depositor_token_account.clone());
+        account_infos.push(self.vault_token_account.clone());
+        account_infos.push(self.depositor_vrt_token_account.clone());
         account_infos.push(self.vault_fee_token_account.clone());
-        account_infos.push(self.program_fee_token_account.clone());
         account_infos.push(self.token_program.clone());
-        account_infos.push(self.system_program.clone());
-        if let Some(burn_signer) = self.burn_signer {
-            account_infos.push(burn_signer.clone());
+        if let Some(mint_signer) = self.mint_signer {
+            account_infos.push(mint_signer.clone());
         }
         remaining_accounts
             .iter()
@@ -543,45 +488,41 @@ impl<'a, 'b> BurnWithdrawalTicketCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `BurnWithdrawalTicket` via CPI.
+/// Instruction builder for `MintToFrozen` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
 ///   1. `[writable]` vault
-///   2. `[writable]` vault_token_account
-///   3. `[writable]` vrt_mint
-///   4. `[writable]` staker
-///   5. `[writable]` staker_token_account
-///   6. `[writable]` vault_staker_withdrawal_ticket
-///   7. `[writable]` vault_staker_withdrawal_ticket_token_account
-///   8. `[writable]` vault_fee_token_account
-///   9. `[writable]` program_fee_token_account
-///   10. `[]` token_program
-///   11. `[]` system_program
-///   12. `[signer, optional]` burn_signer
+///   2. `[writable]` vrt_mint
+///   3. `[writable, signer]` depositor
+///   4. `[writable]` depositor_token_account
+///   5. `[writable]` vault_token_account
+///   6. `[writable]` depositor_vrt_token_account
+///   7. `[writable]` vault_fee_token_account
+///   8. `[]` token_program
+///   9. `[signer, optional]` mint_signer
 #[derive(Clone, Debug)]
-pub struct BurnWithdrawalTicketCpiBuilder<'a, 'b> {
-    instruction: Box<BurnWithdrawalTicketCpiBuilderInstruction<'a, 'b>>,
+pub struct MintToFrozenCpiBuilder<'a, 'b> {
+    instruction: Box<MintToFrozenCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
+impl<'a, 'b> MintToFrozenCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(BurnWithdrawalTicketCpiBuilderInstruction {
+        let instruction = Box::new(MintToFrozenCpiBuilderInstruction {
             __program: program,
             config: None,
             vault: None,
-            vault_token_account: None,
             vrt_mint: None,
-            staker: None,
-            staker_token_account: None,
-            vault_staker_withdrawal_ticket: None,
-            vault_staker_withdrawal_ticket_token_account: None,
+            depositor: None,
+            depositor_token_account: None,
+            vault_token_account: None,
+            depositor_vrt_token_account: None,
             vault_fee_token_account: None,
-            program_fee_token_account: None,
             token_program: None,
-            system_program: None,
-            burn_signer: None,
+            mint_signer: None,
+            amount_in: None,
+            min_amount_out: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -600,14 +541,6 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn vault_token_account(
-        &mut self,
-        vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.vault_token_account = Some(vault_token_account);
-        self
-    }
-    #[inline(always)]
     pub fn vrt_mint(
         &mut self,
         vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
@@ -616,39 +549,35 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn staker(
+    pub fn depositor(
         &mut self,
-        staker: &'b solana_program::account_info::AccountInfo<'a>,
+        depositor: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.staker = Some(staker);
+        self.instruction.depositor = Some(depositor);
         self
     }
     #[inline(always)]
-    pub fn staker_token_account(
+    pub fn depositor_token_account(
         &mut self,
-        staker_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+        depositor_token_account: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.staker_token_account = Some(staker_token_account);
+        self.instruction.depositor_token_account = Some(depositor_token_account);
         self
     }
     #[inline(always)]
-    pub fn vault_staker_withdrawal_ticket(
+    pub fn vault_token_account(
         &mut self,
-        vault_staker_withdrawal_ticket: &'b solana_program::account_info::AccountInfo<'a>,
+        vault_token_account: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.vault_staker_withdrawal_ticket = Some(vault_staker_withdrawal_ticket);
+        self.instruction.vault_token_account = Some(vault_token_account);
         self
     }
     #[inline(always)]
-    pub fn vault_staker_withdrawal_ticket_token_account(
+    pub fn depositor_vrt_token_account(
         &mut self,
-        vault_staker_withdrawal_ticket_token_account: &'b solana_program::account_info::AccountInfo<
-            'a,
-        >,
+        depositor_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction
-            .vault_staker_withdrawal_ticket_token_account =
-            Some(vault_staker_withdrawal_ticket_token_account);
+        self.instruction.depositor_vrt_token_account = Some(depositor_vrt_token_account);
         self
     }
     #[inline(always)]
@@ -660,14 +589,6 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn program_fee_token_account(
-        &mut self,
-        program_fee_token_account: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.program_fee_token_account = Some(program_fee_token_account);
-        self
-    }
-    #[inline(always)]
     pub fn token_program(
         &mut self,
         token_program: &'b solana_program::account_info::AccountInfo<'a>,
@@ -675,22 +596,24 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
         self.instruction.token_program = Some(token_program);
         self
     }
+    /// `[optional account]`
+    /// Signer for minting
     #[inline(always)]
-    pub fn system_program(
+    pub fn mint_signer(
         &mut self,
-        system_program: &'b solana_program::account_info::AccountInfo<'a>,
+        mint_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
+        self.instruction.mint_signer = mint_signer;
         self
     }
-    /// `[optional account]`
-    /// Signer for burning
     #[inline(always)]
-    pub fn burn_signer(
-        &mut self,
-        burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    ) -> &mut Self {
-        self.instruction.burn_signer = burn_signer;
+    pub fn amount_in(&mut self, amount_in: u64) -> &mut Self {
+        self.instruction.amount_in = Some(amount_in);
+        self
+    }
+    #[inline(always)]
+    pub fn min_amount_out(&mut self, min_amount_out: u64) -> &mut Self {
+        self.instruction.min_amount_out = Some(min_amount_out);
         self
     }
     /// Add an additional account to the instruction.
@@ -734,58 +657,56 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let instruction = BurnWithdrawalTicketCpi {
+        let args = MintToFrozenInstructionArgs {
+            amount_in: self
+                .instruction
+                .amount_in
+                .clone()
+                .expect("amount_in is not set"),
+            min_amount_out: self
+                .instruction
+                .min_amount_out
+                .clone()
+                .expect("min_amount_out is not set"),
+        };
+        let instruction = MintToFrozenCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
 
             vault: self.instruction.vault.expect("vault is not set"),
 
+            vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
+
+            depositor: self.instruction.depositor.expect("depositor is not set"),
+
+            depositor_token_account: self
+                .instruction
+                .depositor_token_account
+                .expect("depositor_token_account is not set"),
+
             vault_token_account: self
                 .instruction
                 .vault_token_account
                 .expect("vault_token_account is not set"),
 
-            vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
-
-            staker: self.instruction.staker.expect("staker is not set"),
-
-            staker_token_account: self
+            depositor_vrt_token_account: self
                 .instruction
-                .staker_token_account
-                .expect("staker_token_account is not set"),
-
-            vault_staker_withdrawal_ticket: self
-                .instruction
-                .vault_staker_withdrawal_ticket
-                .expect("vault_staker_withdrawal_ticket is not set"),
-
-            vault_staker_withdrawal_ticket_token_account: self
-                .instruction
-                .vault_staker_withdrawal_ticket_token_account
-                .expect("vault_staker_withdrawal_ticket_token_account is not set"),
+                .depositor_vrt_token_account
+                .expect("depositor_vrt_token_account is not set"),
 
             vault_fee_token_account: self
                 .instruction
                 .vault_fee_token_account
                 .expect("vault_fee_token_account is not set"),
 
-            program_fee_token_account: self
-                .instruction
-                .program_fee_token_account
-                .expect("program_fee_token_account is not set"),
-
             token_program: self
                 .instruction
                 .token_program
                 .expect("token_program is not set"),
 
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
-
-            burn_signer: self.instruction.burn_signer,
+            mint_signer: self.instruction.mint_signer,
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -795,22 +716,20 @@ impl<'a, 'b> BurnWithdrawalTicketCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct BurnWithdrawalTicketCpiBuilderInstruction<'a, 'b> {
+struct MintToFrozenCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    staker: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    staker_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_staker_withdrawal_ticket: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_staker_withdrawal_ticket_token_account:
-        Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    depositor: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    depositor_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    vault_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    depositor_vrt_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_fee_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    program_fee_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    burn_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    mint_signer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    amount_in: Option<u64>,
+    min_amount_out: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,
