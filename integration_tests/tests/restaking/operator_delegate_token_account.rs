@@ -72,7 +72,7 @@ mod tests {
     }
 
     #[test_case(spl_token::id(); "token")]
-    #[test_case(spl_token_2022::id(); "token-2022")]
+    // #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
     async fn test_operator_delegate_token_account_ok(token_program_id: Pubkey) {
         let (mut fixture, operator_root, random_mint, operator_token_account) =
@@ -126,7 +126,7 @@ mod tests {
     }
 
     #[test_case(spl_token::id(); "token")]
-    #[test_case(spl_token_2022::id(); "token-2022")]
+    // #[test_case(spl_token_2022::id(); "token-2022")]
     #[tokio::test]
     async fn test_operator_delegate_token_account_wrong_delegate_admin_fails(
         token_program_id: Pubkey,

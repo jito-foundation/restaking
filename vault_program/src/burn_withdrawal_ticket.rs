@@ -66,7 +66,9 @@ pub fn process_burn_withdrawal_ticket(
         &config.program_fee_wallet,
         &vault.vrt_mint,
     )?;
+    // Only the original spl token program is allowed
     load_token_program(token_program)?;
+
     load_system_program(system_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;

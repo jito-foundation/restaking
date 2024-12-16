@@ -119,7 +119,7 @@ pub fn load_associated_token_account(
     mint: &Pubkey,
 ) -> Result<(), ProgramError> {
     if token_account.owner.ne(&spl_token::id()) {
-        msg!("Account is not owned by the token program");
+        msg!("Account is not owned by the spl token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
 
@@ -148,7 +148,6 @@ pub fn load_associated_token_account(
 /// * `token_account` - The account to load the token account from
 /// * `owner` - The owner of the token account
 /// * `mint` - The mint of the token account
-/// * `token_program_info` - The token program of the token account
 ///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
@@ -161,11 +160,14 @@ pub fn load_token_account(
     token_account: &AccountInfo,
     owner: &Pubkey,
     mint: &Pubkey,
-    token_program_info: &AccountInfo,
+    token_program: &AccountInfo,
 ) -> Result<(), ProgramError> {
-    spl_token_2022::check_spl_token_program_account(token_account.owner)?;
+    if token_program.key.ne(&spl_token::id()) {
+        msg!("Account is not owned by the spl token program");
+        return Err(ProgramError::IncorrectProgramId);
+    }
 
-    if token_account.owner.ne(token_program_info.key) {
+    if token_account.owner.ne(&spl_token::id()) {
         msg!("Account is not owned by the token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -206,8 +208,8 @@ pub fn load_token_account(
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
-    if !(info.owner.eq(&spl_token::id()) || info.owner.eq(&spl_token_2022::id())) {
-        msg!("Account is not owned by the token program");
+    if info.owner.ne(&spl_token::id()) {
+        msg!("Account is not owned by the spl token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
 
