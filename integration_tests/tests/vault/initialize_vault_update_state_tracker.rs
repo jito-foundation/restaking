@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
+    use jito_vault_core::{
+        config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+    };
     use jito_vault_sdk::error::VaultError;
     use solana_program::instruction::InstructionError;
     use solana_sdk::{signature::Keypair, signer::Signer};
@@ -453,7 +455,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
+        assert_eq!(
+            vault.additional_assets_need_unstaking(),
+            75_000 - Vault::INITIALIZATION_TOKEN_AMOUNT
+        );
 
         // Update fees
         let new_withdrawal_fee_bps = 10;
@@ -490,7 +495,10 @@ mod tests {
             .unwrap();
 
         // no assets cooled down, additional_assets_need_unstaking = 75_000
-        assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
+        assert_eq!(
+            vault.additional_assets_need_unstaking(),
+            75_000 - Vault::INITIALIZATION_TOKEN_AMOUNT
+        );
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -545,7 +553,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.delegation_state.staked_amount(), 25_000);
+        assert_eq!(
+            vault.delegation_state.staked_amount(),
+            25_000 + Vault::INITIALIZATION_TOKEN_AMOUNT
+        );
         assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 75_000);
     }

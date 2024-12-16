@@ -14,7 +14,11 @@ pub struct InitializeVault {
 
     pub vrt_mint: solana_program::pubkey::Pubkey,
 
-    pub token_mint: solana_program::pubkey::Pubkey,
+    pub st_mint: solana_program::pubkey::Pubkey,
+
+    pub admin_st_token_account: solana_program::pubkey::Pubkey,
+
+    pub vault_st_token_account: solana_program::pubkey::Pubkey,
 
     pub admin: solana_program::pubkey::Pubkey,
 
@@ -38,7 +42,7 @@ impl InitializeVault {
         args: InitializeVaultInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.config,
             false,
@@ -51,7 +55,15 @@ impl InitializeVault {
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.token_mint,
+            self.st_mint,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            self.admin_st_token_account,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            self.vault_st_token_account,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -114,17 +126,21 @@ pub struct InitializeVaultInstructionArgs {
 ///   0. `[writable]` config
 ///   1. `[writable]` vault
 ///   2. `[writable, signer]` vrt_mint
-///   3. `[]` token_mint
-///   4. `[writable, signer]` admin
-///   5. `[signer]` base
-///   6. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   3. `[]` st_mint
+///   4. `[writable]` admin_st_token_account
+///   5. `[writable]` vault_st_token_account
+///   6. `[writable, signer]` admin
+///   7. `[signer]` base
+///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct InitializeVaultBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
     vrt_mint: Option<solana_program::pubkey::Pubkey>,
-    token_mint: Option<solana_program::pubkey::Pubkey>,
+    st_mint: Option<solana_program::pubkey::Pubkey>,
+    admin_st_token_account: Option<solana_program::pubkey::Pubkey>,
+    vault_st_token_account: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
     base: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
@@ -156,8 +172,24 @@ impl InitializeVaultBuilder {
         self
     }
     #[inline(always)]
-    pub fn token_mint(&mut self, token_mint: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.token_mint = Some(token_mint);
+    pub fn st_mint(&mut self, st_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.st_mint = Some(st_mint);
+        self
+    }
+    #[inline(always)]
+    pub fn admin_st_token_account(
+        &mut self,
+        admin_st_token_account: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.admin_st_token_account = Some(admin_st_token_account);
+        self
+    }
+    #[inline(always)]
+    pub fn vault_st_token_account(
+        &mut self,
+        vault_st_token_account: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.vault_st_token_account = Some(vault_st_token_account);
         self
     }
     #[inline(always)]
@@ -226,7 +258,13 @@ impl InitializeVaultBuilder {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
             vrt_mint: self.vrt_mint.expect("vrt_mint is not set"),
-            token_mint: self.token_mint.expect("token_mint is not set"),
+            st_mint: self.st_mint.expect("st_mint is not set"),
+            admin_st_token_account: self
+                .admin_st_token_account
+                .expect("admin_st_token_account is not set"),
+            vault_st_token_account: self
+                .vault_st_token_account
+                .expect("vault_st_token_account is not set"),
             admin: self.admin.expect("admin is not set"),
             base: self.base.expect("base is not set"),
             system_program: self
@@ -264,7 +302,11 @@ pub struct InitializeVaultCpiAccounts<'a, 'b> {
 
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    pub st_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub admin_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub vault_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -286,7 +328,11 @@ pub struct InitializeVaultCpi<'a, 'b> {
 
     pub vrt_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
+    pub st_mint: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub admin_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub vault_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -310,7 +356,9 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             config: accounts.config,
             vault: accounts.vault,
             vrt_mint: accounts.vrt_mint,
-            token_mint: accounts.token_mint,
+            st_mint: accounts.st_mint,
+            admin_st_token_account: accounts.admin_st_token_account,
+            vault_st_token_account: accounts.vault_st_token_account,
             admin: accounts.admin,
             base: accounts.base,
             system_program: accounts.system_program,
@@ -351,7 +399,7 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.config.key,
             false,
@@ -365,7 +413,15 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             true,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.token_mint.key,
+            *self.st_mint.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            *self.admin_st_token_account.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            *self.vault_st_token_account.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
@@ -400,12 +456,14 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(8 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(10 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.vrt_mint.clone());
-        account_infos.push(self.token_mint.clone());
+        account_infos.push(self.st_mint.clone());
+        account_infos.push(self.admin_st_token_account.clone());
+        account_infos.push(self.vault_st_token_account.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.base.clone());
         account_infos.push(self.system_program.clone());
@@ -429,11 +487,13 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
 ///   0. `[writable]` config
 ///   1. `[writable]` vault
 ///   2. `[writable, signer]` vrt_mint
-///   3. `[]` token_mint
-///   4. `[writable, signer]` admin
-///   5. `[signer]` base
-///   6. `[]` system_program
-///   7. `[]` token_program
+///   3. `[]` st_mint
+///   4. `[writable]` admin_st_token_account
+///   5. `[writable]` vault_st_token_account
+///   6. `[writable, signer]` admin
+///   7. `[signer]` base
+///   8. `[]` system_program
+///   9. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct InitializeVaultCpiBuilder<'a, 'b> {
     instruction: Box<InitializeVaultCpiBuilderInstruction<'a, 'b>>,
@@ -446,7 +506,9 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
             config: None,
             vault: None,
             vrt_mint: None,
-            token_mint: None,
+            st_mint: None,
+            admin_st_token_account: None,
+            vault_st_token_account: None,
             admin: None,
             base: None,
             system_program: None,
@@ -481,11 +543,27 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn token_mint(
+    pub fn st_mint(
         &mut self,
-        token_mint: &'b solana_program::account_info::AccountInfo<'a>,
+        st_mint: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.token_mint = Some(token_mint);
+        self.instruction.st_mint = Some(st_mint);
+        self
+    }
+    #[inline(always)]
+    pub fn admin_st_token_account(
+        &mut self,
+        admin_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.admin_st_token_account = Some(admin_st_token_account);
+        self
+    }
+    #[inline(always)]
+    pub fn vault_st_token_account(
+        &mut self,
+        vault_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.vault_st_token_account = Some(vault_st_token_account);
         self
     }
     #[inline(always)]
@@ -606,7 +684,17 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
 
             vrt_mint: self.instruction.vrt_mint.expect("vrt_mint is not set"),
 
-            token_mint: self.instruction.token_mint.expect("token_mint is not set"),
+            st_mint: self.instruction.st_mint.expect("st_mint is not set"),
+
+            admin_st_token_account: self
+                .instruction
+                .admin_st_token_account
+                .expect("admin_st_token_account is not set"),
+
+            vault_st_token_account: self
+                .instruction
+                .vault_st_token_account
+                .expect("vault_st_token_account is not set"),
 
             admin: self.instruction.admin.expect("admin is not set"),
 
@@ -636,7 +724,9 @@ struct InitializeVaultCpiBuilderInstruction<'a, 'b> {
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vrt_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    st_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    admin_st_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    vault_st_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,

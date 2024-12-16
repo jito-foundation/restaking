@@ -4,7 +4,8 @@ use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{
-        load_signer, load_system_account, load_system_program, load_token_mint, load_token_program,
+        load_signer, load_system_account, load_system_program, load_token_account, load_token_mint,
+        load_token_program,
     },
 };
 use jito_vault_core::{config::Config, vault::Vault, MAX_FEE_BPS};
@@ -14,7 +15,7 @@ use solana_program::{
     program_error::ProgramError, program_pack::Pack, pubkey::Pubkey, rent::Rent,
     system_instruction, sysvar::Sysvar,
 };
-use spl_token::state::Mint;
+use spl_token::{instruction::transfer, state::Mint};
 
 /// Processes the create instruction: [`crate::VaultInstruction::InitializeVault`]
 pub fn process_initialize_vault(
@@ -25,7 +26,8 @@ pub fn process_initialize_vault(
     reward_fee_bps: u16,
     decimals: u8,
 ) -> ProgramResult {
-    let [config, vault, vrt_mint, mint, admin, base, system_program, token_program] = accounts
+    let [config, vault, vrt_mint, st_mint, admin_st_token_account, vault_st_token_account, admin, base, system_program, token_program] =
+        accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -36,13 +38,25 @@ pub fn process_initialize_vault(
     load_system_account(vault, true)?;
     load_system_account(vrt_mint, true)?;
     load_signer(vrt_mint, true)?;
-    load_token_mint(mint)?;
+    load_token_mint(st_mint)?;
     load_signer(admin, true)?;
     load_signer(base, false)?;
     load_system_program(system_program)?;
 
     // Only the original spl token program is allowed
     load_token_program(token_program)?;
+    load_token_account(
+        admin_st_token_account,
+        admin.key,
+        st_mint.key,
+        token_program,
+    )?;
+    load_token_account(
+        vault_st_token_account,
+        vault.key,
+        st_mint.key,
+        token_program,
+    )?;
 
     // The vault account shall be at the canonical PDA
     let (vault_pubkey, vault_bump, mut vault_seeds) =
@@ -92,6 +106,25 @@ pub fn process_initialize_vault(
         )?;
     }
 
+    // Deposit min ST
+    {
+        invoke(
+            &transfer(
+                token_program.key,
+                admin_st_token_account.key,
+                vault_st_token_account.key,
+                admin.key,
+                &[],
+                Vault::INITIALIZATION_TOKEN_AMOUNT,
+            )?,
+            &[
+                vault_st_token_account.clone(),
+                admin_st_token_account.clone(),
+                admin.clone(),
+            ],
+        )?;
+    }
+
     let slot = Clock::get()?.slot;
 
     // Initialize vault
@@ -115,7 +148,7 @@ pub fn process_initialize_vault(
 
         *vault = Vault::new(
             *vrt_mint.key,
-            *mint.key,
+            *st_mint.key,
             *admin.key,
             config.num_vaults(),
             *base.key,
@@ -126,6 +159,10 @@ pub fn process_initialize_vault(
             vault_bump,
             slot,
         )?;
+
+        // Mint initial VRT supply
+        vault.set_vrt_supply(Vault::INITIALIZATION_TOKEN_AMOUNT);
+        vault.set_tokens_deposited(Vault::INITIALIZATION_TOKEN_AMOUNT);
     }
 
     config.increment_num_vaults()?;
