@@ -40,7 +40,7 @@ pub fn process_warmup_operator_vault_ticket(
         OperatorVaultTicket::try_from_slice_unchecked_mut(&mut operator_vault_ticket_data)?;
     if !operator_vault_ticket
         .state
-        .activate(Clock::get()?.slot, config.epoch_length())
+        .activate(Clock::get()?.slot, config.epoch_length())?
     {
         msg!("Operator is not ready to be activated");
         return Err(RestakingError::OperatorVaultTicketFailedWarmup.into());
