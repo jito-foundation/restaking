@@ -1,4 +1,5 @@
 use clap::{command, Subcommand};
+use jito_restaking_client::types::{NcnAdminRole, OperatorAdminRole};
 use solana_program::pubkey::Pubkey;
 
 /// The CLI handler for the restaking program
@@ -39,6 +40,15 @@ pub enum NcnActions {
     Initialize,
     /// Get NCN
     Get { pubkey: String },
+    /// Set Secondary Admin
+    SetSecondaryAdmin {
+        /// The NCN pubkey
+        ncn: Pubkey,
+        /// New admin pubkey
+        new_admin: Pubkey,
+        /// NCN Admin role
+        role: NcnAdminRole,
+    },
     /// List all NCNs
     List,
 }
@@ -51,6 +61,15 @@ pub enum OperatorActions {
     InitializeOperatorVaultTicket { operator: String, vault: String },
     /// Warmup Operator Vault Ticket
     WarmupOperatorVaultTicket { operator: String, vault: String },
+    /// Set Secondary Admin
+    SetSecondaryAdmin {
+        /// The operator pubkey
+        operator: Pubkey,
+        /// New admin pubkey
+        new_admin: Pubkey,
+        /// Operator Admin role
+        role: OperatorAdminRole,
+    },
     /// Get operator
     Get { pubkey: String },
     /// List all operators

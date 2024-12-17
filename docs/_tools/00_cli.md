@@ -95,6 +95,7 @@ Set the config admin
 ###### **Subcommands:**
 
 * `initialize` — Initialize NCN
+* `set-secondary-admin` — NCN Set Secondary Admin
 * `get` — Get NCN
 * `list` — List all NCNs
 
@@ -106,6 +107,18 @@ Initialize NCN
 
 **Usage:** `jito-restaking-cli restaking ncn initialize`
 
+
+## `jito-restaking-cli restaking ncn set-secondary-admin`
+
+NCN Set Secondary Admin
+
+**Usage:** `jito-restaking-cli restaking ncn set-secondary-admin <NCN> <NEW_ADMIN> <ROLE>`
+
+###### **Arguments:**
+
+ * `<NCN>` - The NCN Pubkey
+ * `<NEW_ADMIN>` - New admin Pubkey
+ * `<ROLE>` - NCN Admin role [possible values: operator-admin, vault-admin, slasher-admin, delegate-admin, metadata-admin, weight-table-admin, ncn-program-admin]
 
 
 ## `jito-restaking-cli restaking ncn get`
@@ -137,6 +150,7 @@ List all NCNs
 * `initialize` — Initialize Operator
 * `initialize-operator-vault-ticket` — Initialize Operator Vault Ticket
 * `warmup-operator-vault-ticket` — Warmup Operator Vault Ticket
+* `set-secondary-admin` — Set Secondary Admin
 * `get` — Get operator
 * `list` — List all operators
 
@@ -177,6 +191,19 @@ Warmup Operator Vault Ticket
 
 * `<OPERATOR>`
 * `<VAULT>`
+
+
+## `jito-restaking-cli restaking operator set-secondary-admin`
+
+Operator Set Secondary Admin
+
+**Usage:** `jito-restaking-cli restaking operator set-secondary-admin <OPERATOR> <NEW_ADMIN> <ROLE>`
+
+###### **Arguments:**
+
+* `<OPERATOR>` - The operator Pubkey
+* `<NEW_ADMIN>` - New admin Pubkey
+* `<ROLE>` - Operator Admin role [possible values: ncn-admin, vault-admin, voter-admin, delegate-admin, metadata-admin]
 
 
 
@@ -283,6 +310,7 @@ Vault commands
 * `get` — Gets a vault
 * `list` — List all vaults
 * `set-capacity` — Sets the deposit capacity in the vault
+* `set-secondary-admin` — Set Secondary Admin
 
 
 
@@ -502,6 +530,19 @@ Sets the deposit capacity in the vault
 
 * `<VAULT>` — The vault pubkey
 * `<AMOUNT>` — The new capacity
+
+
+## `jito-restaking-cli vault vault set-secondary-admin`
+
+Set Secondary Admin
+
+**Usage:** `jito-restaking-cli vault vault set-secondary-admin <VAULT> <NEW_ADMIN> <ROLE>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NEW_ADMIN>` — New admin pubkey
+* `<ROLE>` — Vault admin role [possible values: delegation-admin, operator-admin, ncn-admin, slasher-admin, capacity-admin, fee-wallet, mint-burn-admin, delegate-asset-admin, fee-admin, metadata-admin]
 
 
 

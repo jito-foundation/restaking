@@ -1,7 +1,7 @@
-const kinobi = require("kinobi");
-const anchorIdl = require("@kinobi-so/nodes-from-anchor");
+const kinobi = require("codama");
+const anchorIdl = require("@codama/nodes-from-anchor");
 const path = require("path");
-const renderers = require('@kinobi-so/renderers');
+const renderers = require('@codama/renderers');
 
 // Paths.
 const projectRoot = path.join(__dirname, "..");
@@ -35,14 +35,20 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodU64 -> u64
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podU64"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podU64"
+                ) {
+                    return true;
+                };
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u64"),
@@ -51,14 +57,20 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodU32 -> u32
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podU32"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podU32"
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u32"),
@@ -67,14 +79,20 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodU16 -> u16
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podU16"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podU16"
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u16"),
@@ -83,14 +101,9 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     // add 8 byte discriminator to accountNode
     {
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "accountNode")
-            );
-        },
+        select: '[accountNode]',
         transform: (node) => {
             kinobi.assertIsNode(node, "accountNode");
-
             return {
                 ...node,
                 data: {
@@ -104,11 +117,27 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
         },
     },
 ]));
+const traitOptions = {
+    baseDefaults: [
+        'borsh::BorshSerialize',
+        'borsh::BorshDeserialize',
+        'serde::Serialize',
+        'serde::Deserialize',
+        'Clone',
+        'Debug',
+        'Eq',
+        'PartialEq',
+    ],
+    dataEnumDefaults: [],
+    scalarEnumDefaults: ['Copy', 'Hash', 'num_derive::FromPrimitive', 'clap::ValueEnum'],
+    structDefaults: [],
+};
 restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClientDir, "src", "generated"), {
     formatCode: true,
     crateFolder: rustRestakingClientDir,
     deleteFolderBeforeRendering: true,
-    toolchain: "+nightly-2024-07-25"
+    toolchain: "+nightly-2024-07-25",
+    traitOptions,
 }));
 restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingClientDir), {}));
 
@@ -136,14 +165,20 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodU64 -> u64
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podU64"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podU64"
+                ) {
+                    return true;
+                };
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u64"),
@@ -152,14 +187,20 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodU32 -> u32
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podU32"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podU32"
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u32"),
@@ -168,14 +209,20 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodU16 -> u16
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podU16"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podU16"
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("u16"),
@@ -184,29 +231,31 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
     },
     {
         // PodBool -> bool
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "structFieldTypeNode") &&
-                node.type.name === "podBool"
-            );
+        select: (nodes) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (
+                    kinobi.isNode(nodes[i], "structFieldTypeNode") &&
+                    nodes[i].type.name === "podBool"
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         },
         transform: (node) => {
-            kinobi.assertIsNode(node, "structFieldTypeNode");
+            kinobi.assertIsNode(node, ["structFieldTypeNode", "definedTypeLinkNode"]);
             return {
                 ...node,
                 type: kinobi.numberTypeNode("bool"),
             };
         },
     },
+    // add 8 byte discriminator to accountNode
     {
-        select: (node) => {
-            return (
-                kinobi.isNode(node, "accountNode")
-            );
-        },
+        select: '[accountNode]',
         transform: (node) => {
             kinobi.assertIsNode(node, "accountNode");
-
             return {
                 ...node,
                 data: {
@@ -224,6 +273,7 @@ vaultKinobi.accept(renderers.renderRustVisitor(path.join(rustVaultClientDir, "sr
     formatCode: true,
     crateFolder: rustVaultClientDir,
     deleteFolderBeforeRendering: true,
-    toolchain: "+nightly-2024-07-25"
+    toolchain: "+nightly-2024-07-25",
+    traitOptions,
 }));
 vaultKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsVaultClientDir), {}));
