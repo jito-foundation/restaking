@@ -20,12 +20,7 @@ pub fn process_change_withdrawal_ticket_owner(
     Vault::load(program_id, vault_info, false)?;
     let vault_data = vault_info.data.borrow();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;
-    VaultStakerWithdrawalTicket::load(
-        program_id,
-        vault_staker_withdrawal_ticket,
-        vault_info,
-        true,
-    )?;
+    VaultStakerWithdrawalTicket::load(program_id, vault_staker_withdrawal_ticket, true)?;
     let mut vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow_mut();
     let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked_mut(
         &mut vault_staker_withdrawal_ticket_data,
