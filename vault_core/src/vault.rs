@@ -154,6 +154,7 @@ pub struct Vault {
 impl Vault {
     pub const MAX_REWARD_DELTA_BPS: u16 = 50; // 0.5%
     pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
+    pub const INITIALIZATION_TOKEN_AMOUNT: u64 = 10_000;
 
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -333,8 +334,13 @@ impl Vault {
         u16::from(self.program_fee_bps)
     }
 
-    pub fn set_program_fee_bps(&mut self, program_fee_bps: u16) {
+    pub fn set_program_fee_bps(&mut self, program_fee_bps: u16) -> Result<(), ProgramError> {
+        if program_fee_bps > MAX_FEE_BPS {
+            msg!("New fee exceeds maximum allowed fee");
+            return Err(ProgramError::InvalidInstructionData);
+        }
         self.program_fee_bps = PodU16::from(program_fee_bps);
+        Ok(())
     }
 
     pub fn operator_count(&self) -> u64 {
@@ -675,8 +681,13 @@ impl Vault {
         Ok(())
     }
 
-    pub fn set_withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) {
+    pub fn set_withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) -> Result<(), VaultError> {
+        if withdrawal_fee_bps > MAX_FEE_BPS {
+            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_FEE_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
         self.withdrawal_fee_bps = PodU16::from(withdrawal_fee_bps);
+        Ok(())
     }
 
     pub fn set_next_withdrawal_fee_bps(
