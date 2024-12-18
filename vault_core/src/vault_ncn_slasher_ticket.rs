@@ -6,6 +6,8 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 /// The [`VaultNcnSlasherTicket`] account tracks a vault's support for a node consensus network
 /// slasher. It can be enabled and disabled over time by the vault slasher admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
@@ -54,7 +56,7 @@ impl VaultNcnSlasherTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -167,7 +169,7 @@ mod tests {
             size_of::<PodU64>() + // index
             size_of::<SlotToggle>() + // state
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_ncn_slasher_ticket_size, sum_of_fields);
     }
 

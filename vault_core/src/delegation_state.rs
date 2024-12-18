@@ -6,6 +6,8 @@ use jito_vault_sdk::error::VaultError;
 use shank::ShankType;
 use solana_program::msg;
 
+const RESERVED_SPACE_LEN: usize = 256;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, ShankType)]
 #[repr(C)]
 pub struct DelegationState {
@@ -28,7 +30,7 @@ impl Default for DelegationState {
             staked_amount: PodU64::from(0),
             enqueued_for_cooldown_amount: PodU64::from(0),
             cooling_down_amount: PodU64::from(0),
-            reserved: [0; 256],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 }
@@ -43,7 +45,7 @@ impl DelegationState {
             staked_amount: PodU64::from(staked_amount),
             enqueued_for_cooldown_amount: PodU64::from(enqueued_for_cooldown_amount),
             cooling_down_amount: PodU64::from(cooling_down_amount),
-            reserved: [0; 256],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -229,7 +231,7 @@ mod tests {
     use jito_bytemuck::types::PodU64;
     use jito_vault_sdk::error::VaultError;
 
-    use crate::delegation_state::DelegationState;
+    use super::{DelegationState, RESERVED_SPACE_LEN};
 
     #[test]
     fn test_delegation_state_no_padding() {
@@ -237,7 +239,7 @@ mod tests {
         let sum_of_fields = size_of::<PodU64>() // staked_amount
          + size_of::<PodU64>() // enqueued_for_cooldown_amount
          + size_of::<PodU64>() // cooling_down_amount
-         + 256; // reserved
+         + RESERVED_SPACE_LEN; // reserved
         assert_eq!(delegation_state_size, sum_of_fields);
     }
 
