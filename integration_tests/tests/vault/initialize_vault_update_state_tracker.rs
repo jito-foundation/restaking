@@ -291,6 +291,12 @@ mod tests {
             .await
             .unwrap();
 
+        // Do full update
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+            .await
+            .unwrap();
+
         // Set fees
         let new_withdrawal_fee_bps = 10;
         let new_program_fee_bps = 11;
@@ -425,12 +431,11 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(1 * config.epoch_length())
             .await
             .unwrap();
 
         // enqueued for cool down assets are now cooling down
-
         let slot = fixture.get_current_slot().await.unwrap();
         let ncn_epoch = slot / config.epoch_length();
 
@@ -440,6 +445,7 @@ mod tests {
             ncn_epoch,
         )
         .0;
+
         vault_program_client
             .initialize_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
@@ -454,6 +460,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
+
+        // skip cranking operator 0, advance to next epoch
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
 
         // Update fees
         let new_withdrawal_fee_bps = 10;
@@ -471,13 +484,6 @@ mod tests {
             .unwrap();
         vault_program_client
             .set_program_fee(&vault_config_admin, new_program_fee_bps)
-            .await
-            .unwrap();
-
-        // skip cranking operator 0, advance to next epoch
-
-        fixture
-            .warp_slot_incremental(config.epoch_length())
             .await
             .unwrap();
 
