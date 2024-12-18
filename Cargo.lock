@@ -2425,7 +2425,6 @@ dependencies = [
  "serde",
  "serde_with 3.9.0",
  "solana-program",
- "solana-sdk",
  "thiserror",
 ]
 
@@ -2535,7 +2534,6 @@ dependencies = [
  "serde",
  "serde_with 3.9.0",
  "solana-program",
- "solana-sdk",
  "thiserror",
 ]
 
