@@ -1,21 +1,14 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, delegation_state::DelegationState, vault::BurnSummary,
-        vault_operator_delegation::VaultOperatorDelegation,
+        config::Config, vault_operator_delegation::VaultOperatorDelegation,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
-    use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
-    use solana_sdk::{
-        msg,
-        pubkey::Pubkey,
-        signature::{Keypair, Signer},
-    };
-    use spl_associated_token_account::get_associated_token_address;
+    use solana_sdk::signature::{Keypair, Signer};
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},
-        vault_client::{assert_vault_error, VaultStakerWithdrawalTicketRoot},
+        vault_client::VaultStakerWithdrawalTicketRoot,
     };
 
     #[tokio::test]
