@@ -1178,6 +1178,9 @@ impl Vault {
     // ------------------------------------------
 
     /// Returns the seeds for the PDA
+    ///
+    /// # Returns
+    /// * `Vec<Vec<u8>>` - containing the seed vectors
     pub fn seeds(base: &Pubkey) -> Vec<Vec<u8>> {
         vec![b"vault".as_ref().to_vec(), base.to_bytes().to_vec()]
     }
@@ -1236,14 +1239,17 @@ impl Vault {
             msg!("Vault account discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
-        let base = Self::try_from_slice_unchecked(&account.data.borrow())?.base;
-        if account
-            .key
-            .ne(&Self::find_program_address(program_id, &base).0)
-        {
+
+        let vault_data = &account.data.borrow();
+        let vault = Self::try_from_slice_unchecked(vault_data)?;
+        let seeds = vault.signing_seeds();
+        let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
+        let expected_pubkey = Pubkey::create_program_address(&seed_slices, program_id)?;
+        if account.key.ne(&expected_pubkey) {
             msg!("Vault account is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);
         }
+
         Ok(())
     }
 }
