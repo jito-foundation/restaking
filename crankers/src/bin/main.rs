@@ -4,6 +4,7 @@ use anyhow::{anyhow, Context};
 use clap::{arg, Parser};
 use dotenv::dotenv;
 use jito_bytemuck::AccountDeserialize;
+use jito_jsm_core::get_epoch;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
 use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
 use log::{error, info};
@@ -122,7 +123,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     loop {
         let slot = rpc_client.get_slot().await.context("get slot")?;
-        let epoch = config.get_epoch_from_slot(slot)?;
+        let epoch = get_epoch(slot, config.epoch_length()).unwrap();
 
         info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
 
