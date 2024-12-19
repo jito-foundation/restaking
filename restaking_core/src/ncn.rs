@@ -11,6 +11,8 @@ use jito_restaking_sdk::error::RestakingError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 /// The NCN manages the operators, vaults, and slashers associated with a network
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
@@ -79,7 +81,7 @@ impl Ncn {
             vault_count: PodU64::from(0),
             slasher_count: PodU64::from(0),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -283,7 +285,7 @@ mod tests {
     use jito_bytemuck::types::PodU64;
     use solana_program::pubkey::Pubkey;
 
-    use super::Ncn;
+    use super::{Ncn, RESERVED_SPACE_LEN};
 
     #[test]
     fn test_ncn_no_padding() {
@@ -302,7 +304,7 @@ mod tests {
             std::mem::size_of::<PodU64>() + // vault_count
             std::mem::size_of::<PodU64>() + // slasher_count
             std::mem::size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(ncn_size, sum_of_fields);
     }
 
