@@ -40,6 +40,8 @@ pub fn process_initialize_vault(
     load_signer(admin, true)?;
     load_signer(base, false)?;
     load_system_program(system_program)?;
+
+    // Only the original spl token program is allowed
     load_token_program(token_program)?;
 
     // The vault account shall be at the canonical PDA

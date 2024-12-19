@@ -55,8 +55,9 @@ pub fn process_enqueue_withdrawal(
     )?;
     load_signer(staker, false)?;
     load_associated_token_account(staker_vrt_token_account, staker.key, &vault.vrt_mint)?;
-    load_signer(base, false)?;
     load_token_program(token_program)?;
+
+    load_signer(base, false)?;
     load_system_program(system_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
