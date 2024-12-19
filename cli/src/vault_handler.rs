@@ -892,6 +892,22 @@ impl VaultCliHandler {
         let vault_staker_withdrawal_ticket_token_account =
             get_associated_token_address(&vault_staker_withdrawal_ticket, &vault_account.vrt_mint);
 
+        let config = Config::find_program_address(&self.vault_program_id).0;
+        let config_account_raw = rpc_client.get_account(&config).await?;
+        let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
+
+        let program_fee_ata = create_associated_token_account_idempotent(
+            &keypair.pubkey(),
+            &config_account.program_fee_wallet,
+            &vault_account.vrt_mint,
+            &spl_token::ID,
+        );
+
+        let program_fee_token_account = get_associated_token_address(
+            &config_account.program_fee_wallet,
+            &vault_account.vrt_mint,
+        );
+
         let mut ix_builder = BurnWithdrawalTicketBuilder::new();
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
@@ -901,6 +917,7 @@ impl VaultCliHandler {
             .vault_staker_withdrawal_ticket_token_account(
                 vault_staker_withdrawal_ticket_token_account,
             )
+            .program_fee_token_account(program_fee_token_account)
             .staker_token_account(staker_token_account)
             .vault_fee_token_account(vault_fee_token_account)
             .vault_token_account(vault_token_account)
@@ -908,7 +925,7 @@ impl VaultCliHandler {
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
+            &[program_fee_ata, ix_builder.instruction()],
             Some(&keypair.pubkey()),
             &[keypair],
             blockhash,
