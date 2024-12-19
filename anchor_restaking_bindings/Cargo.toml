@@ -1,0 +1,20 @@
+[package]
+name = "jito-restaking-anchor-bindings"
+description = "Anchor bindings for the Jito Restaking program"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }
+
+[dependencies]
+anchor-lang = { workspace = true }
+once_cell = { workspace = true }
+jito-bytemuck = { workspace = true }
+paste = { workspace = true }
+solana-program = { workspace = true }
+bytemuck = { workspace = true }
+shrinkwraprs = { workspace = true }
+jito-restaking-core = { workspace = true }
