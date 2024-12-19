@@ -1385,6 +1385,11 @@
   ],
   "errors": [
     {
+      "code": 0,
+      "name": "BadEpochLength",
+      "msg": "Bad epoch length"
+    },
+    {
       "code": 1000,
       "name": "NcnOperatorAdminInvalid",
       "msg": "NcnOperatorAdminInvalid"

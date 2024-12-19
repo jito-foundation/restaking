@@ -1,6 +1,7 @@
 use std::cmp::min;
 
 use jito_bytemuck::AccountDeserialize;
+use jito_jsm_core::get_epoch;
 use jito_restaking_core::operator::Operator;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
@@ -41,13 +42,15 @@ pub fn process_crank_vault_update_state_tracker(
     let mut vault_operator_delegation_data = vault_operator_delegation.data.borrow_mut();
     let vault_operator_delegation =
         VaultOperatorDelegation::try_from_slice_unchecked_mut(&mut vault_operator_delegation_data)?;
-    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+
+    let epoch_length = config.epoch_length();
+    let ncn_epoch = get_epoch(slot, epoch_length)?;
 
     let last_full_state_update_slot = vault.last_full_state_update_slot();
-    let last_full_state_update_epoch = config.get_epoch_from_slot(last_full_state_update_slot)?;
+    let last_full_state_update_epoch = get_epoch(last_full_state_update_slot, epoch_length)?;
 
     let operator_last_update_slot = vault_operator_delegation.last_update_slot();
-    let operator_last_updated_epoch = config.get_epoch_from_slot(operator_last_update_slot)?;
+    let operator_last_updated_epoch = get_epoch(operator_last_update_slot, epoch_length)?;
 
     let has_been_partially_updated = last_full_state_update_epoch < operator_last_updated_epoch;
 

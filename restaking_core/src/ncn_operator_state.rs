@@ -134,13 +134,17 @@ mod tests {
         let ncn_operator_state =
             NcnOperatorState::new(Pubkey::default(), Pubkey::default(), 0, 0, slot);
         assert_eq!(
-            ncn_operator_state.ncn_opt_in_state.state(slot + 1, 100),
+            ncn_operator_state
+                .ncn_opt_in_state
+                .state(slot + 1, 100)
+                .unwrap(),
             SlotToggleState::Inactive
         );
         assert_eq!(
             ncn_operator_state
                 .operator_opt_in_state
-                .state(slot + 1, 100),
+                .state(slot + 1, 100)
+                .unwrap(),
             SlotToggleState::Inactive
         );
     }

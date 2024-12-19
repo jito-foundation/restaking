@@ -2,7 +2,7 @@ use std::mem::size_of;
 
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
-    create_account,
+    create_account, get_epoch,
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_restaking_core::{ncn::Ncn, operator::Operator};
@@ -48,7 +48,7 @@ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
     load_system_program(system_program)?;
 
     let slot = Clock::get()?.slot;
-    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+    let ncn_epoch = get_epoch(slot, config.epoch_length())?;
 
     // The VaultNcnSlasherOperatorTicket shall be at the canonical PDA
     let (
