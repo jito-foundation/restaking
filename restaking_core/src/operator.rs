@@ -46,7 +46,7 @@ pub struct Operator {
     /// Helpful for indexing all available OperatorNcnTickets.
     ncn_count: PodU64,
 
-    /// The number of NcnVaultTickets associated with the operator.
+    /// The number of OperatorVaultTickets associated with the operator.
     /// Helpful for indexing all available OperatorVaultTickets.
     vault_count: PodU64,
 
