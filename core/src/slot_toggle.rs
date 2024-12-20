@@ -279,4 +279,72 @@ mod tests {
             SlotToggleState::Inactive
         );
     }
+
+    #[test]
+    fn test_is_active_or_cooldown() {
+        let creation_slot = 100;
+        let epoch_length = 150;
+        let mut toggle = SlotToggle::new(creation_slot);
+
+        // Initially inactive
+        assert!(!toggle
+            .is_active_or_cooldown(creation_slot, epoch_length)
+            .unwrap());
+
+        // Activate and check during warm-up
+        let activation_slot = creation_slot + 1;
+        assert!(toggle.activate(activation_slot, epoch_length).unwrap());
+        assert!(!toggle
+            .is_active_or_cooldown(activation_slot, epoch_length)
+            .unwrap());
+
+        // Check during active state
+        let active_slot = activation_slot + (epoch_length * 2);
+        assert!(toggle
+            .is_active_or_cooldown(active_slot, epoch_length)
+            .unwrap());
+
+        // Deactivate and check during cooldown
+        assert!(toggle.deactivate(active_slot, epoch_length).unwrap());
+        assert!(toggle
+            .is_active_or_cooldown(active_slot, epoch_length)
+            .unwrap());
+
+        // Check after cooldown period
+        let inactive_slot = active_slot + (epoch_length * 2);
+        assert!(!toggle
+            .is_active_or_cooldown(inactive_slot, epoch_length)
+            .unwrap());
+    }
+
+    #[test]
+    fn test_is_active() {
+        let creation_slot = 100;
+        let epoch_length = 150;
+        let mut toggle = SlotToggle::new(creation_slot);
+
+        // Initially inactive
+        assert!(!toggle.is_active(creation_slot, epoch_length).unwrap());
+
+        // Activate and check during warm-up
+        let activation_slot = creation_slot + 1;
+        assert!(toggle.activate(activation_slot, epoch_length).unwrap());
+        assert!(!toggle.is_active(activation_slot, epoch_length).unwrap());
+
+        // Check during warm-up period
+        let warmup_slot = activation_slot + epoch_length;
+        assert!(!toggle.is_active(warmup_slot, epoch_length).unwrap());
+
+        // Check during active state
+        let active_slot = activation_slot + (epoch_length * 2);
+        assert!(toggle.is_active(active_slot, epoch_length).unwrap());
+
+        // Deactivate and check during cooldown
+        assert!(toggle.deactivate(active_slot, epoch_length).unwrap());
+        assert!(!toggle.is_active(active_slot, epoch_length).unwrap());
+
+        // Check after cooldown period
+        let inactive_slot = active_slot + (epoch_length * 2);
+        assert!(!toggle.is_active(inactive_slot, epoch_length).unwrap());
+    }
 }
