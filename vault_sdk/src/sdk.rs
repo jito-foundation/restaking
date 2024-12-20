@@ -60,7 +60,7 @@ pub fn initialize_vault(
         AccountMeta::new_readonly(*st_mint, false),
         AccountMeta::new(*admin_st_token_account, false),
         AccountMeta::new(*vault_st_token_account, false),
-        AccountMeta::new(*burn_vault, false),
+        AccountMeta::new_readonly(*burn_vault, false),
         AccountMeta::new(*burn_vault_vrt_token_account, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*base, true),

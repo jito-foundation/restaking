@@ -22,7 +22,7 @@ pub enum VaultInstruction {
     #[account(3, name = "st_mint")]
     #[account(4, writable, name = "admin_st_token_account")]
     #[account(5, writable, name = "vault_st_token_account")]
-    #[account(6, writable, name = "burn_vault")]
+    #[account(6, name = "burn_vault")]
     #[account(7, writable, name = "burn_vault_vrt_token_account")]
     #[account(8, writable, signer, name = "admin")]
     #[account(9, signer, name = "base")]

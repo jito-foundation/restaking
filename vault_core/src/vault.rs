@@ -2529,4 +2529,80 @@ mod tests {
         let result = check_fee(10000, 10000, 1000, 1000, MAX_FEE_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
     }
+
+    #[test]
+    fn test_initialize_vault_override_deposit_fee_bps() {
+        use solana_program::{account_info::AccountInfo, program_error::ProgramError};
+
+        // Create a basic vault
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Create account info for tests
+        let key = Pubkey::new_unique();
+        let owner = Pubkey::new_unique();
+        let mut lamports = 0;
+        let mut data = vec![0; 32];
+
+        // Test 1: Non-signer account should fail
+        let non_signer_account = AccountInfo::new(
+            &key,
+            false, // is_signer = false
+            true,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        );
+
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(100, &non_signer_account),
+            Err(ProgramError::MissingRequiredSignature)
+        );
+
+        // Test 2: Fee exceeding MAX_FEE_BPS should fail
+        let signer_account = AccountInfo::new(
+            &key,
+            true, // is_signer = true
+            true,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        );
+
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(MAX_FEE_BPS + 1, &signer_account),
+            Err(ProgramError::InvalidArgument)
+        );
+
+        // Test 3: Valid parameters should succeed
+        let valid_fee = 100;
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(valid_fee, &signer_account),
+            Ok(())
+        );
+        assert_eq!(vault.deposit_fee_bps(), valid_fee);
+
+        // Test 4: Maximum allowed fee should succeed
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(MAX_FEE_BPS, &signer_account),
+            Ok(())
+        );
+        assert_eq!(vault.deposit_fee_bps(), MAX_FEE_BPS);
+    }
 }

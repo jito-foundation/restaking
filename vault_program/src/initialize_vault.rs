@@ -4,8 +4,8 @@ use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
     create_account,
     loader::{
-        load_signer, load_system_account, load_system_program, load_token_account, load_token_mint,
-        load_token_program,
+        load_associated_token_account_program, load_signer, load_system_account,
+        load_system_program, load_token_account, load_token_mint, load_token_program,
     },
 };
 use jito_vault_core::{burn_vault::BurnVault, config::Config, vault::Vault, MAX_FEE_BPS};
@@ -52,25 +52,29 @@ pub fn process_initialize_vault(
     load_system_account(vrt_mint, true)?;
     load_signer(vrt_mint, true)?;
     load_token_mint(st_mint)?;
-    load_signer(admin, true)?;
-    load_signer(base, false)?;
-    load_system_program(system_program)?;
-
-    // Only the original spl token program is allowed
-    load_token_program(token_program)?;
     load_token_account(
         admin_st_token_account,
         admin.key,
         st_mint.key,
         token_program,
     )?;
-
-    load_system_account(burn_vault, true)?;
+    load_token_account(
+        vault_st_token_account,
+        vault.key,
+        st_mint.key,
+        token_program,
+    )?;
+    BurnVault::load(program_id, base.key, burn_vault, false)?;
     load_system_account(burn_vault_vrt_token_account, true)?;
+    load_signer(admin, true)?;
+    load_signer(base, false)?;
+    load_system_program(system_program)?;
+    load_token_program(token_program)?;
+    load_associated_token_account_program(associated_token_program)?;
 
     if initialize_token_amount == 0 {
         msg!("Initialize token amount must be greater than zero");
-        return Err(ProgramError::InvalidArgument);
+        return Err(VaultError::VaultInitialAmountFailed.into());
     }
 
     // The vault account shall be at the canonical PDA
@@ -188,8 +192,8 @@ pub fn process_initialize_vault(
                     initialize_token_amount,
                 )?,
                 &[
-                    vault_st_token_account.clone(),
                     admin_st_token_account.clone(),
+                    vault_st_token_account.clone(),
                     admin.clone(),
                 ],
             )?;

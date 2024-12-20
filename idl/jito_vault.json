@@ -77,7 +77,7 @@
         },
         {
           "name": "burnVault",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
