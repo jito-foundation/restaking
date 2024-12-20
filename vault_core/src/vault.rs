@@ -2522,4 +2522,92 @@ mod tests {
         let result = check_fee(10000, 10000, 1000, 1000, MAX_FEE_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
     }
+
+    #[test]
+    fn test_last_start_state_update_slot() {
+        // Create a new vault with initial slot
+        let initial_slot = 12345;
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            initial_slot,
+        )
+        .unwrap();
+
+        // Verify initial slot is set correctly
+        assert_eq!(vault.last_start_state_update_slot(), initial_slot);
+
+        // Update the slot
+        let new_slot = 67890;
+        vault.set_last_start_state_update_slot(new_slot);
+
+        // Verify the slot was updated
+        assert_eq!(vault.last_start_state_update_slot(), new_slot);
+    }
+
+    #[test]
+    fn test_reserved_space() {
+        // Create a default vault
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Verify reserved space is initialized to zeros
+        assert_eq!(vault.reserved, [0u8; 251]);
+
+        // Get the size of the reserved field
+        let reserved_size = std::mem::size_of_val(&vault.reserved);
+        assert_eq!(reserved_size, 251);
+
+        // Verify the reserved field maintains alignment
+        assert_eq!(std::mem::align_of_val(&vault.reserved), 1);
+    }
+
+    #[test]
+    fn test_vault_serialization_with_reserved() {
+        // Create a vault
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Serialize the vault to bytes
+        let serialized = bytemuck::bytes_of(&vault);
+
+        // Calculate the expected position of reserved field
+        let reserved_offset = serialized.len() - 251;
+
+        // Verify the reserved space in serialized form
+        let reserved_slice = &serialized[reserved_offset..];
+        assert_eq!(reserved_slice, &[0u8; 251]);
+    }
 }
