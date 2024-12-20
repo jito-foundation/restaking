@@ -1269,7 +1269,7 @@ mod tests {
 
     use jito_bytemuck::types::{PodBool, PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
-    use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+    use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 
     use crate::{
         delegation_state::DelegationState,
@@ -2517,5 +2517,81 @@ mod tests {
     fn test_check_reward_fee_effective_rate_max_delta_bps_too_large() {
         let result = check_fee(10000, 10000, 1000, 1000, MAX_FEE_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
+    }
+
+    #[test]
+    fn test_set_program_fee_bps() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Test setting fee to 0 (minimum value)
+        assert_eq!(vault.set_program_fee_bps(0), Ok(()));
+        assert_eq!(vault.program_fee_bps(), 0);
+
+        // Test setting fee to valid mid-range value
+        assert_eq!(vault.set_program_fee_bps(500), Ok(()));
+        assert_eq!(vault.program_fee_bps(), 500);
+
+        // Test setting fee to maximum allowed value (MAX_FEE_BPS)
+        assert_eq!(vault.set_program_fee_bps(MAX_FEE_BPS), Ok(()));
+        assert_eq!(vault.program_fee_bps(), MAX_FEE_BPS);
+
+        // Test setting fee above maximum (should fail)
+        assert_eq!(
+            vault.set_program_fee_bps(MAX_FEE_BPS + 1),
+            Err(ProgramError::InvalidInstructionData)
+        );
+        // Verify fee remains unchanged after failed attempt
+        assert_eq!(vault.program_fee_bps(), MAX_FEE_BPS);
+    }
+
+    #[test]
+    fn test_set_withdrawal_fee_bps() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Test setting fee to 0 (minimum value)
+        assert_eq!(vault.set_withdrawal_fee_bps(0), Ok(()));
+        assert_eq!(vault.withdrawal_fee_bps(), 0);
+
+        // Test setting fee to valid mid-range value
+        assert_eq!(vault.set_withdrawal_fee_bps(500), Ok(()));
+        assert_eq!(vault.withdrawal_fee_bps(), 500);
+
+        // Test setting fee to maximum allowed value (MAX_FEE_BPS)
+        assert_eq!(vault.set_withdrawal_fee_bps(MAX_FEE_BPS), Ok(()));
+        assert_eq!(vault.withdrawal_fee_bps(), MAX_FEE_BPS);
+
+        // Test setting fee above maximum (should fail)
+        assert_eq!(
+            vault.set_withdrawal_fee_bps(MAX_FEE_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
+        // Verify fee remains unchanged after failed attempt
+        assert_eq!(vault.withdrawal_fee_bps(), MAX_FEE_BPS);
     }
 }
