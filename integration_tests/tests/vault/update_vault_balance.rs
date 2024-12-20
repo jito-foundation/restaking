@@ -149,12 +149,12 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             MINT_AMOUNT * 2
         );
         assert_eq!(reward_fee_account.amount, EXPECTED_FEE);
         assert_eq!(
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             MINT_AMOUNT + EXPECTED_FEE
         );
     }

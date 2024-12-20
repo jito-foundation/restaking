@@ -41,8 +41,14 @@ mod tests {
         assert_eq!(vault.vault_index(), 0);
 
         // Min initial deposit is 10_000
-        assert_eq!(vault.vrt_supply(), Vault::INITIALIZATION_TOKEN_AMOUNT);
-        assert_eq!(vault.tokens_deposited(), Vault::INITIALIZATION_TOKEN_AMOUNT);
+        assert_eq!(
+            vault.vrt_supply(),
+            Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
+        assert_eq!(
+            vault.tokens_deposited(),
+            Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
         assert_eq!(vault.deposit_fee_bps(), 99);
         assert_eq!(vault.withdrawal_fee_bps(), 100);
         assert_eq!(vault.ncn_count(), 0);
@@ -53,6 +59,10 @@ mod tests {
 
         let token_mint = fixture.get_token_mint(&vault.vrt_mint).await.unwrap();
         assert_eq!(token_mint.decimals, 9);
+        assert_eq!(
+            token_mint.supply,
+            Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
     }
 
     #[tokio::test]

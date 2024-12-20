@@ -294,10 +294,13 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             0
         );
-        assert_eq!(vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT, 0);
+        assert_eq!(
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
@@ -462,11 +465,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             expected_fee
         );
         assert_eq!(
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             expected_fee
         );
         assert_eq!(vault.delegation_state, DelegationState::default());
@@ -617,11 +620,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             expected_fee
         );
         assert_eq!(
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             expected_fee
         );
         assert_eq!(vault.delegation_state, DelegationState::default());
@@ -740,11 +743,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             MINT_AMOUNT - AMOUNT_TO_WITHDRAWAL
         );
         assert_eq!(
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             MINT_AMOUNT - AMOUNT_TO_WITHDRAWAL
         );
         assert_eq!(vault.delegation_state, DelegationState::default());
@@ -958,11 +961,11 @@ mod tests {
 
         // Vault balance state
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             expected_remaining_supply
         );
         assert_eq!(
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             expected_remaining_supply
         );
 

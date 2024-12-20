@@ -82,11 +82,11 @@ mod tests {
             vault_operator_delegation.delegation_state
         );
         assert_eq!(
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             AMOUNT_IN
         );
         assert_eq!(
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             AMOUNT_IN
         );
     }
@@ -134,7 +134,7 @@ mod tests {
             .do_add_delegation(
                 &vault_root,
                 &operator_roots[0].operator_pubkey,
-                50_000 + Vault::INITIALIZATION_TOKEN_AMOUNT,
+                50_000 + Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
             )
             .await
             .unwrap();

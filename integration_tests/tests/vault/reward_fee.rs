@@ -80,12 +80,12 @@ mod tests {
 
         assert_eq!(
             MINT_AMOUNT * 2,
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
         );
         assert_eq!(EXPECTED_FEE, reward_fee_account.amount);
         assert_eq!(
             MINT_AMOUNT + EXPECTED_FEE,
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
         );
     }
 
@@ -162,12 +162,12 @@ mod tests {
 
         assert_eq!(
             MINT_AMOUNT * 2,
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
         );
         assert_eq!(MINT_AMOUNT, reward_fee_account.amount);
         assert_eq!(
             MINT_AMOUNT * 2,
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
         );
     }
 
@@ -238,10 +238,13 @@ mod tests {
 
         assert_eq!(
             MINT_AMOUNT,
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
         );
         assert_eq!(0, reward_fee_account.amount);
-        assert_eq!(0, vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT);
+        assert_eq!(
+            0,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
     }
 
     #[tokio::test]
@@ -332,12 +335,12 @@ mod tests {
 
         assert_eq!(
             MINT_AMOUNT * 2,
-            vault.tokens_deposited() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
         );
         assert_eq!(EXPECTED_FEE, reward_fee_account.amount);
         assert_eq!(
             MINT_AMOUNT + EXPECTED_FEE,
-            vault.vrt_supply() - Vault::INITIALIZATION_TOKEN_AMOUNT,
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
         );
     }
 }

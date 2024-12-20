@@ -43,12 +43,15 @@ pub fn initialize_vault(
     st_mint: &Pubkey,
     admin_st_token_account: &Pubkey,
     vault_st_token_account: &Pubkey,
+    burn_vault: &Pubkey,
+    burn_vault_vrt_token_account: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
     decimals: u8,
+    initialize_token_amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
@@ -57,10 +60,13 @@ pub fn initialize_vault(
         AccountMeta::new_readonly(*st_mint, false),
         AccountMeta::new(*admin_st_token_account, false),
         AccountMeta::new(*vault_st_token_account, false),
+        AccountMeta::new(*burn_vault, false),
+        AccountMeta::new(*burn_vault_vrt_token_account, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*base, true),
         AccountMeta::new_readonly(system_program::id(), false),
         AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(spl_associated_token_account::id(), false),
     ];
     Instruction {
         program_id: *program_id,
@@ -70,6 +76,7 @@ pub fn initialize_vault(
             withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
+            initialize_token_amount,
         }
         .try_to_vec()
         .unwrap(),

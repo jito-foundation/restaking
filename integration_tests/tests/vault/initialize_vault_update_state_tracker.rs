@@ -457,7 +457,7 @@ mod tests {
 
         assert_eq!(
             vault.additional_assets_need_unstaking(),
-            75_000 - Vault::INITIALIZATION_TOKEN_AMOUNT
+            75_000 - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
         );
 
         // Update fees
@@ -497,7 +497,7 @@ mod tests {
         // no assets cooled down, additional_assets_need_unstaking = 75_000
         assert_eq!(
             vault.additional_assets_need_unstaking(),
-            75_000 - Vault::INITIALIZATION_TOKEN_AMOUNT
+            75_000 - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
         );
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
@@ -555,7 +555,7 @@ mod tests {
 
         assert_eq!(
             vault.delegation_state.staked_amount(),
-            25_000 + Vault::INITIALIZATION_TOKEN_AMOUNT
+            25_000 + Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
         );
         assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 75_000);

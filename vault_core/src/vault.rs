@@ -154,7 +154,7 @@ pub struct Vault {
 impl Vault {
     pub const MAX_REWARD_DELTA_BPS: u16 = 50; // 0.5%
     pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
-    pub const INITIALIZATION_TOKEN_AMOUNT: u64 = 10_000;
+    pub const DEFAULT_INITIALIZATION_TOKEN_AMOUNT: u64 = 10_000;
 
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -441,6 +441,27 @@ impl Vault {
 
     pub fn set_is_paused(&mut self, is_paused: bool) {
         self.is_paused = PodBool::from_bool(is_paused);
+    }
+
+    // Only to be used in initialize_vault
+    pub fn initialize_vault_override_deposit_fee_bps(
+        &mut self,
+        deposit_fee_bps: u16,
+        base: &AccountInfo,
+    ) -> Result<(), ProgramError> {
+        if !base.is_signer {
+            msg!("Base account must be a signer");
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if deposit_fee_bps > MAX_FEE_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_FEE_BPS);
+            return Err(ProgramError::InvalidArgument);
+        }
+
+        self.deposit_fee_bps = PodU16::from(deposit_fee_bps);
+
+        Ok(())
     }
 
     /// Checks whether the vault is currently paused.

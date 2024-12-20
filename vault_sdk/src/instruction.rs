@@ -22,15 +22,19 @@ pub enum VaultInstruction {
     #[account(3, name = "st_mint")]
     #[account(4, writable, name = "admin_st_token_account")]
     #[account(5, writable, name = "vault_st_token_account")]
-    #[account(6, writable, signer, name = "admin")]
-    #[account(7, signer, name = "base")]
-    #[account(8, name = "system_program")]
-    #[account(9, name = "token_program")]
+    #[account(6, writable, name = "burn_vault")]
+    #[account(7, writable, name = "burn_vault_vrt_token_account")]
+    #[account(8, writable, signer, name = "admin")]
+    #[account(9, signer, name = "base")]
+    #[account(10, name = "system_program")]
+    #[account(11, name = "token_program")]
+    #[account(12, name = "associated_token_program")]
     InitializeVault {
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
         decimals: u8,
+        initialize_token_amount: u64,
     },
 
     /// Initializes a vault with an already-created VRT mint
