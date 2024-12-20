@@ -1341,12 +1341,13 @@ mod tests {
             std::mem::size_of::<PodU64>() + // last_full_state_update_slot
             std::mem::size_of::<PodU16>() + // deposit_fee_bps
             std::mem::size_of::<PodU16>() + // withdrawal_fee_bps
+            std::mem::size_of::<PodU16>() + // next_withdrawal_fee_bps
             std::mem::size_of::<PodU16>() + // reward_fee_bps
             std::mem::size_of::<PodU16>() + // program_fee_bps
             std::mem::size_of::<PodBool>() + // is_paused
             std::mem::size_of::<PodU64>() + // last_start_state_update_slot
             1 + // bump
-            253; // reserved
+            251; // reserved
 
         assert_eq!(vault_size, sum_of_fields);
     }
