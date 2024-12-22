@@ -7,14 +7,14 @@ weight: 1
 
 ## Overview
 
-### Restaking Program
-The Restaking program focuses on:
+### Jito Restaking Program
+The Jito Restaking program focuses on:
 - Initializing NCNs and Operators.
 - Managing NCN authorities.
 - Registering relationships between NCNs, Operators, and Vaults.
 
-### Vault Program
-The Vault program is responsible for:
+### Jito Vault Program
+The Jito Vault program is responsible for:
 - Creating and managing VRTs (Vault Resource Tokens).
 - Allowing users to deposit and withdraw assets.
 - Managing relationships with NCNs, delegations with Operators, and fee settings.
