@@ -69,8 +69,7 @@ pub fn process_update_vault_balance(
 
     // Mint rewards
     if vrt_reward_fee > 0 {
-        let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-        vault_seeds.push(vec![vault_bump]);
+        let vault_seeds = vault.signing_seeds();
         let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
 
         drop(vault_data);
