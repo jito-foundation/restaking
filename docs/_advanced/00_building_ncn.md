@@ -5,8 +5,6 @@ layout: post
 weight: 1
 ---
 
-The purpose of the Restaking and Vault programs is to support the initialization, management, and functionality of NCNs and their relationships with Operators and Vaults. This document outlines the key components, design considerations, and steps to build and maintain an NCN.
-
 ## Overview
 
 ### Restaking Program
