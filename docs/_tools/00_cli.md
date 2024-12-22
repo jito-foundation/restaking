@@ -95,6 +95,15 @@ Set the config admin
 ###### **Subcommands:**
 
 * `initialize` — Initialize NCN
+* `initialize-ncn-operator-state` — Initialize NCN Operator State
+* `ncn-warmup-operator` — NCN warmup Operator
+* `ncn-cooldown-operator` — NCN cooldown Operator
+* `operator-warmup-ncn` — Operator warmup NCN
+* `operator-cooldown-ncn` — Operator cooldown NCN
+* `initialize-ncn-vault-ticket` — Initialize NCN Vault Ticket
+* `warmup-ncn-vault-ticket` — Warmup NCN Vault Ticket
+* `cooldown-ncn-vault-ticket` — Cooldown NCN Vault Ticket
+* `initialize` — Initialize NCN
 * `get` — Get NCN
 * `list` — List all NCNs
 
@@ -106,8 +115,94 @@ Initialize NCN
 
 **Usage:** `jito-restaking-cli restaking ncn initialize`
 
+## `jito-restaking-cli restaking ncn initialize-ncn-operator-state`
 
+Initialize NCN Operator State
 
+**Usage:** `jito-restaking-cli restaking ncn initialize-ncn-operator-state <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<OPERATOR>` - The Operator pubkey
+
+## `jito-restaking-cli restaking ncn ncn-warmup-operator`
+
+NCN warmup Operator
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-warmup-operator <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<OPERATOR>` - The Operator pubkey
+
+## `jito-restaking-cli restaking ncn ncn-cooldown-operator`
+
+NCN cooldown Operator
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-cooldown-operator <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<OPERATOR>` - The Operator pubkey
+
+## `jito-restaking-cli restaking ncn operator-warmup-ncn`
+
+Operator warmup NCN
+
+**Usage:** `jito-restaking-cli restaking ncn operator-warmup-ncn <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<OPERATOR>` - The Operator pubkey
+
+## `jito-restaking-cli restaking ncn operator-cooldown-ncn`
+
+Operator cooldown NCN
+
+**Usage:** `jito-restaking-cli restaking ncn operator-cooldown-ncn <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<OPERATOR>` - The Operator pubkey
+
+## `jito-restaking-cli restaking ncn initialize-ncn-vault-ticket`
+
+Initialize NCN Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking ncn initialize-ncn-vault-ticket <NCN> <VAULT>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<VAULT>` - The Vault pubkey
+ 
+## `jito-restaking-cli restaking ncn warmup-ncn-vault-ticket`
+
+Warmup NCN Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking ncn warmup-ncn-vault-ticket <NCN> <VAULT>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<VAULT>` - The Vault pubkey
+ 
+## `jito-restaking-cli restaking ncn cooldown-ncn-vault-ticket`
+
+Cooldown NCN Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking ncn cooldown-ncn-vault-ticket <NCN> <VAULT>`
+
+###### **Arguments:**
+
+* `<NCN>` - The NCN pubkey
+* `<VAULT>` - The Vault pubkey
+ 
 ## `jito-restaking-cli restaking ncn get`
 
 Get NCN
