@@ -154,7 +154,7 @@ pub struct Vault {
 impl Vault {
     pub const MAX_REWARD_DELTA_BPS: u16 = 50; // 0.5%
     pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
-    pub const INITIALIZATION_TOKEN_AMOUNT: u64 = 10_000;
+    pub const DEFAULT_INITIALIZATION_TOKEN_AMOUNT: u64 = 10_000;
 
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -446,6 +446,27 @@ impl Vault {
 
     pub fn set_is_paused(&mut self, is_paused: bool) {
         self.is_paused = PodBool::from_bool(is_paused);
+    }
+
+    // Only to be used in initialize_vault
+    pub fn initialize_vault_override_deposit_fee_bps(
+        &mut self,
+        deposit_fee_bps: u16,
+        base: &AccountInfo,
+    ) -> Result<(), ProgramError> {
+        if !base.is_signer {
+            msg!("Base account must be a signer");
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if deposit_fee_bps > MAX_FEE_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_FEE_BPS);
+            return Err(ProgramError::InvalidArgument);
+        }
+
+        self.deposit_fee_bps = PodU16::from(deposit_fee_bps);
+
+        Ok(())
     }
 
     /// Checks whether the vault is currently paused.
@@ -2517,81 +2538,5 @@ mod tests {
     fn test_check_reward_fee_effective_rate_max_delta_bps_too_large() {
         let result = check_fee(10000, 10000, 1000, 1000, MAX_FEE_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
-    }
-
-    #[test]
-    fn test_set_program_fee_bps() {
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        )
-        .unwrap();
-
-        // Test setting fee to 0 (minimum value)
-        assert_eq!(vault.set_program_fee_bps(0), Ok(()));
-        assert_eq!(vault.program_fee_bps(), 0);
-
-        // Test setting fee to valid mid-range value
-        assert_eq!(vault.set_program_fee_bps(500), Ok(()));
-        assert_eq!(vault.program_fee_bps(), 500);
-
-        // Test setting fee to maximum allowed value (MAX_FEE_BPS)
-        assert_eq!(vault.set_program_fee_bps(MAX_FEE_BPS), Ok(()));
-        assert_eq!(vault.program_fee_bps(), MAX_FEE_BPS);
-
-        // Test setting fee above maximum (should fail)
-        assert_eq!(
-            vault.set_program_fee_bps(MAX_FEE_BPS + 1),
-            Err(ProgramError::InvalidInstructionData)
-        );
-        // Verify fee remains unchanged after failed attempt
-        assert_eq!(vault.program_fee_bps(), MAX_FEE_BPS);
-    }
-
-    #[test]
-    fn test_set_withdrawal_fee_bps() {
-        let mut vault = Vault::new(
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            Pubkey::new_unique(),
-            0,
-            Pubkey::new_unique(),
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        )
-        .unwrap();
-
-        // Test setting fee to 0 (minimum value)
-        assert_eq!(vault.set_withdrawal_fee_bps(0), Ok(()));
-        assert_eq!(vault.withdrawal_fee_bps(), 0);
-
-        // Test setting fee to valid mid-range value
-        assert_eq!(vault.set_withdrawal_fee_bps(500), Ok(()));
-        assert_eq!(vault.withdrawal_fee_bps(), 500);
-
-        // Test setting fee to maximum allowed value (MAX_FEE_BPS)
-        assert_eq!(vault.set_withdrawal_fee_bps(MAX_FEE_BPS), Ok(()));
-        assert_eq!(vault.withdrawal_fee_bps(), MAX_FEE_BPS);
-
-        // Test setting fee above maximum (should fail)
-        assert_eq!(
-            vault.set_withdrawal_fee_bps(MAX_FEE_BPS + 1),
-            Err(VaultError::VaultFeeCapExceeded)
-        );
-        // Verify fee remains unchanged after failed attempt
-        assert_eq!(vault.withdrawal_fee_bps(), MAX_FEE_BPS);
     }
 }

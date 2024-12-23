@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, vault_operator_delegation::VaultOperatorDelegation,
+        config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
@@ -110,7 +110,8 @@ mod tests {
     async fn test_update_vault_balance_ok() {
         const MINT_AMOUNT: u64 = 1000;
         // Match's unit test in vault.rs: test_calculate_reward_fee
-        const EXPECTED_FEE: u64 = 52;
+        // We have to account for the INITIALIZATION_TOKEN_AMOUNT
+        const EXPECTED_FEE: u64 = 92;
 
         let (fixture, vault_root) = setup_with_reward(
             MINT_AMOUNT,
@@ -147,24 +148,30 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.tokens_deposited(), MINT_AMOUNT * 2);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            MINT_AMOUNT * 2
+        );
         assert_eq!(reward_fee_account.amount, EXPECTED_FEE);
-        assert_eq!(vault.vrt_supply(), MINT_AMOUNT + EXPECTED_FEE);
+        assert_eq!(
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            MINT_AMOUNT + EXPECTED_FEE
+        );
     }
 
     #[tokio::test]
     async fn test_update_vault_balance_no_initial_supply() {
+        // There will always be an initial supply of 10_000
         let (fixture, vault_root) = setup_with_reward(
             1000, 0, 0, 1000, //10%
         )
         .await;
         let mut vault_program_client = fixture.vault_program_client();
 
-        let test_error = vault_program_client
+        vault_program_client
             .update_vault_balance(&vault_root.vault_pubkey)
-            .await;
-
-        assert_vault_error(test_error, VaultError::VaultRewardFeeIsZero);
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
