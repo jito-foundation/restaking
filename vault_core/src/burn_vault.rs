@@ -1,7 +1,6 @@
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-/// Uninitiatilized, no-data account used to hold SOL for ClaimStatus rent
-/// Must be empty and uninitialized to be used as a payer or `transfer` instructions fail
+// Empty PDA to send tokens to "burn"
 pub struct BurnVault {}
 
 impl BurnVault {
