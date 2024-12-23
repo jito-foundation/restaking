@@ -1,3 +1,4 @@
+pub mod burn_vault;
 pub mod config;
 pub mod delegation_state;
 pub mod discriminators;
