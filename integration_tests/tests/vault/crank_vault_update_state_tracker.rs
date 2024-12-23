@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::{
-        config::Config, delegation_state::DelegationState,
+        config::Config, delegation_state::DelegationState, vault::Vault,
         vault_update_state_tracker::VaultUpdateStateTracker,
     };
     use jito_vault_sdk::error::VaultError;
@@ -746,7 +746,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
+        assert_eq!(vault.additional_assets_need_unstaking(), 65_000);
 
         vault_program_client
             .do_crank_vault_update_state_tracker(
@@ -771,7 +771,10 @@ mod tests {
 
         let last_full_update_epoch = vault.last_full_state_update_slot() / config.epoch_length();
         assert_eq!(last_full_update_epoch, 0);
-        assert_eq!(vault.additional_assets_need_unstaking(), 25_000);
+        assert_eq!(
+            vault.additional_assets_need_unstaking(),
+            25_000 - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
 
         let first_operator_delegation = vault_program_client
             .get_vault_operator_delegation(
@@ -871,7 +874,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.delegation_state.staked_amount(), 25_000);
+        assert_eq!(
+            vault.delegation_state.staked_amount(),
+            25_000 + Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
         assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 75_000);
     }
@@ -995,8 +1001,14 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), 0);
-        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
+        assert_eq!(
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
@@ -1111,8 +1123,14 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), 0);
-        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
+        assert_eq!(
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
@@ -1227,8 +1245,14 @@ mod tests {
             .get_vault(&vault_root.vault_pubkey)
             .await
             .unwrap();
-        assert_eq!(vault.tokens_deposited(), 0);
-        assert_eq!(vault.vrt_supply(), 0);
+        assert_eq!(
+            vault.tokens_deposited() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
+        assert_eq!(
+            vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
+            0
+        );
         assert_eq!(vault.delegation_state, DelegationState::default());
         assert_eq!(vault.vrt_enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 0);
