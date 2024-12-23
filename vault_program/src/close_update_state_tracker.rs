@@ -1,5 +1,5 @@
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::{close_program_account, loader::load_signer};
+use jito_jsm_core::{close_program_account, get_epoch, loader::load_signer};
 use jito_vault_core::{
     config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
 };
@@ -42,8 +42,9 @@ pub fn process_close_vault_update_state_tracker(
 
     vault.check_is_paused()?;
 
-    let current_ncn_epoch = config.get_epoch_from_slot(slot)?;
-    let last_updated_epoch = config.get_epoch_from_slot(vault.last_full_state_update_slot())?;
+    let epoch_length = config.epoch_length();
+    let current_ncn_epoch = get_epoch(slot, epoch_length)?;
+    let last_updated_epoch = get_epoch(vault.last_full_state_update_slot(), epoch_length)?;
 
     // The VaultUpdateStateTracker shall be up-to-date before closing
     if ncn_epoch != current_ncn_epoch {

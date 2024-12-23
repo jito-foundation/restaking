@@ -4,7 +4,7 @@ use jito_bytemuck::{
     types::{PodBool, PodU16, PodU64},
     AccountDeserialize, Discriminator,
 };
-use jito_jsm_core::loader::load_signer;
+use jito_jsm_core::{get_epoch, loader::load_signer};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -630,13 +630,9 @@ impl Vault {
 
     #[inline(always)]
     pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let last_updated_epoch = self
-            .last_full_state_update_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let last_updated_epoch = get_epoch(self.last_full_state_update_slot(), epoch_length)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
+
         Ok(last_updated_epoch < current_epoch)
     }
 
@@ -676,14 +672,9 @@ impl Vault {
 
     /// Fees can be changed at most one per epoch, and a **full** epoch must pass before a fee can be changed again.
     #[inline(always)]
-    pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let last_fee_change_epoch = self
-            .last_fee_change_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+    pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
+        let current_epoch = get_epoch(slot, epoch_length)?;
+        let last_fee_change_epoch = get_epoch(self.last_fee_change_slot(), epoch_length)?;
 
         if current_epoch
             <= last_fee_change_epoch
@@ -691,7 +682,7 @@ impl Vault {
                 .ok_or(VaultError::ArithmeticOverflow)?
         {
             msg!("Fee changes are only allowed once per epoch");
-            return Err(VaultError::VaultFeeChangeTooSoon);
+            return Err(VaultError::VaultFeeChangeTooSoon.into());
         }
 
         Ok(())
@@ -1097,7 +1088,7 @@ impl Vault {
         &self,
         slot: u64,
         epoch_length: u64,
-    ) -> Result<u64, VaultError> {
+    ) -> Result<u64, ProgramError> {
         // Calculate the total amount of assets needed to be set aside for all potential withdrawals
         let amount_requested_for_withdrawals =
             self.calculate_supported_assets_requested_for_withdrawal()?;
@@ -1106,16 +1097,11 @@ impl Vault {
         let mut delegation_state_after_update = self.delegation_state;
 
         // Calculate the epoch of the last full state update and the current epoch
-        let last_epoch_update = self
-            .last_full_state_update_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let this_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let last_epoch_update = get_epoch(self.last_full_state_update_slot(), epoch_length)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
 
         // Update the simulated delegation state based on the number of epochs passed
-        let epoch_diff = this_epoch
+        let epoch_diff = current_epoch
             .checked_sub(last_epoch_update)
             .ok_or(VaultError::ArithmeticUnderflow)?;
         match epoch_diff {
@@ -2045,7 +2031,7 @@ mod tests {
         vault.last_fee_change_slot = PodU64::from(101);
         assert_eq!(
             vault.check_can_modify_fees(102, 100),
-            Err(VaultError::VaultFeeChangeTooSoon)
+            Err(VaultError::VaultFeeChangeTooSoon.into())
         );
     }
 
@@ -2055,7 +2041,7 @@ mod tests {
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(
             vault.check_can_modify_fees(101, 100),
-            Err(VaultError::VaultFeeChangeTooSoon)
+            Err(VaultError::VaultFeeChangeTooSoon.into())
         );
     }
 
@@ -2065,7 +2051,7 @@ mod tests {
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(
             vault.check_can_modify_fees(100, 100),
-            Err(VaultError::VaultFeeChangeTooSoon)
+            Err(VaultError::VaultFeeChangeTooSoon.into())
         );
     }
 

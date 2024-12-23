@@ -21,6 +21,7 @@ env_logger = { workspace = true }
 futures = { workspace = true }
 jito-account-traits-derive = { workspace = true }
 jito-bytemuck = { workspace = true }
+jito-jsm-core = { workspace = true }
 jito-restaking-client = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-vault-client = { workspace = true }

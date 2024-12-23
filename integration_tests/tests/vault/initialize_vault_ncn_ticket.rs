@@ -53,7 +53,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
     }

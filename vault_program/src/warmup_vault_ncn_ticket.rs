@@ -42,7 +42,7 @@ pub fn process_warmup_vault_ncn_ticket(
         VaultNcnTicket::try_from_slice_unchecked_mut(&mut vault_ncn_ticket_data)?;
     if !vault_ncn_ticket
         .state
-        .activate(Clock::get()?.slot, config.epoch_length())
+        .activate(Clock::get()?.slot, config.epoch_length())?
     {
         msg!("VaultNcnTicket is not ready to be activated");
         return Err(VaultError::VaultNcnTicketFailedWarmup.into());

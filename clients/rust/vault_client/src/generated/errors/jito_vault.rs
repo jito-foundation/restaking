@@ -9,6 +9,9 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
 pub enum JitoVaultError {
+    /// 0 - Bad epoch length
+    #[error("Bad epoch length")]
+    BadEpochLength = 0x0,
     /// 1000 - VaultSlashUnderflow
     #[error("VaultSlashUnderflow")]
     VaultSlashUnderflow = 0x3E8,
