@@ -76,13 +76,13 @@ pub fn process_initialize_vault_update_state_tracker(
     )?;
 
     let needs_to_recover_from_partial_or_late_update = {
+        let epoch_length = config.epoch_length();
+
         let last_start_state_update_slot = vault.last_start_state_update_slot();
-        let last_start_state_update_epoch =
-            config.get_epoch_from_slot(last_start_state_update_slot)?;
+        let last_start_state_update_epoch = get_epoch(last_start_state_update_slot, epoch_length)?;
 
         let last_full_state_update_slot = vault.last_full_state_update_slot();
-        let last_full_state_update_epoch =
-            config.get_epoch_from_slot(last_full_state_update_slot)?;
+        let last_full_state_update_epoch = get_epoch(last_full_state_update_slot, epoch_length)?;
 
         let last_update_was_completed =
             last_full_state_update_epoch == last_start_state_update_epoch;
