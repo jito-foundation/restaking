@@ -2,7 +2,7 @@ use std::mem::size_of;
 
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::{
-    create_account,
+    create_account, get_epoch,
     loader::{load_signer, load_system_account, load_system_program},
 };
 use jito_vault_core::{
@@ -37,7 +37,7 @@ pub fn process_initialize_vault_update_state_tracker(
 
     // The VaultUpdateStateTracker shall be at the canonical PDA
     let slot = Clock::get()?.slot;
-    let ncn_epoch = config.get_epoch_from_slot(slot)?;
+    let ncn_epoch = get_epoch(slot, config.epoch_length())?;
 
     let (
         vault_update_state_tracker_pubkey,
@@ -100,8 +100,8 @@ pub fn process_initialize_vault_update_state_tracker(
         // Update fees to new values
         // Fees can only be updated here so `additional_assets_need_unstaking` will be static
         // Otherwise there may be a mismatch between withdrawn assets and outstanding claim tickets
-        vault.set_withdrawal_fee_bps(vault.next_withdrawal_fee_bps());
-        vault.set_program_fee_bps(config.program_fee_bps());
+        vault.set_withdrawal_fee_bps(vault.next_withdrawal_fee_bps())?;
+        vault.set_program_fee_bps(config.program_fee_bps())?;
 
         // If the vault is not in the middle of unstaking, calculate the additional assets needed
         // to unstake

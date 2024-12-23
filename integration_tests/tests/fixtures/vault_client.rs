@@ -7,7 +7,8 @@ use jito_restaking_core::{
     operator_vault_ticket::OperatorVaultTicket,
 };
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
+    burn_vault::BurnVault, config::Config, vault::Vault,
+    vault_ncn_slasher_operator_ticket::VaultNcnSlasherOperatorTicket,
     vault_ncn_slasher_ticket::VaultNcnSlasherTicket, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_delegation::VaultOperatorDelegation,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
@@ -294,33 +295,59 @@ impl VaultProgramClient {
     ) -> Result<VaultRoot, TestError> {
         let vault_base = Keypair::new();
 
+        let initialize_token_amount = Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT;
+
         let vault_pubkey =
             Vault::find_program_address(&jito_vault_program::id(), &vault_base.pubkey()).0;
 
         let vrt_mint = Keypair::new();
         let vault_admin = Keypair::new();
-        let token_mint = Keypair::new();
+        let st_mint = Keypair::new();
 
         self.airdrop(&vault_admin.pubkey(), 100.0).await?;
-        self.create_token_mint(&token_mint, &spl_token::id())
+        self.create_token_mint(&st_mint, &spl_token::id()).await?;
+
+        let admin_st_token_account =
+            get_associated_token_address(&vault_admin.pubkey(), &st_mint.pubkey());
+        let vault_st_token_account = get_associated_token_address(&vault_pubkey, &st_mint.pubkey());
+
+        let burn_vault =
+            BurnVault::find_program_address(&jito_vault_program::id(), &vault_base.pubkey()).0;
+
+        let burn_vault_vrt_token_account =
+            get_associated_token_address(&burn_vault, &vrt_mint.pubkey());
+
+        // Needs to be created before initialize vault
+        self.create_ata(&st_mint.pubkey(), &vault_pubkey).await?;
+        self.create_ata(&st_mint.pubkey(), &vault_admin.pubkey())
             .await?;
+
+        self.mint_spl_to(
+            &st_mint.pubkey(),
+            &vault_admin.pubkey(),
+            initialize_token_amount,
+        )
+        .await?;
 
         self.initialize_vault(
             &Config::find_program_address(&jito_vault_program::id()).0,
             &vault_pubkey,
             &vrt_mint,
-            &token_mint,
+            &st_mint,
+            &admin_st_token_account,
+            &vault_st_token_account,
+            &burn_vault,
+            &burn_vault_vrt_token_account,
             &vault_admin,
             &vault_base,
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
+            initialize_token_amount,
         )
         .await?;
 
-        // for holding the backed asset in the vault
-        self.create_ata(&token_mint.pubkey(), &vault_pubkey).await?;
         // for holding fees
         self.create_ata(&vrt_mint.pubkey(), &vault_admin.pubkey())
             .await?;
@@ -688,13 +715,18 @@ impl VaultProgramClient {
         config: &Pubkey,
         vault: &Pubkey,
         vrt_mint: &Keypair,
-        token_mint: &Keypair,
+        st_mint: &Keypair,
+        admin_st_token_account: &Pubkey,
+        vault_st_token_account: &Pubkey,
+        burn_vault: &Pubkey,
+        burn_vault_vrt_token_account: &Pubkey,
         vault_admin: &Keypair,
         vault_base: &Keypair,
         deposit_fee_bps: u16,
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
         decimals: u8,
+        initialize_token_amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
 
@@ -704,13 +736,18 @@ impl VaultProgramClient {
                 config,
                 vault,
                 &vrt_mint.pubkey(),
-                &token_mint.pubkey(),
+                &st_mint.pubkey(),
+                admin_st_token_account,
+                vault_st_token_account,
+                burn_vault,
+                burn_vault_vrt_token_account,
                 &vault_admin.pubkey(),
                 &vault_base.pubkey(),
                 deposit_fee_bps,
                 withdrawal_fee_bps,
                 reward_fee_bps,
                 decimals,
+                initialize_token_amount,
             )],
             Some(&vault_admin.pubkey()),
             &[&vault_admin, &vrt_mint, &vault_base],
