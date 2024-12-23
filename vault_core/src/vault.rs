@@ -2540,13 +2540,12 @@ mod tests {
         let result = check_fee(10000, 10000, 1000, 1000, MAX_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
     }
-  
-  
+
     #[test]
     fn test_last_start_state_update_slot() {
         // Create a new vault with initial slot
         let initial_slot = 12345;
-              let mut vault = Vault::new(
+        let mut vault = Vault::new(
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
@@ -2557,7 +2556,7 @@ mod tests {
             0,
             0,
             0,
-                            initial_slot,
+            initial_slot,
         )
         .unwrap();
 
@@ -2575,7 +2574,8 @@ mod tests {
     #[test]
     fn test_reserved_space() {
         // Create a default vault
-        let vault = Vault::new(            Pubkey::new_unique(),
+        let vault = Vault::new(
+            Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             0,
@@ -2602,7 +2602,8 @@ mod tests {
     #[test]
     fn test_vault_serialization_with_reserved() {
         // Create a vault
-        let vault = Vault::new(            Pubkey::new_unique(),
+        let vault = Vault::new(
+            Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             0,
@@ -2615,7 +2616,7 @@ mod tests {
             0,
         )
         .unwrap();
-              // Serialize the vault to bytes
+        // Serialize the vault to bytes
         let serialized = bytemuck::bytes_of(&vault);
 
         // Calculate the expected position of reserved field
@@ -2624,9 +2625,7 @@ mod tests {
         // Verify the reserved space in serialized form
         let reserved_slice = &serialized[reserved_offset..];
         assert_eq!(reserved_slice, &[0u8; 251]);
-  }
-
-  
+    }
 
     #[test]
     fn test_set_program_fee_bps() {
@@ -2670,7 +2669,6 @@ mod tests {
     #[test]
     fn test_set_withdrawal_fee_bps() {
         let mut vault = Vault::new(
-
             Pubkey::new_unique(),
             Pubkey::new_unique(),
             Pubkey::new_unique(),
