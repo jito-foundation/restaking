@@ -1,3 +1,4 @@
+use jito_jsm_core::get_epoch;
 use jito_vault_core::config::Config;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
@@ -45,11 +46,7 @@ pub async fn emit_vault_metrics(
     let num_vault_operator_delegations_updated = delegations
         .iter()
         .filter(|(_pubkey, delegation)| {
-            delegation
-                .last_update_slot()
-                .checked_div(config_epoch_length)
-                .unwrap()
-                == epoch
+            get_epoch(delegation.last_update_slot(), config_epoch_length).unwrap() == epoch
         })
         .count() as i64;
 

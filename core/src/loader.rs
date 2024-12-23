@@ -50,6 +50,22 @@ pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
 ///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
+pub fn load_associated_token_account_program(info: &AccountInfo) -> Result<(), ProgramError> {
+    if info.key.ne(&spl_associated_token_account::id()) {
+        msg!("Account is not the spl associated token program");
+        return Err(ProgramError::IncorrectProgramId);
+    }
+
+    Ok(())
+}
+
+/// Loads the account as the `spl_token` program, returning an error if it is not.
+///
+/// # Arguments
+/// * `info` - The account to load the token program from
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
     if info.key.ne(&spl_token::id()) {
         msg!("Account is not the spl token program");
