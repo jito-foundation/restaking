@@ -75,7 +75,22 @@ pub fn process_initialize_vault_update_state_tracker(
         &vault_update_state_tracker_seeds,
     )?;
 
-    let additional_assets_need_unstaking = if vault.additional_assets_need_unstaking() > 0 {
+    let needs_to_recover_from_partial_or_late_update = {
+        let epoch_length = config.epoch_length();
+
+        let last_start_state_update_slot = vault.last_start_state_update_slot();
+        let last_start_state_update_epoch = get_epoch(last_start_state_update_slot, epoch_length)?;
+
+        let last_full_state_update_slot = vault.last_full_state_update_slot();
+        let last_full_state_update_epoch = get_epoch(last_full_state_update_slot, epoch_length)?;
+
+        let last_update_was_completed =
+            last_full_state_update_epoch == last_start_state_update_epoch;
+
+        !last_update_was_completed
+    };
+
+    let additional_assets_need_unstaking = if needs_to_recover_from_partial_or_late_update {
         // indicates an old partially cranked state
         // no vault operations can be done until a full update cycle has run
         // this means that the `additional_assets_need_unstaking` will not change
@@ -90,13 +105,13 @@ pub fn process_initialize_vault_update_state_tracker(
 
         // If the vault is not in the middle of unstaking, calculate the additional assets needed
         // to unstake
-        vault.calculate_additional_supported_assets_needed_to_unstake(
-            Clock::get()?.slot,
-            config.epoch_length(),
-        )?
+        vault
+            .calculate_additional_supported_assets_needed_to_unstake(slot, config.epoch_length())?
     };
 
     vault.set_additional_assets_need_unstaking(additional_assets_need_unstaking);
+
+    vault.set_last_start_state_update_slot(slot);
 
     let mut vault_update_state_tracker_data = vault_update_state_tracker.try_borrow_mut_data()?;
     vault_update_state_tracker_data[0] = VaultUpdateStateTracker::DISCRIMINATOR;

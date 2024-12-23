@@ -145,10 +145,14 @@ pub struct Vault {
     /// The bump seed for the PDA
     pub bump: u8,
 
+    /// Whether the vault is paused
     is_paused: PodBool,
 
+    /// last
+    last_start_state_update_slot: PodU64,
+
     /// Reserved space
-    reserved: [u8; 259],
+    reserved: [u8; 251],
 }
 
 impl Vault {
@@ -207,6 +211,7 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(current_slot),
             last_full_state_update_slot: PodU64::from(current_slot),
+            last_start_state_update_slot: PodU64::from(current_slot),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             next_withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
@@ -219,7 +224,7 @@ impl Vault {
             delegation_state: DelegationState::default(),
             additional_assets_need_unstaking: PodU64::from(0),
             is_paused: PodBool::from_bool(false),
-            reserved: [0; 259],
+            reserved: [0; 251],
         })
     }
 
@@ -245,6 +250,10 @@ impl Vault {
 
     pub fn last_full_state_update_slot(&self) -> u64 {
         self.last_full_state_update_slot.into()
+    }
+
+    pub fn last_start_state_update_slot(&self) -> u64 {
+        self.last_start_state_update_slot.into()
     }
 
     pub fn vrt_supply(&self) -> u64 {
@@ -375,6 +384,10 @@ impl Vault {
 
     pub fn set_last_full_state_update_slot(&mut self, slot: u64) {
         self.last_full_state_update_slot = PodU64::from(slot);
+    }
+
+    pub fn set_last_start_state_update_slot(&mut self, slot: u64) {
+        self.last_start_state_update_slot = PodU64::from(slot);
     }
 
     pub fn decrement_vrt_ready_to_claim_amount(&mut self, amount: u64) -> Result<(), VaultError> {
@@ -1346,11 +1359,13 @@ mod tests {
             std::mem::size_of::<PodU64>() + // last_full_state_update_slot
             std::mem::size_of::<PodU16>() + // deposit_fee_bps
             std::mem::size_of::<PodU16>() + // withdrawal_fee_bps
+            std::mem::size_of::<PodU16>() + // next_withdrawal_fee_bps
             std::mem::size_of::<PodU16>() + // reward_fee_bps
             std::mem::size_of::<PodU16>() + // program_fee_bps
             std::mem::size_of::<PodBool>() + // is_paused
+            std::mem::size_of::<PodU64>() + // last_start_state_update_slot
             1 + // bump
-            261; // reserved
+            251; // reserved
 
         assert_eq!(vault_size, sum_of_fields);
     }
@@ -2525,6 +2540,93 @@ mod tests {
         let result = check_fee(10000, 10000, 1000, 1000, MAX_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
     }
+
+    #[test]
+    fn test_last_start_state_update_slot() {
+        // Create a new vault with initial slot
+        let initial_slot = 12345;
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            initial_slot,
+        )
+        .unwrap();
+
+        // Verify initial slot is set correctly
+        assert_eq!(vault.last_start_state_update_slot(), initial_slot);
+
+        // Update the slot
+        let new_slot = 67890;
+        vault.set_last_start_state_update_slot(new_slot);
+
+        // Verify the slot was updated
+        assert_eq!(vault.last_start_state_update_slot(), new_slot);
+    }
+
+    #[test]
+    fn test_reserved_space() {
+        // Create a default vault
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+        // Verify reserved space is initialized to zeros
+        assert_eq!(vault.reserved, [0u8; 251]);
+
+        // Get the size of the reserved field
+        let reserved_size = std::mem::size_of_val(&vault.reserved);
+        assert_eq!(reserved_size, 251);
+
+        // Verify the reserved field maintains alignment
+        assert_eq!(std::mem::align_of_val(&vault.reserved), 1);
+    }
+
+    #[test]
+    fn test_vault_serialization_with_reserved() {
+        // Create a vault
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+        // Serialize the vault to bytes
+        let serialized = bytemuck::bytes_of(&vault);
+
+        // Calculate the expected position of reserved field
+        let reserved_offset = serialized.len() - 251;
+
+        // Verify the reserved space in serialized form
+        let reserved_slice = &serialized[reserved_offset..];
+        assert_eq!(reserved_slice, &[0u8; 251]);
+    }
+
     #[test]
     fn test_set_program_fee_bps() {
         // Create a basic vault
