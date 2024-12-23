@@ -461,7 +461,7 @@ impl Vault {
 
         if deposit_fee_bps > MAX_BPS {
             msg!("Deposit fee exceeds maximum allowed of {}", MAX_BPS);
-            return Err(ProgramError::InvalidArgument);
+            return Err(VaultError::VaultFeeCapExceeded.into());
         }
 
         self.deposit_fee_bps = PodU16::from(deposit_fee_bps);
@@ -2659,7 +2659,7 @@ mod tests {
 
         assert_eq!(
             vault.initialize_vault_override_deposit_fee_bps(MAX_BPS + 1, &signer_account),
-            Err(ProgramError::InvalidArgument)
+            Err(VaultError::VaultFeeCapExceeded.into())
         );
 
         // Test 3: Valid parameters should succeed
