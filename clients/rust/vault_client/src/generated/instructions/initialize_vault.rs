@@ -20,6 +20,10 @@ pub struct InitializeVault {
 
     pub vault_st_token_account: solana_program::pubkey::Pubkey,
 
+    pub burn_vault: solana_program::pubkey::Pubkey,
+
+    pub burn_vault_vrt_token_account: solana_program::pubkey::Pubkey,
+
     pub admin: solana_program::pubkey::Pubkey,
 
     pub base: solana_program::pubkey::Pubkey,
@@ -27,6 +31,8 @@ pub struct InitializeVault {
     pub system_program: solana_program::pubkey::Pubkey,
 
     pub token_program: solana_program::pubkey::Pubkey,
+
+    pub associated_token_program: solana_program::pubkey::Pubkey,
 }
 
 impl InitializeVault {
@@ -42,7 +48,7 @@ impl InitializeVault {
         args: InitializeVaultInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.config,
             false,
@@ -66,6 +72,14 @@ impl InitializeVault {
             self.vault_st_token_account,
             false,
         ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.burn_vault,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            self.burn_vault_vrt_token_account,
+            false,
+        ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.admin, true,
         ));
@@ -78,6 +92,10 @@ impl InitializeVault {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.token_program,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.associated_token_program,
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
@@ -117,6 +135,7 @@ pub struct InitializeVaultInstructionArgs {
     pub withdrawal_fee_bps: u16,
     pub reward_fee_bps: u16,
     pub decimals: u8,
+    pub initialize_token_amount: u64,
 }
 
 /// Instruction builder for `InitializeVault`.
@@ -129,10 +148,13 @@ pub struct InitializeVaultInstructionArgs {
 ///   3. `[]` st_mint
 ///   4. `[writable]` admin_st_token_account
 ///   5. `[writable]` vault_st_token_account
-///   6. `[writable, signer]` admin
-///   7. `[signer]` base
-///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   6. `[]` burn_vault
+///   7. `[writable]` burn_vault_vrt_token_account
+///   8. `[writable, signer]` admin
+///   9. `[signer]` base
+///   10. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   12. `[]` associated_token_program
 #[derive(Clone, Debug, Default)]
 pub struct InitializeVaultBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -141,14 +163,18 @@ pub struct InitializeVaultBuilder {
     st_mint: Option<solana_program::pubkey::Pubkey>,
     admin_st_token_account: Option<solana_program::pubkey::Pubkey>,
     vault_st_token_account: Option<solana_program::pubkey::Pubkey>,
+    burn_vault: Option<solana_program::pubkey::Pubkey>,
+    burn_vault_vrt_token_account: Option<solana_program::pubkey::Pubkey>,
     admin: Option<solana_program::pubkey::Pubkey>,
     base: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
+    associated_token_program: Option<solana_program::pubkey::Pubkey>,
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
     decimals: Option<u8>,
+    initialize_token_amount: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -193,6 +219,19 @@ impl InitializeVaultBuilder {
         self
     }
     #[inline(always)]
+    pub fn burn_vault(&mut self, burn_vault: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.burn_vault = Some(burn_vault);
+        self
+    }
+    #[inline(always)]
+    pub fn burn_vault_vrt_token_account(
+        &mut self,
+        burn_vault_vrt_token_account: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.burn_vault_vrt_token_account = Some(burn_vault_vrt_token_account);
+        self
+    }
+    #[inline(always)]
     pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
         self.admin = Some(admin);
         self
@@ -215,6 +254,14 @@ impl InitializeVaultBuilder {
         self
     }
     #[inline(always)]
+    pub fn associated_token_program(
+        &mut self,
+        associated_token_program: solana_program::pubkey::Pubkey,
+    ) -> &mut Self {
+        self.associated_token_program = Some(associated_token_program);
+        self
+    }
+    #[inline(always)]
     pub fn deposit_fee_bps(&mut self, deposit_fee_bps: u16) -> &mut Self {
         self.deposit_fee_bps = Some(deposit_fee_bps);
         self
@@ -232,6 +279,11 @@ impl InitializeVaultBuilder {
     #[inline(always)]
     pub fn decimals(&mut self, decimals: u8) -> &mut Self {
         self.decimals = Some(decimals);
+        self
+    }
+    #[inline(always)]
+    pub fn initialize_token_amount(&mut self, initialize_token_amount: u64) -> &mut Self {
+        self.initialize_token_amount = Some(initialize_token_amount);
         self
     }
     /// Add an aditional account to the instruction.
@@ -265,6 +317,10 @@ impl InitializeVaultBuilder {
             vault_st_token_account: self
                 .vault_st_token_account
                 .expect("vault_st_token_account is not set"),
+            burn_vault: self.burn_vault.expect("burn_vault is not set"),
+            burn_vault_vrt_token_account: self
+                .burn_vault_vrt_token_account
+                .expect("burn_vault_vrt_token_account is not set"),
             admin: self.admin.expect("admin is not set"),
             base: self.base.expect("base is not set"),
             system_program: self
@@ -273,6 +329,9 @@ impl InitializeVaultBuilder {
             token_program: self.token_program.unwrap_or(solana_program::pubkey!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
+            associated_token_program: self
+                .associated_token_program
+                .expect("associated_token_program is not set"),
         };
         let args = InitializeVaultInstructionArgs {
             deposit_fee_bps: self
@@ -288,6 +347,10 @@ impl InitializeVaultBuilder {
                 .clone()
                 .expect("reward_fee_bps is not set"),
             decimals: self.decimals.clone().expect("decimals is not set"),
+            initialize_token_amount: self
+                .initialize_token_amount
+                .clone()
+                .expect("initialize_token_amount is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -308,6 +371,10 @@ pub struct InitializeVaultCpiAccounts<'a, 'b> {
 
     pub vault_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub burn_vault: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub burn_vault_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub base: &'b solana_program::account_info::AccountInfo<'a>,
@@ -315,6 +382,8 @@ pub struct InitializeVaultCpiAccounts<'a, 'b> {
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub associated_token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
 /// `initialize_vault` CPI instruction.
@@ -334,6 +403,10 @@ pub struct InitializeVaultCpi<'a, 'b> {
 
     pub vault_st_token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
+    pub burn_vault: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub burn_vault_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
     pub admin: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub base: &'b solana_program::account_info::AccountInfo<'a>,
@@ -341,6 +414,8 @@ pub struct InitializeVaultCpi<'a, 'b> {
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub associated_token_program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: InitializeVaultInstructionArgs,
 }
@@ -359,10 +434,13 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             st_mint: accounts.st_mint,
             admin_st_token_account: accounts.admin_st_token_account,
             vault_st_token_account: accounts.vault_st_token_account,
+            burn_vault: accounts.burn_vault,
+            burn_vault_vrt_token_account: accounts.burn_vault_vrt_token_account,
             admin: accounts.admin,
             base: accounts.base,
             system_program: accounts.system_program,
             token_program: accounts.token_program,
+            associated_token_program: accounts.associated_token_program,
             __args: args,
         }
     }
@@ -399,7 +477,7 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.config.key,
             false,
@@ -424,6 +502,14 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             *self.vault_st_token_account.key,
             false,
         ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.burn_vault.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new(
+            *self.burn_vault_vrt_token_account.key,
+            false,
+        ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.admin.key,
             true,
@@ -438,6 +524,10 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.token_program.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.associated_token_program.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
@@ -456,7 +546,7 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(10 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(13 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
@@ -464,10 +554,13 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
         account_infos.push(self.st_mint.clone());
         account_infos.push(self.admin_st_token_account.clone());
         account_infos.push(self.vault_st_token_account.clone());
+        account_infos.push(self.burn_vault.clone());
+        account_infos.push(self.burn_vault_vrt_token_account.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.base.clone());
         account_infos.push(self.system_program.clone());
         account_infos.push(self.token_program.clone());
+        account_infos.push(self.associated_token_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -490,10 +583,13 @@ impl<'a, 'b> InitializeVaultCpi<'a, 'b> {
 ///   3. `[]` st_mint
 ///   4. `[writable]` admin_st_token_account
 ///   5. `[writable]` vault_st_token_account
-///   6. `[writable, signer]` admin
-///   7. `[signer]` base
-///   8. `[]` system_program
-///   9. `[]` token_program
+///   6. `[]` burn_vault
+///   7. `[writable]` burn_vault_vrt_token_account
+///   8. `[writable, signer]` admin
+///   9. `[signer]` base
+///   10. `[]` system_program
+///   11. `[]` token_program
+///   12. `[]` associated_token_program
 #[derive(Clone, Debug)]
 pub struct InitializeVaultCpiBuilder<'a, 'b> {
     instruction: Box<InitializeVaultCpiBuilderInstruction<'a, 'b>>,
@@ -509,14 +605,18 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
             st_mint: None,
             admin_st_token_account: None,
             vault_st_token_account: None,
+            burn_vault: None,
+            burn_vault_vrt_token_account: None,
             admin: None,
             base: None,
             system_program: None,
             token_program: None,
+            associated_token_program: None,
             deposit_fee_bps: None,
             withdrawal_fee_bps: None,
             reward_fee_bps: None,
             decimals: None,
+            initialize_token_amount: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -567,6 +667,22 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
+    pub fn burn_vault(
+        &mut self,
+        burn_vault: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.burn_vault = Some(burn_vault);
+        self
+    }
+    #[inline(always)]
+    pub fn burn_vault_vrt_token_account(
+        &mut self,
+        burn_vault_vrt_token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.burn_vault_vrt_token_account = Some(burn_vault_vrt_token_account);
+        self
+    }
+    #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.admin = Some(admin);
         self
@@ -593,6 +709,14 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
+    pub fn associated_token_program(
+        &mut self,
+        associated_token_program: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.associated_token_program = Some(associated_token_program);
+        self
+    }
+    #[inline(always)]
     pub fn deposit_fee_bps(&mut self, deposit_fee_bps: u16) -> &mut Self {
         self.instruction.deposit_fee_bps = Some(deposit_fee_bps);
         self
@@ -610,6 +734,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn decimals(&mut self, decimals: u8) -> &mut Self {
         self.instruction.decimals = Some(decimals);
+        self
+    }
+    #[inline(always)]
+    pub fn initialize_token_amount(&mut self, initialize_token_amount: u64) -> &mut Self {
+        self.instruction.initialize_token_amount = Some(initialize_token_amount);
         self
     }
     /// Add an additional account to the instruction.
@@ -674,6 +803,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
                 .decimals
                 .clone()
                 .expect("decimals is not set"),
+            initialize_token_amount: self
+                .instruction
+                .initialize_token_amount
+                .clone()
+                .expect("initialize_token_amount is not set"),
         };
         let instruction = InitializeVaultCpi {
             __program: self.instruction.__program,
@@ -696,6 +830,13 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
                 .vault_st_token_account
                 .expect("vault_st_token_account is not set"),
 
+            burn_vault: self.instruction.burn_vault.expect("burn_vault is not set"),
+
+            burn_vault_vrt_token_account: self
+                .instruction
+                .burn_vault_vrt_token_account
+                .expect("burn_vault_vrt_token_account is not set"),
+
             admin: self.instruction.admin.expect("admin is not set"),
 
             base: self.instruction.base.expect("base is not set"),
@@ -709,6 +850,11 @@ impl<'a, 'b> InitializeVaultCpiBuilder<'a, 'b> {
                 .instruction
                 .token_program
                 .expect("token_program is not set"),
+
+            associated_token_program: self
+                .instruction
+                .associated_token_program
+                .expect("associated_token_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -727,14 +873,18 @@ struct InitializeVaultCpiBuilderInstruction<'a, 'b> {
     st_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin_st_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault_st_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    burn_vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    burn_vault_vrt_token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    associated_token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     deposit_fee_bps: Option<u16>,
     withdrawal_fee_bps: Option<u16>,
     reward_fee_bps: Option<u16>,
     decimals: Option<u8>,
+    initialize_token_amount: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

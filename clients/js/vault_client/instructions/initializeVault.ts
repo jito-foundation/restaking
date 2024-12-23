@@ -12,6 +12,8 @@ import {
   getStructEncoder,
   getU16Decoder,
   getU16Encoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -47,6 +49,10 @@ export type InitializeVaultInstruction<
   TAccountStMint extends string | IAccountMeta<string> = string,
   TAccountAdminStTokenAccount extends string | IAccountMeta<string> = string,
   TAccountVaultStTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountBurnVault extends string | IAccountMeta<string> = string,
+  TAccountBurnVaultVrtTokenAccount extends
+    | string
+    | IAccountMeta<string> = string,
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountBase extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
@@ -55,6 +61,7 @@ export type InitializeVaultInstruction<
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  TAccountAssociatedTokenProgram extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -79,6 +86,12 @@ export type InitializeVaultInstruction<
       TAccountVaultStTokenAccount extends string
         ? WritableAccount<TAccountVaultStTokenAccount>
         : TAccountVaultStTokenAccount,
+      TAccountBurnVault extends string
+        ? ReadonlyAccount<TAccountBurnVault>
+        : TAccountBurnVault,
+      TAccountBurnVaultVrtTokenAccount extends string
+        ? WritableAccount<TAccountBurnVaultVrtTokenAccount>
+        : TAccountBurnVaultVrtTokenAccount,
       TAccountAdmin extends string
         ? WritableSignerAccount<TAccountAdmin> &
             IAccountSignerMeta<TAccountAdmin>
@@ -92,6 +105,9 @@ export type InitializeVaultInstruction<
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
+      TAccountAssociatedTokenProgram extends string
+        ? ReadonlyAccount<TAccountAssociatedTokenProgram>
+        : TAccountAssociatedTokenProgram,
       ...TRemainingAccounts,
     ]
   >;
@@ -102,6 +118,7 @@ export type InitializeVaultInstructionData = {
   withdrawalFeeBps: number;
   rewardFeeBps: number;
   decimals: number;
+  initializeTokenAmount: bigint;
 };
 
 export type InitializeVaultInstructionDataArgs = {
@@ -109,6 +126,7 @@ export type InitializeVaultInstructionDataArgs = {
   withdrawalFeeBps: number;
   rewardFeeBps: number;
   decimals: number;
+  initializeTokenAmount: number | bigint;
 };
 
 export function getInitializeVaultInstructionDataEncoder(): Encoder<InitializeVaultInstructionDataArgs> {
@@ -119,6 +137,7 @@ export function getInitializeVaultInstructionDataEncoder(): Encoder<InitializeVa
       ['withdrawalFeeBps', getU16Encoder()],
       ['rewardFeeBps', getU16Encoder()],
       ['decimals', getU8Encoder()],
+      ['initializeTokenAmount', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: INITIALIZE_VAULT_DISCRIMINATOR })
   );
@@ -131,6 +150,7 @@ export function getInitializeVaultInstructionDataDecoder(): Decoder<InitializeVa
     ['withdrawalFeeBps', getU16Decoder()],
     ['rewardFeeBps', getU16Decoder()],
     ['decimals', getU8Decoder()],
+    ['initializeTokenAmount', getU64Decoder()],
   ]);
 }
 
@@ -151,10 +171,13 @@ export type InitializeVaultInput<
   TAccountStMint extends string = string,
   TAccountAdminStTokenAccount extends string = string,
   TAccountVaultStTokenAccount extends string = string,
+  TAccountBurnVault extends string = string,
+  TAccountBurnVaultVrtTokenAccount extends string = string,
   TAccountAdmin extends string = string,
   TAccountBase extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountTokenProgram extends string = string,
+  TAccountAssociatedTokenProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
@@ -162,14 +185,18 @@ export type InitializeVaultInput<
   stMint: Address<TAccountStMint>;
   adminStTokenAccount: Address<TAccountAdminStTokenAccount>;
   vaultStTokenAccount: Address<TAccountVaultStTokenAccount>;
+  burnVault: Address<TAccountBurnVault>;
+  burnVaultVrtTokenAccount: Address<TAccountBurnVaultVrtTokenAccount>;
   admin: TransactionSigner<TAccountAdmin>;
   base: TransactionSigner<TAccountBase>;
   systemProgram?: Address<TAccountSystemProgram>;
   tokenProgram?: Address<TAccountTokenProgram>;
+  associatedTokenProgram: Address<TAccountAssociatedTokenProgram>;
   depositFeeBps: InitializeVaultInstructionDataArgs['depositFeeBps'];
   withdrawalFeeBps: InitializeVaultInstructionDataArgs['withdrawalFeeBps'];
   rewardFeeBps: InitializeVaultInstructionDataArgs['rewardFeeBps'];
   decimals: InitializeVaultInstructionDataArgs['decimals'];
+  initializeTokenAmount: InitializeVaultInstructionDataArgs['initializeTokenAmount'];
 };
 
 export function getInitializeVaultInstruction<
@@ -179,10 +206,13 @@ export function getInitializeVaultInstruction<
   TAccountStMint extends string,
   TAccountAdminStTokenAccount extends string,
   TAccountVaultStTokenAccount extends string,
+  TAccountBurnVault extends string,
+  TAccountBurnVaultVrtTokenAccount extends string,
   TAccountAdmin extends string,
   TAccountBase extends string,
   TAccountSystemProgram extends string,
   TAccountTokenProgram extends string,
+  TAccountAssociatedTokenProgram extends string,
 >(
   input: InitializeVaultInput<
     TAccountConfig,
@@ -191,10 +221,13 @@ export function getInitializeVaultInstruction<
     TAccountStMint,
     TAccountAdminStTokenAccount,
     TAccountVaultStTokenAccount,
+    TAccountBurnVault,
+    TAccountBurnVaultVrtTokenAccount,
     TAccountAdmin,
     TAccountBase,
     TAccountSystemProgram,
-    TAccountTokenProgram
+    TAccountTokenProgram,
+    TAccountAssociatedTokenProgram
   >
 ): InitializeVaultInstruction<
   typeof JITO_VAULT_PROGRAM_ADDRESS,
@@ -204,10 +237,13 @@ export function getInitializeVaultInstruction<
   TAccountStMint,
   TAccountAdminStTokenAccount,
   TAccountVaultStTokenAccount,
+  TAccountBurnVault,
+  TAccountBurnVaultVrtTokenAccount,
   TAccountAdmin,
   TAccountBase,
   TAccountSystemProgram,
-  TAccountTokenProgram
+  TAccountTokenProgram,
+  TAccountAssociatedTokenProgram
 > {
   // Program address.
   const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
@@ -226,10 +262,19 @@ export function getInitializeVaultInstruction<
       value: input.vaultStTokenAccount ?? null,
       isWritable: true,
     },
+    burnVault: { value: input.burnVault ?? null, isWritable: false },
+    burnVaultVrtTokenAccount: {
+      value: input.burnVaultVrtTokenAccount ?? null,
+      isWritable: true,
+    },
     admin: { value: input.admin ?? null, isWritable: true },
     base: { value: input.base ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    associatedTokenProgram: {
+      value: input.associatedTokenProgram ?? null,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -258,10 +303,13 @@ export function getInitializeVaultInstruction<
       getAccountMeta(accounts.stMint),
       getAccountMeta(accounts.adminStTokenAccount),
       getAccountMeta(accounts.vaultStTokenAccount),
+      getAccountMeta(accounts.burnVault),
+      getAccountMeta(accounts.burnVaultVrtTokenAccount),
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.base),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.associatedTokenProgram),
     ],
     programAddress,
     data: getInitializeVaultInstructionDataEncoder().encode(
@@ -275,10 +323,13 @@ export function getInitializeVaultInstruction<
     TAccountStMint,
     TAccountAdminStTokenAccount,
     TAccountVaultStTokenAccount,
+    TAccountBurnVault,
+    TAccountBurnVaultVrtTokenAccount,
     TAccountAdmin,
     TAccountBase,
     TAccountSystemProgram,
-    TAccountTokenProgram
+    TAccountTokenProgram,
+    TAccountAssociatedTokenProgram
   >;
 
   return instruction;
@@ -296,10 +347,13 @@ export type ParsedInitializeVaultInstruction<
     stMint: TAccountMetas[3];
     adminStTokenAccount: TAccountMetas[4];
     vaultStTokenAccount: TAccountMetas[5];
-    admin: TAccountMetas[6];
-    base: TAccountMetas[7];
-    systemProgram: TAccountMetas[8];
-    tokenProgram: TAccountMetas[9];
+    burnVault: TAccountMetas[6];
+    burnVaultVrtTokenAccount: TAccountMetas[7];
+    admin: TAccountMetas[8];
+    base: TAccountMetas[9];
+    systemProgram: TAccountMetas[10];
+    tokenProgram: TAccountMetas[11];
+    associatedTokenProgram: TAccountMetas[12];
   };
   data: InitializeVaultInstructionData;
 };
@@ -312,7 +366,7 @@ export function parseInitializeVaultInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedInitializeVaultInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 10) {
+  if (instruction.accounts.length < 13) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -331,10 +385,13 @@ export function parseInitializeVaultInstruction<
       stMint: getNextAccount(),
       adminStTokenAccount: getNextAccount(),
       vaultStTokenAccount: getNextAccount(),
+      burnVault: getNextAccount(),
+      burnVaultVrtTokenAccount: getNextAccount(),
       admin: getNextAccount(),
       base: getNextAccount(),
       systemProgram: getNextAccount(),
       tokenProgram: getNextAccount(),
+      associatedTokenProgram: getNextAccount(),
     },
     data: getInitializeVaultInstructionDataDecoder().decode(instruction.data),
   };
