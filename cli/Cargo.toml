@@ -18,6 +18,7 @@ clap = { workspace = true }
 clap-markdown = { workspace = true }
 env_logger = { workspace = true }
 jito-bytemuck = { workspace = true }
+jito-jsm-core = { workspace = true }
 jito-restaking-client = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-vault-client = { workspace = true }

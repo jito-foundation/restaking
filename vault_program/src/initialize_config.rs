@@ -5,7 +5,7 @@ use jito_jsm_core::{
     create_account,
     loader::{load_signer, load_system_account, load_system_program},
 };
-use jito_vault_core::{config::Config, MAX_FEE_BPS};
+use jito_vault_core::{config::Config, MAX_BPS};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -34,7 +34,7 @@ pub fn process_initialize_config(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    if program_fee_bps > MAX_FEE_BPS {
+    if program_fee_bps > MAX_BPS {
         msg!("Program fee exceeds maximum allowed fee");
         return Err(ProgramError::InvalidArgument);
     }
