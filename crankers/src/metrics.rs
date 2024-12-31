@@ -69,7 +69,7 @@ pub async fn emit_vault_metrics(
     let st_ata_pubkeys: Vec<Pubkey> = vaults
         .iter()
         .map(|(vault_address, vault)| {
-            get_associated_token_address(&vault_address, &vault.supported_mint)
+            get_associated_token_address(vault_address, &vault.supported_mint)
         })
         .collect();
 
@@ -94,7 +94,7 @@ pub async fn emit_vault_metrics(
 
         let st_deposit_account: &TokenAccount = st_ata_map
             .get(&get_associated_token_address(
-                &address,
+                address,
                 &vault.supported_mint,
             ))
             .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"))?;
