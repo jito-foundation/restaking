@@ -111,6 +111,7 @@ pub fn process_instruction(
             withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
+            initialize_token_amount,
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(
@@ -120,6 +121,7 @@ pub fn process_instruction(
                 withdrawal_fee_bps,
                 reward_fee_bps,
                 decimals,
+                initialize_token_amount,
             )
         }
         VaultInstruction::InitializeVaultWithMint => {
