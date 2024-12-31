@@ -108,7 +108,9 @@ pub fn process_instruction(
             msg!("Instruction: InitializeNcnOperatorState");
             process_initialize_ncn_operator_state(program_id, accounts)
         }
-        RestakingInstruction::InitializeNcnVaultSlasherTicket(max_slashable_per_epoch) => {
+        RestakingInstruction::InitializeNcnVaultSlasherTicket {
+            max_slashable_per_epoch,
+        } => {
             msg!("Instruction: InitializeNcnVaultSlasherTicket");
             process_initialize_ncn_vault_slasher_ticket(
                 program_id,
