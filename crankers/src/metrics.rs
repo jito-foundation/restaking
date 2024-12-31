@@ -4,7 +4,8 @@ use jito_vault_core::config::Config;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey, signature::Keypair};
-use spl_token::state::Mint;
+use spl_associated_token_account::get_associated_token_address;
+use spl_token::state::{Account as TokenAccount, Mint};
 
 use crate::vault_handler::VaultHandler;
 
@@ -68,19 +69,49 @@ pub async fn emit_vault_metrics(
         })
         .collect();
 
+    let st_ata_pubkeys: Vec<Pubkey> = vaults
+        .iter()
+        .map(|(vault_address, vault)| {
+            get_associated_token_address(&vault_address, &vault.supported_mint)
+        })
+        .collect();
+
+    let st_ata_accounts = rpc_client.get_multiple_accounts(&st_ata_pubkeys).await?;
+    let st_ata_map: HashMap<Pubkey, TokenAccount> = st_ata_pubkeys
+        .into_iter()
+        .zip(st_ata_accounts.into_iter())
+        .filter_map(|(pubkey, account)| {
+            account.map(|acc| {
+                (
+                    pubkey,
+                    TokenAccount::unpack(&acc.data).expect("Failed to unpack TokenAccount"),
+                )
+            })
+        })
+        .collect();
+
     for (address, vault) in vaults.iter() {
         let vrt_mint = vrt_mint_map
             .get(&vault.vrt_mint)
             .ok_or_else(|| anyhow::anyhow!("Mint not found in map"))?;
 
+        let st_deposit_account: &TokenAccount = st_ata_map
+            .get(&get_associated_token_address(
+                &address,
+                &vault.supported_mint,
+            ))
+            .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"))?;
+
         datapoint_info!(
             "restaking-vault-supply",
+            "vault" => address.to_string(),
+            "vrt_mint" => vault.vrt_mint.to_string(),
             ("slot", slot as i64, i64),
             ("slot_index", slot_index as i64, i64),
-            ("vault", address.to_string(), String),
-            ("vrt_mint", vault.vrt_mint.to_string(), String),
-            ("total_supply_internal", vault.vrt_supply() as i64, i64),
-            ("total_supply_from_mint", vrt_mint.supply as i64, i64),
+            ("vrt_supply_internal", vault.vrt_supply() as i64, i64),
+            ("vrt_supply_external", vrt_mint.supply as i64, i64),
+            ("st_supply_internal", vault.tokens_deposited() as i64, i64),
+            ("st_supply_external", st_deposit_account.amount as i64, i64),
         );
     }
 
