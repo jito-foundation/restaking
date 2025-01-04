@@ -1,3 +1,4 @@
+use error::CoreError;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -8,6 +9,7 @@ use solana_program::{
     system_instruction,
 };
 
+pub mod error;
 pub mod loader;
 pub mod slot_toggle;
 
@@ -128,4 +130,12 @@ pub fn realloc<'a, 'info>(
     )?;
     account.realloc(new_size, false)?;
     Ok(())
+}
+
+pub fn get_epoch(slot: u64, epoch_length: u64) -> Result<u64, CoreError> {
+    let epoch = slot
+        .checked_div(epoch_length)
+        .ok_or(CoreError::BadEpochLength)?;
+
+    Ok(epoch)
 }

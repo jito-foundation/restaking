@@ -77,10 +77,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            vault_ncn_slasher.state.state(
-                fixture.get_current_slot().await.unwrap(),
-                config.epoch_length()
-            ),
+            vault_ncn_slasher
+                .state
+                .state(
+                    fixture.get_current_slot().await.unwrap(),
+                    config.epoch_length()
+                )
+                .unwrap(),
             SlotToggleState::Inactive
         );
     }
