@@ -1276,15 +1276,11 @@
         "fields": [
           {
             "name": "slotAdded",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "slotRemoved",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "reserved",

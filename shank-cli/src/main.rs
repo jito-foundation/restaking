@@ -90,6 +90,9 @@ fn main() -> Result<()> {
         }
 
         let mut accumulator = idls.pop().unwrap();
+        parse_pod_type(&mut accumulator.accounts);
+        parse_pod_type(&mut accumulator.types);
+
         for other_idls in idls.iter_mut() {
             accumulator.constants.extend(other_idls.constants.clone());
             accumulator
@@ -132,8 +135,8 @@ fn main() -> Result<()> {
 }
 
 fn parse_pod_type(convert_pod_fields: &mut [IdlTypeDefinition]) {
-    for account in convert_pod_fields.iter_mut() {
-        if let IdlTypeDefinitionTy::Struct { ref mut fields } = account.ty {
+    for convert_pod_field in convert_pod_fields.iter_mut() {
+        if let IdlTypeDefinitionTy::Struct { ref mut fields } = convert_pod_field.ty {
             for field in fields.iter_mut() {
                 if let IdlType::Defined(defined_type) = &field.ty {
                     match defined_type.as_str() {
