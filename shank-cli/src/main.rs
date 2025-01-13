@@ -4,7 +4,10 @@ use anyhow::{anyhow, Result};
 use env_logger::Env;
 use log::{debug, info};
 use shank_idl::{
-    extract_idl, idl_type::IdlType, idl_type_definition::IdlTypeDefinitionTy, manifest::Manifest,
+    extract_idl,
+    idl_type::IdlType,
+    idl_type_definition::{IdlTypeDefinition, IdlTypeDefinitionTy},
+    manifest::Manifest,
     ParseIdlOpts,
 };
 
@@ -93,63 +96,12 @@ fn main() -> Result<()> {
                 .instructions
                 .extend(other_idls.instructions.clone());
 
-            for account in other_idls.accounts.iter_mut() {
-                match account.ty {
-                    IdlTypeDefinitionTy::Struct { ref mut fields } => {
-                        for field in fields.iter_mut() {
-                            match &field.ty {
-                                IdlType::Defined(defined_type) => match defined_type.as_str() {
-                                    "PodU64" => {
-                                        field.ty = IdlType::U64;
-                                    }
-                                    "PodU32" => {
-                                        field.ty = IdlType::U32;
-                                    }
-                                    "PodU16" => {
-                                        field.ty = IdlType::U16;
-                                    }
-                                    "PodBool" => {
-                                        field.ty = IdlType::Bool;
-                                    }
-                                    _ => {}
-                                },
-                                _ => {}
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            parse_pod_type(&mut other_idls.accounts);
             accumulator.accounts.extend(other_idls.accounts.clone());
 
-            for other_idl_type in other_idls.types.iter_mut() {
-                match other_idl_type.ty {
-                    IdlTypeDefinitionTy::Struct { ref mut fields } => {
-                        for field in fields.iter_mut() {
-                            match &field.ty {
-                                IdlType::Defined(defined_type) => match defined_type.as_str() {
-                                    "PodU64" => {
-                                        field.ty = IdlType::U64;
-                                    }
-                                    "PodU32" => {
-                                        field.ty = IdlType::U32;
-                                    }
-                                    "PodU16" => {
-                                        field.ty = IdlType::U16;
-                                    }
-                                    "PodBool" => {
-                                        field.ty = IdlType::Bool;
-                                    }
-                                    _ => {}
-                                },
-                                _ => {}
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            parse_pod_type(&mut other_idls.types);
             accumulator.types.extend(other_idls.types.clone());
+
             if let Some(events) = &other_idls.events {
                 if let Some(accumulator_events) = &mut accumulator.events {
                     accumulator_events.extend(events.clone());
@@ -177,4 +129,30 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn parse_pod_type(convert_pod_fields: &mut [IdlTypeDefinition]) {
+    for account in convert_pod_fields.iter_mut() {
+        if let IdlTypeDefinitionTy::Struct { ref mut fields } = account.ty {
+            for field in fields.iter_mut() {
+                if let IdlType::Defined(defined_type) = &field.ty {
+                    match defined_type.as_str() {
+                        "PodU64" => {
+                            field.ty = IdlType::U64;
+                        }
+                        "PodU32" => {
+                            field.ty = IdlType::U32;
+                        }
+                        "PodU16" => {
+                            field.ty = IdlType::U16;
+                        }
+                        "PodBool" => {
+                            field.ty = IdlType::Bool;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
 }
