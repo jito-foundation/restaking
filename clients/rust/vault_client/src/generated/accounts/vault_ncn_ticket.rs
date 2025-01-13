@@ -31,6 +31,8 @@ pub struct VaultNcnTicket {
 }
 
 impl VaultNcnTicket {
+    pub const LEN: usize = 384;
+
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

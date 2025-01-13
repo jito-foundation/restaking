@@ -161,3 +161,7 @@ export async function fetchAllMaybeNcnOperatorState(
     decodeNcnOperatorState(maybeAccount)
   );
 }
+
+export function getNcnOperatorStateSize(): number {
+  return 432;
+}

@@ -163,3 +163,7 @@ export async function fetchAllMaybeOperatorVaultTicket(
     decodeOperatorVaultTicket(maybeAccount)
   );
 }
+
+export function getOperatorVaultTicketSize(): number {
+  return 384;
+}

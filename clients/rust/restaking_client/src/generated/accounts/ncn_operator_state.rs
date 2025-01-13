@@ -32,6 +32,8 @@ pub struct NcnOperatorState {
 }
 
 impl NcnOperatorState {
+    pub const LEN: usize = 432;
+
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;
