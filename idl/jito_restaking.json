@@ -933,21 +933,15 @@
           },
           {
             "name": "ncnCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "operatorCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "epochLength",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -1008,27 +1002,19 @@
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "operatorCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "vaultCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "slasherCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -1061,9 +1047,7 @@
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "ncnOptInState",
@@ -1112,15 +1096,11 @@
           },
           {
             "name": "maxSlashablePerEpoch",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "state",
@@ -1159,9 +1139,7 @@
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "state",
@@ -1220,27 +1198,19 @@
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "ncnCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "vaultCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "operatorFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "bump",
@@ -1273,9 +1243,7 @@
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "state",

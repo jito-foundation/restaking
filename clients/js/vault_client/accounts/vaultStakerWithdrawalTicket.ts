@@ -167,3 +167,7 @@ export async function fetchAllMaybeVaultStakerWithdrawalTicket(
     decodeVaultStakerWithdrawalTicket(maybeAccount)
   );
 }
+
+export function getVaultStakerWithdrawalTicketSize(): number {
+  return 376;
+}

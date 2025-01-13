@@ -56,6 +56,8 @@ pub struct Operator {
 }
 
 impl Operator {
+    pub const LEN: usize = 512;
+
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;

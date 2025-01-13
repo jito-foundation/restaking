@@ -3,7 +3,10 @@ use std::{fs::File, io::Write};
 use anyhow::{anyhow, Result};
 use env_logger::Env;
 use log::{debug, info};
-use shank_idl::{extract_idl, manifest::Manifest, ParseIdlOpts};
+use shank_idl::{
+    extract_idl, idl_type::IdlType, idl_type_definition::IdlTypeDefinitionTy, manifest::Manifest,
+    ParseIdlOpts,
+};
 
 struct IdlConfiguration {
     program_id: String,
@@ -84,23 +87,81 @@ fn main() -> Result<()> {
         }
 
         let mut accumulator = idls.pop().unwrap();
-        for other_idls in idls {
-            accumulator.constants.extend(other_idls.constants);
-            accumulator.instructions.extend(other_idls.instructions);
-            accumulator.accounts.extend(other_idls.accounts);
-            accumulator.types.extend(other_idls.types);
-            if let Some(events) = other_idls.events {
-                if let Some(accumulator_events) = &mut accumulator.events {
-                    accumulator_events.extend(events);
-                } else {
-                    accumulator.events = Some(events);
+        for other_idls in idls.iter_mut() {
+            accumulator.constants.extend(other_idls.constants.clone());
+            accumulator
+                .instructions
+                .extend(other_idls.instructions.clone());
+
+            for account in other_idls.accounts.iter_mut() {
+                match account.ty {
+                    IdlTypeDefinitionTy::Struct { ref mut fields } => {
+                        for field in fields.iter_mut() {
+                            match &field.ty {
+                                IdlType::Defined(defined_type) => match defined_type.as_str() {
+                                    "PodU64" => {
+                                        field.ty = IdlType::U64;
+                                    }
+                                    "PodU32" => {
+                                        field.ty = IdlType::U32;
+                                    }
+                                    "PodU16" => {
+                                        field.ty = IdlType::U16;
+                                    }
+                                    "PodBool" => {
+                                        field.ty = IdlType::Bool;
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
                 }
             }
-            if let Some(errors) = other_idls.errors {
-                if let Some(accumulator_errors) = &mut accumulator.errors {
-                    accumulator_errors.extend(errors);
+            accumulator.accounts.extend(other_idls.accounts.clone());
+
+            for other_idl_type in other_idls.types.iter_mut() {
+                match other_idl_type.ty {
+                    IdlTypeDefinitionTy::Struct { ref mut fields } => {
+                        for field in fields.iter_mut() {
+                            match &field.ty {
+                                IdlType::Defined(defined_type) => match defined_type.as_str() {
+                                    "PodU64" => {
+                                        field.ty = IdlType::U64;
+                                    }
+                                    "PodU32" => {
+                                        field.ty = IdlType::U32;
+                                    }
+                                    "PodU16" => {
+                                        field.ty = IdlType::U16;
+                                    }
+                                    "PodBool" => {
+                                        field.ty = IdlType::Bool;
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            accumulator.types.extend(other_idls.types.clone());
+            if let Some(events) = &other_idls.events {
+                if let Some(accumulator_events) = &mut accumulator.events {
+                    accumulator_events.extend(events.clone());
                 } else {
-                    accumulator.errors = Some(errors);
+                    accumulator.events = Some(events.to_vec());
+                }
+            }
+            if let Some(errors) = &other_idls.errors {
+                if let Some(accumulator_errors) = &mut accumulator.errors {
+                    accumulator_errors.extend(errors.to_vec());
+                } else {
+                    accumulator.errors = Some(errors.to_vec());
                 }
             }
         }

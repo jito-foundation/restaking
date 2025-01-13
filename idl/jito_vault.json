@@ -1409,39 +1409,27 @@
           },
           {
             "name": "epochLength",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "numVaults",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "depositWithdrawalFeeCapBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "feeRateOfChangeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "feeBumpBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "programFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "programFeeWallet",
@@ -1486,21 +1474,15 @@
           },
           {
             "name": "vrtSupply",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "tokensDeposited",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "depositCapacity",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "delegationState",
@@ -1510,27 +1492,19 @@
           },
           {
             "name": "additionalAssetsNeedUnstaking",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "vrtEnqueuedForCooldownAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "vrtCoolingDownAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "vrtReadyToClaimAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "admin",
@@ -1578,69 +1552,47 @@
           },
           {
             "name": "vaultIndex",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "ncnCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "operatorCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "slasherCount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "lastFeeChangeSlot",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "lastFullStateUpdateSlot",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "depositFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "withdrawalFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "nextWithdrawalFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "rewardFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "programFeeBps",
-            "type": {
-              "defined": "PodU16"
-            }
+            "type": "u16"
           },
           {
             "name": "bump",
@@ -1648,15 +1600,11 @@
           },
           {
             "name": "isPaused",
-            "type": {
-              "defined": "PodBool"
-            }
+            "type": "bool"
           },
           {
             "name": "lastStartStateUpdateSlot",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "reserved",
@@ -1693,15 +1641,11 @@
           },
           {
             "name": "epoch",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "slashed",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -1738,15 +1682,11 @@
           },
           {
             "name": "maxSlashablePerEpoch",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "state",
@@ -1785,9 +1725,7 @@
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "state",
@@ -1832,15 +1770,11 @@
           },
           {
             "name": "lastUpdateSlot",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "index",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -1877,15 +1811,11 @@
           },
           {
             "name": "vrtAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "slotUnstaked",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -1914,15 +1844,11 @@
           },
           {
             "name": "ncnEpoch",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "lastUpdatedIndex",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "delegationState",
@@ -2133,21 +2059,15 @@
         "fields": [
           {
             "name": "stakedAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "enqueuedForCooldownAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "coolingDownAmount",
-            "type": {
-              "defined": "PodU64"
-            }
+            "type": "u64"
           },
           {
             "name": "reserved",

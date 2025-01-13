@@ -72,7 +72,7 @@ quote = "1.0.36"
 serde = { version = "^1.0", features = ["derive"] }
 serde_with = "3.9.0"
 shank = "0.4.2"
-shank_idl = "0.4.2"
+shank_idl = { git = "https://github.com/aoikurokawa/shank", branch = "master" }
 solana-account-decoder = "~1.18"
 solana-cli-config = "~1.18"
 solana-metrics = "~1.18"
