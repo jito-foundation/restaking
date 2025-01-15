@@ -2,6 +2,7 @@ const kinobi = require("kinobi");
 const anchorIdl = require("@kinobi-so/nodes-from-anchor");
 const path = require("path");
 const renderers = require('@kinobi-so/renderers');
+const { execSync } = require('child_process');
 
 // Paths.
 const projectRoot = path.join(__dirname, "..");
@@ -194,7 +195,8 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
             kinobi.assertIsNode(node, "structFieldTypeNode");
             return {
                 ...node,
-                type: kinobi.numberTypeNode("bool"),
+                // type: kinobi.numberTypeNode("bool"),
+                type: kinobi.numberTypeNode("u8"), // Note: should it be this instead of numberTypeNode?
             };
         },
     },
@@ -227,3 +229,7 @@ vaultKinobi.accept(renderers.renderRustVisitor(path.join(rustVaultClientDir, "sr
     toolchain: "+nightly-2024-07-25"
 }));
 vaultKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsVaultClientDir), {}));
+
+// Prepare SDKs
+// execSync('bash scripts/prepare-vault-sdk.sh');
+// execSync('bash scripts/prepare-restaking-sdk.sh');

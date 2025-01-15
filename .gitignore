@@ -25,3 +25,8 @@ credentials
 
 # Personal Helper Scripts
 .development
+
+# Vault SDK specific
+packages/vault-sdk/dist/
+packages/vault-sdk/*.tsbuildinfo
+packages/vault-sdk/yarn-error.log

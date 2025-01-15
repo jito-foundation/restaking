@@ -1,0 +1,44 @@
+{
+  "name": "@jito-foundation/vault-sdk",
+  "version": "0.1.0-beta.2",
+  "description": "TypeScript SDK for interacting with Jito's Vault program on Solana",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "author": "Jito Foundation",
+  "license": "MIT",
+  "peerDependencies": {
+    "@solana/web3.js": "^2.0.0",
+    "@solana/spl-token": "^0.3.0"
+  },
+  "dependencies": {
+    "@solana/codecs-data-structures": "^2.0.0",
+    "@solana/codecs-core": "^2.0.0",
+    "fastestsmallesttextencoderdecoder": "^1.0.22",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0",
+    "@solana/web3.js": "^2.0.0",
+    "@solana/spl-token": "^0.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jito-foundation/vault-sdk.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  }
+} 

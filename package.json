@@ -12,6 +12,7 @@
     "yarn": "2.4.3"
   },
   "scripts": {
+    "generate-sdks": "yarn workspace @jito-foundation/vault-sdk build && yarn workspace @jito-foundation/restaking-sdk build",
     "generate-clients": "node scripts/generate-clients.js"
   }
 }
