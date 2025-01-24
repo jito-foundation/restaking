@@ -112,6 +112,13 @@ mod tests {
         // Since we'll have a initial supply of 10_000, we have to account for that
         // Note - this test functions the same as if you were to `update_vault_balance`
         // before `mint_to` and remove the `process_update_vault_balance` call `process_mint`
+
+        // On Initialize:
+        // VST: 10_000, VRT: 10_000, VST-ATA: 20_000
+        // On Update Vault Balance:
+        // New VST: 20_000, VRT: 10_526, VST-ATA: 20_000 ( Mints reward fee: 526 )
+        // On Mint To:
+        // New VST: 30_000, VRT: 10_526, VST-ATA: 30_000 ( Mints ratio 10_526 / 20_000 * 10_000 = 5_263 )
         const EXPECTED_MINT_AMOUNT_OUT: u64 = 5263;
         const EXPECTED_FEE: u64 = 526;
 

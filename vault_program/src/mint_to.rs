@@ -50,7 +50,7 @@ pub fn process_mint(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    // Sudo CPI to update the vault balance
+    // Pseudo CPI to update the vault balance
     {
         let accounts = [
             config.clone(),
