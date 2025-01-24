@@ -18,6 +18,7 @@ mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
 mod initialize_vault_with_mint;
 mod mint_to;
+mod revoke_delegate_token_account;
 mod set_admin;
 mod set_capacity;
 mod set_config_admin;
@@ -60,6 +61,7 @@ use crate::{
     initialize_vault_operator_delegation::process_initialize_vault_operator_delegation,
     initialize_vault_update_state_tracker::process_initialize_vault_update_state_tracker,
     initialize_vault_with_mint::process_initialize_vault_with_mint, mint_to::process_mint,
+    revoke_delegate_token_account::process_revoke_delegate_token_account,
     set_admin::process_set_admin, set_capacity::process_set_deposit_capacity,
     set_config_admin::process_set_config_admin, set_fees::process_set_fees,
     set_is_paused::process_set_is_paused, set_program_fee_wallet::process_set_program_fee_wallet,
@@ -162,6 +164,10 @@ pub fn process_instruction(
         VaultInstruction::DelegateTokenAccount => {
             msg!("Instruction: DelegateTokenAccount");
             process_delegate_token_account(program_id, accounts)
+        }
+        VaultInstruction::RevokeDelegateTokenAccount => {
+            msg!("Instruction: RevokeDelegateTokenAccount");
+            process_revoke_delegate_token_account(program_id, accounts)
         }
         VaultInstruction::SetFees {
             deposit_fee_bps,

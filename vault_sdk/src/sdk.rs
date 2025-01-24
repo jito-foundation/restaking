@@ -302,6 +302,35 @@ pub fn delegate_token_account(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn revoke_delegate_token_account(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    delegate_asset_admin: &Pubkey,
+    token_mint: &Pubkey,
+    token_account: &Pubkey,
+    delegate: &Pubkey,
+    token_program_id: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new_readonly(*vault, false),
+        AccountMeta::new_readonly(*delegate_asset_admin, true),
+        AccountMeta::new_readonly(*token_mint, false),
+        AccountMeta::new(*token_account, false),
+        AccountMeta::new_readonly(*delegate, false),
+        AccountMeta::new_readonly(*token_program_id, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::RevokeDelegateTokenAccount
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
 pub fn set_admin(
     program_id: &Pubkey,
     config: &Pubkey,

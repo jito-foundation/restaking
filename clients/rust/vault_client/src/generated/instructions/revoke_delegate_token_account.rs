@@ -7,56 +7,63 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
-pub struct CooldownDelegation {
+pub struct RevokeDelegateTokenAccount {
     pub config: solana_program::pubkey::Pubkey,
 
     pub vault: solana_program::pubkey::Pubkey,
 
-    pub operator: solana_program::pubkey::Pubkey,
+    pub delegate_asset_admin: solana_program::pubkey::Pubkey,
 
-    pub vault_operator_delegation: solana_program::pubkey::Pubkey,
+    pub token_mint: solana_program::pubkey::Pubkey,
 
-    pub admin: solana_program::pubkey::Pubkey,
+    pub token_account: solana_program::pubkey::Pubkey,
+
+    pub delegate: solana_program::pubkey::Pubkey,
+
+    pub token_program: solana_program::pubkey::Pubkey,
 }
 
-impl CooldownDelegation {
-    pub fn instruction(
-        &self,
-        args: CooldownDelegationInstructionArgs,
-    ) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(args, &[])
+impl RevokeDelegateTokenAccount {
+    pub fn instruction(&self) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(&[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: CooldownDelegationInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.vault, false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.operator,
+            self.delegate_asset_admin,
+            true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.token_mint,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            self.vault_operator_delegation,
+            self.token_account,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.admin, true,
+            self.delegate,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.token_program,
+            false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = CooldownDelegationInstructionData::new()
+        let data = RevokeDelegateTokenAccountInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -67,49 +74,46 @@ impl CooldownDelegation {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct CooldownDelegationInstructionData {
+pub struct RevokeDelegateTokenAccountInstructionData {
     discriminator: u8,
 }
 
-impl CooldownDelegationInstructionData {
+impl RevokeDelegateTokenAccountInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 25 }
+        Self { discriminator: 21 }
     }
 }
 
-impl Default for CooldownDelegationInstructionData {
+impl Default for RevokeDelegateTokenAccountInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CooldownDelegationInstructionArgs {
-    pub amount: u64,
-}
-
-/// Instruction builder for `CooldownDelegation`.
+/// Instruction builder for `RevokeDelegateTokenAccount`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[writable]` vault
-///   2. `[]` operator
-///   3. `[writable]` vault_operator_delegation
-///   4. `[signer]` admin
+///   1. `[]` vault
+///   2. `[signer]` delegate_asset_admin
+///   3. `[]` token_mint
+///   4. `[writable]` token_account
+///   5. `[]` delegate
+///   6. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
-pub struct CooldownDelegationBuilder {
+pub struct RevokeDelegateTokenAccountBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
     vault: Option<solana_program::pubkey::Pubkey>,
-    operator: Option<solana_program::pubkey::Pubkey>,
-    vault_operator_delegation: Option<solana_program::pubkey::Pubkey>,
-    admin: Option<solana_program::pubkey::Pubkey>,
-    amount: Option<u64>,
+    delegate_asset_admin: Option<solana_program::pubkey::Pubkey>,
+    token_mint: Option<solana_program::pubkey::Pubkey>,
+    token_account: Option<solana_program::pubkey::Pubkey>,
+    delegate: Option<solana_program::pubkey::Pubkey>,
+    token_program: Option<solana_program::pubkey::Pubkey>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl CooldownDelegationBuilder {
+impl RevokeDelegateTokenAccountBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -124,26 +128,32 @@ impl CooldownDelegationBuilder {
         self
     }
     #[inline(always)]
-    pub fn operator(&mut self, operator: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.operator = Some(operator);
-        self
-    }
-    #[inline(always)]
-    pub fn vault_operator_delegation(
+    pub fn delegate_asset_admin(
         &mut self,
-        vault_operator_delegation: solana_program::pubkey::Pubkey,
+        delegate_asset_admin: solana_program::pubkey::Pubkey,
     ) -> &mut Self {
-        self.vault_operator_delegation = Some(vault_operator_delegation);
+        self.delegate_asset_admin = Some(delegate_asset_admin);
         self
     }
     #[inline(always)]
-    pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.admin = Some(admin);
+    pub fn token_mint(&mut self, token_mint: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.amount = Some(amount);
+    pub fn token_account(&mut self, token_account: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.token_account = Some(token_account);
+        self
+    }
+    #[inline(always)]
+    pub fn delegate(&mut self, delegate: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.delegate = Some(delegate);
+        self
+    }
+    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
+    #[inline(always)]
+    pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
+        self.token_program = Some(token_program);
         self
     }
     /// Add an aditional account to the instruction.
@@ -166,38 +176,43 @@ impl CooldownDelegationBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = CooldownDelegation {
+        let accounts = RevokeDelegateTokenAccount {
             config: self.config.expect("config is not set"),
             vault: self.vault.expect("vault is not set"),
-            operator: self.operator.expect("operator is not set"),
-            vault_operator_delegation: self
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
-            admin: self.admin.expect("admin is not set"),
-        };
-        let args = CooldownDelegationInstructionArgs {
-            amount: self.amount.clone().expect("amount is not set"),
+            delegate_asset_admin: self
+                .delegate_asset_admin
+                .expect("delegate_asset_admin is not set"),
+            token_mint: self.token_mint.expect("token_mint is not set"),
+            token_account: self.token_account.expect("token_account is not set"),
+            delegate: self.delegate.expect("delegate is not set"),
+            token_program: self.token_program.unwrap_or(solana_program::pubkey!(
+                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+            )),
         };
 
-        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
     }
 }
 
-/// `cooldown_delegation` CPI accounts.
-pub struct CooldownDelegationCpiAccounts<'a, 'b> {
+/// `revoke_delegate_token_account` CPI accounts.
+pub struct RevokeDelegateTokenAccountCpiAccounts<'a, 'b> {
     pub config: &'b solana_program::account_info::AccountInfo<'a>,
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
+    pub delegate_asset_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
+    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+    pub token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub delegate: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `cooldown_delegation` CPI instruction.
-pub struct CooldownDelegationCpi<'a, 'b> {
+/// `revoke_delegate_token_account` CPI instruction.
+pub struct RevokeDelegateTokenAccountCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
 
@@ -205,29 +220,31 @@ pub struct CooldownDelegationCpi<'a, 'b> {
 
     pub vault: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub operator: &'b solana_program::account_info::AccountInfo<'a>,
+    pub delegate_asset_admin: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
+    pub token_mint: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-    /// The arguments for the instruction.
-    pub __args: CooldownDelegationInstructionArgs,
+    pub token_account: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub delegate: &'b solana_program::account_info::AccountInfo<'a>,
+
+    pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
+impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: CooldownDelegationCpiAccounts<'a, 'b>,
-        args: CooldownDelegationInstructionArgs,
+        accounts: RevokeDelegateTokenAccountCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
             config: accounts.config,
             vault: accounts.vault,
-            operator: accounts.operator,
-            vault_operator_delegation: accounts.vault_operator_delegation,
-            admin: accounts.admin,
-            __args: args,
+            delegate_asset_admin: accounts.delegate_asset_admin,
+            token_mint: accounts.token_mint,
+            token_account: accounts.token_account,
+            delegate: accounts.delegate,
+            token_program: accounts.token_program,
         }
     }
     #[inline(always)]
@@ -263,26 +280,34 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
         ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.vault.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.operator.key,
+            *self.delegate_asset_admin.key,
+            true,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.token_mint.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.vault_operator_delegation.key,
+            *self.token_account.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.admin.key,
-            true,
+            *self.delegate.key,
+            false,
+        ));
+        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.token_program.key,
+            false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_program::instruction::AccountMeta {
@@ -291,24 +316,24 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = CooldownDelegationInstructionData::new()
+        let data = RevokeDelegateTokenAccountInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = self.__args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(7 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
-        account_infos.push(self.operator.clone());
-        account_infos.push(self.vault_operator_delegation.clone());
-        account_infos.push(self.admin.clone());
+        account_infos.push(self.delegate_asset_admin.clone());
+        account_infos.push(self.token_mint.clone());
+        account_infos.push(self.token_account.clone());
+        account_infos.push(self.delegate.clone());
+        account_infos.push(self.token_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -321,30 +346,33 @@ impl<'a, 'b> CooldownDelegationCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `CooldownDelegation` via CPI.
+/// Instruction builder for `RevokeDelegateTokenAccount` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[]` config
-///   1. `[writable]` vault
-///   2. `[]` operator
-///   3. `[writable]` vault_operator_delegation
-///   4. `[signer]` admin
+///   1. `[]` vault
+///   2. `[signer]` delegate_asset_admin
+///   3. `[]` token_mint
+///   4. `[writable]` token_account
+///   5. `[]` delegate
+///   6. `[]` token_program
 #[derive(Clone, Debug)]
-pub struct CooldownDelegationCpiBuilder<'a, 'b> {
-    instruction: Box<CooldownDelegationCpiBuilderInstruction<'a, 'b>>,
+pub struct RevokeDelegateTokenAccountCpiBuilder<'a, 'b> {
+    instruction: Box<RevokeDelegateTokenAccountCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
+impl<'a, 'b> RevokeDelegateTokenAccountCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(CooldownDelegationCpiBuilderInstruction {
+        let instruction = Box::new(RevokeDelegateTokenAccountCpiBuilderInstruction {
             __program: program,
             config: None,
             vault: None,
-            operator: None,
-            vault_operator_delegation: None,
-            admin: None,
-            amount: None,
+            delegate_asset_admin: None,
+            token_mint: None,
+            token_account: None,
+            delegate: None,
+            token_program: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -363,29 +391,43 @@ impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn operator(
+    pub fn delegate_asset_admin(
         &mut self,
-        operator: &'b solana_program::account_info::AccountInfo<'a>,
+        delegate_asset_admin: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.operator = Some(operator);
+        self.instruction.delegate_asset_admin = Some(delegate_asset_admin);
         self
     }
     #[inline(always)]
-    pub fn vault_operator_delegation(
+    pub fn token_mint(
         &mut self,
-        vault_operator_delegation: &'b solana_program::account_info::AccountInfo<'a>,
+        token_mint: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.vault_operator_delegation = Some(vault_operator_delegation);
+        self.instruction.token_mint = Some(token_mint);
         self
     }
     #[inline(always)]
-    pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.admin = Some(admin);
+    pub fn token_account(
+        &mut self,
+        token_account: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.token_account = Some(token_account);
         self
     }
     #[inline(always)]
-    pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.instruction.amount = Some(amount);
+    pub fn delegate(
+        &mut self,
+        delegate: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.delegate = Some(delegate);
+        self
+    }
+    #[inline(always)]
+    pub fn token_program(
+        &mut self,
+        token_program: &'b solana_program::account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.token_program = Some(token_program);
         self
     }
     /// Add an additional account to the instruction.
@@ -429,25 +471,31 @@ impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let args = CooldownDelegationInstructionArgs {
-            amount: self.instruction.amount.clone().expect("amount is not set"),
-        };
-        let instruction = CooldownDelegationCpi {
+        let instruction = RevokeDelegateTokenAccountCpi {
             __program: self.instruction.__program,
 
             config: self.instruction.config.expect("config is not set"),
 
             vault: self.instruction.vault.expect("vault is not set"),
 
-            operator: self.instruction.operator.expect("operator is not set"),
-
-            vault_operator_delegation: self
+            delegate_asset_admin: self
                 .instruction
-                .vault_operator_delegation
-                .expect("vault_operator_delegation is not set"),
+                .delegate_asset_admin
+                .expect("delegate_asset_admin is not set"),
 
-            admin: self.instruction.admin.expect("admin is not set"),
-            __args: args,
+            token_mint: self.instruction.token_mint.expect("token_mint is not set"),
+
+            token_account: self
+                .instruction
+                .token_account
+                .expect("token_account is not set"),
+
+            delegate: self.instruction.delegate.expect("delegate is not set"),
+
+            token_program: self
+                .instruction
+                .token_program
+                .expect("token_program is not set"),
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -457,14 +505,15 @@ impl<'a, 'b> CooldownDelegationCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct CooldownDelegationCpiBuilderInstruction<'a, 'b> {
+struct RevokeDelegateTokenAccountCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    operator: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    vault_operator_delegation: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    amount: Option<u64>,
+    delegate_asset_admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    delegate: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

@@ -33,6 +33,7 @@ import {
   type ParsedInitializeVaultUpdateStateTrackerInstruction,
   type ParsedInitializeVaultWithMintInstruction,
   type ParsedMintToInstruction,
+  type ParsedRevokeDelegateTokenAccountInstruction,
   type ParsedSetAdminInstruction,
   type ParsedSetConfigAdminInstruction,
   type ParsedSetDepositCapacityInstruction,
@@ -83,6 +84,7 @@ export enum JitoVaultInstruction {
   SetProgramFeeWallet,
   SetIsPaused,
   DelegateTokenAccount,
+  RevokeDelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
   AddDelegation,
@@ -164,36 +166,39 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoVaultInstruction.SetAdmin;
+    return JitoVaultInstruction.RevokeDelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(22), 0)) {
-    return JitoVaultInstruction.SetSecondaryAdmin;
+    return JitoVaultInstruction.SetAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(23), 0)) {
-    return JitoVaultInstruction.AddDelegation;
+    return JitoVaultInstruction.SetSecondaryAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(24), 0)) {
-    return JitoVaultInstruction.CooldownDelegation;
+    return JitoVaultInstruction.AddDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(25), 0)) {
-    return JitoVaultInstruction.UpdateVaultBalance;
+    return JitoVaultInstruction.CooldownDelegation;
   }
   if (containsBytes(data, getU8Encoder().encode(26), 0)) {
-    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
+    return JitoVaultInstruction.UpdateVaultBalance;
   }
   if (containsBytes(data, getU8Encoder().encode(27), 0)) {
-    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
+    return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(28), 0)) {
-    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
+    return JitoVaultInstruction.CrankVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(29), 0)) {
-    return JitoVaultInstruction.CreateTokenMetadata;
+    return JitoVaultInstruction.CloseVaultUpdateStateTracker;
   }
   if (containsBytes(data, getU8Encoder().encode(30), 0)) {
-    return JitoVaultInstruction.UpdateTokenMetadata;
+    return JitoVaultInstruction.CreateTokenMetadata;
   }
   if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+    return JitoVaultInstruction.UpdateTokenMetadata;
+  }
+  if (containsBytes(data, getU8Encoder().encode(32), 0)) {
     return JitoVaultInstruction.SetConfigAdmin;
   }
   throw new Error(
@@ -267,6 +272,9 @@ export type ParsedJitoVaultInstruction<
   | ({
       instructionType: JitoVaultInstruction.DelegateTokenAccount;
     } & ParsedDelegateTokenAccountInstruction<TProgram>)
+  | ({
+      instructionType: JitoVaultInstruction.RevokeDelegateTokenAccount;
+    } & ParsedRevokeDelegateTokenAccountInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetAdmin;
     } & ParsedSetAdminInstruction<TProgram>)

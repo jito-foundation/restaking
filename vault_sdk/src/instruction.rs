@@ -223,6 +223,16 @@ pub enum VaultInstruction {
     #[account(6, name = "token_program")]
     DelegateTokenAccount,
 
+    /// Revoke Delegate of the token account
+    #[account(0, name = "config")]
+    #[account(1, name = "vault")]
+    #[account(2, signer, name = "delegate_asset_admin")]
+    #[account(3, name = "token_mint")]
+    #[account(4, writable, name = "token_account")]
+    #[account(5, name = "delegate")]
+    #[account(6, name = "token_program")]
+    RevokeDelegateTokenAccount,
+
     /// Changes the signer for vault admin
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
