@@ -37,6 +37,18 @@ pub enum ConfigActions {
 pub enum NcnActions {
     /// Initialize NCN
     Initialize,
+    /// Initialize NCN Operator State
+    InitializeNcnOperatorState { ncn: String, operator: String },
+    /// Warmup NCN Operator State
+    NcnWarmupOperator { ncn: String, operator: String },
+    /// NCN Cooldown Operator State
+    NcnCooldownOperator { ncn: String, operator: String },
+    /// Initialize NCN Vault Ticket
+    InitializeNcnVaultTicket { ncn: String, vault: String },
+    /// Warmup NCN Vault Ticket
+    WarmupNcnVaultTicket { ncn: String, vault: String },
+    /// Cooldown NCN Vault Ticket
+    CooldownNcnVaultTicket { ncn: String, vault: String },
     /// Get NCN
     Get { pubkey: String },
     /// List all NCNs
@@ -51,6 +63,12 @@ pub enum OperatorActions {
     InitializeOperatorVaultTicket { operator: String, vault: String },
     /// Warmup Operator Vault Ticket
     WarmupOperatorVaultTicket { operator: String, vault: String },
+    /// Cooldown Operator Vault Ticket
+    CooldownOperatorVaultTicket { operator: String, vault: String },
+    /// Operator Warmup NCN
+    OperatorWarmupNcn { operator: String, ncn: String },
+    /// Operator Cooldown NCN
+    OperatorCooldownNcn { operator: String, ncn: String },
     /// Get operator
     Get { pubkey: String },
     /// List all operators
