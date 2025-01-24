@@ -1007,14 +1007,8 @@ impl Vault {
         })
     }
 
-    pub fn calculate_burn_summary(
-        &self,
-        is_staker_program_fee_wallet: bool,
-        is_staker_vault_fee_wallet: bool,
-        amount_in: u64,
-    ) -> Result<BurnSummary, VaultError> {
-        let mut program_fee_amount =
-            Config::calculate_program_fee(self.program_fee_bps(), amount_in)?;
+    pub fn calculate_burn_summary(&self, amount_in: u64) -> Result<BurnSummary, VaultError> {
+        let program_fee_amount = Config::calculate_program_fee(self.program_fee_bps(), amount_in)?;
         let mut vault_fee_amount = self.calculate_withdrawal_fee(amount_in)?;
 
         // Prioritize program fee over vault fee if together they exceed the amount in
@@ -1026,14 +1020,6 @@ impl Vault {
             vault_fee_amount = amount_in
                 .checked_sub(program_fee_amount)
                 .ok_or(VaultError::VaultUnderflow)?;
-        }
-
-        if is_staker_program_fee_wallet {
-            program_fee_amount = 0;
-        }
-
-        if is_staker_vault_fee_wallet {
-            vault_fee_amount = 0;
         }
 
         let amount_to_burn = amount_in
@@ -1055,12 +1041,7 @@ impl Vault {
         })
     }
 
-    pub fn burn_with_fee(
-        &mut self,
-        is_staker_program_fee_wallet: bool,
-        is_staker_vault_fee_wallet: bool,
-        amount_in: u64,
-    ) -> Result<BurnSummary, VaultError> {
+    pub fn burn_with_fee(&mut self, amount_in: u64) -> Result<BurnSummary, VaultError> {
         if amount_in == 0 {
             msg!("Amount in is zero");
             return Err(VaultError::VaultBurnZero);
@@ -1073,11 +1054,7 @@ impl Vault {
             vault_fee_amount,
             burn_amount,
             out_amount,
-        } = self.calculate_burn_summary(
-            is_staker_program_fee_wallet,
-            is_staker_vault_fee_wallet,
-            amount_in,
-        )?;
+        } = self.calculate_burn_summary(amount_in)?;
 
         let max_withdrawable = self
             .tokens_deposited()
@@ -1125,7 +1102,7 @@ impl Vault {
         let BurnSummary {
             out_amount: amount_to_reserve_for_vrts,
             ..
-        } = self.calculate_burn_summary(false, false, vrt_reserve)?;
+        } = self.calculate_burn_summary(vrt_reserve)?;
 
         Ok(amount_to_reserve_for_vrts)
     }
@@ -1617,58 +1594,10 @@ mod tests {
             program_fee_amount: _,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(false, false, 100).unwrap();
+        } = vault.burn_with_fee(100).unwrap();
         assert_eq!(fee_amount, 1);
         assert_eq!(burn_amount, 99);
         assert_eq!(out_amount, 99);
-    }
-
-    #[test]
-    fn test_burn_with_staker_as_program_fee_wallet() {
-        let mut vault = make_test_vault(0, 100, 100, 100, 100, DelegationState::default());
-
-        let BurnSummary {
-            vault_fee_amount: fee_amount,
-            program_fee_amount,
-            burn_amount,
-            out_amount,
-        } = vault.burn_with_fee(true, false, 100).unwrap();
-        assert_eq!(fee_amount, 1);
-        assert_eq!(program_fee_amount, 0);
-        assert_eq!(burn_amount, 99);
-        assert_eq!(out_amount, 99);
-    }
-
-    #[test]
-    fn test_burn_with_staker_as_vault_fee_wallet() {
-        let mut vault = make_test_vault(0, 100, 100, 100, 100, DelegationState::default());
-
-        let BurnSummary {
-            vault_fee_amount,
-            program_fee_amount,
-            burn_amount,
-            out_amount,
-        } = vault.burn_with_fee(false, true, 100).unwrap();
-        assert_eq!(vault_fee_amount, 0);
-        assert_eq!(program_fee_amount, 1);
-        assert_eq!(burn_amount, 99);
-        assert_eq!(out_amount, 99);
-    }
-
-    #[test]
-    fn test_burn_with_staker_as_both_program_and_vault_fee_wallet() {
-        let mut vault = make_test_vault(0, 100, 100, 100, 100, DelegationState::default());
-
-        let BurnSummary {
-            vault_fee_amount,
-            program_fee_amount,
-            burn_amount,
-            out_amount,
-        } = vault.burn_with_fee(true, true, 100).unwrap();
-        assert_eq!(vault_fee_amount, 0);
-        assert_eq!(program_fee_amount, 0);
-        assert_eq!(burn_amount, 100);
-        assert_eq!(out_amount, 100);
     }
 
     #[test]
@@ -1680,7 +1609,7 @@ mod tests {
             program_fee_amount,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(false, false, 100).unwrap();
+        } = vault.burn_with_fee(100).unwrap();
         assert_eq!(vault_fee_amount, 1);
         assert_eq!(program_fee_amount, 2);
         assert_eq!(burn_amount, 97);
@@ -1696,7 +1625,7 @@ mod tests {
             program_fee_amount,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(false, false, 100).unwrap();
+        } = vault.burn_with_fee(100).unwrap();
         assert_eq!(program_fee_amount, 90);
         assert_eq!(vault_fee_amount, 10);
         assert_eq!(burn_amount, 0);
@@ -1712,7 +1641,7 @@ mod tests {
             program_fee_amount,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(false, false, 100).unwrap();
+        } = vault.burn_with_fee(100).unwrap();
         assert_eq!(vault_fee_amount, 0);
         assert_eq!(program_fee_amount, 100);
         assert_eq!(burn_amount, 0);
@@ -1724,7 +1653,7 @@ mod tests {
         let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
 
         assert_eq!(
-            vault.burn_with_fee(false, false, 101),
+            vault.burn_with_fee(101),
             Err(VaultError::VaultInsufficientFunds)
         );
     }
@@ -1732,10 +1661,7 @@ mod tests {
     #[test]
     fn test_burn_zero_fails() {
         let mut vault = make_test_vault(0, 100, 0, 100, 100, DelegationState::default());
-        assert_eq!(
-            vault.burn_with_fee(false, false, 0),
-            Err(VaultError::VaultBurnZero)
-        );
+        assert_eq!(vault.burn_with_fee(0), Err(VaultError::VaultBurnZero));
     }
 
     #[test]
@@ -1747,7 +1673,7 @@ mod tests {
             program_fee_amount: _,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(false, false, 50).unwrap();
+        } = vault.burn_with_fee(50).unwrap();
         assert_eq!(fee_amount, 0);
         assert_eq!(burn_amount, 50);
         assert_eq!(out_amount, 50);
@@ -1759,17 +1685,14 @@ mod tests {
     fn test_burn_more_than_withdrawable_fails() {
         let mut vault = make_test_vault(0, 0, 0, 100, 100, DelegationState::new(50, 0, 0));
 
-        assert_eq!(
-            vault.burn_with_fee(false, false, 51),
-            Err(VaultError::VaultUnderflow)
-        );
+        assert_eq!(vault.burn_with_fee(51), Err(VaultError::VaultUnderflow));
     }
 
     #[test]
     fn test_burn_all_delegated() {
         let mut vault = make_test_vault(0, 0, 0, 100, 100, DelegationState::new(100, 0, 0));
 
-        let result = vault.burn_with_fee(false, false, 1);
+        let result = vault.burn_with_fee(1);
         assert_eq!(result, Err(VaultError::VaultUnderflow));
     }
 
@@ -1777,7 +1700,7 @@ mod tests {
     fn test_burn_rounding_issues() {
         let mut vault = make_test_vault(0, 0, 0, 1_000_000, 1_000_000, DelegationState::default());
 
-        let result = vault.burn_with_fee(false, false, 1).unwrap();
+        let result = vault.burn_with_fee(1).unwrap();
         assert_eq!(result.out_amount, 1);
         assert_eq!(vault.tokens_deposited(), 999_999);
         assert_eq!(vault.vrt_supply(), 999_999);
@@ -1786,7 +1709,7 @@ mod tests {
     #[test]
     fn test_burn_max_values() {
         let mut vault = make_test_vault(0, 100, 0, u64::MAX, u64::MAX, DelegationState::default());
-        let result = vault.burn_with_fee(false, false, u64::MAX).unwrap();
+        let result = vault.burn_with_fee(u64::MAX).unwrap();
         let fee_amount = (((u64::MAX as u128) * 100).div_ceil(10000)) as u64;
         assert_eq!(result.vault_fee_amount, fee_amount);
     }
@@ -1795,7 +1718,7 @@ mod tests {
     fn test_burn_different_fees() {
         let mut vault = make_test_vault(0, 500, 0, 10000, 10000, DelegationState::default());
 
-        let result = vault.burn_with_fee(false, false, 1000).unwrap();
+        let result = vault.burn_with_fee(1000).unwrap();
         assert_eq!(result.vault_fee_amount, 50);
         assert_eq!(result.burn_amount, 950);
         assert_eq!(result.out_amount, 950);
@@ -1881,7 +1804,7 @@ mod tests {
             program_fee_amount: _,
             burn_amount,
             out_amount,
-        } = vault.burn_with_fee(false, false, 1).unwrap();
+        } = vault.burn_with_fee(1).unwrap();
         assert_eq!(fee_amount, 1);
         assert_eq!(burn_amount, 0);
         assert_eq!(out_amount, 0);
@@ -2416,10 +2339,7 @@ mod tests {
     #[test]
     fn test_burn_with_fee_zero_amount() {
         let mut vault = make_test_vault(0, 0, 0, 1000, 1000, DelegationState::default());
-        assert_eq!(
-            vault.burn_with_fee(false, false, 0),
-            Err(VaultError::VaultBurnZero)
-        );
+        assert_eq!(vault.burn_with_fee(0), Err(VaultError::VaultBurnZero));
     }
 
     // ---------- REWARD FEE HELPERS ------------
