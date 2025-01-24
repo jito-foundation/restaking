@@ -108,9 +108,7 @@ pub fn close_program_account<'a>(
     **account_to_close.lamports.borrow_mut() = 0;
 
     account_to_close.assign(&solana_program::system_program::id());
-    let mut account_data = account_to_close.data.borrow_mut();
-    let data_len = account_data.len();
-    solana_program::program_memory::sol_memset(*account_data, 0, data_len);
+    account_to_close.realloc(0, false)?;
 
     Ok(())
 }
