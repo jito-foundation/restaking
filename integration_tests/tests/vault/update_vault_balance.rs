@@ -108,10 +108,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_vault_balance_ok() {
-        const MINT_AMOUNT: u64 = 1000;
-        // Match's unit test in vault.rs: test_calculate_reward_fee
-        // We have to account for the INITIALIZATION_TOKEN_AMOUNT
-        const EXPECTED_FEE: u64 = 92;
+        const MINT_AMOUNT: u64 = Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT;
+        // Since we'll have a initial supply of 10_000, we have to account for that
+        // Note - this test functions the same as if you were to `update_vault_balance`
+        // before `mint_to` and remove the `process_update_vault_balance` call `process_mint`
+        const EXPECTED_MINT_AMOUNT_OUT: u64 = 5263;
+        const EXPECTED_FEE: u64 = 526;
 
         let (fixture, vault_root) = setup_with_reward(
             MINT_AMOUNT,
@@ -129,14 +131,20 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .do_mint_to(
+                &vault_root,
+                &depositor,
+                MINT_AMOUNT,
+                EXPECTED_MINT_AMOUNT_OUT,
+            )
             .await
             .unwrap();
 
-        vault_program_client
-            .update_vault_balance(&vault_root.vault_pubkey)
-            .await
-            .unwrap();
+        // No longer needed, as we now call update_vault_balance within mint_to
+        // vault_program_client
+        //     .update_vault_balance(&vault_root.vault_pubkey)
+        //     .await
+        //     .unwrap();
 
         let vault = vault_program_client
             .get_vault(&vault_root.vault_pubkey)
@@ -155,7 +163,7 @@ mod tests {
         assert_eq!(reward_fee_account.amount, EXPECTED_FEE);
         assert_eq!(
             vault.vrt_supply() - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT,
-            MINT_AMOUNT + EXPECTED_FEE
+            EXPECTED_MINT_AMOUNT_OUT + EXPECTED_FEE
         );
     }
 

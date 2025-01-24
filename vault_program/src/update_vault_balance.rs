@@ -40,7 +40,7 @@ pub fn process_update_vault_balance(
     // Calculate rewards
     // - We take our fee in st
     // - We add the reward ( total reward - fee in st )
-    // - We virtually call mint_to on the reward fee ob behalf of the vault
+    // - We virtually call mint_to on the reward fee on behalf of the vault
     let new_st_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
 
     // 1. Calculate reward fee in ST

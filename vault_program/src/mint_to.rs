@@ -19,6 +19,8 @@ use solana_program::{
 };
 use spl_token::instruction::{mint_to, transfer};
 
+use crate::update_vault_balance::process_update_vault_balance;
+
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
 /// Note: it's strongly encouraged to call [`jito_vault_sdk::instruction::VaultInstruction::UpdateVaultBalance`] before calling this instruction to ensure
@@ -47,6 +49,19 @@ pub fn process_mint(
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
+
+    // Sudo CPI to update the vault balance
+    {
+        let accounts = [
+            config.clone(),
+            vault_info.clone(),
+            vault_token_account.clone(),
+            vrt_mint.clone(),
+            vault_fee_token_account.clone(),
+            token_program.clone(),
+        ];
+        process_update_vault_balance(program_id, &accounts)?;
+    }
 
     Config::load(program_id, config, false)?;
     let config_data = config.data.borrow();
