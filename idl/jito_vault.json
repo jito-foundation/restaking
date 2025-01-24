@@ -963,51 +963,6 @@
       }
     },
     {
-      "name": "RevokeDelegateTokenAccount",
-      "accounts": [
-        {
-          "name": "config",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "delegateAssetAdmin",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "tokenMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "delegate",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [],
-      "discriminant": {
-        "type": "u8",
-        "value": 21
-      }
-    },
-    {
       "name": "SetAdmin",
       "accounts": [
         {
@@ -1034,7 +989,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 22
+        "value": 21
       }
     },
     {
@@ -1071,7 +1026,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 23
+        "value": 22
       }
     },
     {
@@ -1111,7 +1066,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 24
+        "value": 23
       }
     },
     {
@@ -1151,7 +1106,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 25
+        "value": 24
       }
     },
     {
@@ -1191,7 +1146,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 26
+        "value": 25
       }
     },
     {
@@ -1233,7 +1188,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 27
+        "value": 26
       }
     },
     {
@@ -1268,7 +1223,7 @@
       "args": [],
       "discriminant": {
         "type": "u8",
-        "value": 28
+        "value": 27
       }
     },
     {
@@ -1303,7 +1258,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 29
+        "value": 28
       }
     },
     {
@@ -1361,7 +1316,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 30
+        "value": 29
       }
     },
     {
@@ -1409,7 +1364,7 @@
       ],
       "discriminant": {
         "type": "u8",
-        "value": 31
+        "value": 30
       }
     },
     {
@@ -1427,6 +1382,46 @@
         },
         {
           "name": "newAdmin",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 31
+      }
+    },
+    {
+      "name": "RevokeDelegateTokenAccount",
+      "accounts": [
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "delegateAssetAdmin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         }

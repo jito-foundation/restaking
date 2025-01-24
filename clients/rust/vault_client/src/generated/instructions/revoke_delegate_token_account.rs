@@ -18,8 +18,6 @@ pub struct RevokeDelegateTokenAccount {
 
     pub token_account: solana_program::pubkey::Pubkey,
 
-    pub delegate: solana_program::pubkey::Pubkey,
-
     pub token_program: solana_program::pubkey::Pubkey,
 }
 
@@ -32,7 +30,7 @@ impl RevokeDelegateTokenAccount {
         &self,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -50,10 +48,6 @@ impl RevokeDelegateTokenAccount {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.token_account,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.delegate,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -80,7 +74,7 @@ pub struct RevokeDelegateTokenAccountInstructionData {
 
 impl RevokeDelegateTokenAccountInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 21 }
+        Self { discriminator: 32 }
     }
 }
 
@@ -99,8 +93,7 @@ impl Default for RevokeDelegateTokenAccountInstructionData {
 ///   2. `[signer]` delegate_asset_admin
 ///   3. `[]` token_mint
 ///   4. `[writable]` token_account
-///   5. `[]` delegate
-///   6. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   5. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct RevokeDelegateTokenAccountBuilder {
     config: Option<solana_program::pubkey::Pubkey>,
@@ -108,7 +101,6 @@ pub struct RevokeDelegateTokenAccountBuilder {
     delegate_asset_admin: Option<solana_program::pubkey::Pubkey>,
     token_mint: Option<solana_program::pubkey::Pubkey>,
     token_account: Option<solana_program::pubkey::Pubkey>,
-    delegate: Option<solana_program::pubkey::Pubkey>,
     token_program: Option<solana_program::pubkey::Pubkey>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
@@ -145,11 +137,6 @@ impl RevokeDelegateTokenAccountBuilder {
         self.token_account = Some(token_account);
         self
     }
-    #[inline(always)]
-    pub fn delegate(&mut self, delegate: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.delegate = Some(delegate);
-        self
-    }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_program::pubkey::Pubkey) -> &mut Self {
@@ -184,7 +171,6 @@ impl RevokeDelegateTokenAccountBuilder {
                 .expect("delegate_asset_admin is not set"),
             token_mint: self.token_mint.expect("token_mint is not set"),
             token_account: self.token_account.expect("token_account is not set"),
-            delegate: self.delegate.expect("delegate is not set"),
             token_program: self.token_program.unwrap_or(solana_program::pubkey!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
@@ -206,8 +192,6 @@ pub struct RevokeDelegateTokenAccountCpiAccounts<'a, 'b> {
 
     pub token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub delegate: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
@@ -226,8 +210,6 @@ pub struct RevokeDelegateTokenAccountCpi<'a, 'b> {
 
     pub token_account: &'b solana_program::account_info::AccountInfo<'a>,
 
-    pub delegate: &'b solana_program::account_info::AccountInfo<'a>,
-
     pub token_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
@@ -243,7 +225,6 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
             delegate_asset_admin: accounts.delegate_asset_admin,
             token_mint: accounts.token_mint,
             token_account: accounts.token_account,
-            delegate: accounts.delegate,
             token_program: accounts.token_program,
         }
     }
@@ -280,7 +261,7 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
             bool,
         )],
     ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -299,10 +280,6 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.token_account.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.delegate.key,
             false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new_readonly(
@@ -325,14 +302,13 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(7 + 1 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(6 + 1 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.vault.clone());
         account_infos.push(self.delegate_asset_admin.clone());
         account_infos.push(self.token_mint.clone());
         account_infos.push(self.token_account.clone());
-        account_infos.push(self.delegate.clone());
         account_infos.push(self.token_program.clone());
         remaining_accounts
             .iter()
@@ -355,8 +331,7 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
 ///   2. `[signer]` delegate_asset_admin
 ///   3. `[]` token_mint
 ///   4. `[writable]` token_account
-///   5. `[]` delegate
-///   6. `[]` token_program
+///   5. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct RevokeDelegateTokenAccountCpiBuilder<'a, 'b> {
     instruction: Box<RevokeDelegateTokenAccountCpiBuilderInstruction<'a, 'b>>,
@@ -371,7 +346,6 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpiBuilder<'a, 'b> {
             delegate_asset_admin: None,
             token_mint: None,
             token_account: None,
-            delegate: None,
             token_program: None,
             __remaining_accounts: Vec::new(),
         });
@@ -412,14 +386,6 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpiBuilder<'a, 'b> {
         token_account: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.token_account = Some(token_account);
-        self
-    }
-    #[inline(always)]
-    pub fn delegate(
-        &mut self,
-        delegate: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.delegate = Some(delegate);
         self
     }
     #[inline(always)]
@@ -490,8 +456,6 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpiBuilder<'a, 'b> {
                 .token_account
                 .expect("token_account is not set"),
 
-            delegate: self.instruction.delegate.expect("delegate is not set"),
-
             token_program: self
                 .instruction
                 .token_program
@@ -512,7 +476,6 @@ struct RevokeDelegateTokenAccountCpiBuilderInstruction<'a, 'b> {
     delegate_asset_admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_mint: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    delegate: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(

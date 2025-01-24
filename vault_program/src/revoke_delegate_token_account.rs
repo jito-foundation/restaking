@@ -20,7 +20,7 @@ pub fn process_revoke_delegate_token_account(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
 ) -> ProgramResult {
-    let [config, vault_info, delegate_asset_admin, token_mint, token_account, delegate, token_program_info] =
+    let [config, vault_info, delegate_asset_admin, token_mint, token_account, token_program_info] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -58,6 +58,7 @@ pub fn process_revoke_delegate_token_account(
 
     drop(vault_data);
 
+    // This is compatible with the spl-token and spl-token-2022 programs
     let ix = spl_token_2022::instruction::revoke(
         token_program_info.key,
         token_account.key,
@@ -70,7 +71,6 @@ pub fn process_revoke_delegate_token_account(
         &[
             token_program_info.clone(),
             token_account.clone(),
-            delegate.clone(),
             vault_info.clone(),
         ],
         &[vault_seeds

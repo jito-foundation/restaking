@@ -310,7 +310,6 @@ pub fn revoke_delegate_token_account(
     delegate_asset_admin: &Pubkey,
     token_mint: &Pubkey,
     token_account: &Pubkey,
-    delegate: &Pubkey,
     token_program_id: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
@@ -319,7 +318,6 @@ pub fn revoke_delegate_token_account(
         AccountMeta::new_readonly(*delegate_asset_admin, true),
         AccountMeta::new_readonly(*token_mint, false),
         AccountMeta::new(*token_account, false),
-        AccountMeta::new_readonly(*delegate, false),
         AccountMeta::new_readonly(*token_program_id, false),
     ];
     Instruction {

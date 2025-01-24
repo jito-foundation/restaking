@@ -116,7 +116,6 @@ mod tests {
                     &vault_admin,
                     &random_mint.pubkey(),
                     &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
-                    &bob,
                     &token_program_id,
                 )
                 .await
@@ -211,7 +210,6 @@ mod tests {
                     &wrong_delegate_asset_admin,
                     &random_mint.pubkey(),
                     &get_associated_token_address(&vault_pubkey, &random_mint.pubkey()),
-                    &bob,
                     &token_program_id,
                 )
                 .await;
@@ -246,7 +244,6 @@ mod tests {
                     &wrong_delegate_asset_admin,
                     &random_mint.pubkey(),
                     &vault_token_account.pubkey(),
-                    &bob,
                     &token_program_id,
                 )
                 .await;

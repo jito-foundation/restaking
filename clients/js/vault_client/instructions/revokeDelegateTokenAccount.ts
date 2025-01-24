@@ -30,7 +30,7 @@ import {
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const REVOKE_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 21;
+export const REVOKE_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 32;
 
 export function getRevokeDelegateTokenAccountDiscriminatorBytes() {
   return getU8Encoder().encode(REVOKE_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR);
@@ -43,7 +43,6 @@ export type RevokeDelegateTokenAccountInstruction<
   TAccountDelegateAssetAdmin extends string | IAccountMeta<string> = string,
   TAccountTokenMint extends string | IAccountMeta<string> = string,
   TAccountTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountDelegate extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
@@ -68,9 +67,6 @@ export type RevokeDelegateTokenAccountInstruction<
       TAccountTokenAccount extends string
         ? WritableAccount<TAccountTokenAccount>
         : TAccountTokenAccount,
-      TAccountDelegate extends string
-        ? ReadonlyAccount<TAccountDelegate>
-        : TAccountDelegate,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
@@ -114,7 +110,6 @@ export type RevokeDelegateTokenAccountInput<
   TAccountDelegateAssetAdmin extends string = string,
   TAccountTokenMint extends string = string,
   TAccountTokenAccount extends string = string,
-  TAccountDelegate extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
@@ -122,7 +117,6 @@ export type RevokeDelegateTokenAccountInput<
   delegateAssetAdmin: TransactionSigner<TAccountDelegateAssetAdmin>;
   tokenMint: Address<TAccountTokenMint>;
   tokenAccount: Address<TAccountTokenAccount>;
-  delegate: Address<TAccountDelegate>;
   tokenProgram?: Address<TAccountTokenProgram>;
 };
 
@@ -132,7 +126,6 @@ export function getRevokeDelegateTokenAccountInstruction<
   TAccountDelegateAssetAdmin extends string,
   TAccountTokenMint extends string,
   TAccountTokenAccount extends string,
-  TAccountDelegate extends string,
   TAccountTokenProgram extends string,
 >(
   input: RevokeDelegateTokenAccountInput<
@@ -141,7 +134,6 @@ export function getRevokeDelegateTokenAccountInstruction<
     TAccountDelegateAssetAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
-    TAccountDelegate,
     TAccountTokenProgram
   >
 ): RevokeDelegateTokenAccountInstruction<
@@ -151,7 +143,6 @@ export function getRevokeDelegateTokenAccountInstruction<
   TAccountDelegateAssetAdmin,
   TAccountTokenMint,
   TAccountTokenAccount,
-  TAccountDelegate,
   TAccountTokenProgram
 > {
   // Program address.
@@ -167,7 +158,6 @@ export function getRevokeDelegateTokenAccountInstruction<
     },
     tokenMint: { value: input.tokenMint ?? null, isWritable: false },
     tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
-    delegate: { value: input.delegate ?? null, isWritable: false },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -189,7 +179,6 @@ export function getRevokeDelegateTokenAccountInstruction<
       getAccountMeta(accounts.delegateAssetAdmin),
       getAccountMeta(accounts.tokenMint),
       getAccountMeta(accounts.tokenAccount),
-      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
@@ -201,7 +190,6 @@ export function getRevokeDelegateTokenAccountInstruction<
     TAccountDelegateAssetAdmin,
     TAccountTokenMint,
     TAccountTokenAccount,
-    TAccountDelegate,
     TAccountTokenProgram
   >;
 
@@ -219,8 +207,7 @@ export type ParsedRevokeDelegateTokenAccountInstruction<
     delegateAssetAdmin: TAccountMetas[2];
     tokenMint: TAccountMetas[3];
     tokenAccount: TAccountMetas[4];
-    delegate: TAccountMetas[5];
-    tokenProgram: TAccountMetas[6];
+    tokenProgram: TAccountMetas[5];
   };
   data: RevokeDelegateTokenAccountInstructionData;
 };
@@ -233,7 +220,7 @@ export function parseRevokeDelegateTokenAccountInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedRevokeDelegateTokenAccountInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -251,7 +238,6 @@ export function parseRevokeDelegateTokenAccountInstruction<
       delegateAssetAdmin: getNextAccount(),
       tokenMint: getNextAccount(),
       tokenAccount: getNextAccount(),
-      delegate: getNextAccount(),
       tokenProgram: getNextAccount(),
     },
     data: getRevokeDelegateTokenAccountInstructionDataDecoder().decode(

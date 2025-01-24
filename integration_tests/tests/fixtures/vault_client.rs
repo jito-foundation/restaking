@@ -851,7 +851,6 @@ impl VaultProgramClient {
         delegate_asset_admin: &Keypair,
         token_mint: &Pubkey,
         token_account: &Pubkey,
-        delegate: &Pubkey,
         token_program_id: &Pubkey,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -863,7 +862,6 @@ impl VaultProgramClient {
                 &delegate_asset_admin.pubkey(),
                 token_mint,
                 token_account,
-                delegate,
                 token_program_id,
             )],
             Some(&self.payer.pubkey()),
