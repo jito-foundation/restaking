@@ -17,10 +17,7 @@ use jito_vault_client::{
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    burn_vault::{self, BurnVault},
-    config::Config,
-    vault::Vault,
-    vault_ncn_ticket::VaultNcnTicket,
+    burn_vault::BurnVault, config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket,
     vault_operator_delegation::VaultOperatorDelegation,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
@@ -713,8 +710,14 @@ impl VaultCliHandler {
         );
 
         info!("Initialize Vault NCN Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            println!("Transaction failed: {:?}", result.err());
+            return Err(anyhow::anyhow!("Transaction failed"));
+        }
+
+        info!("Transaction confirmed: {:?}", result.unwrap());
 
         Ok(())
     }

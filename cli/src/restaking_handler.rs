@@ -2,12 +2,16 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
-use jito_restaking_client::instructions::{
-    CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
-    InitializeNcnBuilder, InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder,
-    InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder, NcnCooldownOperatorBuilder,
-    NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder, OperatorWarmupNcnBuilder,
-    SetConfigAdminBuilder, WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+use jito_restaking_client::{
+    instructions::{
+        CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
+        InitializeNcnBuilder, InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder,
+        InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder,
+        NcnCooldownOperatorBuilder, NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder,
+        OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
+        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+    },
+    types::OperatorAdminRole,
 };
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
@@ -23,7 +27,7 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    signature::{Keypair, Signer},
+    signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
 
@@ -67,8 +71,11 @@ impl RestakingCliHandler {
                 action: ConfigActions::SetAdmin { new_admin },
             } => self.set_config_admin(new_admin).await,
             RestakingCommands::Ncn {
-                action: NcnActions::Initialize,
-            } => self.initialize_ncn().await,
+                action:
+                    NcnActions::Initialize {
+                        path_to_base_keypair,
+                    },
+            } => self.initialize_ncn(path_to_base_keypair).await,
             RestakingCommands::Ncn {
                 action: NcnActions::InitializeNcnOperatorState { ncn, operator },
             } => self.initialize_ncn_operator_state(ncn, operator).await,
@@ -112,12 +119,99 @@ impl RestakingCliHandler {
                 action: OperatorActions::OperatorCooldownNcn { operator, ncn },
             } => self.operator_cooldown_ncn(operator, ncn).await,
             RestakingCommands::Operator {
+                action:
+                    OperatorActions::OperatorSetSecondaryAdmin {
+                        operator,
+                        new_admin,
+                        set_ncn_admin,
+                        set_vault_admin,
+                        set_voter_admin,
+                        set_delegate_admin,
+                        set_metadata_admin,
+                    },
+            } => {
+                self.operator_set_secondary_admin(
+                    operator,
+                    new_admin,
+                    set_ncn_admin,
+                    set_vault_admin,
+                    set_voter_admin,
+                    set_delegate_admin,
+                    set_metadata_admin,
+                )
+                .await
+            }
+            RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
             } => self.get_operator(pubkey).await,
             RestakingCommands::Operator {
                 action: OperatorActions::List,
             } => self.list_operator().await,
         }
+    }
+
+    pub async fn operator_set_secondary_admin(
+        &self,
+        operator: String,
+        new_admin: String,
+        set_ncn_admin: bool,
+        set_vault_admin: bool,
+        set_voter_admin: bool,
+        set_delegate_admin: bool,
+        set_metadata_admin: bool,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let new_admin = Pubkey::from_str(&new_admin)?;
+
+        let mut roles: Vec<OperatorAdminRole> = vec![];
+        if set_ncn_admin {
+            roles.push(OperatorAdminRole::NcnAdmin);
+        }
+        if set_vault_admin {
+            roles.push(OperatorAdminRole::VaultAdmin);
+        }
+        if set_voter_admin {
+            roles.push(OperatorAdminRole::VoterAdmin);
+        }
+        if set_delegate_admin {
+            roles.push(OperatorAdminRole::DelegateAdmin);
+        }
+        if set_metadata_admin {
+            roles.push(OperatorAdminRole::MetadataAdmin);
+        }
+
+        for role in roles.iter() {
+            let mut ix_builder = OperatorSetSecondaryAdminBuilder::new();
+            ix_builder
+                .new_admin(new_admin)
+                .operator(operator)
+                .admin(keypair.pubkey())
+                .operator_admin_role(*role)
+                .instruction();
+
+            let blockhash = rpc_client.get_latest_blockhash().await?;
+            let tx = Transaction::new_signed_with_payer(
+                &[ix_builder.instruction()],
+                Some(&keypair.pubkey()),
+                &[keypair],
+                blockhash,
+            );
+            info!(
+                "Setting {:?} Admin to {} for Operator {}",
+                role, new_admin, operator
+            );
+            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+            info!("Transaction confirmed: {:?}", result);
+        }
+
+        Ok(())
     }
 
     pub async fn initialize_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
@@ -449,7 +543,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    pub async fn initialize_ncn(&self) -> Result<()> {
+    pub async fn initialize_ncn(&self, path_to_base_keypair: Option<String>) -> Result<()> {
         let keypair = self
             .cli_config
             .keypair
@@ -457,7 +551,13 @@ impl RestakingCliHandler {
             .ok_or_else(|| anyhow!("No keypair"))?;
         let rpc_client = self.get_rpc_client();
 
-        let base = Keypair::new();
+        let base = {
+            if let Some(path) = path_to_base_keypair {
+                read_keypair_file(path).unwrap()
+            } else {
+                Keypair::new()
+            }
+        };
         let ncn = Ncn::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
 
         let mut ix_builder = InitializeNcnBuilder::new();

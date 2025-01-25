@@ -36,7 +36,10 @@ pub enum ConfigActions {
 #[derive(Subcommand)]
 pub enum NcnActions {
     /// Initialize NCN
-    Initialize,
+    Initialize {
+        #[arg(long)]
+        path_to_base_keypair: Option<String>,
+    },
     /// Initialize NCN Operator State
     InitializeNcnOperatorState { ncn: String, operator: String },
     /// Warmup NCN Operator State
@@ -69,6 +72,21 @@ pub enum OperatorActions {
     OperatorWarmupNcn { operator: String, ncn: String },
     /// Operator Cooldown NCN
     OperatorCooldownNcn { operator: String, ncn: String },
+    /// Operator Set Admin
+    OperatorSetSecondaryAdmin {
+        operator: String,
+        new_admin: String,
+        #[arg(long)]
+        set_ncn_admin: bool,
+        #[arg(long)]
+        set_vault_admin: bool,
+        #[arg(long)]
+        set_voter_admin: bool,
+        #[arg(long)]
+        set_delegate_admin: bool,
+        #[arg(long)]
+        set_metadata_admin: bool,
+    },
     /// Get operator
     Get { pubkey: String },
     /// List all operators
