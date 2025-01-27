@@ -8,8 +8,8 @@ use jito_restaking_client::{
         InitializeNcnBuilder, InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder,
         InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder,
         NcnCooldownOperatorBuilder, NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder,
-        OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
-        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+        OperatorSetFeeBuilder, OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder,
+        SetConfigAdminBuilder, WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
     types::OperatorAdminRole,
 };
@@ -142,12 +142,57 @@ impl RestakingCliHandler {
                 .await
             }
             RestakingCommands::Operator {
+                action:
+                    OperatorActions::OperatorSetFees {
+                        operator,
+                        operator_fee_bps,
+                    },
+            } => self.operator_set_fee(operator, operator_fee_bps).await,
+            RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
             } => self.get_operator(pubkey).await,
             RestakingCommands::Operator {
                 action: OperatorActions::List,
             } => self.list_operator().await,
         }
+    }
+
+    pub async fn operator_set_fee(&self, operator: String, operator_fee_bps: u16) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let (restaking_vault_config, _, _) =
+            Config::find_program_address(&self.restaking_program_id);
+
+        let operator = Pubkey::from_str(&operator)?;
+
+        let mut ix_builder = OperatorSetFeeBuilder::new();
+        ix_builder
+            .operator(operator)
+            .new_fee_bps(operator_fee_bps)
+            .admin(keypair.pubkey())
+            .config(restaking_vault_config)
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!(
+            "Setting fees to {:?} to Operator {}",
+            operator_fee_bps, operator,
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        Ok(())
     }
 
     pub async fn operator_set_secondary_admin(

@@ -87,6 +87,11 @@ pub enum OperatorActions {
         #[arg(long)]
         set_metadata_admin: bool,
     },
+    /// Sets the operator fee
+    OperatorSetFees {
+        operator: String,
+        operator_fee_bps: u16,
+    },
     /// Get operator
     Get { pubkey: String },
     /// List all operators
