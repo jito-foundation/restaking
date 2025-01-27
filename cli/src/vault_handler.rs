@@ -3,7 +3,9 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::get_epoch;
-use jito_restaking_core::operator_vault_ticket::OperatorVaultTicket;
+use jito_restaking_core::{
+    ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
+};
 use jito_vault_client::{
     instructions::{
         AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
@@ -689,7 +691,7 @@ impl VaultCliHandler {
             VaultNcnTicket::find_program_address(&self.restaking_program_id, &vault, &ncn);
 
         let (ncn_vault_ticket, _, _) =
-            OperatorVaultTicket::find_program_address(&self.restaking_program_id, &ncn, &vault);
+            NcnVaultTicket::find_program_address(&self.restaking_program_id, &ncn, &vault);
 
         let mut ix_builder = InitializeVaultNcnTicketBuilder::new();
         ix_builder
