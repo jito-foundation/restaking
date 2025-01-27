@@ -15,7 +15,8 @@ use jito_vault_client::{
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+    burn_vault::BurnVault, config::Config, vault::Vault,
+    vault_operator_delegation::VaultOperatorDelegation,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
@@ -242,6 +243,14 @@ impl VaultCliHandler {
 
         let vrt_mint = Keypair::new();
 
+        let admin_st_token_account = get_associated_token_address(&keypair.pubkey(), &token_mint);
+        let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
+
+        let burn_vault = BurnVault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
+
+        let burn_vault_vrt_token_account =
+            get_associated_token_address(&burn_vault, &vrt_mint.pubkey());
+
         let mut ix_builder = InitializeVaultBuilder::new();
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
@@ -250,10 +259,16 @@ impl VaultCliHandler {
             .st_mint(token_mint)
             .admin(keypair.pubkey())
             .base(base.pubkey())
+            .admin_st_token_account(admin_st_token_account)
+            .vault_st_token_account(vault_st_token_account)
+            .burn_vault(burn_vault)
+            .burn_vault_vrt_token_account(burn_vault_vrt_token_account)
+            .associated_token_program(spl_associated_token_account::id())
             .deposit_fee_bps(deposit_fee_bps)
             .withdrawal_fee_bps(withdrawal_fee_bps)
             .reward_fee_bps(reward_fee_bps)
-            .decimals(decimals);
+            .decimals(decimals)
+            .initialize_token_amount(0);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
