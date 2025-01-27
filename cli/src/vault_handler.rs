@@ -736,7 +736,7 @@ impl VaultCliHandler {
         let ncn = Pubkey::from_str(&ncn)?;
 
         let (vault_ncn_ticket, _, _) =
-            VaultNcnTicket::find_program_address(&self.restaking_program_id, &vault, &ncn);
+            VaultNcnTicket::find_program_address(&self.vault_program_id, &vault, &ncn);
 
         let mut ix_builder = WarmupVaultNcnTicketBuilder::new();
         ix_builder
