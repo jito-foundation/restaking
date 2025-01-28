@@ -18,8 +18,12 @@ anchor-lang = { workspace = true }
 axum = { workspace = true }
 clap = { workspace = true }
 http = { workspace = true }
+jito-bytemuck = { workspace = true }
+jito-vault-client = { workspace = true, features = ["serde"] }
+jito-vault-core = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+solana-account-decoder = { workspace = true }
 solana-program = { workspace = true }
 solana-rpc-client = { workspace = true }
 solana-rpc-client-api = { workspace = true }
