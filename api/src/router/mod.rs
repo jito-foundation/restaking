@@ -1,4 +1,4 @@
-mod vault;
+mod vaults;
 
 use std::{sync::Arc, time::Duration};
 
@@ -16,7 +16,7 @@ use tower_http::{
     LatencyUnit,
 };
 use tracing::{info, instrument, Span};
-use vault::{get_vault::get_vault, list_vaults::list_vaults};
+use vaults::{get_vault::get_vault, list_vaults::list_vaults, tvl::get_tvls};
 
 pub struct RouterState {
     pub rpc_client: RpcClient,
@@ -52,7 +52,8 @@ pub fn get_routes(state: Arc<RouterState>) -> Router {
 
     let vault_routes = Router::new()
         .route("/list", get(list_vaults))
-        .route("/:vault_pubkey", get(get_vault));
+        .route("/:vault_pubkey", get(get_vault))
+        .route("/tvls", get(get_tvls));
 
     let api_routes = Router::new()
         .route("/", get(root))
