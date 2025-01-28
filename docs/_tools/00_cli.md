@@ -267,7 +267,8 @@ Vault commands
 ###### **Subcommands:**
 
 * `initialize` — Creates a new vault
-* `create-token-metadata` — Creates token metadata for the vault's LRT token
+* `create-token-metadata` — Creates token metadata for the VRT
+* `update-token-metadata` — Updates token metadata for the VRT
 * `initialize-vault-update-state-tracker` — Starts the vault update cycle
 * `crank-vault-update-state-tracker` — Cranks the vault update state tracker, needs to be run per operator
 * `close-vault-update-state-tracker` — Ends the vault update cycle
@@ -304,9 +305,24 @@ Creates a new vault
 
 ## `jito-restaking-cli vault vault create-token-metadata`
 
-Creates token metadata for the vault's LRT token
+Creates token metadata for the VRT
 
 **Usage:** `jito-restaking-cli vault vault create-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NAME>` — The name of the token
+* `<SYMBOL>` — The symbol of the token
+* `<URI>` — The URI for the token metadata
+
+
+
+## `jito-restaking-cli vault vault update-token-metadata`
+
+Updates token metadata for the VRT
+
+**Usage:** `jito-restaking-cli vault vault update-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
 
 ###### **Arguments:**
 
