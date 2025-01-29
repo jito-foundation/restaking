@@ -1,9 +1,10 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use anchor_lang::AnchorDeserialize;
 use axum::{extract::State, response::IntoResponse, Json};
 use jito_bytemuck::Discriminator;
 use jito_vault_client::{accounts::Vault, programs::JITO_VAULT_ID};
+use reqwest;
 use solana_account_decoder::UiAccountEncoding;
 use solana_rpc_client_api::{
     config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
@@ -22,20 +23,11 @@ pub(crate) struct Tvl {
 
     /// The amount of tokens deposited in Vault
     native: u64,
-    usd: u64,
+
+    /// The amount of tokens deposited in Vault in USD
+    usd: f64,
 }
 
-/// Retrieves the history of a specific validator, based on the provided vote account and optional epoch filter.
-///
-/// # Returns
-/// - `Ok(Json(history))`: A JSON response containing the validator history information. If the epoch filter is provided, it only returns the history for the specified epoch.
-///
-/// # Example
-/// This endpoint can be used to fetch the history of a validator's performance over time, either for a specific epoch or for all recorded epochs:
-/// ```
-/// GET /validator_history/{vote_account}?epoch=200
-/// ```
-/// This request retrieves the history for the specified vote account, filtered by epoch 200.
 pub(crate) async fn get_tvls(
     State(state): State<Arc<RouterState>>,
 ) -> crate::Result<impl IntoResponse> {
@@ -60,14 +52,34 @@ pub(crate) async fn get_tvls(
         .await?;
 
     let mut tvls = Vec::new();
+    let mut price_tables = HashMap::new();
     for (vault_pubkey, vault) in accounts {
         let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
+
+        let price_usd = match price_tables.get(&vault.supported_mint.to_string()) {
+            Some(p) => *p,
+            None => {
+                let url  = format!("https://api.coingecko.com/api/v3/simple/token_price/solana?contract_addresses={}&vs_currencies=usd", vault.supported_mint);
+                let price_data: HashMap<String, HashMap<String, f64>> =
+                    reqwest::get(url).await?.json().await?;
+
+                let mut p = 0f64;
+                if let Some(inner_map) = price_data.get(&vault.supported_mint.to_string()) {
+                    if let Some(price) = inner_map.get("usd") {
+                        p = *price;
+                    }
+                }
+
+                price_tables.insert(vault.supported_mint.to_string(), p);
+                p
+            }
+        };
 
         tvls.push(Tvl {
             vault_pubkey: vault_pubkey.to_string(),
             supported_mint: vault.supported_mint.to_string(),
             native: vault.tokens_deposited,
-            usd: 0,
+            usd: vault.tokens_deposited as f64 * price_usd,
         });
     }
 

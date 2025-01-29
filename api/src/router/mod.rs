@@ -16,7 +16,10 @@ use tower_http::{
     LatencyUnit,
 };
 use tracing::{info, instrument, Span};
-use vaults::{get_vault::get_vault, list_vaults::list_vaults, tvl::get_tvls};
+use vaults::{
+    tvl::get_tvls,
+    vault::{get_vault, list_vaults},
+};
 
 pub struct RouterState {
     pub rpc_client: RpcClient,

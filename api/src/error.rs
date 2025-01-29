@@ -23,6 +23,9 @@ pub enum JitoRestakingApiError {
     #[error("Anchor Error")]
     AnchorError(#[from] anchor_lang::error::Error),
 
+    #[error("Reqwest Error")]
+    ReqwestError(#[from] reqwest::Error),
+
     #[error("Internal Error")]
     InternalError,
 }
@@ -45,6 +48,10 @@ impl IntoResponse for JitoRestakingApiError {
             }
             JitoRestakingApiError::AnchorError(e) => {
                 error!("Anchor error: {e}");
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
+            }
+            JitoRestakingApiError::ReqwestError(e) => {
+                error!("Reqwest error: {e}");
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
             }
             JitoRestakingApiError::InternalError => {
