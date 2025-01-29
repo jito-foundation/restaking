@@ -57,21 +57,21 @@ pub(crate) async fn get_tvls(
         let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
 
         let price_usd = match price_tables.get(&vault.supported_mint.to_string()) {
-            Some(p) => *p,
+            Some(p_usd) => *p_usd,
             None => {
                 let url  = format!("https://api.coingecko.com/api/v3/simple/token_price/solana?contract_addresses={}&vs_currencies=usd", vault.supported_mint);
-                let price_data: HashMap<String, HashMap<String, f64>> =
-                    reqwest::get(url).await?.json().await?;
+                let response: serde_json::Value = reqwest::get(url).await?.json().await?;
 
-                let mut p = 0f64;
-                if let Some(inner_map) = price_data.get(&vault.supported_mint.to_string()) {
-                    if let Some(price) = inner_map.get("usd") {
-                        p = *price;
-                    }
-                }
+                let p_usd = if let Some(price) =
+                    response[vault.supported_mint.to_string()]["usd"].as_f64()
+                {
+                    price
+                } else {
+                    0_f64
+                };
 
-                price_tables.insert(vault.supported_mint.to_string(), p);
-                p
+                price_tables.insert(vault.supported_mint.to_string(), p_usd);
+                p_usd
             }
         };
 
