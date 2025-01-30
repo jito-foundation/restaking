@@ -17,7 +17,7 @@ use tower_http::{
 };
 use tracing::{info, instrument, Span};
 use vaults::{
-    tvl::get_tvls,
+    tvl::{get_tvl, get_tvls},
     vault::{get_vault, list_vaults},
 };
 
@@ -54,13 +54,14 @@ pub fn get_routes(state: Arc<RouterState>) -> Router {
         );
 
     let vault_routes = Router::new()
-        .route("/list", get(list_vaults))
+        .route("/", get(list_vaults))
+        .route("/tvl", get(get_tvls))
         .route("/:vault_pubkey", get(get_vault))
-        .route("/tvls", get(get_tvls));
+        .route("/:vault_pubkey/tvl", get(get_tvl));
 
     let api_routes = Router::new()
         .route("/", get(root))
-        .nest("/vault", vault_routes);
+        .nest("/vaults", vault_routes);
 
     let app = Router::new().nest("/api/v1", api_routes).fallback(fallback);
 
