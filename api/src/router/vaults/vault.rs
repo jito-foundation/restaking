@@ -16,7 +16,7 @@ use solana_rpc_client_api::{
 
 use crate::{error::JitoRestakingApiError, router::RouterState};
 
-pub(crate) async fn list_vaults(
+pub async fn list_vaults(
     State(state): State<Arc<RouterState>>,
 ) -> crate::Result<impl IntoResponse> {
     let accounts = state
@@ -48,7 +48,7 @@ pub(crate) async fn list_vaults(
     Ok(Json(vaults))
 }
 
-pub(crate) async fn get_vault(
+pub async fn get_vault(
     State(state): State<Arc<RouterState>>,
     Path(vault_pubkey): Path<String>,
 ) -> crate::Result<impl IntoResponse> {

@@ -12,6 +12,11 @@ use solana_rpc_client_api::client_error::Error as RpcError;
 use thiserror::Error;
 use tracing::error;
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Error {
+    pub error: String,
+}
+
 #[derive(Error, Debug)]
 pub enum JitoRestakingApiError {
     #[error("Rpc Error")]
@@ -30,34 +35,13 @@ pub enum JitoRestakingApiError {
     InternalError,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Error {
-    pub error: String,
-}
-
 impl IntoResponse for JitoRestakingApiError {
     fn into_response(self) -> Response {
-        let (status, error_message) = match self {
-            JitoRestakingApiError::RpcError(e) => {
-                error!("Rpc error: {e}");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Rpc error")
-            }
-            JitoRestakingApiError::ParsePubkeyError(e) => {
-                error!("Parse pubkey error: {e}");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Pubkey parse error")
-            }
-            JitoRestakingApiError::AnchorError(e) => {
-                error!("Anchor error: {e}");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
-            }
-            JitoRestakingApiError::ReqwestError(e) => {
-                error!("Reqwest error: {e}");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
-            }
-            JitoRestakingApiError::InternalError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
-            }
-        };
+        let status = StatusCode::INTERNAL_SERVER_ERROR;
+        let error_message = self.get_error_message();
+
+        self.log_error();
+
         (
             status,
             Json(Error {
@@ -65,6 +49,35 @@ impl IntoResponse for JitoRestakingApiError {
             }),
         )
             .into_response()
+    }
+}
+
+impl JitoRestakingApiError {
+    /// Helper function to map errors to their message
+    const fn get_error_message(&self) -> &'static str {
+        match self {
+            Self::RpcError(_) => "Rpc error",
+            Self::ParsePubkeyError(_) => "Pubkey parse error",
+            Self::AnchorError(_) | Self::ReqwestError(_) | Self::InternalError => {
+                "Internal Server Error"
+            }
+        }
+    }
+
+    /// Logs the error, extracting the error details separately
+    fn log_error(&self) {
+        match self {
+            Self::RpcError(e) => self.log("Rpc error", e),
+            Self::ParsePubkeyError(e) => self.log("Parse pubkey error", e),
+            Self::AnchorError(e) => self.log("Anchor error", e),
+            Self::ReqwestError(e) => self.log("Reqwest error", e),
+            Self::InternalError => self.log("Internal server error", ""),
+        }
+    }
+
+    /// Helper function to log messages
+    fn log<T: std::fmt::Display>(&self, prefix: &str, err: T) {
+        error!("{}: {}", prefix, err);
     }
 }
 

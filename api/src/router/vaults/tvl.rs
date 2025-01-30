@@ -21,7 +21,7 @@ use solana_rpc_client_api::{
 use crate::{error::JitoRestakingApiError, router::RouterState};
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub(crate) struct Tvl {
+pub struct Tvl {
     /// Vault Pubkey
     vault_pubkey: String,
 
@@ -51,9 +51,7 @@ struct CoinResponse {
     coins: HashMap<String, CoinData>,
 }
 
-pub(crate) async fn get_tvls(
-    State(state): State<Arc<RouterState>>,
-) -> crate::Result<impl IntoResponse> {
+pub async fn get_tvls(State(state): State<Arc<RouterState>>) -> crate::Result<impl IntoResponse> {
     let accounts = state
         .rpc_client
         .get_program_accounts_with_config(
@@ -84,7 +82,7 @@ pub(crate) async fn get_tvls(
     let st_pubkeys: Vec<String> = st_pubkeys.into_iter().collect();
 
     let base_url = String::from("https://coins.llama.fi/prices/current/solana:");
-    let url = format!("{base_url}{}", st_pubkeys.join(",solana:").to_string());
+    let url = format!("{base_url}{}", st_pubkeys.join(",solana:"));
 
     let response: CoinResponse = reqwest::get(url).await.unwrap().json().await.unwrap();
 
@@ -92,15 +90,18 @@ pub(crate) async fn get_tvls(
     for (vault_pubkey, vault) in accounts {
         let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
 
-        let key = format!("solana:{}", vault.supported_mint.to_string());
-        let (native_unit_symbol, price_usd, decimals) = match response.coins.get(&key) {
-            Some(coin_data) => (
-                coin_data.symbol.as_str(),
-                coin_data.price,
-                coin_data.decimals,
-            ),
-            None => ("", 0_f64, 0_u8),
-        };
+        let key = format!("solana:{}", vault.supported_mint);
+        let (native_unit_symbol, price_usd, decimals) =
+            response
+                .coins
+                .get(&key)
+                .map_or(("", 0_f64, 0_u8), |coin_data| {
+                    (
+                        coin_data.symbol.as_str(),
+                        coin_data.price,
+                        coin_data.decimals,
+                    )
+                });
 
         let decimal_factor = 10u64.pow(decimals as u32) as f64;
         let native_unit_tvl = vault.tokens_deposited as f64 / decimal_factor;
@@ -118,7 +119,7 @@ pub(crate) async fn get_tvls(
     Ok(Json(tvls))
 }
 
-pub(crate) async fn get_tvl(
+pub async fn get_tvl(
     State(state): State<Arc<RouterState>>,
     Path(vault_pubkey): Path<String>,
 ) -> crate::Result<impl IntoResponse> {
@@ -132,19 +133,22 @@ pub(crate) async fn get_tvl(
 
     let url = format!(
         "https://coins.llama.fi/prices/current/solana:{}",
-        vault.supported_mint.to_string(),
+        vault.supported_mint,
     );
     let response: CoinResponse = reqwest::get(url).await.unwrap().json().await.unwrap();
 
-    let key = format!("solana:{}", vault.supported_mint.to_string());
-    let (native_unit_symbol, price_usd, decimals) = match response.coins.get(&key) {
-        Some(coin_data) => (
-            coin_data.symbol.as_str(),
-            coin_data.price,
-            coin_data.decimals,
-        ),
-        None => ("", 0_f64, 0_u8),
-    };
+    let key = format!("solana:{}", vault.supported_mint);
+    let (native_unit_symbol, price_usd, decimals) =
+        response
+            .coins
+            .get(&key)
+            .map_or(("", 0_f64, 0_u8), |coin_data| {
+                (
+                    coin_data.symbol.as_str(),
+                    coin_data.price,
+                    coin_data.decimals,
+                )
+            });
 
     let decimal_factor = 10u64.pow(decimals as u32) as f64;
     let native_unit_tvl = vault.tokens_deposited as f64 / decimal_factor;
