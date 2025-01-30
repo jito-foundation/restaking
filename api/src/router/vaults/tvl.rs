@@ -1,10 +1,12 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use anchor_lang::AnchorDeserialize;
 use axum::{extract::State, response::IntoResponse, Json};
 use jito_bytemuck::Discriminator;
 use jito_vault_client::{accounts::Vault, programs::JITO_VAULT_ID};
-use reqwest;
 use solana_account_decoder::UiAccountEncoding;
 use solana_rpc_client_api::{
     config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
@@ -26,6 +28,19 @@ pub(crate) struct Tvl {
 
     /// The amount of tokens deposited in Vault in USD
     usd: f64,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct CoinData {
+    decimals: u8,
+    price: f64,
+    symbol: String,
+    timestamp: f64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CoinResponse {
+    coins: HashMap<String, CoinData>,
 }
 
 pub(crate) async fn get_tvls(
@@ -51,28 +66,28 @@ pub(crate) async fn get_tvls(
         )
         .await?;
 
+    let st_pubkeys: HashSet<String> = accounts
+        .iter()
+        .map(|(_, vault)| {
+            let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
+            vault.supported_mint.to_string()
+        })
+        .collect();
+    let st_pubkeys: Vec<String> = st_pubkeys.into_iter().collect();
+
+    let base_url = String::from("https://coins.llama.fi/prices/current/solana:");
+    let url = format!("{base_url}{}", st_pubkeys.join(",solana:").to_string());
+
+    let response: CoinResponse = reqwest::get(url).await.unwrap().json().await.unwrap();
+
     let mut tvls = Vec::new();
-    let mut price_tables = HashMap::new();
     for (vault_pubkey, vault) in accounts {
         let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
 
-        let price_usd = match price_tables.get(&vault.supported_mint.to_string()) {
-            Some(p_usd) => *p_usd,
-            None => {
-                let url  = format!("https://api.coingecko.com/api/v3/simple/token_price/solana?contract_addresses={}&vs_currencies=usd", vault.supported_mint);
-                let response: serde_json::Value = reqwest::get(url).await?.json().await?;
-
-                let p_usd = if let Some(price) =
-                    response[vault.supported_mint.to_string()]["usd"].as_f64()
-                {
-                    price
-                } else {
-                    0_f64
-                };
-
-                price_tables.insert(vault.supported_mint.to_string(), p_usd);
-                p_usd
-            }
+        let key = format!("solana:{}", vault.supported_mint.to_string());
+        let price_usd = match response.coins.get(&key) {
+            Some(coin_data) => coin_data.price,
+            None => 0_f64,
         };
 
         tvls.push(Tvl {
@@ -82,6 +97,8 @@ pub(crate) async fn get_tvls(
             usd: vault.tokens_deposited as f64 * price_usd,
         });
     }
+
+    tvls.sort_by(|a, b| b.usd.total_cmp(&a.usd));
 
     Ok(Json(tvls))
 }
