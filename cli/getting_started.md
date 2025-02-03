@@ -41,16 +41,8 @@ Creating a vault requires:
 - `<INITIALIZE_TOKEN_AMOUNT>`: The amount of tokens to initialize the vault with ( in the smallest unit )
 - `<VRT_MINT_ADDRESS_FILE_PATH>`: The file path of VRT mint address (**Optional**)
 
-Normal:
-
 ```bash
 jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT>
-```
-
-With Vanity VRT mint address:
-
-```bash
-jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> <VRT_MINT_ADDRESS_FILE_PATH>
 ```
 
 Note the resulting Vault Pubkey.
