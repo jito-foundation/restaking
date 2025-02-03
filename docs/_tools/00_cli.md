@@ -290,7 +290,7 @@ Vault commands
 
 Creates a new vault
 
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> <VRT_MINT_ADDRESS_FILE_PATH>`
 
 ###### **Arguments:**
 
@@ -299,6 +299,8 @@ Creates a new vault
 * `<WITHDRAWAL_FEE_BPS>` — The withdrawal fee in bips
 * `<REWARD_FEE_BPS>` — The reward fee in bips
 * `<DECIMALS>` — The decimals of the token
+- `<INITIALIZE_TOKEN_AMOUNT>`: The amount of tokens to initialize the vault with ( in the smallest unit )
+- `<VRT_MINT_ADDRESS_FILE_PATH>`: The file path of VRT mint address (**Optional**)
 
 
 

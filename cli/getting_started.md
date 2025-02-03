@@ -39,7 +39,7 @@ Creating a vault requires:
 - `<REWARD_FEE_BPS>`: Fee taken when ST rewards are sent to the vault
 - `<DECIMALS>`: Decimals of the newly created VRT. ( 9 is Recommended )
 - `<INITIALIZE_TOKEN_AMOUNT>`: The amount of tokens to initialize the vault with ( in the smallest unit )
-- `<VRT_MINT_ADDRESS_FILE_PATH>`: The file path of VRT mint address (**optional**)
+- `<VRT_MINT_ADDRESS_FILE_PATH>`: The file path of VRT mint address (**Optional**)
 
 Normal:
 
