@@ -226,6 +226,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn initialize_vault(
         &self,
         token_mint: String,
