@@ -290,7 +290,7 @@ Vault commands
 
 Creates a new vault
 
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT>`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> [VRT_MINT_ADDRESS_FILE_PATH]`
 
 ###### **Arguments:**
 
@@ -299,22 +299,8 @@ Creates a new vault
 * `<WITHDRAWAL_FEE_BPS>` — The withdrawal fee in bips
 * `<REWARD_FEE_BPS>` — The reward fee in bips
 * `<DECIMALS>` — The decimals of the token
-- `<INITIALIZE_TOKEN_AMOUNT>`: The amount of tokens to initialize the vault with ( in the smallest unit )
-
-
-Creates a new vault with VRT mint [vanity address](https://solana.com/developers/cookbook/wallets/generate-vanity-address)
-
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> <VRT_MINT_ADDRESS_FILE_PATH>`
-
-###### **Arguments:**
-
-* `<TOKEN_MINT>` — The token which is allowed to be deposited into the vault
-* `<DEPOSIT_FEE_BPS>` — The deposit fee in bips
-* `<WITHDRAWAL_FEE_BPS>` — The withdrawal fee in bips
-* `<REWARD_FEE_BPS>` — The reward fee in bips
-* `<DECIMALS>` — The decimals of the token
-- `<INITIALIZE_TOKEN_AMOUNT>`: The amount of tokens to initialize the vault with ( in the smallest unit )
-- `<VRT_MINT_ADDRESS_FILE_PATH>`: The file path of VRT mint address
+* `<INITIALIZE_TOKEN_AMOUNT>` — The amount of tokens to initialize the vault with ( in the smallest unit )
+* `<VRT_MINT_ADDRESS_FILE_PATH>` — The file path of VRT mint address
 
 
 
