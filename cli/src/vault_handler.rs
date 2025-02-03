@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
@@ -15,7 +15,8 @@ use jito_vault_client::{
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+    burn_vault::BurnVault, config::Config, vault::Vault,
+    vault_operator_delegation::VaultOperatorDelegation,
     vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
@@ -29,7 +30,7 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    signature::{Keypair, Signer},
+    signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
 use spl_associated_token_account::{
@@ -90,6 +91,8 @@ impl VaultCliHandler {
                         withdrawal_fee_bps,
                         reward_fee_bps,
                         decimals,
+                        initialize_token_amount,
+                        vrt_mint_address_file_path,
                     },
             } => {
                 self.initialize_vault(
@@ -98,6 +101,8 @@ impl VaultCliHandler {
                     withdrawal_fee_bps,
                     reward_fee_bps,
                     decimals,
+                    initialize_token_amount,
+                    vrt_mint_address_file_path,
                 )
                 .await
             }
@@ -228,6 +233,8 @@ impl VaultCliHandler {
         withdrawal_fee_bps: u16,
         reward_fee_bps: u16,
         decimals: u8,
+        initialize_token_amount: u64,
+        vrt_mint_address_file_path: Option<PathBuf>,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
         let keypair = self
@@ -240,7 +247,25 @@ impl VaultCliHandler {
         let base = Keypair::new();
         let vault = Vault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
 
-        let vrt_mint = Keypair::new();
+        let admin = keypair.pubkey();
+
+        let vrt_mint = match vrt_mint_address_file_path {
+            Some(file_path) => {
+                let keypair = read_keypair_file(file_path)
+                    .map_err(|e| anyhow!("Could not read VRT mint address file path: {e}"))?;
+                info!("Found VRT mint address: {}", keypair.pubkey());
+                keypair
+            }
+            None => Keypair::new(),
+        };
+
+        let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
+        let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
+
+        let burn_vault = BurnVault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
+
+        let burn_vault_vrt_token_account =
+            get_associated_token_address(&burn_vault, &vrt_mint.pubkey());
 
         let mut ix_builder = InitializeVaultBuilder::new();
         ix_builder
@@ -248,16 +273,32 @@ impl VaultCliHandler {
             .vault(vault)
             .vrt_mint(vrt_mint.pubkey())
             .st_mint(token_mint)
-            .admin(keypair.pubkey())
+            .admin(admin)
             .base(base.pubkey())
+            .admin_st_token_account(admin_st_token_account)
+            .vault_st_token_account(vault_st_token_account)
+            .burn_vault(burn_vault)
+            .burn_vault_vrt_token_account(burn_vault_vrt_token_account)
+            .associated_token_program(spl_associated_token_account::id())
             .deposit_fee_bps(deposit_fee_bps)
             .withdrawal_fee_bps(withdrawal_fee_bps)
             .reward_fee_bps(reward_fee_bps)
-            .decimals(decimals);
+            .decimals(decimals)
+            .initialize_token_amount(initialize_token_amount);
+
+        let admin_st_token_account_ix =
+            create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
+
+        let vault_st_token_account_ix =
+            create_associated_token_account_idempotent(&admin, &vault, &token_mint, &spl_token::ID);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
+            &[
+                admin_st_token_account_ix,
+                vault_st_token_account_ix,
+                ix_builder.instruction(),
+            ],
             Some(&keypair.pubkey()),
             &[keypair, &base, &vrt_mint],
             blockhash,
