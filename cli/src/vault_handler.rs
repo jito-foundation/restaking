@@ -993,7 +993,7 @@ impl VaultCliHandler {
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
-            .delegate_asset_admin(&keypair.pubkey())
+            .delegate_asset_admin(keypair.pubkey())
             .token_mint(token_mint)
             .token_account(token_account)
             .delegate(delegate)
