@@ -972,6 +972,7 @@ impl VaultCliHandler {
                         min_context_slot: None,
                     },
                     with_context: None,
+                    sort_results: None,
                 },
             )
             .await?;
