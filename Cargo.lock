@@ -1125,15 +1125,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "const_str_to_pubkey"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "006755890506a0f9a96a6e7a076deeb70cc6621817e5d22a8f838435369f244f"
-dependencies = [
- "solana-program",
-]
-
-[[package]]
 name = "constant_time_eq"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2630,7 +2621,6 @@ version = "0.0.3"
 dependencies = [
  "borsh 0.10.4",
  "cfg-if",
- "const_str_to_pubkey",
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
@@ -2743,7 +2733,6 @@ version = "0.0.3"
 dependencies = [
  "borsh 0.10.4",
  "cfg-if",
- "const_str_to_pubkey",
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-core",
