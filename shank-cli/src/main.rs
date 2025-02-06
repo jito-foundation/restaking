@@ -1,6 +1,5 @@
 use std::{fs::File, io::Write};
 
-use anchor_lang_idl_spec::{Idl as AnchorIdl, IdlMetadata};
 use anyhow::{anyhow, Result};
 use env_logger::Env;
 use log::{debug, info};
@@ -106,36 +105,6 @@ fn main() -> Result<()> {
             }
         }
         accumulator.name = idl.name.to_string();
-
-        // Convert to Anchor IDL
-        let metadata = IdlMetadata {
-            name: accumulator.name,
-            version: accumulator.version,
-            spec: "".to_string(),
-            description: None,
-            repository: None,
-            contact: None,
-            dependencies: vec![],
-            deployments: None,
-
-        };
-
-        let instructions = Vec::new();
-        for instruction in accumulator.instructions {
-instruction.
-        }
-
-        let anchor_idl = AnchorIdl {
-            address: accumulator.metadata.address.unwrap(),
-            metadata,
-            docs: vec![String::new()],
-            instructions: accumulator.instructions,
-            accounts: accumulator.accounts,
-            constants: accumulator.constants,
-            errors: accumulator.errors,
-            events: accumulator.events,
-            types: accumulator.types,
-        };
 
         let idl_json = accumulator.try_into_json()?;
         let mut idl_path = out_dir.join(idl.name);

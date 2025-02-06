@@ -2515,7 +2515,6 @@ dependencies = [
 name = "jito-shank-cli"
 version = "0.0.3"
 dependencies = [
- "anchor-lang-idl-spec",
  "anyhow",
  "clap 4.5.16",
  "env_logger 0.10.2",
