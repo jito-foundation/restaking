@@ -150,5 +150,5 @@ impl anchor_lang::IdlBuild for Vault {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for Vault {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &'static [u8] = &[0; 8];
 }

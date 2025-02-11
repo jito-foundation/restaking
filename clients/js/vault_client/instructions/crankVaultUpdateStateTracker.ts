@@ -118,6 +118,7 @@ export function getCrankVaultUpdateStateTrackerInstruction<
   TAccountOperator extends string,
   TAccountVaultOperatorDelegation extends string,
   TAccountVaultUpdateStateTracker extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: CrankVaultUpdateStateTrackerInput<
     TAccountConfig,
@@ -125,9 +126,10 @@ export function getCrankVaultUpdateStateTrackerInstruction<
     TAccountOperator,
     TAccountVaultOperatorDelegation,
     TAccountVaultUpdateStateTracker
-  >
+  >,
+  config?: { programAddress?: TProgramAddress }
 ): CrankVaultUpdateStateTrackerInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountVault,
   TAccountOperator,
@@ -135,7 +137,7 @@ export function getCrankVaultUpdateStateTrackerInstruction<
   TAccountVaultUpdateStateTracker
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -168,7 +170,7 @@ export function getCrankVaultUpdateStateTrackerInstruction<
     programAddress,
     data: getCrankVaultUpdateStateTrackerInstructionDataEncoder().encode({}),
   } as CrankVaultUpdateStateTrackerInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountVault,
     TAccountOperator,
