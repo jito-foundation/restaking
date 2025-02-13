@@ -632,7 +632,7 @@ impl VaultCliHandler {
         let vault_fee_ata_ix = create_associated_token_account_idempotent(
             &depositor,
             &vault_account.fee_wallet,
-            &vault_account.supported_mint,
+            &vault_account.vrt_mint,
             &spl_token::ID,
         );
 
