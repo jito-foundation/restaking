@@ -7,9 +7,10 @@ use jito_restaking_client::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
         InitializeNcnBuilder, InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder,
         InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder,
-        NcnCooldownOperatorBuilder, NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder,
-        OperatorSetFeeBuilder, OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder,
-        SetConfigAdminBuilder, WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+        NcnCooldownOperatorBuilder, NcnDelegateTokenAccountBuilder, NcnWarmupOperatorBuilder,
+        OperatorCooldownNcnBuilder, OperatorDelegateTokenAccountBuilder, OperatorSetFeeBuilder,
+        OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
+        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
     types::OperatorAdminRole,
 };
@@ -95,6 +96,17 @@ impl RestakingCliHandler {
                 action: NcnActions::CooldownNcnVaultTicket { ncn, vault },
             } => self.cooldown_ncn_vault_ticket(ncn, vault).await,
             RestakingCommands::Ncn {
+                action:
+                    NcnActions::NcnDelegateTokenAccount {
+                        ncn,
+                        delegate,
+                        token_mint,
+                    },
+            } => {
+                self.ncn_delegate_token_account(ncn, delegate, token_mint)
+                    .await
+            }
+            RestakingCommands::Ncn {
                 action: NcnActions::Get { pubkey },
             } => self.get_ncn(pubkey).await,
             RestakingCommands::Ncn {
@@ -148,6 +160,17 @@ impl RestakingCliHandler {
                         operator_fee_bps,
                     },
             } => self.operator_set_fee(operator, operator_fee_bps).await,
+            RestakingCommands::Operator {
+                action:
+                    OperatorActions::OperatorDelegateTokenAccount {
+                        operator,
+                        delegate,
+                        token_mint,
+                    },
+            } => {
+                self.operator_delegate_token_account(operator, delegate, token_mint)
+                    .await
+            }
             RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
             } => self.get_operator(pubkey).await,
@@ -255,6 +278,84 @@ impl RestakingCliHandler {
             let result = rpc_client.send_and_confirm_transaction(&tx).await?;
             info!("Transaction confirmed: {:?}", result);
         }
+
+        Ok(())
+    }
+
+    pub async fn operator_delegate_token_account(
+        &self,
+        operator: String,
+        delegate: String,
+        token_mint: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let delegate = Pubkey::from_str(&delegate)?;
+        let token_mint = Pubkey::from_str(&token_mint)?;
+
+        let mut ix_builder = OperatorDelegateTokenAccountBuilder::new();
+        ix_builder
+            .operator(operator)
+            .delegate(delegate)
+            .delegate_admin(keypair.pubkey())
+            .token_mint(token_mint)
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        Ok(())
+    }
+
+    pub async fn ncn_delegate_token_account(
+        &self,
+        ncn: String,
+        delegate: String,
+        token_mint: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn = Pubkey::from_str(&ncn)?;
+        let delegate = Pubkey::from_str(&delegate)?;
+        let token_mint = Pubkey::from_str(&token_mint)?;
+
+        let mut ix_builder = NcnDelegateTokenAccountBuilder::new();
+        ix_builder
+            .ncn(ncn)
+            .delegate(delegate)
+            .delegate_admin(keypair.pubkey())
+            .token_mint(token_mint)
+            .instruction();
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
 
         Ok(())
     }
