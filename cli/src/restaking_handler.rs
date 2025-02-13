@@ -31,6 +31,9 @@ use solana_sdk::{
     signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
+use spl_associated_token_account::{
+    get_associated_token_address, instruction::create_associated_token_account_idempotent,
+};
 
 use crate::{
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
@@ -101,10 +104,16 @@ impl RestakingCliHandler {
                         ncn,
                         delegate,
                         token_mint,
+                        should_create_token_account,
                     },
             } => {
-                self.ncn_delegate_token_account(ncn, delegate, token_mint)
-                    .await
+                self.ncn_delegate_token_account(
+                    ncn,
+                    delegate,
+                    token_mint,
+                    should_create_token_account,
+                )
+                .await
             }
             RestakingCommands::Ncn {
                 action: NcnActions::Get { pubkey },
@@ -166,10 +175,16 @@ impl RestakingCliHandler {
                         operator,
                         delegate,
                         token_mint,
+                        should_create_token_account,
                     },
             } => {
-                self.operator_delegate_token_account(operator, delegate, token_mint)
-                    .await
+                self.operator_delegate_token_account(
+                    operator,
+                    delegate,
+                    token_mint,
+                    should_create_token_account,
+                )
+                .await
             }
             RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
@@ -287,6 +302,7 @@ impl RestakingCliHandler {
         operator: String,
         delegate: String,
         token_mint: String,
+        should_create_token_account: bool,
     ) -> Result<()> {
         let keypair = self
             .cli_config
@@ -299,17 +315,33 @@ impl RestakingCliHandler {
         let delegate = Pubkey::from_str(&delegate)?;
         let token_mint = Pubkey::from_str(&token_mint)?;
 
+        let token_account = get_associated_token_address(&operator, &token_mint);
+
+        let mut ixs = vec![];
+
+        if should_create_token_account {
+            let ix = create_associated_token_account_idempotent(
+                &keypair.pubkey(),
+                &operator,
+                &token_mint,
+                &spl_token::id(),
+            );
+            ixs.push(ix);
+        }
+
         let mut ix_builder = OperatorDelegateTokenAccountBuilder::new();
         ix_builder
             .operator(operator)
             .delegate(delegate)
             .delegate_admin(keypair.pubkey())
-            .token_mint(token_mint)
-            .instruction();
+            .token_account(token_account)
+            .token_mint(token_mint);
+
+        ixs.push(ix_builder.instruction());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
+            &ixs,
             Some(&keypair.pubkey()),
             &[keypair],
             blockhash,
@@ -326,6 +358,7 @@ impl RestakingCliHandler {
         ncn: String,
         delegate: String,
         token_mint: String,
+        should_create_token_account: bool,
     ) -> Result<()> {
         let keypair = self
             .cli_config
@@ -338,17 +371,33 @@ impl RestakingCliHandler {
         let delegate = Pubkey::from_str(&delegate)?;
         let token_mint = Pubkey::from_str(&token_mint)?;
 
+        let token_account = get_associated_token_address(&ncn, &token_mint);
+
+        let mut ixs = vec![];
+
+        if should_create_token_account {
+            let ix = create_associated_token_account_idempotent(
+                &keypair.pubkey(),
+                &ncn,
+                &token_mint,
+                &spl_token::id(),
+            );
+            ixs.push(ix);
+        }
+
         let mut ix_builder = NcnDelegateTokenAccountBuilder::new();
         ix_builder
             .ncn(ncn)
             .delegate(delegate)
             .delegate_admin(keypair.pubkey())
-            .token_mint(token_mint)
-            .instruction();
+            .token_account(token_account)
+            .token_mint(token_mint);
+
+        ixs.push(ix_builder.instruction());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
+            &ixs,
             Some(&keypair.pubkey()),
             &[keypair],
             blockhash,

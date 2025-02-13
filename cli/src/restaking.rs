@@ -57,6 +57,8 @@ pub enum NcnActions {
         ncn: String,
         delegate: String,
         token_mint: String,
+        #[arg(long)]
+        should_create_token_account: bool,
     },
     /// Get NCN
     Get { pubkey: String },
@@ -103,6 +105,8 @@ pub enum OperatorActions {
         operator: String,
         delegate: String,
         token_mint: String,
+        #[arg(long)]
+        should_create_token_account: bool,
     },
     /// Get operator
     Get { pubkey: String },
