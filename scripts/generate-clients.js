@@ -1,7 +1,7 @@
 const kinobi = require("kinobi");
-const anchorIdl = require("@kinobi-so/nodes-from-anchor");
+const anchorIdl = require("@exo-tech-xyz/nodes-from-anchor");
 const path = require("path");
-const renderers = require('@kinobi-so/renderers');
+const renderers = require('@exo-tech-xyz/renderers');
 
 // Paths.
 const projectRoot = path.join(__dirname, "..");

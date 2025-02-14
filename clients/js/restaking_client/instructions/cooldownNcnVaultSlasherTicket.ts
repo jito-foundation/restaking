@@ -123,6 +123,7 @@ export function getCooldownNcnVaultSlasherTicketInstruction<
   TAccountSlasher extends string,
   TAccountNcnVaultSlasherTicket extends string,
   TAccountAdmin extends string,
+  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
   input: CooldownNcnVaultSlasherTicketInput<
     TAccountConfig,
@@ -131,9 +132,10 @@ export function getCooldownNcnVaultSlasherTicketInstruction<
     TAccountSlasher,
     TAccountNcnVaultSlasherTicket,
     TAccountAdmin
-  >
+  >,
+  config?: { programAddress?: TProgramAddress }
 ): CooldownNcnVaultSlasherTicketInstruction<
-  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountNcn,
   TAccountVault,
@@ -142,7 +144,8 @@ export function getCooldownNcnVaultSlasherTicketInstruction<
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress =
+    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -174,7 +177,7 @@ export function getCooldownNcnVaultSlasherTicketInstruction<
     programAddress,
     data: getCooldownNcnVaultSlasherTicketInstructionDataEncoder().encode({}),
   } as CooldownNcnVaultSlasherTicketInstruction<
-    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountNcn,
     TAccountVault,
