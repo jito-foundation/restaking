@@ -124,14 +124,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - run: docker pull --platform linux/amd64 tommyexo/solana:2.1.11
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.1.11
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install solana-verify from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
           crate: solana-verify
-      - run: solana-verify build --library-name jito_restaking_program --base-image tommyexo/solana:2.1.11
-      - run: solana-verify build --library-name jito_vault_program --base-image tommyexo/solana:2.1.11
+      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.1.11
+      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.1.11
       - name: Upload jito_restaking_program.so
         uses: actions/upload-artifact@v4
         with:
