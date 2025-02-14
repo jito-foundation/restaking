@@ -195,6 +195,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn operator_set_secondary_admin(
         &self,
         operator: String,
@@ -596,13 +597,8 @@ impl RestakingCliHandler {
             .ok_or_else(|| anyhow!("No keypair"))?;
         let rpc_client = self.get_rpc_client();
 
-        let base = {
-            if let Some(path) = path_to_base_keypair {
-                read_keypair_file(path).unwrap()
-            } else {
-                Keypair::new()
-            }
-        };
+        let base =
+            path_to_base_keypair.map_or_else(Keypair::new, |path| read_keypair_file(path).unwrap());
         let ncn = Ncn::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
 
         let mut ix_builder = InitializeNcnBuilder::new();

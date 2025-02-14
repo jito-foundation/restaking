@@ -10,11 +10,12 @@ use jito_vault_client::{
     instructions::{
         AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
         CooldownDelegationBuilder, CooldownVaultNcnTicketBuilder,
-        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder, EnqueueWithdrawalBuilder,
-        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
+        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
+        DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
+        InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
-        WarmupVaultNcnTicketBuilder, DelegateTokenAccountBuilder
+        WarmupVaultNcnTicketBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
@@ -198,11 +199,28 @@ impl VaultCliHandler {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
             VaultCommands::Vault {
-                action: VaultActions::DelegateTokenAccount { vault, delegate, token_mint, token_account },
-            } => self.delegate_token_account(vault, delegate, token_mint, token_account).await,
+                action:
+                    VaultActions::DelegateTokenAccount {
+                        vault,
+                        delegate,
+                        token_mint,
+                        token_account,
+                    },
+            } => {
+                self.delegate_token_account(vault, delegate, token_mint, token_account)
+                    .await
+            }
             VaultCommands::Vault {
-                action: VaultActions::DelegatedTokenTransfer { token_account, recipient_pubkey, amount },
-            } => self.delegated_token_transfer(token_account, recipient_pubkey, amount).await,        
+                action:
+                    VaultActions::DelegatedTokenTransfer {
+                        token_account,
+                        recipient_pubkey,
+                        amount,
+                    },
+            } => {
+                self.delegated_token_transfer(token_account, recipient_pubkey, amount)
+                    .await
+            }
         }
     }
 
