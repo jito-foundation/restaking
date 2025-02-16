@@ -1026,6 +1026,7 @@ impl RestakingCliHandler {
                         min_context_slot: None,
                     },
                     with_context: None,
+                    sort_results: None,
                 },
             )
             .await?;
@@ -1062,6 +1063,7 @@ impl RestakingCliHandler {
                         min_context_slot: None,
                     },
                     with_context: None,
+                    sort_results: None,
                 },
             )
             .await?;
