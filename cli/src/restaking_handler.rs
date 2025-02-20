@@ -10,7 +10,7 @@ use jito_restaking_client::{
         NcnCooldownOperatorBuilder, NcnDelegateTokenAccountBuilder, NcnWarmupOperatorBuilder,
         OperatorCooldownNcnBuilder, OperatorDelegateTokenAccountBuilder, OperatorSetFeeBuilder,
         OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
-        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder
+        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
     types::OperatorAdminRole,
 };
