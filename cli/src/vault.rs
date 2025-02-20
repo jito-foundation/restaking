@@ -60,6 +60,16 @@ pub enum VaultActions {
         /// The URI for the token metadata
         uri: String,
     },
+    UpdateTokenMetadata {
+        /// The vault pubkey
+        vault: String,
+        /// The name of the token
+        name: String,
+        /// The symbol of the token
+        symbol: String,
+        /// The URI for the token metadata
+        uri: String,
+    },
     /// Starts the vault update cycle
     InitializeVaultUpdateStateTracker {
         /// Vault account
