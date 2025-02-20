@@ -52,6 +52,14 @@ pub enum NcnActions {
     WarmupNcnVaultTicket { ncn: String, vault: String },
     /// Cooldown NCN Vault Ticket
     CooldownNcnVaultTicket { ncn: String, vault: String },
+    /// NCN Delegate Token Account
+    NcnDelegateTokenAccount {
+        ncn: String,
+        delegate: String,
+        token_mint: String,
+        #[arg(long)]
+        should_create_token_account: bool,
+    },
     /// Get NCN
     Get { pubkey: String },
     /// List all NCNs
@@ -91,6 +99,14 @@ pub enum OperatorActions {
     OperatorSetFees {
         operator: String,
         operator_fee_bps: u16,
+    },
+    /// Operator Delegate Token Account
+    OperatorDelegateTokenAccount {
+        operator: String,
+        delegate: String,
+        token_mint: String,
+        #[arg(long)]
+        should_create_token_account: bool,
     },
     /// Get operator
     Get { pubkey: String },

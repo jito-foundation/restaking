@@ -15,6 +15,7 @@ use jito_vault_client::{
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         WarmupVaultNcnTicketBuilder, DelegateTokenAccountBuilder
+        WarmupVaultNcnTicketBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
@@ -639,7 +640,7 @@ impl VaultCliHandler {
         let vault_fee_ata_ix = create_associated_token_account_idempotent(
             &depositor,
             &vault_account.fee_wallet,
-            &vault_account.supported_mint,
+            &vault_account.vrt_mint,
             &spl_token::ID,
         );
 
@@ -1247,6 +1248,7 @@ impl VaultCliHandler {
                         min_context_slot: None,
                     },
                     with_context: None,
+                    sort_results: None,
                 },
             )
             .await?;

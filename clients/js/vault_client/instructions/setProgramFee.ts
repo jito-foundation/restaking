@@ -103,15 +103,13 @@ export type SetProgramFeeInput<
 export function getSetProgramFeeInstruction<
   TAccountConfig extends string,
   TAccountAdmin extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
-  input: SetProgramFeeInput<TAccountConfig, TAccountAdmin>
-): SetProgramFeeInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
-  TAccountConfig,
-  TAccountAdmin
-> {
+  input: SetProgramFeeInput<TAccountConfig, TAccountAdmin>,
+  config?: { programAddress?: TProgramAddress }
+): SetProgramFeeInstruction<TProgramAddress, TAccountConfig, TAccountAdmin> {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -133,11 +131,7 @@ export function getSetProgramFeeInstruction<
     data: getSetProgramFeeInstructionDataEncoder().encode(
       args as SetProgramFeeInstructionDataArgs
     ),
-  } as SetProgramFeeInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
-    TAccountConfig,
-    TAccountAdmin
-  >;
+  } as SetProgramFeeInstruction<TProgramAddress, TAccountConfig, TAccountAdmin>;
 
   return instruction;
 }

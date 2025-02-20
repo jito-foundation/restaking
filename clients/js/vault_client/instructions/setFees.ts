@@ -127,16 +127,18 @@ export function getSetFeesInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountAdmin extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
-  input: SetFeesInput<TAccountConfig, TAccountVault, TAccountAdmin>
+  input: SetFeesInput<TAccountConfig, TAccountVault, TAccountAdmin>,
+  config?: { programAddress?: TProgramAddress }
 ): SetFeesInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountVault,
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -164,7 +166,7 @@ export function getSetFeesInstruction<
       args as SetFeesInstructionDataArgs
     ),
   } as SetFeesInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountVault,
     TAccountAdmin

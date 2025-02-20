@@ -7,9 +7,10 @@ use jito_restaking_client::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
         InitializeNcnBuilder, InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder,
         InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder,
-        NcnCooldownOperatorBuilder, NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder,
-        OperatorSetFeeBuilder, OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder,
-        SetConfigAdminBuilder, WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+        NcnCooldownOperatorBuilder, NcnDelegateTokenAccountBuilder, NcnWarmupOperatorBuilder,
+        OperatorCooldownNcnBuilder, OperatorDelegateTokenAccountBuilder, OperatorSetFeeBuilder,
+        OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
+        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder, NcnWarmupOperatorBuilder
     },
     types::OperatorAdminRole,
 };
@@ -29,6 +30,9 @@ use solana_rpc_client_api::{
 use solana_sdk::{
     signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
+};
+use spl_associated_token_account::{
+    get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 
 use crate::{
@@ -95,6 +99,23 @@ impl RestakingCliHandler {
                 action: NcnActions::CooldownNcnVaultTicket { ncn, vault },
             } => self.cooldown_ncn_vault_ticket(ncn, vault).await,
             RestakingCommands::Ncn {
+                action:
+                    NcnActions::NcnDelegateTokenAccount {
+                        ncn,
+                        delegate,
+                        token_mint,
+                        should_create_token_account,
+                    },
+            } => {
+                self.ncn_delegate_token_account(
+                    ncn,
+                    delegate,
+                    token_mint,
+                    should_create_token_account,
+                )
+                .await
+            }
+            RestakingCommands::Ncn {
                 action: NcnActions::Get { pubkey },
             } => self.get_ncn(pubkey).await,
             RestakingCommands::Ncn {
@@ -149,6 +170,23 @@ impl RestakingCliHandler {
                     },
             } => self.operator_set_fee(operator, operator_fee_bps).await,
             RestakingCommands::Operator {
+                action:
+                    OperatorActions::OperatorDelegateTokenAccount {
+                        operator,
+                        delegate,
+                        token_mint,
+                        should_create_token_account,
+                    },
+            } => {
+                self.operator_delegate_token_account(
+                    operator,
+                    delegate,
+                    token_mint,
+                    should_create_token_account,
+                )
+                .await
+            }
+            RestakingCommands::Operator {
                 action: OperatorActions::Get { pubkey },
             } => self.get_operator(pubkey).await,
             RestakingCommands::Operator {
@@ -195,6 +233,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn operator_set_secondary_admin(
         &self,
         operator: String,
@@ -255,6 +294,118 @@ impl RestakingCliHandler {
             let result = rpc_client.send_and_confirm_transaction(&tx).await?;
             info!("Transaction confirmed: {:?}", result);
         }
+
+        Ok(())
+    }
+
+    pub async fn operator_delegate_token_account(
+        &self,
+        operator: String,
+        delegate: String,
+        token_mint: String,
+        should_create_token_account: bool,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let operator = Pubkey::from_str(&operator)?;
+        let delegate = Pubkey::from_str(&delegate)?;
+        let token_mint = Pubkey::from_str(&token_mint)?;
+
+        let token_account = get_associated_token_address(&operator, &token_mint);
+
+        let mut ixs = vec![];
+
+        if should_create_token_account {
+            let ix = create_associated_token_account_idempotent(
+                &keypair.pubkey(),
+                &operator,
+                &token_mint,
+                &spl_token::id(),
+            );
+            ixs.push(ix);
+        }
+
+        let mut ix_builder = OperatorDelegateTokenAccountBuilder::new();
+        ix_builder
+            .operator(operator)
+            .delegate(delegate)
+            .delegate_admin(keypair.pubkey())
+            .token_account(token_account)
+            .token_mint(token_mint);
+
+        ixs.push(ix_builder.instruction());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &ixs,
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
+
+        Ok(())
+    }
+
+    pub async fn ncn_delegate_token_account(
+        &self,
+        ncn: String,
+        delegate: String,
+        token_mint: String,
+        should_create_token_account: bool,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("No keypair"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let ncn = Pubkey::from_str(&ncn)?;
+        let delegate = Pubkey::from_str(&delegate)?;
+        let token_mint = Pubkey::from_str(&token_mint)?;
+
+        let token_account = get_associated_token_address(&ncn, &token_mint);
+
+        let mut ixs = vec![];
+
+        if should_create_token_account {
+            let ix = create_associated_token_account_idempotent(
+                &keypair.pubkey(),
+                &ncn,
+                &token_mint,
+                &spl_token::id(),
+            );
+            ixs.push(ix);
+        }
+
+        let mut ix_builder = NcnDelegateTokenAccountBuilder::new();
+        ix_builder
+            .ncn(ncn)
+            .delegate(delegate)
+            .delegate_admin(keypair.pubkey())
+            .token_account(token_account)
+            .token_mint(token_mint);
+
+        ixs.push(ix_builder.instruction());
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &ixs,
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
+        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", result);
 
         Ok(())
     }
@@ -596,13 +747,8 @@ impl RestakingCliHandler {
             .ok_or_else(|| anyhow!("No keypair"))?;
         let rpc_client = self.get_rpc_client();
 
-        let base = {
-            if let Some(path) = path_to_base_keypair {
-                read_keypair_file(path).unwrap()
-            } else {
-                Keypair::new()
-            }
-        };
+        let base =
+            path_to_base_keypair.map_or_else(Keypair::new, |path| read_keypair_file(path).unwrap());
         let ncn = Ncn::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
 
         let mut ix_builder = InitializeNcnBuilder::new();
@@ -880,6 +1026,7 @@ impl RestakingCliHandler {
                         min_context_slot: None,
                     },
                     with_context: None,
+                    sort_results: None,
                 },
             )
             .await?;
@@ -916,6 +1063,7 @@ impl RestakingCliHandler {
                         min_context_slot: None,
                     },
                     with_context: None,
+                    sort_results: None,
                 },
             )
             .await?;
