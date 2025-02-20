@@ -15,7 +15,6 @@ use jito_vault_client::{
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         WarmupVaultNcnTicketBuilder, DelegateTokenAccountBuilder
-        WarmupVaultNcnTicketBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
