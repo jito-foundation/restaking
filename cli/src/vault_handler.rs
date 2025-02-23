@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
-use jito_bytemuck::{AccountDeserialize, Discriminator};
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_restaking_core::{
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
@@ -94,7 +94,7 @@ impl VaultCliHandler {
                 min_context_slot: None,
             },
             with_context: Some(false),
-            sort_results: Some(true),
+            sort_results: Some(false),
         };
 
         Ok(config)
