@@ -96,6 +96,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 |----------|------------|------------------------------------------------------------------------|
 | Offside  | 2024-11-20 | [60b3884](security_audits/offside_jito_vault_audit.pdf)                |
 | Ottersec | 2024-10-25 | [f04242f](security_audits/ottersec_jito_restaking_audit.pdf)           |
+| Certora  | 2024-10-29 | [ecbe19a](security_audits/certora_jito_restaking_vault_audit_v1.pdf)   |
+| Certora  | 2024-12-23 | [3fdcd88](security_audits/certora_jito_restaking_vault_audit_v2.pdf)   |
 
 ## License
 
