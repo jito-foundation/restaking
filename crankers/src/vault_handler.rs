@@ -1,7 +1,8 @@
 use std::time::Duration;
 
 use anyhow::Context;
-use jito_bytemuck::{AccountDeserialize, Discriminator};
+use base64::{engine::general_purpose, Engine};
+use jito_bytemuck::AccountDeserialize;
 use jito_vault_client::{
     instructions::{
         CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
@@ -14,7 +15,7 @@ use jito_vault_core::{
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
 use log::error;
-use solana_account_decoder::UiAccountEncoding;
+use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
     config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
@@ -62,6 +63,42 @@ impl<'a> VaultHandler<'a> {
     /// `confirmed` commitment level for interactions with the Solana blockchain.
     fn get_rpc_client(&self) -> RpcClient {
         RpcClient::new_with_commitment(self.rpc_url.clone(), CommitmentConfig::confirmed())
+    }
+
+    /// Constructs an `RpcProgramAccountsConfig` for querying accounts of a given type `T`.
+    ///
+    /// # Returns
+    /// - `Ok(RpcProgramAccountsConfig)`: A valid configuration for filtering accounts in
+    ///   Solana's RPC API.
+    /// - `Err(anyhow::Error)`: If the data size calculation fails (e.g., due to overflow).
+    fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
+        &self,
+    ) -> anyhow::Result<RpcProgramAccountsConfig> {
+        let data_size = std::mem::size_of::<T>()
+            .checked_add(8)
+            .ok_or_else(|| anyhow::anyhow!("Failed to add"))?;
+        let encoded_discriminator =
+            general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
+        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
+            0,
+            MemcmpEncodedBytes::Base64(encoded_discriminator),
+        ));
+        let config = RpcProgramAccountsConfig {
+            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64),
+                data_slice: Some(UiDataSliceConfig {
+                    offset: 0,
+                    length: data_size,
+                }),
+                commitment: None,
+                min_context_slot: None,
+            },
+            with_context: Some(false),
+            sort_results: Some(false),
+        };
+
+        Ok(config)
     }
 
     /// Sends and confirms a transaction with retries, priority fees, and blockhash refresh
@@ -135,22 +172,10 @@ impl<'a> VaultHandler<'a> {
     /// - `Vault`: The deserialized vault data from the account.
     pub async fn get_vaults(&self) -> anyhow::Result<Vec<(Pubkey, Vault)>> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Vault>()?;
 
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.vault_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Vault::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        ..RpcAccountInfoConfig::default()
-                    },
-                    ..RpcProgramAccountsConfig::default()
-                },
-            )
+            .get_program_accounts_with_config(&self.vault_program_id, config)
             .await?;
 
         let vaults: Vec<(Pubkey, Vault)> = accounts
@@ -175,21 +200,10 @@ impl<'a> VaultHandler<'a> {
         &self,
     ) -> anyhow::Result<Vec<(Pubkey, VaultOperatorDelegation)>> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>()?;
+
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.vault_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![VaultOperatorDelegation::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        ..RpcAccountInfoConfig::default()
-                    },
-                    ..RpcProgramAccountsConfig::default()
-                },
-            )
+            .get_program_accounts_with_config(&self.vault_program_id, config)
             .await?;
 
         let delegations: Vec<(Pubkey, VaultOperatorDelegation)> = accounts

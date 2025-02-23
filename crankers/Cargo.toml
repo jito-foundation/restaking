@@ -15,6 +15,7 @@ path = "src/bin/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+base64 = { workspace = true }
 clap = { workspace = true }
 dotenv = { workspace = true }
 env_logger = { workspace = true }

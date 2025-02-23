@@ -2529,6 +2529,7 @@ version = "0.0.3"
 dependencies = [
  "anyhow",
  "assert_matches",
+ "base64 0.22.1",
  "borsh 0.10.4",
  "bytemuck",
  "chrono",
@@ -2703,6 +2704,7 @@ name = "jito-vault-cranker"
 version = "0.0.3"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "clap 4.5.28",
  "dotenv",
  "env_logger 0.10.2",
