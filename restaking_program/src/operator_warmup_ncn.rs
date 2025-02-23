@@ -36,7 +36,7 @@ pub fn process_operator_warmup_ncn(program_id: &Pubkey, accounts: &[AccountInfo]
         NcnOperatorState::try_from_slice_unchecked_mut(&mut ncn_operator_state_data)?;
     if !ncn_operator_state
         .operator_opt_in_state
-        .activate(Clock::get()?.slot, config.epoch_length())
+        .activate(Clock::get()?.slot, config.epoch_length())?
     {
         msg!("Operator is not ready to warm up NCN");
         return Err(RestakingError::OperatorWarmupNcnFailed.into());

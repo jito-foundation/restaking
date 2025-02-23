@@ -25,7 +25,6 @@ mod warmup_ncn_vault_ticket;
 mod warmup_operator_vault_ticket;
 
 use borsh::BorshDeserialize;
-use const_str_to_pubkey::str_to_pubkey;
 use jito_restaking_sdk::instruction::RestakingInstruction;
 use operator_set_fee::process_operator_set_fee;
 use solana_program::{
@@ -59,7 +58,7 @@ use crate::{
     warmup_operator_vault_ticket::process_warmup_operator_vault_ticket,
 };
 
-declare_id!(str_to_pubkey(env!("RESTAKING_PROGRAM_ID")));
+declare_id!(env!("RESTAKING_PROGRAM_ID"));
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {

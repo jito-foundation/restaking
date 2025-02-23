@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, MAX_FEE_BPS};
+    use jito_vault_core::{config::Config, MAX_BPS};
     use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_sdk::{
         pubkey::Pubkey,
@@ -589,7 +589,7 @@ mod tests {
 
         let new_deposit_fee_bps = config.deposit_withdrawal_fee_cap_bps() + 1;
         let new_withdrawal_fee_bps = config.deposit_withdrawal_fee_cap_bps() + 1;
-        let new_reward_fee_bps = MAX_FEE_BPS + 1;
+        let new_reward_fee_bps = MAX_BPS + 1;
 
         let result = fixture
             .vault_program_client()
@@ -994,9 +994,9 @@ mod tests {
             .await
             .unwrap();
 
-        let new_deposit_fee_bps = MAX_FEE_BPS + 1;
-        let new_withdrawal_fee_bps = MAX_FEE_BPS + 1;
-        let new_reward_fee_bps = MAX_FEE_BPS + 1;
+        let new_deposit_fee_bps = MAX_BPS + 1;
+        let new_withdrawal_fee_bps = MAX_BPS + 1;
+        let new_reward_fee_bps = MAX_BPS + 1;
 
         let result = fixture
             .vault_program_client()
@@ -1077,7 +1077,7 @@ mod tests {
 
         // Try to set fee above MAX_FEE_BPS
         let result = vault_program_client
-            .set_program_fee(&config_admin, MAX_FEE_BPS + 1)
+            .set_program_fee(&config_admin, MAX_BPS + 1)
             .await;
         assert!(result.is_err());
 

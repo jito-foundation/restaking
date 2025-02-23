@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, vault_update_state_tracker::VaultUpdateStateTracker};
+    use jito_vault_core::{
+        config::Config, vault::Vault, vault_update_state_tracker::VaultUpdateStateTracker,
+    };
     use jito_vault_sdk::error::VaultError;
     use solana_program::instruction::InstructionError;
     use solana_sdk::{signature::Keypair, signer::Signer};
@@ -291,6 +293,12 @@ mod tests {
             .await
             .unwrap();
 
+        // Do full update
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &[operator_root.operator_pubkey])
+            .await
+            .unwrap();
+
         // Set fees
         let new_withdrawal_fee_bps = 10;
         let new_program_fee_bps = 11;
@@ -425,12 +433,11 @@ mod tests {
             .unwrap();
 
         fixture
-            .warp_slot_incremental(2 * config.epoch_length())
+            .warp_slot_incremental(1 * config.epoch_length())
             .await
             .unwrap();
 
         // enqueued for cool down assets are now cooling down
-
         let slot = fixture.get_current_slot().await.unwrap();
         let ncn_epoch = slot / config.epoch_length();
 
@@ -440,6 +447,7 @@ mod tests {
             ncn_epoch,
         )
         .0;
+
         vault_program_client
             .initialize_vault_update_state_tracker(
                 &vault_root.vault_pubkey,
@@ -453,7 +461,17 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
+        assert_eq!(
+            vault.additional_assets_need_unstaking(),
+            75_000 - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
+
+        // skip cranking operator 0, advance to next epoch
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
 
         // Update fees
         let new_withdrawal_fee_bps = 10;
@@ -474,13 +492,6 @@ mod tests {
             .await
             .unwrap();
 
-        // skip cranking operator 0, advance to next epoch
-
-        fixture
-            .warp_slot_incremental(config.epoch_length())
-            .await
-            .unwrap();
-
         let slot = fixture.get_current_slot().await.unwrap();
         let ncn_epoch = slot / config.epoch_length();
         // no assets cooled down, additional_assets_need_unstaking = 75_000
@@ -490,7 +501,10 @@ mod tests {
             .unwrap();
 
         // no assets cooled down, additional_assets_need_unstaking = 75_000
-        assert_eq!(vault.additional_assets_need_unstaking(), 75_000);
+        assert_eq!(
+            vault.additional_assets_need_unstaking(),
+            75_000 - Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
 
         let vault_update_state_tracker_pubkey = VaultUpdateStateTracker::find_program_address(
             &jito_vault_program::id(),
@@ -545,7 +559,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(vault.delegation_state.staked_amount(), 25_000);
+        assert_eq!(
+            vault.delegation_state.staked_amount(),
+            25_000 + Vault::DEFAULT_INITIALIZATION_TOKEN_AMOUNT
+        );
         assert_eq!(vault.delegation_state.enqueued_for_cooldown_amount(), 0);
         assert_eq!(vault.vrt_ready_to_claim_amount(), 75_000);
     }

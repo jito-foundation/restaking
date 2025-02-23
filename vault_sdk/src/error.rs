@@ -5,6 +5,8 @@ use thiserror::Error;
 pub enum VaultError {
     #[error("VaultSlashUnderflow")]
     VaultSlashUnderflow = 1000,
+    #[error("VaultInitialAmountFailed")]
+    VaultInitialAmountFailed,
     #[error("VaultInsufficientFunds")]
     VaultInsufficientFunds,
     #[error("VaultOverflow")]
@@ -117,9 +119,10 @@ pub enum VaultError {
     VaultRewardFeeDeltaTooLarge,
     #[error("VaultRewardFeeIsZero")]
     VaultRewardFeeIsZero,
+    #[error("VrtOutCannotBeZero")]
+    VrtOutCannotBeZero,
     #[error("NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate")]
     NonZeroAdditionalAssetsNeededForWithdrawalAtEndOfUpdate,
-
     #[error("ArithmeticOverflow")]
     ArithmeticOverflow = 3000,
     #[error("ArithmeticUnderflow")]

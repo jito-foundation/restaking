@@ -21,6 +21,7 @@ env_logger = { workspace = true }
 futures = { workspace = true }
 jito-account-traits-derive = { workspace = true }
 jito-bytemuck = { workspace = true }
+jito-jsm-core = { workspace = true }
 jito-restaking-client = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-vault-client = { workspace = true }
@@ -32,5 +33,7 @@ solana-metrics = { workspace = true }
 solana-rpc-client = { workspace = true }
 solana-rpc-client-api = { workspace = true }
 solana-sdk = { workspace = true }
+spl-associated-token-account = { workspace = true }
+spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
