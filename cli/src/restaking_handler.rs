@@ -1,7 +1,8 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use jito_bytemuck::{AccountDeserialize, Discriminator};
+use base64::{engine::general_purpose, Engine};
+use jito_bytemuck::AccountDeserialize;
 use jito_restaking_client::{
     instructions::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
@@ -20,7 +21,7 @@ use jito_restaking_core::{
     operator_vault_ticket::OperatorVaultTicket,
 };
 use log::{debug, info};
-use solana_account_decoder::UiAccountEncoding;
+use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
 use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
 use solana_rpc_client_api::{
@@ -61,6 +62,36 @@ impl RestakingCliHandler {
 
     fn get_rpc_client(&self) -> RpcClient {
         RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
+    }
+
+    fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
+        &self,
+    ) -> Result<RpcProgramAccountsConfig> {
+        let data_size = std::mem::size_of::<T>()
+            .checked_add(8)
+            .ok_or_else(|| anyhow!("Failed to add"))?;
+        let encoded_discriminator =
+            general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
+        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
+            0,
+            MemcmpEncodedBytes::Base64(encoded_discriminator),
+        ));
+        let config = RpcProgramAccountsConfig {
+            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64),
+                data_slice: Some(UiDataSliceConfig {
+                    offset: 0,
+                    length: data_size,
+                }),
+                commitment: None,
+                min_context_slot: None,
+            },
+            with_context: Some(false),
+            sort_results: Some(true),
+        };
+
+        Ok(config)
     }
 
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
@@ -1011,24 +1042,10 @@ impl RestakingCliHandler {
 
     pub async fn list_ncn(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Ncn>()?;
+
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.restaking_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Ncn::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (ncn_pubkey, ncn) in accounts {
             let ncn = Ncn::try_from_slice_unchecked(&ncn.data)?;
@@ -1048,24 +1065,9 @@ impl RestakingCliHandler {
 
     pub async fn list_operator(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Operator>()?;
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.restaking_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Operator::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (operator_pubkey, operator) in accounts {
             let operator = Operator::try_from_slice_unchecked(&operator.data)?;
