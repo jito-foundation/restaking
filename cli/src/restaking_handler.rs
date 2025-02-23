@@ -88,7 +88,7 @@ impl RestakingCliHandler {
                 min_context_slot: None,
             },
             with_context: Some(false),
-            sort_results: Some(true),
+            sort_results: Some(false),
         };
 
         Ok(config)
