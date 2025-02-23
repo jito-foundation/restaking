@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
+use base64::{engine::general_purpose, Engine};
 use jito_bytemuck::{AccountDeserialize, Discriminator};
 use jito_jsm_core::get_epoch;
 use jito_restaking_core::{
@@ -26,7 +27,7 @@ use jito_vault_core::{
 };
 use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
-use solana_account_decoder::UiAccountEncoding;
+use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
 use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
 use solana_rpc_client_api::{
@@ -1198,25 +1199,34 @@ impl VaultCliHandler {
 
     pub async fn list_vaults(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let data_size = std::mem::size_of::<Vault>() + 8;
+        let encoded_discriminator =
+            general_purpose::STANDARD.encode(vec![Vault::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
+
+        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
+            0,
+            MemcmpEncodedBytes::Base64(encoded_discriminator),
+        ));
+        let config = RpcProgramAccountsConfig {
+            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64),
+                data_slice: Some(UiDataSliceConfig {
+                    offset: 0,
+                    length: data_size,
+                }),
+                commitment: None,
+                min_context_slot: None,
+            },
+            with_context: Some(false),
+            sort_results: Some(true),
+        };
+
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.vault_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Vault::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
-            .await?;
+            .get_program_accounts_with_config(&self.vault_program_id, config)
+            .await
+            .unwrap();
+        log::info!("{:?}", accounts);
         for (vault_pubkey, vault) in accounts {
             let vault = Vault::try_from_slice_unchecked(&vault.data)?;
             info!("vault at address {}: {:?}", vault_pubkey, vault);
