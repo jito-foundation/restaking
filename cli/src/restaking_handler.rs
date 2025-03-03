@@ -36,8 +36,9 @@ use spl_associated_token_account::{
 };
 
 use crate::{
+    cli_config::CliConfig,
+    cli_signer::CliSigner,
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
-    CliConfig,
 };
 
 pub struct RestakingCliHandler {
@@ -196,11 +197,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn operator_set_fee(&self, operator: String, operator_fee_bps: u16) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let (restaking_vault_config, _, _) =
@@ -212,17 +213,18 @@ impl RestakingCliHandler {
         ix_builder
             .operator(operator)
             .new_fee_bps(operator_fee_bps)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .config(restaking_vault_config)
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
+
         info!(
             "Setting fees to {:?} to Operator {}",
             operator_fee_bps, operator,
@@ -244,11 +246,11 @@ impl RestakingCliHandler {
         set_delegate_admin: bool,
         set_metadata_admin: bool,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
@@ -276,15 +278,15 @@ impl RestakingCliHandler {
             ix_builder
                 .new_admin(new_admin)
                 .operator(operator)
-                .admin(keypair.pubkey())
+                .admin(signer.pubkey())
                 .operator_admin_role(*role)
                 .instruction();
 
             let blockhash = rpc_client.get_latest_blockhash().await?;
             let tx = Transaction::new_signed_with_payer(
                 &[ix_builder.instruction()],
-                Some(&keypair.pubkey()),
-                &[keypair],
+                Some(&signer.pubkey()),
+                &[signer],
                 blockhash,
             );
             info!(
@@ -305,11 +307,11 @@ impl RestakingCliHandler {
         token_mint: String,
         should_create_token_account: bool,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
@@ -322,7 +324,7 @@ impl RestakingCliHandler {
 
         if should_create_token_account {
             let ix = create_associated_token_account_idempotent(
-                &keypair.pubkey(),
+                &signer.pubkey(),
                 &operator,
                 &token_mint,
                 &spl_token::id(),
@@ -334,19 +336,15 @@ impl RestakingCliHandler {
         ix_builder
             .operator(operator)
             .delegate(delegate)
-            .delegate_admin(keypair.pubkey())
+            .delegate_admin(signer.pubkey())
             .token_account(token_account)
             .token_mint(token_mint);
 
         ixs.push(ix_builder.instruction());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&keypair.pubkey()),
-            &[keypair],
-            blockhash,
-        );
+        let tx =
+            Transaction::new_signed_with_payer(&ixs, Some(&signer.pubkey()), &[signer], blockhash);
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
         let result = rpc_client.send_and_confirm_transaction(&tx).await?;
         info!("Transaction confirmed: {:?}", result);
@@ -361,11 +359,11 @@ impl RestakingCliHandler {
         token_mint: String,
         should_create_token_account: bool,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -378,7 +376,7 @@ impl RestakingCliHandler {
 
         if should_create_token_account {
             let ix = create_associated_token_account_idempotent(
-                &keypair.pubkey(),
+                &signer.pubkey(),
                 &ncn,
                 &token_mint,
                 &spl_token::id(),
@@ -390,19 +388,15 @@ impl RestakingCliHandler {
         ix_builder
             .ncn(ncn)
             .delegate(delegate)
-            .delegate_admin(keypair.pubkey())
+            .delegate_admin(signer.pubkey())
             .token_account(token_account)
             .token_mint(token_mint);
 
         ixs.push(ix_builder.instruction());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&keypair.pubkey()),
-            &[keypair],
-            blockhash,
-        );
+        let tx =
+            Transaction::new_signed_with_payer(&ixs, Some(&signer.pubkey()), &[signer], blockhash);
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
         let result = rpc_client.send_and_confirm_transaction(&tx).await?;
         info!("Transaction confirmed: {:?}", result);
@@ -411,11 +405,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn initialize_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -430,15 +424,15 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .vault(vault)
             .ncn_vault_ticket(ncn_vault_ticket)
-            .admin(keypair.pubkey())
-            .payer(keypair.pubkey())
+            .admin(signer.pubkey())
+            .payer(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Initializing NCN Vault Ticket");
@@ -449,11 +443,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn warmup_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -468,14 +462,14 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .vault(vault)
             .ncn_vault_ticket(ncn_vault_ticket)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Warmup NCN Vault Ticket");
@@ -486,11 +480,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn cooldown_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -505,14 +499,14 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .vault(vault)
             .ncn_vault_ticket(ncn_vault_ticket)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Cooldown NCN Vault Ticket");
@@ -523,11 +517,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn initialize_ncn_operator_state(&self, ncn: String, operator: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -542,15 +536,15 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .operator(operator)
             .ncn_operator_state(ncn_operator_state)
-            .admin(keypair.pubkey())
-            .payer(keypair.pubkey())
+            .admin(signer.pubkey())
+            .payer(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Initializing NCN Operator State");
@@ -561,11 +555,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn ncn_warmup_operator(&self, ncn: String, operator: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -580,14 +574,14 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .operator(operator)
             .ncn_operator_state(ncn_operator_state)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("NCN Warmup Operator");
@@ -598,11 +592,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn ncn_cooldown_operator(&self, ncn: String, operator: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
@@ -617,14 +611,14 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .operator(operator)
             .ncn_operator_state(ncn_operator_state)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("NCN Cooldown Operator");
@@ -635,11 +629,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn operator_warmup_ncn(&self, operator: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
@@ -654,14 +648,14 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .operator(operator)
             .ncn_operator_state(ncn_operator_state)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Operator Warmup NCN");
@@ -672,11 +666,11 @@ impl RestakingCliHandler {
     }
 
     pub async fn operator_cooldown_ncn(&self, operator: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
@@ -691,14 +685,14 @@ impl RestakingCliHandler {
             .ncn(ncn)
             .operator(operator)
             .ncn_operator_state(ncn_operator_state)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Operator Cooldown NCN");
@@ -709,24 +703,24 @@ impl RestakingCliHandler {
     }
 
     async fn initialize_config(&self) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let config_address = Config::find_program_address(&self.restaking_program_id).0;
         let mut ix_builder = InitializeConfigBuilder::new();
         ix_builder
             .config(config_address)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .vault_program(self.vault_program_id);
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Initializing restaking config parameters: {:?}", ix_builder);
@@ -740,30 +734,31 @@ impl RestakingCliHandler {
     }
 
     pub async fn initialize_ncn(&self, path_to_base_keypair: Option<String>) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let base =
             path_to_base_keypair.map_or_else(Keypair::new, |path| read_keypair_file(path).unwrap());
-        let ncn = Ncn::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
+        let base_signer = CliSigner::new(Some(base), None);
+        let ncn = Ncn::find_program_address(&self.restaking_program_id, &base_signer.pubkey()).0;
 
         let mut ix_builder = InitializeNcnBuilder::new();
         ix_builder
             .config(Config::find_program_address(&self.restaking_program_id).0)
             .ncn(ncn)
-            .admin(keypair.pubkey())
-            .base(base.pubkey())
+            .admin(signer.pubkey())
+            .base(base_signer.pubkey())
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair, &base],
+            Some(&signer.pubkey()),
+            &[signer, &base_signer],
             blockhash,
         );
         info!("Initializing NCN: {:?}", ncn);
@@ -787,30 +782,31 @@ impl RestakingCliHandler {
     }
 
     pub async fn initialize_operator(&self, operator_fee_bps: u16) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
-        let base = Keypair::new();
-        let operator = Operator::find_program_address(&self.restaking_program_id, &base.pubkey()).0;
+        let base_signer = CliSigner::new(Some(Keypair::new()), None);
+        let operator =
+            Operator::find_program_address(&self.restaking_program_id, &base_signer.pubkey()).0;
 
         let mut ix_builder = InitializeOperatorBuilder::new();
         ix_builder
             .config(Config::find_program_address(&self.restaking_program_id).0)
             .operator(operator)
-            .admin(keypair.pubkey())
-            .base(base.pubkey())
+            .admin(signer.pubkey())
+            .base(base_signer.pubkey())
             .operator_fee_bps(operator_fee_bps)
             .instruction();
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair, &base],
+            Some(&signer.pubkey()),
+            &[signer, &base_signer],
             blockhash,
         );
         info!("Initializing operator: {:?}", operator);
@@ -841,9 +837,9 @@ impl RestakingCliHandler {
         operator: String,
         vault: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -863,15 +859,15 @@ impl RestakingCliHandler {
             .config(Config::find_program_address(&self.restaking_program_id).0)
             .operator(operator)
             .vault(vault)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .operator_vault_ticket(operator_vault_ticket)
-            .payer(keypair.pubkey());
+            .payer(signer.pubkey());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
 
@@ -895,9 +891,9 @@ impl RestakingCliHandler {
         operator: String,
         vault: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -918,13 +914,13 @@ impl RestakingCliHandler {
             .operator(operator)
             .vault(vault)
             .operator_vault_ticket(operator_vault_ticket)
-            .admin(keypair.pubkey());
+            .admin(signer.pubkey());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
 
@@ -943,9 +939,9 @@ impl RestakingCliHandler {
         operator: String,
         vault: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -966,13 +962,13 @@ impl RestakingCliHandler {
             .operator(operator)
             .vault(vault)
             .operator_vault_ticket(operator_vault_ticket)
-            .admin(keypair.pubkey());
+            .admin(signer.pubkey());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
 
@@ -1075,25 +1071,25 @@ impl RestakingCliHandler {
     }
 
     async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("No keypair"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let rpc_client = self.get_rpc_client();
 
         let config_address = Config::find_program_address(&self.restaking_program_id).0;
         let mut ix_builder = SetConfigAdminBuilder::new();
         ix_builder
             .config(config_address)
-            .old_admin(keypair.pubkey())
+            .old_admin(signer.pubkey())
             .new_admin(new_admin);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
