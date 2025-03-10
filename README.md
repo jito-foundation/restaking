@@ -7,9 +7,6 @@
 
 Jito Restaking is a next-generation restaking platform for Solana and SVM environments.
 
-**This project is currently under development and is not yet ready for production use.
-Expect breaking changes.**
-
 ## Table of Contents
 
 - [Features](#features)
