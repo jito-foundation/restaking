@@ -29,7 +29,7 @@ incremental = false
 codegen-units = 1
 
 [workspace.package]
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Jito Network Maintainers <support@jito.network>"]
 repository = "https://github.com/jito-foundation/restaking"
 homepage = "https://jito.network/"
@@ -51,17 +51,17 @@ dotenv = "0.15.0"
 envfile = "0.2.1"
 env_logger = "0.10.2"
 futures = "0.3.31"
-jito-bytemuck = { path = "bytemuck", version = "=0.0.3" }
-jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.3" }
-jito-jsm-core = { path = "core", version = "=0.0.3" }
-jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.3" }
-jito-restaking-core = { path = "restaking_core", version = "=0.0.3" }
-jito-restaking-program = { path = "restaking_program", version = "=0.0.3" }
-jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.3" }
-jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.3" }
-jito-vault-core = { path = "vault_core", version = "=0.0.3" }
-jito-vault-program = { path = "vault_program", version = "=0.0.3" }
-jito-vault-sdk = { path = "vault_sdk", version = "=0.0.3" }
+jito-bytemuck = { path = "bytemuck", version = "=0.0.4" }
+jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.4" }
+jito-jsm-core = { path = "core", version = "=0.0.4" }
+jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.4" }
+jito-restaking-core = { path = "restaking_core", version = "=0.0.4" }
+jito-restaking-program = { path = "restaking_program", version = "=0.0.4" }
+jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.4" }
+jito-vault-client = { path = "clients/rust/vault_client", version = "=0.0.4" }
+jito-vault-core = { path = "vault_core", version = "=0.0.4" }
+jito-vault-program = { path = "vault_program", version = "=0.0.4" }
+jito-vault-sdk = { path = "vault_sdk", version = "=0.0.4" }
 log = "0.4.22"
 matches = "0.1.10"
 num-derive = "0.4.2"
