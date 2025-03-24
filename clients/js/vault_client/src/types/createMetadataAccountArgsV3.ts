@@ -21,7 +21,7 @@ import {
   type Encoder,
   type Option,
   type OptionOrNullable,
-} from '@solana/web3.js';
+} from '@solana/kit';
 import {
   getDataV2Decoder,
   getDataV2Encoder,

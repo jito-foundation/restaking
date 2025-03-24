@@ -3,9 +3,12 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
+//!
 
 pub(crate) mod r#ncn_admin_role;
 pub(crate) mod r#operator_admin_role;
 pub(crate) mod r#slot_toggle;
 
-pub use self::{r#ncn_admin_role::*, r#operator_admin_role::*, r#slot_toggle::*};
+pub use self::r#ncn_admin_role::*;
+pub use self::r#operator_admin_role::*;
+pub use self::r#slot_toggle::*;

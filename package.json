@@ -5,7 +5,8 @@
   "license": "BSL-1.0",
   "private": true,
   "workspaces": [
-    "clients/js/*"
+    "clients/js/restaking_client",
+    "clients/js/vault_client"
   ],
   "dependencies": {
     "@exo-tech-xyz/nodes-from-anchor": "0.21.3",

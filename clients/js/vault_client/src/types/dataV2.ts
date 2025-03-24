@@ -27,7 +27,7 @@ import {
   type Encoder,
   type Option,
   type OptionOrNullable,
-} from '@solana/web3.js';
+} from '@solana/kit';
 
 export type DataV2 = {
   name: string;

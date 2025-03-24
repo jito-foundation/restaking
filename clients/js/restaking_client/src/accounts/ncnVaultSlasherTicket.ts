@@ -33,7 +33,7 @@ import {
   type FetchAccountsConfig,
   type MaybeAccount,
   type MaybeEncodedAccount,
-} from '@solana/web3.js';
+} from '@solana/kit';
 import {
   getSlotToggleDecoder,
   getSlotToggleEncoder,

@@ -19,7 +19,7 @@ yarn add jito-vault-client
 ### Fetch vault config
 
 ```typescript
-import { address, createSolanaRpc } from "@solana/web3.js";
+import { address, createSolanaRpc } from "@solana/kit";
 import { fetchConfig } from "jito-vault-client";
 
 const rpc = createSolanaRpc("https://api.devnet.solana.com");

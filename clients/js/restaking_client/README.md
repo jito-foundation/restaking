@@ -19,7 +19,7 @@ yarn add jito-restaking-client
 ### Fetch Restaking Config
 
 ```typescript
-import { address, createSolanaRpc } from "@solana/web3.js";
+import { address, createSolanaRpc } from "@solana/kit";
 import { fetchConfig } from "jito-restaking-client";
 
 const rpc = createSolanaRpc("https://api.devnet.solana.com");

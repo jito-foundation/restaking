@@ -20,7 +20,7 @@ import {
   type Decoder,
   type Encoder,
   type ReadonlyUint8Array,
-} from '@solana/web3.js';
+} from '@solana/kit';
 
 export type SlotToggle = {
   slotAdded: bigint;

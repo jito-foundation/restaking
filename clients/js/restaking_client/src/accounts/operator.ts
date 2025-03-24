@@ -35,7 +35,7 @@ import {
   type FetchAccountsConfig,
   type MaybeAccount,
   type MaybeEncodedAccount,
-} from '@solana/web3.js';
+} from '@solana/kit';
 
 export type Operator = {
   discriminator: bigint;

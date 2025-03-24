@@ -21,7 +21,7 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
-} from '@solana/web3.js';
+} from '@solana/kit';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 
 export const INITIALIZE_VAULT_WITH_MINT_DISCRIMINATOR = 2;

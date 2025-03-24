@@ -1194,6 +1194,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^22.9.2":
+  version: 22.13.13
+  resolution: "@types/node@npm:22.13.13"
+  dependencies:
+    undici-types: "npm:~6.20.0"
+  checksum: 10c0/daf792ba5dcff1316abf4b33680f94b792f8d54d6ae495efc8929531e0ba1284a248d29aab117d2259f9280284d986ad5799b193b0516e2b926d713aab835f7d
+  languageName: node
+  linkType: hard
+
 "a-sync-waterfall@npm:^1.0.0":
   version: 1.0.1
   resolution: "a-sync-waterfall@npm:1.0.1"
@@ -1828,6 +1837,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jito-restaking-client@workspace:clients/js/restaking_client":
+  version: 0.0.0-use.local
+  resolution: "jito-restaking-client@workspace:clients/js/restaking_client"
+  dependencies:
+    "@solana/kit": "npm:^2.1.0"
+    "@types/node": "npm:^22.9.2"
+    tsup: "npm:^8.4.0"
+  languageName: unknown
+  linkType: soft
+
 "jito-restaking@workspace:.":
   version: 0.0.0-use.local
   resolution: "jito-restaking@workspace:."
@@ -1841,6 +1860,17 @@ __metadata:
     kinobi: "npm:^0.21.1"
     tsup: "npm:^8.3.5"
     yarn: "npm:2.4.3"
+  languageName: unknown
+  linkType: soft
+
+"jito-vault-client@workspace:clients/js/vault_client":
+  version: 0.0.0-use.local
+  resolution: "jito-vault-client@workspace:clients/js/vault_client"
+  dependencies:
+    "@solana/kit": "npm:^2.1.0"
+    "@types/node": "npm:^22.9.2"
+    tsup: "npm:^8.4.0"
+    typescript: "npm:^5.7.2"
   languageName: unknown
   linkType: soft
 
@@ -2579,7 +2609,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsup@npm:^8.3.5":
+"tsup@npm:^8.3.5, tsup@npm:^8.4.0":
   version: 8.4.0
   resolution: "tsup@npm:8.4.0"
   dependencies:
@@ -2620,10 +2650,37 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typescript@npm:^5.7.2":
+  version: 5.8.2
+  resolution: "typescript@npm:5.8.2"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/5c4f6fbf1c6389b6928fe7b8fcd5dc73bb2d58cd4e3883f1d774ed5bd83b151cbac6b7ecf11723de56d4676daeba8713894b1e9af56174f2f9780ae7848ec3c6
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@npm%3A^5.7.2#optional!builtin<compat/typescript>":
+  version: 5.8.2
+  resolution: "typescript@patch:typescript@npm%3A5.8.2#optional!builtin<compat/typescript>::version=5.8.2&hash=5786d5"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/5448a08e595cc558ab321e49d4cac64fb43d1fa106584f6ff9a8d8e592111b373a995a1d5c7f3046211c8a37201eb6d0f1566f15cdb7a62a5e3be01d087848e2
+  languageName: node
+  linkType: hard
+
 "undici-types@npm:^7.3.0":
   version: 7.5.0
   resolution: "undici-types@npm:7.5.0"
   checksum: 10c0/be7acfcd4be2c8146477254dd5a3c4e27ef16784228123f1fcc08bb26f26c7366605488b40e6ab8388fc082def95d46b4c0c637c0610e888aab5c47dc22dfce8
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~6.20.0":
+  version: 6.20.0
+  resolution: "undici-types@npm:6.20.0"
+  checksum: 10c0/68e659a98898d6a836a9a59e6adf14a5d799707f5ea629433e025ac90d239f75e408e2e5ff086afc3cace26f8b26ee52155293564593fbb4a2f666af57fc59bf
   languageName: node
   linkType: hard
 
