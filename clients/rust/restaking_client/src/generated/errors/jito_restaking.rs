@@ -107,3 +107,4 @@ impl solana_program::program_error::PrintProgramError for JitoRestakingError {
         solana_program::msg!(&self.to_string());
     }
 }
+

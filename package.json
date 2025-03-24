@@ -22,7 +22,7 @@
     "tsup": "^8.3.5"
   },
   "scripts": {
-    "generate-clients": "node scripts/generate-clients.js"
+    "generate-clients": "node scripts/generate-clients.js && node scripts/update-dependencies.js"
   },
   "volta": {
     "node": "22.14.0",

@@ -209,3 +209,4 @@ impl solana_program::program_error::PrintProgramError for JitoVaultError {
         solana_program::msg!(&self.to_string());
     }
 }
+

@@ -10,419 +10,382 @@ use borsh::BorshSerialize;
 
 /// Accounts.
 pub struct InitializeNcn {
-    pub config: solana_program::pubkey::Pubkey,
-
-    pub ncn: solana_program::pubkey::Pubkey,
-
-    pub admin: solana_program::pubkey::Pubkey,
-
-    pub base: solana_program::pubkey::Pubkey,
-
-    pub system_program: solana_program::pubkey::Pubkey,
-}
+      
+              
+          pub config: solana_program::pubkey::Pubkey,
+          
+              
+          pub ncn: solana_program::pubkey::Pubkey,
+          
+              
+          pub admin: solana_program::pubkey::Pubkey,
+          
+              
+          pub base: solana_program::pubkey::Pubkey,
+          
+              
+          pub system_program: solana_program::pubkey::Pubkey,
+      }
 
 impl InitializeNcn {
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
-    }
-    #[allow(clippy::vec_init_then_push)]
-    pub fn instruction_with_remaining_accounts(
-        &self,
-        remaining_accounts: &[solana_program::instruction::AccountMeta],
-    ) -> solana_program::instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new(
+  pub fn instruction(&self) -> solana_program::instruction::Instruction {
+    self.instruction_with_remaining_accounts(&[])
+  }
+  #[allow(clippy::vec_init_then_push)]
+  pub fn instruction_with_remaining_accounts(&self, remaining_accounts: &[solana_program::instruction::AccountMeta]) -> solana_program::instruction::Instruction {
+    let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+                            accounts.push(solana_program::instruction::AccountMeta::new(
             self.config,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.ncn, false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.admin, true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.base, true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            false
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new(
+            self.ncn,
+            false
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new(
+            self.admin,
+            true
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.base,
+            true
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.system_program,
-            false,
-        ));
-        accounts.extend_from_slice(remaining_accounts);
-        let data = InitializeNcnInstructionData::new().try_to_vec().unwrap();
-
-        solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_ID,
-            accounts,
-            data,
-        }
+            false
+          ));
+                      accounts.extend_from_slice(remaining_accounts);
+    let data = InitializeNcnInstructionData::new().try_to_vec().unwrap();
+    
+    solana_program::instruction::Instruction {
+      program_id: crate::JITO_RESTAKING_ID,
+      accounts,
+      data,
     }
+  }
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct InitializeNcnInstructionData {
-    discriminator: u8,
-}
+            discriminator: u8,
+      }
 
 impl InitializeNcnInstructionData {
-    pub fn new() -> Self {
-        Self { discriminator: 1 }
-    }
+  pub fn new() -> Self {
+    Self {
+                        discriminator: 1,
+                  }
+  }
 }
 
 impl Default for InitializeNcnInstructionData {
-    fn default() -> Self {
-        Self::new()
-    }
+  fn default() -> Self {
+    Self::new()
+  }
 }
+
+
 
 /// Instruction builder for `InitializeNcn`.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` config
-///   1. `[writable]` ncn
-///   2. `[writable, signer]` admin
-///   3. `[signer]` base
-///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
+                ///   0. `[writable]` config
+                ///   1. `[writable]` ncn
+                      ///   2. `[writable, signer]` admin
+                ///   3. `[signer]` base
+                ///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitializeNcnBuilder {
-    config: Option<solana_program::pubkey::Pubkey>,
-    ncn: Option<solana_program::pubkey::Pubkey>,
-    admin: Option<solana_program::pubkey::Pubkey>,
-    base: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
-    __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
+            config: Option<solana_program::pubkey::Pubkey>,
+                ncn: Option<solana_program::pubkey::Pubkey>,
+                admin: Option<solana_program::pubkey::Pubkey>,
+                base: Option<solana_program::pubkey::Pubkey>,
+                system_program: Option<solana_program::pubkey::Pubkey>,
+                __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
 impl InitializeNcnBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-    #[inline(always)]
+  pub fn new() -> Self {
+    Self::default()
+  }
+            #[inline(always)]
     pub fn config(&mut self, config: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.config = Some(config);
-        self
+                        self.config = Some(config);
+                    self
     }
-    #[inline(always)]
+            #[inline(always)]
     pub fn ncn(&mut self, ncn: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.ncn = Some(ncn);
-        self
+                        self.ncn = Some(ncn);
+                    self
     }
-    #[inline(always)]
+            #[inline(always)]
     pub fn admin(&mut self, admin: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.admin = Some(admin);
-        self
+                        self.admin = Some(admin);
+                    self
     }
-    #[inline(always)]
+            #[inline(always)]
     pub fn base(&mut self, base: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.base = Some(base);
-        self
+                        self.base = Some(base);
+                    self
     }
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    #[inline(always)]
+            /// `[optional account, default to '11111111111111111111111111111111']`
+#[inline(always)]
     pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
-        self
+                        self.system_program = Some(system_program);
+                    self
     }
-    /// Add an additional account to the instruction.
-    #[inline(always)]
-    pub fn add_remaining_account(
-        &mut self,
-        account: solana_program::instruction::AccountMeta,
-    ) -> &mut Self {
-        self.__remaining_accounts.push(account);
-        self
-    }
-    /// Add additional accounts to the instruction.
-    #[inline(always)]
-    pub fn add_remaining_accounts(
-        &mut self,
-        accounts: &[solana_program::instruction::AccountMeta],
-    ) -> &mut Self {
-        self.__remaining_accounts.extend_from_slice(accounts);
-        self
-    }
-    #[allow(clippy::clone_on_copy)]
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = InitializeNcn {
-            config: self.config.expect("config is not set"),
-            ncn: self.ncn.expect("ncn is not set"),
-            admin: self.admin.expect("admin is not set"),
-            base: self.base.expect("base is not set"),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
-        };
-
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
-    }
+            /// Add an additional account to the instruction.
+  #[inline(always)]
+  pub fn add_remaining_account(&mut self, account: solana_program::instruction::AccountMeta) -> &mut Self {
+    self.__remaining_accounts.push(account);
+    self
+  }
+  /// Add additional accounts to the instruction.
+  #[inline(always)]
+  pub fn add_remaining_accounts(&mut self, accounts: &[solana_program::instruction::AccountMeta]) -> &mut Self {
+    self.__remaining_accounts.extend_from_slice(accounts);
+    self
+  }
+  #[allow(clippy::clone_on_copy)]
+  pub fn instruction(&self) -> solana_program::instruction::Instruction {
+    let accounts = InitializeNcn {
+                              config: self.config.expect("config is not set"),
+                                        ncn: self.ncn.expect("ncn is not set"),
+                                        admin: self.admin.expect("admin is not set"),
+                                        base: self.base.expect("base is not set"),
+                                        system_program: self.system_program.unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
+                      };
+    
+    accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+  }
 }
 
-/// `initialize_ncn` CPI accounts.
-pub struct InitializeNcnCpiAccounts<'a, 'b> {
-    pub config: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub base: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
-}
+  /// `initialize_ncn` CPI accounts.
+  pub struct InitializeNcnCpiAccounts<'a, 'b> {
+          
+                    
+              pub config: &'b solana_program::account_info::AccountInfo<'a>,
+                
+                    
+              pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
+                
+                    
+              pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+                
+                    
+              pub base: &'b solana_program::account_info::AccountInfo<'a>,
+                
+                    
+              pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+            }
 
 /// `initialize_ncn` CPI instruction.
 pub struct InitializeNcnCpi<'a, 'b> {
-    /// The program to invoke.
-    pub __program: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub config: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub admin: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub base: &'b solana_program::account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
-}
+  /// The program to invoke.
+  pub __program: &'b solana_program::account_info::AccountInfo<'a>,
+      
+              
+          pub config: &'b solana_program::account_info::AccountInfo<'a>,
+          
+              
+          pub ncn: &'b solana_program::account_info::AccountInfo<'a>,
+          
+              
+          pub admin: &'b solana_program::account_info::AccountInfo<'a>,
+          
+              
+          pub base: &'b solana_program::account_info::AccountInfo<'a>,
+          
+              
+          pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+        }
 
 impl<'a, 'b> InitializeNcnCpi<'a, 'b> {
-    pub fn new(
-        program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: InitializeNcnCpiAccounts<'a, 'b>,
-    ) -> Self {
-        Self {
-            __program: program,
-            config: accounts.config,
-            ncn: accounts.ncn,
-            admin: accounts.admin,
-            base: accounts.base,
-            system_program: accounts.system_program,
-        }
-    }
-    #[inline(always)]
-    pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
-        self.invoke_signed_with_remaining_accounts(&[], &[])
-    }
-    #[inline(always)]
-    pub fn invoke_with_remaining_accounts(
-        &self,
-        remaining_accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> solana_program::entrypoint::ProgramResult {
-        self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
-    }
-    #[inline(always)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program::entrypoint::ProgramResult {
-        self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
-    }
-    #[allow(clippy::clone_on_copy)]
-    #[allow(clippy::vec_init_then_push)]
-    pub fn invoke_signed_with_remaining_accounts(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-        remaining_accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> solana_program::entrypoint::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new(
+  pub fn new(
+    program: &'b solana_program::account_info::AccountInfo<'a>,
+          accounts: InitializeNcnCpiAccounts<'a, 'b>,
+          ) -> Self {
+    Self {
+      __program: program,
+              config: accounts.config,
+              ncn: accounts.ncn,
+              admin: accounts.admin,
+              base: accounts.base,
+              system_program: accounts.system_program,
+                }
+  }
+  #[inline(always)]
+  pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
+    self.invoke_signed_with_remaining_accounts(&[], &[])
+  }
+  #[inline(always)]
+  pub fn invoke_with_remaining_accounts(&self, remaining_accounts: &[(&'b solana_program::account_info::AccountInfo<'a>, bool, bool)]) -> solana_program::entrypoint::ProgramResult {
+    self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
+  }
+  #[inline(always)]
+  pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program::entrypoint::ProgramResult {
+    self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
+  }
+  #[allow(clippy::clone_on_copy)]
+  #[allow(clippy::vec_init_then_push)]
+  pub fn invoke_signed_with_remaining_accounts(
+    &self,
+    signers_seeds: &[&[&[u8]]],
+    remaining_accounts: &[(&'b solana_program::account_info::AccountInfo<'a>, bool, bool)]
+  ) -> solana_program::entrypoint::ProgramResult {
+    let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+                            accounts.push(solana_program::instruction::AccountMeta::new(
             *self.config.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
+            false
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new(
             *self.ncn.key,
-            false,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new(
+            false
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new(
             *self.admin.key,
-            true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            true
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.base.key,
-            true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            true
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.system_program.key,
-            false,
-        ));
-        remaining_accounts.iter().for_each(|remaining_account| {
-            accounts.push(solana_program::instruction::AccountMeta {
-                pubkey: *remaining_account.0.key,
-                is_signer: remaining_account.1,
-                is_writable: remaining_account.2,
-            })
-        });
-        let data = InitializeNcnInstructionData::new().try_to_vec().unwrap();
+            false
+          ));
+                      remaining_accounts.iter().for_each(|remaining_account| {
+      accounts.push(solana_program::instruction::AccountMeta {
+          pubkey: *remaining_account.0.key,
+          is_signer: remaining_account.1,
+          is_writable: remaining_account.2,
+      })
+    });
+    let data = InitializeNcnInstructionData::new().try_to_vec().unwrap();
+    
+    let instruction = solana_program::instruction::Instruction {
+      program_id: crate::JITO_RESTAKING_ID,
+      accounts,
+      data,
+    };
+    let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
+    account_infos.push(self.__program.clone());
+                  account_infos.push(self.config.clone());
+                        account_infos.push(self.ncn.clone());
+                        account_infos.push(self.admin.clone());
+                        account_infos.push(self.base.clone());
+                        account_infos.push(self.system_program.clone());
+              remaining_accounts.iter().for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
 
-        let instruction = solana_program::instruction::Instruction {
-            program_id: crate::JITO_RESTAKING_ID,
-            accounts,
-            data,
-        };
-        let mut account_infos = Vec::with_capacity(5 + 1 + remaining_accounts.len());
-        account_infos.push(self.__program.clone());
-        account_infos.push(self.config.clone());
-        account_infos.push(self.ncn.clone());
-        account_infos.push(self.admin.clone());
-        account_infos.push(self.base.clone());
-        account_infos.push(self.system_program.clone());
-        remaining_accounts
-            .iter()
-            .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
-
-        if signers_seeds.is_empty() {
-            solana_program::program::invoke(&instruction, &account_infos)
-        } else {
-            solana_program::program::invoke_signed(&instruction, &account_infos, signers_seeds)
-        }
+    if signers_seeds.is_empty() {
+      solana_program::program::invoke(&instruction, &account_infos)
+    } else {
+      solana_program::program::invoke_signed(&instruction, &account_infos, signers_seeds)
     }
+  }
 }
 
 /// Instruction builder for `InitializeNcn` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` config
-///   1. `[writable]` ncn
-///   2. `[writable, signer]` admin
-///   3. `[signer]` base
-///   4. `[]` system_program
+                ///   0. `[writable]` config
+                ///   1. `[writable]` ncn
+                      ///   2. `[writable, signer]` admin
+                ///   3. `[signer]` base
+          ///   4. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitializeNcnCpiBuilder<'a, 'b> {
-    instruction: Box<InitializeNcnCpiBuilderInstruction<'a, 'b>>,
+  instruction: Box<InitializeNcnCpiBuilderInstruction<'a, 'b>>,
 }
 
 impl<'a, 'b> InitializeNcnCpiBuilder<'a, 'b> {
-    pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(InitializeNcnCpiBuilderInstruction {
-            __program: program,
-            config: None,
-            ncn: None,
-            admin: None,
-            base: None,
-            system_program: None,
-            __remaining_accounts: Vec::new(),
-        });
-        Self { instruction }
+  pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
+    let instruction = Box::new(InitializeNcnCpiBuilderInstruction {
+      __program: program,
+              config: None,
+              ncn: None,
+              admin: None,
+              base: None,
+              system_program: None,
+                                __remaining_accounts: Vec::new(),
+    });
+    Self { instruction }
+  }
+      #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.config = Some(config);
+                    self
     }
-    #[inline(always)]
-    pub fn config(
-        &mut self,
-        config: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.config = Some(config);
-        self
-    }
-    #[inline(always)]
+      #[inline(always)]
     pub fn ncn(&mut self, ncn: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.ncn = Some(ncn);
-        self
+                        self.instruction.ncn = Some(ncn);
+                    self
     }
-    #[inline(always)]
+      #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.admin = Some(admin);
-        self
+                        self.instruction.admin = Some(admin);
+                    self
     }
-    #[inline(always)]
+      #[inline(always)]
     pub fn base(&mut self, base: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.base = Some(base);
-        self
+                        self.instruction.base = Some(base);
+                    self
     }
-    #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
-        self
+      #[inline(always)]
+    pub fn system_program(&mut self, system_program: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.system_program = Some(system_program);
+                    self
     }
-    /// Add an additional account to the instruction.
-    #[inline(always)]
-    pub fn add_remaining_account(
-        &mut self,
-        account: &'b solana_program::account_info::AccountInfo<'a>,
-        is_writable: bool,
-        is_signer: bool,
-    ) -> &mut Self {
-        self.instruction
-            .__remaining_accounts
-            .push((account, is_writable, is_signer));
-        self
-    }
-    /// Add additional accounts to the instruction.
-    ///
-    /// Each account is represented by a tuple of the `AccountInfo`, a `bool` indicating whether the account is writable or not,
-    /// and a `bool` indicating whether the account is a signer or not.
-    #[inline(always)]
-    pub fn add_remaining_accounts(
-        &mut self,
-        accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> &mut Self {
-        self.instruction
-            .__remaining_accounts
-            .extend_from_slice(accounts);
-        self
-    }
-    #[inline(always)]
-    pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
-        self.invoke_signed(&[])
-    }
-    #[allow(clippy::clone_on_copy)]
-    #[allow(clippy::vec_init_then_push)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program::entrypoint::ProgramResult {
+            /// Add an additional account to the instruction.
+  #[inline(always)]
+  pub fn add_remaining_account(&mut self, account: &'b solana_program::account_info::AccountInfo<'a>, is_writable: bool, is_signer: bool) -> &mut Self {
+    self.instruction.__remaining_accounts.push((account, is_writable, is_signer));
+    self
+  }
+  /// Add additional accounts to the instruction.
+  ///
+  /// Each account is represented by a tuple of the `AccountInfo`, a `bool` indicating whether the account is writable or not,
+  /// and a `bool` indicating whether the account is a signer or not.
+  #[inline(always)]
+  pub fn add_remaining_accounts(&mut self, accounts: &[(&'b solana_program::account_info::AccountInfo<'a>, bool, bool)]) -> &mut Self {
+    self.instruction.__remaining_accounts.extend_from_slice(accounts);
+    self
+  }
+  #[inline(always)]
+  pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
+    self.invoke_signed(&[])
+  }
+  #[allow(clippy::clone_on_copy)]
+  #[allow(clippy::vec_init_then_push)]
+  pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program::entrypoint::ProgramResult {
         let instruction = InitializeNcnCpi {
-            __program: self.instruction.__program,
-
-            config: self.instruction.config.expect("config is not set"),
-
-            ncn: self.instruction.ncn.expect("ncn is not set"),
-
-            admin: self.instruction.admin.expect("admin is not set"),
-
-            base: self.instruction.base.expect("base is not set"),
-
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
-        };
-        instruction.invoke_signed_with_remaining_accounts(
-            signers_seeds,
-            &self.instruction.__remaining_accounts,
-        )
-    }
+        __program: self.instruction.__program,
+                  
+          config: self.instruction.config.expect("config is not set"),
+                  
+          ncn: self.instruction.ncn.expect("ncn is not set"),
+                  
+          admin: self.instruction.admin.expect("admin is not set"),
+                  
+          base: self.instruction.base.expect("base is not set"),
+                  
+          system_program: self.instruction.system_program.expect("system_program is not set"),
+                    };
+    instruction.invoke_signed_with_remaining_accounts(signers_seeds, &self.instruction.__remaining_accounts)
+  }
 }
 
 #[derive(Clone, Debug)]
 struct InitializeNcnCpiBuilderInstruction<'a, 'b> {
-    __program: &'b solana_program::account_info::AccountInfo<'a>,
-    config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    ncn: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
-    __remaining_accounts: Vec<(
-        &'b solana_program::account_info::AccountInfo<'a>,
-        bool,
-        bool,
-    )>,
+  __program: &'b solana_program::account_info::AccountInfo<'a>,
+            config: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                ncn: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                base: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
+  __remaining_accounts: Vec<(&'b solana_program::account_info::AccountInfo<'a>, bool, bool)>,
 }
+

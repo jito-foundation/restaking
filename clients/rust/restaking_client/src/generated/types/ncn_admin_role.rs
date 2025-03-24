@@ -5,29 +5,20 @@
 //! <https://github.com/kinobi-so/kinobi>
 //!
 
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
 use num_derive::FromPrimitive;
+use borsh::BorshSerialize;
+use borsh::BorshDeserialize;
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    Copy,
-    PartialOrd,
-    Hash,
-    FromPrimitive,
-)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq, Copy, PartialOrd, Hash, FromPrimitive)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum NcnAdminRole {
-    OperatorAdmin,
-    VaultAdmin,
-    SlasherAdmin,
-    DelegateAdmin,
-    MetadataAdmin,
-    WeightTableAdmin,
-    NcnProgramAdmin,
+OperatorAdmin,
+VaultAdmin,
+SlasherAdmin,
+DelegateAdmin,
+MetadataAdmin,
+WeightTableAdmin,
+NcnProgramAdmin,
 }
+
+
