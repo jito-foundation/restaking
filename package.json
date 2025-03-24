@@ -23,5 +23,9 @@
   },
   "scripts": {
     "generate-clients": "node scripts/generate-clients.js"
+  },
+  "volta": {
+    "node": "22.14.0",
+    "yarn": "1.22.22"
   }
 }
