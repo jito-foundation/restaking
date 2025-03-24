@@ -3,7 +3,6 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-//!
 
 pub(crate) mod jito_vault;
 

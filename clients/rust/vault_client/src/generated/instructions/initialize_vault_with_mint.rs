@@ -3,10 +3,8 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-//!
 
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Accounts.
 pub struct InitializeVaultWithMint {}
@@ -54,7 +52,6 @@ impl Default for InitializeVaultWithMintInstructionData {
 /// Instruction builder for `InitializeVaultWithMint`.
 ///
 /// ### Accounts:
-///
 #[derive(Clone, Debug, Default)]
 pub struct InitializeVaultWithMintBuilder {
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
@@ -167,7 +164,6 @@ impl<'a, 'b> InitializeVaultWithMintCpi<'a, 'b> {
 /// Instruction builder for `InitializeVaultWithMint` via CPI.
 ///
 /// ### Accounts:
-///
 #[derive(Clone, Debug)]
 pub struct InitializeVaultWithMintCpiBuilder<'a, 'b> {
     instruction: Box<InitializeVaultWithMintCpiBuilderInstruction<'a, 'b>>,

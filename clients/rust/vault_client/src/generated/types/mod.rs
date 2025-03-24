@@ -3,7 +3,6 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-//!
 
 pub(crate) mod r#create_metadata_account_args_v3;
 pub(crate) mod r#data_v2;
@@ -13,10 +12,7 @@ pub(crate) mod r#update_metadata_account_args_v2;
 pub(crate) mod r#vault_admin_role;
 pub(crate) mod r#withdrawal_allocation_method;
 
-pub use self::r#create_metadata_account_args_v3::*;
-pub use self::r#data_v2::*;
-pub use self::r#delegation_state::*;
-pub use self::r#slot_toggle::*;
-pub use self::r#update_metadata_account_args_v2::*;
-pub use self::r#vault_admin_role::*;
-pub use self::r#withdrawal_allocation_method::*;
+pub use self::{
+    r#create_metadata_account_args_v3::*, r#data_v2::*, r#delegation_state::*, r#slot_toggle::*,
+    r#update_metadata_account_args_v2::*, r#vault_admin_role::*, r#withdrawal_allocation_method::*,
+};
