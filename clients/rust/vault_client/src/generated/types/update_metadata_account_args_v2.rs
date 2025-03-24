@@ -6,17 +6,15 @@
 //!
 
 use crate::generated::types::DataV2;
-use solana_program::pubkey::Pubkey;
-use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
+use solana_program::pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UpdateMetadataAccountArgsV2 {
-pub data: Option<DataV2>,
-pub update_authority: Option<Pubkey>,
-pub primary_sale_happened: Option<bool>,
-pub is_mutable: Option<bool>,
+    pub data: Option<DataV2>,
+    pub update_authority: Option<Pubkey>,
+    pub primary_sale_happened: Option<bool>,
+    pub is_mutable: Option<bool>,
 }
-
-
