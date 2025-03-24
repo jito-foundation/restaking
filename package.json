@@ -1,15 +1,24 @@
 {
   "name": "jito-restaking",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Jito Restaking",
+  "license": "BSL-1.0",
+  "private": true,
+  "workspaces": [
+    "clients/js/*"
+  ],
   "dependencies": {
     "@exo-tech-xyz/nodes-from-anchor": "0.21.3",
     "@exo-tech-xyz/renderers": "0.21.4",
     "@exo-tech-xyz/renderers-js-umi": "0.21.7",
     "@exo-tech-xyz/renderers-rust": "0.21.8",
+    "@solana/kit": "^2.1.0",
     "corepack": "^0.29.3",
     "kinobi": "^0.21.1",
     "yarn": "2.4.3"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5"
   },
   "scripts": {
     "generate-clients": "node scripts/generate-clients.js"
