@@ -95,6 +95,13 @@ Set the config admin
 ###### **Subcommands:**
 
 * `initialize` — Initialize NCN
+* `initialize-ncn-operator-state` — Initialize NCN Operator State
+* `ncn-warmup-operator` — Warmup NCN Operator State
+* `ncn-cooldown-operator` — NCN Cooldown Operator State
+* `initialize-ncn-vault-ticket` — Initialize NCN Vault Ticket
+* `warmup-ncn-vault-ticket` — Warmup NCN Vault Ticket
+* `cooldown-ncn-vault-ticket` — Cooldown NCN Vault Ticket
+* `ncn-delegate-token-account` — NCN Delegate Token Account
 * `get` — Get NCN
 * `list` — List all NCNs
 
@@ -104,7 +111,107 @@ Set the config admin
 
 Initialize NCN
 
-**Usage:** `jito-restaking-cli restaking ncn initialize`
+**Usage:** `jito-restaking-cli restaking ncn initialize [OPTIONS]`
+
+###### **Options:**
+
+* `--path-to-base-keypair <PATH_TO_BASE_KEYPAIR>`
+
+
+
+## `jito-restaking-cli restaking ncn initialize-ncn-operator-state`
+
+Initialize NCN Operator State
+
+**Usage:** `jito-restaking-cli restaking ncn initialize-ncn-operator-state <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<OPERATOR>`
+
+
+
+## `jito-restaking-cli restaking ncn ncn-warmup-operator`
+
+Warmup NCN Operator State
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-warmup-operator <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<OPERATOR>`
+
+
+
+## `jito-restaking-cli restaking ncn ncn-cooldown-operator`
+
+NCN Cooldown Operator State
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-cooldown-operator <NCN> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<OPERATOR>`
+
+
+
+## `jito-restaking-cli restaking ncn initialize-ncn-vault-ticket`
+
+Initialize NCN Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking ncn initialize-ncn-vault-ticket <NCN> <VAULT>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<VAULT>`
+
+
+
+## `jito-restaking-cli restaking ncn warmup-ncn-vault-ticket`
+
+Warmup NCN Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking ncn warmup-ncn-vault-ticket <NCN> <VAULT>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<VAULT>`
+
+
+
+## `jito-restaking-cli restaking ncn cooldown-ncn-vault-ticket`
+
+Cooldown NCN Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking ncn cooldown-ncn-vault-ticket <NCN> <VAULT>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<VAULT>`
+
+
+
+## `jito-restaking-cli restaking ncn ncn-delegate-token-account`
+
+NCN Delegate Token Account
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-delegate-token-account [OPTIONS] <NCN> <DELEGATE> <TOKEN_MINT>`
+
+###### **Arguments:**
+
+* `<NCN>`
+* `<DELEGATE>`
+* `<TOKEN_MINT>`
+
+###### **Options:**
+
+* `--should-create-token-account`
 
 
 
@@ -137,6 +244,12 @@ List all NCNs
 * `initialize` — Initialize Operator
 * `initialize-operator-vault-ticket` — Initialize Operator Vault Ticket
 * `warmup-operator-vault-ticket` — Warmup Operator Vault Ticket
+* `cooldown-operator-vault-ticket` — Cooldown Operator Vault Ticket
+* `operator-warmup-ncn` — Operator Warmup NCN
+* `operator-cooldown-ncn` — Operator Cooldown NCN
+* `operator-set-secondary-admin` — Operator Set Admin
+* `operator-set-fees` — Sets the operator fee
+* `operator-delegate-token-account` — Operator Delegate Token Account
 * `get` — Get operator
 * `list` — List all operators
 
@@ -177,6 +290,97 @@ Warmup Operator Vault Ticket
 
 * `<OPERATOR>`
 * `<VAULT>`
+
+
+
+## `jito-restaking-cli restaking operator cooldown-operator-vault-ticket`
+
+Cooldown Operator Vault Ticket
+
+**Usage:** `jito-restaking-cli restaking operator cooldown-operator-vault-ticket <OPERATOR> <VAULT>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<VAULT>`
+
+
+
+## `jito-restaking-cli restaking operator operator-warmup-ncn`
+
+Operator Warmup NCN
+
+**Usage:** `jito-restaking-cli restaking operator operator-warmup-ncn <OPERATOR> <NCN>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<NCN>`
+
+
+
+## `jito-restaking-cli restaking operator operator-cooldown-ncn`
+
+Operator Cooldown NCN
+
+**Usage:** `jito-restaking-cli restaking operator operator-cooldown-ncn <OPERATOR> <NCN>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<NCN>`
+
+
+
+## `jito-restaking-cli restaking operator operator-set-secondary-admin`
+
+Operator Set Admin
+
+**Usage:** `jito-restaking-cli restaking operator operator-set-secondary-admin [OPTIONS] <OPERATOR> <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<NEW_ADMIN>`
+
+###### **Options:**
+
+* `--set-ncn-admin`
+* `--set-vault-admin`
+* `--set-voter-admin`
+* `--set-delegate-admin`
+* `--set-metadata-admin`
+
+
+
+## `jito-restaking-cli restaking operator operator-set-fees`
+
+Sets the operator fee
+
+**Usage:** `jito-restaking-cli restaking operator operator-set-fees <OPERATOR> <OPERATOR_FEE_BPS>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<OPERATOR_FEE_BPS>`
+
+
+
+## `jito-restaking-cli restaking operator operator-delegate-token-account`
+
+Operator Delegate Token Account
+
+**Usage:** `jito-restaking-cli restaking operator operator-delegate-token-account [OPTIONS] <OPERATOR> <DELEGATE> <TOKEN_MINT>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+* `<DELEGATE>`
+* `<TOKEN_MINT>`
+
+###### **Options:**
+
+* `--should-create-token-account`
 
 
 
@@ -268,6 +472,7 @@ Vault commands
 
 * `initialize` — Creates a new vault
 * `create-token-metadata` — Creates token metadata for the vault's LRT token
+* `update-token-metadata` — 
 * `initialize-vault-update-state-tracker` — Starts the vault update cycle
 * `crank-vault-update-state-tracker` — Cranks the vault update state tracker, needs to be run per operator
 * `close-vault-update-state-tracker` — Ends the vault update cycle
@@ -275,6 +480,9 @@ Vault commands
 * `initialize-operator-delegation` — Sets up the delegations for an operator
 * `delegate-to-operator` — Delegates tokens to an operator
 * `cooldown-operator-delegation` — Cooldown delegation for an operator
+* `initialize-vault-ncn-ticket` — Initialize Vault NCN Ticket
+* `warmup-vault-ncn-ticket` — Warmup Vault NCN Ticket
+* `cooldown-vault-ncn-ticket` — Cooldown Vault NCN Ticket
 * `enqueue-withdrawal` — Starts the withdrawal process
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
@@ -309,6 +517,19 @@ Creates a new vault
 Creates token metadata for the vault's LRT token
 
 **Usage:** `jito-restaking-cli vault vault create-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NAME>` — The name of the token
+* `<SYMBOL>` — The symbol of the token
+* `<URI>` — The URI for the token metadata
+
+
+
+## `jito-restaking-cli vault vault update-token-metadata`
+
+**Usage:** `jito-restaking-cli vault vault update-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
 
 ###### **Arguments:**
 
@@ -409,6 +630,45 @@ Cooldown delegation for an operator
 * `<VAULT>` — Vault account
 * `<OPERATOR>` — Operator account
 * `<AMOUNT>` — Amount to cooldown
+
+
+
+## `jito-restaking-cli vault vault initialize-vault-ncn-ticket`
+
+Initialize Vault NCN Ticket
+
+**Usage:** `jito-restaking-cli vault vault initialize-vault-ncn-ticket <VAULT> <NCN>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<NCN>` — NCN account
+
+
+
+## `jito-restaking-cli vault vault warmup-vault-ncn-ticket`
+
+Warmup Vault NCN Ticket
+
+**Usage:** `jito-restaking-cli vault vault warmup-vault-ncn-ticket <VAULT> <NCN>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<NCN>` — NCN account
+
+
+
+## `jito-restaking-cli vault vault cooldown-vault-ncn-ticket`
+
+Cooldown Vault NCN Ticket
+
+**Usage:** `jito-restaking-cli vault vault cooldown-vault-ncn-ticket <VAULT> <NCN>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
+* `<NCN>` — NCN account
 
 
 

@@ -64,6 +64,16 @@ pub enum VaultActions {
         /// The URI for the token metadata
         uri: String,
     },
+    UpdateTokenMetadata {
+        /// The vault pubkey
+        vault: String,
+        /// The name of the token
+        name: String,
+        /// The symbol of the token
+        symbol: String,
+        /// The URI for the token metadata
+        uri: String,
+    },
     /// Starts the vault update cycle
     InitializeVaultUpdateStateTracker {
         /// Vault account
@@ -116,6 +126,27 @@ pub enum VaultActions {
         operator: String,
         /// Amount to cooldown
         amount: u64,
+    },
+    /// Initialize Vault NCN Ticket
+    InitializeVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
+    /// Warmup Vault NCN Ticket
+    WarmupVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
+    /// Cooldown Vault NCN Ticket
+    CooldownVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
     },
     /// Starts the withdrawal process
     EnqueueWithdrawal {
