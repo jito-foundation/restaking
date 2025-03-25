@@ -46,9 +46,21 @@ pub enum VaultActions {
         reward_fee_bps: u16,
         /// The decimals of the token
         decimals: u8,
+        /// The amount of tokens to initialize the vault with ( in the smallest unit )
+        initialize_token_amount: u64,
     },
     /// Creates token metadata for the vault's LRT token
     CreateTokenMetadata {
+        /// The vault pubkey
+        vault: String,
+        /// The name of the token
+        name: String,
+        /// The symbol of the token
+        symbol: String,
+        /// The URI for the token metadata
+        uri: String,
+    },
+    UpdateTokenMetadata {
         /// The vault pubkey
         vault: String,
         /// The name of the token
@@ -110,6 +122,27 @@ pub enum VaultActions {
         operator: String,
         /// Amount to cooldown
         amount: u64,
+    },
+    /// Initialize Vault NCN Ticket
+    InitializeVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
+    /// Warmup Vault NCN Ticket
+    WarmupVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
+    /// Cooldown Vault NCN Ticket
+    CooldownVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
     },
     /// Starts the withdrawal process
     EnqueueWithdrawal {
