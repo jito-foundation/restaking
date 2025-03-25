@@ -268,8 +268,6 @@ impl VaultCliHandler {
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
 
-        let admin = keypair.pubkey();
-
         let base = Keypair::new();
         let vault = Vault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
 
@@ -284,14 +282,6 @@ impl VaultCliHandler {
             }
             None => Keypair::new(),
         };
-
-        let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
-        let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
-
-        let burn_vault = BurnVault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
-
-        let burn_vault_vrt_token_account =
-            get_associated_token_address(&burn_vault, &vrt_mint.pubkey());
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
@@ -320,12 +310,6 @@ impl VaultCliHandler {
             .reward_fee_bps(reward_fee_bps)
             .decimals(decimals)
             .initialize_token_amount(initialize_token_amount);
-
-        let admin_st_token_account_ix =
-            create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
-
-        let vault_st_token_account_ix =
-            create_associated_token_account_idempotent(&admin, &vault, &token_mint, &spl_token::ID);
 
         let admin_st_token_account_ix =
             create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
