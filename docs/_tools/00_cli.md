@@ -498,7 +498,7 @@ Vault commands
 
 Creates a new vault
 
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> [VRT_MINT_ADDRESS_FILE_PATH]`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> <VRT_MINT_ADDRESS_FILE_PATH>`
 
 ###### **Arguments:**
 
