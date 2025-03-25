@@ -59,6 +59,20 @@ To create the metadata:
 jito-restaking-cli --rpc-url <RPC_URL> vault vault create-token-metadata <VAULT> <NAME> <SYMBOL> <URI>
 ```
 
+### Update VRT Metadata
+
+To update the metadata:
+
+- `<RPC_URL>`: RPC url
+- `<VAULT>`: The vault Pubkey
+- `<NAME>`: Name for VRT
+- `<SYMBOL>`: Symbol for VRT
+- `<URI>`: Metadata url
+
+```bash
+jito-restaking-cli --rpc-url <RPC_URL> vault vault update-token-metadata <VAULT> <NAME> <SYMBOL> <URI>
+```
+
 ## Update a Vault
 
 It is the vault's responsibility to update it once per epoch. If a vault is not updated, no other actions can be taken. This is done by initializing a `vault_update_state_tracker`, cranking it and to finish the update, closing it.
