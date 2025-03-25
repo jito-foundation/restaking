@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use jito_vault_core::{config::Config, MAX_FEE_BPS};
+    use jito_vault_core::{config::Config, MAX_BPS};
     use solana_program::{clock::DEFAULT_SLOTS_PER_EPOCH, instruction::InstructionError};
     use solana_sdk::signature::{Keypair, Signer};
 
@@ -44,7 +44,7 @@ mod tests {
                 &Config::find_program_address(&jito_vault_program::id()).0,
                 &config_admin,
                 &config_admin.pubkey(),
-                MAX_FEE_BPS + 1,
+                MAX_BPS + 1,
             )
             .await;
 
