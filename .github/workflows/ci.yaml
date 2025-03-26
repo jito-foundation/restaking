@@ -66,6 +66,10 @@ jobs:
         uses: borales/actions-yarn@v4
         with:
           cmd: generate-clients
+      - name: Update dependencies
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: update-dependencies
       - name: Verify no changed files
         uses: tj-actions/verify-changed-files@v20
         id: verify-changed-kinobi-files
