@@ -102,20 +102,22 @@ export function getSetProgramFeeWalletInstruction<
   TAccountConfig extends string,
   TAccountProgramFeeAdmin extends string,
   TAccountNewFeeWallet extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
   input: SetProgramFeeWalletInput<
     TAccountConfig,
     TAccountProgramFeeAdmin,
     TAccountNewFeeWallet
-  >
+  >,
+  config?: { programAddress?: TProgramAddress }
 ): SetProgramFeeWalletInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountProgramFeeAdmin,
   TAccountNewFeeWallet
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -141,7 +143,7 @@ export function getSetProgramFeeWalletInstruction<
     programAddress,
     data: getSetProgramFeeWalletInstructionDataEncoder().encode({}),
   } as SetProgramFeeWalletInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountProgramFeeAdmin,
     TAccountNewFeeWallet

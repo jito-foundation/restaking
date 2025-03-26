@@ -131,7 +131,7 @@ mod tests {
         let operator_vault_ticket =
             OperatorVaultTicket::new(Pubkey::default(), Pubkey::default(), 0, 0, slot);
         assert_eq!(
-            operator_vault_ticket.state.state(slot + 1, 100),
+            operator_vault_ticket.state.state(slot + 1, 100).unwrap(),
             SlotToggleState::Inactive
         );
     }

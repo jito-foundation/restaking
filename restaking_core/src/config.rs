@@ -51,11 +51,6 @@ impl Config {
         }
     }
 
-    pub fn get_epoch_from_slot(&self, slot: u64) -> Result<u64, RestakingError> {
-        slot.checked_div(self.epoch_length())
-            .ok_or(RestakingError::InvalidEpochLength)
-    }
-
     pub fn epoch_length(&self) -> u64 {
         self.epoch_length.into()
     }

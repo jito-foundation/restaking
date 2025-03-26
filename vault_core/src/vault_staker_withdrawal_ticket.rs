@@ -2,6 +2,7 @@
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_jsm_core::get_epoch;
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
@@ -74,13 +75,9 @@ impl VaultStakerWithdrawalTicket {
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let epoch_unstaked = self
-            .slot_unstaked()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
+        let epoch_unstaked = get_epoch(self.slot_unstaked(), epoch_length)?;
+
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)

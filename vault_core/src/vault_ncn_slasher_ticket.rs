@@ -186,7 +186,7 @@ mod tests {
             slot,
         );
         assert_eq!(
-            vault_ncn_slasher_ticket.state.state(slot + 1, 100),
+            vault_ncn_slasher_ticket.state.state(slot + 1, 100).unwrap(),
             SlotToggleState::Inactive
         );
     }

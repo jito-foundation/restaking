@@ -6,6 +6,9 @@ use std::{cmp::Ordering, fmt::Debug};
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::types::PodU64;
 use shank::ShankType;
+use solana_program::program_error::ProgramError;
+
+use crate::get_epoch;
 
 /// SlotToggle is a state tracker that allows for activation and deactivation of certain features
 /// based on slot time.
@@ -64,19 +67,19 @@ impl SlotToggle {
     ///
     /// # Returns
     /// * `bool` - Whether the feature was successfully activated
-    pub fn activate(&mut self, slot: u64, epoch_length: u64) -> bool {
-        match self.state(slot, epoch_length) {
+    pub fn activate(&mut self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
+        match self.state(slot, epoch_length)? {
             SlotToggleState::Inactive => {
                 if self.slot_added() == slot {
                     // this should only be possible if the feature is being activated for the first time
                     // and the slot is the same as the slot it was created at
-                    false
+                    Ok(false)
                 } else {
                     self.slot_added = PodU64::from(slot);
-                    true
+                    Ok(true)
                 }
             }
-            _ => false,
+            _ => Ok(false),
         }
     }
 
@@ -90,27 +93,34 @@ impl SlotToggle {
     ///
     /// # Returns
     /// * `bool` - Whether the feature was successfully deactivated
-    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> bool {
-        match self.state(slot, epoch_length) {
+    pub fn deactivate(&mut self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
+        match self.state(slot, epoch_length)? {
             SlotToggleState::Active => {
                 self.slot_removed = PodU64::from(slot);
-                true
+                Ok(true)
             }
-            _ => false,
+            _ => Ok(false),
         }
     }
 
     /// Check if the feature is active or in cooldown state at the given slot.
-    pub fn is_active_or_cooldown(&self, slot: u64, epoch_length: u64) -> bool {
-        matches!(
-            self.state(slot, epoch_length),
+    pub fn is_active_or_cooldown(
+        &self,
+        slot: u64,
+        epoch_length: u64,
+    ) -> Result<bool, ProgramError> {
+        Ok(matches!(
+            self.state(slot, epoch_length)?,
             SlotToggleState::Active | SlotToggleState::Cooldown
-        )
+        ))
     }
 
     /// Check if the feature is active at the given slot.
-    pub fn is_active(&self, slot: u64, epoch_length: u64) -> bool {
-        matches!(self.state(slot, epoch_length), SlotToggleState::Active)
+    pub fn is_active(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
+        Ok(matches!(
+            self.state(slot, epoch_length)?,
+            SlotToggleState::Active
+        ))
     }
 
     /// Get the state of the feature at the given slot.
@@ -122,28 +132,36 @@ impl SlotToggle {
     ///
     /// # Returns
     /// * `SlotToggleState` - The state of the feature at the given slot
-    pub fn state(&self, slot: u64, epoch_length: u64) -> SlotToggleState {
-        let current_epoch = slot.checked_div(epoch_length).unwrap();
+    pub fn state(&self, slot: u64, epoch_length: u64) -> Result<SlotToggleState, ProgramError> {
+        let current_epoch = get_epoch(slot, epoch_length)?;
 
         let slot_added: u64 = self.slot_added.into();
         let slot_removed: u64 = self.slot_removed.into();
 
         match slot_added.cmp(&slot_removed) {
-            Ordering::Equal => SlotToggleState::Inactive,
+            Ordering::Equal => Ok(SlotToggleState::Inactive),
             Ordering::Less => {
-                let slot_removed_epoch = slot_removed.checked_div(epoch_length).unwrap();
-                if current_epoch > slot_removed_epoch.checked_add(1).unwrap() {
-                    SlotToggleState::Inactive
+                let slot_removed_epoch = get_epoch(slot_removed, epoch_length)?;
+                if current_epoch
+                    > slot_removed_epoch
+                        .checked_add(1)
+                        .ok_or(ProgramError::ArithmeticOverflow)?
+                {
+                    Ok(SlotToggleState::Inactive)
                 } else {
-                    SlotToggleState::Cooldown
+                    Ok(SlotToggleState::Cooldown)
                 }
             }
             Ordering::Greater => {
-                let slot_added_epoch = slot_added.checked_div(epoch_length).unwrap();
-                if current_epoch > slot_added_epoch.checked_add(1).unwrap() {
-                    SlotToggleState::Active
+                let slot_added_epoch = get_epoch(slot_added, epoch_length)?;
+                if current_epoch
+                    > slot_added_epoch
+                        .checked_add(1)
+                        .ok_or(ProgramError::ArithmeticOverflow)?
+                {
+                    Ok(SlotToggleState::Active)
                 } else {
-                    SlotToggleState::WarmUp
+                    Ok(SlotToggleState::WarmUp)
                 }
             }
         }
@@ -169,10 +187,16 @@ mod tests {
     fn test_slot_zero() {
         let epoch_length = 150;
         let toggle = SlotToggle::new(0);
-        assert_eq!(toggle.state(0, epoch_length), SlotToggleState::Inactive);
-        assert_eq!(toggle.state(10, epoch_length), SlotToggleState::Inactive);
         assert_eq!(
-            toggle.state(epoch_length + 1, epoch_length),
+            toggle.state(0, epoch_length).unwrap(),
+            SlotToggleState::Inactive
+        );
+        assert_eq!(
+            toggle.state(10, epoch_length).unwrap(),
+            SlotToggleState::Inactive
+        );
+        assert_eq!(
+            toggle.state(epoch_length + 1, epoch_length).unwrap(),
             SlotToggleState::Inactive
         );
     }
@@ -185,7 +209,7 @@ mod tests {
         let toggle = SlotToggle::new(creation_slot);
         assert_eq!(toggle.slot_added(), creation_slot);
         assert_eq!(toggle.slot_removed(), creation_slot);
-        assert!(toggle.state(creation_slot, epoch_length) == SlotToggleState::Inactive);
+        assert!(toggle.state(creation_slot, epoch_length).unwrap() == SlotToggleState::Inactive);
     }
 
     #[test]
@@ -196,8 +220,8 @@ mod tests {
         let mut toggle = SlotToggle::new(creation_slot);
 
         // can't transition to activate the same slot it was created at
-        assert!(!toggle.activate(creation_slot, epoch_length));
-        assert!(!toggle.deactivate(creation_slot, epoch_length));
+        assert!(!toggle.activate(creation_slot, epoch_length).unwrap());
+        assert!(!toggle.deactivate(creation_slot, epoch_length).unwrap());
     }
 
     #[test]
@@ -210,49 +234,117 @@ mod tests {
 
         // Assert inactive
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::Inactive
         );
 
         // Transition to warming up
         current_slot += 1;
-        assert!(toggle.activate(current_slot, epoch_length));
+        assert!(toggle.activate(current_slot, epoch_length).unwrap());
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::WarmUp
         );
 
         // Assert warming up
         current_slot += epoch_length;
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::WarmUp
         );
 
         // Assert active
         current_slot += epoch_length;
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::Active
         );
 
         // Assert Deactivate
-        assert!(toggle.deactivate(current_slot, epoch_length));
+        assert!(toggle.deactivate(current_slot, epoch_length).unwrap());
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::Cooldown
         );
 
         current_slot += epoch_length;
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::Cooldown
         );
 
         current_slot += epoch_length;
         assert_eq!(
-            toggle.state(current_slot, epoch_length),
+            toggle.state(current_slot, epoch_length).unwrap(),
             SlotToggleState::Inactive
         );
+    }
+
+    #[test]
+    fn test_is_active_or_cooldown() {
+        let creation_slot = 100;
+        let epoch_length = 150;
+        let mut toggle = SlotToggle::new(creation_slot);
+
+        // Initially inactive
+        assert!(!toggle
+            .is_active_or_cooldown(creation_slot, epoch_length)
+            .unwrap());
+
+        // Activate and check during warm-up
+        let activation_slot = creation_slot + 1;
+        assert!(toggle.activate(activation_slot, epoch_length).unwrap());
+        assert!(!toggle
+            .is_active_or_cooldown(activation_slot, epoch_length)
+            .unwrap());
+
+        // Check during active state
+        let active_slot = activation_slot + (epoch_length * 2);
+        assert!(toggle
+            .is_active_or_cooldown(active_slot, epoch_length)
+            .unwrap());
+
+        // Deactivate and check during cooldown
+        assert!(toggle.deactivate(active_slot, epoch_length).unwrap());
+        assert!(toggle
+            .is_active_or_cooldown(active_slot, epoch_length)
+            .unwrap());
+
+        // Check after cooldown period
+        let inactive_slot = active_slot + (epoch_length * 2);
+        assert!(!toggle
+            .is_active_or_cooldown(inactive_slot, epoch_length)
+            .unwrap());
+    }
+
+    #[test]
+    fn test_is_active() {
+        let creation_slot = 100;
+        let epoch_length = 150;
+        let mut toggle = SlotToggle::new(creation_slot);
+
+        // Initially inactive
+        assert!(!toggle.is_active(creation_slot, epoch_length).unwrap());
+
+        // Activate and check during warm-up
+        let activation_slot = creation_slot + 1;
+        assert!(toggle.activate(activation_slot, epoch_length).unwrap());
+        assert!(!toggle.is_active(activation_slot, epoch_length).unwrap());
+
+        // Check during warm-up period
+        let warmup_slot = activation_slot + epoch_length;
+        assert!(!toggle.is_active(warmup_slot, epoch_length).unwrap());
+
+        // Check during active state
+        let active_slot = activation_slot + (epoch_length * 2);
+        assert!(toggle.is_active(active_slot, epoch_length).unwrap());
+
+        // Deactivate and check during cooldown
+        assert!(toggle.deactivate(active_slot, epoch_length).unwrap());
+        assert!(!toggle.is_active(active_slot, epoch_length).unwrap());
+
+        // Check after cooldown period
+        let inactive_slot = active_slot + (epoch_length * 2);
+        assert!(!toggle.is_active(inactive_slot, epoch_length).unwrap());
     }
 }

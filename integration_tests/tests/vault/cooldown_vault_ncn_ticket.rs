@@ -53,7 +53,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
 
@@ -82,7 +83,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::WarmUp
         );
 
@@ -106,7 +108,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Active
         );
 
@@ -124,7 +127,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Cooldown
         );
 
@@ -148,7 +152,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
     }
@@ -196,7 +201,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
 
@@ -241,7 +247,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::WarmUp
         );
 
@@ -265,7 +272,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Active
         );
 
@@ -299,7 +307,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Cooldown
         );
 
@@ -323,7 +332,8 @@ mod tests {
         assert_eq!(
             vault_ncn_ticket_account
                 .state
-                .state(slot, config.epoch_length()),
+                .state(slot, config.epoch_length())
+                .unwrap(),
             SlotToggleState::Inactive
         );
     }

@@ -104,8 +104,9 @@ pub struct Vault {
     pub program_fee_bps: u16,
     pub bump: u8,
     pub is_paused: bool,
+    pub last_start_state_update_slot: u64,
     #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-    pub reserved: [u8; 259],
+    pub reserved: [u8; 251],
 }
 
 impl Vault {
@@ -149,5 +150,5 @@ impl anchor_lang::IdlBuild for Vault {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for Vault {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &'static [u8] = &[0; 8];
 }

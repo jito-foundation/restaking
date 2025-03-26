@@ -4,14 +4,14 @@ use jito_bytemuck::{
     types::{PodBool, PodU16, PodU64},
     AccountDeserialize, Discriminator,
 };
-use jito_jsm_core::loader::load_signer;
+use jito_jsm_core::{get_epoch, loader::load_signer};
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{config::Config, delegation_state::DelegationState, MAX_BPS, MAX_FEE_BPS};
+use crate::{config::Config, delegation_state::DelegationState, MAX_BPS};
 
-const RESERVED_SPACE_LEN: usize = 259;
+const RESERVED_SPACE_LEN: usize = 251;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
@@ -147,15 +147,20 @@ pub struct Vault {
     /// The bump seed for the PDA
     pub bump: u8,
 
+    /// Whether the vault is paused
     is_paused: PodBool,
 
+    /// last
+    last_start_state_update_slot: PodU64,
+
     /// Reserved space
-    reserved: [u8; 259],
+    reserved: [u8; 251],
 }
 
 impl Vault {
     pub const MAX_REWARD_DELTA_BPS: u16 = 50; // 0.5%
     pub const MIN_WITHDRAWAL_SLIPPAGE_BPS: u16 = 50; // 0.5%
+    pub const DEFAULT_INITIALIZATION_TOKEN_AMOUNT: u64 = 10_000;
 
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -208,6 +213,7 @@ impl Vault {
             vrt_ready_to_claim_amount: PodU64::from(0),
             last_fee_change_slot: PodU64::from(current_slot),
             last_full_state_update_slot: PodU64::from(current_slot),
+            last_start_state_update_slot: PodU64::from(current_slot),
             deposit_fee_bps: PodU16::from(deposit_fee_bps),
             withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
             next_withdrawal_fee_bps: PodU16::from(withdrawal_fee_bps),
@@ -246,6 +252,10 @@ impl Vault {
 
     pub fn last_full_state_update_slot(&self) -> u64 {
         self.last_full_state_update_slot.into()
+    }
+
+    pub fn last_start_state_update_slot(&self) -> u64 {
+        self.last_start_state_update_slot.into()
     }
 
     pub fn vrt_supply(&self) -> u64 {
@@ -335,8 +345,13 @@ impl Vault {
         u16::from(self.program_fee_bps)
     }
 
-    pub fn set_program_fee_bps(&mut self, program_fee_bps: u16) {
+    pub fn set_program_fee_bps(&mut self, program_fee_bps: u16) -> Result<(), ProgramError> {
+        if program_fee_bps > MAX_BPS {
+            msg!("New fee exceeds maximum allowed fee");
+            return Err(ProgramError::InvalidInstructionData);
+        }
         self.program_fee_bps = PodU16::from(program_fee_bps);
+        Ok(())
     }
 
     pub fn operator_count(&self) -> u64 {
@@ -371,6 +386,10 @@ impl Vault {
 
     pub fn set_last_full_state_update_slot(&mut self, slot: u64) {
         self.last_full_state_update_slot = PodU64::from(slot);
+    }
+
+    pub fn set_last_start_state_update_slot(&mut self, slot: u64) {
+        self.last_start_state_update_slot = PodU64::from(slot);
     }
 
     pub fn decrement_vrt_ready_to_claim_amount(&mut self, amount: u64) -> Result<(), VaultError> {
@@ -442,6 +461,27 @@ impl Vault {
 
     pub fn set_is_paused(&mut self, is_paused: bool) {
         self.is_paused = PodBool::from_bool(is_paused);
+    }
+
+    // Only to be used in initialize_vault
+    pub fn initialize_vault_override_deposit_fee_bps(
+        &mut self,
+        deposit_fee_bps: u16,
+        base: &AccountInfo,
+    ) -> Result<(), ProgramError> {
+        if !base.is_signer {
+            msg!("Base account must be a signer");
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if deposit_fee_bps > MAX_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded.into());
+        }
+
+        self.deposit_fee_bps = PodU16::from(deposit_fee_bps);
+
+        Ok(())
     }
 
     /// Checks whether the vault is currently paused.
@@ -610,13 +650,9 @@ impl Vault {
 
     #[inline(always)]
     pub fn is_update_needed(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let last_updated_epoch = self
-            .last_full_state_update_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let last_updated_epoch = get_epoch(self.last_full_state_update_slot(), epoch_length)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
+
         Ok(last_updated_epoch < current_epoch)
     }
 
@@ -656,14 +692,9 @@ impl Vault {
 
     /// Fees can be changed at most one per epoch, and a **full** epoch must pass before a fee can be changed again.
     #[inline(always)]
-    pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let last_fee_change_epoch = self
-            .last_fee_change_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+    pub fn check_can_modify_fees(&self, slot: u64, epoch_length: u64) -> Result<(), ProgramError> {
+        let current_epoch = get_epoch(slot, epoch_length)?;
+        let last_fee_change_epoch = get_epoch(self.last_fee_change_slot(), epoch_length)?;
 
         if current_epoch
             <= last_fee_change_epoch
@@ -671,14 +702,19 @@ impl Vault {
                 .ok_or(VaultError::ArithmeticOverflow)?
         {
             msg!("Fee changes are only allowed once per epoch");
-            return Err(VaultError::VaultFeeChangeTooSoon);
+            return Err(VaultError::VaultFeeChangeTooSoon.into());
         }
 
         Ok(())
     }
 
-    pub fn set_withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) {
+    pub fn set_withdrawal_fee_bps(&mut self, withdrawal_fee_bps: u16) -> Result<(), VaultError> {
+        if withdrawal_fee_bps > MAX_BPS {
+            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_BPS);
+            return Err(VaultError::VaultFeeCapExceeded);
+        }
         self.withdrawal_fee_bps = PodU16::from(withdrawal_fee_bps);
+        Ok(())
     }
 
     pub fn set_next_withdrawal_fee_bps(
@@ -688,8 +724,8 @@ impl Vault {
         fee_bump_bps: u16,
         fee_rate_of_change_bps: u16,
     ) -> Result<(), VaultError> {
-        if withdrawal_fee_bps > MAX_FEE_BPS {
-            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_FEE_BPS);
+        if withdrawal_fee_bps > MAX_BPS {
+            msg!("Withdrawal fee exceeds maximum allowed of {}", MAX_BPS);
             return Err(VaultError::VaultFeeCapExceeded);
         } else if withdrawal_fee_bps > deposit_withdrawal_fee_cap_bps {
             msg!(
@@ -716,8 +752,8 @@ impl Vault {
         fee_bump_bps: u16,
         fee_rate_of_change_bps: u16,
     ) -> Result<(), VaultError> {
-        if deposit_fee_bps > MAX_FEE_BPS {
-            msg!("Deposit fee exceeds maximum allowed of {}", MAX_FEE_BPS);
+        if deposit_fee_bps > MAX_BPS {
+            msg!("Deposit fee exceeds maximum allowed of {}", MAX_BPS);
             return Err(VaultError::VaultFeeCapExceeded);
         } else if deposit_fee_bps > deposit_withdrawal_fee_cap_bps {
             msg!(
@@ -740,8 +776,8 @@ impl Vault {
     }
 
     pub fn set_reward_fee_bps(&mut self, reward_fee_bps: u16) -> Result<(), VaultError> {
-        if reward_fee_bps > MAX_FEE_BPS {
-            msg!("Reward fee exceeds maximum allowed of {}", MAX_FEE_BPS);
+        if reward_fee_bps > MAX_BPS {
+            msg!("Reward fee exceeds maximum allowed of {}", MAX_BPS);
             return Err(VaultError::VaultFeeCapExceeded);
         }
         self.reward_fee_bps = PodU16::from(reward_fee_bps);
@@ -767,7 +803,7 @@ impl Vault {
         }
 
         let fee_delta = new_fee_bps.saturating_sub(current_fee_bps);
-        let fee_cap_bps = fee_cap_bps.min(MAX_FEE_BPS);
+        let fee_cap_bps = fee_cap_bps.min(MAX_BPS);
 
         if new_fee_bps > fee_cap_bps {
             msg!("Fee exceeds maximum allowed of {}", fee_cap_bps);
@@ -776,7 +812,7 @@ impl Vault {
 
         if fee_delta > fee_bump_bps {
             let deposit_percentage_increase_bps: u64 = (fee_delta as u128)
-                .checked_mul(MAX_FEE_BPS as u128)
+                .checked_mul(MAX_BPS as u128)
                 .and_then(|product| product.checked_div(current_fee_bps as u128))
                 .and_then(|result| result.try_into().ok())
                 .unwrap_or(u64::MAX); // Divide by zero should result in max value
@@ -809,7 +845,7 @@ impl Vault {
 
         let st_reward_fee = (st_rewards as u128)
             .checked_mul(self.reward_fee_bps() as u128)
-            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+            .map(|x| x.div_ceil(MAX_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
 
@@ -832,8 +868,8 @@ impl Vault {
 
         // ----- Checks -------
         // { bps is too large }
-        if max_delta_bps > MAX_FEE_BPS {
-            msg!("Max delta bps exceeds maximum allowed of {}", MAX_FEE_BPS);
+        if max_delta_bps > MAX_BPS {
+            msg!("Max delta bps exceeds maximum allowed of {}", MAX_BPS);
             return Err(VaultError::VaultFeeCapExceeded);
         }
 
@@ -849,7 +885,7 @@ impl Vault {
         }
 
         // ---- Calculations -------
-        let precision_factor = MAX_FEE_BPS as u128;
+        let precision_factor = MAX_BPS as u128;
 
         // Calculate st_vrt_ratio with higher precision (multiply by 1e6 for 6 decimal places)
         let st_vrt_ratio = new_st_balance_u128
@@ -865,7 +901,7 @@ impl Vault {
 
         // Calculate effective_rate_bps
         let effective_rate_bps = reward_fee_in_vrt_u128
-            .checked_mul(MAX_FEE_BPS as u128)
+            .checked_mul(MAX_BPS as u128)
             .and_then(|v| v.checked_div(rewards_in_vrt))
             .and_then(|v| u16::try_from(v).ok())
             .ok_or(VaultError::VaultOverflow)?;
@@ -910,7 +946,7 @@ impl Vault {
     fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.deposit_fee_bps() as u128)
-            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+            .map(|x| x.div_ceil(MAX_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
@@ -920,7 +956,7 @@ impl Vault {
     fn calculate_withdrawal_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
         let fee = (vrt_amount as u128)
             .checked_mul(self.withdrawal_fee_bps() as u128)
-            .map(|x| x.div_ceil(MAX_FEE_BPS as u128))
+            .map(|x| x.div_ceil(MAX_BPS as u128))
             .and_then(|x| x.try_into().ok())
             .ok_or(VaultError::VaultOverflow)?;
         Ok(fee)
@@ -1077,7 +1113,7 @@ impl Vault {
         &self,
         slot: u64,
         epoch_length: u64,
-    ) -> Result<u64, VaultError> {
+    ) -> Result<u64, ProgramError> {
         // Calculate the total amount of assets needed to be set aside for all potential withdrawals
         let amount_requested_for_withdrawals =
             self.calculate_supported_assets_requested_for_withdrawal()?;
@@ -1086,16 +1122,11 @@ impl Vault {
         let mut delegation_state_after_update = self.delegation_state;
 
         // Calculate the epoch of the last full state update and the current epoch
-        let last_epoch_update = self
-            .last_full_state_update_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let this_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let last_epoch_update = get_epoch(self.last_full_state_update_slot(), epoch_length)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
 
         // Update the simulated delegation state based on the number of epochs passed
-        let epoch_diff = this_epoch
+        let epoch_diff = current_epoch
             .checked_sub(last_epoch_update)
             .ok_or(VaultError::ArithmeticUnderflow)?;
         match epoch_diff {
@@ -1260,12 +1291,12 @@ mod tests {
 
     use jito_bytemuck::types::{PodBool, PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
-    use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+    use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 
     use crate::{
         delegation_state::DelegationState,
         vault::{BurnSummary, MintSummary, Vault, RESERVED_SPACE_LEN},
-        MAX_BPS, MAX_FEE_BPS,
+        MAX_BPS,
     };
 
     fn make_test_vault(
@@ -1334,6 +1365,7 @@ mod tests {
             std::mem::size_of::<PodU16>() + // reward_fee_bps
             std::mem::size_of::<PodU16>() + // program_fee_bps
             std::mem::size_of::<PodBool>() + // is_paused
+            std::mem::size_of::<PodU64>() + // last_start_state_update_slot
             1 + // bump
             RESERVED_SPACE_LEN; // reserved
 
@@ -2026,7 +2058,7 @@ mod tests {
         vault.last_fee_change_slot = PodU64::from(101);
         assert_eq!(
             vault.check_can_modify_fees(102, 100),
-            Err(VaultError::VaultFeeChangeTooSoon)
+            Err(VaultError::VaultFeeChangeTooSoon.into())
         );
     }
 
@@ -2036,7 +2068,7 @@ mod tests {
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(
             vault.check_can_modify_fees(101, 100),
-            Err(VaultError::VaultFeeChangeTooSoon)
+            Err(VaultError::VaultFeeChangeTooSoon.into())
         );
     }
 
@@ -2046,7 +2078,7 @@ mod tests {
         vault.last_fee_change_slot = PodU64::from(1);
         assert_eq!(
             vault.check_can_modify_fees(100, 100),
-            Err(VaultError::VaultFeeChangeTooSoon)
+            Err(VaultError::VaultFeeChangeTooSoon.into())
         );
     }
 
@@ -2204,7 +2236,7 @@ mod tests {
 
     #[test]
     fn test_max_fee_values() {
-        let max_fee_bps = MAX_FEE_BPS;
+        let max_fee_bps = MAX_BPS;
 
         let current_fee_bps = max_fee_bps - 1;
         let new_fee_bps = max_fee_bps;
@@ -2507,7 +2539,246 @@ mod tests {
 
     #[test]
     fn test_check_reward_fee_effective_rate_max_delta_bps_too_large() {
-        let result = check_fee(10000, 10000, 1000, 1000, MAX_FEE_BPS + 1);
+        let result = check_fee(10000, 10000, 1000, 1000, MAX_BPS + 1);
         assert_eq!(result, Err(VaultError::VaultFeeCapExceeded));
+    }
+
+    #[test]
+    fn test_last_start_state_update_slot() {
+        // Create a new vault with initial slot
+        let initial_slot = 12345;
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            initial_slot,
+        )
+        .unwrap();
+
+        // Verify initial slot is set correctly
+        assert_eq!(vault.last_start_state_update_slot(), initial_slot);
+
+        // Update the slot
+        let new_slot = 67890;
+        vault.set_last_start_state_update_slot(new_slot);
+
+        // Verify the slot was updated
+        assert_eq!(vault.last_start_state_update_slot(), new_slot);
+    }
+
+    #[test]
+    fn test_reserved_space() {
+        // Create a default vault
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+        // Verify reserved space is initialized to zeros
+        assert_eq!(vault.reserved, [0u8; 251]);
+
+        // Get the size of the reserved field
+        let reserved_size = std::mem::size_of_val(&vault.reserved);
+        assert_eq!(reserved_size, 251);
+
+        // Verify the reserved field maintains alignment
+        assert_eq!(std::mem::align_of_val(&vault.reserved), 1);
+    }
+
+    #[test]
+    fn test_vault_serialization_with_reserved() {
+        // Create a vault
+        let vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+        // Serialize the vault to bytes
+        let serialized = bytemuck::bytes_of(&vault);
+
+        // Calculate the expected position of reserved field
+        let reserved_offset = serialized.len() - 251;
+
+        // Verify the reserved space in serialized form
+        let reserved_slice = &serialized[reserved_offset..];
+        assert_eq!(reserved_slice, &[0u8; 251]);
+    }
+
+    #[test]
+    fn test_set_program_fee_bps() {
+        // Create a basic vault
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Test setting fee to 0 (minimum value)
+        assert_eq!(vault.set_program_fee_bps(0), Ok(()));
+        assert_eq!(vault.program_fee_bps(), 0);
+
+        // Test setting fee to valid mid-range value
+        assert_eq!(vault.set_program_fee_bps(500), Ok(()));
+        assert_eq!(vault.program_fee_bps(), 500);
+
+        // Test setting fee to maximum allowed value (MAX_FEE_BPS)
+        assert_eq!(vault.set_program_fee_bps(MAX_BPS), Ok(()));
+        assert_eq!(vault.program_fee_bps(), MAX_BPS);
+
+        // Test setting fee above maximum (should fail)
+        assert_eq!(
+            vault.set_program_fee_bps(MAX_BPS + 1),
+            Err(ProgramError::InvalidInstructionData)
+        );
+        // Verify fee remains unchanged after failed attempt
+        assert_eq!(vault.program_fee_bps(), MAX_BPS);
+    }
+
+    #[test]
+    fn test_set_withdrawal_fee_bps() {
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Test setting fee to 0 (minimum value)
+        assert_eq!(vault.set_withdrawal_fee_bps(0), Ok(()));
+        assert_eq!(vault.withdrawal_fee_bps(), 0);
+
+        // Test setting fee to valid mid-range value
+        assert_eq!(vault.set_withdrawal_fee_bps(500), Ok(()));
+        assert_eq!(vault.withdrawal_fee_bps(), 500);
+
+        // Test setting fee to maximum allowed value (MAX_FEE_BPS)
+        assert_eq!(vault.set_withdrawal_fee_bps(MAX_BPS), Ok(()));
+        assert_eq!(vault.withdrawal_fee_bps(), MAX_BPS);
+
+        // Test setting fee above maximum (should fail)
+        assert_eq!(
+            vault.set_withdrawal_fee_bps(MAX_BPS + 1),
+            Err(VaultError::VaultFeeCapExceeded)
+        );
+        // Verify fee remains unchanged after failed attempt
+        assert_eq!(vault.withdrawal_fee_bps(), MAX_BPS);
+    }
+
+    #[test]
+    fn test_initialize_vault_override_deposit_fee_bps() {
+        use solana_program::{account_info::AccountInfo, program_error::ProgramError};
+
+        // Create a basic vault
+        let mut vault = Vault::new(
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            0,
+            Pubkey::new_unique(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        .unwrap();
+
+        // Create account info for tests
+        let key = Pubkey::new_unique();
+        let owner = Pubkey::new_unique();
+        let mut lamports = 0;
+        let mut data = vec![0; 32];
+
+        // Test 1: Non-signer account should fail
+        let non_signer_account = AccountInfo::new(
+            &key,
+            false, // is_signer = false
+            true,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        );
+
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(100, &non_signer_account),
+            Err(ProgramError::MissingRequiredSignature)
+        );
+
+        // Test 2: Fee exceeding MAX_FEE_BPS should fail
+        let signer_account = AccountInfo::new(
+            &key,
+            true, // is_signer = true
+            true,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        );
+
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(MAX_BPS + 1, &signer_account),
+            Err(VaultError::VaultFeeCapExceeded.into())
+        );
+
+        // Test 3: Valid parameters should succeed
+        let valid_fee = 100;
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(valid_fee, &signer_account),
+            Ok(())
+        );
+        assert_eq!(vault.deposit_fee_bps(), valid_fee);
+
+        // Test 4: Maximum allowed fee should succeed
+        assert_eq!(
+            vault.initialize_vault_override_deposit_fee_bps(MAX_BPS, &signer_account),
+            Ok(())
+        );
+        assert_eq!(vault.deposit_fee_bps(), MAX_BPS);
     }
 }

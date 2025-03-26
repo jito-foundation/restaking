@@ -66,6 +66,10 @@ jobs:
         uses: borales/actions-yarn@v4
         with:
           cmd: generate-clients
+      - name: Update dependencies
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: update-dependencies
       - name: Verify no changed files
         uses: tj-actions/verify-changed-files@v20
         id: verify-changed-kinobi-files
@@ -108,7 +112,7 @@ jobs:
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.solana.com/v1.18.22/install)"
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.11/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Building programs
@@ -124,14 +128,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - run: docker pull --platform linux/amd64 ellipsislabs/solana:1.18.11
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.1.11
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install solana-verify from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
           crate: solana-verify
-      - run: solana-verify build --library-name jito_restaking_program --base-image ellipsislabs/solana:1.18.11
-      - run: solana-verify build --library-name jito_vault_program --base-image ellipsislabs/solana:1.18.11
+      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.1.11
+      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.1.11
       - name: Upload jito_restaking_program.so
         uses: actions/upload-artifact@v4
         with:
