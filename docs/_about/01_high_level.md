@@ -20,7 +20,7 @@ that can receive delegations from the vault, the NCNs supported by the vault, an
 
 - Universal framework for (re)staking SPL tokens to node consensus networks on Solana and SVM chains.
 - Staked assets are tokenized into Vault Receipt Tokens (VRT)
-- Flexible opt-in from node consensus networks, operators, and vaults for staking and slashing.
+- Flexible opt-in from node consensus networks, operators, and vaults for staking.
 
 ### Entity Opt-in
 
@@ -32,7 +32,7 @@ operators, and vaults. The following diagram shows the opt-in process for the Ji
 
 When a NCN, operator, and vault have all opted-in to each other and the vault has staked assets to the operator, those
 assets are considered staked to the NCN. The operator will then be able to participate in the NCN's consensus protocol.
-Assuming the vault has opted-in to the slasher, the staked assets can be slashed.
+Assuming the vault has opted-in to the slasher.
 
 ### Vault Interactions
 
