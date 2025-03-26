@@ -3,13 +3,17 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
+//!
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshSerialize;
+use borsh::BorshDeserialize;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SlotToggle {
-    pub slot_added: u64,
-    pub slot_removed: u64,
-    pub reserved: [u8; 32],
+pub slot_added: u64,
+pub slot_removed: u64,
+pub reserved: [u8; 32],
 }
+
+

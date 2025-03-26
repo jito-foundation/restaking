@@ -3,11 +3,12 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
+//!
 
-pub mod accounts;
-pub mod errors;
-pub mod instructions;
-pub mod programs;
-pub mod types;
-
-pub(crate) use programs::*;
+      pub mod accounts;
+        pub mod errors;
+        pub mod instructions;
+        pub mod programs;
+        pub mod types;
+  
+  pub(crate) use programs::*;

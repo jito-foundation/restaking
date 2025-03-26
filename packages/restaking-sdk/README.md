@@ -1,17 +1,17 @@
 # Jito Restaking Client
 
-An client for interacting with the Jito Restaking program.
+A client for interacting with the Jito Restaking program.
 
 ## Installation
 
 ```bash
-npm install jito-restaking-client
+npm install @jito-foundation/restaking-sdk
 ```
 
 or
 
 ```bash
-yarn add jito-restaking-client
+yarn add @jito-foundation/restaking-sdk
 ```
 
 ## Example
@@ -20,7 +20,7 @@ yarn add jito-restaking-client
 
 ```typescript
 import { address, createSolanaRpc } from "@solana/kit";
-import { fetchConfig } from "jito-restaking-client";
+import { fetchConfig } from "@jito-foundation/restaking-sdk";
 
 const rpc = createSolanaRpc("https://api.devnet.solana.com");
 

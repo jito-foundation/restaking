@@ -110,7 +110,7 @@ restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClient
     deleteFolderBeforeRendering: true,
     toolchain: "+nightly-2024-07-25"
 }));
-restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingClientDir, "src"), {}));
+restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingClientDir), {}));
 
 // Generate the vault client in Rust and JavaScript.
 const rustVaultClientDir = path.join(rustClientsDir, "vault_client");
@@ -226,4 +226,4 @@ vaultKinobi.accept(renderers.renderRustVisitor(path.join(rustVaultClientDir, "sr
     deleteFolderBeforeRendering: true,
     toolchain: "+nightly-2024-07-25"
 }));
-vaultKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsVaultClientDir, "src"), {}));
+vaultKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsVaultClientDir), {}));

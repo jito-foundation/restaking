@@ -1,10 +1,15 @@
 {
-    "name": "jito-vault-client",
-    "version": "0.0.4",
-    "description": "An client for interacting with the Jito Vault program",
+    "name": "@jito-foundation/vault-sdk",
+    "version": "1.0.0",
+    "description": "TypeScript SDK for interacting with Jito's Vault program on Solana",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "license": "BSL-1.0",
+    "license": "MIT",
+    "files": [
+        "dist",
+        "src",
+        "README.md"
+    ],
     "repository": {
         "type": "git",
         "url": "https://github.com/jito-foundation/restaking"

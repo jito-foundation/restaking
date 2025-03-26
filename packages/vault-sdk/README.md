@@ -1,17 +1,17 @@
 # Jito Restaking Client
 
-An client for interacting with the Jito Vault program.
+A client for interacting with the Jito Vault program.
 
 ## Installation
 
 ```bash
-npm install jito-vault-client
+npm install @jito-foundation/vault-sdk
 ```
 
 or
 
 ```bash
-yarn add jito-vault-client
+yarn add @jito-foundation/vault-sdk
 ```
 
 ## Example
@@ -20,7 +20,7 @@ yarn add jito-vault-client
 
 ```typescript
 import { address, createSolanaRpc } from "@solana/kit";
-import { fetchConfig } from "jito-vault-client";
+import { fetchConfig } from "@jito-foundation/vault-sdk";
 
 const rpc = createSolanaRpc("https://api.devnet.solana.com");
 
