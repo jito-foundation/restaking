@@ -3,7 +3,6 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-//!
 
 use num_derive::FromPrimitive;
 use thiserror::Error;
@@ -209,4 +208,3 @@ impl solana_program::program_error::PrintProgramError for JitoVaultError {
         solana_program::msg!(&self.to_string());
     }
 }
-

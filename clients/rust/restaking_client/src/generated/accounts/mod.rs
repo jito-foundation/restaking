@@ -3,21 +3,16 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-//!
 
-  pub(crate) mod r#config;
-  pub(crate) mod r#ncn;
-  pub(crate) mod r#ncn_operator_state;
-  pub(crate) mod r#ncn_vault_slasher_ticket;
-  pub(crate) mod r#ncn_vault_ticket;
-  pub(crate) mod r#operator;
-  pub(crate) mod r#operator_vault_ticket;
+pub(crate) mod r#config;
+pub(crate) mod r#ncn;
+pub(crate) mod r#ncn_operator_state;
+pub(crate) mod r#ncn_vault_slasher_ticket;
+pub(crate) mod r#ncn_vault_ticket;
+pub(crate) mod r#operator;
+pub(crate) mod r#operator_vault_ticket;
 
-  pub use self::r#config::*;
-  pub use self::r#ncn::*;
-  pub use self::r#ncn_operator_state::*;
-  pub use self::r#ncn_vault_slasher_ticket::*;
-  pub use self::r#ncn_vault_ticket::*;
-  pub use self::r#operator::*;
-  pub use self::r#operator_vault_ticket::*;
-
+pub use self::{
+    r#config::*, r#ncn::*, r#ncn_operator_state::*, r#ncn_vault_slasher_ticket::*,
+    r#ncn_vault_ticket::*, r#operator::*, r#operator_vault_ticket::*,
+};

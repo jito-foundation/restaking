@@ -3,19 +3,15 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-//!
 
-use borsh::BorshSerialize;
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DelegationState {
-pub staked_amount: u64,
-pub enqueued_for_cooldown_amount: u64,
-pub cooling_down_amount: u64,
-#[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-pub reserved: [u8; 256],
+    pub staked_amount: u64,
+    pub enqueued_for_cooldown_amount: u64,
+    pub cooling_down_amount: u64,
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub reserved: [u8; 256],
 }
-
-
