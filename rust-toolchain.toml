@@ -1,4 +1,4 @@
 # note: this file doesn't play nicely with solana-verify build
 [toolchain]
-channel = "1.81.0"
+channel = "1.80.0"
 components = ["rustfmt", "rustc-dev", "clippy", "cargo"]
