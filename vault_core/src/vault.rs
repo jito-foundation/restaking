@@ -11,6 +11,8 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 use crate::{config::Config, delegation_state::DelegationState, MAX_BPS};
 
+const RESERVED_SPACE_LEN: usize = 251;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct BurnSummary {
     /// How much of the VRT shall be transferred to the vault fee account
@@ -224,7 +226,7 @@ impl Vault {
             delegation_state: DelegationState::default(),
             additional_assets_need_unstaking: PodU64::from(0),
             is_paused: PodBool::from_bool(false),
-            reserved: [0; 251],
+            reserved: [0; RESERVED_SPACE_LEN],
         })
     }
 
@@ -1293,7 +1295,7 @@ mod tests {
 
     use crate::{
         delegation_state::DelegationState,
-        vault::{BurnSummary, MintSummary, Vault},
+        vault::{BurnSummary, MintSummary, Vault, RESERVED_SPACE_LEN},
         MAX_BPS,
     };
 
@@ -1365,7 +1367,7 @@ mod tests {
             std::mem::size_of::<PodBool>() + // is_paused
             std::mem::size_of::<PodU64>() + // last_start_state_update_slot
             1 + // bump
-            251; // reserved
+            RESERVED_SPACE_LEN; // reserved
 
         assert_eq!(vault_size, sum_of_fields);
     }
