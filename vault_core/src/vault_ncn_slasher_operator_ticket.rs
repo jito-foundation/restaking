@@ -9,6 +9,8 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 /// The [`VaultNcnSlasherOperatorTicket`] account tracks the amount an operator has been slashed
 /// by a slasher for a given node consensus network (NCN) and vault for a given epoch. It helps
 /// ensure that the operator is held accountable for their actions and that slashing conditions
@@ -58,7 +60,7 @@ impl VaultNcnSlasherOperatorTicket {
             epoch: PodU64::from(epoch),
             slashed: PodU64::from(0),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -226,7 +228,7 @@ mod tests {
             size_of::<PodU64>() + // epoch
             size_of::<PodU64>() + // slashed
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_ncn_slasher_operator_ticket_size, sum_of_fields);
     }
 }
