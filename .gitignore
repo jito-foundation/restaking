@@ -2,7 +2,8 @@
 .DS_Store
 target
 **/*.rs.bk
-node_modules
+**/node_modules/*
+**/dist/*
 test-ledger
 .idea
 docs/api
