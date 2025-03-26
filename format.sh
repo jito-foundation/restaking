@@ -18,7 +18,7 @@ echo "$content" > "$FILE"
 
 # Execute the commands
 
-cargo b && ./target/debug/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
+cargo b && ./target/debug/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md && ./target/debug/jito-shank-cli && yarn generate-clients && yarn update-dependencies && cargo b
 cargo sort --workspace
 cargo fmt --all
 cargo nextest run --all-features
