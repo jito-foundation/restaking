@@ -22,6 +22,7 @@
     "tsup": "^8.3.5"
   },
   "scripts": {
+    "generate-sdks": "yarn workspace @jito-foundation/vault-sdk build && yarn workspace @jito-foundation/restaking-sdk build",
     "generate-clients": "node scripts/generate-clients.js",
     "update-dependencies": "node scripts/update-dependencies.js"
   },
