@@ -146,7 +146,7 @@ impl UpdateVaultBalanceBuilder {
         self.token_program = Some(token_program);
         self
     }
-    /// Add an aditional account to the instruction.
+    /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,

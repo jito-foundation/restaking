@@ -111,16 +111,18 @@ export function getSetIsPausedInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
   TAccountAdmin extends string,
+  TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
-  input: SetIsPausedInput<TAccountConfig, TAccountVault, TAccountAdmin>
+  input: SetIsPausedInput<TAccountConfig, TAccountVault, TAccountAdmin>,
+  config?: { programAddress?: TProgramAddress }
 ): SetIsPausedInstruction<
-  typeof JITO_VAULT_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountVault,
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = JITO_VAULT_PROGRAM_ADDRESS;
+  const programAddress = config?.programAddress ?? JITO_VAULT_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -148,7 +150,7 @@ export function getSetIsPausedInstruction<
       args as SetIsPausedInstructionDataArgs
     ),
   } as SetIsPausedInstruction<
-    typeof JITO_VAULT_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountVault,
     TAccountAdmin
