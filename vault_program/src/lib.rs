@@ -32,7 +32,6 @@ mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
 
 use borsh::BorshDeserialize;
-use const_str_to_pubkey::str_to_pubkey;
 use jito_vault_sdk::instruction::VaultInstruction;
 use set_program_fee::process_set_program_fee;
 use solana_program::{
@@ -70,7 +69,7 @@ use crate::{
     warmup_vault_ncn_ticket::process_warmup_vault_ncn_ticket,
 };
 
-declare_id!(str_to_pubkey(env!("VAULT_PROGRAM_ID")));
+declare_id!(env!("VAULT_PROGRAM_ID"));
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
@@ -111,6 +110,7 @@ pub fn process_instruction(
             withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
+            initialize_token_amount,
         } => {
             msg!("Instruction: InitializeVault");
             process_initialize_vault(
@@ -120,6 +120,7 @@ pub fn process_instruction(
                 withdrawal_fee_bps,
                 reward_fee_bps,
                 decimals,
+                initialize_token_amount,
             )
         }
         VaultInstruction::InitializeVaultWithMint => {

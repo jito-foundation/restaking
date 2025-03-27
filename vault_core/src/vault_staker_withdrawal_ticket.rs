@@ -2,9 +2,12 @@
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_jsm_core::get_epoch;
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+
+const RESERVED_SPACE_LEN: usize = 263;
 
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 /// For every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
@@ -49,7 +52,7 @@ impl VaultStakerWithdrawalTicket {
             vrt_amount: PodU64::from(vrt_amount),
             slot_unstaked: PodU64::from(slot_unstaked),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -72,13 +75,9 @@ impl VaultStakerWithdrawalTicket {
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let epoch_unstaked = self
-            .slot_unstaked()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
+        let epoch_unstaked = get_epoch(self.slot_unstaked(), epoch_length)?;
+
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)
@@ -94,7 +93,6 @@ impl VaultStakerWithdrawalTicket {
     ///
     /// # Arguments
     /// * `vault` - The vault
-    /// * `staker` - The staker
     /// * `base` - The base account used as a PDA seed
     pub fn seeds(vault: &Pubkey, base: &Pubkey) -> Vec<Vec<u8>> {
         Vec::from_iter([
@@ -102,6 +100,16 @@ impl VaultStakerWithdrawalTicket {
             vault.to_bytes().to_vec(),
             base.to_bytes().to_vec(),
         ])
+    }
+
+    /// Returns the seeds for the PDA used for signing
+    ///
+    /// # Returns
+    /// * `Vec<Vec<u8>>` - containing the seed vectors
+    pub fn signing_seeds(&self) -> Vec<Vec<u8>> {
+        let mut vault_seeds = Self::seeds(&self.vault, &self.base);
+        vault_seeds.push(vec![self.bump]);
+        vault_seeds
     }
 
     /// Find the program address for the PDA
@@ -132,8 +140,6 @@ impl VaultStakerWithdrawalTicket {
     /// # Arguments
     /// * `program_id` - The program ID
     /// * `vault_staker_withdrawal_ticket` - The [`VaultStakerWithdrawalTicket`] account
-    /// * `vault` - The [`crate::vault::Vault`] account
-    /// * `staker` - The staker account
     /// * `expect_writable` - Whether the account should be writable
     ///
     /// # Returns
@@ -141,7 +147,6 @@ impl VaultStakerWithdrawalTicket {
     pub fn load(
         program_id: &Pubkey,
         vault_staker_withdrawal_ticket: &AccountInfo,
-        vault: &AccountInfo,
         expect_writable: bool,
     ) -> Result<(), ProgramError> {
         if vault_staker_withdrawal_ticket.owner.ne(program_id) {
@@ -160,13 +165,17 @@ impl VaultStakerWithdrawalTicket {
             msg!("Vault staker withdrawal ticket discriminator is invalid");
             return Err(ProgramError::InvalidAccountData);
         }
+
         let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
-        let base = Self::try_from_slice_unchecked(&vault_staker_withdrawal_ticket_data)?.base;
-        let expected_pubkey = Self::find_program_address(program_id, vault.key, &base).0;
+        let ticket = Self::try_from_slice_unchecked(&vault_staker_withdrawal_ticket_data)?;
+        let seeds = ticket.signing_seeds();
+        let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
+        let expected_pubkey = Pubkey::create_program_address(&seed_slices, program_id)?;
         if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {
             msg!("Vault staker withdrawal ticket is not at the correct PDA");
             return Err(ProgramError::InvalidAccountData);
         }
+
         Ok(())
     }
 }
@@ -185,7 +194,7 @@ mod tests {
             size_of::<PodU64>() + // vrt_amount
             size_of::<PodU64>() + // slot_unstaked
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_staker_withdrawal_ticket_size, sum_of_fields);
     }
 }

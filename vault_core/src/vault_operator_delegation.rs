@@ -2,6 +2,7 @@
 
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_jsm_core::get_epoch;
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{
@@ -10,6 +11,8 @@ use solana_program::{
 };
 
 use crate::delegation_state::DelegationState;
+
+const RESERVED_SPACE_LEN: usize = 263;
 
 /// The [`VaultOperatorDelegation`] account tracks a vault's delegation to an operator
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
@@ -45,7 +48,7 @@ impl VaultOperatorDelegation {
             delegation_state: DelegationState::default(),
             index: PodU64::from(index),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -57,17 +60,17 @@ impl VaultOperatorDelegation {
         self.index.into()
     }
 
-    pub fn check_is_already_updated(&self, slot: u64, epoch_length: u64) -> Result<(), VaultError> {
-        let last_updated_epoch = self
-            .last_update_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        if last_updated_epoch >= current_epoch {
+    pub fn check_is_already_updated(
+        &self,
+        slot: u64,
+        epoch_length: u64,
+    ) -> Result<(), ProgramError> {
+        let last_update_epoch = get_epoch(self.last_update_slot(), epoch_length)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
+
+        if last_update_epoch >= current_epoch {
             msg!("VaultOperatorDelegationUpdate is not needed");
-            return Err(VaultError::VaultOperatorDelegationIsUpdated);
+            return Err(VaultError::VaultOperatorDelegationIsUpdated.into());
         }
 
         Ok(())
@@ -80,13 +83,8 @@ impl VaultOperatorDelegation {
     /// The enqueued_for_withdrawal_amount is zeroed out
     #[inline(always)]
     pub fn update(&mut self, slot: u64, epoch_length: u64) -> ProgramResult {
-        let last_update_epoch = self
-            .last_update_slot()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let last_update_epoch = get_epoch(self.last_update_slot(), epoch_length)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
 
         let epoch_diff = current_epoch
             .checked_sub(last_update_epoch)
@@ -195,7 +193,7 @@ mod tests {
             size_of::<PodU64>() + // last_update_slot
             size_of::<PodU64>() + // index
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_operator_delegation_size, sum_of_fields);
     }
 

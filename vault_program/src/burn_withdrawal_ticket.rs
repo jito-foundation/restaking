@@ -45,12 +45,7 @@ pub fn process_burn_withdrawal_ticket(
 
     // staker
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
-    VaultStakerWithdrawalTicket::load(
-        program_id,
-        vault_staker_withdrawal_ticket_info,
-        vault_info,
-        true,
-    )?;
+    VaultStakerWithdrawalTicket::load(program_id, vault_staker_withdrawal_ticket_info, true)?;
     let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket_info.data.borrow();
     let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked(
         &vault_staker_withdrawal_ticket_data,
@@ -71,7 +66,9 @@ pub fn process_burn_withdrawal_ticket(
         &config.program_fee_wallet,
         &vault.vrt_mint,
     )?;
+    // Only the original spl token program is allowed
     load_token_program(token_program)?;
+
     load_system_program(system_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
@@ -86,12 +83,20 @@ pub fn process_burn_withdrawal_ticket(
         return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());
     }
 
+    let is_staker_program_fee_wallet = config.program_fee_wallet.eq(staker.key);
+    let is_staker_vault_fee_wallet = vault.fee_wallet.eq(staker.key);
+    let amount_in = vault_staker_withdrawal_ticket.vrt_amount();
+
     let BurnSummary {
         vault_fee_amount,
         program_fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount())?;
+    } = vault.burn_with_fee(
+        is_staker_program_fee_wallet,
+        is_staker_vault_fee_wallet,
+        amount_in,
+    )?;
 
     // To close the token account, the balance needs to be 0.
     // The only way for vault_staker_withdrawal_ticket.vrt_amount() != ticket_vrt_amount
@@ -107,13 +112,7 @@ pub fn process_burn_withdrawal_ticket(
 
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
-    let (_, vault_staker_withdrawal_bump, mut vault_staker_withdrawal_seeds) =
-        VaultStakerWithdrawalTicket::find_program_address(
-            program_id,
-            vault_info.key,
-            &vault_staker_withdrawal_ticket.base,
-        );
-    vault_staker_withdrawal_seeds.push(vec![vault_staker_withdrawal_bump]);
+    let vault_staker_withdrawal_seeds = vault_staker_withdrawal_ticket.signing_seeds();
     let seed_slices: Vec<&[u8]> = vault_staker_withdrawal_seeds
         .iter()
         .map(|seed| seed.as_slice())
@@ -192,10 +191,14 @@ pub fn process_burn_withdrawal_ticket(
     close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
 
     // transfer the assets to the staker
-    let (_, vault_bump, mut vault_seeds) = Vault::find_program_address(program_id, &vault.base);
-    vault_seeds.push(vec![vault_bump]);
-    let seed_slices: Vec<&[u8]> = vault_seeds.iter().map(|seed| seed.as_slice()).collect();
+    let vault_signer_seeds = vault.signing_seeds();
+    let seed_slices: Vec<&[u8]> = vault_signer_seeds
+        .iter()
+        .map(|seed| seed.as_slice())
+        .collect();
+
     drop(vault_data); // avoid double borrow
+
     invoke_signed(
         &transfer(
             &spl_token::id(),

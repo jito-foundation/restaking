@@ -6,6 +6,8 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+const RESERVED_LEN: usize = 263;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct OperatorVaultTicket {
@@ -35,7 +37,7 @@ impl OperatorVaultTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_LEN],
         }
     }
 
@@ -119,7 +121,7 @@ mod tests {
             size_of::<PodU64>() + // index
             size_of::<SlotToggle>() + // state
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_LEN; // reserved
         assert_eq!(operator_vault_ticket_size, sum_of_fields);
     }
 
@@ -129,7 +131,7 @@ mod tests {
         let operator_vault_ticket =
             OperatorVaultTicket::new(Pubkey::default(), Pubkey::default(), 0, 0, slot);
         assert_eq!(
-            operator_vault_ticket.state.state(slot + 1, 100),
+            operator_vault_ticket.state.state(slot + 1, 100).unwrap(),
             SlotToggleState::Inactive
         );
     }

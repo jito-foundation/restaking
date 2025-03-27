@@ -1,3 +1,4 @@
+use error::CoreError;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -8,6 +9,7 @@ use solana_program::{
     system_instruction,
 };
 
+pub mod error;
 pub mod loader;
 pub mod slot_toggle;
 
@@ -106,9 +108,7 @@ pub fn close_program_account<'a>(
     **account_to_close.lamports.borrow_mut() = 0;
 
     account_to_close.assign(&solana_program::system_program::id());
-    let mut account_data = account_to_close.data.borrow_mut();
-    let data_len = account_data.len();
-    solana_program::program_memory::sol_memset(*account_data, 0, data_len);
+    account_to_close.realloc(0, false)?;
 
     Ok(())
 }
@@ -128,4 +128,12 @@ pub fn realloc<'a, 'info>(
     )?;
     account.realloc(new_size, false)?;
     Ok(())
+}
+
+pub fn get_epoch(slot: u64, epoch_length: u64) -> Result<u64, CoreError> {
+    let epoch = slot
+        .checked_div(epoch_length)
+        .ok_or(CoreError::BadEpochLength)?;
+
+    Ok(epoch)
 }

@@ -1,7 +1,7 @@
 const kinobi = require("kinobi");
-const anchorIdl = require("@kinobi-so/nodes-from-anchor");
+const anchorIdl = require("@exo-tech-xyz/nodes-from-anchor");
 const path = require("path");
-const renderers = require('@kinobi-so/renderers');
+const renderers = require('@exo-tech-xyz/renderers');
 
 // Paths.
 const projectRoot = path.join(__dirname, "..");
@@ -17,6 +17,22 @@ const jsRestakingClientDir = path.join(jsClientsDir, "restaking_client");
 const restakingRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_restaking.json")));
 const restakingKinobi = kinobi.createFromRoot(restakingRootNode);
 restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
+    {
+        // PodU128 -> u128
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU128"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u128"),
+            };
+        },
+    },
     {
         // PodU64 -> u64
         select: (node) => {
@@ -80,7 +96,7 @@ restakingKinobi.update(kinobi.bottomUpTransformerVisitor([
                 data: {
                     ...node.data,
                     fields: [
-                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        kinobi.structFieldTypeNode({ name: 'discriminator', type: kinobi.numberTypeNode('u64') }),
                         ...node.data.fields
                     ]
                 }
@@ -102,6 +118,22 @@ const jsVaultClientDir = path.join(jsClientsDir, "vault_client");
 const vaultRootNode = anchorIdl.rootNodeFromAnchor(require(path.join(idlDir, "jito_vault.json")));
 const vaultKinobi = kinobi.createFromRoot(vaultRootNode);
 vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
+    {
+        // PodU128 -> u128
+        select: (node) => {
+            return (
+                kinobi.isNode(node, "structFieldTypeNode") &&
+                node.type.name === "podU128"
+            );
+        },
+        transform: (node) => {
+            kinobi.assertIsNode(node, "structFieldTypeNode");
+            return {
+                ...node,
+                type: kinobi.numberTypeNode("u128"),
+            };
+        },
+    },
     {
         // PodU64 -> u64
         select: (node) => {
@@ -162,7 +194,7 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
             kinobi.assertIsNode(node, "structFieldTypeNode");
             return {
                 ...node,
-                type: kinobi.numberTypeNode("bool"),
+                type: kinobi.booleanTypeNode(),
             };
         },
     },
@@ -180,7 +212,7 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
                 data: {
                     ...node.data,
                     fields: [
-                        kinobi.structFieldTypeNode({name: 'discriminator', type: kinobi.numberTypeNode('u64')}),
+                        kinobi.structFieldTypeNode({ name: 'discriminator', type: kinobi.numberTypeNode('u64') }),
                         ...node.data.fields
                     ]
                 }

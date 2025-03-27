@@ -65,6 +65,8 @@ pub fn process_mint(
     load_associated_token_account(vault_token_account, vault_info.key, &vault.supported_mint)?;
     load_associated_token_account(depositor_vrt_token_account, depositor.key, vrt_mint.key)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
+
+    // Only the original spl token program is allowed
     load_token_program(token_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
@@ -91,6 +93,11 @@ pub fn process_mint(
         vrt_to_depositor,
         vrt_to_fee_wallet,
     } = vault.mint_with_fee(amount_in, min_amount_out)?;
+
+    if vrt_to_depositor == 0 {
+        msg!("Some VRT must be minted to the depositor. If you wish to donate to the vault, please send ST directly to the vault token account");
+        return Err(VaultError::VrtOutCannotBeZero.into());
+    }
 
     // transfer tokens from depositor to vault
     {
