@@ -38,9 +38,11 @@ Creating a vault requires:
 - `<WITHDRAWAL_FEE_BPS>`: Fee for withdrawing ST
 - `<REWARD_FEE_BPS>`: Fee taken when ST rewards are sent to the vault
 - `<DECIMALS>`: Decimals of the newly created VRT. ( 9 is Recommended )
+- `<INITIALIZE_TOKEN_AMOUNT>`: The amount of tokens to initialize the vault with ( in the smallest unit )
+- `<VRT_MINT_ADDRESS_FILE_PATH>`: The file path of VRT mint address (**Optional**)
 
 ```bash
-jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS>
+jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT>
 ```
 
 Note the resulting Vault Pubkey.

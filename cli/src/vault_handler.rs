@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
@@ -35,7 +35,7 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    signature::{Keypair, Signer},
+    signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
 use spl_associated_token_account::{
@@ -127,6 +127,7 @@ impl VaultCliHandler {
                         reward_fee_bps,
                         decimals,
                         initialize_token_amount,
+                        vrt_mint_address_file_path,
                     },
             } => {
                 self.initialize_vault(
@@ -136,6 +137,7 @@ impl VaultCliHandler {
                     reward_fee_bps,
                     decimals,
                     initialize_token_amount,
+                    vrt_mint_address_file_path,
                 )
                 .await
             }
@@ -278,6 +280,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn initialize_vault(
         &self,
         token_mint: String,
@@ -286,6 +289,7 @@ impl VaultCliHandler {
         reward_fee_bps: u16,
         decimals: u8,
         initialize_token_amount: u64,
+        vrt_mint_address_file_path: Option<PathBuf>,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
         let keypair = self
@@ -295,12 +299,20 @@ impl VaultCliHandler {
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
 
-        let admin = keypair.pubkey();
-
         let base = Keypair::new();
         let vault = Vault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
 
-        let vrt_mint = Keypair::new();
+        let admin = keypair.pubkey();
+
+        let vrt_mint = match vrt_mint_address_file_path {
+            Some(file_path) => {
+                let keypair = read_keypair_file(file_path)
+                    .map_err(|e| anyhow!("Could not read VRT mint address file path: {e}"))?;
+                info!("Found VRT mint address: {}", keypair.pubkey());
+                keypair
+            }
+            None => Keypair::new(),
+        };
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
@@ -319,16 +331,16 @@ impl VaultCliHandler {
             .st_mint(token_mint)
             .admin(admin)
             .base(base.pubkey())
-            .deposit_fee_bps(deposit_fee_bps)
-            .withdrawal_fee_bps(withdrawal_fee_bps)
-            .reward_fee_bps(reward_fee_bps)
             .admin_st_token_account(admin_st_token_account)
             .vault_st_token_account(vault_st_token_account)
             .burn_vault(burn_vault)
             .burn_vault_vrt_token_account(burn_vault_vrt_token_account)
             .associated_token_program(spl_associated_token_account::id())
-            .initialize_token_amount(initialize_token_amount)
-            .decimals(decimals);
+            .deposit_fee_bps(deposit_fee_bps)
+            .withdrawal_fee_bps(withdrawal_fee_bps)
+            .reward_fee_bps(reward_fee_bps)
+            .decimals(decimals)
+            .initialize_token_amount(initialize_token_amount);
 
         let admin_st_token_account_ix =
             create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
