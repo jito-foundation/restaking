@@ -2,9 +2,12 @@
 //! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
+use jito_jsm_core::get_epoch;
 use jito_vault_sdk::error::VaultError;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+
+const RESERVED_SPACE_LEN: usize = 263;
 
 /// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
 /// For every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
@@ -49,7 +52,7 @@ impl VaultStakerWithdrawalTicket {
             vrt_amount: PodU64::from(vrt_amount),
             slot_unstaked: PodU64::from(slot_unstaked),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -72,13 +75,9 @@ impl VaultStakerWithdrawalTicket {
     /// In order for the ticket to be withdrawable, it needs to be more than one **full** epoch
     /// since unstaking
     pub fn is_withdrawable(&self, slot: u64, epoch_length: u64) -> Result<bool, ProgramError> {
-        let current_epoch = slot
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
-        let epoch_unstaked = self
-            .slot_unstaked()
-            .checked_div(epoch_length)
-            .ok_or(VaultError::DivisionByZero)?;
+        let current_epoch = get_epoch(slot, epoch_length)?;
+        let epoch_unstaked = get_epoch(self.slot_unstaked(), epoch_length)?;
+
         if current_epoch
             <= epoch_unstaked
                 .checked_add(1)
@@ -195,7 +194,7 @@ mod tests {
             size_of::<PodU64>() + // vrt_amount
             size_of::<PodU64>() + // slot_unstaked
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_staker_withdrawal_ticket_size, sum_of_fields);
     }
 }

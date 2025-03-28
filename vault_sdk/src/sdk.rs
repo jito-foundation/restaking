@@ -40,23 +40,33 @@ pub fn initialize_vault(
     config: &Pubkey,
     vault: &Pubkey,
     vrt_mint: &Pubkey,
-    token_mint: &Pubkey,
+    st_mint: &Pubkey,
+    admin_st_token_account: &Pubkey,
+    vault_st_token_account: &Pubkey,
+    burn_vault: &Pubkey,
+    burn_vault_vrt_token_account: &Pubkey,
     admin: &Pubkey,
     base: &Pubkey,
     deposit_fee_bps: u16,
     withdrawal_fee_bps: u16,
     reward_fee_bps: u16,
     decimals: u8,
+    initialize_token_amount: u64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new(*vrt_mint, true),
-        AccountMeta::new_readonly(*token_mint, false),
+        AccountMeta::new_readonly(*st_mint, false),
+        AccountMeta::new(*admin_st_token_account, false),
+        AccountMeta::new(*vault_st_token_account, false),
+        AccountMeta::new_readonly(*burn_vault, false),
+        AccountMeta::new(*burn_vault_vrt_token_account, false),
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*base, true),
         AccountMeta::new_readonly(system_program::id(), false),
         AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(spl_associated_token_account::id(), false),
     ];
     Instruction {
         program_id: *program_id,
@@ -66,6 +76,7 @@ pub fn initialize_vault(
             withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
+            initialize_token_amount,
         }
         .try_to_vec()
         .unwrap(),
@@ -559,6 +570,30 @@ pub fn enqueue_withdrawal(
         program_id: *program_id,
         accounts,
         data: VaultInstruction::EnqueueWithdrawal { amount }
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn change_withdrawal_ticket_owner(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_staker_withdrawal_ticket: &Pubkey,
+    old_owner: &Pubkey,
+    new_owner: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket, false),
+        AccountMeta::new_readonly(*old_owner, true),
+        AccountMeta::new_readonly(*new_owner, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::ChangeWithdrawalTicketOwner
             .try_to_vec()
             .unwrap(),
     }

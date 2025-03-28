@@ -38,16 +38,16 @@ edition = "2021"
 readme = "README.md"
 
 [workspace.dependencies]
-anchor-lang = { version = "0.30.1", features = [] }
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "96ed3b791c6fed9ab64cb138397795fe55991280", features = ["idl-build"] }
 anyhow = "1.0.86"
 assert_matches = "1.5.0"
+base64 = "0.22.1"
 borsh = { version = "0.10.3" }
 bytemuck = { version = "1.16.3", features = ["min_const_generics"] }
 cfg-if = "1.0.0"
 chrono = "0.4.38"
 clap = { version = "4.5.16", features = ["derive", "env"] }
 clap-markdown = { version = "0.1.4" }
-const_str_to_pubkey = "0.1.1"
 dotenv = "0.15.0"
 envfile = "0.2.1"
 env_logger = "0.10.2"
@@ -73,17 +73,18 @@ serde = { version = "^1.0", features = ["derive"] }
 serde_with = "3.9.0"
 shank = "0.4.2"
 shank_idl = "0.4.2"
-solana-account-decoder = "^1.18,<2"
-solana-cli-config = "^1.18,<2"
-solana-metrics = "^1.18,<2"
-solana-program = "^1.18,<2"
-solana-program-test = "^1.18,<2"
-solana-rpc-client = "^1.18,<2"
-solana-rpc-client-api = "^1.18,<2"
+solana-account-decoder = "~2.1"
+solana-cli-config = "~2.1"
+solana-metrics = "~2.1"
+solana-program = "~2.1"
+solana-program-test = "~2.1"
+solana-sdk = "~2.1"
+solana-rpc-client = "~2.1"
+solana-rpc-client-api = "~2.1"
 solana-security-txt = "1.1.1"
-spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"] }
-spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
-spl-token-2022 = { version = "3.0.4", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "6.0.0", features = ["no-entrypoint"] }
+spl-token = { version = "7.0.0", features = ["no-entrypoint"] }
+spl-token-2022 = { version = "7.0.0", features = ["no-entrypoint"] }
 syn = "2.0.72"
 test-case = "3.3.1"
 thiserror = "1.0.57"
