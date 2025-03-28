@@ -107,7 +107,7 @@ pub async fn get_tvls(State(state): State<Arc<RouterState>>) -> crate::Result<im
     let base_url = String::from("https://coins.llama.fi/prices/current/solana:");
     let url = format!("{base_url}{}", st_pubkeys.join(",solana:"));
 
-    let response: CoinResponse = reqwest::get(url).await.unwrap().json().await.unwrap();
+    let response: CoinResponse = reqwest::get(url).await?.json().await?;
 
     let mut tvls = Vec::new();
     for (vault_pubkey, vault) in accounts {

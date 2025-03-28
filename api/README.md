@@ -47,7 +47,7 @@ Fetches TVL for a single vault.
 Endpoint:
 
 ```http
-GET api/v1/vaults/{vault_pubkey}/tvl/
+GET api/v1/vaults/{vault_pubkey}/tvl
 ```
 
 Response:
