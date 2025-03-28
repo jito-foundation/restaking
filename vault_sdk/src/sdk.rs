@@ -575,6 +575,30 @@ pub fn enqueue_withdrawal(
     }
 }
 
+pub fn change_withdrawal_ticket_owner(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_staker_withdrawal_ticket: &Pubkey,
+    old_owner: &Pubkey,
+    new_owner: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket, false),
+        AccountMeta::new_readonly(*old_owner, true),
+        AccountMeta::new_readonly(*new_owner, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::ChangeWithdrawalTicketOwner
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn burn_withdrawal_ticket(
     program_id: &Pubkey,

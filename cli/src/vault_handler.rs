@@ -1,7 +1,8 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
-use jito_bytemuck::{AccountDeserialize, Discriminator};
+use base64::{engine::general_purpose, Engine};
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_restaking_core::{
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
@@ -15,7 +16,7 @@ use jito_vault_client::{
         InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
-        WarmupVaultNcnTicketBuilder,
+        UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
@@ -27,7 +28,7 @@ use jito_vault_core::{
 };
 use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
-use solana_account_decoder::UiAccountEncoding;
+use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
 use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
 use solana_rpc_client_api::{
@@ -35,7 +36,7 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    signature::{Keypair, Signer},
+    signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
 use spl_associated_token_account::{
@@ -71,6 +72,36 @@ impl VaultCliHandler {
         RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
     }
 
+    fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
+        &self,
+    ) -> Result<RpcProgramAccountsConfig> {
+        let data_size = std::mem::size_of::<T>()
+            .checked_add(8)
+            .ok_or_else(|| anyhow!("Failed to add"))?;
+        let encoded_discriminator =
+            general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
+        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
+            0,
+            MemcmpEncodedBytes::Base64(encoded_discriminator),
+        ));
+        let config = RpcProgramAccountsConfig {
+            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64),
+                data_slice: Some(UiDataSliceConfig {
+                    offset: 0,
+                    length: data_size,
+                }),
+                commitment: None,
+                min_context_slot: None,
+            },
+            with_context: Some(false),
+            sort_results: Some(false),
+        };
+
+        Ok(config)
+    }
+
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
         match action {
             VaultCommands::Config {
@@ -98,6 +129,7 @@ impl VaultCliHandler {
                         reward_fee_bps,
                         decimals,
                         initialize_token_amount,
+                        vrt_mint_address_file_path,
                     },
             } => {
                 self.initialize_vault(
@@ -107,6 +139,7 @@ impl VaultCliHandler {
                     reward_fee_bps,
                     decimals,
                     initialize_token_amount,
+                    vrt_mint_address_file_path,
                 )
                 .await
             }
@@ -119,6 +152,15 @@ impl VaultCliHandler {
                         uri,
                     },
             } => self.create_token_metadata(vault, name, symbol, uri).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::UpdateTokenMetadata {
+                        vault,
+                        name,
+                        symbol,
+                        uri,
+                    },
+            } => self.update_token_metadata(vault, name, symbol, uri).await,
             VaultCommands::Vault {
                 action: VaultActions::InitializeVaultUpdateStateTracker { vault },
             } => self.initialize_vault_update_state_tracker(vault).await,
@@ -263,6 +305,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn initialize_vault(
         &self,
         token_mint: String,
@@ -271,6 +314,7 @@ impl VaultCliHandler {
         reward_fee_bps: u16,
         decimals: u8,
         initialize_token_amount: u64,
+        vrt_mint_address_file_path: Option<PathBuf>,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
         let keypair = self
@@ -280,12 +324,20 @@ impl VaultCliHandler {
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
 
-        let admin = keypair.pubkey();
-
         let base = Keypair::new();
         let vault = Vault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
 
-        let vrt_mint = Keypair::new();
+        let admin = keypair.pubkey();
+
+        let vrt_mint = match vrt_mint_address_file_path {
+            Some(file_path) => {
+                let keypair = read_keypair_file(file_path)
+                    .map_err(|e| anyhow!("Could not read VRT mint address file path: {e}"))?;
+                info!("Found VRT mint address: {}", keypair.pubkey());
+                keypair
+            }
+            None => Keypair::new(),
+        };
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
@@ -304,16 +356,16 @@ impl VaultCliHandler {
             .st_mint(token_mint)
             .admin(admin)
             .base(base.pubkey())
-            .deposit_fee_bps(deposit_fee_bps)
-            .withdrawal_fee_bps(withdrawal_fee_bps)
-            .reward_fee_bps(reward_fee_bps)
             .admin_st_token_account(admin_st_token_account)
             .vault_st_token_account(vault_st_token_account)
             .burn_vault(burn_vault)
             .burn_vault_vrt_token_account(burn_vault_vrt_token_account)
             .associated_token_program(spl_associated_token_account::id())
-            .initialize_token_amount(initialize_token_amount)
-            .decimals(decimals);
+            .deposit_fee_bps(deposit_fee_bps)
+            .withdrawal_fee_bps(withdrawal_fee_bps)
+            .reward_fee_bps(reward_fee_bps)
+            .decimals(decimals)
+            .initialize_token_amount(initialize_token_amount);
 
         let admin_st_token_account_ix =
             create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
@@ -399,6 +451,65 @@ impl VaultCliHandler {
 
         info!(
             "Creating token metadata transaction: {:?}",
+            tx.get_signature()
+        );
+        rpc_client
+            .send_and_confirm_transaction(&tx)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    async fn update_token_metadata(
+        &self,
+        vault: String,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let vault_pubkey = Pubkey::from_str(&vault)?;
+
+        let rpc_client = self.get_rpc_client();
+        let vault_account = rpc_client.get_account(&vault_pubkey).await?;
+        let vault = Vault::try_from_slice_unchecked(&vault_account.data)?;
+
+        let metadata = Pubkey::find_program_address(
+            &[
+                b"metadata",
+                inline_mpl_token_metadata::id().as_ref(),
+                vault.vrt_mint.as_ref(),
+            ],
+            &inline_mpl_token_metadata::id(),
+        )
+        .0;
+
+        let ix = UpdateTokenMetadataBuilder::new()
+            .vault(vault_pubkey)
+            .admin(keypair.pubkey())
+            .vrt_mint(vault.vrt_mint)
+            .metadata(metadata)
+            .name(name)
+            .symbol(symbol)
+            .uri(uri)
+            .instruction();
+
+        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            recent_blockhash,
+        );
+
+        info!(
+            "Updating token metadata transaction: {:?}",
             tx.get_signature()
         );
         rpc_client
@@ -1250,25 +1361,12 @@ impl VaultCliHandler {
 
     pub async fn list_vaults(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Vault>()?;
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.vault_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Vault::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
-            .await?;
+            .get_program_accounts_with_config(&self.vault_program_id, config)
+            .await
+            .unwrap();
+        log::info!("{:?}", accounts);
         for (vault_pubkey, vault) in accounts {
             let vault = Vault::try_from_slice_unchecked(&vault.data)?;
             info!("vault at address {}: {:?}", vault_pubkey, vault);

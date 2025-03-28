@@ -95,7 +95,7 @@ graph TD
 
 ## 4.4. NcnVaultSlasherTicket
 
-This ticket represents the slashing relationship between an NCN and a Vault. The NCN register slashers, which allows the slasher to potentially slash the Vault under appropriate conditions.
+This ticket represents the slashing relationship between an NCN and a Vault. The NCN register slashers.
 
 ```mermaid
 graph TD

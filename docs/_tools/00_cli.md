@@ -472,6 +472,7 @@ Vault commands
 
 * `initialize` — Creates a new vault
 * `create-token-metadata` — Creates token metadata for the vault's LRT token
+* `update-token-metadata` — 
 * `initialize-vault-update-state-tracker` — Starts the vault update cycle
 * `crank-vault-update-state-tracker` — Cranks the vault update state tracker, needs to be run per operator
 * `close-vault-update-state-tracker` — Ends the vault update cycle
@@ -499,7 +500,7 @@ Vault commands
 
 Creates a new vault
 
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT>`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> [VRT_MINT_ADDRESS_FILE_PATH]`
 
 ###### **Arguments:**
 
@@ -509,6 +510,7 @@ Creates a new vault
 * `<REWARD_FEE_BPS>` — The reward fee in bips
 * `<DECIMALS>` — The decimals of the token
 * `<INITIALIZE_TOKEN_AMOUNT>` — The amount of tokens to initialize the vault with ( in the smallest unit )
+* `<VRT_MINT_ADDRESS_FILE_PATH>` — The file path of VRT mint address
 
 
 
@@ -517,6 +519,19 @@ Creates a new vault
 Creates token metadata for the vault's LRT token
 
 **Usage:** `jito-restaking-cli vault vault create-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NAME>` — The name of the token
+* `<SYMBOL>` — The symbol of the token
+* `<URI>` — The URI for the token metadata
+
+
+
+## `jito-restaking-cli vault vault update-token-metadata`
+
+**Usage:** `jito-restaking-cli vault vault update-token-metadata <VAULT> <NAME> <SYMBOL> <URI>`
 
 ###### **Arguments:**
 

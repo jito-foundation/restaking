@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{command, Subcommand};
 use solana_program::pubkey::Pubkey;
 
@@ -48,9 +50,21 @@ pub enum VaultActions {
         decimals: u8,
         /// The amount of tokens to initialize the vault with ( in the smallest unit )
         initialize_token_amount: u64,
+        /// The file path of VRT mint address
+        vrt_mint_address_file_path: Option<PathBuf>,
     },
     /// Creates token metadata for the vault's LRT token
     CreateTokenMetadata {
+        /// The vault pubkey
+        vault: String,
+        /// The name of the token
+        name: String,
+        /// The symbol of the token
+        symbol: String,
+        /// The URI for the token metadata
+        uri: String,
+    },
+    UpdateTokenMetadata {
         /// The vault pubkey
         vault: String,
         /// The name of the token
