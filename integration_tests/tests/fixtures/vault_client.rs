@@ -1002,8 +1002,8 @@ impl VaultProgramClient {
                 new_owner,
             )],
             Some(&self.payer.pubkey()),
-            &[&self.payer,old_owner],
-            blockhash
+            &[&self.payer, old_owner],
+            blockhash,
         ))
         .await
     }
