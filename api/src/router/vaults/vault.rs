@@ -59,7 +59,10 @@ pub async fn list_vaults(
 
     let mut vaults = Vec::new();
     for (_vault_pubkey, vault) in accounts {
-        let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
+        let vault = Vault::deserialize(&mut vault.data.as_slice()).map_err(|e| {
+            tracing::warn!("error deserializing Vault: {:?}", e);
+            JitoRestakingApiError::AnchorError(e.into())
+        })?;
         vaults.push(vault);
     }
 
