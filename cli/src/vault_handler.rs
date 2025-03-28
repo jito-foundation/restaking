@@ -11,8 +11,9 @@ use jito_vault_client::{
     instructions::{
         AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
         CooldownDelegationBuilder, CooldownVaultNcnTicketBuilder,
-        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder, EnqueueWithdrawalBuilder,
-        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
+        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
+        DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
+        InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
@@ -41,6 +42,7 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
+use spl_token::instruction::transfer;
 
 use crate::{
     vault::{ConfigActions, VaultActions, VaultCommands},
@@ -238,6 +240,29 @@ impl VaultCliHandler {
             VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::DelegateTokenAccount {
+                        vault,
+                        delegate,
+                        token_mint,
+                        token_account,
+                    },
+            } => {
+                self.delegate_token_account(vault, delegate, token_mint, token_account)
+                    .await
+            }
+            VaultCommands::Vault {
+                action:
+                    VaultActions::DelegatedTokenTransfer {
+                        token_account,
+                        recipient_pubkey,
+                        amount,
+                    },
+            } => {
+                self.delegated_token_transfer(token_account, recipient_pubkey, amount)
+                    .await
+            }
         }
     }
 
@@ -1070,6 +1095,101 @@ impl VaultCliHandler {
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
         info!("Cooldown {} tokens for {}", amount, operator);
+
+        Ok(())
+    }
+
+    pub async fn delegate_token_account(
+        &self,
+        vault: String,
+        delegate: String,
+        token_mint: String,
+        token_account: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let delegate = Pubkey::from_str(&delegate)?;
+        let token_mint = Pubkey::from_str(&token_mint)?;
+        let token_account = Pubkey::from_str(&token_account)?;
+
+        let mut ix_builder = DelegateTokenAccountBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .delegate_asset_admin(keypair.pubkey())
+            .token_mint(token_mint)
+            .token_account(token_account)
+            .delegate(delegate)
+            .token_program(spl_token::ID);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+        info!("Delegating token account: {:?}", tx.get_signature());
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+        info!("Delegated token account: {:?}", token_account);
+
+        Ok(())
+    }
+
+    pub async fn delegated_token_transfer(
+        &self,
+        token_account: String,
+        recipient_pubkey: String,
+        amount: u64,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let token_account = Pubkey::from_str(&token_account)?;
+        let recipient_pubkey = Pubkey::from_str(&recipient_pubkey)?;
+
+        let transfer_ix = transfer(
+            &spl_token::id(),
+            &token_account,
+            &recipient_pubkey,
+            &keypair.pubkey(),
+            &[],
+            amount,
+        )?;
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[transfer_ix],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!("Delegating token transfer: {:?}", tx.get_signature());
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+        info!("Transferred {} tokens to {}", amount, recipient_pubkey);
 
         Ok(())
     }
