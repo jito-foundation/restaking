@@ -491,6 +491,8 @@ Vault commands
 * `get` — Gets a vault
 * `list` — List all vaults
 * `set-capacity` — Sets the deposit capacity in the vault
+* `delegate-token-account` — Delegate a token account
+* `delegated-token-transfer` — Transfer a token account
 
 
 
@@ -764,6 +766,35 @@ Sets the deposit capacity in the vault
 
 * `<VAULT>` — The vault pubkey
 * `<AMOUNT>` — The new capacity
+
+
+
+## `jito-restaking-cli vault vault delegate-token-account`
+
+Delegate a token account
+
+**Usage:** `jito-restaking-cli vault vault delegate-token-account <VAULT> <DELEGATE> <TOKEN_MINT> <TOKEN_ACCOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<DELEGATE>` — The delegate account
+* `<TOKEN_MINT>` — The token mint
+* `<TOKEN_ACCOUNT>` — The token account
+
+
+
+## `jito-restaking-cli vault vault delegated-token-transfer`
+
+Transfer a token account
+
+**Usage:** `jito-restaking-cli vault vault delegated-token-transfer <TOKEN_ACCOUNT> <RECIPIENT_PUBKEY> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<TOKEN_ACCOUNT>` — The token account
+* `<RECIPIENT_PUBKEY>` — The recipient pubkey
+* `<AMOUNT>` — The amount to transfer
 
 
 

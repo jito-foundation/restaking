@@ -194,4 +194,24 @@ pub enum VaultActions {
         /// The new capacity
         amount: u64,
     },
+    /// Delegate a token account
+    DelegateTokenAccount {
+        /// The vault pubkey
+        vault: String,
+        /// The delegate account
+        delegate: String,
+        /// The token mint
+        token_mint: String,
+        /// The token account
+        token_account: String,
+    },
+    /// Transfer a token account
+    DelegatedTokenTransfer {
+        /// The token account
+        token_account: String,
+        /// The recipient pubkey
+        recipient_pubkey: String,
+        /// The amount to transfer
+        amount: u64,
+    },
 }
