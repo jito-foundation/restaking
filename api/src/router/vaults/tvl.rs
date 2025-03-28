@@ -92,10 +92,15 @@ pub async fn get_tvls(State(state): State<Arc<RouterState>>) -> crate::Result<im
 
     let st_pubkeys: HashSet<String> = accounts
         .iter()
-        .map(|(_, vault)| {
-            let vault = Vault::deserialize(&mut vault.data.as_slice()).unwrap();
-            vault.supported_mint.to_string()
-        })
+        .filter_map(
+            |(_, vault)| match Vault::deserialize(&mut vault.data.as_slice()) {
+                Ok(vault) => Some(vault.supported_mint.to_string()),
+                Err(e) => {
+                    tracing::warn!("error deserializing Vault: {:?}", e);
+                    None
+                }
+            },
+        )
         .collect();
     let st_pubkeys: Vec<String> = st_pubkeys.into_iter().collect();
 
