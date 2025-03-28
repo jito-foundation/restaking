@@ -983,6 +983,31 @@ impl VaultProgramClient {
         })
     }
 
+    pub async fn do_change_withdrawal_ticket_owner(
+        &mut self,
+        config: &Pubkey,
+        vault: &Pubkey,
+        vault_staker_withdrawal_ticket: &Pubkey,
+        old_owner: &Keypair,
+        new_owner: &Pubkey,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::change_withdrawal_ticket_owner(
+                &jito_vault_program::id(),
+                config,
+                vault,
+                vault_staker_withdrawal_ticket,
+                &old_owner.pubkey(),
+                new_owner,
+            )],
+            Some(&self.payer.pubkey()),
+            &[&self.payer, old_owner],
+            blockhash,
+        ))
+        .await
+    }
+
     pub async fn do_cooldown_delegation(
         &mut self,
         vault_root: &VaultRoot,

@@ -9,6 +9,8 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct NcnVaultTicket {
@@ -36,7 +38,7 @@ impl NcnVaultTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -120,7 +122,7 @@ mod tests {
             size_of::<PodU64>() + // index
             size_of::<SlotToggle>() + // state
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(ncn_vault_ticket_size, sum_of_fields);
     }
 
