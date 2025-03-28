@@ -2568,7 +2568,6 @@ dependencies = [
  "serde",
  "serde_with",
  "solana-program",
- "solana-sdk",
  "thiserror 1.0.69",
 ]
 
@@ -2677,7 +2676,6 @@ dependencies = [
  "serde",
  "serde_with",
  "solana-program",
- "solana-sdk",
  "thiserror 1.0.69",
 ]
 
