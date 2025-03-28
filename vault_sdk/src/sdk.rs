@@ -575,7 +575,6 @@ pub fn enqueue_withdrawal(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn change_withdrawal_ticket_owner(
     program_id: &Pubkey,
     config: &Pubkey,
