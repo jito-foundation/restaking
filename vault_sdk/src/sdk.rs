@@ -582,7 +582,7 @@ pub fn change_withdrawal_ticket_owner(
     vault: &Pubkey,
     vault_staker_withdrawal_ticket: &Pubkey,
     old_owner: &Pubkey,
-    new_owner: &Pubkey
+    new_owner: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new_readonly(*config, false),
@@ -594,7 +594,9 @@ pub fn change_withdrawal_ticket_owner(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::ChangeWithdrawalTicketOwner.try_to_vec().unwrap(),
+        data: VaultInstruction::ChangeWithdrawalTicketOwner
+            .try_to_vec()
+            .unwrap(),
     }
 }
 
