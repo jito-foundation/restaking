@@ -14,6 +14,7 @@ mod initialize_vault_ncn_slasher_ticket;
 mod initialize_vault_ncn_ticket;
 mod initialize_vault_operator_delegation;
 mod initialize_vault_update_state_tracker;
+mod revoke_delegate_token_account;
 mod reward_fee;
 mod set_admin;
 mod set_capacity;
