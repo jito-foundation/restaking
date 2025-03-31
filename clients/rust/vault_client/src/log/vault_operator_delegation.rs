@@ -1,6 +1,5 @@
-use crate::accounts::VaultOperatorDelegation;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::VaultOperatorDelegation;
 
 impl PrettyDisplay for VaultOperatorDelegation {
     fn pretty_display(&self) -> String {

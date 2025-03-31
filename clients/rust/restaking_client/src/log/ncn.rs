@@ -1,6 +1,5 @@
-use crate::accounts::Ncn;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::Ncn;
 
 impl PrettyDisplay for Ncn {
     fn pretty_display(&self) -> String {

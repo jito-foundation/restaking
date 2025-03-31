@@ -1,6 +1,5 @@
-use crate::accounts::Vault;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::Vault;
 
 impl PrettyDisplay for Vault {
     fn pretty_display(&self) -> String {

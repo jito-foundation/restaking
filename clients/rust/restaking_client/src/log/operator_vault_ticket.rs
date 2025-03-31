@@ -1,6 +1,5 @@
-use crate::accounts::OperatorVaultTicket;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::OperatorVaultTicket;
 
 impl PrettyDisplay for OperatorVaultTicket {
     fn pretty_display(&self) -> String {

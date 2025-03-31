@@ -1,6 +1,5 @@
-use crate::accounts::Config;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::Config;
 
 impl PrettyDisplay for Config {
     fn pretty_display(&self) -> String {

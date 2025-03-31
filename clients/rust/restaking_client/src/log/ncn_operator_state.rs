@@ -1,6 +1,5 @@
-use crate::accounts::NcnOperatorState;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::NcnOperatorState;
 
 impl PrettyDisplay for NcnOperatorState {
     fn pretty_display(&self) -> String {

@@ -1,6 +1,5 @@
-use crate::accounts::NcnVaultTicket;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::NcnVaultTicket;
 
 impl PrettyDisplay for NcnVaultTicket {
     fn pretty_display(&self) -> String {

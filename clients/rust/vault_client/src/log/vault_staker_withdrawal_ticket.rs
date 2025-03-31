@@ -1,6 +1,5 @@
-use crate::accounts::VaultStakerWithdrawalTicket;
-
 use super::{account_header, field, section_header, PrettyDisplay};
+use crate::accounts::VaultStakerWithdrawalTicket;
 
 impl PrettyDisplay for VaultStakerWithdrawalTicket {
     fn pretty_display(&self) -> String {
