@@ -1476,7 +1476,7 @@ impl VaultCliHandler {
             "Vault Staker Withdrawal Ticket at address {}",
             vault_staker_withdrawal_ticket
         );
-        info!("{:?}", ticket.pretty_display());
+        info!("{}", ticket.pretty_display());
 
         Ok(())
     }

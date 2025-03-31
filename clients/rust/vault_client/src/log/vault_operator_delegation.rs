@@ -20,7 +20,7 @@ impl PrettyDisplay for VaultOperatorDelegation {
             self.delegation_state.enqueued_for_cooldown_amount,
         ));
         output.push_str(&field(
-            "Coolindown Amount",
+            "Cooling Down Amount",
             self.delegation_state.cooling_down_amount,
         ));
         output.push_str(&field("Staked Amount", self.delegation_state.staked_amount));

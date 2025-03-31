@@ -27,7 +27,7 @@ impl PrettyDisplay for Config {
             self.fee_rate_of_change_bps,
         ));
         output.push_str(&field("Fee Bump BPS", self.fee_bump_bps));
-        output.push_str(&field("Program Fee BPS", self.fee_bump_bps));
+        output.push_str(&field("Program Fee BPS", self.program_fee_bps));
 
         output.push_str(&section_header("Epoch Info"));
         output.push_str(&field("Epoch Length", self.epoch_length));
