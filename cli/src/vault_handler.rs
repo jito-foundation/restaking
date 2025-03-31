@@ -2,6 +2,7 @@ use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
+use borsh::BorshDeserialize;
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_restaking_core::{
@@ -18,6 +19,7 @@ use jito_vault_client::{
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
     },
+    log::PrettyDisplay,
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
@@ -1354,8 +1356,9 @@ impl VaultCliHandler {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let rpc_client = self.get_rpc_client();
         let account = rpc_client.get_account(&pubkey).await?;
-        let vault = Vault::try_from_slice_unchecked(&account.data)?;
-        info!("vault at address {}: {:?}", pubkey, vault);
+        let vault = jito_vault_client::accounts::Vault::deserialize(&mut account.data.as_slice())?;
+        info!("vault at address {}", pubkey);
+        info!("{}", vault.pretty_display());
         Ok(())
     }
 
@@ -1368,8 +1371,10 @@ impl VaultCliHandler {
             .unwrap();
         log::info!("{:?}", accounts);
         for (vault_pubkey, vault) in accounts {
-            let vault = Vault::try_from_slice_unchecked(&vault.data)?;
-            info!("vault at address {}: {:?}", vault_pubkey, vault);
+            let vault =
+                jito_vault_client::accounts::Vault::deserialize(&mut vault.data.as_slice())?;
+            info!("vault at address {}", vault_pubkey);
+            info!("{}", vault.pretty_display());
         }
         Ok(())
     }
@@ -1384,8 +1389,10 @@ impl VaultCliHandler {
         );
 
         let account = rpc_client.get_account(&config_address).await?;
-        let config = Config::try_from_slice_unchecked(&account.data)?;
-        info!("Vault config at address {} : {:?}", config_address, config);
+        let config =
+            jito_vault_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
+        info!("Vault config at address {}", config_address);
+        info!("{}", config.pretty_display());
         Ok(())
     }
 
@@ -1403,8 +1410,14 @@ impl VaultCliHandler {
         )
         .0;
         let account = rpc_client.get_account(&vault_update_state_tracker).await?;
-        let state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked(&account.data)?;
-        info!("{:?}", state_tracker);
+        let state_tracker = jito_vault_client::accounts::VaultUpdateStateTracker::deserialize(
+            &mut account.data.as_slice(),
+        )?;
+        info!(
+            "Vault Update State Tracker at address {}",
+            vault_update_state_tracker
+        );
+        info!("{}", state_tracker.pretty_display());
         Ok(())
     }
 
@@ -1423,8 +1436,14 @@ impl VaultCliHandler {
         )
         .0;
         let account = rpc_client.get_account(&vault_operator_delegation).await?;
-        let delegation = VaultOperatorDelegation::try_from_slice_unchecked(&account.data)?;
-        info!("{:?}", delegation);
+        let delegation = jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
+            &mut account.data.as_slice(),
+        )?;
+        info!(
+            "Vault Operator Delegation at address {}",
+            vault_operator_delegation
+        );
+        info!("{}", delegation.pretty_display());
         Ok(())
     }
 
@@ -1450,8 +1469,14 @@ impl VaultCliHandler {
         let account = rpc_client
             .get_account(&vault_staker_withdrawal_ticket)
             .await?;
-        let ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked(&account.data)?;
-        info!("{:?}", ticket);
+        let ticket = jito_vault_client::accounts::VaultStakerWithdrawalTicket::deserialize(
+            &mut account.data.as_slice(),
+        )?;
+        info!(
+            "Vault Staker Withdrawal Ticket at address {}",
+            vault_staker_withdrawal_ticket
+        );
+        info!("{:?}", ticket.pretty_display());
 
         Ok(())
     }

@@ -3,7 +3,6 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
 use borsh::BorshDeserialize;
-use jito_bytemuck::AccountDeserialize;
 use jito_restaking_client::{
     instructions::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
@@ -1061,8 +1060,10 @@ impl RestakingCliHandler {
     pub async fn get_operator(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
-        let operator = Operator::try_from_slice_unchecked(&account.data)?;
-        info!("Operator at address {}: {:?}", pubkey, operator);
+        let operator =
+            jito_restaking_client::accounts::Operator::deserialize(&mut account.data.as_slice())?;
+        info!("Operator at address {}", pubkey);
+        info!("{}", operator.pretty_display());
 
         Ok(())
     }
@@ -1074,8 +1075,11 @@ impl RestakingCliHandler {
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (operator_pubkey, operator) in accounts {
-            let operator = Operator::try_from_slice_unchecked(&operator.data)?;
-            info!("Operator at address {}: {:?}", operator_pubkey, operator);
+            let operator = jito_restaking_client::accounts::Operator::deserialize(
+                &mut operator.data.as_slice(),
+            )?;
+            info!("Operator at address {}", operator_pubkey);
+            info!("{}", operator.pretty_display());
         }
         Ok(())
     }

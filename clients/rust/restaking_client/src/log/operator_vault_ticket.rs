@@ -6,7 +6,7 @@ impl PrettyDisplay for OperatorVaultTicket {
     fn pretty_display(&self) -> String {
         let mut output = String::new();
 
-        output.push_str(&account_header("Ncn Vault Ticket Account"));
+        output.push_str(&account_header("Operator Vault Ticket Account"));
 
         output.push_str(&section_header("Basic Info"));
         output.push_str(&field("NCN", self.operator));
