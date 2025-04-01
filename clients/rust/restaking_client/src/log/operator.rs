@@ -28,3 +28,45 @@ impl PrettyDisplay for Operator {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::Operator, log::PrettyDisplay};
+
+    #[test]
+    fn test_operator_pretty_display_structure() {
+        let operator = Operator {
+            discriminator: 12345,
+            base: Pubkey::new_unique(),
+            admin: Pubkey::new_unique(),
+            ncn_admin: Pubkey::new_unique(),
+            vault_admin: Pubkey::new_unique(),
+            delegate_admin: Pubkey::new_unique(),
+            metadata_admin: Pubkey::new_unique(),
+            voter: Pubkey::new_unique(),
+            index: 1,
+            ncn_count: 2,
+            vault_count: 3,
+            operator_fee_bps: 4,
+            bump: 5,
+            reserved_space: [0; 261],
+        };
+
+        let output = operator.pretty_display();
+
+        assert!(output.contains(&operator.base.to_string()));
+        assert!(output.contains(&operator.admin.to_string()));
+        assert!(output.contains(&operator.ncn_admin.to_string()));
+        assert!(output.contains(&operator.vault_admin.to_string()));
+        assert!(output.contains(&operator.delegate_admin.to_string()));
+        assert!(output.contains(&operator.metadata_admin.to_string()));
+        assert!(output.contains(&operator.voter.to_string()));
+        assert!(output.contains(&operator.index.to_string()));
+        assert!(output.contains(&operator.ncn_count.to_string()));
+        assert!(output.contains(&operator.vault_count.to_string()));
+        assert!(output.contains(&operator.operator_fee_bps.to_string()));
+        assert!(output.contains(&operator.bump.to_string()));
+    }
+}

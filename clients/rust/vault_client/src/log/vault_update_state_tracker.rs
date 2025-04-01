@@ -35,3 +35,57 @@ impl PrettyDisplay for VaultUpdateStateTracker {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::VaultUpdateStateTracker, log::PrettyDisplay, types::DelegationState};
+
+    #[test]
+    fn test_vault_update_state_tracker_pretty_display_structure() {
+        let vault_update_state_tracker = VaultUpdateStateTracker {
+            discriminator: 12345,
+            vault: Pubkey::new_unique(),
+            ncn_epoch: 1,
+            last_updated_index: 2,
+            delegation_state: DelegationState {
+                staked_amount: 3,
+                enqueued_for_cooldown_amount: 4,
+                cooling_down_amount: 5,
+                reserved: [0; 256],
+            },
+            withdrawal_allocation_method: 6,
+            reserved: [0; 263],
+        };
+
+        let output = vault_update_state_tracker.pretty_display();
+
+        assert!(output.contains(&vault_update_state_tracker.vault.to_string()));
+        assert!(output.contains(&vault_update_state_tracker.ncn_epoch.to_string()));
+        assert!(output.contains(&vault_update_state_tracker.last_updated_index.to_string()));
+        assert!(output.contains(
+            &vault_update_state_tracker
+                .delegation_state
+                .staked_amount
+                .to_string()
+        ));
+        assert!(output.contains(
+            &vault_update_state_tracker
+                .delegation_state
+                .enqueued_for_cooldown_amount
+                .to_string()
+        ));
+        assert!(output.contains(
+            &vault_update_state_tracker
+                .delegation_state
+                .cooling_down_amount
+                .to_string()
+        ));
+        assert!(output.contains(
+            &vault_update_state_tracker
+                .withdrawal_allocation_method
+                .to_string()
+        ));
+    }
+}

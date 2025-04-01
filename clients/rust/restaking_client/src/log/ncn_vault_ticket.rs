@@ -20,3 +20,36 @@ impl PrettyDisplay for NcnVaultTicket {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::NcnVaultTicket, log::PrettyDisplay, types::SlotToggle};
+
+    #[test]
+    fn test_ncn_vault_ticket_pretty_display_structure() {
+        let ncn_vault_ticket = NcnVaultTicket {
+            discriminator: 12345,
+            ncn: Pubkey::new_unique(),
+            vault: Pubkey::new_unique(),
+            index: 1,
+            state: SlotToggle {
+                slot_added: 0,
+                slot_removed: 1,
+                reserved: [0; 32],
+            },
+            bump: 2,
+            reserved: [0; 263],
+        };
+
+        let output = ncn_vault_ticket.pretty_display();
+
+        assert!(output.contains(&ncn_vault_ticket.ncn.to_string()));
+        assert!(output.contains(&ncn_vault_ticket.vault.to_string()));
+        assert!(output.contains(&ncn_vault_ticket.index.to_string()));
+        assert!(output.contains(&ncn_vault_ticket.state.slot_added.to_string()));
+        assert!(output.contains(&ncn_vault_ticket.state.slot_removed.to_string()));
+        assert!(output.contains(&ncn_vault_ticket.bump.to_string()));
+    }
+}

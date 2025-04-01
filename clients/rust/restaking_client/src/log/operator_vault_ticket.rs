@@ -20,3 +20,36 @@ impl PrettyDisplay for OperatorVaultTicket {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::OperatorVaultTicket, log::PrettyDisplay, types::SlotToggle};
+
+    #[test]
+    fn test_operator_vault_ticket_pretty_display_structure() {
+        let operator_vault_ticket = OperatorVaultTicket {
+            discriminator: 12345,
+            operator: Pubkey::new_unique(),
+            vault: Pubkey::new_unique(),
+            index: 0,
+            state: SlotToggle {
+                slot_added: 0,
+                slot_removed: 1,
+                reserved: [0; 32],
+            },
+            bump: 2,
+            reserved: [0; 263],
+        };
+
+        let output = operator_vault_ticket.pretty_display();
+
+        assert!(output.contains(&operator_vault_ticket.operator.to_string()));
+        assert!(output.contains(&operator_vault_ticket.vault.to_string()));
+        assert!(output.contains(&operator_vault_ticket.index.to_string()));
+        assert!(output.contains(&operator_vault_ticket.state.slot_added.to_string()));
+        assert!(output.contains(&operator_vault_ticket.state.slot_removed.to_string()));
+        assert!(output.contains(&operator_vault_ticket.bump.to_string()));
+    }
+}

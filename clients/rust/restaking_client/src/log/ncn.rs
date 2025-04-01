@@ -30,3 +30,49 @@ impl PrettyDisplay for Ncn {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::Ncn, log::PrettyDisplay};
+
+    #[test]
+    fn test_ncn_pretty_display_structure() {
+        let ncn = Ncn {
+            discriminator: 12345,
+            base: Pubkey::new_unique(),
+            admin: Pubkey::new_unique(),
+            operator_admin: Pubkey::new_unique(),
+            vault_admin: Pubkey::new_unique(),
+            slasher_admin: Pubkey::new_unique(),
+            delegate_admin: Pubkey::new_unique(),
+            metadata_admin: Pubkey::new_unique(),
+            weight_table_admin: Pubkey::new_unique(),
+            ncn_program_admin: Pubkey::new_unique(),
+            index: 0,
+            operator_count: 1,
+            vault_count: 2,
+            slasher_count: 3,
+            bump: 254,
+            reserved: [0; 263],
+        };
+
+        let output = ncn.pretty_display();
+
+        assert!(output.contains(&ncn.base.to_string()));
+        assert!(output.contains(&ncn.admin.to_string()));
+        assert!(output.contains(&ncn.operator_admin.to_string()));
+        assert!(output.contains(&ncn.vault_admin.to_string()));
+        assert!(output.contains(&ncn.slasher_admin.to_string()));
+        assert!(output.contains(&ncn.delegate_admin.to_string()));
+        assert!(output.contains(&ncn.metadata_admin.to_string()));
+        assert!(output.contains(&ncn.weight_table_admin.to_string()));
+        assert!(output.contains(&ncn.ncn_program_admin.to_string()));
+        assert!(output.contains(&ncn.index.to_string()));
+        assert!(output.contains(&ncn.operator_count.to_string()));
+        assert!(output.contains(&ncn.vault_count.to_string()));
+        assert!(output.contains(&ncn.slasher_count.to_string()));
+        assert!(output.contains(&ncn.bump.to_string()));
+    }
+}

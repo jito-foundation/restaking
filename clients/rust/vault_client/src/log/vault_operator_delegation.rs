@@ -28,3 +28,55 @@ impl PrettyDisplay for VaultOperatorDelegation {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::VaultOperatorDelegation, log::PrettyDisplay, types::DelegationState};
+
+    #[test]
+    fn test_vault_operator_delegation_pretty_display_structure() {
+        let vault_operator_delegation = VaultOperatorDelegation {
+            discriminator: 12345,
+            vault: Pubkey::new_unique(),
+            operator: Pubkey::new_unique(),
+            delegation_state: DelegationState {
+                staked_amount: 1,
+                enqueued_for_cooldown_amount: 2,
+                cooling_down_amount: 3,
+                reserved: [0; 256],
+            },
+            last_update_slot: 4,
+            index: 5,
+            bump: 6,
+            reserved: [0; 263],
+        };
+
+        let output = vault_operator_delegation.pretty_display();
+
+        assert!(output.contains(&vault_operator_delegation.vault.to_string()));
+        assert!(output.contains(&vault_operator_delegation.operator.to_string()));
+        assert!(output.contains(
+            &vault_operator_delegation
+                .delegation_state
+                .staked_amount
+                .to_string()
+        ));
+        assert!(output.contains(
+            &vault_operator_delegation
+                .delegation_state
+                .enqueued_for_cooldown_amount
+                .to_string()
+        ));
+        assert!(output.contains(
+            &vault_operator_delegation
+                .delegation_state
+                .cooling_down_amount
+                .to_string()
+        ));
+        assert!(output.contains(&vault_operator_delegation.last_update_slot.to_string()));
+        assert!(output.contains(&vault_operator_delegation.index.to_string()));
+        assert!(output.contains(&vault_operator_delegation.bump.to_string()));
+    }
+}

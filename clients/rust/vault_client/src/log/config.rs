@@ -35,3 +35,42 @@ impl PrettyDisplay for Config {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::Config, log::PrettyDisplay};
+
+    #[test]
+    fn test_config_pretty_display_structure() {
+        let config = Config {
+            discriminator: 12345,
+            admin: Pubkey::new_unique(),
+            restaking_program: Pubkey::new_unique(),
+            epoch_length: 0,
+            num_vaults: 1,
+            deposit_withdrawal_fee_cap_bps: 2,
+            fee_rate_of_change_bps: 3,
+            fee_bump_bps: 4,
+            program_fee_bps: 5,
+            program_fee_wallet: Pubkey::new_unique(),
+            fee_admin: Pubkey::new_unique(),
+            bump: 248,
+            reserved: [0; 229],
+        };
+
+        let output = config.pretty_display();
+
+        assert!(output.contains(&config.admin.to_string()));
+        assert!(output.contains(&config.restaking_program.to_string()));
+        assert!(output.contains(&config.epoch_length.to_string()));
+        assert!(output.contains(&config.num_vaults.to_string()));
+        assert!(output.contains(&config.deposit_withdrawal_fee_cap_bps.to_string()));
+        assert!(output.contains(&config.fee_rate_of_change_bps.to_string()));
+        assert!(output.contains(&config.program_fee_bps.to_string()));
+        assert!(output.contains(&config.program_fee_wallet.to_string()));
+        assert!(output.contains(&config.fee_admin.to_string()));
+        assert!(output.contains(&config.bump.to_string()));
+    }
+}

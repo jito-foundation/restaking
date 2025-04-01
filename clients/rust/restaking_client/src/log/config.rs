@@ -24,3 +24,33 @@ impl PrettyDisplay for Config {
         output
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::{accounts::Config, log::PrettyDisplay};
+
+    #[test]
+    fn test_config_pretty_display_structure() {
+        let config = Config {
+            discriminator: 12345,
+            admin: Pubkey::new_unique(),
+            vault_program: Pubkey::new_unique(),
+            ncn_count: 5,
+            operator_count: 10,
+            epoch_length: 432000,
+            bump: 254,
+            reserved: [0; 263],
+        };
+
+        let output = config.pretty_display();
+
+        assert!(output.contains(&config.admin.to_string()));
+        assert!(output.contains(&config.vault_program.to_string()));
+        assert!(output.contains(&config.bump.to_string()));
+        assert!(output.contains(&config.epoch_length.to_string()));
+        assert!(output.contains(&config.ncn_count.to_string()));
+        assert!(output.contains(&config.operator_count.to_string()));
+    }
+}
