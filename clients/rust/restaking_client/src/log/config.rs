@@ -10,7 +10,7 @@ impl PrettyDisplay for Config {
         output.push_str(&section_header("Admin Authorities"));
         output.push_str(&field("Admin", self.admin));
 
-        output.push_str(&section_header("Basic Info"));
+        output.push_str(&section_header("Basic Information"));
         output.push_str(&field("Vault Program", self.vault_program));
         output.push_str(&field("Bump", self.bump));
 
@@ -18,7 +18,7 @@ impl PrettyDisplay for Config {
         output.push_str(&field("NCN Count", self.ncn_count));
         output.push_str(&field("Operator Count", self.operator_count));
 
-        output.push_str(&section_header("Epoch Info"));
+        output.push_str(&section_header("Epoch Information"));
         output.push_str(&field("Epoch Length", self.epoch_length));
 
         output

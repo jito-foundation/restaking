@@ -7,7 +7,7 @@ impl PrettyDisplay for Operator {
 
         output.push_str(&account_header("Operator Account"));
 
-        output.push_str(&section_header("Basic Info"));
+        output.push_str(&section_header("Basic Information"));
         output.push_str(&field("Base", self.base));
         output.push_str(&field("Index", self.index));
         output.push_str(&field("Bump", self.bump));

@@ -12,7 +12,7 @@ impl PrettyDisplay for Config {
         output.push_str(&field("Program Fee Wallet", self.program_fee_wallet));
         output.push_str(&field("Fee Admin", self.fee_admin));
 
-        output.push_str(&section_header("Basic Info"));
+        output.push_str(&section_header("Basic Information"));
         output.push_str(&field("Restaking Program", self.restaking_program));
         output.push_str(&field("Bump", self.bump));
 
@@ -29,7 +29,7 @@ impl PrettyDisplay for Config {
         output.push_str(&field("Fee Bump BPS", self.fee_bump_bps));
         output.push_str(&field("Program Fee BPS", self.program_fee_bps));
 
-        output.push_str(&section_header("Epoch Info"));
+        output.push_str(&section_header("Epoch Information"));
         output.push_str(&field("Epoch Length", self.epoch_length));
 
         output

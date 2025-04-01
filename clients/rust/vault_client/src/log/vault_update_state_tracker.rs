@@ -1,5 +1,5 @@
 use super::{account_header, field, section_header, PrettyDisplay};
-use crate::{accounts::VaultUpdateStateTracker, types::WithdrawalAllocationMethod};
+use crate::accounts::VaultUpdateStateTracker;
 
 impl PrettyDisplay for VaultUpdateStateTracker {
     fn pretty_display(&self) -> String {

@@ -7,7 +7,7 @@ impl PrettyDisplay for NcnVaultSlasherTicket {
 
         output.push_str(&account_header("Ncn Vault Slasher Ticket Account"));
 
-        output.push_str(&section_header("Basic Info"));
+        output.push_str(&section_header("Basic Information"));
         output.push_str(&field("NCN", self.ncn));
         output.push_str(&field("Vault", self.vault));
         output.push_str(&field("Slasher", self.slasher));
