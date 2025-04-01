@@ -1,5 +1,5 @@
 use super::{account_header, field, section_header, PrettyDisplay};
-use crate::accounts::VaultUpdateStateTracker;
+use crate::{accounts::VaultUpdateStateTracker, types::WithdrawalAllocationMethod};
 
 impl PrettyDisplay for VaultUpdateStateTracker {
     fn pretty_display(&self) -> String {
@@ -11,9 +11,14 @@ impl PrettyDisplay for VaultUpdateStateTracker {
         output.push_str(&field("Vault", self.vault));
         output.push_str(&field("NCN Epoch", self.ncn_epoch));
         output.push_str(&field("Last Updated Index", self.last_updated_index));
+
+        let withdrawal_allocation_method = match self.withdrawal_allocation_method {
+            0 => "Greedy",
+            _ => "",
+        };
         output.push_str(&field(
             "Withdrawal Allocation Method",
-            self.withdrawal_allocation_method,
+            withdrawal_allocation_method,
         ));
 
         output.push_str(&section_header("Delegation State"));

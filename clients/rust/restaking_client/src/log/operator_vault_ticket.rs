@@ -8,7 +8,7 @@ impl PrettyDisplay for OperatorVaultTicket {
         output.push_str(&account_header("Operator Vault Ticket Account"));
 
         output.push_str(&section_header("Basic Info"));
-        output.push_str(&field("NCN", self.operator));
+        output.push_str(&field("Operator", self.operator));
         output.push_str(&field("Vault", self.vault));
         output.push_str(&field("Index", self.index));
         output.push_str(&field("Bump", self.bump));
