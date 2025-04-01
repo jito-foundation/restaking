@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
-use jito_bytemuck::AccountDeserialize;
+use borsh::BorshDeserialize;
 use jito_restaking_client::{
     instructions::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
@@ -13,6 +13,7 @@ use jito_restaking_client::{
         OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
         WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
+    log::PrettyDisplay,
     types::OperatorAdminRole,
 };
 use jito_restaking_core::{
@@ -767,6 +768,7 @@ impl RestakingCliHandler {
         );
         rpc_client.send_and_confirm_transaction(&tx).await?;
         info!("Transaction confirmed: {:?}", tx.get_signature());
+
         Ok(())
     }
 
@@ -1024,19 +1026,19 @@ impl RestakingCliHandler {
         );
 
         let account = rpc_client.get_account(&config_address).await?;
-        let config = Config::try_from_slice_unchecked(&account.data)?;
-        info!(
-            "Restaking config at address {}: {:?}",
-            config_address, config
-        );
+        let config =
+            jito_restaking_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
+        info!("Restaking config at address {}", config_address);
+        info!("{}", config.pretty_display());
         Ok(())
     }
 
     pub async fn get_ncn(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
-        let ncn = Ncn::try_from_slice_unchecked(&account.data)?;
-        info!("NCN at address {}: {:?}", pubkey, ncn);
+        let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut account.data.as_slice())?;
+        info!("NCN at address {}", pubkey);
+        info!("{}", ncn.pretty_display());
         Ok(())
     }
 
@@ -1048,8 +1050,9 @@ impl RestakingCliHandler {
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (ncn_pubkey, ncn) in accounts {
-            let ncn = Ncn::try_from_slice_unchecked(&ncn.data)?;
-            info!("NCN at address {}: {:?}", ncn_pubkey, ncn);
+            let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
+            info!("NCN at address {}", ncn_pubkey);
+            info!("{}", ncn.pretty_display());
         }
         Ok(())
     }
@@ -1057,8 +1060,10 @@ impl RestakingCliHandler {
     pub async fn get_operator(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
-        let operator = Operator::try_from_slice_unchecked(&account.data)?;
-        info!("Operator at address {}: {:?}", pubkey, operator);
+        let operator =
+            jito_restaking_client::accounts::Operator::deserialize(&mut account.data.as_slice())?;
+        info!("Operator at address {}", pubkey);
+        info!("{}", operator.pretty_display());
 
         Ok(())
     }
@@ -1070,8 +1075,11 @@ impl RestakingCliHandler {
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (operator_pubkey, operator) in accounts {
-            let operator = Operator::try_from_slice_unchecked(&operator.data)?;
-            info!("Operator at address {}: {:?}", operator_pubkey, operator);
+            let operator = jito_restaking_client::accounts::Operator::deserialize(
+                &mut operator.data.as_slice(),
+            )?;
+            info!("Operator at address {}", operator_pubkey);
+            info!("{}", operator.pretty_display());
         }
         Ok(())
     }
