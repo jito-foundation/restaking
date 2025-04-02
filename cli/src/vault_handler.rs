@@ -237,8 +237,8 @@ impl VaultCliHandler {
                 action: VaultActions::BurnWithdrawalTicket { vault },
             } => self.burn_withdrawal_ticket(vault).await,
             VaultCommands::Vault {
-                action: VaultActions::GetVaultUpdateStateTracker { vault, ncn_epoch },
-            } => self.get_vault_update_state_tracker(vault, ncn_epoch).await,
+                action: VaultActions::GetVaultUpdateStateTracker { vault },
+            } => self.get_vault_update_state_tracker(vault).await,
             VaultCommands::Vault {
                 action: VaultActions::GetOperatorDelegation { vault, operator },
             } => self.get_vault_operator_delegation(vault, operator).await,
@@ -571,7 +571,7 @@ impl VaultCliHandler {
 
         let current_slot = rpc_client.get_slot().await?;
 
-        let ncn_epoch = get_epoch(current_slot, config_account.epoch_length()).unwrap();
+        let ncn_epoch = get_epoch(current_slot, config_account.epoch_length())?;
 
         let vault = Pubkey::from_str(&vault)?;
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
@@ -1418,13 +1418,18 @@ impl VaultCliHandler {
         Ok(())
     }
 
-    pub async fn get_vault_update_state_tracker(
-        &self,
-        vault: String,
-        ncn_epoch: u64,
-    ) -> Result<()> {
+    pub async fn get_vault_update_state_tracker(&self, vault: String) -> Result<()> {
         let vault = Pubkey::from_str(&vault)?;
         let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let config = self
+            .get_account::<jito_vault_client::accounts::Config>(&config_address)
+            .await?;
+
+        let slot = rpc_client.get_slot().await?;
+        let ncn_epoch = get_epoch(slot, config.epoch_length)?;
+
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
             &self.vault_program_id,
             &vault,
