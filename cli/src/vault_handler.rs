@@ -1519,14 +1519,17 @@ impl VaultCliHandler {
                     .get_program_accounts_with_config(&self.vault_program_id, config)
                     .await?;
 
-                for (_pubkey, account) in accounts {
+                let mut count = 0;
+                for (pubkey, account) in accounts {
                     let vault_operator_delegation =
                         jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
                             &mut account.data.as_slice(),
                         )?;
 
                     if vault_operator_delegation.vault.eq(&vault) {
+                        info!("Vault Operator Delegation {} at address {}", count, pubkey);
                         info!("{}", vault_operator_delegation.pretty_display());
+                        count += 1;
                     }
                 }
             }
