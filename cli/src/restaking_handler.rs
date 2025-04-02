@@ -24,7 +24,7 @@ use jito_restaking_core::{
 use log::{debug, info};
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
+use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
     config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
@@ -265,19 +265,8 @@ impl RestakingCliHandler {
             let blockhash = rpc_client.get_latest_blockhash().await?;
             let tx = Transaction::new_signed_with_payer(ixs, Some(payer), keypairs, blockhash);
             let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+
             info!("Transaction confirmed: {:?}", result);
-
-            let statuses = rpc_client
-                .get_signature_statuses(&[*tx.get_signature()])
-                .await?;
-
-            let tx_status = statuses
-                .value
-                .first()
-                .unwrap()
-                .as_ref()
-                .ok_or_else(|| anyhow!("No signature status"))?;
-            info!("Transaction status: {:?}", tx_status);
         }
 
         Ok(())
