@@ -1,4 +1,5 @@
 pub(crate) mod config;
+pub mod metadata;
 pub(crate) mod vault;
 pub(crate) mod vault_ncn_slasher_operator_ticket;
 pub(crate) mod vault_ncn_slasher_ticket;
