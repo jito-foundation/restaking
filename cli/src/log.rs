@@ -43,19 +43,19 @@ pub(crate) fn print_base58_tx(ixs: &[Instruction]) {
     ixs.iter().for_each(|ix| {
         log::info!("\n------ IX ------\n");
 
-        log::info!("{}\n", ix.program_id);
+        println!("{}\n", ix.program_id);
 
         ix.accounts.iter().for_each(|account| {
             let pubkey = format!("{}", account.pubkey);
             let writable = if account.is_writable { "W" } else { "" };
             let signer = if account.is_signer { "S" } else { "" };
 
-            log::info!("{:<44} {:>2} {:>1}", pubkey, writable, signer);
+            println!("{:<44} {:>2} {:>1}", pubkey, writable, signer);
         });
 
-        log::info!("\n");
+        println!("\n");
 
         let base58_string = bs58::encode(&ix.data).into_string();
-        log::info!("{}\n", base58_string);
+        println!("{}\n", base58_string);
     });
 }

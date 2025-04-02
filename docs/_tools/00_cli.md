@@ -29,6 +29,9 @@ A CLI for managing restaking and vault operations
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
 * `--keypair <KEYPAIR>` — Keypair
 * `--verbose` — Verbose mode
+* `--print-tx` — This will print out the raw TX instead of running it
+
+  Default value: `false`
 
 
 

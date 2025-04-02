@@ -245,7 +245,7 @@ impl RestakingCliHandler {
     ) -> Result<T> {
         let rpc_client = self.get_rpc_client();
 
-        let account = rpc_client.get_account(&account_pubkey).await?;
+        let account = rpc_client.get_account(account_pubkey).await?;
         let account = T::deserialize(&mut account.data.as_slice())?;
 
         Ok(account)
@@ -313,6 +313,13 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -369,8 +376,15 @@ impl RestakingCliHandler {
                 role, new_admin, operator
             );
 
-            self.process_transaction(&[ix], &keypair.pubkey(), &[&keypair])
+            self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
                 .await?;
+        }
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
         }
 
         Ok(())
@@ -421,7 +435,7 @@ impl RestakingCliHandler {
 
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
 
-        self.process_transaction(&ixs, &keypair.pubkey(), &[&keypair])
+        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair])
             .await?;
 
         Ok(())
@@ -508,6 +522,13 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnVaultTicket>(&ncn_vault_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -539,6 +560,13 @@ impl RestakingCliHandler {
 
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnVaultTicket>(&ncn_vault_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -605,6 +633,15 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -636,6 +673,15 @@ impl RestakingCliHandler {
 
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -669,6 +715,15 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -700,6 +755,15 @@ impl RestakingCliHandler {
 
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -733,6 +797,15 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -756,6 +829,13 @@ impl RestakingCliHandler {
 
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -783,8 +863,15 @@ impl RestakingCliHandler {
 
         info!("Initializing NCN: {:?}", ncn);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair, &base])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -812,8 +899,15 @@ impl RestakingCliHandler {
 
         info!("Initializing Operator: {:?}", operator);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair, &base])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -857,6 +951,15 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::OperatorVaultTicket>(
+                    &operator_vault_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -898,6 +1001,15 @@ impl RestakingCliHandler {
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
 
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::OperatorVaultTicket>(
+                    &operator_vault_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -938,6 +1050,15 @@ impl RestakingCliHandler {
 
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::OperatorVaultTicket>(
+                    &operator_vault_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -1032,6 +1153,13 @@ impl RestakingCliHandler {
         );
         self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
             .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
