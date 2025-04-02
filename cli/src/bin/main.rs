@@ -119,9 +119,14 @@ async fn main() -> Result<(), anyhow::Error> {
             .await?;
         }
         ProgramCommand::Vault { action } => {
-            VaultCliHandler::new(cli_config, restaking_program_id, vault_program_id)
-                .handle(action)
-                .await?;
+            VaultCliHandler::new(
+                cli_config,
+                restaking_program_id,
+                vault_program_id,
+                args.print_tx,
+            )
+            .handle(action)
+            .await?;
         }
     }
 
