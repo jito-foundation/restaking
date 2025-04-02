@@ -240,8 +240,14 @@ impl VaultCliHandler {
                 action: VaultActions::GetVaultUpdateStateTracker { vault },
             } => self.get_vault_update_state_tracker(vault).await,
             VaultCommands::Vault {
+                action: VaultActions::GetOperatorDelegations { vault },
+            } => self.get_vault_operator_delegations(vault, None).await,
+            VaultCommands::Vault {
                 action: VaultActions::GetOperatorDelegation { vault, operator },
-            } => self.get_vault_operator_delegation(vault, operator).await,
+            } => {
+                self.get_vault_operator_delegations(vault, Some(operator))
+                    .await
+            }
             VaultCommands::Vault {
                 action: VaultActions::GetWithdrawalTicket { vault, staker },
             } => self.get_withdrawal_ticket(vault, staker).await,
@@ -1475,29 +1481,57 @@ impl VaultCliHandler {
         Ok(())
     }
 
-    pub async fn get_vault_operator_delegation(
+    pub async fn get_vault_operator_delegations(
         &self,
         vault: String,
-        operator: String,
+        operator: Option<String>,
     ) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let vault = Pubkey::from_str(&vault)?;
-        let operator = Pubkey::from_str(&operator)?;
-        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
-            &self.vault_program_id,
-            &vault,
-            &operator,
-        )
-        .0;
-        let account = rpc_client.get_account(&vault_operator_delegation).await?;
-        let delegation = jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
-            &mut account.data.as_slice(),
-        )?;
-        info!(
-            "Vault Operator Delegation at address {}",
-            vault_operator_delegation
-        );
-        info!("{}", delegation.pretty_display());
+        let operator_pubkey = match operator {
+            Some(operator) => Some(Pubkey::from_str(&operator)?),
+            None => None,
+        };
+
+        match operator_pubkey {
+            Some(operator) => {
+                let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+                    &self.vault_program_id,
+                    &vault,
+                    &operator,
+                )
+                .0;
+                let account = rpc_client.get_account(&vault_operator_delegation).await?;
+
+                let delegation = jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
+                    &mut account.data.as_slice(),
+                )?;
+
+                info!(
+                    "Vault Operator Delegation at address {}",
+                    vault_operator_delegation
+                );
+                info!("{}", delegation.pretty_display());
+            }
+            None => {
+                let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>()?;
+                let accounts = rpc_client
+                    .get_program_accounts_with_config(&self.vault_program_id, config)
+                    .await?;
+
+                for (_pubkey, account) in accounts {
+                    let vault_operator_delegation =
+                        jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
+                            &mut account.data.as_slice(),
+                        )?;
+
+                    if vault_operator_delegation.vault.eq(&vault) {
+                        info!("{}", vault_operator_delegation.pretty_display());
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 

@@ -165,6 +165,11 @@ pub enum VaultActions {
         /// Vault account
         vault: String,
     },
+    /// Gets the operator delegations for a vault
+    GetOperatorDelegations {
+        /// Vault account
+        vault: String,
+    },
     /// Gets the operator delegation for a vault
     GetOperatorDelegation {
         /// Vault account
