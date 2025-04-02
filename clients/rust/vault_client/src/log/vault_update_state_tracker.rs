@@ -55,7 +55,7 @@ mod tests {
                 cooling_down_amount: 5,
                 reserved: [0; 256],
             },
-            withdrawal_allocation_method: 6,
+            withdrawal_allocation_method: 0,
             reserved: [0; 263],
         };
 
@@ -82,10 +82,7 @@ mod tests {
                 .cooling_down_amount
                 .to_string()
         ));
-        assert!(output.contains(
-            &vault_update_state_tracker
-                .withdrawal_allocation_method
-                .to_string()
-        ));
+        // withdrawal_allocation_method
+        assert!(output.contains("Greedy"));
     }
 }
