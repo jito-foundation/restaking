@@ -26,6 +26,15 @@ pub struct CliConfig {
 pub(crate) trait CliHandler {
     fn cli_config(&self) -> &CliConfig;
 
+    /// Creates a new Solana RPC client using the configuration from the CLI handler.
+    ///
+    /// This method constructs an RPC client with the URL and commitment level specified in the
+    /// CLI configuration. The client can be used to communicate with a Solana node for
+    /// submitting transactions, querying account data, and other RPC operations.
+    ///
+    /// # Returns
+    ///
+    /// * `RpcClient` - A configured Solana RPC client.
     fn get_rpc_client(&self) -> RpcClient {
         RpcClient::new_with_commitment(
             self.cli_config().rpc_url.clone(),
@@ -33,6 +42,28 @@ pub(crate) trait CliHandler {
         )
     }
 
+    /// Creates an RPC program accounts configuration for fetching accounts of type `T` with an optional public key filter.
+    ///
+    /// This method constructs a configuration that can be used with Solana RPC methods to fetch program accounts
+    /// that match specific criteria. It automatically adds filters for the account data size and the discriminator
+    /// of type `T` to ensure only accounts of the expected type are returned.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The account data type that implements the `jito_bytemuck::Discriminator` trait,
+    ///         which provides a unique 8-byte identifier for the account type.
+    ///
+    /// # Parameters
+    ///
+    /// * `&self` - A reference to the implementing struct.
+    /// * `filter_pubkey` - An optional tuple containing:
+    ///   * A reference to a `Pubkey` to filter by (e.g., an owner or authority)
+    ///   * The byte offset within the account data where this public key should be found
+    ///
+    /// # Returns
+    ///
+    /// * `anyhow::Result<RpcProgramAccountsConfig>` - The configured RPC request on success, or an error if
+    ///   the data size calculation overflows.
     fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
         &self,
         filter_pubkey: Option<(&Pubkey, usize)>,

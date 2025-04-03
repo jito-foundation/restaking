@@ -132,7 +132,7 @@ impl RestakingCliHandler {
             } => self.list_ncn().await,
             RestakingCommands::Ncn {
                 action: NcnActions::ListNcnOperatorState { ncn },
-            } => self.list_ncn_operator_state(ncn).await,
+            } => self.list_ncn_operator_state(Some(&ncn), None).await,
             RestakingCommands::Ncn {
                 action: NcnActions::ListNcnVaultTicket { ncn },
             } => self.list_ncn_vault_ticket(ncn).await,
@@ -210,6 +210,9 @@ impl RestakingCliHandler {
             RestakingCommands::Operator {
                 action: OperatorActions::ListOperatorVaultTicket { operator },
             } => self.list_operator_vault_ticket(&operator).await,
+            RestakingCommands::Operator {
+                action: OperatorActions::ListNcnOperatorState { operator },
+            } => self.list_ncn_operator_state(None, Some(&operator)).await,
         }
     }
 
@@ -1067,9 +1070,21 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    pub async fn list_ncn_operator_state(&self, ncn: Pubkey) -> Result<()> {
+    pub async fn list_ncn_operator_state(
+        &self,
+        ncn: Option<&Pubkey>,
+        operator: Option<&Pubkey>,
+    ) -> Result<()> {
         let rpc_client = self.get_rpc_client();
-        let config = self.get_rpc_program_accounts_config::<NcnOperatorState>(Some((&ncn, 8)))?;
+
+        let (pubkey, offset) = match (ncn, operator) {
+            (Some(ncn_pubkey), None) => (ncn_pubkey, 8),
+            (None, Some(operator_pubkey)) => (operator_pubkey, 8 + 32),
+            _ => return Err(anyhow!("Choose Operator or NCN")),
+        };
+
+        let config =
+            self.get_rpc_program_accounts_config::<NcnOperatorState>(Some((pubkey, offset)))?;
 
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)

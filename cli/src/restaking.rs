@@ -118,4 +118,6 @@ pub enum OperatorActions {
     List,
     /// List Operator Vault Ticket for an Operator
     ListOperatorVaultTicket { operator: Pubkey },
+    /// List All Ncn Operator State for a Operator
+    ListNcnOperatorState { operator: Pubkey },
 }
