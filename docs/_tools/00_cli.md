@@ -107,6 +107,8 @@ Set the config admin
 * `ncn-delegate-token-account` — NCN Delegate Token Account
 * `get` — Get NCN
 * `list` — List all NCNs
+* `list-ncn-operator-state` — List All Ncn Operator State for a NCN
+* `list-ncn-vault-ticket` — List All Ncn Vault Ticket for a NCN
 
 
 
@@ -238,6 +240,30 @@ List all NCNs
 
 
 
+## `jito-restaking-cli restaking ncn list-ncn-operator-state`
+
+List All Ncn Operator State for a NCN
+
+**Usage:** `jito-restaking-cli restaking ncn list-ncn-operator-state <NCN>`
+
+###### **Arguments:**
+
+* `<NCN>`
+
+
+
+## `jito-restaking-cli restaking ncn list-ncn-vault-ticket`
+
+List All Ncn Vault Ticket for a NCN
+
+**Usage:** `jito-restaking-cli restaking ncn list-ncn-vault-ticket <NCN>`
+
+###### **Arguments:**
+
+* `<NCN>`
+
+
+
 ## `jito-restaking-cli restaking operator`
 
 **Usage:** `jito-restaking-cli restaking operator <COMMAND>`
@@ -255,6 +281,8 @@ List all NCNs
 * `operator-delegate-token-account` — Operator Delegate Token Account
 * `get` — Get operator
 * `list` — List all operators
+* `list-operator-vault-ticket` — List Operator Vault Ticket for an Operator
+* `list-ncn-operator-state` — List All Ncn Operator State for a Operator
 
 
 
@@ -407,6 +435,30 @@ List all operators
 
 
 
+## `jito-restaking-cli restaking operator list-operator-vault-ticket`
+
+List Operator Vault Ticket for an Operator
+
+**Usage:** `jito-restaking-cli restaking operator list-operator-vault-ticket <OPERATOR>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+
+
+
+## `jito-restaking-cli restaking operator list-ncn-operator-state`
+
+List All Ncn Operator State for a Operator
+
+**Usage:** `jito-restaking-cli restaking operator list-ncn-operator-state <OPERATOR>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+
+
+
 ## `jito-restaking-cli vault`
 
 Vault program commands
@@ -489,6 +541,7 @@ Vault commands
 * `enqueue-withdrawal` — Starts the withdrawal process
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
+* `get-operator-delegations` — Gets the operator delegations for a vault
 * `get-operator-delegation` — Gets the operator delegation for a vault
 * `get-withdrawal-ticket` — 
 * `get` — Gets a vault
@@ -706,12 +759,23 @@ Burns the withdrawal ticket, ending the withdrawal process
 
 Gets the update state tracker for a vault
 
-**Usage:** `jito-restaking-cli vault vault get-vault-update-state-tracker <VAULT> <NCN_EPOCH>`
+**Usage:** `jito-restaking-cli vault vault get-vault-update-state-tracker <VAULT>`
 
 ###### **Arguments:**
 
 * `<VAULT>` — Vault account
-* `<NCN_EPOCH>` — NCN epoch
+
+
+
+## `jito-restaking-cli vault vault get-operator-delegations`
+
+Gets the operator delegations for a vault
+
+**Usage:** `jito-restaking-cli vault vault get-operator-delegations <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
 
 
 
