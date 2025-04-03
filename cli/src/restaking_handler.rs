@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use base64::{engine::general_purpose, Engine};
 use borsh::BorshDeserialize;
 use jito_restaking_client::{
     instructions::{
@@ -22,13 +21,7 @@ use jito_restaking_core::{
     operator_vault_ticket::OperatorVaultTicket,
 };
 use log::{debug, info};
-use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_rpc_client_api::{
-    config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
-    filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
-};
 use solana_sdk::{
     instruction::Instruction,
     signature::{read_keypair_file, Keypair, Signer},
@@ -41,7 +34,7 @@ use spl_associated_token_account::{
 use crate::{
     log::print_base58_tx,
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
-    CliConfig,
+    CliConfig, CliHandler,
 };
 
 pub struct RestakingCliHandler {
@@ -58,6 +51,12 @@ pub struct RestakingCliHandler {
     print_tx: bool,
 }
 
+impl CliHandler for RestakingCliHandler {
+    fn cli_config(&self) -> &CliConfig {
+        &self.cli_config
+    }
+}
+
 impl RestakingCliHandler {
     pub const fn new(
         cli_config: CliConfig,
@@ -71,40 +70,6 @@ impl RestakingCliHandler {
             vault_program_id,
             print_tx,
         }
-    }
-
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
-    }
-
-    fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
-        &self,
-    ) -> Result<RpcProgramAccountsConfig> {
-        let data_size = std::mem::size_of::<T>()
-            .checked_add(8)
-            .ok_or_else(|| anyhow!("Failed to add"))?;
-        let encoded_discriminator =
-            general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
-        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
-            0,
-            MemcmpEncodedBytes::Base64(encoded_discriminator),
-        ));
-        let config = RpcProgramAccountsConfig {
-            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
-            account_config: RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64),
-                data_slice: Some(UiDataSliceConfig {
-                    offset: 0,
-                    length: data_size,
-                }),
-                commitment: None,
-                min_context_slot: None,
-            },
-            with_context: Some(false),
-            sort_results: Some(false),
-        };
-
-        Ok(config)
     }
 
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
@@ -165,6 +130,12 @@ impl RestakingCliHandler {
             RestakingCommands::Ncn {
                 action: NcnActions::List,
             } => self.list_ncn().await,
+            RestakingCommands::Ncn {
+                action: NcnActions::ListNcnOperatorState { ncn },
+            } => self.list_ncn_operator_state(ncn).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::ListNcnVaultTicket { ncn },
+            } => self.list_ncn_vault_ticket(ncn).await,
             RestakingCommands::Operator {
                 action: OperatorActions::Initialize { operator_fee_bps },
             } => self.initialize_operator(operator_fee_bps).await,
@@ -1080,7 +1051,7 @@ impl RestakingCliHandler {
 
     pub async fn list_ncn(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
-        let config = self.get_rpc_program_accounts_config::<Ncn>()?;
+        let config = self.get_rpc_program_accounts_config::<Ncn>(None)?;
 
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)
@@ -1089,6 +1060,45 @@ impl RestakingCliHandler {
             let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
             info!("NCN at address {}", ncn_pubkey);
             info!("{}", ncn.pretty_display());
+        }
+        Ok(())
+    }
+
+    pub async fn list_ncn_operator_state(&self, ncn: Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<NcnOperatorState>(Some((&ncn, 8)))?;
+
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ncn_operator_state_pubkey, ncn_operator_state)) in accounts.iter().enumerate()
+        {
+            let ncn_operator_state =
+                jito_restaking_client::accounts::NcnOperatorState::deserialize(
+                    &mut ncn_operator_state.data.as_slice(),
+                )?;
+            info!(
+                "NcnOperatorState {} at address {}",
+                index, ncn_operator_state_pubkey
+            );
+            info!("{}", ncn_operator_state.pretty_display());
+        }
+        Ok(())
+    }
+
+    pub async fn list_ncn_vault_ticket(&self, ncn: Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<NcnVaultTicket>(Some((&ncn, 8)))?;
+
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
+            let ticket = jito_restaking_client::accounts::NcnVaultTicket::deserialize(
+                &mut ticket.data.as_slice(),
+            )?;
+            info!("NcnVaultTicket {} at address {}", index, ticket_pubkey);
+            info!("{}", ticket.pretty_display());
         }
         Ok(())
     }
@@ -1106,7 +1116,7 @@ impl RestakingCliHandler {
 
     pub async fn list_operator(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
-        let config = self.get_rpc_program_accounts_config::<Operator>()?;
+        let config = self.get_rpc_program_accounts_config::<Operator>(None)?;
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;

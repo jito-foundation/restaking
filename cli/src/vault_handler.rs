@@ -1,7 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
-use base64::{engine::general_purpose, Engine};
 use borsh::BorshDeserialize;
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
@@ -30,13 +29,8 @@ use jito_vault_core::{
 };
 use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
-use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
 use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
-use solana_rpc_client_api::{
-    config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
-    filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
-};
 use solana_sdk::{
     instruction::Instruction,
     signature::{read_keypair_file, Keypair, Signer},
@@ -50,7 +44,7 @@ use spl_token::instruction::transfer;
 use crate::{
     log::print_base58_tx,
     vault::{ConfigActions, VaultActions, VaultCommands},
-    CliConfig,
+    CliConfig, CliHandler,
 };
 
 pub struct VaultCliHandler {
@@ -65,6 +59,12 @@ pub struct VaultCliHandler {
 
     /// This will print out the raw TX instead of running it
     print_tx: bool,
+}
+
+impl CliHandler for VaultCliHandler {
+    fn cli_config(&self) -> &CliConfig {
+        &self.cli_config
+    }
 }
 
 impl VaultCliHandler {
@@ -84,36 +84,6 @@ impl VaultCliHandler {
 
     fn get_rpc_client(&self) -> RpcClient {
         RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
-    }
-
-    fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
-        &self,
-    ) -> Result<RpcProgramAccountsConfig> {
-        let data_size = std::mem::size_of::<T>()
-            .checked_add(8)
-            .ok_or_else(|| anyhow!("Failed to add"))?;
-        let encoded_discriminator =
-            general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
-        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
-            0,
-            MemcmpEncodedBytes::Base64(encoded_discriminator),
-        ));
-        let config = RpcProgramAccountsConfig {
-            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
-            account_config: RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64),
-                data_slice: Some(UiDataSliceConfig {
-                    offset: 0,
-                    length: data_size,
-                }),
-                commitment: None,
-                min_context_slot: None,
-            },
-            with_context: Some(false),
-            sort_results: Some(false),
-        };
-
-        Ok(config)
     }
 
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
@@ -1401,7 +1371,7 @@ impl VaultCliHandler {
 
     pub async fn list_vaults(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
-        let config = self.get_rpc_program_accounts_config::<Vault>()?;
+        let config = self.get_rpc_program_accounts_config::<Vault>(None)?;
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.vault_program_id, config)
             .await
@@ -1514,23 +1484,21 @@ impl VaultCliHandler {
                 info!("{}", delegation.pretty_display());
             }
             None => {
-                let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>()?;
+                let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>(
+                    Some((&vault, 8)),
+                )?;
                 let accounts = rpc_client
                     .get_program_accounts_with_config(&self.vault_program_id, config)
                     .await?;
 
-                let mut count = 0;
-                for (pubkey, account) in accounts {
+                for (index, (pubkey, account)) in accounts.iter().enumerate() {
                     let vault_operator_delegation =
                         jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
                             &mut account.data.as_slice(),
                         )?;
 
-                    if vault_operator_delegation.vault.eq(&vault) {
-                        info!("Vault Operator Delegation {} at address {}", count, pubkey);
-                        info!("{}", vault_operator_delegation.pretty_display());
-                        count += 1;
-                    }
+                    info!("Vault Operator Delegation {} at address {}", index, pubkey);
+                    info!("{}", vault_operator_delegation.pretty_display());
                 }
             }
         }

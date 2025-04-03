@@ -64,6 +64,10 @@ pub enum NcnActions {
     Get { pubkey: String },
     /// List all NCNs
     List,
+    /// List All Ncn Operator State for a NCN
+    ListNcnOperatorState { ncn: Pubkey },
+    /// List All Ncn Vault Ticket for a NCN
+    ListNcnVaultTicket { ncn: Pubkey },
 }
 
 #[derive(Subcommand)]
