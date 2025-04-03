@@ -207,6 +207,9 @@ impl RestakingCliHandler {
             RestakingCommands::Operator {
                 action: OperatorActions::List,
             } => self.list_operator().await,
+            RestakingCommands::Operator {
+                action: OperatorActions::ListOperatorVaultTicket { operator },
+            } => self.list_operator_vault_ticket(&operator).await,
         }
     }
 
@@ -1126,6 +1129,23 @@ impl RestakingCliHandler {
             )?;
             info!("Operator at address {}", operator_pubkey);
             info!("{}", operator.pretty_display());
+        }
+        Ok(())
+    }
+
+    pub async fn list_operator_vault_ticket(&self, operator: &Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config =
+            self.get_rpc_program_accounts_config::<OperatorVaultTicket>(Some((operator, 8)))?;
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
+            let ticket = jito_restaking_client::accounts::OperatorVaultTicket::deserialize(
+                &mut ticket.data.as_slice(),
+            )?;
+            info!("OperatorVaultTicket {} at address {}", index, ticket_pubkey);
+            info!("{}", ticket.pretty_display());
         }
         Ok(())
     }

@@ -116,4 +116,6 @@ pub enum OperatorActions {
     Get { pubkey: String },
     /// List all operators
     List,
+    /// List Operator Vault Ticket for an Operator
+    ListOperatorVaultTicket { operator: Pubkey },
 }
