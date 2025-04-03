@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: crankers/Dockerfile
-    container_name: jito-vault-cranker
     environment:
       - RUST_LOG=${RUST_LOG:-info}
       - RPC_URL=${RPC_URL}
@@ -17,3 +16,5 @@ services:
     volumes:
       - ./credentials:/credentials
     restart: on-failure:5
+    deploy:
+      replicas: 2
