@@ -1,13 +1,14 @@
-use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
+use std::{collections::HashMap, fmt, path::PathBuf, process::Command, time::Duration};
 
 use anyhow::{anyhow, Context};
-use clap::{arg, Parser};
+use clap::{arg, Parser, ValueEnum};
 use dotenv::dotenv;
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
 use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
 use log::{error, info};
+use solana_metrics::set_host_id;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 
@@ -16,6 +17,10 @@ struct Args {
     /// RPC URL for the cluster
     #[arg(short, long, env, default_value = "https://api.devnet.solana.com")]
     rpc_url: String,
+
+    /// Cluster name (e.g., devnet, mainnet)
+    #[arg(short, long, env, value_enum, default_value_t = Cluster::Mainnet)]
+    cluster: Cluster,
 
     /// Path to keypair used to pay
     #[arg(short, long, env)]
@@ -75,6 +80,23 @@ impl fmt::Display for Args {
     }
 }
 
+#[derive(ValueEnum, Debug, Clone)]
+pub enum Cluster {
+    Mainnet,
+    Testnet,
+    Localnet,
+}
+
+impl fmt::Display for Cluster {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Mainnet => write!(f, "mainnet"),
+            Self::Testnet => write!(f, "testnet"),
+            Self::Localnet => write!(f, "localnet"),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
     dotenv().ok();
@@ -84,6 +106,16 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let args = Args::parse();
 
     info!("{}", args);
+
+    let hostname_cmd = Command::new("hostname")
+        .output()
+        .expect("Failed to execute hostname command");
+
+    let hostname = String::from_utf8_lossy(&hostname_cmd.stdout)
+        .trim()
+        .to_string();
+
+    set_host_id(format!("{}_{}", args.cluster, hostname));
 
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
     let payer = read_keypair_file(&args.keypair_path)
