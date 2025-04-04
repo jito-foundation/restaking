@@ -26,3 +26,6 @@ credentials
 
 # Personal Helper Scripts
 .development
+
+# cargo-llvm-cov
+lcov.info
