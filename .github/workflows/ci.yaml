@@ -38,7 +38,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
+          toolchain: 1.84.0
       - name: cargo build
         run: cargo b -r
       - name: Generate the CLI markdown
@@ -93,7 +93,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
+          toolchain: 1.84.0
       - name: Install cargo-sort from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
@@ -156,7 +156,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
+          toolchain: 1.84.0
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
