@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: crankers/Dockerfile
+    container_name: jito-vault-cranker
     environment:
       - RUST_LOG=${RUST_LOG:-info}
       - RPC_URL=${RPC_URL}
