@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::VaultOperatorDelegation;
 
 impl PrettyDisplay for VaultOperatorDelegation {
@@ -32,8 +33,9 @@ impl PrettyDisplay for VaultOperatorDelegation {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::VaultOperatorDelegation, log::PrettyDisplay, types::DelegationState};
+    use crate::{accounts::VaultOperatorDelegation, types::DelegationState};
 
     #[test]
     fn test_vault_operator_delegation_pretty_display_structure() {

@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::VaultUpdateStateTracker;
 
 impl PrettyDisplay for VaultUpdateStateTracker {
@@ -39,8 +40,9 @@ impl PrettyDisplay for VaultUpdateStateTracker {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::VaultUpdateStateTracker, log::PrettyDisplay, types::DelegationState};
+    use crate::{accounts::VaultUpdateStateTracker, types::DelegationState};
 
     #[test]
     fn test_vault_update_state_tracker_pretty_display_structure() {

@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::VaultStakerWithdrawalTicket;
 
 impl PrettyDisplay for VaultStakerWithdrawalTicket {
@@ -22,8 +23,9 @@ impl PrettyDisplay for VaultStakerWithdrawalTicket {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::VaultStakerWithdrawalTicket, log::PrettyDisplay};
+    use crate::accounts::VaultStakerWithdrawalTicket;
 
     #[test]
     fn test_vault_staker_withdrawal_ticket_pretty_display_structure() {

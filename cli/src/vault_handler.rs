@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use borsh::BorshDeserialize;
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
+use jito_restaking_client_common::log::PrettyDisplay;
 use jito_restaking_core::{
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
 };
@@ -18,7 +19,6 @@ use jito_vault_client::{
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
     },
-    log::PrettyDisplay,
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
@@ -30,9 +30,8 @@ use jito_vault_core::{
 use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
+use solana_rpc_client::rpc_client::SerializableTransaction;
 use solana_sdk::{
-    instruction::Instruction,
     signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
@@ -42,7 +41,6 @@ use spl_associated_token_account::{
 use spl_token::instruction::transfer;
 
 use crate::{
-    log::print_base58_tx,
     vault::{ConfigActions, VaultActions, VaultCommands},
     CliConfig, CliHandler,
 };
@@ -65,6 +63,10 @@ impl CliHandler for VaultCliHandler {
     fn cli_config(&self) -> &CliConfig {
         &self.cli_config
     }
+
+    fn print_tx(&self) -> bool {
+        self.print_tx
+    }
 }
 
 impl VaultCliHandler {
@@ -80,10 +82,6 @@ impl VaultCliHandler {
             vault_program_id,
             print_tx,
         }
-    }
-
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
     }
 
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
@@ -254,39 +252,6 @@ impl VaultCliHandler {
                     .await
             }
         }
-    }
-
-    pub async fn get_account<T: BorshDeserialize + PrettyDisplay>(
-        &self,
-        account_pubkey: &Pubkey,
-    ) -> Result<T> {
-        let rpc_client = self.get_rpc_client();
-
-        let account = rpc_client.get_account(account_pubkey).await?;
-        let account = T::deserialize(&mut account.data.as_slice())?;
-
-        Ok(account)
-    }
-
-    pub async fn process_transaction(
-        &self,
-        ixs: &[Instruction],
-        payer: &Pubkey,
-        keypairs: &[&Keypair],
-    ) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
-
-        if self.print_tx {
-            print_base58_tx(ixs);
-        } else {
-            let blockhash = rpc_client.get_latest_blockhash().await?;
-            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), keypairs, blockhash);
-            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-
-            info!("Transaction confirmed: {:?}", result);
-        }
-
-        Ok(())
     }
 
     pub async fn initialize_config(

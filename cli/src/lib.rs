@@ -1,12 +1,19 @@
+use ::log::info;
 use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine};
+use borsh::BorshDeserialize;
+use jito_restaking_client_common::log::PrettyDisplay;
+use log::print_base58_tx;
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
     config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature::Keypair};
+use solana_sdk::{
+    commitment_config::CommitmentConfig, instruction::Instruction, pubkey::Pubkey,
+    signature::Keypair, transaction::Transaction,
+};
 
 pub mod cli_args;
 pub mod log;
@@ -26,15 +33,13 @@ pub struct CliConfig {
 pub(crate) trait CliHandler {
     fn cli_config(&self) -> &CliConfig;
 
-    /// Creates a new Solana RPC client using the configuration from the CLI handler.
+    fn print_tx(&self) -> bool;
+
+    /// Creates a new RPC client using the configuration from the CLI handler.
     ///
     /// This method constructs an RPC client with the URL and commitment level specified in the
     /// CLI configuration. The client can be used to communicate with a Solana node for
     /// submitting transactions, querying account data, and other RPC operations.
-    ///
-    /// # Returns
-    ///
-    /// * `RpcClient` - A configured Solana RPC client.
     fn get_rpc_client(&self) -> RpcClient {
         RpcClient::new_with_commitment(
             self.cli_config().rpc_url.clone(),
@@ -44,26 +49,9 @@ pub(crate) trait CliHandler {
 
     /// Creates an RPC program accounts configuration for fetching accounts of type `T` with an optional public key filter.
     ///
-    /// This method constructs a configuration that can be used with Solana RPC methods to fetch program accounts
+    /// This method constructs a configuration that can be used with RPC methods to fetch program accounts
     /// that match specific criteria. It automatically adds filters for the account data size and the discriminator
     /// of type `T` to ensure only accounts of the expected type are returned.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `T` - The account data type that implements the `jito_bytemuck::Discriminator` trait,
-    ///         which provides a unique 8-byte identifier for the account type.
-    ///
-    /// # Parameters
-    ///
-    /// * `&self` - A reference to the implementing struct.
-    /// * `filter_pubkey` - An optional tuple containing:
-    ///   * A reference to a `Pubkey` to filter by (e.g., an owner or authority)
-    ///   * The byte offset within the account data where this public key should be found
-    ///
-    /// # Returns
-    ///
-    /// * `anyhow::Result<RpcProgramAccountsConfig>` - The configured RPC request on success, or an error if
-    ///   the data size calculation overflows.
     fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
         &self,
         filter_pubkey: Option<(&Pubkey, usize)>,
@@ -109,5 +97,46 @@ pub(crate) trait CliHandler {
         };
 
         Ok(config)
+    }
+    /// Fetches and deserializes an account
+    ///
+    /// This method retrieves account data using the configured RPC client,
+    /// then deserializes it into the specified account type using Borsh deserialization.
+    async fn get_account<T: BorshDeserialize + PrettyDisplay>(
+        &self,
+        account_pubkey: &Pubkey,
+    ) -> anyhow::Result<T> {
+        let rpc_client = self.get_rpc_client();
+
+        let account = rpc_client.get_account(account_pubkey).await?;
+        let account = T::deserialize(&mut account.data.as_slice())?;
+
+        Ok(account)
+    }
+
+    /// Processes a transaction by either printing it as Base58 or sending it.
+    ///
+    /// This method handles the logic for processing a set of instructions as a transaction.
+    /// If `print_tx` is enabled in the CLI handler (helpful for running commands in Squads), it will print the transaction in Base58 format
+    /// without sending it. Otherwise, it will submit and confirm the transaction.
+    async fn process_transaction(
+        &self,
+        ixs: &[Instruction],
+        payer: &Pubkey,
+        keypairs: &[&Keypair],
+    ) -> anyhow::Result<()> {
+        let rpc_client = self.get_rpc_client();
+
+        if self.print_tx() {
+            print_base58_tx(ixs);
+        } else {
+            let blockhash = rpc_client.get_latest_blockhash().await?;
+            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), keypairs, blockhash);
+            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+
+            info!("Transaction confirmed: {:?}", result);
+        }
+
+        Ok(())
     }
 }

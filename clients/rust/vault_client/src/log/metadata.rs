@@ -1,7 +1,6 @@
 use anchor_lang::prelude::Pubkey;
 use borsh::BorshDeserialize;
-
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
 
 #[derive(Clone, BorshDeserialize, Debug, PartialEq, Eq)]
 pub struct Metadata {
@@ -41,8 +40,9 @@ impl PrettyDisplay for Metadata {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::log::{metadata::Metadata, PrettyDisplay};
+    use crate::log::metadata::Metadata;
 
     #[test]
     fn test_config_pretty_display_structure() {
@@ -52,7 +52,7 @@ mod tests {
             mint: Pubkey::new_unique(),
             name: String::from("Jito Staked SOL"),
             symbol: String::from("JitoSOL"),
-            uri: String::from("https:://example.com"),
+            uri: String::from("https://example.com"),
             seller_fee_basis_points: 0,
             creators: None,
             primary_sale_happened: false,

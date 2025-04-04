@@ -12,9 +12,9 @@ use jito_restaking_client::{
         OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
         WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
-    log::PrettyDisplay,
     types::OperatorAdminRole,
 };
+use jito_restaking_client_common::log::PrettyDisplay;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
     ncn_vault_ticket::NcnVaultTicket, operator::Operator,
@@ -22,17 +22,12 @@ use jito_restaking_core::{
 };
 use log::{debug, info};
 use solana_program::pubkey::Pubkey;
-use solana_sdk::{
-    instruction::Instruction,
-    signature::{read_keypair_file, Keypair, Signer},
-    transaction::Transaction,
-};
+use solana_sdk::signature::{read_keypair_file, Keypair, Signer};
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 
 use crate::{
-    log::print_base58_tx,
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
     CliConfig, CliHandler,
 };
@@ -54,6 +49,10 @@ pub struct RestakingCliHandler {
 impl CliHandler for RestakingCliHandler {
     fn cli_config(&self) -> &CliConfig {
         &self.cli_config
+    }
+
+    fn print_tx(&self) -> bool {
+        self.print_tx
     }
 }
 
@@ -214,39 +213,6 @@ impl RestakingCliHandler {
                 action: OperatorActions::ListNcnOperatorState { operator },
             } => self.list_ncn_operator_state(None, Some(&operator)).await,
         }
-    }
-
-    pub async fn get_account<T: BorshDeserialize + PrettyDisplay>(
-        &self,
-        account_pubkey: &Pubkey,
-    ) -> Result<T> {
-        let rpc_client = self.get_rpc_client();
-
-        let account = rpc_client.get_account(account_pubkey).await?;
-        let account = T::deserialize(&mut account.data.as_slice())?;
-
-        Ok(account)
-    }
-
-    pub async fn process_transaction(
-        &self,
-        ixs: &[Instruction],
-        payer: &Pubkey,
-        keypairs: &[&Keypair],
-    ) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
-
-        if self.print_tx {
-            print_base58_tx(ixs);
-        } else {
-            let blockhash = rpc_client.get_latest_blockhash().await?;
-            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), keypairs, blockhash);
-            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-
-            info!("Transaction confirmed: {:?}", result);
-        }
-
-        Ok(())
     }
 
     pub async fn operator_set_fee(&self, operator: String, operator_fee_bps: u16) -> Result<()> {
@@ -1070,6 +1036,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    /// Lists NCN operator state accounts filtered by either NCN or Operator public key.
     pub async fn list_ncn_operator_state(
         &self,
         ncn: Option<&Pubkey>,
@@ -1104,6 +1071,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    /// Lists NCN operator state accounts filtered by NCN public key.
     pub async fn list_ncn_vault_ticket(&self, ncn: Pubkey) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<NcnVaultTicket>(Some((&ncn, 8)))?;

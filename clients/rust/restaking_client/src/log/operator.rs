@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::Operator;
 
 impl PrettyDisplay for Operator {
@@ -32,8 +33,9 @@ impl PrettyDisplay for Operator {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::Operator, log::PrettyDisplay};
+    use crate::accounts::Operator;
 
     #[test]
     fn test_operator_pretty_display_structure() {

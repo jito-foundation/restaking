@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::Config;
 
 impl PrettyDisplay for Config {
@@ -39,8 +40,9 @@ impl PrettyDisplay for Config {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::Config, log::PrettyDisplay};
+    use crate::accounts::Config;
 
     #[test]
     fn test_config_pretty_display_structure() {

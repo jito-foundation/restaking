@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::Vault;
 
 impl PrettyDisplay for Vault {
@@ -89,8 +90,9 @@ impl PrettyDisplay for Vault {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::Vault, log::PrettyDisplay, types::DelegationState};
+    use crate::{accounts::Vault, types::DelegationState};
 
     #[test]
     fn test_vault_pretty_display_structure() {
