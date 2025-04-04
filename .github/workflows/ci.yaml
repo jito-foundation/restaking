@@ -185,6 +185,8 @@ jobs:
       - verified_build
     steps:
       - uses: actions/checkout@v4
+      - name: Install libudev-dev
+        run: sudo apt-get install -y libudev-dev
       - uses: aarcangeli/load-dotenv@v1.0.0
         with:
           path: config
