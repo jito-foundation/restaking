@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::NcnOperatorState;
 
 impl PrettyDisplay for NcnOperatorState {
@@ -37,8 +38,9 @@ impl PrettyDisplay for NcnOperatorState {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::NcnOperatorState, log::PrettyDisplay, types::SlotToggle};
+    use crate::{accounts::NcnOperatorState, types::SlotToggle};
 
     #[test]
     fn test_ncn_operator_state_pretty_display_structure() {

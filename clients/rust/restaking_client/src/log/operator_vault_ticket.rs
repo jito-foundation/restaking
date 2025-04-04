@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::OperatorVaultTicket;
 
 impl PrettyDisplay for OperatorVaultTicket {
@@ -24,8 +25,9 @@ impl PrettyDisplay for OperatorVaultTicket {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::OperatorVaultTicket, log::PrettyDisplay, types::SlotToggle};
+    use crate::{accounts::OperatorVaultTicket, types::SlotToggle};
 
     #[test]
     fn test_operator_vault_ticket_pretty_display_structure() {

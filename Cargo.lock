@@ -2539,6 +2539,7 @@ dependencies = [
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-client",
+ "jito-restaking-client-common",
  "jito-restaking-core",
  "jito-vault-client",
  "jito-vault-core",
@@ -2563,6 +2564,7 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "bytemuck",
+ "jito-restaking-client-common",
  "num-derive",
  "num-traits",
  "serde",
@@ -2570,6 +2572,10 @@ dependencies = [
  "solana-program",
  "thiserror 1.0.69",
 ]
+
+[[package]]
+name = "jito-restaking-client-common"
+version = "0.0.3"
 
 [[package]]
 name = "jito-restaking-core"
@@ -2671,6 +2677,7 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "bytemuck",
+ "jito-restaking-client-common",
  "num-derive",
  "num-traits",
  "serde",

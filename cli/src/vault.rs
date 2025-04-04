@@ -164,8 +164,11 @@ pub enum VaultActions {
     GetVaultUpdateStateTracker {
         /// Vault account
         vault: String,
-        /// NCN epoch
-        ncn_epoch: u64,
+    },
+    /// Gets the operator delegations for a vault
+    GetOperatorDelegations {
+        /// Vault account
+        vault: String,
     },
     /// Gets the operator delegation for a vault
     GetOperatorDelegation {

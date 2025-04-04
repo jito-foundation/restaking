@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use base64::{engine::general_purpose, Engine};
 use borsh::BorshDeserialize;
 use jito_restaking_client::{
     instructions::{
@@ -13,35 +12,24 @@ use jito_restaking_client::{
         OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
         WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
-    log::PrettyDisplay,
     types::OperatorAdminRole,
 };
+use jito_restaking_client_common::log::PrettyDisplay;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
     ncn_vault_ticket::NcnVaultTicket, operator::Operator,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use log::{debug, info};
-use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_rpc_client_api::{
-    config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
-    filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
-};
-use solana_sdk::{
-    instruction::Instruction,
-    signature::{read_keypair_file, Keypair, Signer},
-    transaction::Transaction,
-};
+use solana_sdk::signature::{read_keypair_file, Keypair, Signer};
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 
 use crate::{
-    log::print_base58_tx,
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
-    CliConfig,
+    CliConfig, CliHandler,
 };
 
 pub struct RestakingCliHandler {
@@ -58,6 +46,16 @@ pub struct RestakingCliHandler {
     print_tx: bool,
 }
 
+impl CliHandler for RestakingCliHandler {
+    fn cli_config(&self) -> &CliConfig {
+        &self.cli_config
+    }
+
+    fn print_tx(&self) -> bool {
+        self.print_tx
+    }
+}
+
 impl RestakingCliHandler {
     pub const fn new(
         cli_config: CliConfig,
@@ -71,40 +69,6 @@ impl RestakingCliHandler {
             vault_program_id,
             print_tx,
         }
-    }
-
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
-    }
-
-    fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
-        &self,
-    ) -> Result<RpcProgramAccountsConfig> {
-        let data_size = std::mem::size_of::<T>()
-            .checked_add(8)
-            .ok_or_else(|| anyhow!("Failed to add"))?;
-        let encoded_discriminator =
-            general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
-        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
-            0,
-            MemcmpEncodedBytes::Base64(encoded_discriminator),
-        ));
-        let config = RpcProgramAccountsConfig {
-            filters: Some(vec![RpcFilterType::DataSize(data_size as u64), memcmp]),
-            account_config: RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64),
-                data_slice: Some(UiDataSliceConfig {
-                    offset: 0,
-                    length: data_size,
-                }),
-                commitment: None,
-                min_context_slot: None,
-            },
-            with_context: Some(false),
-            sort_results: Some(false),
-        };
-
-        Ok(config)
     }
 
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
@@ -165,6 +129,12 @@ impl RestakingCliHandler {
             RestakingCommands::Ncn {
                 action: NcnActions::List,
             } => self.list_ncn().await,
+            RestakingCommands::Ncn {
+                action: NcnActions::ListNcnOperatorState { ncn },
+            } => self.list_ncn_operator_state(Some(&ncn), None).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::ListNcnVaultTicket { ncn },
+            } => self.list_ncn_vault_ticket(ncn).await,
             RestakingCommands::Operator {
                 action: OperatorActions::Initialize { operator_fee_bps },
             } => self.initialize_operator(operator_fee_bps).await,
@@ -236,40 +206,13 @@ impl RestakingCliHandler {
             RestakingCommands::Operator {
                 action: OperatorActions::List,
             } => self.list_operator().await,
+            RestakingCommands::Operator {
+                action: OperatorActions::ListOperatorVaultTicket { operator },
+            } => self.list_operator_vault_ticket(&operator).await,
+            RestakingCommands::Operator {
+                action: OperatorActions::ListNcnOperatorState { operator },
+            } => self.list_ncn_operator_state(None, Some(&operator)).await,
         }
-    }
-
-    pub async fn get_account<T: BorshDeserialize + PrettyDisplay>(
-        &self,
-        account_pubkey: &Pubkey,
-    ) -> Result<T> {
-        let rpc_client = self.get_rpc_client();
-
-        let account = rpc_client.get_account(account_pubkey).await?;
-        let account = T::deserialize(&mut account.data.as_slice())?;
-
-        Ok(account)
-    }
-
-    pub async fn process_transaction(
-        &self,
-        ixs: &[Instruction],
-        payer: &Pubkey,
-        keypairs: &[&Keypair],
-    ) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
-
-        if self.print_tx {
-            print_base58_tx(ixs);
-        } else {
-            let blockhash = rpc_client.get_latest_blockhash().await?;
-            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), keypairs, blockhash);
-            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-
-            info!("Transaction confirmed: {:?}", result);
-        }
-
-        Ok(())
     }
 
     pub async fn operator_set_fee(&self, operator: String, operator_fee_bps: u16) -> Result<()> {
@@ -1080,7 +1023,7 @@ impl RestakingCliHandler {
 
     pub async fn list_ncn(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
-        let config = self.get_rpc_program_accounts_config::<Ncn>()?;
+        let config = self.get_rpc_program_accounts_config::<Ncn>(None)?;
 
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)
@@ -1089,6 +1032,59 @@ impl RestakingCliHandler {
             let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
             info!("NCN at address {}", ncn_pubkey);
             info!("{}", ncn.pretty_display());
+        }
+        Ok(())
+    }
+
+    /// Lists NCN operator state accounts filtered by either NCN or Operator public key.
+    pub async fn list_ncn_operator_state(
+        &self,
+        ncn: Option<&Pubkey>,
+        operator: Option<&Pubkey>,
+    ) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+
+        let (pubkey, offset) = match (ncn, operator) {
+            (Some(ncn_pubkey), None) => (ncn_pubkey, 8),
+            (None, Some(operator_pubkey)) => (operator_pubkey, 8 + 32),
+            _ => return Err(anyhow!("Choose Operator or NCN")),
+        };
+
+        let config =
+            self.get_rpc_program_accounts_config::<NcnOperatorState>(Some((pubkey, offset)))?;
+
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ncn_operator_state_pubkey, ncn_operator_state)) in accounts.iter().enumerate()
+        {
+            let ncn_operator_state =
+                jito_restaking_client::accounts::NcnOperatorState::deserialize(
+                    &mut ncn_operator_state.data.as_slice(),
+                )?;
+            info!(
+                "NcnOperatorState {} at address {}",
+                index, ncn_operator_state_pubkey
+            );
+            info!("{}", ncn_operator_state.pretty_display());
+        }
+        Ok(())
+    }
+
+    /// Lists NCN operator state accounts filtered by NCN public key.
+    pub async fn list_ncn_vault_ticket(&self, ncn: Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<NcnVaultTicket>(Some((&ncn, 8)))?;
+
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
+            let ticket = jito_restaking_client::accounts::NcnVaultTicket::deserialize(
+                &mut ticket.data.as_slice(),
+            )?;
+            info!("NcnVaultTicket {} at address {}", index, ticket_pubkey);
+            info!("{}", ticket.pretty_display());
         }
         Ok(())
     }
@@ -1106,7 +1102,7 @@ impl RestakingCliHandler {
 
     pub async fn list_operator(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
-        let config = self.get_rpc_program_accounts_config::<Operator>()?;
+        let config = self.get_rpc_program_accounts_config::<Operator>(None)?;
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
@@ -1116,6 +1112,23 @@ impl RestakingCliHandler {
             )?;
             info!("Operator at address {}", operator_pubkey);
             info!("{}", operator.pretty_display());
+        }
+        Ok(())
+    }
+
+    pub async fn list_operator_vault_ticket(&self, operator: &Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config =
+            self.get_rpc_program_accounts_config::<OperatorVaultTicket>(Some((operator, 8)))?;
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
+            let ticket = jito_restaking_client::accounts::OperatorVaultTicket::deserialize(
+                &mut ticket.data.as_slice(),
+            )?;
+            info!("OperatorVaultTicket {} at address {}", index, ticket_pubkey);
+            info!("{}", ticket.pretty_display());
         }
         Ok(())
     }

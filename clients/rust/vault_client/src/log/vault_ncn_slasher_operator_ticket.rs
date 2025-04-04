@@ -1,4 +1,5 @@
-use super::{account_header, field, section_header, PrettyDisplay};
+use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+
 use crate::accounts::VaultNcnSlasherOperatorTicket;
 
 impl PrettyDisplay for VaultNcnSlasherOperatorTicket {
@@ -23,8 +24,9 @@ impl PrettyDisplay for VaultNcnSlasherOperatorTicket {
 #[cfg(test)]
 mod tests {
     use anchor_lang::prelude::Pubkey;
+    use jito_restaking_client_common::log::PrettyDisplay;
 
-    use crate::{accounts::VaultNcnSlasherOperatorTicket, log::PrettyDisplay};
+    use crate::accounts::VaultNcnSlasherOperatorTicket;
 
     #[test]
     fn test_vault_ncn_slasher_operator_ticket_pretty_display_structure() {
