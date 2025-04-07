@@ -24,6 +24,7 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-audit
+          version: "0.21.1"
       - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2023-0065 --ignore RUSTSEC-2024-0344 --ignore RUSTSEC-2024-0421
 
   code_gen:
@@ -66,6 +67,10 @@ jobs:
         uses: borales/actions-yarn@v4
         with:
           cmd: generate-clients
+      - name: Update dependencies
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: update-dependencies
       - name: Verify no changed files
         uses: tj-actions/verify-changed-files@v20
         id: verify-changed-kinobi-files

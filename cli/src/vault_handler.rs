@@ -1,8 +1,10 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
-use jito_bytemuck::{AccountDeserialize, Discriminator};
+use borsh::BorshDeserialize;
+use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
+use jito_restaking_client_common::log::PrettyDisplay;
 use jito_restaking_core::{
     ncn_vault_ticket::NcnVaultTicket, operator_vault_ticket::OperatorVaultTicket,
 };
@@ -10,8 +12,9 @@ use jito_vault_client::{
     instructions::{
         AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
         CooldownDelegationBuilder, CooldownVaultNcnTicketBuilder,
-        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder, EnqueueWithdrawalBuilder,
-        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
+        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
+        DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
+        InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
@@ -26,31 +29,46 @@ use jito_vault_core::{
 };
 use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
-use solana_account_decoder::UiAccountEncoding;
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
-use solana_rpc_client_api::{
-    config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
-    filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
-};
+use solana_rpc_client::rpc_client::SerializableTransaction;
 use solana_sdk::{
-    signature::{Keypair, Signer},
+    signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
+use spl_token::instruction::transfer;
 
 use crate::{
     cli_config::CliConfig,
     cli_signer::CliSigner,
     vault::{ConfigActions, VaultActions, VaultCommands},
+    CliConfig, CliHandler,
 };
 
 pub struct VaultCliHandler {
+    /// The configuration of CLI
     cli_config: CliConfig,
+
+    /// The Pubkey of Jito Restaking Program ID
     restaking_program_id: Pubkey,
+
+    /// The Pubkey of Jito Vault Program ID
     vault_program_id: Pubkey,
+
+    /// This will print out the raw TX instead of running it
+    print_tx: bool,
+}
+
+impl CliHandler for VaultCliHandler {
+    fn cli_config(&self) -> &CliConfig {
+        &self.cli_config
+    }
+
+    fn print_tx(&self) -> bool {
+        self.print_tx
+    }
 }
 
 impl VaultCliHandler {
@@ -58,16 +76,14 @@ impl VaultCliHandler {
         cli_config: CliConfig,
         restaking_program_id: Pubkey,
         vault_program_id: Pubkey,
+        print_tx: bool,
     ) -> Self {
         Self {
             cli_config,
             restaking_program_id,
             vault_program_id,
+            print_tx,
         }
-    }
-
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
     }
 
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
@@ -97,6 +113,7 @@ impl VaultCliHandler {
                         reward_fee_bps,
                         decimals,
                         initialize_token_amount,
+                        vrt_mint_address_file_path,
                     },
             } => {
                 self.initialize_vault(
@@ -106,6 +123,7 @@ impl VaultCliHandler {
                     reward_fee_bps,
                     decimals,
                     initialize_token_amount,
+                    vrt_mint_address_file_path,
                 )
                 .await
             }
@@ -189,11 +207,17 @@ impl VaultCliHandler {
                 action: VaultActions::BurnWithdrawalTicket { vault },
             } => self.burn_withdrawal_ticket(vault).await,
             VaultCommands::Vault {
-                action: VaultActions::GetVaultUpdateStateTracker { vault, ncn_epoch },
-            } => self.get_vault_update_state_tracker(vault, ncn_epoch).await,
+                action: VaultActions::GetVaultUpdateStateTracker { vault },
+            } => self.get_vault_update_state_tracker(vault).await,
+            VaultCommands::Vault {
+                action: VaultActions::GetOperatorDelegations { vault },
+            } => self.get_vault_operator_delegations(vault, None).await,
             VaultCommands::Vault {
                 action: VaultActions::GetOperatorDelegation { vault, operator },
-            } => self.get_vault_operator_delegation(vault, operator).await,
+            } => {
+                self.get_vault_operator_delegations(vault, Some(operator))
+                    .await
+            }
             VaultCommands::Vault {
                 action: VaultActions::GetWithdrawalTicket { vault, staker },
             } => self.get_withdrawal_ticket(vault, staker).await,
@@ -206,6 +230,29 @@ impl VaultCliHandler {
             VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::DelegateTokenAccount {
+                        vault,
+                        delegate,
+                        token_mint,
+                        token_account,
+                    },
+            } => {
+                self.delegate_token_account(vault, delegate, token_mint, token_account)
+                    .await
+            }
+            VaultCommands::Vault {
+                action:
+                    VaultActions::DelegatedTokenTransfer {
+                        token_account,
+                        recipient_pubkey,
+                        amount,
+                    },
+            } => {
+                self.delegated_token_transfer(token_account, recipient_pubkey, amount)
+                    .await
+            }
         }
     }
 
@@ -219,7 +266,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let mut ix_builder = InitializeConfigBuilder::new();
         let config_address = Config::find_program_address(&self.vault_program_id).0;
@@ -229,25 +275,25 @@ impl VaultCliHandler {
             .restaking_program(self.restaking_program_id)
             .program_fee_wallet(program_fee_wallet)
             .program_fee_bps(program_fee_bps);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Initializing vault config parameters: {:?}", ix_builder);
-        info!(
-            "Initializing vault config transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", tx.get_signature());
-        info!("Vault config initialized at address: {}", config_address);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn initialize_vault(
         &self,
         token_mint: String,
@@ -256,6 +302,7 @@ impl VaultCliHandler {
         reward_fee_bps: u16,
         decimals: u8,
         initialize_token_amount: u64,
+        vrt_mint_address_file_path: Option<PathBuf>,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
         let signer = self
@@ -263,9 +310,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
-
-        let admin = signer.pubkey();
 
         let base_signer = CliSigner::new(Some(Keypair::new()), None);
         let vault = Vault::find_program_address(&self.vault_program_id, &base_signer.pubkey()).0;
@@ -289,16 +333,18 @@ impl VaultCliHandler {
             .st_mint(token_mint)
             .admin(admin)
             .base(base_signer.pubkey())
-            .deposit_fee_bps(deposit_fee_bps)
-            .withdrawal_fee_bps(withdrawal_fee_bps)
-            .reward_fee_bps(reward_fee_bps)
             .admin_st_token_account(admin_st_token_account)
             .vault_st_token_account(vault_st_token_account)
             .burn_vault(burn_vault)
             .burn_vault_vrt_token_account(burn_vault_vrt_token_account)
             .associated_token_program(spl_associated_token_account::id())
-            .initialize_token_amount(initialize_token_amount)
-            .decimals(decimals);
+            .deposit_fee_bps(deposit_fee_bps)
+            .withdrawal_fee_bps(withdrawal_fee_bps)
+            .reward_fee_bps(reward_fee_bps)
+            .decimals(decimals)
+            .initialize_token_amount(initialize_token_amount);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
         let admin_st_token_account_ix =
             create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
@@ -306,31 +352,18 @@ impl VaultCliHandler {
         let vault_st_token_account_ix =
             create_associated_token_account_idempotent(&admin, &vault, &token_mint, &spl_token::ID);
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[
-                admin_st_token_account_ix,
-                vault_st_token_account_ix,
-                ix_builder.instruction(),
-            ],
-            Some(&signer.pubkey()),
-            &[signer, &base_signer, &vrt_mint_signer],
-            blockhash,
-        );
-        info!("Initializing vault transaction: {:?}", tx.get_signature());
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+        info!("Initializing Vault at address: {}", vault);
 
-        if result.is_err() {
-            info!("Transaction failed: {:?}", result.err());
-            return Err(anyhow::anyhow!("Transaction failed"));
+        let ixs = [admin_st_token_account_ix, vault_st_token_account_ix, ix];
+        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair, &base, &vrt_mint])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(&vault)
+                .await?;
+            info!("{}", account.pretty_display());
         }
-
-        info!("Transaction confirmed: {:?}", tx.get_signature());
-        info!("\nCreated new vault");
-        info!("Vault address: {}", vault);
-        info!("Base address: {}", base_signer.pubkey());
-        info!("VRT mint address: {}", vrt_mint_signer.pubkey());
-        info!("Token mint address: {}", token_mint);
 
         Ok(())
     }
@@ -363,7 +396,7 @@ impl VaultCliHandler {
         )
         .0;
 
-        let ix = CreateTokenMetadataBuilder::new()
+        let mut ix = CreateTokenMetadataBuilder::new()
             .vault(vault_pubkey)
             .admin(signer.pubkey())
             .vrt_mint(vault.vrt_mint)
@@ -373,24 +406,12 @@ impl VaultCliHandler {
             .symbol(symbol)
             .uri(uri)
             .instruction();
+        ix.program_id = self.vault_program_id;
 
-        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix],
-            Some(&signer.pubkey()),
-            &[signer],
-            recent_blockhash,
-        );
+        info!("Creating token metadata transaction",);
 
-        info!(
-            "Creating token metadata transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client
-            .send_and_confirm_transaction(&tx)
-            .await
-            .map_err(|e| anyhow!(e.to_string()))?;
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
 
         Ok(())
     }
@@ -471,7 +492,7 @@ impl VaultCliHandler {
 
         let current_slot = rpc_client.get_slot().await?;
 
-        let ncn_epoch = get_epoch(current_slot, config_account.epoch_length()).unwrap();
+        let ncn_epoch = get_epoch(current_slot, config_account.epoch_length())?;
 
         let vault = Pubkey::from_str(&vault)?;
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
@@ -751,7 +772,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let vault = Pubkey::from_str(&vault)?;
         let ncn = Pubkey::from_str(&ncn)?;
@@ -771,24 +791,20 @@ impl VaultCliHandler {
             .ncn_vault_ticket(ncn_vault_ticket)
             .payer(signer.pubkey())
             .admin(signer.pubkey());
-
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
         info!("Initialize Vault NCN Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
 
-        if result.is_err() {
-            println!("Transaction failed: {:?}", result.err());
-            return Err(anyhow::anyhow!("Transaction failed"));
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultNcnTicket>(&vault_ncn_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
         }
-
-        info!("Transaction confirmed: {:?}", result.unwrap());
 
         Ok(())
     }
@@ -799,7 +815,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let vault = Pubkey::from_str(&vault)?;
         let ncn = Pubkey::from_str(&ncn)?;
@@ -814,18 +829,20 @@ impl VaultCliHandler {
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
             .admin(signer.pubkey());
-
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
         info!("Warmup Vault NCN Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultNcnTicket>(&vault_ncn_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -836,7 +853,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let vault = Pubkey::from_str(&vault)?;
         let ncn = Pubkey::from_str(&ncn)?;
@@ -851,18 +867,20 @@ impl VaultCliHandler {
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
             .admin(signer.pubkey());
-
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
         info!("Cooldown Vault NCN Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultNcnTicket>(&vault_ncn_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -877,7 +895,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let vault = Pubkey::from_str(&vault)?;
         let operator = Pubkey::from_str(&operator)?;
@@ -905,25 +922,22 @@ impl VaultCliHandler {
             .vault_operator_delegation(vault_operator_delegation)
             .payer(signer.pubkey())
             .admin(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
-        info!(
-            "Initializing vault operator delegation transaction: {:?}",
-            tx.get_signature()
-        );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+        info!("Initializing vault operator delegation",);
 
-        if result.is_err() {
-            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultOperatorDelegation>(
+                    &vault_operator_delegation,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
         }
-
-        info!("Transaction confirmed: {:?}", tx.get_signature());
 
         Ok(())
     }
@@ -939,7 +953,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let vault = Pubkey::from_str(&vault)?;
         let operator = Pubkey::from_str(&operator)?;
@@ -959,23 +972,23 @@ impl VaultCliHandler {
             .vault_operator_delegation(vault_operator_delegation)
             .admin(signer.pubkey())
             .amount(amount);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
-        info!("Delegating to operator: {:?}", tx.get_signature());
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+        info!("Delegating to operator");
 
-        if result.is_err() {
-            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultOperatorDelegation>(
+                    &vault_operator_delegation,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+            info!("Delegated {} tokens to {}", amount, operator);
         }
-
-        info!("Transaction confirmed: {:?}", tx.get_signature());
-        info!("Delegated {} tokens to {}", amount, operator);
 
         Ok(())
     }
@@ -991,7 +1004,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let vault = Pubkey::from_str(&vault)?;
         let operator = Pubkey::from_str(&operator)?;
@@ -1011,6 +1023,55 @@ impl VaultCliHandler {
             .vault_operator_delegation(vault_operator_delegation)
             .admin(signer.pubkey())
             .amount(amount);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Cooling down delegation");
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultOperatorDelegation>(
+                    &vault_operator_delegation,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+            info!("Cooldown {} tokens for {}", amount, operator);
+        }
+
+        Ok(())
+    }
+
+    pub async fn delegate_token_account(
+        &self,
+        vault: String,
+        delegate: String,
+        token_mint: String,
+        token_account: String,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault = Pubkey::from_str(&vault)?;
+        let delegate = Pubkey::from_str(&delegate)?;
+        let token_mint = Pubkey::from_str(&token_mint)?;
+        let token_account = Pubkey::from_str(&token_account)?;
+
+        let mut ix_builder = DelegateTokenAccountBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
+            .delegate_asset_admin(keypair.pubkey())
+            .token_mint(token_mint)
+            .token_account(token_account)
+            .delegate(delegate)
+            .token_program(spl_token::ID);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
@@ -1019,7 +1080,7 @@ impl VaultCliHandler {
             &[signer],
             blockhash,
         );
-        info!("Cooling down delegation: {:?}", tx.get_signature());
+        info!("Delegating token account: {:?}", tx.get_signature());
         let result = rpc_client.send_and_confirm_transaction(&tx).await;
 
         if result.is_err() {
@@ -1027,7 +1088,53 @@ impl VaultCliHandler {
         }
 
         info!("Transaction confirmed: {:?}", tx.get_signature());
-        info!("Cooldown {} tokens for {}", amount, operator);
+        info!("Delegated token account: {:?}", token_account);
+
+        Ok(())
+    }
+
+    pub async fn delegated_token_transfer(
+        &self,
+        token_account: String,
+        recipient_pubkey: String,
+        amount: u64,
+    ) -> Result<()> {
+        let keypair = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let token_account = Pubkey::from_str(&token_account)?;
+        let recipient_pubkey = Pubkey::from_str(&recipient_pubkey)?;
+
+        let transfer_ix = transfer(
+            &spl_token::id(),
+            &token_account,
+            &recipient_pubkey,
+            &keypair.pubkey(),
+            &[],
+            amount,
+        )?;
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[transfer_ix],
+            Some(&keypair.pubkey()),
+            &[keypair],
+            blockhash,
+        );
+
+        info!("Delegating token transfer: {:?}", tx.get_signature());
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+        info!("Transferred {} tokens to {}", amount, recipient_pubkey);
 
         Ok(())
     }
@@ -1191,36 +1298,65 @@ impl VaultCliHandler {
     pub async fn get_vault(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let rpc_client = self.get_rpc_client();
-        let account = rpc_client.get_account(&pubkey).await?;
-        let vault = Vault::try_from_slice_unchecked(&account.data)?;
-        info!("vault at address {}: {:?}", pubkey, vault);
+
+        let vault_account = rpc_client.get_account(&pubkey).await?;
+        let vault =
+            jito_vault_client::accounts::Vault::deserialize(&mut vault_account.data.as_slice())?;
+
+        let metadata_pubkey = Pubkey::find_program_address(
+            &[
+                b"metadata",
+                inline_mpl_token_metadata::id().as_ref(),
+                vault.vrt_mint.as_ref(),
+            ],
+            &inline_mpl_token_metadata::id(),
+        )
+        .0;
+
+        info!("Vault at address {}", pubkey);
+        info!("{}", vault.pretty_display());
+
+        if let Ok(metadata) = self
+            .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
+            .await
+        {
+            info!("{}", metadata.pretty_display());
+        }
+
         Ok(())
     }
 
     pub async fn list_vaults(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Vault>(None)?;
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.vault_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Vault::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
-            .await?;
+            .get_program_accounts_with_config(&self.vault_program_id, config)
+            .await
+            .unwrap();
+        log::info!("{:?}", accounts);
         for (vault_pubkey, vault) in accounts {
-            let vault = Vault::try_from_slice_unchecked(&vault.data)?;
-            info!("vault at address {}: {:?}", vault_pubkey, vault);
+            let vault =
+                jito_vault_client::accounts::Vault::deserialize(&mut vault.data.as_slice())?;
+
+            let metadata_pubkey = Pubkey::find_program_address(
+                &[
+                    b"metadata",
+                    inline_mpl_token_metadata::id().as_ref(),
+                    vault.vrt_mint.as_ref(),
+                ],
+                &inline_mpl_token_metadata::id(),
+            )
+            .0;
+
+            info!("Vault at address {}", vault_pubkey);
+            info!("{}", vault.pretty_display());
+
+            if let Ok(metadata) = self
+                .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
+                .await
+            {
+                info!("{}", metadata.pretty_display());
+            }
         }
         Ok(())
     }
@@ -1235,18 +1371,25 @@ impl VaultCliHandler {
         );
 
         let account = rpc_client.get_account(&config_address).await?;
-        let config = Config::try_from_slice_unchecked(&account.data)?;
-        info!("Vault config at address {} : {:?}", config_address, config);
+        let config =
+            jito_vault_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
+        info!("Vault config at address {}", config_address);
+        info!("{}", config.pretty_display());
         Ok(())
     }
 
-    pub async fn get_vault_update_state_tracker(
-        &self,
-        vault: String,
-        ncn_epoch: u64,
-    ) -> Result<()> {
+    pub async fn get_vault_update_state_tracker(&self, vault: String) -> Result<()> {
         let vault = Pubkey::from_str(&vault)?;
         let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let config = self
+            .get_account::<jito_vault_client::accounts::Config>(&config_address)
+            .await?;
+
+        let slot = rpc_client.get_slot().await?;
+        let ncn_epoch = get_epoch(slot, config.epoch_length)?;
+
         let vault_update_state_tracker = VaultUpdateStateTracker::find_program_address(
             &self.vault_program_id,
             &vault,
@@ -1254,28 +1397,69 @@ impl VaultCliHandler {
         )
         .0;
         let account = rpc_client.get_account(&vault_update_state_tracker).await?;
-        let state_tracker = VaultUpdateStateTracker::try_from_slice_unchecked(&account.data)?;
-        info!("{:?}", state_tracker);
+        let state_tracker = jito_vault_client::accounts::VaultUpdateStateTracker::deserialize(
+            &mut account.data.as_slice(),
+        )?;
+        info!(
+            "Vault Update State Tracker at address {}",
+            vault_update_state_tracker
+        );
+        info!("{}", state_tracker.pretty_display());
         Ok(())
     }
 
-    pub async fn get_vault_operator_delegation(
+    pub async fn get_vault_operator_delegations(
         &self,
         vault: String,
-        operator: String,
+        operator: Option<String>,
     ) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let vault = Pubkey::from_str(&vault)?;
-        let operator = Pubkey::from_str(&operator)?;
-        let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
-            &self.vault_program_id,
-            &vault,
-            &operator,
-        )
-        .0;
-        let account = rpc_client.get_account(&vault_operator_delegation).await?;
-        let delegation = VaultOperatorDelegation::try_from_slice_unchecked(&account.data)?;
-        info!("{:?}", delegation);
+        let operator_pubkey = match operator {
+            Some(operator) => Some(Pubkey::from_str(&operator)?),
+            None => None,
+        };
+
+        match operator_pubkey {
+            Some(operator) => {
+                let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+                    &self.vault_program_id,
+                    &vault,
+                    &operator,
+                )
+                .0;
+                let account = rpc_client.get_account(&vault_operator_delegation).await?;
+
+                let delegation = jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
+                    &mut account.data.as_slice(),
+                )?;
+
+                info!(
+                    "Vault Operator Delegation at address {}",
+                    vault_operator_delegation
+                );
+                info!("{}", delegation.pretty_display());
+            }
+            None => {
+                let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>(
+                    Some((&vault, 8)),
+                )?;
+                let accounts = rpc_client
+                    .get_program_accounts_with_config(&self.vault_program_id, config)
+                    .await?;
+
+                for (index, (pubkey, account)) in accounts.iter().enumerate() {
+                    let vault_operator_delegation =
+                        jito_vault_client::accounts::VaultOperatorDelegation::deserialize(
+                            &mut account.data.as_slice(),
+                        )?;
+
+                    info!("Vault Operator Delegation {} at address {}", index, pubkey);
+                    info!("{}", vault_operator_delegation.pretty_display());
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -1301,8 +1485,14 @@ impl VaultCliHandler {
         let account = rpc_client
             .get_account(&vault_staker_withdrawal_ticket)
             .await?;
-        let ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked(&account.data)?;
-        info!("{:?}", ticket);
+        let ticket = jito_vault_client::accounts::VaultStakerWithdrawalTicket::deserialize(
+            &mut account.data.as_slice(),
+        )?;
+        info!(
+            "Vault Staker Withdrawal Ticket at address {}",
+            vault_staker_withdrawal_ticket
+        );
+        info!("{}", ticket.pretty_display());
 
         Ok(())
     }
@@ -1314,7 +1504,6 @@ impl VaultCliHandler {
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
-        let rpc_client = self.get_rpc_client();
 
         let mut builder = SetDepositCapacityBuilder::new();
         builder
@@ -1322,25 +1511,20 @@ impl VaultCliHandler {
             .vault(vault_pubkey)
             .admin(signer.pubkey())
             .amount(amount);
-
-        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            recent_blockhash,
-        );
+        let mut ix = builder.instruction();
+        ix.program_id = self.vault_program_id;
 
         info!("Vault capacity instruction: {:?}", builder);
-        info!(
-            "Vault capacity transaction signature: {:?}",
-            tx.get_signature()
-        );
-        rpc_client
-            .send_and_confirm_transaction(&tx)
-            .await
-            .map_err(|e| anyhow!(e.to_string()))?;
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(&vault_pubkey)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -1351,7 +1535,6 @@ impl VaultCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let config_address = Config::find_program_address(&self.vault_program_id).0;
         let mut ix_builder = SetConfigAdminBuilder::new();
@@ -1359,21 +1542,21 @@ impl VaultCliHandler {
             .config(config_address)
             .old_admin(signer.pubkey())
             .new_admin(new_admin);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Setting vault config admin parameters: {:?}", ix_builder);
-        info!(
-            "Setting vault config admin transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 }

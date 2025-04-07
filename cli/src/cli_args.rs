@@ -34,6 +34,14 @@ pub struct Cli {
     #[arg(long, global = true, help = "Verbose mode")]
     pub verbose: bool,
 
+    #[arg(
+        long,
+        global = true,
+        default_value = "false",
+        help = "This will print out the raw TX instead of running it"
+    )]
+    pub print_tx: bool,
+
     #[arg(long, global = true, hide = true)]
     pub markdown_help: bool,
 }

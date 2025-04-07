@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use jito_bytemuck::{AccountDeserialize, Discriminator};
+use borsh::BorshDeserialize;
 use jito_restaking_client::{
     instructions::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
@@ -14,23 +14,15 @@ use jito_restaking_client::{
     },
     types::OperatorAdminRole,
 };
+use jito_restaking_client_common::log::PrettyDisplay;
 use jito_restaking_core::{
     config::Config, ncn::Ncn, ncn_operator_state::NcnOperatorState,
     ncn_vault_ticket::NcnVaultTicket, operator::Operator,
     operator_vault_ticket::OperatorVaultTicket,
 };
 use log::{debug, info};
-use solana_account_decoder::UiAccountEncoding;
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::{nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction};
-use solana_rpc_client_api::{
-    config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
-    filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
-};
-use solana_sdk::{
-    signature::{read_keypair_file, Keypair, Signer},
-    transaction::Transaction,
-};
+use solana_sdk::signature::{read_keypair_file, Keypair, Signer};
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
@@ -39,12 +31,31 @@ use crate::{
     cli_config::CliConfig,
     cli_signer::CliSigner,
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
+    CliConfig, CliHandler,
 };
 
 pub struct RestakingCliHandler {
+    /// The configuration of CLI
     cli_config: CliConfig,
+
+    /// The Pubkey of Jito Restaking Program ID
     restaking_program_id: Pubkey,
+
+    /// The Pubkey of Jito Vault Program ID
     vault_program_id: Pubkey,
+
+    /// This will print out the raw TX instead of running it
+    print_tx: bool,
+}
+
+impl CliHandler for RestakingCliHandler {
+    fn cli_config(&self) -> &CliConfig {
+        &self.cli_config
+    }
+
+    fn print_tx(&self) -> bool {
+        self.print_tx
+    }
 }
 
 impl RestakingCliHandler {
@@ -52,16 +63,14 @@ impl RestakingCliHandler {
         cli_config: CliConfig,
         restaking_program_id: Pubkey,
         vault_program_id: Pubkey,
+        print_tx: bool,
     ) -> Self {
         Self {
             cli_config,
             restaking_program_id,
             vault_program_id,
+            print_tx,
         }
-    }
-
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.cli_config.rpc_url.clone(), self.cli_config.commitment)
     }
 
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
@@ -122,6 +131,12 @@ impl RestakingCliHandler {
             RestakingCommands::Ncn {
                 action: NcnActions::List,
             } => self.list_ncn().await,
+            RestakingCommands::Ncn {
+                action: NcnActions::ListNcnOperatorState { ncn },
+            } => self.list_ncn_operator_state(Some(&ncn), None).await,
+            RestakingCommands::Ncn {
+                action: NcnActions::ListNcnVaultTicket { ncn },
+            } => self.list_ncn_vault_ticket(ncn).await,
             RestakingCommands::Operator {
                 action: OperatorActions::Initialize { operator_fee_bps },
             } => self.initialize_operator(operator_fee_bps).await,
@@ -193,6 +208,12 @@ impl RestakingCliHandler {
             RestakingCommands::Operator {
                 action: OperatorActions::List,
             } => self.list_operator().await,
+            RestakingCommands::Operator {
+                action: OperatorActions::ListOperatorVaultTicket { operator },
+            } => self.list_operator_vault_ticket(&operator).await,
+            RestakingCommands::Operator {
+                action: OperatorActions::ListNcnOperatorState { operator },
+            } => self.list_ncn_operator_state(None, Some(&operator)).await,
         }
     }
 
@@ -202,7 +223,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let (restaking_vault_config, _, _) =
             Config::find_program_address(&self.restaking_program_id);
@@ -216,21 +236,23 @@ impl RestakingCliHandler {
             .admin(signer.pubkey())
             .config(restaking_vault_config)
             .instruction();
-
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
         info!(
             "Setting fees to {:?} to Operator {}",
             operator_fee_bps, operator,
         );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -251,7 +273,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let new_admin = Pubkey::from_str(&new_admin)?;
@@ -281,20 +302,23 @@ impl RestakingCliHandler {
                 .admin(signer.pubkey())
                 .operator_admin_role(*role)
                 .instruction();
+            let mut ix = ix_builder.instruction();
+            ix.program_id = self.restaking_program_id;
 
-            let blockhash = rpc_client.get_latest_blockhash().await?;
-            let tx = Transaction::new_signed_with_payer(
-                &[ix_builder.instruction()],
-                Some(&signer.pubkey()),
-                &[signer],
-                blockhash,
-            );
             info!(
                 "Setting {:?} Admin to {} for Operator {}",
                 role, new_admin, operator
             );
-            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-            info!("Transaction confirmed: {:?}", result);
+
+            self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+                .await?;
+        }
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
         }
 
         Ok(())
@@ -312,7 +336,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let delegate = Pubkey::from_str(&delegate)?;
@@ -339,15 +362,15 @@ impl RestakingCliHandler {
             .delegate_admin(signer.pubkey())
             .token_account(token_account)
             .token_mint(token_mint);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
         ixs.push(ix_builder.instruction());
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx =
-            Transaction::new_signed_with_payer(&ixs, Some(&signer.pubkey()), &[signer], blockhash);
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair])
+            .await?;
 
         Ok(())
     }
@@ -364,7 +387,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let delegate = Pubkey::from_str(&delegate)?;
@@ -391,15 +413,15 @@ impl RestakingCliHandler {
             .delegate_admin(signer.pubkey())
             .token_account(token_account)
             .token_mint(token_mint);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
         ixs.push(ix_builder.instruction());
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx =
-            Transaction::new_signed_with_payer(&ixs, Some(&signer.pubkey()), &[signer], blockhash);
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair])
+            .await?;
 
         Ok(())
     }
@@ -410,7 +432,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let vault = Pubkey::from_str(&vault)?;
@@ -427,17 +448,20 @@ impl RestakingCliHandler {
             .admin(signer.pubkey())
             .payer(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Initializing NCN Vault Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnVaultTicket>(&ncn_vault_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -448,7 +472,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let vault = Pubkey::from_str(&vault)?;
@@ -464,17 +487,20 @@ impl RestakingCliHandler {
             .ncn_vault_ticket(ncn_vault_ticket)
             .admin(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Warmup NCN Vault Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnVaultTicket>(&ncn_vault_ticket)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -485,7 +511,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let vault = Pubkey::from_str(&vault)?;
@@ -501,17 +526,13 @@ impl RestakingCliHandler {
             .ncn_vault_ticket(ncn_vault_ticket)
             .admin(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Cooldown NCN Vault Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
 
         Ok(())
     }
@@ -522,7 +543,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let operator = Pubkey::from_str(&operator)?;
@@ -539,17 +559,22 @@ impl RestakingCliHandler {
             .admin(signer.pubkey())
             .payer(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Initializing NCN Operator State");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -560,7 +585,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let operator = Pubkey::from_str(&operator)?;
@@ -576,17 +600,22 @@ impl RestakingCliHandler {
             .ncn_operator_state(ncn_operator_state)
             .admin(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("NCN Warmup Operator");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -597,7 +626,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let ncn = Pubkey::from_str(&ncn)?;
         let operator = Pubkey::from_str(&operator)?;
@@ -613,17 +641,22 @@ impl RestakingCliHandler {
             .ncn_operator_state(ncn_operator_state)
             .admin(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("NCN Cooldown Operator");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -634,7 +667,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let ncn = Pubkey::from_str(&ncn)?;
@@ -650,17 +682,22 @@ impl RestakingCliHandler {
             .ncn_operator_state(ncn_operator_state)
             .admin(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Operator Warmup NCN");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -671,7 +708,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let ncn = Pubkey::from_str(&ncn)?;
@@ -687,17 +723,22 @@ impl RestakingCliHandler {
             .ncn_operator_state(ncn_operator_state)
             .admin(signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!("Operator Cooldown NCN");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::NcnOperatorState>(
+                    &ncn_operator_state,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -708,7 +749,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let config_address = Config::find_program_address(&self.restaking_program_id).0;
         let mut ix_builder = InitializeConfigBuilder::new();
@@ -716,20 +756,21 @@ impl RestakingCliHandler {
             .config(config_address)
             .admin(signer.pubkey())
             .vault_program(self.vault_program_id);
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
+
         info!("Initializing restaking config parameters: {:?}", ix_builder);
-        info!(
-            "Initializing restaking config transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 
@@ -739,7 +780,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let base =
             path_to_base_keypair.map_or_else(Keypair::new, |path| read_keypair_file(path).unwrap());
@@ -753,30 +793,20 @@ impl RestakingCliHandler {
             .admin(signer.pubkey())
             .base(base_signer.pubkey())
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer, &base_signer],
-            blockhash,
-        );
         info!("Initializing NCN: {:?}", ncn);
-        info!("Initializing NCN transaction: {:?}", tx.get_signature());
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
-        let statuses = rpc_client
-            .get_signature_statuses(&[*tx.get_signature()])
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair, &base])
             .await?;
 
-        let tx_status = statuses
-            .value
-            .first()
-            .unwrap()
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signature status"))?;
-        info!("Transaction status: {:?}", tx_status);
-        info!("NCN initialized at address: {:?}", ncn);
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -787,7 +817,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let base_signer = CliSigner::new(Some(Keypair::new()), None);
         let operator =
@@ -801,33 +830,20 @@ impl RestakingCliHandler {
             .base(base_signer.pubkey())
             .operator_fee_bps(operator_fee_bps)
             .instruction();
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer, &base_signer],
-            blockhash,
-        );
-        info!("Initializing operator: {:?}", operator);
-        info!(
-            "Initializing operator transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed");
-        let statuses = rpc_client
-            .get_signature_statuses(&[*tx.get_signature()])
+        info!("Initializing Operator: {:?}", operator);
+
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair, &base])
             .await?;
 
-        let tx_status = statuses
-            .value
-            .first()
-            .unwrap()
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signature status"))?;
-        info!("Transaction status: {:?}", tx_status);
-        info!("Operator initialized at address: {:?}", operator);
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -842,7 +858,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let vault = Pubkey::from_str(&vault)?;
@@ -862,26 +877,24 @@ impl RestakingCliHandler {
             .admin(signer.pubkey())
             .operator_vault_ticket(operator_vault_ticket)
             .payer(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
-
-        info!(
-            "Initializing operator vault ticket transaction: {:?}",
-            tx.get_signature()
-        );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
-
-        info!("\nCreated Operator Vault Ticket");
+        info!("Operator Vault Ticket address: {}", operator_vault_ticket);
         info!("Operator address: {}", operator);
         info!("Vault address: {}", vault);
-        info!("Operator Vault Ticket address: {}", operator_vault_ticket);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::OperatorVaultTicket>(
+                    &operator_vault_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -896,7 +909,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let vault = Pubkey::from_str(&vault)?;
@@ -915,21 +927,24 @@ impl RestakingCliHandler {
             .vault(vault)
             .operator_vault_ticket(operator_vault_ticket)
             .admin(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        info!("Warming up operator vault ticket transaction");
+        info!("Operator address: {}", operator);
+        info!("Vault address: {}", vault);
 
-        info!(
-            "Warming up operator vault ticket transaction: {:?}",
-            tx.get_signature()
-        );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::OperatorVaultTicket>(
+                    &operator_vault_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -944,7 +959,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
-        let rpc_client = self.get_rpc_client();
 
         let operator = Pubkey::from_str(&operator)?;
         let vault = Pubkey::from_str(&vault)?;
@@ -963,18 +977,24 @@ impl RestakingCliHandler {
             .vault(vault)
             .operator_vault_ticket(operator_vault_ticket)
             .admin(signer.pubkey());
-
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
         info!("Cooldown Operator Vault Ticket");
-        let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", result);
+        info!("Operator address: {}", operator);
+        info!("Vault address: {}", vault);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::OperatorVaultTicket>(
+                    &operator_vault_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+        }
 
         Ok(())
     }
@@ -989,46 +1009,86 @@ impl RestakingCliHandler {
         );
 
         let account = rpc_client.get_account(&config_address).await?;
-        let config = Config::try_from_slice_unchecked(&account.data)?;
-        info!(
-            "Restaking config at address {}: {:?}",
-            config_address, config
-        );
+        let config =
+            jito_restaking_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
+        info!("Restaking config at address {}", config_address);
+        info!("{}", config.pretty_display());
         Ok(())
     }
 
     pub async fn get_ncn(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
-        let ncn = Ncn::try_from_slice_unchecked(&account.data)?;
-        info!("NCN at address {}: {:?}", pubkey, ncn);
+        let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut account.data.as_slice())?;
+        info!("NCN at address {}", pubkey);
+        info!("{}", ncn.pretty_display());
         Ok(())
     }
 
     pub async fn list_ncn(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Ncn>(None)?;
+
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.restaking_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Ncn::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (ncn_pubkey, ncn) in accounts {
-            let ncn = Ncn::try_from_slice_unchecked(&ncn.data)?;
-            info!("NCN at address {}: {:?}", ncn_pubkey, ncn);
+            let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
+            info!("NCN at address {}", ncn_pubkey);
+            info!("{}", ncn.pretty_display());
+        }
+        Ok(())
+    }
+
+    /// Lists NCN operator state accounts filtered by either NCN or Operator public key.
+    pub async fn list_ncn_operator_state(
+        &self,
+        ncn: Option<&Pubkey>,
+        operator: Option<&Pubkey>,
+    ) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+
+        let (pubkey, offset) = match (ncn, operator) {
+            (Some(ncn_pubkey), None) => (ncn_pubkey, 8),
+            (None, Some(operator_pubkey)) => (operator_pubkey, 8 + 32),
+            _ => return Err(anyhow!("Choose Operator or NCN")),
+        };
+
+        let config =
+            self.get_rpc_program_accounts_config::<NcnOperatorState>(Some((pubkey, offset)))?;
+
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ncn_operator_state_pubkey, ncn_operator_state)) in accounts.iter().enumerate()
+        {
+            let ncn_operator_state =
+                jito_restaking_client::accounts::NcnOperatorState::deserialize(
+                    &mut ncn_operator_state.data.as_slice(),
+                )?;
+            info!(
+                "NcnOperatorState {} at address {}",
+                index, ncn_operator_state_pubkey
+            );
+            info!("{}", ncn_operator_state.pretty_display());
+        }
+        Ok(())
+    }
+
+    /// Lists NCN operator state accounts filtered by NCN public key.
+    pub async fn list_ncn_vault_ticket(&self, ncn: Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<NcnVaultTicket>(Some((&ncn, 8)))?;
+
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
+            let ticket = jito_restaking_client::accounts::NcnVaultTicket::deserialize(
+                &mut ticket.data.as_slice(),
+            )?;
+            info!("NcnVaultTicket {} at address {}", index, ticket_pubkey);
+            info!("{}", ticket.pretty_display());
         }
         Ok(())
     }
@@ -1036,36 +1096,43 @@ impl RestakingCliHandler {
     pub async fn get_operator(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
-        let operator = Operator::try_from_slice_unchecked(&account.data)?;
-        info!("Operator at address {}: {:?}", pubkey, operator);
+        let operator =
+            jito_restaking_client::accounts::Operator::deserialize(&mut account.data.as_slice())?;
+        info!("Operator at address {}", pubkey);
+        info!("{}", operator.pretty_display());
 
         Ok(())
     }
 
     pub async fn list_operator(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
+        let config = self.get_rpc_program_accounts_config::<Operator>(None)?;
         let accounts = rpc_client
-            .get_program_accounts_with_config(
-                &self.restaking_program_id,
-                RpcProgramAccountsConfig {
-                    filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new(
-                        0,
-                        MemcmpEncodedBytes::Bytes(vec![Operator::DISCRIMINATOR]),
-                    ))]),
-                    account_config: RpcAccountInfoConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        data_slice: None,
-                        commitment: None,
-                        min_context_slot: None,
-                    },
-                    with_context: None,
-                    sort_results: None,
-                },
-            )
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
         for (operator_pubkey, operator) in accounts {
-            let operator = Operator::try_from_slice_unchecked(&operator.data)?;
-            info!("Operator at address {}: {:?}", operator_pubkey, operator);
+            let operator = jito_restaking_client::accounts::Operator::deserialize(
+                &mut operator.data.as_slice(),
+            )?;
+            info!("Operator at address {}", operator_pubkey);
+            info!("{}", operator.pretty_display());
+        }
+        Ok(())
+    }
+
+    pub async fn list_operator_vault_ticket(&self, operator: &Pubkey) -> Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let config =
+            self.get_rpc_program_accounts_config::<OperatorVaultTicket>(Some((operator, 8)))?;
+        let accounts = rpc_client
+            .get_program_accounts_with_config(&self.restaking_program_id, config)
+            .await?;
+        for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
+            let ticket = jito_restaking_client::accounts::OperatorVaultTicket::deserialize(
+                &mut ticket.data.as_slice(),
+            )?;
+            info!("OperatorVaultTicket {} at address {}", index, ticket_pubkey);
+            info!("{}", ticket.pretty_display());
         }
         Ok(())
     }
@@ -1076,7 +1143,6 @@ impl RestakingCliHandler {
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
-        let rpc_client = self.get_rpc_client();
 
         let config_address = Config::find_program_address(&self.restaking_program_id).0;
         let mut ix_builder = SetConfigAdminBuilder::new();
@@ -1084,24 +1150,23 @@ impl RestakingCliHandler {
             .config(config_address)
             .old_admin(signer.pubkey())
             .new_admin(new_admin);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!(
             "Setting restaking config admin parameters: {:?}",
             ix_builder
         );
-        info!(
-            "Setting restaking config admin transaction: {:?}",
-            tx.get_signature()
-        );
-        rpc_client.send_and_confirm_transaction(&tx).await?;
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
         Ok(())
     }
 }
