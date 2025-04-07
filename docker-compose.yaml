@@ -15,6 +15,7 @@ services:
       - PRIORITY_FEES=${PRIORITY_FEES}
       - SOLANA_METRICS_CONFIG=${SOLANA_METRICS_CONFIG}
       - REGION=${REGION}
+      - CLUSTER=${CLUSTER}
     volumes:
       - ./credentials:/credentials
     restart: on-failure:5
