@@ -6,6 +6,7 @@ use env_logger::{
     Env,
 };
 use log::Record;
+use solana_sdk::{bs58, instruction::Instruction};
 pub fn init_logger() {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .format(format_log_message)
@@ -36,4 +37,25 @@ fn colored_level(style: &mut Style, level: log::Level) -> StyledValue<&'static s
         log::Level::Warn => style.set_color(Color::Yellow).value("WARN "),
         log::Level::Error => style.set_color(Color::Red).value("ERROR"),
     }
+}
+
+pub(crate) fn print_base58_tx(ixs: &[Instruction]) {
+    ixs.iter().for_each(|ix| {
+        log::info!("\n------ IX ------\n");
+
+        println!("{}\n", ix.program_id);
+
+        ix.accounts.iter().for_each(|account| {
+            let pubkey = format!("{}", account.pubkey);
+            let writable = if account.is_writable { "W" } else { "" };
+            let signer = if account.is_signer { "S" } else { "" };
+
+            println!("{:<44} {:>2} {:>1}", pubkey, writable, signer);
+        });
+
+        println!("\n");
+
+        let base58_string = bs58::encode(&ix.data).into_string();
+        println!("{}\n", base58_string);
+    });
 }

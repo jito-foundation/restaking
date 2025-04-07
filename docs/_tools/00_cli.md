@@ -29,6 +29,9 @@ A CLI for managing restaking and vault operations
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
 * `--keypair <KEYPAIR>` — Keypair
 * `--verbose` — Verbose mode
+* `--print-tx` — This will print out the raw TX instead of running it
+
+  Default value: `false`
 
 
 
@@ -104,6 +107,8 @@ Set the config admin
 * `ncn-delegate-token-account` — NCN Delegate Token Account
 * `get` — Get NCN
 * `list` — List all NCNs
+* `list-ncn-operator-state` — List All Ncn Operator State for a NCN
+* `list-ncn-vault-ticket` — List All Ncn Vault Ticket for a NCN
 
 
 
@@ -235,6 +240,30 @@ List all NCNs
 
 
 
+## `jito-restaking-cli restaking ncn list-ncn-operator-state`
+
+List All Ncn Operator State for a NCN
+
+**Usage:** `jito-restaking-cli restaking ncn list-ncn-operator-state <NCN>`
+
+###### **Arguments:**
+
+* `<NCN>`
+
+
+
+## `jito-restaking-cli restaking ncn list-ncn-vault-ticket`
+
+List All Ncn Vault Ticket for a NCN
+
+**Usage:** `jito-restaking-cli restaking ncn list-ncn-vault-ticket <NCN>`
+
+###### **Arguments:**
+
+* `<NCN>`
+
+
+
 ## `jito-restaking-cli restaking operator`
 
 **Usage:** `jito-restaking-cli restaking operator <COMMAND>`
@@ -252,6 +281,8 @@ List all NCNs
 * `operator-delegate-token-account` — Operator Delegate Token Account
 * `get` — Get operator
 * `list` — List all operators
+* `list-operator-vault-ticket` — List Operator Vault Ticket for an Operator
+* `list-ncn-operator-state` — List All Ncn Operator State for a Operator
 
 
 
@@ -404,6 +435,30 @@ List all operators
 
 
 
+## `jito-restaking-cli restaking operator list-operator-vault-ticket`
+
+List Operator Vault Ticket for an Operator
+
+**Usage:** `jito-restaking-cli restaking operator list-operator-vault-ticket <OPERATOR>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+
+
+
+## `jito-restaking-cli restaking operator list-ncn-operator-state`
+
+List All Ncn Operator State for a Operator
+
+**Usage:** `jito-restaking-cli restaking operator list-ncn-operator-state <OPERATOR>`
+
+###### **Arguments:**
+
+* `<OPERATOR>`
+
+
+
 ## `jito-restaking-cli vault`
 
 Vault program commands
@@ -486,11 +541,14 @@ Vault commands
 * `enqueue-withdrawal` — Starts the withdrawal process
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
+* `get-operator-delegations` — Gets the operator delegations for a vault
 * `get-operator-delegation` — Gets the operator delegation for a vault
 * `get-withdrawal-ticket` — 
 * `get` — Gets a vault
 * `list` — List all vaults
 * `set-capacity` — Sets the deposit capacity in the vault
+* `delegate-token-account` — Delegate a token account
+* `delegated-token-transfer` — Transfer a token account
 
 
 
@@ -498,7 +556,7 @@ Vault commands
 
 Creates a new vault
 
-**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT>`
+**Usage:** `jito-restaking-cli vault vault initialize <TOKEN_MINT> <DEPOSIT_FEE_BPS> <WITHDRAWAL_FEE_BPS> <REWARD_FEE_BPS> <DECIMALS> <INITIALIZE_TOKEN_AMOUNT> [VRT_MINT_ADDRESS_FILE_PATH]`
 
 ###### **Arguments:**
 
@@ -508,6 +566,7 @@ Creates a new vault
 * `<REWARD_FEE_BPS>` — The reward fee in bips
 * `<DECIMALS>` — The decimals of the token
 * `<INITIALIZE_TOKEN_AMOUNT>` — The amount of tokens to initialize the vault with ( in the smallest unit )
+* `<VRT_MINT_ADDRESS_FILE_PATH>` — The file path of VRT mint address
 
 
 
@@ -700,12 +759,23 @@ Burns the withdrawal ticket, ending the withdrawal process
 
 Gets the update state tracker for a vault
 
-**Usage:** `jito-restaking-cli vault vault get-vault-update-state-tracker <VAULT> <NCN_EPOCH>`
+**Usage:** `jito-restaking-cli vault vault get-vault-update-state-tracker <VAULT>`
 
 ###### **Arguments:**
 
 * `<VAULT>` — Vault account
-* `<NCN_EPOCH>` — NCN epoch
+
+
+
+## `jito-restaking-cli vault vault get-operator-delegations`
+
+Gets the operator delegations for a vault
+
+**Usage:** `jito-restaking-cli vault vault get-operator-delegations <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — Vault account
 
 
 
@@ -763,6 +833,35 @@ Sets the deposit capacity in the vault
 
 * `<VAULT>` — The vault pubkey
 * `<AMOUNT>` — The new capacity
+
+
+
+## `jito-restaking-cli vault vault delegate-token-account`
+
+Delegate a token account
+
+**Usage:** `jito-restaking-cli vault vault delegate-token-account <VAULT> <DELEGATE> <TOKEN_MINT> <TOKEN_ACCOUNT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<DELEGATE>` — The delegate account
+* `<TOKEN_MINT>` — The token mint
+* `<TOKEN_ACCOUNT>` — The token account
+
+
+
+## `jito-restaking-cli vault vault delegated-token-transfer`
+
+Transfer a token account
+
+**Usage:** `jito-restaking-cli vault vault delegated-token-transfer <TOKEN_ACCOUNT> <RECIPIENT_PUBKEY> <AMOUNT>`
+
+###### **Arguments:**
+
+* `<TOKEN_ACCOUNT>` — The token account
+* `<RECIPIENT_PUBKEY>` — The recipient pubkey
+* `<AMOUNT>` — The amount to transfer
 
 
 

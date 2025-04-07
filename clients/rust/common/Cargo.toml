@@ -1,0 +1,10 @@
+[package]
+name = "jito-restaking-client-common"
+description = "Jito Client Common Crate"
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+readme = { workspace = true }

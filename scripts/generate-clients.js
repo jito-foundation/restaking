@@ -194,7 +194,7 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
             kinobi.assertIsNode(node, "structFieldTypeNode");
             return {
                 ...node,
-                type: kinobi.numberTypeNode("bool"),
+                type: kinobi.booleanTypeNode(),
             };
         },
     },

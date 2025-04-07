@@ -2529,6 +2529,7 @@ version = "0.0.3"
 dependencies = [
  "anyhow",
  "assert_matches",
+ "base64 0.22.1",
  "borsh 0.10.4",
  "bytemuck",
  "chrono",
@@ -2538,6 +2539,7 @@ dependencies = [
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-client",
+ "jito-restaking-client-common",
  "jito-restaking-core",
  "jito-vault-client",
  "jito-vault-core",
@@ -2562,14 +2564,18 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "bytemuck",
+ "jito-restaking-client-common",
  "num-derive",
  "num-traits",
  "serde",
  "serde_with",
  "solana-program",
- "solana-sdk",
  "thiserror 1.0.69",
 ]
+
+[[package]]
+name = "jito-restaking-client-common"
+version = "0.0.3"
 
 [[package]]
 name = "jito-restaking-core"
@@ -2671,12 +2677,12 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "bytemuck",
+ "jito-restaking-client-common",
  "num-derive",
  "num-traits",
  "serde",
  "serde_with",
  "solana-program",
- "solana-sdk",
  "thiserror 1.0.69",
 ]
 
@@ -2703,6 +2709,7 @@ name = "jito-vault-cranker"
 version = "0.0.3"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "clap 4.5.28",
  "dotenv",
  "env_logger 0.10.2",
@@ -3913,15 +3920,14 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.17.8"
+version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c17fa4cb658e3583423e915b9f3acc01cceaee1860e33d59ebae66adc3a2dc0d"
+checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
 dependencies = [
  "cc",
  "cfg-if",
  "getrandom 0.2.15",
  "libc",
- "spin",
  "untrusted",
  "windows-sys 0.52.0",
 ]
@@ -6431,12 +6437,6 @@ dependencies = [
  "thiserror 1.0.69",
  "winapi",
 ]
-
-[[package]]
-name = "spin"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spinning_top"
