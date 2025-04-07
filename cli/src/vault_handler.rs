@@ -44,7 +44,7 @@ use crate::{
     cli_config::CliConfig,
     cli_signer::CliSigner,
     vault::{ConfigActions, VaultActions, VaultCommands},
-    CliConfig, CliHandler,
+    CliHandler,
 };
 
 pub struct VaultCliHandler {
@@ -265,7 +265,7 @@ impl VaultCliHandler {
             .cli_config
             .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No Signer"))?;
 
         let mut ix_builder = InitializeConfigBuilder::new();
         let config_address = Config::find_program_address(&self.vault_program_id).0;
@@ -280,7 +280,7 @@ impl VaultCliHandler {
 
         info!("Initializing vault config parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -309,12 +309,24 @@ impl VaultCliHandler {
             .cli_config
             .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No Signer"))?;
+
+        let admin = signer.pubkey();
 
         let base_signer = CliSigner::new(Some(Keypair::new()), None);
         let vault = Vault::find_program_address(&self.vault_program_id, &base_signer.pubkey()).0;
 
-        let vrt_mint_signer = CliSigner::new(Some(Keypair::new()), None);
+        let vrt_mint_signer = match vrt_mint_address_file_path {
+            Some(file_path) => {
+                let keypair = read_keypair_file(file_path)
+                    .map_err(|e| anyhow!("Could not read VRT mint address file path: {e}"))?;
+                info!("Found VRT mint address: {}", keypair.pubkey());
+
+                CliSigner::new(Some(keypair), None)
+            }
+            None => CliSigner::new(Some(Keypair::new()), None),
+        };
+        // let vrt_mint_signer = CliSigner::new(Some(Keypair::new()), None);
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
@@ -355,8 +367,12 @@ impl VaultCliHandler {
         info!("Initializing Vault at address: {}", vault);
 
         let ixs = [admin_st_token_account_ix, vault_st_token_account_ix, ix];
-        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair, &base, &vrt_mint])
-            .await?;
+        self.process_transaction(
+            &ixs,
+            &signer.pubkey(),
+            &[signer, &base_signer, &vrt_mint_signer],
+        )
+        .await?;
 
         if !self.print_tx {
             let account = self
@@ -379,7 +395,7 @@ impl VaultCliHandler {
             .cli_config
             .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
 
         let rpc_client = self.get_rpc_client();
@@ -410,7 +426,7 @@ impl VaultCliHandler {
 
         info!("Creating token metadata transaction",);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         Ok(())
@@ -796,7 +812,7 @@ impl VaultCliHandler {
 
         info!("Initialize Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -834,7 +850,7 @@ impl VaultCliHandler {
 
         info!("Warmup Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -872,7 +888,7 @@ impl VaultCliHandler {
 
         info!("Cooldown Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -927,7 +943,7 @@ impl VaultCliHandler {
 
         info!("Initializing vault operator delegation",);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -977,7 +993,7 @@ impl VaultCliHandler {
 
         info!("Delegating to operator");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1028,7 +1044,7 @@ impl VaultCliHandler {
 
         info!("Cooling down delegation");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1051,9 +1067,9 @@ impl VaultCliHandler {
         token_mint: String,
         token_account: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1067,7 +1083,7 @@ impl VaultCliHandler {
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
-            .delegate_asset_admin(keypair.pubkey())
+            .delegate_asset_admin(signer.pubkey())
             .token_mint(token_mint)
             .token_account(token_account)
             .delegate(delegate)
@@ -1101,7 +1117,7 @@ impl VaultCliHandler {
     ) -> Result<()> {
         let keypair = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1516,7 +1532,7 @@ impl VaultCliHandler {
 
         info!("Vault capacity instruction: {:?}", builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1547,7 +1563,7 @@ impl VaultCliHandler {
 
         info!("Setting vault config admin parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {

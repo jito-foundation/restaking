@@ -31,7 +31,7 @@ use crate::{
     cli_config::CliConfig,
     cli_signer::CliSigner,
     restaking::{ConfigActions, NcnActions, OperatorActions, RestakingCommands},
-    CliConfig, CliHandler,
+    CliHandler,
 };
 
 pub struct RestakingCliHandler {
@@ -244,7 +244,7 @@ impl RestakingCliHandler {
             operator_fee_bps, operator,
         );
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -310,7 +310,7 @@ impl RestakingCliHandler {
                 role, new_admin, operator
             );
 
-            self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+            self.process_transaction(&[ix], &signer.pubkey(), &[signer])
                 .await?;
         }
 
@@ -369,7 +369,7 @@ impl RestakingCliHandler {
 
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
 
-        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair])
+        self.process_transaction(&ixs, &signer.pubkey(), &[signer])
             .await?;
 
         Ok(())
@@ -420,7 +420,7 @@ impl RestakingCliHandler {
 
         info!("Setting delegate for mint: {} to {}", token_mint, delegate,);
 
-        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair])
+        self.process_transaction(&ixs, &signer.pubkey(), &[signer])
             .await?;
 
         Ok(())
@@ -453,7 +453,7 @@ impl RestakingCliHandler {
 
         info!("Initializing NCN Vault Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -492,7 +492,7 @@ impl RestakingCliHandler {
 
         info!("Warmup NCN Vault Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -531,7 +531,7 @@ impl RestakingCliHandler {
 
         info!("Cooldown NCN Vault Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         Ok(())
@@ -564,7 +564,7 @@ impl RestakingCliHandler {
 
         info!("Initializing NCN Operator State");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -605,7 +605,7 @@ impl RestakingCliHandler {
 
         info!("NCN Warmup Operator");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -646,7 +646,7 @@ impl RestakingCliHandler {
 
         info!("NCN Cooldown Operator");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -687,7 +687,7 @@ impl RestakingCliHandler {
 
         info!("Operator Warmup NCN");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -728,7 +728,7 @@ impl RestakingCliHandler {
 
         info!("Operator Cooldown NCN");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -761,7 +761,7 @@ impl RestakingCliHandler {
 
         info!("Initializing restaking config parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -798,7 +798,7 @@ impl RestakingCliHandler {
 
         info!("Initializing NCN: {:?}", ncn);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair, &base])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &base_signer])
             .await?;
 
         if !self.print_tx {
@@ -835,7 +835,7 @@ impl RestakingCliHandler {
 
         info!("Initializing Operator: {:?}", operator);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair, &base])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &base_signer])
             .await?;
 
         if !self.print_tx {
@@ -934,7 +934,7 @@ impl RestakingCliHandler {
         info!("Operator address: {}", operator);
         info!("Vault address: {}", vault);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1157,7 +1157,7 @@ impl RestakingCliHandler {
             "Setting restaking config admin parameters: {:?}",
             ix_builder
         );
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {

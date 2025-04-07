@@ -2,6 +2,7 @@ use ::log::info;
 use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine};
 use borsh::BorshDeserialize;
+use cli_config::CliConfig;
 use jito_restaking_client_common::log::PrettyDisplay;
 use log::print_base58_tx;
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
@@ -11,8 +12,7 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    commitment_config::CommitmentConfig, instruction::Instruction, pubkey::Pubkey,
-    signature::Keypair, transaction::Transaction,
+    instruction::Instruction, pubkey::Pubkey, signers::Signers, transaction::Transaction,
 };
 
 pub mod cli_args;
@@ -23,14 +23,6 @@ pub mod restaking;
 pub mod restaking_handler;
 pub mod vault;
 pub mod vault_handler;
-
-pub struct CliConfig {
-    pub rpc_url: String,
-
-    pub commitment: CommitmentConfig,
-
-    pub keypair: Option<Keypair>,
-}
 
 pub(crate) trait CliHandler {
     fn cli_config(&self) -> &CliConfig;
@@ -121,19 +113,22 @@ pub(crate) trait CliHandler {
     /// This method handles the logic for processing a set of instructions as a transaction.
     /// If `print_tx` is enabled in the CLI handler (helpful for running commands in Squads), it will print the transaction in Base58 format
     /// without sending it. Otherwise, it will submit and confirm the transaction.
-    async fn process_transaction(
+    async fn process_transaction<T>(
         &self,
         ixs: &[Instruction],
         payer: &Pubkey,
-        keypairs: &[&Keypair],
-    ) -> anyhow::Result<()> {
+        signers: &T,
+    ) -> anyhow::Result<()>
+    where
+        T: Signers + ?Sized,
+    {
         let rpc_client = self.get_rpc_client();
 
         if self.print_tx() {
             print_base58_tx(ixs);
         } else {
             let blockhash = rpc_client.get_latest_blockhash().await?;
-            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), keypairs, blockhash);
+            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), signers, blockhash);
             let result = rpc_client.send_and_confirm_transaction(&tx).await?;
 
             info!("Transaction confirmed: {:?}", result);
