@@ -115,7 +115,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         .trim()
         .to_string();
 
-    set_host_id(format!("{}_{}", args.cluster, hostname));
+    set_host_id(format!("restaking-cranker_{}_{}", args.cluster, hostname));
 
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
     let payer = read_keypair_file(&args.keypair_path)
