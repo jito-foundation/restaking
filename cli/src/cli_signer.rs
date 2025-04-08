@@ -59,7 +59,7 @@ impl CliSigner {
         let account_index = 0;
         let derivation_path = DerivationPath::new_bip44(Some(account_index), Some(0));
         let path = format!("{}{}", ledger.pretty_path, derivation_path.get_query());
-        let confirm_key = false;
+        let confirm_key = true;
         let remote_keypair = RemoteKeypair::new(
             RemoteWalletType::Ledger(ledger),
             derivation_path,
@@ -89,9 +89,9 @@ impl Signer for CliSigner {
 
     fn try_sign_message(&self, message: &[u8]) -> Result<Signature, SignerError> {
         if let Some(keypair) = &self.keypair {
-            Ok(keypair.sign_message(message))
+            keypair.try_sign_message(message)
         } else if let Some(remote_keypair) = &self.remote_keypair {
-            Ok(remote_keypair.sign_message(message))
+            remote_keypair.try_sign_message(message)
         } else {
             Err(SignerError::NoDeviceFound)
         }

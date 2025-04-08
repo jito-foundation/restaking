@@ -798,7 +798,7 @@ impl RestakingCliHandler {
 
         info!("Initializing NCN: {:?}", ncn);
 
-        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &base_signer])
+        self.process_transaction(&[ix], &signer.pubkey(), &[&base_signer])
             .await?;
 
         if !self.print_tx {
