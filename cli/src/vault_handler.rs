@@ -41,8 +41,10 @@ use spl_associated_token_account::{
 use spl_token::instruction::transfer;
 
 use crate::{
+    cli_config::CliConfig,
+    cli_signer::CliSigner,
     vault::{ConfigActions, VaultActions, VaultCommands},
-    CliConfig, CliHandler,
+    CliHandler,
 };
 
 pub struct VaultCliHandler {
@@ -259,17 +261,17 @@ impl VaultCliHandler {
         program_fee_bps: u16,
         program_fee_wallet: Pubkey,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No Signer"))?;
 
         let mut ix_builder = InitializeConfigBuilder::new();
         let config_address = Config::find_program_address(&self.vault_program_id).0;
         let ix_builder = ix_builder
             .config(config_address)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .restaking_program(self.restaking_program_id)
             .program_fee_wallet(program_fee_wallet)
             .program_fee_bps(program_fee_bps);
@@ -278,7 +280,7 @@ impl VaultCliHandler {
 
         info!("Initializing vault config parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -303,44 +305,46 @@ impl VaultCliHandler {
         vrt_mint_address_file_path: Option<PathBuf>,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No Signer"))?;
 
-        let base = Keypair::new();
-        let vault = Vault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
+        let admin = signer.pubkey();
 
-        let admin = keypair.pubkey();
+        let base_signer = CliSigner::new(Some(Keypair::new()), None);
+        let vault = Vault::find_program_address(&self.vault_program_id, &base_signer.pubkey()).0;
 
-        let vrt_mint = match vrt_mint_address_file_path {
+        let vrt_mint_signer = match vrt_mint_address_file_path {
             Some(file_path) => {
                 let keypair = read_keypair_file(file_path)
                     .map_err(|e| anyhow!("Could not read VRT mint address file path: {e}"))?;
                 info!("Found VRT mint address: {}", keypair.pubkey());
-                keypair
+
+                CliSigner::new(Some(keypair), None)
             }
-            None => Keypair::new(),
+            None => CliSigner::new(Some(Keypair::new()), None),
         };
+        // let vrt_mint_signer = CliSigner::new(Some(Keypair::new()), None);
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
 
         let (burn_vault, _, _) =
-            BurnVault::find_program_address(&self.vault_program_id, &base.pubkey());
+            BurnVault::find_program_address(&self.vault_program_id, &base_signer.pubkey());
 
         let burn_vault_vrt_token_account =
-            get_associated_token_address(&burn_vault, &vrt_mint.pubkey());
+            get_associated_token_address(&burn_vault, &vrt_mint_signer.pubkey());
 
         let mut ix_builder = InitializeVaultBuilder::new();
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
-            .vrt_mint(vrt_mint.pubkey())
+            .vrt_mint(vrt_mint_signer.pubkey())
             .st_mint(token_mint)
             .admin(admin)
-            .base(base.pubkey())
+            .base(base_signer.pubkey())
             .admin_st_token_account(admin_st_token_account)
             .vault_st_token_account(vault_st_token_account)
             .burn_vault(burn_vault)
@@ -363,8 +367,12 @@ impl VaultCliHandler {
         info!("Initializing Vault at address: {}", vault);
 
         let ixs = [admin_st_token_account_ix, vault_st_token_account_ix, ix];
-        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair, &base, &vrt_mint])
-            .await?;
+        self.process_transaction(
+            &ixs,
+            &signer.pubkey(),
+            &[signer, &base_signer, &vrt_mint_signer],
+        )
+        .await?;
 
         if !self.print_tx {
             let account = self
@@ -383,11 +391,11 @@ impl VaultCliHandler {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
 
         let rpc_client = self.get_rpc_client();
@@ -406,9 +414,9 @@ impl VaultCliHandler {
 
         let mut ix = CreateTokenMetadataBuilder::new()
             .vault(vault_pubkey)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .vrt_mint(vault.vrt_mint)
-            .payer(keypair.pubkey())
+            .payer(signer.pubkey())
             .metadata(metadata)
             .name(name)
             .symbol(symbol)
@@ -418,7 +426,7 @@ impl VaultCliHandler {
 
         info!("Creating token metadata transaction",);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         Ok(())
@@ -431,9 +439,9 @@ impl VaultCliHandler {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
@@ -454,7 +462,7 @@ impl VaultCliHandler {
 
         let ix = UpdateTokenMetadataBuilder::new()
             .vault(vault_pubkey)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .vrt_mint(vault.vrt_mint)
             .metadata(metadata)
             .name(name)
@@ -465,8 +473,8 @@ impl VaultCliHandler {
         let recent_blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             recent_blockhash,
         );
 
@@ -486,9 +494,9 @@ impl VaultCliHandler {
     // ---------- UPDATE ------------
 
     pub async fn initialize_vault_update_state_tracker(&self, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -515,14 +523,14 @@ impl VaultCliHandler {
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
             .vault_update_state_tracker(vault_update_state_tracker)
-            .payer(keypair.pubkey())
+            .payer(signer.pubkey())
             .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy); // Only withdrawal allocation method supported for now
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -556,9 +564,9 @@ impl VaultCliHandler {
     ) -> Result<()> {
         //TODO V2: Make it so the operator needed is automatically fetched from the vault
 
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -601,8 +609,8 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -625,9 +633,9 @@ impl VaultCliHandler {
         vault: String,
         ncn_epoch: Option<u64>,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -659,13 +667,13 @@ impl VaultCliHandler {
             .vault(vault)
             .vault_update_state_tracker(vault_update_state_tracker)
             .ncn_epoch(ncn_epoch)
-            .payer(keypair.pubkey());
+            .payer(signer.pubkey());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -685,9 +693,9 @@ impl VaultCliHandler {
 
     // ---------- FUNCTIONS --------------
     pub async fn mint_vrt(&self, vault: String, amount_in: u64, min_amount_out: u64) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -697,7 +705,7 @@ impl VaultCliHandler {
         let vault_account_raw = rpc_client.get_account(&vault).await?;
         let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
 
-        let depositor = keypair.pubkey();
+        let depositor = signer.pubkey();
         let depositor_token_account =
             get_associated_token_address(&depositor, &vault_account.supported_mint);
         let depositor_vrt_token_account =
@@ -756,8 +764,8 @@ impl VaultCliHandler {
                 vault_fee_ata_ix,
                 ix_builder.instruction(),
             ],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Mint to transaction: {:?}", tx.get_signature());
@@ -775,9 +783,9 @@ impl VaultCliHandler {
     }
 
     pub async fn initialize_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -797,14 +805,14 @@ impl VaultCliHandler {
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
             .ncn_vault_ticket(ncn_vault_ticket)
-            .payer(keypair.pubkey())
-            .admin(keypair.pubkey());
+            .payer(signer.pubkey())
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Initialize Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -818,9 +826,9 @@ impl VaultCliHandler {
     }
 
     pub async fn warmup_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -836,13 +844,13 @@ impl VaultCliHandler {
             .vault(vault)
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
-            .admin(keypair.pubkey());
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Warmup Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -856,9 +864,9 @@ impl VaultCliHandler {
     }
 
     pub async fn cooldown_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -874,13 +882,13 @@ impl VaultCliHandler {
             .vault(vault)
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
-            .admin(keypair.pubkey());
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Cooldown Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -898,9 +906,9 @@ impl VaultCliHandler {
         vault: String,
         operator: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -928,14 +936,14 @@ impl VaultCliHandler {
             .operator(operator)
             .operator_vault_ticket(operator_vault_ticket)
             .vault_operator_delegation(vault_operator_delegation)
-            .payer(keypair.pubkey())
-            .admin(keypair.pubkey());
+            .payer(signer.pubkey())
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Initializing vault operator delegation",);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -956,9 +964,9 @@ impl VaultCliHandler {
         operator: String,
         amount: u64,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -978,14 +986,14 @@ impl VaultCliHandler {
             .vault(vault)
             .operator(operator)
             .vault_operator_delegation(vault_operator_delegation)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .amount(amount);
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Delegating to operator");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1007,9 +1015,9 @@ impl VaultCliHandler {
         operator: String,
         amount: u64,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -1029,14 +1037,14 @@ impl VaultCliHandler {
             .vault(vault)
             .operator(operator)
             .vault_operator_delegation(vault_operator_delegation)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .amount(amount);
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Cooling down delegation");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1059,9 +1067,9 @@ impl VaultCliHandler {
         token_mint: String,
         token_account: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1075,7 +1083,7 @@ impl VaultCliHandler {
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
-            .delegate_asset_admin(keypair.pubkey())
+            .delegate_asset_admin(signer.pubkey())
             .token_mint(token_mint)
             .token_account(token_account)
             .delegate(delegate)
@@ -1084,8 +1092,8 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Delegating token account: {:?}", tx.get_signature());
@@ -1109,7 +1117,7 @@ impl VaultCliHandler {
     ) -> Result<()> {
         let keypair = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1148,9 +1156,9 @@ impl VaultCliHandler {
     }
 
     pub async fn enqueue_withdrawal(&self, vault: String, amount: u64) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1162,7 +1170,7 @@ impl VaultCliHandler {
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
             &vault,
-            &keypair.pubkey(),
+            &signer.pubkey(),
         )
         .0;
 
@@ -1170,10 +1178,10 @@ impl VaultCliHandler {
             get_associated_token_address(&vault_staker_withdrawal_ticket, &vault_account.vrt_mint);
 
         let staker_vrt_token_account =
-            get_associated_token_address(&keypair.pubkey(), &vault_account.vrt_mint);
+            get_associated_token_address(&signer.pubkey(), &vault_account.vrt_mint);
 
         let vault_staker_withdrawal_ticket_ata_ix = create_associated_token_account_idempotent(
-            &keypair.pubkey(),
+            &signer.pubkey(),
             &vault_staker_withdrawal_ticket,
             &vault_account.vrt_mint,
             &spl_token::ID,
@@ -1187,9 +1195,9 @@ impl VaultCliHandler {
             .vault_staker_withdrawal_ticket_token_account(
                 vault_staker_withdrawal_ticket_token_account,
             )
-            .staker(keypair.pubkey())
+            .staker(signer.pubkey())
             .staker_vrt_token_account(staker_vrt_token_account)
-            .base(keypair.pubkey())
+            .base(signer.pubkey())
             .amount(amount);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
@@ -1198,8 +1206,8 @@ impl VaultCliHandler {
                 vault_staker_withdrawal_ticket_ata_ix,
                 ix_builder.instruction(),
             ],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -1218,9 +1226,9 @@ impl VaultCliHandler {
     }
 
     pub async fn burn_withdrawal_ticket(&self, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1232,11 +1240,11 @@ impl VaultCliHandler {
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
             &vault,
-            &keypair.pubkey(),
+            &signer.pubkey(),
         )
         .0;
 
-        let staker = keypair.pubkey();
+        let staker = signer.pubkey();
         let staker_token_account =
             get_associated_token_address(&staker, &vault_account.supported_mint);
 
@@ -1254,7 +1262,7 @@ impl VaultCliHandler {
         let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
 
         let program_fee_ata = create_associated_token_account_idempotent(
-            &keypair.pubkey(),
+            &signer.pubkey(),
             &config_account.program_fee_wallet,
             &vault_account.vrt_mint,
             &spl_token::ID,
@@ -1283,8 +1291,8 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[program_fee_ata, ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -1477,12 +1485,12 @@ impl VaultCliHandler {
         let staker = if let Some(staker) = staker {
             Pubkey::from_str(&staker)?
         } else {
-            let keypair = self
+            let signer = self
                 .cli_config
-                .keypair
+                .signer
                 .as_ref()
                 .ok_or_else(|| anyhow!("Keypair not provided"))?;
-            keypair.pubkey()
+            signer.pubkey()
         };
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
@@ -1506,9 +1514,9 @@ impl VaultCliHandler {
     }
 
     pub async fn set_capacity(&self, vault: String, amount: u64) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
@@ -1517,14 +1525,14 @@ impl VaultCliHandler {
         builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault_pubkey)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .amount(amount);
         let mut ix = builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Vault capacity instruction: {:?}", builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1538,9 +1546,9 @@ impl VaultCliHandler {
     }
 
     async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -1548,14 +1556,14 @@ impl VaultCliHandler {
         let mut ix_builder = SetConfigAdminBuilder::new();
         ix_builder
             .config(config_address)
-            .old_admin(keypair.pubkey())
+            .old_admin(signer.pubkey())
             .new_admin(new_admin);
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Setting vault config admin parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
