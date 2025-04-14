@@ -129,7 +129,8 @@ pub(crate) trait CliHandler {
         } else {
             let blockhash = rpc_client.get_latest_blockhash().await?;
             let tx = Transaction::new_signed_with_payer(ixs, Some(payer), signers, blockhash);
-            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+            // let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+            let result = rpc_client.simulate_transaction(&tx).await;
 
             info!("Transaction confirmed: {:?}", result);
         }

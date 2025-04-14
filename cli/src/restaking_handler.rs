@@ -7,10 +7,10 @@ use jito_restaking_client::{
         CooldownNcnVaultTicketBuilder, CooldownOperatorVaultTicketBuilder, InitializeConfigBuilder,
         InitializeNcnBuilder, InitializeNcnOperatorStateBuilder, InitializeNcnVaultTicketBuilder,
         InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder,
-        NcnCooldownOperatorBuilder, NcnDelegateTokenAccountBuilder, NcnWarmupOperatorBuilder,
-        OperatorCooldownNcnBuilder, OperatorDelegateTokenAccountBuilder, OperatorSetFeeBuilder,
-        OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
-        WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
+        NcnCooldownOperatorBuilder, NcnDelegateTokenAccountBuilder, NcnSetAdminBuilder,
+        NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder, OperatorDelegateTokenAccountBuilder,
+        OperatorSetFeeBuilder, OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder,
+        SetConfigAdminBuilder, WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
     types::OperatorAdminRole,
 };
@@ -137,6 +137,13 @@ impl RestakingCliHandler {
             RestakingCommands::Ncn {
                 action: NcnActions::ListNcnVaultTicket { ncn },
             } => self.list_ncn_vault_ticket(ncn).await,
+            RestakingCommands::Ncn {
+                action:
+                    NcnActions::NcnSetAdmin {
+                        ncn,
+                        old_admin_keypair,
+                    },
+            } => self.ncn_set_admin(ncn, old_admin_keypair).await,
             RestakingCommands::Operator {
                 action: OperatorActions::Initialize { operator_fee_bps },
             } => self.initialize_operator(operator_fee_bps).await,
@@ -1163,6 +1170,41 @@ impl RestakingCliHandler {
         if !self.print_tx {
             let account = self
                 .get_account::<jito_restaking_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    pub async fn ncn_set_admin(&self, ncn: String, old_admin_keypair: String) -> Result<()> {
+        let signer = self
+            .cli_config
+            .signer
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signer"))?;
+
+        let ncn = Pubkey::from_str(&ncn)?;
+        let old_admin = read_keypair_file(&old_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let mut ix_builder = NcnSetAdminBuilder::new();
+        ix_builder
+            .ncn(ncn)
+            .old_admin(old_admin_signer.pubkey())
+            .new_admin(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
+
+        info!("Setting NCN admin to {}", signer.pubkey());
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
                 .await?;
             info!("{}", account.pretty_display());
         }

@@ -68,6 +68,14 @@ pub enum NcnActions {
     ListNcnOperatorState { ncn: Pubkey },
     /// List All Ncn Vault Ticket for a NCN
     ListNcnVaultTicket { ncn: Pubkey },
+    /// Set NCN Admin
+    NcnSetAdmin {
+        /// The NCN pubkey
+        ncn: String,
+        /// Path to the old admin keypair file
+        #[arg(long)]
+        old_admin_keypair: String,
+    },
 }
 
 #[derive(Subcommand)]

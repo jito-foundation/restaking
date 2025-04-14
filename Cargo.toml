@@ -92,3 +92,4 @@ syn = "2.0.72"
 test-case = "3.3.1"
 thiserror = "1.0.57"
 tokio = { version = "1.36.0", features = ["full"] }
+uriparse = "0.6.4"
