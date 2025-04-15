@@ -19,8 +19,8 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {
         let config = Config::load(config_file.as_os_str().to_str().unwrap())?;
-        let signer = if args.ledger {
-            CliSigner::new_ledger()
+        let signer = if let Some(ledger) = &args.ledger {
+            CliSigner::new_ledger(ledger)
         } else if let Some(keypair_path) = &args.keypair {
             CliSigner::new_keypair_from_path(keypair_path)
         } else {
@@ -37,8 +37,8 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             .as_ref()
             .ok_or_else(|| anyhow!("unable to get config file path"))?;
         if let Ok(config) = Config::load(config_file) {
-            let signer = if args.ledger {
-                CliSigner::new_ledger()
+            let signer = if let Some(ledger) = &args.ledger {
+                CliSigner::new_ledger(ledger)
             } else if let Some(keypair_path) = &args.keypair {
                 CliSigner::new_keypair_from_path(keypair_path)
             } else {
@@ -68,8 +68,8 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 } else {
                     CommitmentConfig::confirmed()
                 },
-                signer: if args.ledger {
-                    Some(CliSigner::new_ledger())
+                signer: if let Some(ledger) = &args.ledger {
+                    Some(CliSigner::new_ledger(ledger))
                 } else if let Some(keypair) = &args.keypair {
                     Some(CliSigner::new_keypair_from_path(keypair))
                 } else {

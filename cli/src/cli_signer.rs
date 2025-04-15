@@ -38,7 +38,7 @@ impl CliSigner {
     }
 
     // Will only work with Ledger devices as
-    pub fn new_ledger() -> Self {
+    pub fn new_ledger(path: &str) -> Self {
         println!("\nConnecting to Ledger Device");
         println!("- This will only work with Ledger devices.");
         println!("- It will use the first account on the first connected Ledger.");
@@ -56,8 +56,12 @@ impl CliSigner {
         let device = devices.first().expect("No devices found");
         let ledger = get_ledger_from_info(device.clone(), "Signer", &wallet_manager)
             .expect("This CLI only supports Ledger devices");
-        let account_index = 0;
-        let derivation_path = DerivationPath::new_bip44(Some(account_index), Some(0));
+        let derivation_path = DerivationPath::from_uri_key_query(
+            &uriparse::URIReference::try_from(path).expect("Could not create URIReference"),
+        )
+        .expect("Could not create derivation path from str")
+        .expect("Could not create derivation path from str");
+
         let path = format!("{}{}", ledger.pretty_path, derivation_path.get_query());
         let confirm_key = true;
         let remote_keypair = RemoteKeypair::new(
@@ -68,8 +72,8 @@ impl CliSigner {
         )
         .expect("Could not create remote keypair");
         println!(
-            "\nConnected to first Ledger device\n- {}\n",
-            remote_keypair.pubkey
+            "\nConnected to Ledger wallet specified by path and pubkey\n- {}\n- {}\n",
+            path, remote_keypair.pubkey
         );
 
         Self::new(None, Some(remote_keypair))

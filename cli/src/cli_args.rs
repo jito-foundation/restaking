@@ -26,7 +26,7 @@ pub struct Cli {
     pub vault_program_id: Option<String>,
 
     #[arg(long, global = true, help = "Ledger")]
-    pub ledger: bool,
+    pub ledger: Option<String>,
 
     #[arg(long, global = true, help = "Keypair")]
     pub keypair: Option<String>,

@@ -131,22 +131,9 @@ pub(crate) trait CliHandler {
             let message = Message::new(ixs, Some(payer));
 
             let blockhash = rpc_client.get_latest_blockhash().await?;
-            let mut tx = Transaction::new_unsigned(message);
-
-            if let Some(signer) = &self.cli_config().signer {
-                if let Some(remote_keypair) = &signer.remote_keypair {
-                    println!("{:?}", tx.message_data());
-                    let signature = remote_keypair.try_sign_message(&tx.message_data())?;
-                    println!("Signature: {:?}", signature);
-                    // match remote_keypair.try_sign_message(&tx.message_data()) {
-                    //     Ok(sig) => {}
-                    //     Err(e) => println!("Error: {}", e),
-                    // }
-                    // tx.try_sign(&[remote_keypair], blockhash)?;
-                }
-            }
-
-            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+            let tx = Transaction::new_signed_with_payer(ixs, Some(payer), signers, blockhash);
+            // let result = rpc_client.send_and_confirm_transaction(&tx).await?;
+            let result = rpc_client.simulate_transaction(&tx).await;
 
             info!("Transaction confirmed: {:?}", result);
         }

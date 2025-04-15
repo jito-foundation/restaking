@@ -38,6 +38,7 @@ spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+uriparse = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
