@@ -12,8 +12,7 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    instruction::Instruction, message::Message, pubkey::Pubkey, signer::Signer, signers::Signers,
-    transaction::Transaction,
+    instruction::Instruction, pubkey::Pubkey, signers::Signers, transaction::Transaction,
 };
 
 pub mod cli_args;
@@ -128,12 +127,9 @@ pub(crate) trait CliHandler {
         if self.print_tx() {
             print_base58_tx(ixs);
         } else {
-            let message = Message::new(ixs, Some(payer));
-
             let blockhash = rpc_client.get_latest_blockhash().await?;
             let tx = Transaction::new_signed_with_payer(ixs, Some(payer), signers, blockhash);
-            // let result = rpc_client.send_and_confirm_transaction(&tx).await?;
-            let result = rpc_client.simulate_transaction(&tx).await;
+            let result = rpc_client.send_and_confirm_transaction(&tx).await?;
 
             info!("Transaction confirmed: {:?}", result);
         }

@@ -70,10 +70,10 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 },
                 signer: if let Some(ledger) = &args.ledger {
                     Some(CliSigner::new_ledger(ledger))
-                } else if let Some(keypair) = &args.keypair {
-                    Some(CliSigner::new_keypair_from_path(keypair))
                 } else {
-                    None
+                    args.keypair
+                        .as_ref()
+                        .map(|keypair| CliSigner::new_keypair_from_path(keypair))
                 },
             }
         }
