@@ -105,7 +105,7 @@ impl VaultStakerWithdrawalTicket {
     /// # Returns
     /// * `Vec<Vec<u8>>` - containing the seed vectors
     pub fn signing_seeds(&self, vault: &Pubkey) -> Vec<Vec<u8>> {
-        let mut vault_seeds = Self::seeds(&vault, &self.base);
+        let mut vault_seeds = Self::seeds(vault, &self.base);
         vault_seeds.push(vec![self.bump]);
         vault_seeds
     }
