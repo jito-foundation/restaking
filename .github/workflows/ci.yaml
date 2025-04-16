@@ -39,6 +39,8 @@ jobs:
         with:
           components: rustfmt, clippy
           toolchain: nightly-2024-07-25
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
       - name: cargo build
         run: cargo b -r
       - name: Generate the CLI markdown
@@ -165,6 +167,8 @@ jobs:
           toolchain: nightly-2024-07-25
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
         env:
