@@ -409,7 +409,6 @@ impl VaultCliHandler {
             }
             None => CliSigner::new(Some(Keypair::new()), None),
         };
-        // let vrt_mint_signer = CliSigner::new(Some(Keypair::new()), None);
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
