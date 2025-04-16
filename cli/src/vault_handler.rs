@@ -1335,7 +1335,6 @@ impl VaultCliHandler {
         new_ticket_owner: &Pubkey,
     ) -> Result<()> {
         let signer = self.signer()?;
-        let rpc_client = self.get_rpc_client();
 
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
@@ -1355,25 +1354,27 @@ impl VaultCliHandler {
             .vault_staker_withdrawal_ticket(vault_staker_withdrawal_ticket)
             .old_owner(old_ticket_owner_signer.pubkey())
             .new_owner(*new_ticket_owner);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[ix_builder.instruction()],
-            Some(&signer.pubkey()),
-            &[signer, &old_ticket_owner_signer],
-            blockhash,
-        );
-        info!(
-            "Changing Withdrawal Ticket Owner transaction: {:?}",
-            tx.get_signature()
-        );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+        info!("Changing Withdrawal Ticket Owner",);
 
-        if result.is_err() {
-            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_ticket_owner_signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultStakerWithdrawalTicket>(
+                    &vault_staker_withdrawal_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+            info!(
+                "Change withdrawal ticket owner from {} to {}",
+                old_ticket_owner_signer.pubkey(),
+                new_ticket_owner
+            );
         }
-
-        info!("Transaction confirmed: {:?}", tx.get_signature());
 
         Ok(())
     }
