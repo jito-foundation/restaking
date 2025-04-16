@@ -165,6 +165,18 @@ pub enum VaultActions {
         /// Amount to withdraw
         amount: u64,
     },
+    /// Starts the withdrawal process
+    ChangeWithdrawalTicketOwner {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The old ticket owner keypair
+        #[arg(long)]
+        old_ticket_owner_keypair: String,
+
+        /// The new ticket owner pubkey
+        new_ticket_owner: Pubkey,
+    },
     /// Burns the withdrawal ticket, ending the withdrawal process
     BurnWithdrawalTicket {
         /// Vault account

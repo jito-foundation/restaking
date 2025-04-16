@@ -10,11 +10,11 @@ use jito_restaking_core::{
 };
 use jito_vault_client::{
     instructions::{
-        AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
-        CooldownDelegationBuilder, CooldownVaultNcnTicketBuilder,
-        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
-        DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
-        InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
+        AddDelegationBuilder, BurnWithdrawalTicketBuilder, ChangeWithdrawalTicketOwnerBuilder,
+        CloseVaultUpdateStateTrackerBuilder, CooldownDelegationBuilder,
+        CooldownVaultNcnTicketBuilder, CrankVaultUpdateStateTrackerBuilder,
+        CreateTokenMetadataBuilder, DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder,
+        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder, SetProgramFeeWalletBuilder,
@@ -212,6 +212,21 @@ impl VaultCliHandler {
             VaultCommands::Vault {
                 action: VaultActions::EnqueueWithdrawal { vault, amount },
             } => self.enqueue_withdrawal(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::ChangeWithdrawalTicketOwner {
+                        vault,
+                        old_ticket_owner_keypair,
+                        new_ticket_owner,
+                    },
+            } => {
+                self.change_withdrawal_ticket_owner(
+                    &vault,
+                    &old_ticket_owner_keypair,
+                    &new_ticket_owner,
+                )
+                .await
+            }
             VaultCommands::Vault {
                 action: VaultActions::BurnWithdrawalTicket { vault },
             } => self.burn_withdrawal_ticket(vault).await,
@@ -1294,6 +1309,62 @@ impl VaultCliHandler {
         );
         info!(
             "Initializing vault operator delegation transaction: {:?}",
+            tx.get_signature()
+        );
+        let result = rpc_client.send_and_confirm_transaction(&tx).await;
+
+        if result.is_err() {
+            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
+        }
+
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
+        Ok(())
+    }
+
+    /// Changes the owner of a withdrawal ticket
+    ///
+    /// Transfers ownership of a vault staker withdrawal ticket from one account to another.
+    /// This operation requires the signature of both the current ticket owner and the
+    /// signer configured in the client.
+    #[allow(clippy::future_not_send)]
+    pub async fn change_withdrawal_ticket_owner(
+        &self,
+        vault: &Pubkey,
+        old_ticket_owner: &str,
+        new_ticket_owner: &Pubkey,
+    ) -> Result<()> {
+        let signer = self.signer()?;
+        let rpc_client = self.get_rpc_client();
+
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &self.vault_program_id,
+            vault,
+            &signer.pubkey(),
+        )
+        .0;
+
+        let old_ticket_owner_keypair = read_keypair_file(old_ticket_owner)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_ticket_owner_signer = CliSigner::new(Some(old_ticket_owner_keypair), None);
+
+        let mut ix_builder = ChangeWithdrawalTicketOwnerBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(*vault)
+            .vault_staker_withdrawal_ticket(vault_staker_withdrawal_ticket)
+            .old_owner(old_ticket_owner_signer.pubkey())
+            .new_owner(*new_ticket_owner);
+
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[ix_builder.instruction()],
+            Some(&signer.pubkey()),
+            &[signer, &old_ticket_owner_signer],
+            blockhash,
+        );
+        info!(
+            "Changing Withdrawal Ticket Owner transaction: {:?}",
             tx.get_signature()
         );
         let result = rpc_client.send_and_confirm_transaction(&tx).await;

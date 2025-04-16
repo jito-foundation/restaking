@@ -624,6 +624,7 @@ Vault commands
 * `warmup-vault-ncn-ticket` — Warmup Vault NCN Ticket
 * `cooldown-vault-ncn-ticket` — Cooldown Vault NCN Ticket
 * `enqueue-withdrawal` — Starts the withdrawal process
+* `change-withdrawal-ticket-owner` — Starts the withdrawal process
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
 * `get-operator-delegations` — Gets the operator delegations for a vault
@@ -830,6 +831,23 @@ Starts the withdrawal process
 
 * `<VAULT>` — Vault account
 * `<AMOUNT>` — Amount to withdraw
+
+
+
+## `jito-restaking-cli vault vault change-withdrawal-ticket-owner`
+
+Starts the withdrawal process
+
+**Usage:** `jito-restaking-cli vault vault change-withdrawal-ticket-owner --old-ticket-owner-keypair <OLD_TICKET_OWNER_KEYPAIR> <VAULT> <NEW_TICKET_OWNER>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NEW_TICKET_OWNER>` — The new ticket owner pubkey
+
+###### **Options:**
+
+* `--old-ticket-owner-keypair <OLD_TICKET_OWNER_KEYPAIR>` — The old ticket owner keypair
 
 
 
