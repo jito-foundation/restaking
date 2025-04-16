@@ -45,7 +45,12 @@ pub fn process_burn_withdrawal_ticket(
 
     // staker
     load_associated_token_account(staker_token_account, staker.key, &vault.supported_mint)?;
-    VaultStakerWithdrawalTicket::load(program_id, vault_staker_withdrawal_ticket_info, true)?;
+    VaultStakerWithdrawalTicket::load(
+        program_id,
+        vault_staker_withdrawal_ticket_info,
+        vault_info,
+        true,
+    )?;
     let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket_info.data.borrow();
     let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::try_from_slice_unchecked(
         &vault_staker_withdrawal_ticket_data,
@@ -104,7 +109,8 @@ pub fn process_burn_withdrawal_ticket(
 
     vault.decrement_vrt_ready_to_claim_amount(vault_staker_withdrawal_ticket.vrt_amount())?;
 
-    let vault_staker_withdrawal_seeds = vault_staker_withdrawal_ticket.signing_seeds();
+    let vault_staker_withdrawal_seeds =
+        vault_staker_withdrawal_ticket.signing_seeds(vault_info.key);
     let seed_slices: Vec<&[u8]> = vault_staker_withdrawal_seeds
         .iter()
         .map(|seed| seed.as_slice())
