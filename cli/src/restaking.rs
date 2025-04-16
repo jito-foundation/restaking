@@ -81,7 +81,7 @@ pub enum NcnActions {
         /// The NCN pubkey
         ncn: String,
 
-        /// Path to the old admin keypair file
+        /// The new admin pubkey
         new_admin: String,
 
         /// Set operator_admin

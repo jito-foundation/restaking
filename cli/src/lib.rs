@@ -3,6 +3,7 @@ use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine};
 use borsh::BorshDeserialize;
 use cli_config::CliConfig;
+use cli_signer::CliSigner;
 use jito_restaking_client_common::log::PrettyDisplay;
 use log::print_base58_tx;
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
@@ -28,6 +29,13 @@ pub(crate) trait CliHandler {
     fn cli_config(&self) -> &CliConfig;
 
     fn print_tx(&self) -> bool;
+
+    fn signer(&self) -> anyhow::Result<&CliSigner> {
+        self.cli_config()
+            .signer
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))
+    }
 
     /// Creates a new RPC client using the configuration from the CLI handler.
     ///

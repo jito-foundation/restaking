@@ -16,10 +16,11 @@ use jito_vault_client::{
         DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
         InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
-        UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
+        MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder, SetProgramFeeWalletBuilder,
+        SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
     },
-    types::WithdrawalAllocationMethod,
+    types::{VaultAdminRole, WithdrawalAllocationMethod},
 };
 use jito_vault_core::{
     burn_vault::BurnVault, config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket,
@@ -105,6 +106,12 @@ impl VaultCliHandler {
             VaultCommands::Config {
                 action: ConfigActions::SetAdmin { new_admin },
             } => self.set_config_admin(new_admin).await,
+            VaultCommands::Config {
+                action: ConfigActions::SetProgramFee { new_fee_bps },
+            } => self.set_program_fee(new_fee_bps).await,
+            VaultCommands::Config {
+                action: ConfigActions::SetProgramFeeWallet { program_fee_wallet },
+            } => self.set_program_fee_wallet(&program_fee_wallet).await,
             VaultCommands::Vault {
                 action:
                     VaultActions::Initialize {
@@ -229,8 +236,63 @@ impl VaultCliHandler {
                 action: VaultActions::List,
             } => self.list_vaults().await,
             VaultCommands::Vault {
+                action:
+                    VaultActions::SetAdmin {
+                        vault,
+                        old_admin_keypair,
+                    },
+            } => self.set_admin(&vault, &old_admin_keypair).await,
+            VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::SetFees {
+                        vault,
+                        deposit_fee_bps,
+                        withdrawal_fee_bps,
+                        reward_fee_bps,
+                    },
+            } => {
+                self.set_fees(&vault, deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+                    .await
+            }
+            VaultCommands::Vault {
+                action: VaultActions::SetIsPaused { vault, set_pause },
+            } => self.set_is_paused(&vault, set_pause).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::SetSecondaryAdmin {
+                        vault,
+                        new_admin,
+                        set_delegation_admin,
+                        set_operator_admin,
+                        set_ncn_admin,
+                        set_slasher_admin,
+                        set_capacity_admin,
+                        set_fee_wallet,
+                        set_mint_burn_admin,
+                        set_delegate_asset_admin,
+                        set_fee_admin,
+                        set_metadata_admin,
+                    },
+            } => {
+                self.set_secondary_admin(
+                    &vault,
+                    &new_admin,
+                    set_delegation_admin,
+                    set_operator_admin,
+                    set_ncn_admin,
+                    set_slasher_admin,
+                    set_capacity_admin,
+                    set_fee_wallet,
+                    set_mint_burn_admin,
+                    set_delegate_asset_admin,
+                    set_fee_admin,
+                    set_metadata_admin,
+                )
+                .await
+            }
             VaultCommands::Vault {
                 action:
                     VaultActions::DelegateTokenAccount {
@@ -1536,6 +1598,49 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    /// Sets the primary admin for Vault
+    ///
+    /// This function transfers the primary administrative control of a Vault from an existing admin
+    /// to a new admin.
+    #[allow(clippy::future_not_send)]
+    async fn set_admin(&self, vault: &Pubkey, old_admin_keypair: &str) -> Result<()> {
+        let signer = self
+            .cli_config
+            .signer
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signer"))?;
+
+        let old_admin = read_keypair_file(old_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let mut ix_builder = SetAdminBuilder::new();
+        ix_builder
+            .vault(*vault)
+            .old_admin(old_admin_signer.pubkey())
+            .new_admin(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Setting Vault admin to {}", signer.pubkey());
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Set the capacity for Vault
+    ///
+    /// Updates the maximum deposit capacity for a specific vault.
+    /// This operation can only be performed by the vault admin.
     #[allow(clippy::future_not_send)]
     pub async fn set_capacity(&self, vault: String, amount: u64) -> Result<()> {
         let signer = self
@@ -1569,13 +1674,13 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    /// Sets the primary admin for Config
+    ///
+    /// Transfers administrative control of the Config to a new admin.
+    /// This operation can only be performed by the current admin.
     #[allow(clippy::future_not_send)]
     async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
-        let signer = self
-            .cli_config
-            .signer
-            .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let signer = self.signer()?;
 
         let config_address = Config::find_program_address(&self.vault_program_id).0;
         let mut ix_builder = SetConfigAdminBuilder::new();
@@ -1594,6 +1699,252 @@ impl VaultCliHandler {
         if !self.print_tx {
             let account = self
                 .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Set the fees for Vault
+    ///
+    /// Updates one or more fee parameters for a specific vault. Each fee type
+    /// (deposit, withdrawal, reward) is specified in basis points and can be
+    /// updated independently. Any fee type not provided (None) will remain unchanged.
+    ///
+    /// NOTE:
+    /// - Fee changes are only allowed once per epoch
+    #[allow(clippy::future_not_send)]
+    async fn set_fees(
+        &self,
+        vault: &Pubkey,
+        deposit_fee_bps: Option<u16>,
+        withdrawal_fee_bps: Option<u16>,
+        reward_fee_bps: Option<u16>,
+    ) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetFeesBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .admin(signer.pubkey());
+
+        if let Some(deposit_fee_bps) = deposit_fee_bps {
+            ix_builder.deposit_fee_bps(deposit_fee_bps);
+        }
+
+        if let Some(withdrawal_fee_bps) = withdrawal_fee_bps {
+            ix_builder.withdrawal_fee_bps(withdrawal_fee_bps);
+        }
+
+        if let Some(reward_fee_bps) = reward_fee_bps {
+            ix_builder.reward_fee_bps(reward_fee_bps);
+        }
+
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Setting Vault fees: {:?}", ix_builder);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets the pause state for a specific vault
+    ///
+    /// Enables or disables operations on a vault by setting its pause state.
+    /// When paused, most interactions with the vault will be rejected.
+    /// This operation can only be performed by the vault admin.
+    #[allow(clippy::future_not_send)]
+    async fn set_is_paused(&self, vault: &Pubkey, set_pause: bool) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetIsPausedBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .admin(signer.pubkey())
+            .is_paused(set_pause);
+
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Setting Is Paused: {:?}", ix_builder);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets a new program fee (in basis points) for the Config
+    ///
+    /// Updates the fee percentage (specified in basis points) that the program
+    /// collects for vault operation. This operation can only be performed by the
+    /// current admin of the config.
+    #[allow(clippy::future_not_send)]
+    async fn set_program_fee(&self, new_fee_bps: u16) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetProgramFeeBuilder::new();
+        ix_builder
+            .config(config_address)
+            .admin(signer.pubkey())
+            .new_fee_bps(new_fee_bps);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!(
+            "Setting vault config program fee bps parameters: {:?}",
+            ix_builder
+        );
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets a new program fee wallet for the Config
+    ///
+    /// Updates the wallet address that receives program fees collected by the Jito Vault Program.
+    /// This operation can only be performed by the current program fee admin.
+    #[allow(clippy::future_not_send)]
+    async fn set_program_fee_wallet(&self, new_fee_wallet: &Pubkey) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetProgramFeeWalletBuilder::new();
+        ix_builder
+            .config(config_address)
+            .program_fee_admin(signer.pubkey())
+            .new_fee_wallet(*new_fee_wallet);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!(
+            "Setting vault config program fee wallet parameters: {:?}",
+            ix_builder
+        );
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets secondary admin roles for Vault
+    ///
+    /// This function allows assigning a new administrator to various administrative roles
+    /// for a specific Vault. Multiple roles can be assigned in a single call by enabling the
+    /// corresponding boolean flags.
+    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
+    async fn set_secondary_admin(
+        &self,
+        vault: &Pubkey,
+        new_admin: &Pubkey,
+        set_delegation_admin: bool,
+        set_operator_admin: bool,
+        set_ncn_admin: bool,
+        set_slasher_admin: bool,
+        set_capacity_admin: bool,
+        set_fee_wallet: bool,
+        set_mint_burn_admin: bool,
+        set_delegate_asset_admin: bool,
+        set_fee_admin: bool,
+        set_metadata_admin: bool,
+    ) -> Result<()> {
+        let signer = self.signer()?;
+
+        let mut roles: Vec<VaultAdminRole> = vec![];
+        if set_delegation_admin {
+            roles.push(VaultAdminRole::DelegationAdmin);
+        }
+        if set_operator_admin {
+            roles.push(VaultAdminRole::OperatorAdmin);
+        }
+        if set_ncn_admin {
+            roles.push(VaultAdminRole::NcnAdmin);
+        }
+        if set_slasher_admin {
+            roles.push(VaultAdminRole::SlasherAdmin);
+        }
+        if set_capacity_admin {
+            roles.push(VaultAdminRole::CapacityAdmin);
+        }
+        if set_fee_wallet {
+            roles.push(VaultAdminRole::FeeWallet);
+        }
+        if set_mint_burn_admin {
+            roles.push(VaultAdminRole::MintBurnAdmin);
+        }
+        if set_delegate_asset_admin {
+            roles.push(VaultAdminRole::DelegateAssetAdmin);
+        }
+        if set_fee_admin {
+            roles.push(VaultAdminRole::FeeAdmin);
+        }
+        if set_metadata_admin {
+            roles.push(VaultAdminRole::MetadataAdmin);
+        }
+
+        for role in roles.iter() {
+            let mut ix_builder = SetSecondaryAdminBuilder::new();
+            ix_builder
+                .new_admin(*new_admin)
+                .vault(*vault)
+                .admin(signer.pubkey())
+                .vault_admin_role(*role)
+                .instruction();
+            let mut ix = ix_builder.instruction();
+            ix.program_id = self.vault_program_id;
+
+            info!(
+                "Setting {:?} Admin to {} for Vault {}",
+                role, new_admin, vault
+            );
+
+            self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+                .await?;
+        }
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
                 .await?;
             info!("{}", account.pretty_display());
         }
