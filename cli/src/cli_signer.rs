@@ -82,23 +82,29 @@ impl CliSigner {
 
 impl Signer for CliSigner {
     fn try_pubkey(&self) -> Result<Pubkey, SignerError> {
-        if let Some(keypair) = &self.keypair {
-            Ok(keypair.pubkey())
-        } else if let Some(remote_keypair) = &self.remote_keypair {
-            Ok(remote_keypair.pubkey)
-        } else {
-            Err(SignerError::NoDeviceFound)
-        }
+        self.keypair.as_ref().map_or_else(
+            || {
+                self.remote_keypair
+                    .as_ref()
+                    .map_or(Err(SignerError::NoDeviceFound), |remote_keypair| {
+                        Ok(remote_keypair.pubkey)
+                    })
+            },
+            |keypair| Ok(keypair.pubkey()),
+        )
     }
 
     fn try_sign_message(&self, message: &[u8]) -> Result<Signature, SignerError> {
-        if let Some(keypair) = &self.keypair {
-            keypair.try_sign_message(message)
-        } else if let Some(remote_keypair) = &self.remote_keypair {
-            remote_keypair.try_sign_message(message)
-        } else {
-            Err(SignerError::NoDeviceFound)
-        }
+        self.keypair.as_ref().map_or_else(
+            || {
+                self.remote_keypair
+                    .as_ref()
+                    .map_or(Err(SignerError::NoDeviceFound), |remote_keypair| {
+                        remote_keypair.try_sign_message(message)
+                    })
+            },
+            |keypair| keypair.try_sign_message(message),
+        )
     }
 
     fn is_interactive(&self) -> bool {

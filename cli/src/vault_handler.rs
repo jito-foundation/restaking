@@ -86,6 +86,7 @@ impl VaultCliHandler {
         }
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
         match action {
             VaultCommands::Config {
@@ -256,6 +257,7 @@ impl VaultCliHandler {
         }
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_config(
         &self,
         program_fee_bps: u16,
@@ -293,7 +295,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
     pub async fn initialize_vault(
         &self,
         token_mint: String,
@@ -384,6 +386,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn create_token_metadata(
         &self,
         vault: String,
@@ -432,6 +435,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn update_token_metadata(
         &self,
         vault: String,
@@ -492,7 +496,7 @@ impl VaultCliHandler {
     }
 
     // ---------- UPDATE ------------
-
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_vault_update_state_tracker(&self, vault: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -557,6 +561,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn crank_vault_update_state_tracker(
         &self,
         vault: String,
@@ -628,6 +633,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn close_vault_update_state_tracker(
         &self,
         vault: String,
@@ -692,6 +698,7 @@ impl VaultCliHandler {
     }
 
     // ---------- FUNCTIONS --------------
+    #[allow(clippy::future_not_send)]
     pub async fn mint_vrt(&self, vault: String, amount_in: u64, min_amount_out: u64) -> Result<()> {
         let signer = self
             .cli_config
@@ -782,6 +789,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -825,6 +833,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn warmup_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -863,6 +872,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn cooldown_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -901,6 +911,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_vault_operator_delegation(
         &self,
         vault: String,
@@ -958,6 +969,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn delegate_to_operator(
         &self,
         vault: String,
@@ -1009,6 +1021,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn cooldown_operator_delegation(
         &self,
         vault: String,
@@ -1060,6 +1073,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn delegate_token_account(
         &self,
         vault: String,
@@ -1109,6 +1123,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn delegated_token_transfer(
         &self,
         token_account: String,
@@ -1155,6 +1170,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn enqueue_withdrawal(&self, vault: String, amount: u64) -> Result<()> {
         let signer = self
             .cli_config
@@ -1225,6 +1241,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn burn_withdrawal_ticket(&self, vault: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -1311,6 +1328,7 @@ impl VaultCliHandler {
     }
 
     // ------- GET ACCOUNTS --------------------
+    #[allow(clippy::future_not_send)]
     pub async fn get_vault(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let rpc_client = self.get_rpc_client();
@@ -1342,6 +1360,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn list_vaults(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Vault>(None)?;
@@ -1377,6 +1396,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn get_config(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
 
@@ -1394,6 +1414,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_vault_update_state_tracker(&self, vault: String) -> Result<()> {
         let vault = Pubkey::from_str(&vault)?;
         let rpc_client = self.get_rpc_client();
@@ -1424,6 +1445,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_vault_operator_delegations(
         &self,
         vault: String,
@@ -1479,6 +1501,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_withdrawal_ticket(&self, vault: String, staker: Option<String>) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let vault = Pubkey::from_str(&vault)?;
@@ -1513,6 +1536,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn set_capacity(&self, vault: String, amount: u64) -> Result<()> {
         let signer = self
             .cli_config
@@ -1545,6 +1569,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
         let signer = self
             .cli_config

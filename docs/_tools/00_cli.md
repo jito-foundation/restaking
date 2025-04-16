@@ -27,6 +27,7 @@ A CLI for managing restaking and vault operations
 * `--commitment <COMMITMENT>` — Commitment level
 * `--restaking-program-id <RESTAKING_PROGRAM_ID>` — Restaking program ID
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
+* `--ledger <LEDGER>` — Ledger
 * `--keypair <KEYPAIR>` — Keypair
 * `--verbose` — Verbose mode
 * `--print-tx` — This will print out the raw TX instead of running it
@@ -109,6 +110,7 @@ Set the config admin
 * `list` — List all NCNs
 * `list-ncn-operator-state` — List All Ncn Operator State for a NCN
 * `list-ncn-vault-ticket` — List All Ncn Vault Ticket for a NCN
+* `ncn-set-admin` — Set NCN Admin
 
 
 
@@ -261,6 +263,22 @@ List All Ncn Vault Ticket for a NCN
 ###### **Arguments:**
 
 * `<NCN>`
+
+
+
+## `jito-restaking-cli restaking ncn ncn-set-admin`
+
+Set NCN Admin
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> <NCN>`
+
+###### **Arguments:**
+
+* `<NCN>` — The NCN pubkey
+
+###### **Options:**
+
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
 
 
 

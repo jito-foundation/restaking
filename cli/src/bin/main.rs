@@ -68,13 +68,14 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 } else {
                     CommitmentConfig::confirmed()
                 },
-                signer: if let Some(ledger) = &args.ledger {
-                    Some(CliSigner::new_ledger(ledger))
-                } else {
-                    args.keypair
-                        .as_ref()
-                        .map(|keypair| CliSigner::new_keypair_from_path(keypair))
-                },
+                signer: args.ledger.as_ref().map_or_else(
+                    || {
+                        args.keypair
+                            .as_ref()
+                            .map(|keypair| CliSigner::new_keypair_from_path(keypair))
+                    },
+                    |ledger| Some(CliSigner::new_ledger(ledger)),
+                ),
             }
         }
     };

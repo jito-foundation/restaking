@@ -73,6 +73,7 @@ impl RestakingCliHandler {
         }
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
         match action {
             RestakingCommands::Config {
@@ -224,6 +225,7 @@ impl RestakingCliHandler {
         }
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn operator_set_fee(&self, operator: String, operator_fee_bps: u16) -> Result<()> {
         let signer = self
             .cli_config
@@ -264,7 +266,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
     pub async fn operator_set_secondary_admin(
         &self,
         operator: String,
@@ -331,6 +333,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn operator_delegate_token_account(
         &self,
         operator: String,
@@ -382,6 +385,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn ncn_delegate_token_account(
         &self,
         ncn: String,
@@ -433,6 +437,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -473,6 +478,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn warmup_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -512,6 +518,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn cooldown_ncn_vault_ticket(&self, ncn: String, vault: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -544,6 +551,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_ncn_operator_state(&self, ncn: String, operator: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -586,6 +594,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn ncn_warmup_operator(&self, ncn: String, operator: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -627,6 +636,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn ncn_cooldown_operator(&self, ncn: String, operator: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -668,6 +678,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn operator_warmup_ncn(&self, operator: String, ncn: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -709,6 +720,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn operator_cooldown_ncn(&self, operator: String, ncn: String) -> Result<()> {
         let signer = self
             .cli_config
@@ -750,6 +762,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn initialize_config(&self) -> Result<()> {
         let signer = self
             .cli_config
@@ -781,6 +794,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_ncn(&self, path_to_base_keypair: Option<String>) -> Result<()> {
         let signer = self
             .cli_config
@@ -805,7 +819,7 @@ impl RestakingCliHandler {
 
         info!("Initializing NCN: {:?}", ncn);
 
-        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &base_signer])
+        self.process_transaction(&[ix], &signer.pubkey(), &[&base_signer])
             .await?;
 
         if !self.print_tx {
@@ -818,6 +832,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_operator(&self, operator_fee_bps: u16) -> Result<()> {
         let signer = self
             .cli_config
@@ -855,6 +870,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_operator_vault_ticket(
         &self,
         operator: String,
@@ -906,6 +922,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn warmup_operator_vault_ticket(
         &self,
         operator: String,
@@ -956,6 +973,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn cooldown_operator_vault_ticket(
         &self,
         operator: String,
@@ -1006,6 +1024,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_config(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
 
@@ -1023,6 +1042,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_ncn(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
@@ -1032,6 +1052,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn list_ncn(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Ncn>(None)?;
@@ -1048,6 +1069,7 @@ impl RestakingCliHandler {
     }
 
     /// Lists NCN operator state accounts filtered by either NCN or Operator public key.
+    #[allow(clippy::future_not_send)]
     pub async fn list_ncn_operator_state(
         &self,
         ncn: Option<&Pubkey>,
@@ -1083,6 +1105,7 @@ impl RestakingCliHandler {
     }
 
     /// Lists NCN operator state accounts filtered by NCN public key.
+    #[allow(clippy::future_not_send)]
     pub async fn list_ncn_vault_ticket(&self, ncn: Pubkey) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<NcnVaultTicket>(Some((&ncn, 8)))?;
@@ -1100,6 +1123,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_operator(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
@@ -1111,6 +1135,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn list_operator(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Operator>(None)?;
@@ -1127,6 +1152,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn list_operator_vault_ticket(&self, operator: &Pubkey) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config =
@@ -1144,6 +1170,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
         let signer = self
             .cli_config
@@ -1177,6 +1204,7 @@ impl RestakingCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn ncn_set_admin(&self, ncn: String, old_admin_keypair: String) -> Result<()> {
         let signer = self
             .cli_config
