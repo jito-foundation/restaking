@@ -76,6 +76,42 @@ pub enum NcnActions {
         #[arg(long)]
         old_admin_keypair: String,
     },
+    /// Set NCN Secondary Admin
+    NcnSetSecondaryAdmin {
+        /// The NCN pubkey
+        ncn: String,
+
+        /// Path to the old admin keypair file
+        new_admin: String,
+
+        /// Set operator_admin
+        #[arg(long)]
+        set_operator_admin: bool,
+
+        /// Set vault_admin
+        #[arg(long)]
+        set_vault_admin: bool,
+
+        /// Set slasher_admin
+        #[arg(long)]
+        set_slasher_admin: bool,
+
+        /// Set delegate_admin
+        #[arg(long)]
+        set_delegate_admin: bool,
+
+        ///Set metadata_admin
+        #[arg(long)]
+        set_metadata_admin: bool,
+
+        ///Set weight_table_admin
+        #[arg(long)]
+        set_weight_table_admin: bool,
+
+        ///Set ncn_program_admin
+        #[arg(long)]
+        set_ncn_program_admin: bool,
+    },
 }
 
 #[derive(Subcommand)]
