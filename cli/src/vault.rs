@@ -245,7 +245,7 @@ pub enum VaultActions {
         #[arg(long)]
         reward_fee_bps: Option<u16>,
     },
-    /// Sets the paused the vault
+    /// Sets the vault's pause state
     SetIsPaused {
         /// The vault pubkey
         vault: Pubkey,

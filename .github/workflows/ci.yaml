@@ -194,6 +194,8 @@ jobs:
           path: config
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
       - name: Download restaking program
         uses: actions/download-artifact@v4
         with:

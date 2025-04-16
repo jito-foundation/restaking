@@ -635,7 +635,7 @@ Vault commands
 * `set-admin` — Set Admin
 * `set-capacity` — Sets the deposit capacity in the vault
 * `set-fees` — Sets the fees in the vault
-* `set-is-paused` — Sets the paused the vault
+* `set-is-paused` — Sets the vault's pause state
 * `set-secondary-admin` — Set Secondary Admin
 * `update-vault-balance` — Update Vault Balance
 * `delegate-token-account` — Delegate a token account
@@ -980,7 +980,7 @@ Sets the fees in the vault
 
 ## `jito-restaking-cli vault vault set-is-paused`
 
-Sets the paused the vault
+Sets the vault's pause state
 
 **Usage:** `jito-restaking-cli vault vault set-is-paused [OPTIONS] <VAULT>`
 
