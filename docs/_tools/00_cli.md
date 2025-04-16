@@ -111,6 +111,7 @@ Set the config admin
 * `list-ncn-operator-state` — List All Ncn Operator State for a NCN
 * `list-ncn-vault-ticket` — List All Ncn Vault Ticket for a NCN
 * `ncn-set-admin` — Set NCN Admin
+* `ncn-set-secondary-admin` — Set NCN Secondary Admin
 
 
 
@@ -282,6 +283,29 @@ Set NCN Admin
 
 
 
+## `jito-restaking-cli restaking ncn ncn-set-secondary-admin`
+
+Set NCN Secondary Admin
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-set-secondary-admin [OPTIONS] <NCN> <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<NCN>` — The NCN pubkey
+* `<NEW_ADMIN>` — Path to the old admin keypair file
+
+###### **Options:**
+
+* `--set-operator-admin` — Set operator_admin
+* `--set-vault-admin` — Set vault_admin
+* `--set-slasher-admin` — Set slasher_admin
+* `--set-delegate-admin` — Set delegate_admin
+* `--set-metadata-admin` — Set metadata_admin
+* `--set-weight-table-admin` — Set weight_table_admin
+* `--set-ncn-program-admin` — Set ncn_program_admin
+
+
+
 ## `jito-restaking-cli restaking operator`
 
 **Usage:** `jito-restaking-cli restaking operator <COMMAND>`
@@ -294,7 +318,8 @@ Set NCN Admin
 * `cooldown-operator-vault-ticket` — Cooldown Operator Vault Ticket
 * `operator-warmup-ncn` — Operator Warmup NCN
 * `operator-cooldown-ncn` — Operator Cooldown NCN
-* `operator-set-secondary-admin` — Operator Set Admin
+* `operator-set-admin` — Operator Set Admin
+* `operator-set-secondary-admin` — Operator Set Secondary Admin
 * `operator-set-fees` — Sets the operator fee
 * `operator-delegate-token-account` — Operator Delegate Token Account
 * `get` — Get operator
@@ -381,9 +406,25 @@ Operator Cooldown NCN
 
 
 
-## `jito-restaking-cli restaking operator operator-set-secondary-admin`
+## `jito-restaking-cli restaking operator operator-set-admin`
 
 Operator Set Admin
+
+**Usage:** `jito-restaking-cli restaking operator operator-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<OPERATOR>` — The Operator pubkey
+
+###### **Options:**
+
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+
+
+
+## `jito-restaking-cli restaking operator operator-set-secondary-admin`
+
+Operator Set Secondary Admin
 
 **Usage:** `jito-restaking-cli restaking operator operator-set-secondary-admin [OPTIONS] <OPERATOR> <NEW_ADMIN>`
 

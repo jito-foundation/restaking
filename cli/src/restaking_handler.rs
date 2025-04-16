@@ -197,7 +197,7 @@ impl RestakingCliHandler {
                         operator,
                         old_admin_keypair,
                     },
-            } => self.operator_set_admin(&operator, old_admin_keypair).await,
+            } => self.operator_set_admin(&operator, &old_admin_keypair).await,
             RestakingCommands::Operator {
                 action:
                     OperatorActions::OperatorSetSecondaryAdmin {
@@ -382,15 +382,15 @@ impl RestakingCliHandler {
     /// This function transfers the primary administrative control of an Operator from an existing admin
     /// to a new admin.
     #[allow(clippy::future_not_send)]
-    async fn operator_set_admin(&self, operator: &str, old_admin_keypair: String) -> Result<()> {
+    async fn operator_set_admin(&self, operator: &str, old_admin_keypair: &str) -> Result<()> {
         let signer = self
             .cli_config
             .signer
             .as_ref()
             .ok_or_else(|| anyhow!("No signer"))?;
 
-        let operator = Pubkey::from_str(&operator)?;
-        let old_admin = read_keypair_file(&old_admin_keypair)
+        let operator = Pubkey::from_str(operator)?;
+        let old_admin = read_keypair_file(old_admin_keypair)
             .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
         let old_admin_signer = CliSigner::new(Some(old_admin), None);
 
