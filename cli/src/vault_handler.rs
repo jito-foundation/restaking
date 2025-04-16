@@ -18,7 +18,8 @@ use jito_vault_client::{
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
         MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
         SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder, SetProgramFeeWalletBuilder,
-        SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
+        SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder, UpdateVaultBalanceBuilder,
+        WarmupVaultNcnTicketBuilder,
     },
     types::{VaultAdminRole, WithdrawalAllocationMethod},
 };
@@ -293,6 +294,9 @@ impl VaultCliHandler {
                 )
                 .await
             }
+            VaultCommands::Vault {
+                action: VaultActions::UpdateVaultBalance { vault },
+            } => self.update_vault_balance(&vault).await,
             VaultCommands::Vault {
                 action:
                     VaultActions::DelegateTokenAccount {
@@ -1941,6 +1945,55 @@ impl VaultCliHandler {
             self.process_transaction(&[ix], &signer.pubkey(), &[signer])
                 .await?;
         }
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Updates the vault balance
+    ///
+    /// Synchronizes the vault's internal token balance with its actual token holdings and
+    /// calculates rewards. This function:
+    /// 1. Verifies the vault is not paused and can be updated
+    /// 2. Calculates rewards based on the difference between current and tracked token balance
+    /// 3. Applies the reward fee according to the vault's configuration
+    /// 4. Updates the vault's tracked token balance
+    /// 5. Mints VRT tokens to the fee wallet as reward fees
+    #[allow(clippy::future_not_send)]
+    async fn update_vault_balance(&self, vault: &Pubkey) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+
+        let vault_account_raw = self.get_rpc_client().get_account(vault).await?;
+        let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
+
+        let vault_token_account =
+            get_associated_token_address(vault, &vault_account.supported_mint);
+
+        let vault_fee_token_account =
+            get_associated_token_address(&vault_account.fee_wallet, &vault_account.vrt_mint);
+
+        let mut ix_builder = UpdateVaultBalanceBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .vault_token_account(vault_token_account)
+            .vrt_mint(vault_account.vrt_mint)
+            .vault_fee_token_account(vault_fee_token_account);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Update Vault balance: {:?}", ix_builder);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
 
         if !self.print_tx {
             let account = self

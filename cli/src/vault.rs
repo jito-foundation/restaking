@@ -244,6 +244,7 @@ pub enum VaultActions {
     },
     /// Set Secondary Admin
     SetSecondaryAdmin {
+        /// The vault pubkey
         vault: Pubkey,
 
         /// The new admin pubkey
@@ -288,6 +289,11 @@ pub enum VaultActions {
         /// Set metadata_admin
         #[arg(long)]
         set_metadata_admin: bool,
+    },
+    /// Update Vault Balance
+    UpdateVaultBalance {
+        /// The vault pubkey
+        vault: Pubkey,
     },
     /// Delegate a token account
     DelegateTokenAccount {
