@@ -129,6 +129,15 @@ pub enum OperatorActions {
     /// Operator Cooldown NCN
     OperatorCooldownNcn { operator: String, ncn: String },
     /// Operator Set Admin
+    OperatorSetAdmin {
+        /// The Operator pubkey
+        operator: String,
+
+        /// Path to the old admin keypair file
+        #[arg(long)]
+        old_admin_keypair: String,
+    },
+    /// Operator Set Secondary Admin
     OperatorSetSecondaryAdmin {
         operator: String,
         new_admin: String,

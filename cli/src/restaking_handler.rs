@@ -9,7 +9,7 @@ use jito_restaking_client::{
         InitializeOperatorBuilder, InitializeOperatorVaultTicketBuilder,
         NcnCooldownOperatorBuilder, NcnDelegateTokenAccountBuilder, NcnSetAdminBuilder,
         NcnSetSecondaryAdminBuilder, NcnWarmupOperatorBuilder, OperatorCooldownNcnBuilder,
-        OperatorDelegateTokenAccountBuilder, OperatorSetFeeBuilder,
+        OperatorDelegateTokenAccountBuilder, OperatorSetAdminBuilder, OperatorSetFeeBuilder,
         OperatorSetSecondaryAdminBuilder, OperatorWarmupNcnBuilder, SetConfigAdminBuilder,
         WarmupNcnVaultTicketBuilder, WarmupOperatorVaultTicketBuilder,
     },
@@ -193,6 +193,13 @@ impl RestakingCliHandler {
             } => self.operator_cooldown_ncn(operator, ncn).await,
             RestakingCommands::Operator {
                 action:
+                    OperatorActions::OperatorSetAdmin {
+                        operator,
+                        old_admin_keypair,
+                    },
+            } => self.operator_set_admin(&operator, old_admin_keypair).await,
+            RestakingCommands::Operator {
+                action:
                     OperatorActions::OperatorSetSecondaryAdmin {
                         operator,
                         new_admin,
@@ -251,6 +258,163 @@ impl RestakingCliHandler {
                 action: OperatorActions::ListNcnOperatorState { operator },
             } => self.list_ncn_operator_state(None, Some(&operator)).await,
         }
+    }
+
+    /// Sets the primary admin for NCN
+    ///
+    /// This function transfers the primary administrative control of an NCN from an existing admin
+    /// to a new admin.
+    #[allow(clippy::future_not_send)]
+    async fn ncn_set_admin(&self, ncn: String, old_admin_keypair: String) -> Result<()> {
+        let signer = self
+            .cli_config
+            .signer
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signer"))?;
+
+        let ncn = Pubkey::from_str(&ncn)?;
+        let old_admin = read_keypair_file(&old_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let mut ix_builder = NcnSetAdminBuilder::new();
+        ix_builder
+            .ncn(ncn)
+            .old_admin(old_admin_signer.pubkey())
+            .new_admin(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
+
+        info!("Setting NCN admin to {}", signer.pubkey());
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets secondary admin roles for NCN
+    ///
+    /// This function allows assigning a new administrator to various administrative roles
+    /// for a specific NCN. Multiple roles can be assigned in a single call by enabling the
+    /// corresponding boolean flags.
+    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
+    async fn ncn_set_secondary_admin(
+        &self,
+        ncn: &str,
+        new_admin: &str,
+        set_operator_admin: bool,
+        set_vault_admin: bool,
+        set_slasher_admin: bool,
+        set_delegate_admin: bool,
+        set_metadata_admin: bool,
+        set_weight_table_admin: bool,
+        set_ncn_program_admin: bool,
+    ) -> Result<()> {
+        let signer = self
+            .cli_config
+            .signer
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signer"))?;
+
+        let ncn = Pubkey::from_str(ncn)?;
+        let new_admin = Pubkey::from_str(new_admin)?;
+
+        let mut roles: Vec<NcnAdminRole> = vec![];
+        if set_operator_admin {
+            roles.push(NcnAdminRole::OperatorAdmin);
+        }
+        if set_vault_admin {
+            roles.push(NcnAdminRole::VaultAdmin);
+        }
+        if set_slasher_admin {
+            roles.push(NcnAdminRole::SlasherAdmin);
+        }
+        if set_delegate_admin {
+            roles.push(NcnAdminRole::DelegateAdmin);
+        }
+        if set_metadata_admin {
+            roles.push(NcnAdminRole::MetadataAdmin);
+        }
+        if set_weight_table_admin {
+            roles.push(NcnAdminRole::WeightTableAdmin);
+        }
+        if set_ncn_program_admin {
+            roles.push(NcnAdminRole::NcnProgramAdmin);
+        }
+
+        for role in roles.iter() {
+            let mut ix_builder = NcnSetSecondaryAdminBuilder::new();
+            ix_builder
+                .new_admin(new_admin)
+                .ncn(ncn)
+                .admin(signer.pubkey())
+                .ncn_admin_role(*role)
+                .instruction();
+            let mut ix = ix_builder.instruction();
+            ix.program_id = self.restaking_program_id;
+
+            info!("Setting {:?} Admin to {} for NCN {}", role, new_admin, ncn);
+
+            self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+                .await?;
+        }
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets the primary admin for Operator
+    ///
+    /// This function transfers the primary administrative control of an Operator from an existing admin
+    /// to a new admin.
+    #[allow(clippy::future_not_send)]
+    async fn operator_set_admin(&self, operator: &str, old_admin_keypair: String) -> Result<()> {
+        let signer = self
+            .cli_config
+            .signer
+            .as_ref()
+            .ok_or_else(|| anyhow!("No signer"))?;
+
+        let operator = Pubkey::from_str(&operator)?;
+        let old_admin = read_keypair_file(&old_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let mut ix_builder = OperatorSetAdminBuilder::new();
+        ix_builder
+            .operator(operator)
+            .old_admin(old_admin_signer.pubkey())
+            .new_admin(signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.restaking_program_id;
+
+        info!("Setting Operator admin to {}", signer.pubkey());
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_restaking_client::accounts::Operator>(&operator)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
     }
 
     #[allow(clippy::future_not_send)]
@@ -1225,123 +1389,6 @@ impl RestakingCliHandler {
         if !self.print_tx {
             let account = self
                 .get_account::<jito_restaking_client::accounts::Config>(&config_address)
-                .await?;
-            info!("{}", account.pretty_display());
-        }
-
-        Ok(())
-    }
-
-    /// Sets the primary admin for NCN
-    ///
-    /// This function transfers the primary administrative control of an NCN from an existing admin
-    /// to a new admin.
-    #[allow(clippy::future_not_send)]
-    async fn ncn_set_admin(&self, ncn: String, old_admin_keypair: String) -> Result<()> {
-        let signer = self
-            .cli_config
-            .signer
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signer"))?;
-
-        let ncn = Pubkey::from_str(&ncn)?;
-        let old_admin = read_keypair_file(&old_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
-        let old_admin_signer = CliSigner::new(Some(old_admin), None);
-
-        let mut ix_builder = NcnSetAdminBuilder::new();
-        ix_builder
-            .ncn(ncn)
-            .old_admin(old_admin_signer.pubkey())
-            .new_admin(signer.pubkey());
-        let mut ix = ix_builder.instruction();
-        ix.program_id = self.restaking_program_id;
-
-        info!("Setting NCN admin to {}", signer.pubkey());
-
-        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
-            .await?;
-
-        if !self.print_tx {
-            let account = self
-                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
-                .await?;
-            info!("{}", account.pretty_display());
-        }
-
-        Ok(())
-    }
-
-    /// Sets secondary admin roles for NCN
-    ///
-    /// This function allows assigning a new administrator to various administrative roles
-    /// for a specific NCN. Multiple roles can be assigned in a single call by enabling the
-    /// corresponding boolean flags.
-    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
-    async fn ncn_set_secondary_admin(
-        &self,
-        ncn: &str,
-        new_admin: &str,
-        set_operator_admin: bool,
-        set_vault_admin: bool,
-        set_slasher_admin: bool,
-        set_delegate_admin: bool,
-        set_metadata_admin: bool,
-        set_weight_table_admin: bool,
-        set_ncn_program_admin: bool,
-    ) -> Result<()> {
-        let signer = self
-            .cli_config
-            .signer
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signer"))?;
-
-        let ncn = Pubkey::from_str(ncn)?;
-        let new_admin = Pubkey::from_str(new_admin)?;
-
-        let mut roles: Vec<NcnAdminRole> = vec![];
-        if set_operator_admin {
-            roles.push(NcnAdminRole::OperatorAdmin);
-        }
-        if set_vault_admin {
-            roles.push(NcnAdminRole::VaultAdmin);
-        }
-        if set_slasher_admin {
-            roles.push(NcnAdminRole::SlasherAdmin);
-        }
-        if set_delegate_admin {
-            roles.push(NcnAdminRole::DelegateAdmin);
-        }
-        if set_metadata_admin {
-            roles.push(NcnAdminRole::MetadataAdmin);
-        }
-        if set_weight_table_admin {
-            roles.push(NcnAdminRole::WeightTableAdmin);
-        }
-        if set_ncn_program_admin {
-            roles.push(NcnAdminRole::NcnProgramAdmin);
-        }
-
-        for role in roles.iter() {
-            let mut ix_builder = NcnSetSecondaryAdminBuilder::new();
-            ix_builder
-                .new_admin(new_admin)
-                .ncn(ncn)
-                .admin(signer.pubkey())
-                .ncn_admin_role(*role)
-                .instruction();
-            let mut ix = ix_builder.instruction();
-            ix.program_id = self.restaking_program_id;
-
-            info!("Setting {:?} Admin to {} for NCN {}", role, new_admin, ncn);
-
-            self.process_transaction(&[ix], &signer.pubkey(), &[signer])
-                .await?;
-        }
-
-        if !self.print_tx {
-            let account = self
-                .get_account::<jito_restaking_client::accounts::Ncn>(&ncn)
                 .await?;
             info!("{}", account.pretty_display());
         }
