@@ -182,7 +182,7 @@ impl Config {
     pub fn check_admin(&self, admin: &Pubkey) -> Result<(), VaultError> {
         if self.admin.ne(admin) {
             msg!("Config admin does not match the provided admin");
-            return Err(VaultError::ConfigAdminInvalid.into());
+            return Err(VaultError::ConfigAdminInvalid);
         }
         Ok(())
     }
