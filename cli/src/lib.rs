@@ -34,7 +34,7 @@ pub(crate) trait CliHandler {
         self.cli_config()
             .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))
+            .ok_or_else(|| anyhow!("Signer not provided"))
     }
 
     /// Creates a new RPC client using the configuration from the CLI handler.
