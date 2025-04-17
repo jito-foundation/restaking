@@ -2,7 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [ master ]
+    branches: 
+      - master
+      - v0.0.5
     tags:
       - 'v*'
   pull_request:
