@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use borsh::BorshDeserialize;
@@ -144,8 +144,12 @@ impl RestakingCliHandler {
                     NcnActions::NcnSetAdmin {
                         ncn,
                         old_admin_keypair,
+                        new_admin_keypair,
                     },
-            } => self.ncn_set_admin(ncn, old_admin_keypair).await,
+            } => {
+                self.ncn_set_admin(&ncn, &old_admin_keypair, &new_admin_keypair)
+                    .await
+            }
             RestakingCommands::Ncn {
                 action:
                     NcnActions::NcnSetSecondaryAdmin {
@@ -196,8 +200,12 @@ impl RestakingCliHandler {
                     OperatorActions::OperatorSetAdmin {
                         operator,
                         old_admin_keypair,
+                        new_admin_keypair,
                     },
-            } => self.operator_set_admin(&operator, &old_admin_keypair).await,
+            } => {
+                self.operator_set_admin(&operator, &old_admin_keypair, &new_admin_keypair)
+                    .await
+            }
             RestakingCommands::Operator {
                 action:
                     OperatorActions::OperatorSetSecondaryAdmin {
@@ -265,30 +273,38 @@ impl RestakingCliHandler {
     /// This function transfers the primary administrative control of an NCN from an existing admin
     /// to a new admin.
     #[allow(clippy::future_not_send)]
-    async fn ncn_set_admin(&self, ncn: String, old_admin_keypair: String) -> Result<()> {
-        let signer = self
-            .cli_config
-            .signer
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signer"))?;
+    async fn ncn_set_admin(
+        &self,
+        ncn: &str,
+        old_admin_keypair: &PathBuf,
+        new_admin_keypair: &PathBuf,
+    ) -> Result<()> {
+        let ncn = Pubkey::from_str(ncn)?;
 
-        let ncn = Pubkey::from_str(&ncn)?;
-        let old_admin = read_keypair_file(&old_admin_keypair)
+        let old_admin = read_keypair_file(old_admin_keypair)
             .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
         let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let new_admin = read_keypair_file(new_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
+        let new_admin_signer = CliSigner::new(Some(new_admin), None);
 
         let mut ix_builder = NcnSetAdminBuilder::new();
         ix_builder
             .ncn(ncn)
             .old_admin(old_admin_signer.pubkey())
-            .new_admin(signer.pubkey());
+            .new_admin(new_admin_signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.restaking_program_id;
 
-        info!("Setting NCN admin to {}", signer.pubkey());
+        info!("Setting NCN admin to {}", new_admin_signer.pubkey());
 
-        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
-            .await?;
+        self.process_transaction(
+            &[ix],
+            &new_admin_signer.pubkey(),
+            &[new_admin_signer, old_admin_signer],
+        )
+        .await?;
 
         if !self.print_tx {
             let account = self
@@ -382,30 +398,38 @@ impl RestakingCliHandler {
     /// This function transfers the primary administrative control of an Operator from an existing admin
     /// to a new admin.
     #[allow(clippy::future_not_send)]
-    async fn operator_set_admin(&self, operator: &str, old_admin_keypair: &str) -> Result<()> {
-        let signer = self
-            .cli_config
-            .signer
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signer"))?;
-
+    async fn operator_set_admin(
+        &self,
+        operator: &str,
+        old_admin_keypair: &PathBuf,
+        new_admin_keypair: &PathBuf,
+    ) -> Result<()> {
         let operator = Pubkey::from_str(operator)?;
+
         let old_admin = read_keypair_file(old_admin_keypair)
             .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
         let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let new_admin = read_keypair_file(new_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
+        let new_admin_signer = CliSigner::new(Some(new_admin), None);
 
         let mut ix_builder = OperatorSetAdminBuilder::new();
         ix_builder
             .operator(operator)
             .old_admin(old_admin_signer.pubkey())
-            .new_admin(signer.pubkey());
+            .new_admin(new_admin_signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.restaking_program_id;
 
-        info!("Setting Operator admin to {}", signer.pubkey());
+        info!("Setting Operator admin to {}", new_admin_signer.pubkey());
 
-        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
-            .await?;
+        self.process_transaction(
+            &[ix],
+            &new_admin_signer.pubkey(),
+            &[new_admin_signer, old_admin_signer],
+        )
+        .await?;
 
         if !self.print_tx {
             let account = self

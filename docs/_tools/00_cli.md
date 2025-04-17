@@ -271,7 +271,7 @@ List All Ncn Vault Ticket for a NCN
 
 Set NCN Admin
 
-**Usage:** `jito-restaking-cli restaking ncn ncn-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> <NCN>`
+**Usage:** `jito-restaking-cli restaking ncn ncn-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair <NEW_ADMIN_KEYPAIR> <NCN>`
 
 ###### **Arguments:**
 
@@ -280,6 +280,7 @@ Set NCN Admin
 ###### **Options:**
 
 * `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
 
 
 
@@ -410,7 +411,7 @@ Operator Cooldown NCN
 
 Operator Set Admin
 
-**Usage:** `jito-restaking-cli restaking operator operator-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> <OPERATOR>`
+**Usage:** `jito-restaking-cli restaking operator operator-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair <NEW_ADMIN_KEYPAIR> <OPERATOR>`
 
 ###### **Arguments:**
 
@@ -419,6 +420,7 @@ Operator Set Admin
 ###### **Options:**
 
 * `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
 
 
 
@@ -935,7 +937,7 @@ List all vaults
 
 Set Admin
 
-**Usage:** `jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> <VAULT>`
+**Usage:** `jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair <NEW_ADMIN_KEYPAIR> <VAULT>`
 
 ###### **Arguments:**
 
@@ -944,6 +946,7 @@ Set Admin
 ###### **Options:**
 
 * `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
 
 
 

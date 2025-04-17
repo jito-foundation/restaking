@@ -256,8 +256,12 @@ impl VaultCliHandler {
                     VaultActions::SetAdmin {
                         vault,
                         old_admin_keypair,
+                        new_admin_keypair,
                     },
-            } => self.set_admin(&vault, &old_admin_keypair).await,
+            } => {
+                self.set_admin(&vault, &old_admin_keypair, &new_admin_keypair)
+                    .await
+            }
             VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
@@ -1678,29 +1682,37 @@ impl VaultCliHandler {
     /// This function transfers the primary administrative control of a Vault from an existing admin
     /// to a new admin.
     #[allow(clippy::future_not_send)]
-    async fn set_admin(&self, vault: &Pubkey, old_admin_keypair: &str) -> Result<()> {
-        let signer = self
-            .cli_config
-            .signer
-            .as_ref()
-            .ok_or_else(|| anyhow!("No signer"))?;
-
+    async fn set_admin(
+        &self,
+        vault: &Pubkey,
+        old_admin_keypair: &PathBuf,
+        new_admin_keypair: &PathBuf,
+    ) -> Result<()> {
         let old_admin = read_keypair_file(old_admin_keypair)
             .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
         let old_admin_signer = CliSigner::new(Some(old_admin), None);
 
+        let new_admin = read_keypair_file(new_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
+        let new_admin_signer = CliSigner::new(Some(new_admin), None);
+
         let mut ix_builder = SetAdminBuilder::new();
         ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(*vault)
             .old_admin(old_admin_signer.pubkey())
-            .new_admin(signer.pubkey());
+            .new_admin(new_admin_signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
-        info!("Setting Vault admin to {}", signer.pubkey());
+        info!("Setting Vault admin to {}", new_admin_signer.pubkey());
 
-        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_admin_signer])
-            .await?;
+        self.process_transaction(
+            &[ix],
+            &new_admin_signer.pubkey(),
+            &[new_admin_signer, old_admin_signer],
+        )
+        .await?;
 
         if !self.print_tx {
             let account = self
@@ -1964,6 +1976,7 @@ impl VaultCliHandler {
         set_metadata_admin: bool,
     ) -> Result<()> {
         let signer = self.signer()?;
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
 
         let mut roles: Vec<VaultAdminRole> = vec![];
         if set_delegation_admin {
@@ -2000,6 +2013,7 @@ impl VaultCliHandler {
         for role in roles.iter() {
             let mut ix_builder = SetSecondaryAdminBuilder::new();
             ix_builder
+                .config(config_address)
                 .new_admin(*new_admin)
                 .vault(*vault)
                 .admin(signer.pubkey())
