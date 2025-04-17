@@ -320,4 +320,15 @@ mod tests {
             Err(VaultError::VaultFeeCapExceeded)
         );
     }
+
+    #[test]
+    fn test_check_admin() {
+        let admin = Pubkey::new_unique();
+        let bad_admin = Pubkey::new_unique();
+
+        let config = Config::new(admin, Pubkey::new_unique(), Pubkey::new_unique(), 0, 0);
+
+        assert!(config.check_admin(&admin).is_ok());
+        assert!(config.check_admin(&bad_admin).is_err());
+    }
 }
