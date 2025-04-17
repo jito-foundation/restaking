@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{command, Subcommand};
 use solana_program::pubkey::Pubkey;
 
@@ -46,9 +48,23 @@ pub enum VaultActions {
         reward_fee_bps: u16,
         /// The decimals of the token
         decimals: u8,
+        /// The amount of tokens to initialize the vault with ( in the smallest unit )
+        initialize_token_amount: u64,
+        /// The file path of VRT mint address
+        vrt_mint_address_file_path: Option<PathBuf>,
     },
     /// Creates token metadata for the vault's LRT token
     CreateTokenMetadata {
+        /// The vault pubkey
+        vault: String,
+        /// The name of the token
+        name: String,
+        /// The symbol of the token
+        symbol: String,
+        /// The URI for the token metadata
+        uri: String,
+    },
+    UpdateTokenMetadata {
         /// The vault pubkey
         vault: String,
         /// The name of the token
@@ -111,6 +127,27 @@ pub enum VaultActions {
         /// Amount to cooldown
         amount: u64,
     },
+    /// Initialize Vault NCN Ticket
+    InitializeVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
+    /// Warmup Vault NCN Ticket
+    WarmupVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
+    /// Cooldown Vault NCN Ticket
+    CooldownVaultNcnTicket {
+        /// Vault account
+        vault: String,
+        /// NCN account
+        ncn: String,
+    },
     /// Starts the withdrawal process
     EnqueueWithdrawal {
         /// Vault account
@@ -127,8 +164,11 @@ pub enum VaultActions {
     GetVaultUpdateStateTracker {
         /// Vault account
         vault: String,
-        /// NCN epoch
-        ncn_epoch: u64,
+    },
+    /// Gets the operator delegations for a vault
+    GetOperatorDelegations {
+        /// Vault account
+        vault: String,
     },
     /// Gets the operator delegation for a vault
     GetOperatorDelegation {
@@ -155,6 +195,26 @@ pub enum VaultActions {
         /// The vault pubkey
         vault: String,
         /// The new capacity
+        amount: u64,
+    },
+    /// Delegate a token account
+    DelegateTokenAccount {
+        /// The vault pubkey
+        vault: String,
+        /// The delegate account
+        delegate: String,
+        /// The token mint
+        token_mint: String,
+        /// The token account
+        token_account: String,
+    },
+    /// Transfer a token account
+    DelegatedTokenTransfer {
+        /// The token account
+        token_account: String,
+        /// The recipient pubkey
+        recipient_pubkey: String,
+        /// The amount to transfer
         amount: u64,
     },
 }

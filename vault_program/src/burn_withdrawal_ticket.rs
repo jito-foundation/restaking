@@ -88,12 +88,20 @@ pub fn process_burn_withdrawal_ticket(
         return Err(VaultError::VaultStakerWithdrawalTicketNotWithdrawable.into());
     }
 
+    let is_staker_program_fee_wallet = config.program_fee_wallet.eq(staker.key);
+    let is_staker_vault_fee_wallet = vault.fee_wallet.eq(staker.key);
+    let amount_in = vault_staker_withdrawal_ticket.vrt_amount();
+
     let BurnSummary {
         vault_fee_amount,
         program_fee_amount,
         burn_amount,
         out_amount,
-    } = vault.burn_with_fee(vault_staker_withdrawal_ticket.vrt_amount())?;
+    } = vault.burn_with_fee(
+        is_staker_program_fee_wallet,
+        is_staker_vault_fee_wallet,
+        amount_in,
+    )?;
 
     // To close the token account, the balance needs to be 0.
     // The only way for vault_staker_withdrawal_ticket.vrt_amount() != ticket_vrt_amount

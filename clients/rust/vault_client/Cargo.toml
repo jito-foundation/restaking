@@ -13,15 +13,16 @@ readme = { workspace = true }
 serde = []
 anchor = []
 anchor-idl-build = []
+idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
 anchor-lang = { workspace = true }
 borsh = { workspace = true }
 bytemuck = { workspace = true }
+jito-restaking-client-common = { workspace = true }
 num-derive = { workspace = true }
 num-traits = { workspace = true }
 serde = { workspace = true }
 serde_with = { workspace = true }
 solana-program = { workspace = true }
-solana-sdk = { workspace = true }
 thiserror = { workspace = true }

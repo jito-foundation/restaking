@@ -11,6 +11,7 @@ readme = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+base64 = { workspace = true }
 borsh = { workspace = true }
 bytemuck = { workspace = true }
 chrono = { workspace = true }
@@ -20,6 +21,7 @@ env_logger = { workspace = true }
 jito-bytemuck = { workspace = true }
 jito-jsm-core = { workspace = true }
 jito-restaking-client = { workspace = true }
+jito-restaking-client-common = { workspace = true }
 jito-restaking-core = { workspace = true }
 jito-vault-client = { workspace = true }
 jito-vault-core = { workspace = true }

@@ -111,16 +111,19 @@ export function getOperatorSetFeeInstruction<
   TAccountConfig extends string,
   TAccountOperator extends string,
   TAccountAdmin extends string,
+  TProgramAddress extends Address = typeof JITO_RESTAKING_PROGRAM_ADDRESS,
 >(
-  input: OperatorSetFeeInput<TAccountConfig, TAccountOperator, TAccountAdmin>
+  input: OperatorSetFeeInput<TAccountConfig, TAccountOperator, TAccountAdmin>,
+  config?: { programAddress?: TProgramAddress }
 ): OperatorSetFeeInstruction<
-  typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+  TProgramAddress,
   TAccountConfig,
   TAccountOperator,
   TAccountAdmin
 > {
   // Program address.
-  const programAddress = JITO_RESTAKING_PROGRAM_ADDRESS;
+  const programAddress =
+    config?.programAddress ?? JITO_RESTAKING_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
@@ -148,7 +151,7 @@ export function getOperatorSetFeeInstruction<
       args as OperatorSetFeeInstructionDataArgs
     ),
   } as OperatorSetFeeInstruction<
-    typeof JITO_RESTAKING_PROGRAM_ADDRESS,
+    TProgramAddress,
     TAccountConfig,
     TAccountOperator,
     TAccountAdmin

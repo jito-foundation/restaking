@@ -5,6 +5,7 @@
 #![allow(clippy::style)]
 #![allow(clippy::perf)]
 mod generated;
+pub mod log;
 
 use generated::*;
 
