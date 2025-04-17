@@ -57,6 +57,7 @@ jito-bytemuck = { path = "bytemuck", version = "=0.0.5" }
 jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.5" }
 jito-jsm-core = { path = "core", version = "=0.0.5" }
 jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.5" }
+jito-restaking-client-common = { path = "clients/rust/common", version = "=0.0.5" }
 jito-restaking-core = { path = "restaking_core", version = "=0.0.5" }
 jito-restaking-program = { path = "restaking_program", version = "=0.0.5" }
 jito-restaking-sdk = { path = "restaking_sdk", version = "=0.0.5" }

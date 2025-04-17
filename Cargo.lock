@@ -2575,7 +2575,7 @@ dependencies = [
 
 [[package]]
 name = "jito-restaking-client-common"
-version = "0.0.3"
+version = "0.0.5"
 
 [[package]]
 name = "jito-restaking-core"
