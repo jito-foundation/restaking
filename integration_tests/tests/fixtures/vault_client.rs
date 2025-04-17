@@ -46,9 +46,8 @@ use spl_associated_token_account::{
 use spl_token::state::Account as SPLTokenAccount;
 use spl_token_2022::extension::ExtensionType;
 
-use crate::fixtures::{TestError, TestResult};
-
 use super::fixture::TestBuilder;
+use crate::fixtures::{TestError, TestResult};
 
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
