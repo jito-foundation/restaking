@@ -10,16 +10,18 @@ use jito_restaking_core::{
 };
 use jito_vault_client::{
     instructions::{
-        AddDelegationBuilder, BurnWithdrawalTicketBuilder, CloseVaultUpdateStateTrackerBuilder,
-        CooldownDelegationBuilder, CooldownVaultNcnTicketBuilder,
-        CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
-        DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder, InitializeConfigBuilder,
-        InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
+        AddDelegationBuilder, BurnWithdrawalTicketBuilder, ChangeWithdrawalTicketOwnerBuilder,
+        CloseVaultUpdateStateTrackerBuilder, CooldownDelegationBuilder,
+        CooldownVaultNcnTicketBuilder, CrankVaultUpdateStateTrackerBuilder,
+        CreateTokenMetadataBuilder, DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder,
+        InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
-        UpdateTokenMetadataBuilder, WarmupVaultNcnTicketBuilder,
+        MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder, SetProgramFeeWalletBuilder,
+        SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder, UpdateVaultBalanceBuilder,
+        WarmupVaultNcnTicketBuilder,
     },
-    types::WithdrawalAllocationMethod,
+    types::{VaultAdminRole, WithdrawalAllocationMethod},
 };
 use jito_vault_core::{
     burn_vault::BurnVault, config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket,
@@ -41,8 +43,10 @@ use spl_associated_token_account::{
 use spl_token::instruction::transfer;
 
 use crate::{
+    cli_config::CliConfig,
+    cli_signer::CliSigner,
     vault::{ConfigActions, VaultActions, VaultCommands},
-    CliConfig, CliHandler,
+    CliHandler,
 };
 
 pub struct VaultCliHandler {
@@ -84,6 +88,7 @@ impl VaultCliHandler {
         }
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
         match action {
             VaultCommands::Config {
@@ -102,6 +107,12 @@ impl VaultCliHandler {
             VaultCommands::Config {
                 action: ConfigActions::SetAdmin { new_admin },
             } => self.set_config_admin(new_admin).await,
+            VaultCommands::Config {
+                action: ConfigActions::SetProgramFee { new_fee_bps },
+            } => self.set_program_fee(new_fee_bps).await,
+            VaultCommands::Config {
+                action: ConfigActions::SetProgramFeeWallet { program_fee_wallet },
+            } => self.set_program_fee_wallet(&program_fee_wallet).await,
             VaultCommands::Vault {
                 action:
                     VaultActions::Initialize {
@@ -202,6 +213,21 @@ impl VaultCliHandler {
                 action: VaultActions::EnqueueWithdrawal { vault, amount },
             } => self.enqueue_withdrawal(vault, amount).await,
             VaultCommands::Vault {
+                action:
+                    VaultActions::ChangeWithdrawalTicketOwner {
+                        vault,
+                        old_ticket_owner_keypair,
+                        new_ticket_owner,
+                    },
+            } => {
+                self.change_withdrawal_ticket_owner(
+                    &vault,
+                    &old_ticket_owner_keypair,
+                    &new_ticket_owner,
+                )
+                .await
+            }
+            VaultCommands::Vault {
                 action: VaultActions::BurnWithdrawalTicket { vault },
             } => self.burn_withdrawal_ticket(vault).await,
             VaultCommands::Vault {
@@ -226,8 +252,70 @@ impl VaultCliHandler {
                 action: VaultActions::List,
             } => self.list_vaults().await,
             VaultCommands::Vault {
+                action:
+                    VaultActions::SetAdmin {
+                        vault,
+                        old_admin_keypair,
+                        new_admin_keypair,
+                    },
+            } => {
+                self.set_admin(&vault, &old_admin_keypair, &new_admin_keypair)
+                    .await
+            }
+            VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::SetFees {
+                        vault,
+                        deposit_fee_bps,
+                        withdrawal_fee_bps,
+                        reward_fee_bps,
+                    },
+            } => {
+                self.set_fees(&vault, deposit_fee_bps, withdrawal_fee_bps, reward_fee_bps)
+                    .await
+            }
+            VaultCommands::Vault {
+                action: VaultActions::SetIsPaused { vault, set_pause },
+            } => self.set_is_paused(&vault, set_pause).await,
+            VaultCommands::Vault {
+                action:
+                    VaultActions::SetSecondaryAdmin {
+                        vault,
+                        new_admin,
+                        set_delegation_admin,
+                        set_operator_admin,
+                        set_ncn_admin,
+                        set_slasher_admin,
+                        set_capacity_admin,
+                        set_fee_wallet,
+                        set_mint_burn_admin,
+                        set_delegate_asset_admin,
+                        set_fee_admin,
+                        set_metadata_admin,
+                    },
+            } => {
+                self.set_secondary_admin(
+                    &vault,
+                    &new_admin,
+                    set_delegation_admin,
+                    set_operator_admin,
+                    set_ncn_admin,
+                    set_slasher_admin,
+                    set_capacity_admin,
+                    set_fee_wallet,
+                    set_mint_burn_admin,
+                    set_delegate_asset_admin,
+                    set_fee_admin,
+                    set_metadata_admin,
+                )
+                .await
+            }
+            VaultCommands::Vault {
+                action: VaultActions::UpdateVaultBalance { vault },
+            } => self.update_vault_balance(&vault).await,
             VaultCommands::Vault {
                 action:
                     VaultActions::DelegateTokenAccount {
@@ -254,22 +342,23 @@ impl VaultCliHandler {
         }
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_config(
         &self,
         program_fee_bps: u16,
         program_fee_wallet: Pubkey,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No Signer"))?;
 
         let mut ix_builder = InitializeConfigBuilder::new();
         let config_address = Config::find_program_address(&self.vault_program_id).0;
         let ix_builder = ix_builder
             .config(config_address)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .restaking_program(self.restaking_program_id)
             .program_fee_wallet(program_fee_wallet)
             .program_fee_bps(program_fee_bps);
@@ -278,7 +367,7 @@ impl VaultCliHandler {
 
         info!("Initializing vault config parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -291,7 +380,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
     pub async fn initialize_vault(
         &self,
         token_mint: String,
@@ -303,44 +392,45 @@ impl VaultCliHandler {
         vrt_mint_address_file_path: Option<PathBuf>,
     ) -> Result<()> {
         let token_mint = Pubkey::from_str(&token_mint)?;
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No Signer"))?;
 
-        let base = Keypair::new();
-        let vault = Vault::find_program_address(&self.vault_program_id, &base.pubkey()).0;
+        let admin = signer.pubkey();
 
-        let admin = keypair.pubkey();
+        let base_signer = CliSigner::new(Some(Keypair::new()), None);
+        let vault = Vault::find_program_address(&self.vault_program_id, &base_signer.pubkey()).0;
 
-        let vrt_mint = match vrt_mint_address_file_path {
+        let vrt_mint_signer = match vrt_mint_address_file_path {
             Some(file_path) => {
                 let keypair = read_keypair_file(file_path)
                     .map_err(|e| anyhow!("Could not read VRT mint address file path: {e}"))?;
                 info!("Found VRT mint address: {}", keypair.pubkey());
-                keypair
+
+                CliSigner::new(Some(keypair), None)
             }
-            None => Keypair::new(),
+            None => CliSigner::new(Some(Keypair::new()), None),
         };
 
         let admin_st_token_account = get_associated_token_address(&admin, &token_mint);
         let vault_st_token_account = get_associated_token_address(&vault, &token_mint);
 
         let (burn_vault, _, _) =
-            BurnVault::find_program_address(&self.vault_program_id, &base.pubkey());
+            BurnVault::find_program_address(&self.vault_program_id, &base_signer.pubkey());
 
         let burn_vault_vrt_token_account =
-            get_associated_token_address(&burn_vault, &vrt_mint.pubkey());
+            get_associated_token_address(&burn_vault, &vrt_mint_signer.pubkey());
 
         let mut ix_builder = InitializeVaultBuilder::new();
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
-            .vrt_mint(vrt_mint.pubkey())
+            .vrt_mint(vrt_mint_signer.pubkey())
             .st_mint(token_mint)
             .admin(admin)
-            .base(base.pubkey())
+            .base(base_signer.pubkey())
             .admin_st_token_account(admin_st_token_account)
             .vault_st_token_account(vault_st_token_account)
             .burn_vault(burn_vault)
@@ -363,8 +453,12 @@ impl VaultCliHandler {
         info!("Initializing Vault at address: {}", vault);
 
         let ixs = [admin_st_token_account_ix, vault_st_token_account_ix, ix];
-        self.process_transaction(&ixs, &keypair.pubkey(), &[keypair, &base, &vrt_mint])
-            .await?;
+        self.process_transaction(
+            &ixs,
+            &signer.pubkey(),
+            &[signer, &base_signer, &vrt_mint_signer],
+        )
+        .await?;
 
         if !self.print_tx {
             let account = self
@@ -376,6 +470,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn create_token_metadata(
         &self,
         vault: String,
@@ -383,11 +478,11 @@ impl VaultCliHandler {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+            .ok_or_else(|| anyhow!("No signer"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
 
         let rpc_client = self.get_rpc_client();
@@ -406,9 +501,9 @@ impl VaultCliHandler {
 
         let mut ix = CreateTokenMetadataBuilder::new()
             .vault(vault_pubkey)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .vrt_mint(vault.vrt_mint)
-            .payer(keypair.pubkey())
+            .payer(signer.pubkey())
             .metadata(metadata)
             .name(name)
             .symbol(symbol)
@@ -418,12 +513,13 @@ impl VaultCliHandler {
 
         info!("Creating token metadata transaction",);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn update_token_metadata(
         &self,
         vault: String,
@@ -431,9 +527,9 @@ impl VaultCliHandler {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
@@ -454,7 +550,7 @@ impl VaultCliHandler {
 
         let ix = UpdateTokenMetadataBuilder::new()
             .vault(vault_pubkey)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .vrt_mint(vault.vrt_mint)
             .metadata(metadata)
             .name(name)
@@ -465,8 +561,8 @@ impl VaultCliHandler {
         let recent_blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             recent_blockhash,
         );
 
@@ -484,11 +580,11 @@ impl VaultCliHandler {
     }
 
     // ---------- UPDATE ------------
-
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_vault_update_state_tracker(&self, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -515,14 +611,14 @@ impl VaultCliHandler {
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
             .vault_update_state_tracker(vault_update_state_tracker)
-            .payer(keypair.pubkey())
+            .payer(signer.pubkey())
             .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy); // Only withdrawal allocation method supported for now
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -549,6 +645,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn crank_vault_update_state_tracker(
         &self,
         vault: String,
@@ -556,9 +653,9 @@ impl VaultCliHandler {
     ) -> Result<()> {
         //TODO V2: Make it so the operator needed is automatically fetched from the vault
 
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -601,8 +698,8 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -620,14 +717,15 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn close_vault_update_state_tracker(
         &self,
         vault: String,
         ncn_epoch: Option<u64>,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -659,13 +757,13 @@ impl VaultCliHandler {
             .vault(vault)
             .vault_update_state_tracker(vault_update_state_tracker)
             .ncn_epoch(ncn_epoch)
-            .payer(keypair.pubkey());
+            .payer(signer.pubkey());
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -684,10 +782,11 @@ impl VaultCliHandler {
     }
 
     // ---------- FUNCTIONS --------------
+    #[allow(clippy::future_not_send)]
     pub async fn mint_vrt(&self, vault: String, amount_in: u64, min_amount_out: u64) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -697,7 +796,7 @@ impl VaultCliHandler {
         let vault_account_raw = rpc_client.get_account(&vault).await?;
         let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
 
-        let depositor = keypair.pubkey();
+        let depositor = signer.pubkey();
         let depositor_token_account =
             get_associated_token_address(&depositor, &vault_account.supported_mint);
         let depositor_vrt_token_account =
@@ -756,8 +855,8 @@ impl VaultCliHandler {
                 vault_fee_ata_ix,
                 ix_builder.instruction(),
             ],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Mint to transaction: {:?}", tx.get_signature());
@@ -774,10 +873,11 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -797,14 +897,14 @@ impl VaultCliHandler {
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
             .ncn_vault_ticket(ncn_vault_ticket)
-            .payer(keypair.pubkey())
-            .admin(keypair.pubkey());
+            .payer(signer.pubkey())
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Initialize Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -817,10 +917,11 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn warmup_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -836,13 +937,13 @@ impl VaultCliHandler {
             .vault(vault)
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
-            .admin(keypair.pubkey());
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Warmup Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -855,10 +956,11 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn cooldown_vault_ncn_ticket(&self, vault: String, ncn: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -874,13 +976,13 @@ impl VaultCliHandler {
             .vault(vault)
             .ncn(ncn)
             .vault_ncn_ticket(vault_ncn_ticket)
-            .admin(keypair.pubkey());
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Cooldown Vault NCN Ticket");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -893,14 +995,15 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn initialize_vault_operator_delegation(
         &self,
         vault: String,
         operator: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -928,14 +1031,14 @@ impl VaultCliHandler {
             .operator(operator)
             .operator_vault_ticket(operator_vault_ticket)
             .vault_operator_delegation(vault_operator_delegation)
-            .payer(keypair.pubkey())
-            .admin(keypair.pubkey());
+            .payer(signer.pubkey())
+            .admin(signer.pubkey());
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Initializing vault operator delegation",);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -950,15 +1053,16 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn delegate_to_operator(
         &self,
         vault: String,
         operator: String,
         amount: u64,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -978,14 +1082,14 @@ impl VaultCliHandler {
             .vault(vault)
             .operator(operator)
             .vault_operator_delegation(vault_operator_delegation)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .amount(amount);
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Delegating to operator");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1001,15 +1105,16 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn cooldown_operator_delegation(
         &self,
         vault: String,
         operator: String,
         amount: u64,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
 
@@ -1029,14 +1134,14 @@ impl VaultCliHandler {
             .vault(vault)
             .operator(operator)
             .vault_operator_delegation(vault_operator_delegation)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .amount(amount);
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Cooling down delegation");
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1052,6 +1157,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn delegate_token_account(
         &self,
         vault: String,
@@ -1059,9 +1165,9 @@ impl VaultCliHandler {
         token_mint: String,
         token_account: String,
     ) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1075,7 +1181,7 @@ impl VaultCliHandler {
         ix_builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault)
-            .delegate_asset_admin(keypair.pubkey())
+            .delegate_asset_admin(signer.pubkey())
             .token_mint(token_mint)
             .token_account(token_account)
             .delegate(delegate)
@@ -1084,8 +1190,8 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!("Delegating token account: {:?}", tx.get_signature());
@@ -1101,6 +1207,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn delegated_token_transfer(
         &self,
         token_account: String,
@@ -1109,7 +1216,7 @@ impl VaultCliHandler {
     ) -> Result<()> {
         let keypair = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1147,10 +1254,11 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn enqueue_withdrawal(&self, vault: String, amount: u64) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1162,7 +1270,7 @@ impl VaultCliHandler {
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
             &vault,
-            &keypair.pubkey(),
+            &signer.pubkey(),
         )
         .0;
 
@@ -1170,10 +1278,10 @@ impl VaultCliHandler {
             get_associated_token_address(&vault_staker_withdrawal_ticket, &vault_account.vrt_mint);
 
         let staker_vrt_token_account =
-            get_associated_token_address(&keypair.pubkey(), &vault_account.vrt_mint);
+            get_associated_token_address(&signer.pubkey(), &vault_account.vrt_mint);
 
         let vault_staker_withdrawal_ticket_ata_ix = create_associated_token_account_idempotent(
-            &keypair.pubkey(),
+            &signer.pubkey(),
             &vault_staker_withdrawal_ticket,
             &vault_account.vrt_mint,
             &spl_token::ID,
@@ -1187,9 +1295,9 @@ impl VaultCliHandler {
             .vault_staker_withdrawal_ticket_token_account(
                 vault_staker_withdrawal_ticket_token_account,
             )
-            .staker(keypair.pubkey())
+            .staker(signer.pubkey())
             .staker_vrt_token_account(staker_vrt_token_account)
-            .base(keypair.pubkey())
+            .base(signer.pubkey())
             .amount(amount);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
@@ -1198,8 +1306,8 @@ impl VaultCliHandler {
                 vault_staker_withdrawal_ticket_ata_ix,
                 ix_builder.instruction(),
             ],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -1217,10 +1325,68 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    /// Changes the owner of a withdrawal ticket
+    ///
+    /// Transfers ownership of a vault staker withdrawal ticket from one account to another.
+    /// This operation requires the signature of both the current ticket owner and the
+    /// signer configured in the client.
+    #[allow(clippy::future_not_send)]
+    pub async fn change_withdrawal_ticket_owner(
+        &self,
+        vault: &Pubkey,
+        old_ticket_owner: &str,
+        new_ticket_owner: &Pubkey,
+    ) -> Result<()> {
+        let signer = self.signer()?;
+
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &self.vault_program_id,
+            vault,
+            &signer.pubkey(),
+        )
+        .0;
+
+        let old_ticket_owner_keypair = read_keypair_file(old_ticket_owner)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_ticket_owner_signer = CliSigner::new(Some(old_ticket_owner_keypair), None);
+
+        let mut ix_builder = ChangeWithdrawalTicketOwnerBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(*vault)
+            .vault_staker_withdrawal_ticket(vault_staker_withdrawal_ticket)
+            .old_owner(old_ticket_owner_signer.pubkey())
+            .new_owner(*new_ticket_owner);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Changing Withdrawal Ticket Owner",);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer, &old_ticket_owner_signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::VaultStakerWithdrawalTicket>(
+                    &vault_staker_withdrawal_ticket,
+                )
+                .await?;
+            info!("{}", account.pretty_display());
+            info!(
+                "Change withdrawal ticket owner from {} to {}",
+                old_ticket_owner_signer.pubkey(),
+                new_ticket_owner
+            );
+        }
+
+        Ok(())
+    }
+
+    #[allow(clippy::future_not_send)]
     pub async fn burn_withdrawal_ticket(&self, vault: String) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let rpc_client = self.get_rpc_client();
@@ -1232,11 +1398,11 @@ impl VaultCliHandler {
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
             &vault,
-            &keypair.pubkey(),
+            &signer.pubkey(),
         )
         .0;
 
-        let staker = keypair.pubkey();
+        let staker = signer.pubkey();
         let staker_token_account =
             get_associated_token_address(&staker, &vault_account.supported_mint);
 
@@ -1254,7 +1420,7 @@ impl VaultCliHandler {
         let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
 
         let program_fee_ata = create_associated_token_account_idempotent(
-            &keypair.pubkey(),
+            &signer.pubkey(),
             &config_account.program_fee_wallet,
             &vault_account.vrt_mint,
             &spl_token::ID,
@@ -1283,8 +1449,8 @@ impl VaultCliHandler {
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
             &[program_fee_ata, ix_builder.instruction()],
-            Some(&keypair.pubkey()),
-            &[keypair],
+            Some(&signer.pubkey()),
+            &[signer],
             blockhash,
         );
         info!(
@@ -1303,6 +1469,7 @@ impl VaultCliHandler {
     }
 
     // ------- GET ACCOUNTS --------------------
+    #[allow(clippy::future_not_send)]
     pub async fn get_vault(&self, pubkey: String) -> Result<()> {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let rpc_client = self.get_rpc_client();
@@ -1334,6 +1501,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn list_vaults(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Vault>(None)?;
@@ -1369,6 +1537,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     async fn get_config(&self) -> Result<()> {
         let rpc_client = self.get_rpc_client();
 
@@ -1386,6 +1555,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_vault_update_state_tracker(&self, vault: String) -> Result<()> {
         let vault = Pubkey::from_str(&vault)?;
         let rpc_client = self.get_rpc_client();
@@ -1416,6 +1586,7 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_vault_operator_delegations(
         &self,
         vault: String,
@@ -1471,18 +1642,19 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    #[allow(clippy::future_not_send)]
     pub async fn get_withdrawal_ticket(&self, vault: String, staker: Option<String>) -> Result<()> {
         let rpc_client = self.get_rpc_client();
         let vault = Pubkey::from_str(&vault)?;
         let staker = if let Some(staker) = staker {
             Pubkey::from_str(&staker)?
         } else {
-            let keypair = self
+            let signer = self
                 .cli_config
-                .keypair
+                .signer
                 .as_ref()
                 .ok_or_else(|| anyhow!("Keypair not provided"))?;
-            keypair.pubkey()
+            signer.pubkey()
         };
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
             &self.vault_program_id,
@@ -1505,10 +1677,62 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    /// Sets the primary admin for Vault
+    ///
+    /// This function transfers the primary administrative control of a Vault from an existing admin
+    /// to a new admin.
+    #[allow(clippy::future_not_send)]
+    async fn set_admin(
+        &self,
+        vault: &Pubkey,
+        old_admin_keypair: &PathBuf,
+        new_admin_keypair: &PathBuf,
+    ) -> Result<()> {
+        let old_admin = read_keypair_file(old_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
+        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+
+        let new_admin = read_keypair_file(new_admin_keypair)
+            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
+        let new_admin_signer = CliSigner::new(Some(new_admin), None);
+
+        let mut ix_builder = SetAdminBuilder::new();
+        ix_builder
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(*vault)
+            .old_admin(old_admin_signer.pubkey())
+            .new_admin(new_admin_signer.pubkey());
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Setting Vault admin to {}", new_admin_signer.pubkey());
+
+        self.process_transaction(
+            &[ix],
+            &new_admin_signer.pubkey(),
+            &[new_admin_signer, old_admin_signer],
+        )
+        .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Set the capacity for Vault
+    ///
+    /// Updates the maximum deposit capacity for a specific vault.
+    /// This operation can only be performed by the vault admin.
+    #[allow(clippy::future_not_send)]
     pub async fn set_capacity(&self, vault: String, amount: u64) -> Result<()> {
-        let keypair = self
+        let signer = self
             .cli_config
-            .keypair
+            .signer
             .as_ref()
             .ok_or_else(|| anyhow!("Keypair not provided"))?;
         let vault_pubkey = Pubkey::from_str(&vault)?;
@@ -1517,14 +1741,14 @@ impl VaultCliHandler {
         builder
             .config(Config::find_program_address(&self.vault_program_id).0)
             .vault(vault_pubkey)
-            .admin(keypair.pubkey())
+            .admin(signer.pubkey())
             .amount(amount);
         let mut ix = builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Vault capacity instruction: {:?}", builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
@@ -1537,30 +1761,328 @@ impl VaultCliHandler {
         Ok(())
     }
 
+    /// Sets the primary admin for Config
+    ///
+    /// Transfers administrative control of the Config to a new admin.
+    /// This operation can only be performed by the current admin.
+    #[allow(clippy::future_not_send)]
     async fn set_config_admin(&self, new_admin: Pubkey) -> Result<()> {
-        let keypair = self
-            .cli_config
-            .keypair
-            .as_ref()
-            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let signer = self.signer()?;
 
         let config_address = Config::find_program_address(&self.vault_program_id).0;
         let mut ix_builder = SetConfigAdminBuilder::new();
         ix_builder
             .config(config_address)
-            .old_admin(keypair.pubkey())
+            .old_admin(signer.pubkey())
             .new_admin(new_admin);
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
         info!("Setting vault config admin parameters: {:?}", ix_builder);
 
-        self.process_transaction(&[ix], &keypair.pubkey(), &[keypair])
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
             .await?;
 
         if !self.print_tx {
             let account = self
                 .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Set the fees for Vault
+    ///
+    /// Updates one or more fee parameters for a specific vault. Each fee type
+    /// (deposit, withdrawal, reward) is specified in basis points and can be
+    /// updated independently. Any fee type not provided (None) will remain unchanged.
+    ///
+    /// NOTE:
+    /// - Fee changes are only allowed once per epoch
+    #[allow(clippy::future_not_send)]
+    async fn set_fees(
+        &self,
+        vault: &Pubkey,
+        deposit_fee_bps: Option<u16>,
+        withdrawal_fee_bps: Option<u16>,
+        reward_fee_bps: Option<u16>,
+    ) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetFeesBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .admin(signer.pubkey());
+
+        if let Some(deposit_fee_bps) = deposit_fee_bps {
+            ix_builder.deposit_fee_bps(deposit_fee_bps);
+        }
+
+        if let Some(withdrawal_fee_bps) = withdrawal_fee_bps {
+            ix_builder.withdrawal_fee_bps(withdrawal_fee_bps);
+        }
+
+        if let Some(reward_fee_bps) = reward_fee_bps {
+            ix_builder.reward_fee_bps(reward_fee_bps);
+        }
+
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Setting Vault fees: {:?}", ix_builder);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets the pause state for a specific vault
+    ///
+    /// Enables or disables operations on a vault by setting its pause state.
+    /// When paused, most interactions with the vault will be rejected.
+    /// This operation can only be performed by the vault admin.
+    #[allow(clippy::future_not_send)]
+    async fn set_is_paused(&self, vault: &Pubkey, set_pause: bool) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetIsPausedBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .admin(signer.pubkey())
+            .is_paused(set_pause);
+
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Setting Is Paused: {:?}", ix_builder);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets a new program fee (in basis points) for the Config
+    ///
+    /// Updates the fee percentage (specified in basis points) that the program
+    /// collects for vault operation. This operation can only be performed by the
+    /// current admin of the config.
+    #[allow(clippy::future_not_send)]
+    async fn set_program_fee(&self, new_fee_bps: u16) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetProgramFeeBuilder::new();
+        ix_builder
+            .config(config_address)
+            .admin(signer.pubkey())
+            .new_fee_bps(new_fee_bps);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!(
+            "Setting vault config program fee bps parameters: {:?}",
+            ix_builder
+        );
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets a new program fee wallet for the Config
+    ///
+    /// Updates the wallet address that receives program fees collected by the Jito Vault Program.
+    /// This operation can only be performed by the current program fee admin.
+    #[allow(clippy::future_not_send)]
+    async fn set_program_fee_wallet(&self, new_fee_wallet: &Pubkey) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+        let mut ix_builder = SetProgramFeeWalletBuilder::new();
+        ix_builder
+            .config(config_address)
+            .program_fee_admin(signer.pubkey())
+            .new_fee_wallet(*new_fee_wallet);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!(
+            "Setting vault config program fee wallet parameters: {:?}",
+            ix_builder
+        );
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Config>(&config_address)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Sets secondary admin roles for Vault
+    ///
+    /// This function allows assigning a new administrator to various administrative roles
+    /// for a specific Vault. Multiple roles can be assigned in a single call by enabling the
+    /// corresponding boolean flags.
+    #[allow(clippy::too_many_arguments, clippy::future_not_send)]
+    async fn set_secondary_admin(
+        &self,
+        vault: &Pubkey,
+        new_admin: &Pubkey,
+        set_delegation_admin: bool,
+        set_operator_admin: bool,
+        set_ncn_admin: bool,
+        set_slasher_admin: bool,
+        set_capacity_admin: bool,
+        set_fee_wallet: bool,
+        set_mint_burn_admin: bool,
+        set_delegate_asset_admin: bool,
+        set_fee_admin: bool,
+        set_metadata_admin: bool,
+    ) -> Result<()> {
+        let signer = self.signer()?;
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+
+        let mut roles: Vec<VaultAdminRole> = vec![];
+        if set_delegation_admin {
+            roles.push(VaultAdminRole::DelegationAdmin);
+        }
+        if set_operator_admin {
+            roles.push(VaultAdminRole::OperatorAdmin);
+        }
+        if set_ncn_admin {
+            roles.push(VaultAdminRole::NcnAdmin);
+        }
+        if set_slasher_admin {
+            roles.push(VaultAdminRole::SlasherAdmin);
+        }
+        if set_capacity_admin {
+            roles.push(VaultAdminRole::CapacityAdmin);
+        }
+        if set_fee_wallet {
+            roles.push(VaultAdminRole::FeeWallet);
+        }
+        if set_mint_burn_admin {
+            roles.push(VaultAdminRole::MintBurnAdmin);
+        }
+        if set_delegate_asset_admin {
+            roles.push(VaultAdminRole::DelegateAssetAdmin);
+        }
+        if set_fee_admin {
+            roles.push(VaultAdminRole::FeeAdmin);
+        }
+        if set_metadata_admin {
+            roles.push(VaultAdminRole::MetadataAdmin);
+        }
+
+        for role in roles.iter() {
+            let mut ix_builder = SetSecondaryAdminBuilder::new();
+            ix_builder
+                .config(config_address)
+                .new_admin(*new_admin)
+                .vault(*vault)
+                .admin(signer.pubkey())
+                .vault_admin_role(*role)
+                .instruction();
+            let mut ix = ix_builder.instruction();
+            ix.program_id = self.vault_program_id;
+
+            info!(
+                "Setting {:?} Admin to {} for Vault {}",
+                role, new_admin, vault
+            );
+
+            self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+                .await?;
+        }
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
+                .await?;
+            info!("{}", account.pretty_display());
+        }
+
+        Ok(())
+    }
+
+    /// Updates the vault balance
+    ///
+    /// Synchronizes the vault's internal token balance with its actual token holdings and
+    /// calculates rewards. This function:
+    /// 1. Verifies the vault is not paused and can be updated
+    /// 2. Calculates rewards based on the difference between current and tracked token balance
+    /// 3. Applies the reward fee according to the vault's configuration
+    /// 4. Updates the vault's tracked token balance
+    /// 5. Mints VRT tokens to the fee wallet as reward fees
+    #[allow(clippy::future_not_send)]
+    async fn update_vault_balance(&self, vault: &Pubkey) -> Result<()> {
+        let signer = self.signer()?;
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+
+        let vault_account_raw = self.get_rpc_client().get_account(vault).await?;
+        let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
+
+        let vault_token_account =
+            get_associated_token_address(vault, &vault_account.supported_mint);
+
+        let vault_fee_token_account =
+            get_associated_token_address(&vault_account.fee_wallet, &vault_account.vrt_mint);
+
+        let mut ix_builder = UpdateVaultBalanceBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .vault_token_account(vault_token_account)
+            .vrt_mint(vault_account.vrt_mint)
+            .vault_fee_token_account(vault_fee_token_account);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Update Vault balance: {:?}", ix_builder);
+
+        self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+            .await?;
+
+        if !self.print_tx {
+            let account = self
+                .get_account::<jito_vault_client::accounts::Vault>(vault)
                 .await?;
             info!("{}", account.pretty_display());
         }

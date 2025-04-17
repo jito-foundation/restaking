@@ -31,6 +31,16 @@ pub enum ConfigActions {
         /// The new admin's pubkey
         new_admin: Pubkey,
     },
+    /// Set the program fee
+    SetProgramFee {
+        /// The program fee
+        new_fee_bps: u16,
+    },
+    /// Set the program fee wallet
+    SetProgramFeeWallet {
+        /// The program fee wallet
+        program_fee_wallet: Pubkey,
+    },
 }
 
 /// Vault commands
@@ -155,6 +165,18 @@ pub enum VaultActions {
         /// Amount to withdraw
         amount: u64,
     },
+    /// Change withdrawal ticket owner
+    ChangeWithdrawalTicketOwner {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The old ticket owner keypair
+        #[arg(long)]
+        old_ticket_owner_keypair: String,
+
+        /// The new ticket owner pubkey
+        new_ticket_owner: Pubkey,
+    },
     /// Burns the withdrawal ticket, ending the withdrawal process
     BurnWithdrawalTicket {
         /// Vault account
@@ -190,12 +212,104 @@ pub enum VaultActions {
     },
     /// List all vaults
     List,
+    /// Set Admin
+    SetAdmin {
+        /// The Vault pubkey
+        vault: Pubkey,
+
+        /// Path to the old admin keypair file
+        #[arg(long)]
+        old_admin_keypair: PathBuf,
+
+        /// Path to the new admin keypair file
+        #[arg(long)]
+        new_admin_keypair: PathBuf,
+    },
     /// Sets the deposit capacity in the vault
     SetCapacity {
         /// The vault pubkey
         vault: String,
         /// The new capacity
         amount: u64,
+    },
+    /// Sets the fees in the vault
+    SetFees {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The deposit fee BPS
+        #[arg(long)]
+        deposit_fee_bps: Option<u16>,
+
+        /// The withdrawal fee BPS
+        #[arg(long)]
+        withdrawal_fee_bps: Option<u16>,
+
+        /// The reward fee BPS
+        #[arg(long)]
+        reward_fee_bps: Option<u16>,
+    },
+    /// Sets the vault's pause state
+    SetIsPaused {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// Set pause
+        #[arg(long)]
+        set_pause: bool,
+    },
+    /// Set Secondary Admin
+    SetSecondaryAdmin {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The new admin pubkey
+        new_admin: Pubkey,
+
+        /// Set delegation_admin
+        #[arg(long)]
+        set_delegation_admin: bool,
+
+        /// Set operator_admin
+        #[arg(long)]
+        set_operator_admin: bool,
+
+        /// Set ncn_admin
+        #[arg(long)]
+        set_ncn_admin: bool,
+
+        /// Set slasher_admin
+        #[arg(long)]
+        set_slasher_admin: bool,
+
+        /// Set capacity_admin
+        #[arg(long)]
+        set_capacity_admin: bool,
+
+        /// Set fee_wallet
+        #[arg(long)]
+        set_fee_wallet: bool,
+
+        /// Set mint_burn_admin
+        #[arg(long)]
+        set_mint_burn_admin: bool,
+
+        /// Set delegate_asset_admin
+        #[arg(long)]
+        set_delegate_asset_admin: bool,
+
+        /// Set fee_admin
+        #[arg(long)]
+        set_fee_admin: bool,
+
+        /// Set metadata_admin
+        #[arg(long)]
+        set_metadata_admin: bool,
+    },
+    /// Update Vault Balance
+    UpdateVaultBalance {
+        /// The vault pubkey
+        vault: Pubkey,
     },
     /// Delegate a token account
     DelegateTokenAccount {

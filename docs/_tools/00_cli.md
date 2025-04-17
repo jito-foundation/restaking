@@ -27,6 +27,7 @@ A CLI for managing restaking and vault operations
 * `--commitment <COMMITMENT>` — Commitment level
 * `--restaking-program-id <RESTAKING_PROGRAM_ID>` — Restaking program ID
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
+* `--ledger <LEDGER>` — Ledger device path or identifier
 * `--keypair <KEYPAIR>` — Keypair
 * `--verbose` — Verbose mode
 * `--print-tx` — This will print out the raw TX instead of running it
@@ -109,6 +110,8 @@ Set the config admin
 * `list` — List all NCNs
 * `list-ncn-operator-state` — List All Ncn Operator State for a NCN
 * `list-ncn-vault-ticket` — List All Ncn Vault Ticket for a NCN
+* `ncn-set-admin` — Set NCN Admin
+* `ncn-set-secondary-admin` — Set NCN Secondary Admin
 
 
 
@@ -264,6 +267,46 @@ List All Ncn Vault Ticket for a NCN
 
 
 
+## `jito-restaking-cli restaking ncn ncn-set-admin`
+
+Set NCN Admin
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair <NEW_ADMIN_KEYPAIR> <NCN>`
+
+###### **Arguments:**
+
+* `<NCN>` — The NCN pubkey
+
+###### **Options:**
+
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+
+
+
+## `jito-restaking-cli restaking ncn ncn-set-secondary-admin`
+
+Set NCN Secondary Admin
+
+**Usage:** `jito-restaking-cli restaking ncn ncn-set-secondary-admin [OPTIONS] <NCN> <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<NCN>` — The NCN pubkey
+* `<NEW_ADMIN>` — The new admin pubkey
+
+###### **Options:**
+
+* `--set-operator-admin` — Set operator_admin
+* `--set-vault-admin` — Set vault_admin
+* `--set-slasher-admin` — Set slasher_admin
+* `--set-delegate-admin` — Set delegate_admin
+* `--set-metadata-admin` — Set metadata_admin
+* `--set-weight-table-admin` — Set weight_table_admin
+* `--set-ncn-program-admin` — Set ncn_program_admin
+
+
+
 ## `jito-restaking-cli restaking operator`
 
 **Usage:** `jito-restaking-cli restaking operator <COMMAND>`
@@ -276,7 +319,8 @@ List All Ncn Vault Ticket for a NCN
 * `cooldown-operator-vault-ticket` — Cooldown Operator Vault Ticket
 * `operator-warmup-ncn` — Operator Warmup NCN
 * `operator-cooldown-ncn` — Operator Cooldown NCN
-* `operator-set-secondary-admin` — Operator Set Admin
+* `operator-set-admin` — Operator Set Admin
+* `operator-set-secondary-admin` — Operator Set Secondary Admin
 * `operator-set-fees` — Sets the operator fee
 * `operator-delegate-token-account` — Operator Delegate Token Account
 * `get` — Get operator
@@ -363,9 +407,26 @@ Operator Cooldown NCN
 
 
 
-## `jito-restaking-cli restaking operator operator-set-secondary-admin`
+## `jito-restaking-cli restaking operator operator-set-admin`
 
 Operator Set Admin
+
+**Usage:** `jito-restaking-cli restaking operator operator-set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair <NEW_ADMIN_KEYPAIR> <OPERATOR>`
+
+###### **Arguments:**
+
+* `<OPERATOR>` — The Operator pubkey
+
+###### **Options:**
+
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+
+
+
+## `jito-restaking-cli restaking operator operator-set-secondary-admin`
+
+Operator Set Secondary Admin
 
 **Usage:** `jito-restaking-cli restaking operator operator-set-secondary-admin [OPTIONS] <OPERATOR> <NEW_ADMIN>`
 
@@ -481,6 +542,8 @@ Vault program commands
 * `initialize` — Creates global config (can only be done once)
 * `get` — Fetches global config
 * `set-admin` — Set the config admin
+* `set-program-fee` — Set the program fee
+* `set-program-fee-wallet` — Set the program fee wallet
 
 
 
@@ -517,6 +580,30 @@ Set the config admin
 
 
 
+## `jito-restaking-cli vault config set-program-fee`
+
+Set the program fee
+
+**Usage:** `jito-restaking-cli vault config set-program-fee <NEW_FEE_BPS>`
+
+###### **Arguments:**
+
+* `<NEW_FEE_BPS>` — The program fee
+
+
+
+## `jito-restaking-cli vault config set-program-fee-wallet`
+
+Set the program fee wallet
+
+**Usage:** `jito-restaking-cli vault config set-program-fee-wallet <PROGRAM_FEE_WALLET>`
+
+###### **Arguments:**
+
+* `<PROGRAM_FEE_WALLET>` — The program fee wallet
+
+
+
 ## `jito-restaking-cli vault vault`
 
 Vault commands
@@ -539,6 +626,7 @@ Vault commands
 * `warmup-vault-ncn-ticket` — Warmup Vault NCN Ticket
 * `cooldown-vault-ncn-ticket` — Cooldown Vault NCN Ticket
 * `enqueue-withdrawal` — Starts the withdrawal process
+* `change-withdrawal-ticket-owner` — Change withdrawal ticket owner
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
 * `get-operator-delegations` — Gets the operator delegations for a vault
@@ -546,7 +634,12 @@ Vault commands
 * `get-withdrawal-ticket` — 
 * `get` — Gets a vault
 * `list` — List all vaults
+* `set-admin` — Set Admin
 * `set-capacity` — Sets the deposit capacity in the vault
+* `set-fees` — Sets the fees in the vault
+* `set-is-paused` — Sets the vault's pause state
+* `set-secondary-admin` — Set Secondary Admin
+* `update-vault-balance` — Update Vault Balance
 * `delegate-token-account` — Delegate a token account
 * `delegated-token-transfer` — Transfer a token account
 
@@ -743,6 +836,23 @@ Starts the withdrawal process
 
 
 
+## `jito-restaking-cli vault vault change-withdrawal-ticket-owner`
+
+Change withdrawal ticket owner
+
+**Usage:** `jito-restaking-cli vault vault change-withdrawal-ticket-owner --old-ticket-owner-keypair <OLD_TICKET_OWNER_KEYPAIR> <VAULT> <NEW_TICKET_OWNER>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NEW_TICKET_OWNER>` — The new ticket owner pubkey
+
+###### **Options:**
+
+* `--old-ticket-owner-keypair <OLD_TICKET_OWNER_KEYPAIR>` — The old ticket owner keypair
+
+
+
 ## `jito-restaking-cli vault vault burn-withdrawal-ticket`
 
 Burns the withdrawal ticket, ending the withdrawal process
@@ -823,6 +933,23 @@ List all vaults
 
 
 
+## `jito-restaking-cli vault vault set-admin`
+
+Set Admin
+
+**Usage:** `jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair <NEW_ADMIN_KEYPAIR> <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The Vault pubkey
+
+###### **Options:**
+
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+
+
+
 ## `jito-restaking-cli vault vault set-capacity`
 
 Sets the deposit capacity in the vault
@@ -833,6 +960,78 @@ Sets the deposit capacity in the vault
 
 * `<VAULT>` — The vault pubkey
 * `<AMOUNT>` — The new capacity
+
+
+
+## `jito-restaking-cli vault vault set-fees`
+
+Sets the fees in the vault
+
+**Usage:** `jito-restaking-cli vault vault set-fees [OPTIONS] <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+
+###### **Options:**
+
+* `--deposit-fee-bps <DEPOSIT_FEE_BPS>` — The deposit fee BPS
+* `--withdrawal-fee-bps <WITHDRAWAL_FEE_BPS>` — The withdrawal fee BPS
+* `--reward-fee-bps <REWARD_FEE_BPS>` — The reward fee BPS
+
+
+
+## `jito-restaking-cli vault vault set-is-paused`
+
+Sets the vault's pause state
+
+**Usage:** `jito-restaking-cli vault vault set-is-paused [OPTIONS] <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+
+###### **Options:**
+
+* `--set-pause` — Set pause
+
+
+
+## `jito-restaking-cli vault vault set-secondary-admin`
+
+Set Secondary Admin
+
+**Usage:** `jito-restaking-cli vault vault set-secondary-admin [OPTIONS] <VAULT> <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
+* `<NEW_ADMIN>` — The new admin pubkey
+
+###### **Options:**
+
+* `--set-delegation-admin` — Set delegation_admin
+* `--set-operator-admin` — Set operator_admin
+* `--set-ncn-admin` — Set ncn_admin
+* `--set-slasher-admin` — Set slasher_admin
+* `--set-capacity-admin` — Set capacity_admin
+* `--set-fee-wallet` — Set fee_wallet
+* `--set-mint-burn-admin` — Set mint_burn_admin
+* `--set-delegate-asset-admin` — Set delegate_asset_admin
+* `--set-fee-admin` — Set fee_admin
+* `--set-metadata-admin` — Set metadata_admin
+
+
+
+## `jito-restaking-cli vault vault update-vault-balance`
+
+Update Vault Balance
+
+**Usage:** `jito-restaking-cli vault vault update-vault-balance <VAULT>`
+
+###### **Arguments:**
+
+* `<VAULT>` — The vault pubkey
 
 
 
