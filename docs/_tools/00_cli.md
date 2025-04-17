@@ -27,7 +27,7 @@ A CLI for managing restaking and vault operations
 * `--commitment <COMMITMENT>` — Commitment level
 * `--restaking-program-id <RESTAKING_PROGRAM_ID>` — Restaking program ID
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
-* `--ledger <LEDGER>` — Ledger
+* `--ledger <LEDGER>` — Ledger device path or identifier
 * `--keypair <KEYPAIR>` — Keypair
 * `--verbose` — Verbose mode
 * `--print-tx` — This will print out the raw TX instead of running it
@@ -624,7 +624,7 @@ Vault commands
 * `warmup-vault-ncn-ticket` — Warmup Vault NCN Ticket
 * `cooldown-vault-ncn-ticket` — Cooldown Vault NCN Ticket
 * `enqueue-withdrawal` — Starts the withdrawal process
-* `change-withdrawal-ticket-owner` — Starts the withdrawal process
+* `change-withdrawal-ticket-owner` — Change withdrawal ticket owner
 * `burn-withdrawal-ticket` — Burns the withdrawal ticket, ending the withdrawal process
 * `get-vault-update-state-tracker` — Gets the update state tracker for a vault
 * `get-operator-delegations` — Gets the operator delegations for a vault
@@ -836,7 +836,7 @@ Starts the withdrawal process
 
 ## `jito-restaking-cli vault vault change-withdrawal-ticket-owner`
 
-Starts the withdrawal process
+Change withdrawal ticket owner
 
 **Usage:** `jito-restaking-cli vault vault change-withdrawal-ticket-owner --old-ticket-owner-keypair <OLD_TICKET_OWNER_KEYPAIR> <VAULT> <NEW_TICKET_OWNER>`
 

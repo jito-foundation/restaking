@@ -165,7 +165,7 @@ pub enum VaultActions {
         /// Amount to withdraw
         amount: u64,
     },
-    /// Starts the withdrawal process
+    /// Change withdrawal ticket owner
     ChangeWithdrawalTicketOwner {
         /// The vault pubkey
         vault: Pubkey,
