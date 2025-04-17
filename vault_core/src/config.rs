@@ -177,6 +177,16 @@ impl Config {
         Ok(fee)
     }
 
+    /// Check admin validity and signature
+    #[inline(always)]
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), VaultError> {
+        if self.admin.ne(admin) {
+            msg!("Config admin does not match the provided admin");
+            return Err(VaultError::ConfigAdminInvalid.into());
+        }
+        Ok(())
+    }
+
     pub fn seeds() -> Vec<Vec<u8>> {
         vec![b"config".to_vec()]
     }

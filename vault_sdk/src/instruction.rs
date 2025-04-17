@@ -320,6 +320,17 @@ pub enum VaultInstruction {
     #[account(2, name = "new_admin")]
     SetConfigAdmin,
 
+    /// Changes the secondary admin for the config
+    #[account(0, name = "config")]
+    #[account(1, signer, name = "admin")]
+    #[account(2, name = "new_admin")]
+    SetConfigSecondaryAdmin (ConfigAdminRole),
+
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+pub enum ConfigAdminRole {
+    FeeAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
