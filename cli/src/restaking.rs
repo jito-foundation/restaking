@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{command, Subcommand};
 use solana_program::pubkey::Pubkey;
 
@@ -68,6 +70,55 @@ pub enum NcnActions {
     ListNcnOperatorState { ncn: Pubkey },
     /// List All Ncn Vault Ticket for a NCN
     ListNcnVaultTicket { ncn: Pubkey },
+    /// Set NCN Admin
+    NcnSetAdmin {
+        /// The NCN pubkey
+        ncn: String,
+
+        /// Path to the old admin keypair file
+        #[arg(long)]
+        old_admin_keypair: PathBuf,
+
+        /// Path to the new admin keypair file
+        #[arg(long)]
+        new_admin_keypair: PathBuf,
+    },
+    /// Set NCN Secondary Admin
+    NcnSetSecondaryAdmin {
+        /// The NCN pubkey
+        ncn: String,
+
+        /// The new admin pubkey
+        new_admin: String,
+
+        /// Set operator_admin
+        #[arg(long)]
+        set_operator_admin: bool,
+
+        /// Set vault_admin
+        #[arg(long)]
+        set_vault_admin: bool,
+
+        /// Set slasher_admin
+        #[arg(long)]
+        set_slasher_admin: bool,
+
+        /// Set delegate_admin
+        #[arg(long)]
+        set_delegate_admin: bool,
+
+        ///Set metadata_admin
+        #[arg(long)]
+        set_metadata_admin: bool,
+
+        ///Set weight_table_admin
+        #[arg(long)]
+        set_weight_table_admin: bool,
+
+        ///Set ncn_program_admin
+        #[arg(long)]
+        set_ncn_program_admin: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -85,6 +136,19 @@ pub enum OperatorActions {
     /// Operator Cooldown NCN
     OperatorCooldownNcn { operator: String, ncn: String },
     /// Operator Set Admin
+    OperatorSetAdmin {
+        /// The Operator pubkey
+        operator: String,
+
+        /// Path to the old admin keypair file
+        #[arg(long)]
+        old_admin_keypair: PathBuf,
+
+        /// Path to the new admin keypair file
+        #[arg(long)]
+        new_admin_keypair: PathBuf,
+    },
+    /// Operator Set Secondary Admin
     OperatorSetSecondaryAdmin {
         operator: String,
         new_admin: String,
