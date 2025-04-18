@@ -16,12 +16,12 @@ use jito_vault_client::{
         CreateTokenMetadataBuilder, DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder,
         InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetConfigSecondaryAdminBuilder,
-        SetDepositCapacityBuilder, SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder,
-        SetProgramFeeWalletBuilder, SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder,
-        UpdateVaultBalanceBuilder, WarmupVaultNcnTicketBuilder,
+        MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder, SetProgramFeeWalletBuilder,
+        SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder, UpdateVaultBalanceBuilder,
+        WarmupVaultNcnTicketBuilder,
     },
-    types::{ConfigAdminRole, VaultAdminRole, WithdrawalAllocationMethod},
+    types::{VaultAdminRole, WithdrawalAllocationMethod},
 };
 use jito_vault_core::{
     burn_vault::BurnVault, config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket,
