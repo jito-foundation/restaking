@@ -21,6 +21,7 @@ mod mint_to;
 mod set_admin;
 mod set_capacity;
 mod set_config_admin;
+mod set_config_secondary_admin;
 mod set_fees;
 mod set_is_paused;
 mod set_program_fee;
@@ -33,6 +34,7 @@ mod warmup_vault_ncn_ticket;
 
 use borsh::BorshDeserialize;
 use jito_vault_sdk::instruction::VaultInstruction;
+use set_config_secondary_admin::process_set_config_secondary_admin;
 use set_program_fee::process_set_program_fee;
 use solana_program::{
     account_info::AccountInfo, declare_id, entrypoint::ProgramResult, msg,
@@ -279,6 +281,10 @@ pub fn process_instruction(
         VaultInstruction::SetConfigAdmin => {
             msg!("Instruction: SetConfigAdmin");
             process_set_config_admin(program_id, accounts)
+        }
+        VaultInstruction::SetConfigSecondaryAdmin(role) => {
+            msg!("Instruction: SetConfigSecondaryAdmin");
+            process_set_config_secondary_admin(program_id, accounts, role)
         }
     }
 }

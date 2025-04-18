@@ -542,6 +542,7 @@ Vault program commands
 * `initialize` — Creates global config (can only be done once)
 * `get` — Fetches global config
 * `set-admin` — Set the config admin
+* `set-secondary-admin` — Set the config admin
 * `set-program-fee` — Set the program fee
 * `set-program-fee-wallet` — Set the program fee wallet
 
@@ -577,6 +578,22 @@ Set the config admin
 ###### **Arguments:**
 
 * `<NEW_ADMIN>` — The new admin's pubkey
+
+
+
+## `jito-restaking-cli vault config set-secondary-admin`
+
+Set the config admin
+
+**Usage:** `jito-restaking-cli vault config set-secondary-admin [OPTIONS] <NEW_ADMIN>`
+
+###### **Arguments:**
+
+* `<NEW_ADMIN>` — The new admin's pubkey
+
+###### **Options:**
+
+* `--set-fee-admin` — Set fee_admin
 
 
 
