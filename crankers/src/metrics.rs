@@ -13,6 +13,7 @@ use crate::vault_handler::VaultHandler;
 pub async fn emit_vault_metrics(
     rpc_client: &RpcClient,
     config_epoch_length: u64,
+    cluster_name: &str,
 ) -> anyhow::Result<()> {
     let slot = rpc_client.get_slot().await?;
     let epoch = slot / config_epoch_length;
@@ -109,6 +110,7 @@ pub async fn emit_vault_metrics(
             ("vrt_supply_external", vrt_mint.supply as i64, i64),
             ("st_supply_internal", vault.tokens_deposited() as i64, i64),
             ("st_supply_external", st_deposit_account.amount as i64, i64),
+            "cluster" => cluster_name,
         );
     }
 
@@ -128,6 +130,7 @@ pub async fn emit_vault_metrics(
             num_vault_operator_delegations_updated,
             i64
         ),
+        "cluster" => cluster_name,
     );
 
     Ok(())
