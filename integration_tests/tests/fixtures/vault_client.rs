@@ -1250,13 +1250,10 @@ impl VaultProgramClient {
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
-        let signers = match mint_burn_admin {
-            Some(admin) => {
-                vec![staker, base, admin]
-            }
-            None => {
-                vec![staker, base]
-            }
+        let mut signers = vec![staker, base];
+
+        if let Some(admin) = mint_burn_admin {
+            signers.push(admin);
         };
 
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -1285,6 +1282,7 @@ impl VaultProgramClient {
         staker: &Keypair,
         vault_staker_withdrawal_ticket_base: &Pubkey,
         program_fee_wallet: &Pubkey,
+        mint_burn_admin: Option<&Keypair>,
     ) -> Result<(), TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
@@ -1305,7 +1303,7 @@ impl VaultProgramClient {
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
             &get_associated_token_address(program_fee_wallet, &vault.vrt_mint),
-            None,
+            mint_burn_admin,
         )
         .await?;
 
@@ -1327,6 +1325,12 @@ impl VaultProgramClient {
         mint_burn_admin: Option<&Keypair>,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
+        let mut signers = vec![&self.payer];
+
+        if let Some(admin) = mint_burn_admin {
+            signers.push(admin);
+        };
+
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::burn_withdrawal_ticket(
                 &jito_vault_program::id(),
@@ -1343,7 +1347,7 @@ impl VaultProgramClient {
                 mint_burn_admin.map(|s| s.pubkey()).as_ref(),
             )],
             Some(&self.payer.pubkey()),
-            &[&self.payer],
+            &signers,
             blockhash,
         ))
         .await

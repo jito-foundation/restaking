@@ -993,7 +993,13 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1115,7 +1121,13 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1237,7 +1249,13 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 

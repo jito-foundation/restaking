@@ -4,7 +4,7 @@ mod tests {
         config::Config, delegation_state::DelegationState, vault::Vault,
         vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     };
-    use jito_vault_sdk::error::VaultError;
+    use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_program::pubkey::Pubkey;
     use solana_sdk::{instruction::InstructionError, signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address;
@@ -85,7 +85,13 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await;
         assert_vault_error(
             transaction_error,
@@ -179,7 +185,13 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await;
         assert_vault_error(
             transaction_error,
@@ -284,8 +296,27 @@ mod tests {
             .await
             .unwrap();
 
+        // Mint Burn
+        let mint_burn_admin = Keypair::new();
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .set_secondary_admin(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &vault_root.vault_admin,
+                &mint_burn_admin.pubkey(),
+                VaultAdminRole::MintBurnAdmin,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                Some(&mint_burn_admin),
+            )
             .await
             .unwrap();
 
@@ -426,7 +457,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -587,7 +624,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -742,7 +785,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -897,7 +946,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1050,7 +1105,13 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1206,7 +1267,13 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1529,5 +1596,118 @@ mod tests {
             .await;
 
         assert_vault_error(result, VaultError::VaultIsPaused);
+    }
+
+    #[tokio::test]
+    async fn test_burn_withdrawal_ticket_without_mint_burn_admin_fails() {
+        const MINT_AMOUNT: u64 = 100_000;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin: _,
+            vault_root,
+            restaking_config_admin: _,
+            operator_roots,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        let random_pubkey = Pubkey::new_unique();
+        fixture
+            .create_ata(&vault.supported_mint, &random_pubkey)
+            .await
+            .unwrap();
+
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &base,
+        )
+        .0;
+
+        // Mint Burn
+        let mint_burn_admin = Keypair::new();
+        vault_program_client
+            .set_secondary_admin(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &vault_root.vault_admin,
+                &mint_burn_admin.pubkey(),
+                VaultAdminRole::MintBurnAdmin,
+            )
+            .await
+            .unwrap();
+
+        let result = vault_program_client
+            .burn_withdrawal_ticket(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &get_associated_token_address(&vault_root.vault_pubkey, &vault.supported_mint),
+                &vault.vrt_mint,
+                &random_pubkey,
+                &get_associated_token_address(&random_pubkey, &vault.supported_mint),
+                &vault_staker_withdrawal_ticket,
+                &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
+                &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
+                &get_associated_token_address(&config.program_fee_wallet, &vault.vrt_mint),
+                None,
+            )
+            .await;
+
+        assert_vault_error(result, VaultError::VaultMintBurnAdminInvalid);
     }
 }
