@@ -93,12 +93,23 @@ pub async fn emit_vault_metrics(
             .get(&vault.vrt_mint)
             .ok_or_else(|| anyhow::anyhow!("Mint not found in map"))?;
 
-        let st_deposit_account: &TokenAccount = st_ata_map
+        let try_st_deposit_account: &TokenAccount = st_ata_map
             .get(&get_associated_token_address(
                 address,
                 &vault.supported_mint,
             ))
-            .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"))?;
+            .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"));
+
+        if try_st_ata_accounts.is_err() {
+            error!(
+                "Failed to get ST deposit account for vault {}: {}",
+                address,
+                try_st_deposit_account.unwrap_err()
+            );
+            continue;
+        }
+
+        let st_deposit_account = try_st_deposit_account.unwrap();
 
         datapoint_info!(
             "restaking-vault-supply",
