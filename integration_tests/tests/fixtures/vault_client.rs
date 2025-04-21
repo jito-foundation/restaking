@@ -974,6 +974,7 @@ impl VaultProgramClient {
             depositor,
             &depositor_vrt_token_account,
             &base,
+            None,
             amount,
         )
         .await?;
@@ -1244,6 +1245,7 @@ impl VaultProgramClient {
         staker: &Keypair,
         staker_vrt_token_account: &Pubkey,
         base: &Keypair,
+        mint_burn_admin: Option<&Keypair>,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
@@ -1257,6 +1259,7 @@ impl VaultProgramClient {
                 &staker.pubkey(),
                 staker_vrt_token_account,
                 &base.pubkey(),
+                mint_burn_admin.map(|s| s.pubkey()).as_ref(),
                 amount,
             )],
             Some(&staker.pubkey()),
@@ -1292,6 +1295,7 @@ impl VaultProgramClient {
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
             &get_associated_token_address(program_fee_wallet, &vault.vrt_mint),
+            None,
         )
         .await?;
 
@@ -1310,6 +1314,7 @@ impl VaultProgramClient {
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         program_fee_vrt_token_account: &Pubkey,
+        mint_burn_admin: Option<&Keypair>,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
         self._process_transaction(&Transaction::new_signed_with_payer(
@@ -1325,6 +1330,7 @@ impl VaultProgramClient {
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
                 program_fee_vrt_token_account,
+                mint_burn_admin.map(|s| s.pubkey()).as_ref(),
             )],
             Some(&self.payer.pubkey()),
             &[&self.payer],

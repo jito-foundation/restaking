@@ -1418,6 +1418,7 @@ mod tests {
                 ),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 &invalid_program_fee_account,
+                None,
             )
             .await;
 
@@ -1523,6 +1524,7 @@ mod tests {
                 &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 &get_associated_token_address(&config.program_fee_wallet, &vault.vrt_mint),
+                None,
             )
             .await;
 
