@@ -943,6 +943,7 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Keypair,
+        mint_burn_admin: Option<&Keypair>,
         amount: u64,
     ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
@@ -974,7 +975,7 @@ impl VaultProgramClient {
             depositor,
             &depositor_vrt_token_account,
             &base,
-            None,
+            mint_burn_admin,
             amount,
         )
         .await?;
@@ -1249,6 +1250,15 @@ impl VaultProgramClient {
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
+        let signers = match mint_burn_admin {
+            Some(admin) => {
+                vec![staker, base, admin]
+            }
+            None => {
+                vec![staker, base]
+            }
+        };
+
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::enqueue_withdrawal(
                 &jito_vault_program::id(),
@@ -1263,7 +1273,7 @@ impl VaultProgramClient {
                 amount,
             )],
             Some(&staker.pubkey()),
-            &[staker, base],
+            &signers,
             blockhash,
         ))
         .await

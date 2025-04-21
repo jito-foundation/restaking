@@ -80,7 +80,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -158,7 +158,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -252,7 +252,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -377,7 +377,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -538,7 +538,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -693,7 +693,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -848,7 +848,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -1002,7 +1002,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, AMOUNT_TO_WITHDRAWAL)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, AMOUNT_TO_WITHDRAWAL)
             .await
             .unwrap();
 
@@ -1158,7 +1158,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, AMOUNT_TO_WITHDRAWAL)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, AMOUNT_TO_WITHDRAWAL)
             .await
             .unwrap();
 
@@ -1352,7 +1352,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -1472,7 +1472,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 

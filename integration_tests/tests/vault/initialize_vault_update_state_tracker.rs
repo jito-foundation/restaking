@@ -422,7 +422,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 75_000)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, 75_000)
             .await
             .unwrap();
 
