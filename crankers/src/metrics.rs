@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use jito_jsm_core::get_epoch;
 use jito_vault_core::config::Config;
+use log::error;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey, signature::Keypair};
@@ -93,14 +94,14 @@ pub async fn emit_vault_metrics(
             .get(&vault.vrt_mint)
             .ok_or_else(|| anyhow::anyhow!("Mint not found in map"))?;
 
-        let try_st_deposit_account: &TokenAccount = st_ata_map
+        let try_st_deposit_account = st_ata_map
             .get(&get_associated_token_address(
                 address,
                 &vault.supported_mint,
             ))
             .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"));
 
-        if try_st_ata_accounts.is_err() {
+        if try_st_deposit_account.is_err() {
             error!(
                 "Failed to get ST deposit account for vault {}: {}",
                 address,
