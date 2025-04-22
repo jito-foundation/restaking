@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use jito_vault_core::config::Config;
-    use jito_vault_sdk::error::VaultError;
+    use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_sdk::signature::{Keypair, Signer};
     use spl_associated_token_account::get_associated_token_address;
 
@@ -113,12 +113,30 @@ mod tests {
             MINT_AMOUNT
         );
 
+        // Mint Burn
+        let mint_burn_admin = Keypair::new();
+        vault_program_client
+            .set_secondary_admin(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &vault_root.vault_admin,
+                &mint_burn_admin.pubkey(),
+                VaultAdminRole::MintBurnAdmin,
+            )
+            .await
+            .unwrap();
+
         // the user is withdrawing 99,000 VRT tokens, there is a 1% fee on withdraws, so
         // 98010 tokens will be undeleged for withdraw
         let amount_to_dequeue = MINT_AMOUNT * (10_000 - WITHDRAWAL_FEE_BPS) as u64 / 10_000;
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, amount_to_dequeue)
+            .do_enqueue_withdrawal(
+                &vault_root,
+                &depositor,
+                Some(&mint_burn_admin),
+                amount_to_dequeue,
+            )
             .await
             .unwrap();
 
@@ -185,7 +203,7 @@ mod tests {
             .unwrap();
 
         let err = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 0)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, 0)
             .await;
 
         assert_vault_error(err, VaultError::VaultEnqueueWithdrawalAmountZero);
@@ -239,9 +257,71 @@ mod tests {
             .unwrap();
 
         let test_error = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 0)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, 0)
             .await;
 
         assert_vault_error(test_error, VaultError::VaultIsPaused);
+    }
+
+    #[tokio::test]
+    async fn test_enqueue_withdraw_without_mint_burn_admin_fails() {
+        let mut fixture = TestBuilder::new().await;
+        let ConfiguredVault {
+            mut vault_program_client,
+            vault_root,
+            operator_roots,
+            ..
+        } = fixture
+            .setup_vault_with_ncn_and_operators(0, 0, 0, 1, &[])
+            .await
+            .unwrap();
+
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), 100)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, 100, 100)
+            .await
+            .unwrap();
+
+        // let vault operator ticket warmup
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(2 * config.epoch_length())
+            .await
+            .unwrap();
+
+        let operator_root_pubkeys: Vec<_> = operator_roots
+            .iter()
+            .map(|root| root.operator_pubkey)
+            .collect();
+        vault_program_client
+            .do_full_vault_update(&vault_root.vault_pubkey, &operator_root_pubkeys)
+            .await
+            .unwrap();
+
+        // Mint Burn
+        let mint_burn_admin = Keypair::new();
+        vault_program_client
+            .set_secondary_admin(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &vault_root.vault_admin,
+                &mint_burn_admin.pubkey(),
+                VaultAdminRole::MintBurnAdmin,
+            )
+            .await
+            .unwrap();
+
+        let test_error = vault_program_client
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, 0)
+            .await;
+
+        assert_vault_error(test_error, VaultError::VaultMintBurnAdminInvalid);
     }
 }
