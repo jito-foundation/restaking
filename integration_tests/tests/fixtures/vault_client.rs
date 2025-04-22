@@ -46,6 +46,7 @@ use spl_associated_token_account::{
 use spl_token::state::Account as SPLTokenAccount;
 use spl_token_2022::extension::ExtensionType;
 
+use super::fixture::TestBuilder;
 use crate::fixtures::{TestError, TestResult};
 
 pub struct VaultRoot {
@@ -1831,6 +1832,88 @@ impl VaultProgramClient {
             blockhash,
         ))
         .await
+    }
+
+    pub async fn do_transfer_to_withdrawal_ticket(
+        &mut self,
+        vault_staker_withdrawal_ticket: &Pubkey,
+        vault_root_attacker: &VaultRoot,
+        attacker: &Keypair,
+        amount: u64,
+        fixture: &mut TestBuilder,
+    ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
+        let attacker_vault = self
+            .get_vault(&vault_root_attacker.vault_pubkey)
+            .await
+            .unwrap();
+
+        self.create_ata(&attacker_vault.vrt_mint, &vault_staker_withdrawal_ticket)
+            .await?;
+
+        fixture
+            .transfer_token(
+                &spl_token::id(),
+                &attacker,
+                &vault_staker_withdrawal_ticket,
+                &attacker_vault.vrt_mint,
+                amount,
+            )
+            .await
+            .unwrap();
+
+        Ok(VaultStakerWithdrawalTicketRoot {
+            base: Keypair::new().pubkey(),
+        })
+    }
+
+    pub async fn do_burn_withdrawal_ticket_with_different_vault(
+        &mut self,
+        vault_root: &VaultRoot,
+        vault_root_attacker: &VaultRoot,
+        staker: &Keypair,
+        vault_staker_withdrawal_ticket_base: &Pubkey,
+        program_fee_wallet: &Pubkey,
+    ) -> Result<(), TestError> {
+        let vault_attacker = self
+            .get_vault(&vault_root_attacker.vault_pubkey)
+            .await
+            .unwrap();
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            vault_staker_withdrawal_ticket_base,
+        )
+        .0;
+
+        self.create_ata(
+            &vault_attacker.supported_mint,
+            &vault_staker_withdrawal_ticket,
+        )
+        .await?;
+        self.create_ata(&vault_attacker.supported_mint, &staker.pubkey())
+            .await?;
+
+        self.burn_withdrawal_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root_attacker.vault_pubkey,
+            &get_associated_token_address(
+                &vault_root_attacker.vault_pubkey,
+                &vault_attacker.supported_mint,
+            ),
+            &vault_attacker.vrt_mint,
+            &staker.pubkey(),
+            &get_associated_token_address(&staker.pubkey(), &vault_attacker.supported_mint),
+            &vault_staker_withdrawal_ticket,
+            &get_associated_token_address(
+                &vault_staker_withdrawal_ticket,
+                &vault_attacker.vrt_mint,
+            ),
+            &get_associated_token_address(&vault_attacker.fee_wallet, &vault_attacker.vrt_mint),
+            &get_associated_token_address(program_fee_wallet, &vault_attacker.vrt_mint),
+        )
+        .await?;
+
+        Ok(())
     }
 }
 
