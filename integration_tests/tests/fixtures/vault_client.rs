@@ -1924,6 +1924,7 @@ impl VaultProgramClient {
             ),
             &get_associated_token_address(&vault_attacker.fee_wallet, &vault_attacker.vrt_mint),
             &get_associated_token_address(program_fee_wallet, &vault_attacker.vrt_mint),
+            None,
         )
         .await?;
 
