@@ -47,6 +47,9 @@ pub struct RestakingCliHandler {
 
     /// This will print out the raw TX instead of running it
     print_tx: bool,
+
+    /// This will print out the account information in JSON format
+    print_json: bool,
 }
 
 impl CliHandler for RestakingCliHandler {
@@ -57,6 +60,10 @@ impl CliHandler for RestakingCliHandler {
     fn print_tx(&self) -> bool {
         self.print_tx
     }
+
+    fn print_json(&self) -> bool {
+        self.print_json
+    }
 }
 
 impl RestakingCliHandler {
@@ -65,12 +72,14 @@ impl RestakingCliHandler {
         restaking_program_id: Pubkey,
         vault_program_id: Pubkey,
         print_tx: bool,
+        print_json: bool,
     ) -> Self {
         Self {
             cli_config,
             restaking_program_id,
             vault_program_id,
             print_tx,
+            print_json,
         }
     }
 
@@ -1253,8 +1262,11 @@ impl RestakingCliHandler {
         let account = rpc_client.get_account(&config_address).await?;
         let config =
             jito_restaking_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
+
         info!("Restaking config at address {}", config_address);
-        info!("{}", config.pretty_display());
+
+        self.print_out(&config)?;
+
         Ok(())
     }
 

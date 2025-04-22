@@ -125,6 +125,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 restaking_program_id,
                 vault_program_id,
                 args.print_tx,
+                args.print_json,
             )
             .handle(action)
             .await?;
@@ -135,6 +136,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 restaking_program_id,
                 vault_program_id,
                 args.print_tx,
+                args.print_json,
             )
             .handle(action)
             .await?;

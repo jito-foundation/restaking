@@ -6,6 +6,7 @@ use cli_config::CliConfig;
 use cli_signer::CliSigner;
 use jito_restaking_client_common::log::PrettyDisplay;
 use log::print_base58_tx;
+use serde::Serialize;
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
@@ -29,6 +30,8 @@ pub(crate) trait CliHandler {
     fn cli_config(&self) -> &CliConfig;
 
     fn print_tx(&self) -> bool;
+
+    fn print_json(&self) -> bool;
 
     fn signer(&self) -> anyhow::Result<&CliSigner> {
         self.cli_config()
@@ -140,6 +143,26 @@ pub(crate) trait CliHandler {
             let result = rpc_client.send_and_confirm_transaction(&tx).await?;
 
             info!("Transaction confirmed: {:?}", result);
+        }
+
+        Ok(())
+    }
+
+    /// Prints a value either as JSON or using its pretty display format.
+    ///
+    /// This function provides flexible output formatting for any type that implements both
+    /// [`Serialize`] and [`PrettyDisplay`]. It determines the output format based on the
+    /// configuration of the containing struct (accessed via `self.print_json()`).
+    fn print_out<T>(&self, value: &T) -> anyhow::Result<()>
+    where
+        T: ?Sized + Serialize,
+        T: PrettyDisplay,
+    {
+        if self.print_json() {
+            let json_string = serde_json::to_string_pretty(value)?;
+            println!("{}", json_string);
+        } else {
+            info!("{}", value.pretty_display());
         }
 
         Ok(())

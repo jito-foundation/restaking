@@ -61,6 +61,9 @@ pub struct VaultCliHandler {
 
     /// This will print out the raw TX instead of running it
     print_tx: bool,
+
+    /// This will print out the account information in JSON format
+    print_json: bool,
 }
 
 impl CliHandler for VaultCliHandler {
@@ -71,6 +74,10 @@ impl CliHandler for VaultCliHandler {
     fn print_tx(&self) -> bool {
         self.print_tx
     }
+
+    fn print_json(&self) -> bool {
+        self.print_json
+    }
 }
 
 impl VaultCliHandler {
@@ -79,12 +86,14 @@ impl VaultCliHandler {
         restaking_program_id: Pubkey,
         vault_program_id: Pubkey,
         print_tx: bool,
+        print_json: bool,
     ) -> Self {
         Self {
             cli_config,
             restaking_program_id,
             vault_program_id,
             print_tx,
+            print_json,
         }
     }
 
