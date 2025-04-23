@@ -22,6 +22,13 @@ Jito Restaking is a next-generation restaking platform for Solana and SVM enviro
 - VRT construction and management
 - Flexible NCN and operator management
 
+## SDKs
+
+We provide TypeScript SDKs for interacting with the Jito Restaking system:
+
+- 📦 [`@jito-foundation/restaking-sdk`](https://www.npmjs.com/package/@jito-foundation/restaking-sdk) – TypeScript SDK for interacting with the Jito Restaking program.
+- 📦 [`@jito-foundation/vault-sdk`](https://www.npmjs.com/package/@jito-foundation/vault-sdk) – TypeScript SDK for interacting with the Jito Vault program.
+
 ## Installation
 
 ```bash
@@ -98,3 +105,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the Business Source License 1.1 - see the [LICENSE](./LICENSE.md) file for details.
+
+
