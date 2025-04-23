@@ -2,15 +2,12 @@
 
 ## Overview
 
-The Jito Restaking CLI is a powerful command-line tool that provides access to Jito's restaking.
+The Jito Restaking CLI is a command-line tool that provides access to Jito's Restaking protocol.
 This tool enables users to interact with the Jito Restaking protocol, allowing for vault management, operator delegation, and so on.
 
 With this CLI, you can:
-- Create and manage vaults for token restaking
-- Mint and burn Vault Restaking Tokens (VRT)
-- Register as an operator and receive delegations
-- Delegate tokens to operators
-- Update vaults and manage epoch transitions
+- NCN, Operator, Vault Operation
+- Mint and burn VRT
 - Monitor account statuses with JSON output support
 - Preview transactions before sending them with the `print-tx` flag
 
