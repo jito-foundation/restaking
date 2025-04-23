@@ -152,14 +152,22 @@ pub(crate) trait CliHandler {
     ///
     /// This function provides flexible output formatting for any type that implements both
     /// [`Serialize`] and [`PrettyDisplay`]. It determines the output format based on the
-    /// configuration of the containing struct (accessed via `self.print_json()`).
+    /// configuration of the containing struct.
+    ///
+    /// When printing as JSON, this function automatically filters out the `reserved` field
+    /// from the output without modifying the original struct.
     fn print_out<T>(&self, value: &T) -> anyhow::Result<()>
     where
-        T: ?Sized + Serialize,
-        T: PrettyDisplay,
+        T: ?Sized + Serialize + PrettyDisplay,
     {
         if self.print_json() {
-            let json_string = serde_json::to_string_pretty(value)?;
+            let mut json_value = serde_json::to_value(value)?;
+
+            if let serde_json::Value::Object(ref mut map) = json_value {
+                map.remove("reserved");
+            }
+
+            let json_string = serde_json::to_string_pretty(&json_value)?;
             println!("{}", json_string);
         } else {
             info!("{}", value.pretty_display());

@@ -23,7 +23,7 @@ jito-jsm-core = { workspace = true }
 jito-restaking-client = { workspace = true, features = ["serde"] }
 jito-restaking-client-common = { workspace = true }
 jito-restaking-core = { workspace = true }
-jito-vault-client = { workspace = true }
+jito-vault-client = { workspace = true, features = ["serde"] }
 jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 log = { workspace = true }

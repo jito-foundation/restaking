@@ -1264,9 +1264,7 @@ impl RestakingCliHandler {
             jito_restaking_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
 
         info!("Restaking config at address {}", config_address);
-
         self.print_out(&config)?;
-
         Ok(())
     }
 
@@ -1276,7 +1274,8 @@ impl RestakingCliHandler {
         let account = self.get_rpc_client().get_account(&pubkey).await?;
         let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut account.data.as_slice())?;
         info!("NCN at address {}", pubkey);
-        info!("{}", ncn.pretty_display());
+        self.print_out(&ncn)?;
+
         Ok(())
     }
 
@@ -1291,7 +1290,7 @@ impl RestakingCliHandler {
         for (ncn_pubkey, ncn) in accounts {
             let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
             info!("NCN at address {}", ncn_pubkey);
-            info!("{}", ncn.pretty_display());
+            self.print_out(&ncn)?;
         }
         Ok(())
     }
@@ -1327,7 +1326,7 @@ impl RestakingCliHandler {
                 "NcnOperatorState {} at address {}",
                 index, ncn_operator_state_pubkey
             );
-            info!("{}", ncn_operator_state.pretty_display());
+            self.print_out(&ncn_operator_state)?;
         }
         Ok(())
     }
@@ -1346,7 +1345,7 @@ impl RestakingCliHandler {
                 &mut ticket.data.as_slice(),
             )?;
             info!("NcnVaultTicket {} at address {}", index, ticket_pubkey);
-            info!("{}", ticket.pretty_display());
+            self.print_out(&ticket)?;
         }
         Ok(())
     }
@@ -1358,7 +1357,7 @@ impl RestakingCliHandler {
         let operator =
             jito_restaking_client::accounts::Operator::deserialize(&mut account.data.as_slice())?;
         info!("Operator at address {}", pubkey);
-        info!("{}", operator.pretty_display());
+        self.print_out(&operator)?;
 
         Ok(())
     }
@@ -1375,7 +1374,7 @@ impl RestakingCliHandler {
                 &mut operator.data.as_slice(),
             )?;
             info!("Operator at address {}", operator_pubkey);
-            info!("{}", operator.pretty_display());
+            self.print_out(&operator)?;
         }
         Ok(())
     }
@@ -1393,7 +1392,7 @@ impl RestakingCliHandler {
                 &mut ticket.data.as_slice(),
             )?;
             info!("OperatorVaultTicket {} at address {}", index, ticket_pubkey);
-            info!("{}", ticket.pretty_display());
+            self.print_out(&ticket)?;
         }
         Ok(())
     }

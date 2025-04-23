@@ -1498,13 +1498,13 @@ impl VaultCliHandler {
         .0;
 
         info!("Vault at address {}", pubkey);
-        info!("{}", vault.pretty_display());
+        self.print_out(&vault)?;
 
         if let Ok(metadata) = self
             .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
             .await
         {
-            info!("{}", metadata.pretty_display());
+            self.print_out(&metadata)?;
         }
 
         Ok(())
@@ -1534,13 +1534,13 @@ impl VaultCliHandler {
             .0;
 
             info!("Vault at address {}", vault_pubkey);
-            info!("{}", vault.pretty_display());
+            self.print_out(&vault)?;
 
             if let Ok(metadata) = self
                 .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
                 .await
             {
-                info!("{}", metadata.pretty_display());
+                self.print_out(&metadata)?;
             }
         }
         Ok(())
@@ -1560,7 +1560,7 @@ impl VaultCliHandler {
         let config =
             jito_vault_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
         info!("Vault config at address {}", config_address);
-        info!("{}", config.pretty_display());
+        self.print_out(&config)?;
         Ok(())
     }
 
@@ -1591,7 +1591,7 @@ impl VaultCliHandler {
             "Vault Update State Tracker at address {}",
             vault_update_state_tracker
         );
-        info!("{}", state_tracker.pretty_display());
+        self.print_out(&state_tracker)?;
         Ok(())
     }
 
@@ -1626,7 +1626,7 @@ impl VaultCliHandler {
                     "Vault Operator Delegation at address {}",
                     vault_operator_delegation
                 );
-                info!("{}", delegation.pretty_display());
+                self.print_out(&delegation)?;
             }
             None => {
                 let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>(
@@ -1643,7 +1643,7 @@ impl VaultCliHandler {
                         )?;
 
                     info!("Vault Operator Delegation {} at address {}", index, pubkey);
-                    info!("{}", vault_operator_delegation.pretty_display());
+                    self.print_out(&vault_operator_delegation)?;
                 }
             }
         }
@@ -1681,7 +1681,7 @@ impl VaultCliHandler {
             "Vault Staker Withdrawal Ticket at address {}",
             vault_staker_withdrawal_ticket
         );
-        info!("{}", ticket.pretty_display());
+        self.print_out(&ticket)?;
 
         Ok(())
     }
