@@ -1,25 +1,22 @@
-# Getting Started
+# Jito Restaking CLI
 
-This getting started guide will cover creating a vault, minting some VRT, delegating to an operator, updating the vault and withdrawing VRT.
+## Overview
 
-## Setup
+The Jito Restaking CLI is a powerful command-line tool that provides access to Jito's restaking.
+This tool enables users to interact with the Jito Restaking protocol, allowing for vault management, operator delegation, and so on.
 
-Build and install the CLI
+With this CLI, you can:
+- Create and manage vaults for token restaking
+- Mint and burn Vault Restaking Tokens (VRT)
+- Register as an operator and receive delegations
+- Delegate tokens to operators
+- Update vaults and manage epoch transitions
+- Monitor account statuses with JSON output support
+- Preview transactions before sending them with the `print-tx` flag
 
-In the root of the repo:
+## Features 
 
-```bash
-cargo build --release
-cargo install --path ./cli --bin jito-restaking-cli
-```
-
-Ensure it has been installed
-
-```bash
-jito-restaking-cli --help
-```
-
-## JSON Output
+### JSON Output
 
 The CLI supports JSON output for easier parsing and integration with other tools.
 To enable JSON output, use `--print-json` flag with command like `get`, `list`.
@@ -58,7 +55,55 @@ JSON output can be piped to tools like `jq` for further processing:
 jito-restaking-cli --rpc-url <RPC_URL> restaking operator get <OPERATOR_ADDRESS> --print-json | jq
 ```
 
-## Create a Vault
+### Transaction Inspection
+
+You can preview transactions before sending them using the --print-tx flag.
+
+```bash
+jito-restaking-cli --rpc-url <RPC_URL> restaking ncn initialize --print-tx
+```
+
+Example output:
+
+```bash
+    ------ IX ------
+
+RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
+
+4vvKh3Ws4vGzgXRVdo8SdL4jePXDvCqKVmi21BCBGwvn  W
+6PPdbsLZUyAxPXQ4PWXtZWfnQFQ4w3iWcu1E9AL1PpnG  W
+2V6Abua9BY6Ga8HUeLWSLXh4Gm6oKsn3GpTzP4eYMFqT  W S
+G4iZadrtSPkGWXwF6SKGNQaS6JW4Zu4tgURM1AFXeGV     S
+11111111111111111111111111111111
+
+
+2
+```
+
+When using this flag, the transaction will not be processed - only printed for inspection.
+
+## Getting Started
+
+This getting started guide will cover creating a vault, minting some VRT, delegating to an operator, updating the vault and withdrawing VRT.
+
+### Setup
+
+Build and install the CLI
+
+In the root of the repo:
+
+```bash
+cargo build --release
+cargo install --path ./cli --bin jito-restaking-cli
+```
+
+Ensure it has been installed
+
+```bash
+jito-restaking-cli --help
+```
+
+### Create a Vault
 
 This is a Jito Test Vault, which uses JitoSOL as its supported token.
 
@@ -67,7 +112,7 @@ Example Vault: `jkHHVMhQefVuEiFKEyEZgcDZoXv8ZZyjUiK11e61oVY`
 Example VRT: `5rN9m6TkyPkzMGVpdmbRVYct1RKa7VssV1AwsHVPFaxJ`
 Example Operator: `EN7drMzCkZqpuyMVW1QBu8Ciw4Se76KNxNvFZYhDnyUH`
 
-### Initialize Vault
+#### Initialize Vault
 
 Creating a vault requires:
 
@@ -86,7 +131,7 @@ jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize <TOKEN_MINT> <DEPO
 
 Note the resulting Vault Pubkey.
 
-### Create VRT Metadata
+#### Create VRT Metadata
 
 To create the metadata:
 
@@ -100,7 +145,7 @@ To create the metadata:
 jito-restaking-cli --rpc-url <RPC_URL> vault vault create-token-metadata <VAULT> <NAME> <SYMBOL> <URI>
 ```
 
-### Update VRT Metadata
+#### Update VRT Metadata
 
 To update the metadata:
 
@@ -114,11 +159,11 @@ To update the metadata:
 jito-restaking-cli --rpc-url <RPC_URL> vault vault update-token-metadata <VAULT> <NAME> <SYMBOL> <URI>
 ```
 
-## Update a Vault
+### Update a Vault
 
 It is the vault's responsibility to update it once per epoch. If a vault is not updated, no other actions can be taken. This is done by initializing a `vault_update_state_tracker`, cranking it and to finish the update, closing it.
 
-### Initialize Vault Update State Tracker
+#### Initialize Vault Update State Tracker
 
 Starts the update process, this should be the first IX called at the start of an epoch.
 
@@ -129,7 +174,7 @@ Starts the update process, this should be the first IX called at the start of an
 jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize-vault-update-state-tracker <VAULT>
 ```
 
-### Crank Vault Update State Tracker
+#### Crank Vault Update State Tracker
 
 Needs to be called for each operator. If there are no operators, this IX can be skipped. Operators need to be called in order.
 
@@ -141,7 +186,7 @@ Needs to be called for each operator. If there are no operators, this IX can be 
 jito-restaking-cli --rpc-url <RPC_URL> vault vault crank-vault-update-state-tracker <VAULT> <OPERATOR>
 ```
 
-### Close Vault Update State Tracker
+#### Close Vault Update State Tracker
 
 - `<RPC_URL>`: RPC url
 - `<VAULT>`: The vault Pubkey
@@ -151,9 +196,9 @@ jito-restaking-cli --rpc-url <RPC_URL> vault vault crank-vault-update-state-trac
 jito-restaking-cli --rpc-url <RPC_URL> vault vault close-vault-update-state-tracker <VAULT> <OPERATOR> [NCN_EPOCH]
 ```
 
-## Vault Functions
+### Vault Functions
 
-### Mint VRT
+#### Mint VRT
 
 - `<RPC_URL>`: RPC url
 - `<VAULT>`: The vault Pubkey
@@ -164,9 +209,9 @@ jito-restaking-cli --rpc-url <RPC_URL> vault vault close-vault-update-state-trac
 jito-restaking-cli --rpc-url <RPC_URL> vault vault mint-vrt <VAULT> <AMOUNT_IN> <MIN_AMOUNT_OUT>
 ```
 
-## Create and Delegate to Operator
+### Create and Delegate to Operator
 
-### Initialize an Operator
+#### Initialize an Operator
 
 Note: This command will output the operator's public key.
 
@@ -177,7 +222,7 @@ Note: This command will output the operator's public key.
 jito-restaking-cli --rpc-url <RPC_URL> restaking operator initialize <OPERATOR_FEE_BPS>
 ```
 
-### Initialize Operator Vault Ticket
+#### Initialize Operator Vault Ticket
 
 This ticket is a the operator telling the vault that it's ready to receive delegation.
 
@@ -189,7 +234,7 @@ This ticket is a the operator telling the vault that it's ready to receive deleg
 jito-restaking-cli --rpc-url <RPC_URL> restaking operator initialize-operator-vault-ticket <OPERATOR> <VAULT>
 ```
 
-### Warmup Operator Vault Ticket
+#### Warmup Operator Vault Ticket
 
 To allow the operator to receive delegation.
 
@@ -201,7 +246,7 @@ To allow the operator to receive delegation.
 jito-restaking-cli --rpc-url <RPC_URL> restaking operator warmup-operator-vault-ticket <OPERATOR> <VAULT>
 ```
 
-### Initialize Vault Operator Delegation
+#### Initialize Vault Operator Delegation
 
 To complete the handshake, the vault has to allow delegation to the operator.
 
@@ -215,7 +260,7 @@ Note: vault comes first since this is a vault program ix
 jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize-operator-delegation <VAULT> <OPERATOR>
 ```
 
-### Delegate to Operator
+#### Delegate to Operator
 
 - `<RPC_URL>`: RPC url
 - `<VAULT>`: The vault Pubkey
@@ -226,7 +271,7 @@ jito-restaking-cli --rpc-url <RPC_URL> vault vault initialize-operator-delegatio
 jito-restaking-cli --rpc-url <RPC_URL> vault vault delegate-to-operator <VAULT> <OPERATOR> <AMOUNT>
 ```
 
-### Cooldown Delegation
+#### Cooldown Delegation
 
 Undelegating stake requires a cooldown of one epoch, so this IX starts the undelegation process. The funds will be undelegated during the update vault process.
 
@@ -239,9 +284,9 @@ Undelegating stake requires a cooldown of one epoch, so this IX starts the undel
 jito-restaking-cli --rpc-url <RPC_URL> vault vault cooldown-operator-delegation <VAULT> <OPERATOR> <AMOUNT>
 ```
 
-## Withdraw from Vault
+### Withdraw from Vault
 
-### Enqueue withdrawal
+#### Enqueue withdrawal
 
 Withdrawing the supported mint from the vault, involves a full epoch cooldown period and then burning the equivalent VRT. To finish the withdrawal, call `burn-withdrawal-ticket`.
 
@@ -253,7 +298,7 @@ Withdrawing the supported mint from the vault, involves a full epoch cooldown pe
 jito-restaking-cli --rpc-url <RPC_URL> vault vault enqueue-withdrawal <VAULT> <AMOUNT>
 ```
 
-### Burn Withdrawal Ticket
+#### Burn Withdrawal Ticket
 
 Burn the withdrawal ticket after the cooldown period to complete the withdrawal.
 
