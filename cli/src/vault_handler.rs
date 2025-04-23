@@ -1497,14 +1497,13 @@ impl VaultCliHandler {
         )
         .0;
 
-        info!("Vault at address {}", pubkey);
-        self.print_out(&vault)?;
+        self.print_out(None, Some(&pubkey), &vault)?;
 
         if let Ok(metadata) = self
             .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
             .await
         {
-            self.print_out(&metadata)?;
+            self.print_out(None, None, &metadata)?;
         }
 
         Ok(())
@@ -1519,7 +1518,7 @@ impl VaultCliHandler {
             .await
             .unwrap();
         log::info!("{:?}", accounts);
-        for (vault_pubkey, vault) in accounts {
+        for (index, (vault_pubkey, vault)) in accounts.iter().enumerate() {
             let vault =
                 jito_vault_client::accounts::Vault::deserialize(&mut vault.data.as_slice())?;
 
@@ -1533,14 +1532,13 @@ impl VaultCliHandler {
             )
             .0;
 
-            info!("Vault at address {}", vault_pubkey);
-            self.print_out(&vault)?;
+            self.print_out(Some(index), Some(vault_pubkey), &vault)?;
 
             if let Ok(metadata) = self
                 .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
                 .await
             {
-                self.print_out(&metadata)?;
+                self.print_out(None, None, &metadata)?;
             }
         }
         Ok(())
@@ -1559,8 +1557,7 @@ impl VaultCliHandler {
         let account = rpc_client.get_account(&config_address).await?;
         let config =
             jito_vault_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
-        info!("Vault config at address {}", config_address);
-        self.print_out(&config)?;
+        self.print_out(None, Some(&config_address), &config)?;
         Ok(())
     }
 
@@ -1587,11 +1584,7 @@ impl VaultCliHandler {
         let state_tracker = jito_vault_client::accounts::VaultUpdateStateTracker::deserialize(
             &mut account.data.as_slice(),
         )?;
-        info!(
-            "Vault Update State Tracker at address {}",
-            vault_update_state_tracker
-        );
-        self.print_out(&state_tracker)?;
+        self.print_out(None, Some(&vault_update_state_tracker), &state_tracker)?;
         Ok(())
     }
 
@@ -1622,11 +1615,7 @@ impl VaultCliHandler {
                     &mut account.data.as_slice(),
                 )?;
 
-                info!(
-                    "Vault Operator Delegation at address {}",
-                    vault_operator_delegation
-                );
-                self.print_out(&delegation)?;
+                self.print_out(None, Some(&vault_operator_delegation), &delegation)?;
             }
             None => {
                 let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>(
@@ -1642,8 +1631,7 @@ impl VaultCliHandler {
                             &mut account.data.as_slice(),
                         )?;
 
-                    info!("Vault Operator Delegation {} at address {}", index, pubkey);
-                    self.print_out(&vault_operator_delegation)?;
+                    self.print_out(Some(index), Some(pubkey), &vault_operator_delegation)?;
                 }
             }
         }
@@ -1677,11 +1665,7 @@ impl VaultCliHandler {
         let ticket = jito_vault_client::accounts::VaultStakerWithdrawalTicket::deserialize(
             &mut account.data.as_slice(),
         )?;
-        info!(
-            "Vault Staker Withdrawal Ticket at address {}",
-            vault_staker_withdrawal_ticket
-        );
-        self.print_out(&ticket)?;
+        self.print_out(None, Some(&vault_staker_withdrawal_ticket), &ticket)?;
 
         Ok(())
     }

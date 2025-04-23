@@ -21,7 +21,7 @@ use jito_restaking_core::{
     ncn_vault_ticket::NcnVaultTicket, operator::Operator,
     operator_vault_ticket::OperatorVaultTicket,
 };
-use log::{debug, info};
+use log::info;
 use solana_program::pubkey::Pubkey;
 use solana_sdk::signature::{read_keypair_file, Keypair, Signer};
 use spl_associated_token_account::{
@@ -1254,17 +1254,13 @@ impl RestakingCliHandler {
         let rpc_client = self.get_rpc_client();
 
         let config_address = Config::find_program_address(&self.restaking_program_id).0;
-        debug!(
-            "Reading the restaking configuration account at address: {}",
-            config_address
-        );
 
         let account = rpc_client.get_account(&config_address).await?;
         let config =
             jito_restaking_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
 
-        info!("Restaking config at address {}", config_address);
-        self.print_out(&config)?;
+        self.print_out(None, Some(&config_address), &config)?;
+
         Ok(())
     }
 
@@ -1273,8 +1269,8 @@ impl RestakingCliHandler {
         let pubkey = Pubkey::from_str(&pubkey)?;
         let account = self.get_rpc_client().get_account(&pubkey).await?;
         let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut account.data.as_slice())?;
-        info!("NCN at address {}", pubkey);
-        self.print_out(&ncn)?;
+
+        self.print_out(None, Some(&pubkey), &ncn)?;
 
         Ok(())
     }
@@ -1287,10 +1283,10 @@ impl RestakingCliHandler {
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
-        for (ncn_pubkey, ncn) in accounts {
+        for (index, (ncn_pubkey, ncn)) in accounts.iter().enumerate() {
             let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
-            info!("NCN at address {}", ncn_pubkey);
-            self.print_out(&ncn)?;
+
+            self.print_out(Some(index), Some(ncn_pubkey), &ncn)?;
         }
         Ok(())
     }
@@ -1322,11 +1318,11 @@ impl RestakingCliHandler {
                 jito_restaking_client::accounts::NcnOperatorState::deserialize(
                     &mut ncn_operator_state.data.as_slice(),
                 )?;
-            info!(
-                "NcnOperatorState {} at address {}",
-                index, ncn_operator_state_pubkey
-            );
-            self.print_out(&ncn_operator_state)?;
+            self.print_out(
+                Some(index),
+                Some(ncn_operator_state_pubkey),
+                &ncn_operator_state,
+            )?;
         }
         Ok(())
     }
@@ -1344,8 +1340,7 @@ impl RestakingCliHandler {
             let ticket = jito_restaking_client::accounts::NcnVaultTicket::deserialize(
                 &mut ticket.data.as_slice(),
             )?;
-            info!("NcnVaultTicket {} at address {}", index, ticket_pubkey);
-            self.print_out(&ticket)?;
+            self.print_out(Some(index), Some(ticket_pubkey), &ticket)?;
         }
         Ok(())
     }
@@ -1356,8 +1351,7 @@ impl RestakingCliHandler {
         let account = self.get_rpc_client().get_account(&pubkey).await?;
         let operator =
             jito_restaking_client::accounts::Operator::deserialize(&mut account.data.as_slice())?;
-        info!("Operator at address {}", pubkey);
-        self.print_out(&operator)?;
+        self.print_out(None, Some(&pubkey), &operator)?;
 
         Ok(())
     }
@@ -1369,12 +1363,11 @@ impl RestakingCliHandler {
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.restaking_program_id, config)
             .await?;
-        for (operator_pubkey, operator) in accounts {
+        for (index, (operator_pubkey, operator)) in accounts.iter().enumerate() {
             let operator = jito_restaking_client::accounts::Operator::deserialize(
                 &mut operator.data.as_slice(),
             )?;
-            info!("Operator at address {}", operator_pubkey);
-            self.print_out(&operator)?;
+            self.print_out(Some(index), Some(operator_pubkey), &operator)?;
         }
         Ok(())
     }
@@ -1391,8 +1384,7 @@ impl RestakingCliHandler {
             let ticket = jito_restaking_client::accounts::OperatorVaultTicket::deserialize(
                 &mut ticket.data.as_slice(),
             )?;
-            info!("OperatorVaultTicket {} at address {}", index, ticket_pubkey);
-            self.print_out(&ticket)?;
+            self.print_out(Some(index), Some(ticket_pubkey), &ticket)?;
         }
         Ok(())
     }
