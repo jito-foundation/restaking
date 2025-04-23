@@ -19,6 +19,45 @@ Ensure it has been installed
 jito-restaking-cli --help
 ```
 
+## JSON Output
+
+The CLI supports JSON output for easier parsing and integration with other tools.
+To enable JSON output, use `--print-json` flag with command like `get`, `list`.
+This is especially useful for scripting and automation.
+
+```bash
+jito-restaking-cli --rpc-url <RPC_URL> restaking operator get <OPERATOR_ADDRESS> --print-json 
+```
+
+Example JSON output:
+
+```json
+{
+  "address": "MBAN56N5NjttLmDF5QFgZPwRxjTCS7tUA5ToZoLekJp",
+  "data": {
+    "discriminator": 3,
+    "base": "7s2yLogXkNSR837HHGJcHohFuDSaDhDbpDvQxYsYMX1C",
+    "admin": "aaaDerwdMyzNkoX1aSoTi3UtFe2W45vh5wCgQNhsjF8",
+    "ncn_admin": "aaaDerwdMyzNkoX1aSoTi3UtFe2W45vh5wCgQNhsjF8",
+    "vault_admin": "aaaDerwdMyzNkoX1aSoTi3UtFe2W45vh5wCgQNhsjF8",
+    "delegate_admin": "aaaDerwdMyzNkoX1aSoTi3UtFe2W45vh5wCgQNhsjF8",
+    "metadata_admin": "aaaDerwdMyzNkoX1aSoTi3UtFe2W45vh5wCgQNhsjF8",
+    "voter": "aaaDerwdMyzNkoX1aSoTi3UtFe2W45vh5wCgQNhsjF8",
+    "index": 13,
+    "ncn_count": 1,
+    "vault_count": 2,
+    "operator_fee_bps": 100,
+    "bump": 252
+  }
+}
+```
+
+JSON output can be piped to tools like `jq` for further processing:
+
+```bash
+jito-restaking-cli --rpc-url <RPC_URL> restaking operator get <OPERATOR_ADDRESS> --print-json | jq
+```
+
 ## Create a Vault
 
 This is a Jito Test Vault, which uses JitoSOL as its supported token.
