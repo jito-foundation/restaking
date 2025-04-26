@@ -279,8 +279,8 @@ Set NCN Admin
 
 ###### **Options:**
 
-* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
-* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of old admin
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of new admin
 
 
 
@@ -419,8 +419,8 @@ Operator Set Admin
 
 ###### **Options:**
 
-* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
-* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of old admin
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of new admin
 
 
 
@@ -945,8 +945,8 @@ Set Admin
 
 ###### **Options:**
 
-* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
-* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of old admin
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of new admin
 
 
 

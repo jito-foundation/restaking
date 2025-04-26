@@ -22,9 +22,9 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
         let signer = if let Some(ledger) = &args.ledger {
             CliSigner::new_ledger(ledger)
         } else if let Some(keypair_path) = &args.keypair {
-            CliSigner::new_keypair_from_path(keypair_path)
+            CliSigner::new_keypair_from_path(keypair_path)?
         } else {
-            CliSigner::new_keypair_from_path(&config.keypair_path)
+            CliSigner::new_keypair_from_path(&config.keypair_path)?
         };
 
         CliConfig {
@@ -40,9 +40,9 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             let signer = if let Some(ledger) = &args.ledger {
                 CliSigner::new_ledger(ledger)
             } else if let Some(keypair_path) = &args.keypair {
-                CliSigner::new_keypair_from_path(keypair_path)
+                CliSigner::new_keypair_from_path(keypair_path)?
             } else {
-                CliSigner::new_keypair_from_path(&config.keypair_path)
+                CliSigner::new_keypair_from_path(&config.keypair_path)?
             };
 
             let rpc = if let Some(rpc) = &args.rpc_url {
@@ -57,6 +57,13 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 signer: Some(signer),
             }
         } else {
+            let signer = match args.ledger {
+                Some(ref keypair_path) => Some(CliSigner::new_ledger(keypair_path)),
+                None => {
+                    let keypair_path = args.keypair.as_ref().unwrap();
+                    Some(CliSigner::new_keypair_from_path(keypair_path)?)
+                }
+            };
             CliConfig {
                 rpc_url: args
                     .rpc_url
@@ -68,14 +75,7 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 } else {
                     CommitmentConfig::confirmed()
                 },
-                signer: args.ledger.as_ref().map_or_else(
-                    || {
-                        args.keypair
-                            .as_ref()
-                            .map(|keypair| CliSigner::new_keypair_from_path(keypair))
-                    },
-                    |ledger| Some(CliSigner::new_ledger(ledger)),
-                ),
+                signer,
             }
         }
     };
