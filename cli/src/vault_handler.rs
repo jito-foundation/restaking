@@ -1679,24 +1679,24 @@ impl VaultCliHandler {
         Ok(())
     }
 
-    /// Sets the primary admin for Vault
+    /// Sets the primary admin for a Vault
     ///
-    /// This function transfers the primary administrative control of a Vault from an existing admin
-    /// to a new admin.
+    /// This function transfers administrative control of a Vault account from the current admin
+    /// to a new admin. It supports both file-based keypairs and hardware wallets (USB devices)
+    /// for both the old and new admin. The function builds and processes a transaction that
+    /// updates the admin public key in the Vault account.
     #[allow(clippy::future_not_send)]
     async fn set_admin(
         &self,
         vault: &Pubkey,
-        old_admin_keypair: &PathBuf,
-        new_admin_keypair: &PathBuf,
+        old_admin_keypair: &str,
+        new_admin_keypair: &str,
     ) -> Result<()> {
-        let old_admin = read_keypair_file(old_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
-        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+        let mut old_admin_owned = None;
+        let mut new_admin_owned = None;
 
-        let new_admin = read_keypair_file(new_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
-        let new_admin_signer = CliSigner::new(Some(new_admin), None);
+        let old_admin_signer = self.resolve_keypair(old_admin_keypair, &mut old_admin_owned)?;
+        let new_admin_signer = self.resolve_keypair(new_admin_keypair, &mut new_admin_owned)?;
 
         let mut ix_builder = SetAdminBuilder::new();
         ix_builder
