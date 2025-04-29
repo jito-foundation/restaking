@@ -25,7 +25,7 @@ pub struct Cli {
     #[arg(long, global = true, help = "Vault program ID")]
     pub vault_program_id: Option<String>,
 
-    #[arg(long, global = true, help = "Keypair")]
+    #[arg(long, global = true, help = "Filepath or URL to a keypair")]
     pub signer: Option<String>,
 
     #[arg(long, global = true, help = "Verbose mode")]

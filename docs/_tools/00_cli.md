@@ -27,7 +27,7 @@ A CLI for managing restaking and vault operations
 * `--commitment <COMMITMENT>` — Commitment level
 * `--restaking-program-id <RESTAKING_PROGRAM_ID>` — Restaking program ID
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
-* `--signer <SIGNER>` — Keypair
+* `--signer <SIGNER>` — Filepath or URL to a keypair
 * `--verbose` — Verbose mode
 * `--print-tx` — This will print out the raw TX instead of running it
 
