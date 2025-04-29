@@ -171,6 +171,9 @@ pub(crate) trait CliHandler {
         T: ?Sized + Serialize + PrettyDisplay,
     {
         match (self.print_json(), self.print_json_without_reserves()) {
+            (true, true) => {
+                return Err(anyhow!("Conflicting flags: both --print-json and --print-json-without-reserves are enabled. Please enable only one of these flags."));
+            }
             (true, false) => {
                 let json_string = serde_json::to_string_pretty(&value)?;
 
@@ -199,7 +202,7 @@ pub(crate) trait CliHandler {
 
                 println!("{json_string}");
             }
-            _ => {
+            (false, false) => {
                 let type_name = std::any::type_name::<T>();
                 let msg = address.map_or("".to_string(), |address| {
                     format!("{type_name} at {address}")
