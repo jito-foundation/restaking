@@ -187,9 +187,10 @@ pub(crate) trait CliHandler {
     ///
     /// # Format options:
     /// - Default: Uses the [`PrettyDisplay`] trait to format output.
-    /// - `--print-json`: Prints the full account information in JSON format.
-    /// - `--print-json-without-reserves`: Prints account information in JSON format but automatically
-    ///   filters out the `reserved` fields without modifying the original struct.
+    /// - `--print-json`: Prints account information in JSON format but automatically
+    ///   filters out the `reserved` fields.
+    /// - `--print-json-with-reserves`: Prints the full account information in JSON format with
+    ///   reserved space.
     fn print_out<T>(
         &self,
         index: Option<usize>,
@@ -201,7 +202,7 @@ pub(crate) trait CliHandler {
     {
         match (self.print_json(), self.print_json_with_reserves()) {
             (true, true) => {
-                return Err(anyhow!("Conflicting flags: both --print-json and --print-json-without-reserves are enabled. Please enable only one of these flags."));
+                return Err(anyhow!("Conflicting flags: both --print-json and --print-json-with-reserves are enabled. Please enable only one of these flags."));
             }
             (true, false) => {
                 let mut json_value = serde_json::to_value(value)?;
