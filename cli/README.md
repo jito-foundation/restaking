@@ -78,6 +78,7 @@ G4iZadrtSPkGWXwF6SKGNQaS6JW4Zu4tgURM1AFXeGV     S
 ```
 
 When using this flag, the transaction will not be processed - only printed for inspection.
+Note that instruction data shown in the output is **base58** encoded, which provides a compact text representation of binary data.
 
 ## Getting Started
 
