@@ -51,8 +51,8 @@ pub struct RestakingCliHandler {
     /// This will print out the account information in JSON format
     print_json: bool,
 
-    /// This will print out the account information in JSON format without reserved space
-    print_json_without_reserves: bool,
+    /// This will print out the account information in JSON format with reserved space
+    print_json_with_reserves: bool,
 }
 
 impl CliHandler for RestakingCliHandler {
@@ -68,8 +68,8 @@ impl CliHandler for RestakingCliHandler {
         self.print_json
     }
 
-    fn print_json_without_reserves(&self) -> bool {
-        self.print_json_without_reserves
+    fn print_json_with_reserves(&self) -> bool {
+        self.print_json_with_reserves
     }
 }
 
@@ -80,7 +80,7 @@ impl RestakingCliHandler {
         vault_program_id: Pubkey,
         print_tx: bool,
         print_json: bool,
-        print_json_without_reserves: bool,
+        print_json_with_reserves: bool,
     ) -> Self {
         Self {
             cli_config,
@@ -88,7 +88,7 @@ impl RestakingCliHandler {
             vault_program_id,
             print_tx,
             print_json,
-            print_json_without_reserves,
+            print_json_with_reserves,
         }
     }
 

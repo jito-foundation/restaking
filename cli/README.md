@@ -10,6 +10,7 @@ With this CLI, you can:
 - Mint and burn VRT
 - Monitor account statuses with JSON output support
 - Preview transactions before sending them with the `print-tx` flag
+- Connect and sign transactions with Ledger hardware wallets
 
 ## Features 
 
@@ -113,6 +114,35 @@ G4iZadrtSPkGWXwF6SKGNQaS6JW4Zu4tgURM1AFXeGV     S
 
 When using this flag, the transaction will not be processed - only printed for inspection.
 Note that instruction data shown in the output is **base58** encoded, which provides a compact text representation of binary data.
+
+### Ledger Hardware Wallet Support
+
+The CLI now supports integration with Ledger hardware wallets for enhanced security when signing transactions.
+This allows you to keep your private keys secure on your hardware device instead of storing them as local keypair files.
+
+#### Using Ledger for Signing
+
+You can specify a Ledger device as the signer by using the `usb://ledger?key=0` in any command that accepts keypair arguments.
+
+```bash
+--signer usb://ledger?key=0
+```
+
+When you specify a Ledger path, the CLI will automatically connect to your Ledger device and prompt you to confirm the transaction on the device.
+
+##### Set Admin
+
+```bash
+jito-restaking-cli vault vault set-admin --old-admin-keypair ./credentials/user1.json --new-admin-keypair usb://ledger?key=0 <VAULT>
+```
+
+##### Using Ledger with Other Commands
+
+You can use your Ledger device with any command that accepts a signer argument. The CLI will automatically handle the connection and signing process with your Ledger device.
+
+```bash
+jito-restaking-cli -- vault vault set-secondary-admin <VAULT> <SECONDARY_ADMIN> --set-metadata-admin --signer 'usb://ledger?key=0'
+```
 
 ## Getting Started
 

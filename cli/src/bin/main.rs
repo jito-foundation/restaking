@@ -127,7 +127,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 vault_program_id,
                 args.print_tx,
                 args.print_json,
-                args.print_json_without_reserves,
+                args.print_json_with_reserves,
             )
             .handle(action)
             .await?;
@@ -139,7 +139,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 vault_program_id,
                 args.print_tx,
                 args.print_json,
-                args.print_json_without_reserves,
+                args.print_json_with_reserves,
             )
             .handle(action)
             .await?;

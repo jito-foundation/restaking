@@ -33,7 +33,7 @@ pub(crate) trait CliHandler {
 
     fn print_json(&self) -> bool;
 
-    fn print_json_without_reserves(&self) -> bool;
+    fn print_json_with_reserves(&self) -> bool;
 
     fn signer(&self) -> anyhow::Result<&CliSigner> {
         self.cli_config()
@@ -199,16 +199,11 @@ pub(crate) trait CliHandler {
     where
         T: ?Sized + Serialize + PrettyDisplay,
     {
-        match (self.print_json(), self.print_json_without_reserves()) {
+        match (self.print_json(), self.print_json_with_reserves()) {
             (true, true) => {
                 return Err(anyhow!("Conflicting flags: both --print-json and --print-json-without-reserves are enabled. Please enable only one of these flags."));
             }
             (true, false) => {
-                let json_string = serde_json::to_string_pretty(&value)?;
-
-                println!("{json_string}");
-            }
-            (false, true) => {
                 let mut json_value = serde_json::to_value(value)?;
                 self.remove_reserved_fields(&mut json_value);
 
@@ -228,6 +223,11 @@ pub(crate) trait CliHandler {
                 account_obj.insert("data".to_string(), json_value);
 
                 let json_string = serde_json::to_string_pretty(&account_obj)?;
+
+                println!("{json_string}");
+            }
+            (false, true) => {
+                let json_string = serde_json::to_string_pretty(&value)?;
 
                 println!("{json_string}");
             }
