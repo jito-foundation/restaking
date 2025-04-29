@@ -64,6 +64,9 @@ pub struct VaultCliHandler {
 
     /// This will print out the account information in JSON format
     print_json: bool,
+
+    /// This will print out the account information in JSON format without reserved space
+    print_json_without_reserves: bool,
 }
 
 impl CliHandler for VaultCliHandler {
@@ -78,6 +81,10 @@ impl CliHandler for VaultCliHandler {
     fn print_json(&self) -> bool {
         self.print_json
     }
+
+    fn print_json_without_reserves(&self) -> bool {
+        self.print_json_without_reserves
+    }
 }
 
 impl VaultCliHandler {
@@ -87,6 +94,7 @@ impl VaultCliHandler {
         vault_program_id: Pubkey,
         print_tx: bool,
         print_json: bool,
+        print_json_without_reserves: bool,
     ) -> Self {
         Self {
             cli_config,
@@ -94,6 +102,7 @@ impl VaultCliHandler {
             vault_program_id,
             print_tx,
             print_json,
+            print_json_without_reserves,
         }
     }
 

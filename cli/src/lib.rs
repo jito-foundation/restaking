@@ -33,6 +33,8 @@ pub(crate) trait CliHandler {
 
     fn print_json(&self) -> bool;
 
+    fn print_json_without_reserves(&self) -> bool;
+
     fn signer(&self) -> anyhow::Result<&CliSigner> {
         self.cli_config()
             .signer
@@ -154,8 +156,11 @@ pub(crate) trait CliHandler {
     /// [`Serialize`] and [`PrettyDisplay`]. It determines the output format based on the
     /// configuration of the containing struct.
     ///
-    /// When printing as JSON, this function automatically filters out the `reserved` field
-    /// from the output without modifying the original struct.
+    /// # Format options:
+    /// - Default: Uses the [`PrettyDisplay`] trait to format output.
+    /// - `--print-json`: Prints the full account information in JSON format.
+    /// - `--print-json-without-reserves`: Prints account information in JSON format but automatically
+    ///   filters out the `reserved` fields without modifying the original struct.
     fn print_out<T>(
         &self,
         index: Option<usize>,
@@ -165,35 +170,43 @@ pub(crate) trait CliHandler {
     where
         T: ?Sized + Serialize + PrettyDisplay,
     {
-        if self.print_json() {
-            let mut json_value = serde_json::to_value(value)?;
-            self.remove_reserved_fields(&mut json_value);
+        match (self.print_json(), self.print_json_without_reserves()) {
+            (true, false) => {
+                let json_string = serde_json::to_string_pretty(&value)?;
 
-            let mut account_obj = serde_json::Map::new();
-            if let Some(index) = index {
-                account_obj.insert(
-                    "index".to_string(),
-                    serde_json::Value::String(index.to_string()),
-                );
+                println!("{json_string}");
             }
-            if let Some(address) = address {
-                account_obj.insert(
-                    "address".to_string(),
-                    serde_json::Value::String(address.to_string()),
-                );
+            (false, true) => {
+                let mut json_value = serde_json::to_value(value)?;
+                self.remove_reserved_fields(&mut json_value);
+
+                let mut account_obj = serde_json::Map::new();
+                if let Some(index) = index {
+                    account_obj.insert(
+                        "index".to_string(),
+                        serde_json::Value::String(index.to_string()),
+                    );
+                }
+                if let Some(address) = address {
+                    account_obj.insert(
+                        "address".to_string(),
+                        serde_json::Value::String(address.to_string()),
+                    );
+                }
+                account_obj.insert("data".to_string(), json_value);
+
+                let json_string = serde_json::to_string_pretty(&account_obj)?;
+
+                println!("{json_string}");
             }
-            account_obj.insert("data".to_string(), json_value);
-
-            let json_string = serde_json::to_string_pretty(&account_obj)?;
-
-            println!("{json_string}");
-        } else {
-            let type_name = std::any::type_name::<T>();
-            let msg = address.map_or("".to_string(), |address| {
-                format!("{type_name} at {address}")
-            });
-            info!("{msg}");
-            info!("{}", value.pretty_display());
+            _ => {
+                let type_name = std::any::type_name::<T>();
+                let msg = address.map_or("".to_string(), |address| {
+                    format!("{type_name} at {address}")
+                });
+                info!("{msg}");
+                info!("{}", value.pretty_display());
+            }
         }
 
         Ok(())

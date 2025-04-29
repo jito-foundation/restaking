@@ -50,6 +50,14 @@ pub struct Cli {
     )]
     pub print_json: bool,
 
+    #[arg(
+        long,
+        global = true,
+        default_value = "false",
+        help = "This will print out account information in JSON format without reserved space"
+    )]
+    pub print_json_without_reserves: bool,
+
     #[arg(long, global = true, hide = true)]
     pub markdown_help: bool,
 }

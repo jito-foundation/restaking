@@ -36,6 +36,9 @@ A CLI for managing restaking and vault operations
 * `--print-json` — This will print out account information in JSON format
 
   Default value: `false`
+* `--print-json-without-reserves` — This will print out account information in JSON format without reserved space
+
+  Default value: `false`
 
 
 
