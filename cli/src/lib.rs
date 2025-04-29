@@ -62,13 +62,14 @@ pub(crate) trait CliHandler {
     ) -> anyhow::Result<&'a CliSigner> {
         if keypair_path.starts_with("usb://") {
             let signer = self.signer()?;
-            if signer.remote_keypair.is_none() {
-                return Err(anyhow!(
-                    "Failed to read admin keypair from USB: {}",
-                    keypair_path
-                ));
+            match signer.remote_keypair {
+                Some(_) => Ok(signer),
+                None => {
+                    let signer = CliSigner::new_ledger(keypair_path);
+                    *owned_signer = Some(signer);
+                    Ok(owned_signer.as_ref().unwrap())
+                }
             }
-            Ok(signer)
         } else {
             let signer = CliSigner::new_keypair_from_path(keypair_path)?;
             *owned_signer = Some(signer);

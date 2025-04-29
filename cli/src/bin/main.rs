@@ -19,10 +19,12 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {
         let config = Config::load(config_file.as_os_str().to_str().unwrap())?;
-        let signer = if let Some(ledger) = &args.ledger {
-            CliSigner::new_ledger(ledger)
-        } else if let Some(keypair_path) = &args.keypair {
-            CliSigner::new_keypair_from_path(keypair_path)?
+        let signer = if let Some(keypair_path) = &args.signer {
+            if keypair_path.starts_with("usb://") {
+                CliSigner::new_ledger(keypair_path)
+            } else {
+                CliSigner::new_keypair_from_path(keypair_path)?
+            }
         } else {
             CliSigner::new_keypair_from_path(&config.keypair_path)?
         };
@@ -37,10 +39,12 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             .as_ref()
             .ok_or_else(|| anyhow!("unable to get config file path"))?;
         if let Ok(config) = Config::load(config_file) {
-            let signer = if let Some(ledger) = &args.ledger {
-                CliSigner::new_ledger(ledger)
-            } else if let Some(keypair_path) = &args.keypair {
-                CliSigner::new_keypair_from_path(keypair_path)?
+            let signer = if let Some(keypair_path) = &args.signer {
+                if keypair_path.starts_with("usb://") {
+                    CliSigner::new_ledger(keypair_path)
+                } else {
+                    CliSigner::new_keypair_from_path(keypair_path)?
+                }
             } else {
                 CliSigner::new_keypair_from_path(&config.keypair_path)?
             };
@@ -57,12 +61,9 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 signer: Some(signer),
             }
         } else {
-            let signer = match args.ledger {
-                Some(ref keypair_path) => Some(CliSigner::new_ledger(keypair_path)),
-                None => {
-                    let keypair_path = args.keypair.as_ref().unwrap();
-                    Some(CliSigner::new_keypair_from_path(keypair_path)?)
-                }
+            let signer = {
+                let keypair_path = args.signer.as_ref().unwrap();
+                Some(CliSigner::new_keypair_from_path(keypair_path)?)
             };
             CliConfig {
                 rpc_url: args
