@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use solana_remote_wallet::{
     ledger::get_ledger_from_info,
     remote_keypair::RemoteKeypair,
@@ -30,11 +31,11 @@ impl CliSigner {
         Self::new(Some(keypair), None)
     }
 
-    pub fn new_keypair_from_path(keypair_path: &str) -> Self {
-        Self::new(
-            Some(read_keypair_file(keypair_path).expect("No keypair found")),
-            None,
-        )
+    pub fn new_keypair_from_path(keypair_path: &str) -> anyhow::Result<Self> {
+        match read_keypair_file(keypair_path) {
+            Ok(keypair) => Ok(Self::new(Some(keypair), None)),
+            Err(e) => Err(anyhow!("{}", e)),
+        }
     }
 
     // Will only work with Ledger devices as

@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::{command, Subcommand};
 use solana_program::pubkey::Pubkey;
 
@@ -73,15 +71,15 @@ pub enum NcnActions {
     /// Set NCN Admin
     NcnSetAdmin {
         /// The NCN pubkey
-        ncn: String,
+        ncn: Pubkey,
 
-        /// Path to the old admin keypair file
+        /// Filepath or URL to a keypair of old admin
         #[arg(long)]
-        old_admin_keypair: PathBuf,
+        old_admin_keypair: String,
 
-        /// Path to the new admin keypair file
+        /// Filepath or URL to a keypair of new admin
         #[arg(long)]
-        new_admin_keypair: PathBuf,
+        new_admin_keypair: String,
     },
     /// Set NCN Secondary Admin
     NcnSetSecondaryAdmin {
@@ -140,13 +138,13 @@ pub enum OperatorActions {
         /// The Operator pubkey
         operator: String,
 
-        /// Path to the old admin keypair file
+        /// Filepath or URL to a keypair of old admin
         #[arg(long)]
-        old_admin_keypair: PathBuf,
+        old_admin_keypair: String,
 
-        /// Path to the new admin keypair file
+        /// Filepath or URL to a keypair of new admin
         #[arg(long)]
-        new_admin_keypair: PathBuf,
+        new_admin_keypair: String,
     },
     /// Operator Set Secondary Admin
     OperatorSetSecondaryAdmin {

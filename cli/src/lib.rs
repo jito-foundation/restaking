@@ -49,6 +49,35 @@ pub(crate) trait CliHandler {
         )
     }
 
+    /// Resolves a signer from a keypair path, creating a new file signer if needed
+    ///
+    /// This function:
+    /// 1. Checks if the keypair path starts with "usb://"
+    /// 2. If it does, returns the existing CLI signer
+    /// 3. If not, creates a new CliSigner from the file path
+    fn resolve_keypair<'a>(
+        &'a self,
+        keypair_path: &str,
+        owned_signer: &'a mut Option<CliSigner>,
+    ) -> anyhow::Result<&'a CliSigner> {
+        if keypair_path.starts_with("usb://") {
+            let signer = self.signer()?;
+            match signer.remote_keypair {
+                Some(_) => Ok(signer),
+                None => {
+                    let signer = CliSigner::new_ledger(keypair_path);
+                    *owned_signer = Some(signer);
+                    Ok(owned_signer.as_ref().unwrap())
+                }
+            }
+        } else {
+            let signer = CliSigner::new_keypair_from_path(keypair_path)?;
+            *owned_signer = Some(signer);
+
+            Ok(owned_signer.as_ref().unwrap())
+        }
+    }
+
     /// Creates an RPC program accounts configuration for fetching accounts of type `T` with an optional public key filter.
     ///
     /// This method constructs a configuration that can be used with RPC methods to fetch program accounts

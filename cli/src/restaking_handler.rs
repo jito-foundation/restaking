@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use borsh::BorshDeserialize;
@@ -147,7 +147,7 @@ impl RestakingCliHandler {
                         new_admin_keypair,
                     },
             } => {
-                self.ncn_set_admin(&ncn, &old_admin_keypair, &new_admin_keypair)
+                self.ncn_set_admin(ncn, &old_admin_keypair, &new_admin_keypair)
                     .await
             }
             RestakingCommands::Ncn {
@@ -268,26 +268,24 @@ impl RestakingCliHandler {
         }
     }
 
-    /// Sets the primary admin for NCN
+    /// Sets the primary admin for an NCN
     ///
-    /// This function transfers the primary administrative control of an NCN from an existing admin
-    /// to a new admin.
+    /// This function transfers administrative control of an NCN from the current admin
+    /// to a new admin. It supports both file-based keypairs and hardware wallets (USB devices like
+    /// ledger) for both the old and new admin. The function builds and processes a transaction
+    /// that updates the admin public key in the NCN account.
     #[allow(clippy::future_not_send)]
     async fn ncn_set_admin(
         &self,
-        ncn: &str,
-        old_admin_keypair: &PathBuf,
-        new_admin_keypair: &PathBuf,
+        ncn: Pubkey,
+        old_admin_keypair: &str,
+        new_admin_keypair: &str,
     ) -> Result<()> {
-        let ncn = Pubkey::from_str(ncn)?;
+        let mut old_admin_owned = None;
+        let mut new_admin_owned = None;
 
-        let old_admin = read_keypair_file(old_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
-        let old_admin_signer = CliSigner::new(Some(old_admin), None);
-
-        let new_admin = read_keypair_file(new_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
-        let new_admin_signer = CliSigner::new(Some(new_admin), None);
+        let old_admin_signer = self.resolve_keypair(old_admin_keypair, &mut old_admin_owned)?;
+        let new_admin_signer = self.resolve_keypair(new_admin_keypair, &mut new_admin_owned)?;
 
         let mut ix_builder = NcnSetAdminBuilder::new();
         ix_builder
@@ -393,26 +391,27 @@ impl RestakingCliHandler {
         Ok(())
     }
 
-    /// Sets the primary admin for Operator
+    /// Sets the primary admin for an Operator
     ///
-    /// This function transfers the primary administrative control of an Operator from an existing admin
-    /// to a new admin.
+    /// This function transfers administrative control of an Operator account from the current admin
+    /// to a new admin. It supports both file-based keypairs and hardware wallets (USB devices)
+    /// for both the old and new admin. The function first converts the operator string to a public key,
+    /// resolves the signers, then builds and processes a transaction that updates the admin public key
+    /// in the Operator account.
     #[allow(clippy::future_not_send)]
     async fn operator_set_admin(
         &self,
         operator: &str,
-        old_admin_keypair: &PathBuf,
-        new_admin_keypair: &PathBuf,
+        old_admin_keypair: &str,
+        new_admin_keypair: &str,
     ) -> Result<()> {
         let operator = Pubkey::from_str(operator)?;
 
-        let old_admin = read_keypair_file(old_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
-        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+        let mut old_admin_owned = None;
+        let mut new_admin_owned = None;
 
-        let new_admin = read_keypair_file(new_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
-        let new_admin_signer = CliSigner::new(Some(new_admin), None);
+        let old_admin_signer = self.resolve_keypair(old_admin_keypair, &mut old_admin_owned)?;
+        let new_admin_signer = self.resolve_keypair(new_admin_keypair, &mut new_admin_owned)?;
 
         let mut ix_builder = OperatorSetAdminBuilder::new();
         ix_builder
