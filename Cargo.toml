@@ -34,7 +34,7 @@ version = "0.0.5"
 authors = ["Jito Network Maintainers <support@jito.network>"]
 repository = "https://github.com/jito-foundation/restaking"
 homepage = "https://jito.network/"
-license = "BSL"
+license = "Apache-2.0"
 edition = "2021"
 readme = "README.md"
 
