@@ -32,6 +32,12 @@ A CLI for managing restaking and vault operations
 * `--print-tx` — This will print out the raw TX instead of running it
 
   Default value: `false`
+* `--print-json` — This will print out account information in JSON format
+
+  Default value: `false`
+* `--print-json-with-reserves` — This will print out account information in JSON format with reserved space
+
+  Default value: `false`
 
 
 

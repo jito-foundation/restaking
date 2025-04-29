@@ -39,6 +39,22 @@ pub struct Cli {
     )]
     pub print_tx: bool,
 
+    #[arg(
+        long,
+        global = true,
+        default_value = "false",
+        help = "This will print out account information in JSON format"
+    )]
+    pub print_json: bool,
+
+    #[arg(
+        long,
+        global = true,
+        default_value = "false",
+        help = "This will print out account information in JSON format with reserved space"
+    )]
+    pub print_json_with_reserves: bool,
+
     #[arg(long, global = true, hide = true)]
     pub markdown_help: bool,
 }
