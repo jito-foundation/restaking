@@ -133,7 +133,7 @@ When you specify a Ledger path, the CLI will automatically connect to your Ledge
 ##### Set Admin
 
 ```bash
-jito-restaking-cli vault vault set-admin --old-admin-keypair ./credentials/user1.json --new-admin-keypair usb://ledger?key=0 <VAULT>
+jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair usb://ledger?key=0 <VAULT>
 ```
 
 ##### Using Ledger with Other Commands
