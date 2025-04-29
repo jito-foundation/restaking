@@ -22,8 +22,8 @@ This is especially useful for scripting and automation.
 
 #### JSON Output Options:
 
-- `--print-json`: Outputs full account information in JSON format
-- `--print-json-without-reserves`: Outputs account information in JSON format while automatically filtering out any `reserved` fields
+- `--print-json`: Outputs full account information in JSON format while automatically filtering out any `reserved` fields
+- `--print-json-with-reserves`: Outputs account information in JSON format with `reserved` fields
 
 ```bash
 jito-restaking-cli --rpc-url <RPC_URL> restaking operator get <OPERATOR_ADDRESS> --print-json
@@ -53,7 +53,7 @@ Example JSON output:
 ```
 
 ```bash
-jito-restaking-cli --rpc-url <RPC_URL> restaking operator get <OPERATOR_ADDRESS> --print-json-without-reserves 
+jito-restaking-cli --rpc-url <RPC_URL> restaking operator get <OPERATOR_ADDRESS> --print-json-with-reserves
 ```
 
 Example JSON output:
