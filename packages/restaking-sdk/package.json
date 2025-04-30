@@ -4,7 +4,7 @@
     "description": "TypeScript SDK for interacting with Jito's Restaking program on Solana",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "files": [
         "dist",
         "src",
