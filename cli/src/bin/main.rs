@@ -61,9 +61,9 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 signer: Some(signer),
             }
         } else {
-            let signer = {
-                let keypair_path = args.signer.as_ref().unwrap();
-                Some(CliSigner::new_keypair_from_path(keypair_path)?)
+            let signer = match args.signer.as_ref() {
+                Some(keypair_path) => Some(CliSigner::new_keypair_from_path(keypair_path)?),
+                None => None,
             };
             CliConfig {
                 rpc_url: args
