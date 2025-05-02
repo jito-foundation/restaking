@@ -121,7 +121,7 @@ jobs:
 
   verified_build:
     name: verified_build
-    runs-on: big-runner-1
+    runs-on: ubuntu-20.04-32c-128g
     steps:
       - uses: actions/checkout@v4
         with:
