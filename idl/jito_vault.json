@@ -1,5 +1,5 @@
 {
-  "version": "0.0.5",
+  "version": "0.0.3",
   "name": "jito_vault",
   "instructions": [
     {
@@ -560,9 +560,7 @@
           "isMut": false,
           "isSigner": true,
           "isOptional": true,
-          "docs": [
-            "Signer for minting"
-          ]
+          "docs": ["Signer for minting"]
         }
       ],
       "args": [
@@ -633,9 +631,7 @@
           "isMut": false,
           "isSigner": true,
           "isOptional": true,
-          "docs": [
-            "Signer for burning"
-          ]
+          "docs": ["Signer for burning"]
         }
       ],
       "args": [
@@ -752,9 +748,7 @@
           "isMut": false,
           "isSigner": true,
           "isOptional": true,
-          "docs": [
-            "Signer for burning"
-          ]
+          "docs": ["Signer for burning"]
         }
       ],
       "args": [],
@@ -1458,10 +1452,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                229
-              ]
+              "array": ["u8", 229]
             }
           }
         ]
@@ -1661,10 +1652,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                251
-              ]
+              "array": ["u8", 251]
             }
           }
         ]
@@ -1710,10 +1698,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1761,10 +1746,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1802,10 +1784,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1849,10 +1828,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1894,10 +1870,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1937,10 +1910,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1968,10 +1938,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           }
         ]
@@ -2152,10 +2119,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                256
-              ]
+              "array": ["u8", 256]
             }
           }
         ]
