@@ -2,13 +2,11 @@ name: ci
 
 on:
   push:
-    branches: 
-      - master
-      - v0.0.5
+    branches: [master]
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -48,14 +46,14 @@ jobs:
         uses: tj-actions/verify-changed-files@v20
         with:
           fail-if-changed: true
-          fail-message: 'Unexpected changes in the CLI files. Please run `./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md` to regenerate the files.'
+          fail-message: "Unexpected changes in the CLI files. Please run `./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md` to regenerate the files."
       - name: Regenerate Shank IDL files
         run: ./target/release/jito-shank-cli
       - name: Verify no changed files
         uses: tj-actions/verify-changed-files@v20
         with:
           fail-if-changed: true
-          fail-message: 'Unexpected changes in the shank IDL files. Please run `./target/release/jito-shank-cli` to regenerate the files.'
+          fail-message: "Unexpected changes in the shank IDL files. Please run `./target/release/jito-shank-cli` to regenerate the files."
       - name: Set Node.js 22.x
         uses: actions/setup-node@v3
         with:
@@ -121,7 +119,7 @@ jobs:
 
   verified_build:
     name: verified_build
-    runs-on: big-runner-1
+    runs-on: ubuntu-20.04-32c-128g
     steps:
       - uses: actions/checkout@v4
         with:

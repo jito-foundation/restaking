@@ -1,5 +1,5 @@
 {
-  "version": "0.0.5",
+  "version": "0.0.3",
   "name": "jito_restaking",
   "instructions": [
     {
@@ -158,7 +158,7 @@
       ],
       "args": [
         {
-          "name": "args",
+          "name": "maxSlashablePerEpoch",
           "type": "u64"
         }
       ],
@@ -956,10 +956,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1037,10 +1034,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1084,10 +1078,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1135,10 +1126,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1176,10 +1164,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1249,10 +1234,7 @@
           {
             "name": "reservedSpace",
             "type": {
-              "array": [
-                "u8",
-                261
-              ]
+              "array": ["u8", 261]
             }
           }
         ]
@@ -1290,10 +1272,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                263
-              ]
+              "array": ["u8", 263]
             }
           }
         ]
@@ -1321,10 +1300,7 @@
           {
             "name": "reserved",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           }
         ]
