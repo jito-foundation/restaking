@@ -2663,14 +2663,11 @@ dependencies = [
  "jito-vault-core",
  "shank",
  "solana-program",
- "solana-program-test",
- "solana-sdk",
  "solana-security-txt",
  "spl-associated-token-account 6.0.0",
  "spl-token 7.0.0",
  "spl-token-2022 7.0.0",
  "thiserror 1.0.69",
- "tokio",
 ]
 
 [[package]]
