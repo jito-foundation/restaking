@@ -49,5 +49,11 @@ pub fn process_cooldown_vault_ncn_ticket(
         return Err(VaultError::VaultNcnTicketFailedCooldown.into());
     }
 
+    msg!(
+        "COOLDOWN VAULT_NCN_TICKET: Vault {} deactivating NCN {}",
+        vault_info.key,
+        ncn.key
+    );
+
     Ok(())
 }
