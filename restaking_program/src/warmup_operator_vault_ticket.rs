@@ -46,5 +46,11 @@ pub fn process_warmup_operator_vault_ticket(
         return Err(RestakingError::OperatorVaultTicketFailedWarmup.into());
     }
 
+    msg!(
+        "WARMUP OPERATOR_VAULT_TICKET: Operator {} activating Vault {}",
+        operator_vault_ticket.operator,
+        operator_vault_ticket.vault,
+    );
+
     Ok(())
 }

@@ -99,6 +99,8 @@ pub fn process_mint(
         return Err(VaultError::VrtOutCannotBeZero.into());
     }
 
+    msg!("DEPOSIT: {} tokens from {}", amount_in, depositor.key);
+
     // transfer tokens from depositor to vault
     {
         invoke(

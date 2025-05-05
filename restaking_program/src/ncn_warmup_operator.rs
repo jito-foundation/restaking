@@ -11,17 +11,17 @@ use solana_program::{
 
 /// [`crate::RestakingInstruction::NcnWarmupOperator`]
 pub fn process_ncn_warmup_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-    let [config, ncn, operator, ncn_operator_state, ncn_operator_admin] = accounts else {
+    let [config, ncn_info, operator, ncn_operator_state, ncn_operator_admin] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     Config::load(program_id, config, false)?;
-    Ncn::load(program_id, ncn, false)?;
+    Ncn::load(program_id, ncn_info, false)?;
     Operator::load(program_id, operator, false)?;
-    NcnOperatorState::load(program_id, ncn_operator_state, ncn, operator, true)?;
+    NcnOperatorState::load(program_id, ncn_operator_state, ncn_info, operator, true)?;
     load_signer(ncn_operator_admin, false)?;
 
     // The NCN operator admin shall be the signer of the transaction
-    let ncn_data = ncn.data.borrow();
+    let ncn_data = ncn_info.data.borrow();
     let ncn = Ncn::try_from_slice_unchecked(&ncn_data)?;
     if ncn.operator_admin.ne(ncn_operator_admin.key) {
         msg!("Invalid operator admin for NCN");
@@ -41,6 +41,12 @@ pub fn process_ncn_warmup_operator(program_id: &Pubkey, accounts: &[AccountInfo]
         msg!("NCN is not ready to be warmup operator");
         return Err(RestakingError::NcnWarmupOperatorFailed.into());
     }
+
+    msg!(
+        "WARMUP NCN_OPERATOR_STATE: NCN {} activating Operator {}",
+        ncn_operator_state.ncn,
+        ncn_operator_state.operator,
+    );
 
     Ok(())
 }
