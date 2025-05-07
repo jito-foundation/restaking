@@ -49,6 +49,8 @@ use spl_token_2022::extension::ExtensionType;
 use super::fixture::TestBuilder;
 use crate::fixtures::{TestError, TestResult};
 
+use super::fixture::TestBuilder;
+
 pub struct VaultRoot {
     pub vault_pubkey: Pubkey,
     pub vault_admin: Keypair,
@@ -1924,7 +1926,6 @@ impl VaultProgramClient {
             ),
             &get_associated_token_address(&vault_attacker.fee_wallet, &vault_attacker.vrt_mint),
             &get_associated_token_address(program_fee_wallet, &vault_attacker.vrt_mint),
-            None,
         )
         .await?;
 
