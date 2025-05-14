@@ -139,20 +139,19 @@ jobs:
       - name: Publish Crate
         id: publish
         working-directory: ${{ inputs.package_path }}
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        # env:
+          # CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          if [ "${{ inputs.dry_run }}" == "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
-          else
-            DRY_RUN_FLAG=""
-          fi
-
           # Get current version before update
           OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
           
-          # Update version and publish
-          cargo release ${{ inputs.level }} --no-confirm --no-push $DRY_RUN_FLAG
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            # For dry-run mode, don't use the -x flag (dry-run is default)
+            cargo release ${{ inputs.level }} --no-confirm --no-push
+          else
+            # For actual execution, use the -x flag
+            cargo release ${{ inputs.level }} --no-confirm --no-push -x
+          fi
           
           # Get new version after update
           NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
