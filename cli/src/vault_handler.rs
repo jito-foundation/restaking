@@ -1317,28 +1317,17 @@ impl VaultCliHandler {
             .staker_vrt_token_account(staker_vrt_token_account)
             .base(signer.pubkey())
             .amount(amount);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[
-                vault_staker_withdrawal_ticket_ata_ix,
-                ix_builder.instruction(),
-            ],
-            Some(&signer.pubkey()),
+        info!("Enqueueing withdrawal");
+
+        self.process_transaction(
+            &[vault_staker_withdrawal_ticket_ata_ix, ix],
+            &signer.pubkey(),
             &[signer],
-            blockhash,
-        );
-        info!(
-            "Initializing vault operator delegation transaction: {:?}",
-            tx.get_signature()
-        );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
-
-        if result.is_err() {
-            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
-        }
-
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+        )
+        .await?;
 
         Ok(())
     }
