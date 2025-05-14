@@ -1320,7 +1320,10 @@ impl VaultCliHandler {
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
-        info!("Enqueueing withdrawal");
+        info!(
+            "Enqueueing withdrawal: amount = {amount}, vault = {vault}, signer = {}",
+            signer.pubkey()
+        );
 
         self.process_transaction(
             &[vault_staker_withdrawal_ticket_ata_ix, ix],
