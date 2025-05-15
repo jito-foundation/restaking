@@ -5,7 +5,7 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
 };
 use solana_program::{
-    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult,
+    account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
 
@@ -56,6 +56,13 @@ pub fn process_cooldown_delegation(
         .delegation_state
         .cooldown(amount)?;
     vault.delegation_state.cooldown(amount)?;
+
+    msg!(
+        "COOLDOWN DELEGATION: Vault {} undelegating {} tokens from Operator {}",
+        vault_info.key,
+        amount,
+        operator.key
+    );
 
     Ok(())
 }

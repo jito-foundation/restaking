@@ -125,6 +125,15 @@ pub fn process_burn_withdrawal_ticket(
         .collect();
     drop(vault_staker_withdrawal_ticket_data);
 
+    msg!(
+        "COMPLETE WITHDRAWAL: Staker {} received {} tokens (burned {} VRT, fees: {} vault, {} program)",
+        staker.key,
+        out_amount,
+        burn_amount,
+        vault_fee_amount,
+        program_fee_amount
+    );
+
     // transfer fee to fee wallet
     invoke_signed(
         &transfer(
