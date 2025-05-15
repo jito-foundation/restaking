@@ -150,7 +150,7 @@ jobs:
             cargo release ${{ inputs.level }} --no-confirm --no-push
           else
             # For actual execution, use the -x flag
-            cargo release ${{ inputs.level }} --no-confirm --no-push -x
+            cargo release ${{ inputs.level }} --no-confirm -x
           fi
           
           # Get new version after update
@@ -162,7 +162,7 @@ jobs:
           echo "new_git_tag=${{ steps.extract_name.outputs.crate_name }}-v${NEW_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Generate a changelog
-        if: inputs.create_release == 'true'
+        if: github.event.inputs.create_release == 'true'
         id: changelog
         uses: metcalfc/changelog-generator@v4.1.0
         with:
@@ -170,7 +170,7 @@ jobs:
           includePattern: ".*/${{ inputs.package_path }}/.*"
 
       - name: Create GitHub release
-        if: inputs.create_release == 'true' && inputs.dry_run != 'true'
+        if: github.event.inputs.create_release == 'true' && github.event.inputs.dry_run != 'true'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.publish.outputs.new_git_tag }}
