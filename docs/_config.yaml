@@ -1,5 +1,5 @@
-title: Jito Restaking Documentation
-longtitle: Jito Restaking Documentation
+title: Jito (Re)Staking Overview
+longtitle: Jito (Re)Staking Overview
 description: Jito Restaking Documentation
 url: "https://docs.restaking.jito.network"
 
@@ -7,7 +7,6 @@ remote_theme: sighingnow/jekyll-gitbook
 
 markdown: kramdown
 syntax_highlighter_style: colorful
-
 toc:
   enabled: true
   h_min: 1
@@ -20,6 +19,9 @@ assets:
     - assets
 
 collections:
+  ncn:
+    output: true
+    permalink: /:collection/:title/
   about:
     output: true
     permalink: /:collection/:title/
@@ -41,6 +43,7 @@ collections:
     permalink: /:collection/:title/
 
 ordered_collections:
+  - ncn
   - about
   - restaking
   - vault
