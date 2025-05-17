@@ -1,0 +1,129 @@
+name: Build and Upload Binaries to Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to upload binaries to (e.g. jito-restaking-cli-v0.1.0)'
+        required: true
+        type: string
+      package_path:
+        description: 'Path to the package'
+        required: true
+        default: 'jito-restaking-cli'
+        type: choice
+        options:
+          - jito-restaking-cli
+          - jito-shank-cli
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            name: x86_64-unknown-linux-musl
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: x86_64-pc-windows-msvc
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_tag }}
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Install musl-tools (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "shank-build-${{ matrix.target }}-${{ inputs.package_path }}"
+      
+      - name: Extract crate name and version
+        id: crate_info
+        shell: bash
+        run: |
+          CRATE_NAME=$(basename "${{ inputs.package_path }}")
+          VERSION=$(grep -m1 'version =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building $CRATE_NAME version $VERSION for ${{ matrix.target }}"
+      
+      - name: Build
+        working-directory: ${{ inputs.package_path }}
+        run: cargo build --release --target ${{ matrix.target }}
+      
+      - name: Prepare binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          CRATE_NAME="${{ steps.crate_info.outputs.crate_name }}"
+          VERSION="${{ steps.crate_info.outputs.version }}"
+          BINARY_NAME="${CRATE_NAME}-v${VERSION}-${{ matrix.target }}"
+          
+          # Copy binary to root with appropriate name
+          cp ./target/${{ matrix.target }}/release/${CRATE_NAME} ${BINARY_NAME}
+          
+          # Create checksum
+          shasum -a 256 ${BINARY_NAME} > ${BINARY_NAME}.sha256
+          
+          # For debugging
+          echo "Created binary: ${BINARY_NAME}"
+          ls -la ${BINARY_NAME}*
+      
+      - name: Prepare binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $CRATE_NAME = "${{ steps.crate_info.outputs.crate_name }}"
+          $VERSION = "${{ steps.crate_info.outputs.version }}"
+          $BINARY_NAME = "${CRATE_NAME}-v${VERSION}-${{ matrix.target }}.exe"
+          
+          # Copy binary to root with appropriate name
+          Copy-Item "./target/${{ matrix.target }}/release/${CRATE_NAME}.exe" -Destination $BINARY_NAME
+          
+          # Create checksum
+          $hash = Get-FileHash -Path $BINARY_NAME -Algorithm SHA256
+          $hash.Hash | Out-File -FilePath "${BINARY_NAME}.sha256"
+          
+          # For debugging
+          Write-Host "Created binary: ${BINARY_NAME}"
+          Get-ChildItem -Path "${BINARY_NAME}*"
+      
+      - name: Upload to Release (Unix)
+        if: matrix.os != 'windows-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CRATE_NAME="${{ steps.crate_info.outputs.crate_name }}"
+          VERSION="${{ steps.crate_info.outputs.version }}"
+          BINARY_NAME="${CRATE_NAME}-v${VERSION}-${{ matrix.target }}"
+          
+          echo "Uploading to release: ${{ github.event.inputs.release_tag }}"
+          gh release upload "${{ github.event.inputs.release_tag }}" "${BINARY_NAME}" "${BINARY_NAME}.sha256" --clobber
+      
+      - name: Upload to Release (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $CRATE_NAME = "${{ steps.crate_info.outputs.crate_name }}"
+          $VERSION = "${{ steps.crate_info.outputs.version }}"
+          $BINARY_NAME = "${CRATE_NAME}-v${VERSION}-${{ matrix.target }}.exe"
+          
+          Write-Host "Uploading to release: ${{ github.event.inputs.release_tag }}"
+          gh release upload "${{ github.event.inputs.release_tag }}" "${BINARY_NAME}" "${BINARY_NAME}.sha256" --clobber
