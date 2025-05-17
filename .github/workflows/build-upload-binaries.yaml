@@ -15,6 +15,11 @@ on:
         options:
           - jito-restaking-cli
           - jito-shank-cli
+      publish_release:
+        description: 'Publish the release after uploading binaries'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   build-binaries:
@@ -37,7 +42,8 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.release_tag }}
+          fetch-depth: 1
+          ref: refs/tags/${{ github.event.inputs.release_tag }}
       
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -74,15 +80,13 @@ jobs:
           VERSION="${{ steps.crate_info.outputs.version }}"
           BINARY_NAME="${CRATE_NAME}-v${VERSION}-${{ matrix.target }}"
           
+          echo "Building binary with new version: $VERSION"
+          
           # Copy binary to root with appropriate name
           cp ./target/${{ matrix.target }}/release/${CRATE_NAME} ${BINARY_NAME}
           
           # Create checksum
           shasum -a 256 ${BINARY_NAME} > ${BINARY_NAME}.sha256
-          
-          # For debugging
-          echo "Created binary: ${BINARY_NAME}"
-          ls -la ${BINARY_NAME}*
       
       - name: Prepare binary (Windows)
         if: matrix.os == 'windows-latest'
@@ -92,38 +96,108 @@ jobs:
           $VERSION = "${{ steps.crate_info.outputs.version }}"
           $BINARY_NAME = "${CRATE_NAME}-v${VERSION}-${{ matrix.target }}.exe"
           
+          Write-Host "Building binary with new version: $VERSION"
+          
           # Copy binary to root with appropriate name
           Copy-Item "./target/${{ matrix.target }}/release/${CRATE_NAME}.exe" -Destination $BINARY_NAME
           
           # Create checksum
           $hash = Get-FileHash -Path $BINARY_NAME -Algorithm SHA256
           $hash.Hash | Out-File -FilePath "${BINARY_NAME}.sha256"
-          
-          # For debugging
-          Write-Host "Created binary: ${BINARY_NAME}"
-          Get-ChildItem -Path "${BINARY_NAME}*"
       
-      - name: Upload to Release (Unix)
+      - name: Upload binary artifacts (Unix)
         if: matrix.os != 'windows-latest'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          CRATE_NAME="${{ steps.crate_info.outputs.crate_name }}"
-          VERSION="${{ steps.crate_info.outputs.version }}"
-          BINARY_NAME="${CRATE_NAME}-v${VERSION}-${{ matrix.target }}"
-          
-          echo "Uploading to release: ${{ github.event.inputs.release_tag }}"
-          gh release upload "${{ github.event.inputs.release_tag }}" "${BINARY_NAME}" "${BINARY_NAME}.sha256" --clobber
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}.sha256
+          retention-days: 7
       
-      - name: Upload to Release (Windows)
+      - name: Upload binary artifacts (Windows)
         if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}.exe
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}.exe.sha256
+          retention-days: 7
+
+    publish-release:
+    name: Publish Release
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_tag }}
+      
+      - name: Extract release information
+        id: release_info
+        shell: bash
+        run: |
+          CRATE_NAME=$(basename "${{ inputs.package_path }}")
+          VERSION=$(grep -m1 'version =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create release directory
+        run: mkdir -p release-binaries
+      
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-unknown-linux-musl
+          path: release-binaries
+      
+      - name: Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-apple-darwin
+          path: release-binaries
+      
+      - name: Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-pc-windows-msvc
+          path: release-binaries
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "# ${{ steps.release_info.outputs.crate_name }} v${{ steps.release_info.outputs.version }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Binaries" >> RELEASE_NOTES.md
+          echo "- Linux (x86_64-unknown-linux-musl)" >> RELEASE_NOTES.md
+          echo "- macOS (x86_64-apple-darwin)" >> RELEASE_NOTES.md
+          echo "- Windows (x86_64-pc-windows-msvc)" >> RELEASE_NOTES.md
+          
+          if [ -f "CHANGELOG.md" ]; then
+            echo "" >> RELEASE_NOTES.md
+            echo "## Changelog" >> RELEASE_NOTES.md
+            # Extract the relevant section from CHANGELOG.md if it exists
+            grep -A 50 "^## ${{ steps.release_info.outputs.version }}" CHANGELOG.md | grep -B 50 -m 2 "^## " | head -n -1 >> RELEASE_NOTES.md || true
+          fi
+      
+      - name: Update release with binaries
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.release_tag }}
+          name: "${{ steps.release_info.outputs.crate_name }} v${{ steps.release_info.outputs.version }}"
+          bodyFile: "RELEASE_NOTES.md"
+          artifacts: "./release-binaries/*"
+          artifactErrorsFailBuild: false
+          allowUpdates: true
+          draft: ${{ github.event.inputs.publish_release != 'true' }}
+          
+      - name: Publish Release
+        if: github.event.inputs.publish_release == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
         run: |
-          $CRATE_NAME = "${{ steps.crate_info.outputs.crate_name }}"
-          $VERSION = "${{ steps.crate_info.outputs.version }}"
-          $BINARY_NAME = "${CRATE_NAME}-v${VERSION}-${{ matrix.target }}.exe"
-          
-          Write-Host "Uploading to release: ${{ github.event.inputs.release_tag }}"
-          gh release upload "${{ github.event.inputs.release_tag }}" "${BINARY_NAME}" "${BINARY_NAME}.sha256" --clobber
+          gh release edit "${{ github.event.inputs.release_tag }}" --draft=false
