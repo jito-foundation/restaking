@@ -86,7 +86,6 @@ Key steps for this include:
   - `valid_slots_after_consensus`: Number of slots after consensus is reached where votes are still accepted
   - `epochs_before_stall`: Number of epochs to wait after consensus is reached before epoch accounts can be closed.
   - `epochs_after_consensus_before_close`: Number of epochs without reaching consensus before the cycle is considered stalled.
-  - `epochs_before_stall`: Number of epochs to wait after consensus is reached before epoch accounts can be closed.
 - **Snapshot**: The NCN admin initiates a new consensus cycle by triggering the snapshot phase, which creates a frozen, point-in-time view of the network's state. During this phase, the system captures and records several critical pieces of information: the current set of active operators, their associated vault delegations, and the weighted stake distribution across the network.
 
 This snapshot process involves creating an `EpochSnapshot` account to track the total stake weight and participant counts, individual `OperatorSnapshot` accounts for each operator to record their specific delegated stake weights, and a `WeightTable` that freezes the voting weights for each supported token. By locking this configuration at the start of the cycle, the system ensures that all subsequent votes are based on a consistent, immutable view of the network's state, preventing any manipulation of voting power through strategic stake movements or delegation changes during the active voting period.
