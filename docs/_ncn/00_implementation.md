@@ -9,7 +9,7 @@ weight: 1
 
 The Node Consensus Network (NCN) is a robust blockchain consensus system built on Solana. It enables network participants to agree on critical network decisions using a secure, stake-weighted voting mechanism. This system utilizes Jito's restaking infrastructure, allowing operators with delegated tokens to vote on network parameters and states.
 
-This tutorial will focus on a [pre-built NCN program](https://github.com/Unboxed-Software/ncn-program-template) that acts like a template or base that you can use to create your own NCN program. To help you understand how it works, we will walk through building a simulation test that covers the majority of its setup and functionality. We do not recommend most NCN developers build an NCN from scratch. Rather, we suggest using this prebuilt program as a starting point and customizing it according to your needs.
+This tutorial will focus on a [pre-built NCN program](https://github.com/jito-foundation/ncn-template) that acts like a template or base that you can use to create your own NCN program. To help you understand how it works, we will walk through building a simulation test that covers the majority of its setup and functionality. We do not recommend most NCN developers build an NCN from scratch. Rather, we suggest using this prebuilt program as a starting point and customizing it according to your needs.
 
 By following the simulation test setup in this guide, you will gain hands-on experience with the entire NCN lifecycle: initializing vaults and operators using Jito's restaking and vault programs, configuring the NCN program, and executing the full voting process.
 

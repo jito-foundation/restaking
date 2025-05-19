@@ -24,7 +24,7 @@ This split enables scalability and flexibility for developers while retaining cr
 
 ### Node Consensus Network (NCN)
 
-An NCN is a decentralized service or network that reaches onchain consensus on offchain data or workloads. This may include oracles, DePIN services, bridges, co-processors, or new chains. The NCN is registered onchain using the Jito (Re)Staking program (`RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q`) and interacts with the Vault Program (`Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8`) to source security from staked SPL tokens without needing to build a validator set or depend on a native token.
+An NCN is a decentralized service or network that reaches onchain consensus on offchain data or workloads. This may include oracles, DePIN services, bridges, co-processors, or new chains. Jito (Re)Staking comprises of two different on-chain programs. The restaking program (`RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q`) handles relations between Operators and NCNs, and the Vault Program (`Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8`) that facilitates staking and delegating assets to make the NCNs function.
 
 ### Vaults
 
@@ -179,7 +179,7 @@ Consensus in Jito (Re)Staking is driven by submitting onchain votes on offchain 
 - They submit signed votes onchain based on their results
 - These votes are weighted by how much stake they are delegated from vaults
 - Finalized results require reaching a threshold of weighted agreement
-- NCNs can implement custom slashing logic for missed votes or malicious behavior
+- Once slashing is live, NCNs can implement custom slashing logic for missed votes or malicious behavior
 
 ### Modular and Permissioned Participation
 
