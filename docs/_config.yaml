@@ -4,7 +4,8 @@ description: Jito Restaking Documentation
 url: "https://docs.restaking.jito.network"
 
 remote_theme: sighingnow/jekyll-gitbook
-
+plugins:
+  - jekyll-remote-theme
 markdown: kramdown
 syntax_highlighter_style: colorful
 toc:
@@ -22,7 +23,7 @@ collections:
   ncn:
     output: true
     permalink: /:collection/:title/
-  about:
+  terminology:
     output: true
     permalink: /:collection/:title/
     sort_by: weight
@@ -44,7 +45,7 @@ collections:
 
 ordered_collections:
   - ncn
-  - about
+  - terminology
   - restaking
   - vault
   - tools
