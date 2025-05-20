@@ -19,10 +19,7 @@ assets:
     - assets
 
 collections:
-  ncn:
-    output: true
-    permalink: /:collection/:title/
-  about:
+  terminology:
     output: true
     permalink: /:collection/:title/
     sort_by: weight
@@ -34,18 +31,16 @@ collections:
     output: true
     permalink: /:collection/:title/
     sort_by: weight
-  advanced:
+  tools:
     output: true
     permalink: /:collection/:title/
-    sort_by: weight
-  tools:
+  ncn:
     output: true
     permalink: /:collection/:title/
 
 ordered_collections:
-  - ncn
-  - about
+  - terminology
   - restaking
   - vault
   - tools
-  - advanced
+  - ncn
