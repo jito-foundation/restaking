@@ -60,7 +60,7 @@ cargo r -p jito-shank-cli -- \
 --program-env-path ./config/program.env \
 --output-idl-path ./idl \
 generate \
---program-env-key "RESTAKING_PROGRAM_ID" \
+--program-id-key "RESTAKING_PROGRAM_ID" \
 --idl-name jito_restaking \
 --module-paths "restaking_sdk" \
 --module-paths "restaking_core" \
@@ -83,7 +83,7 @@ cargo r -p jito-shank-cli -- \
 --program-env ./config/program.env \
 --output-idl-path ./idl \
 generate \
---program-env-key "VAULT_PROGRAM_ID" \
+--program-id-key "VAULT_PROGRAM_ID" \
 --idl-name jito_vault \
 --module-paths "vault_sdk" \
 --module-paths "vault_core" \
