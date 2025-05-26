@@ -102,6 +102,7 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-sort
+          version: "1.0.9"
       - run: cargo sort --workspace --check
       - run: cargo fmt --all --check
       - run: cargo clippy --all-features -- -D warnings -D clippy::all -D clippy::nursery -D clippy::integer_division -D clippy::arithmetic_side_effects -D clippy::style -D clippy::perf
