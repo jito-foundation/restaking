@@ -198,12 +198,12 @@ This ongoing maintenance ensures the NCN remains flexible and cost-efficient. Ad
 
 | Network | Program   | Address                                     | Version |
 | ------- | --------- | ------------------------------------------- | ------- |
-| Mainnet | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q | 0.0.2   |
-| Mainnet | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8 | 0.0.2   |
-| Testnet | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q | 0.0.2   |
-| Testnet | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8 | 0.0.2   |
-| Devnet  | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q | 0.0.2   |
-| Devnet  | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8 | 0.0.2   |
+| Mainnet | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q | 0.0.5   |
+| Mainnet | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8 | 0.0.5   |
+| Testnet | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q | 0.0.5   |
+| Testnet | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8 | 0.0.5   |
+| Devnet  | Restaking | RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q | 0.0.5   |
+| Devnet  | Vault     | Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8 | 0.0.5   |
 
 ## License
 
