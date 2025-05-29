@@ -145,7 +145,4 @@ jobs:
             ```bash
             cargo install jito-restaking-cli --version ${{ steps.publish.outputs.new_version }}
             ```
-            
-            ### Changes
-            [Generated changelog here]
           makeLatest: true
