@@ -1,26 +1,8 @@
-name: Publish Restaking Crates
+name: Publish CLI
 
 on:
   workflow_dispatch:
     inputs:
-      package_path:
-        description: Which crate to publish
-        required: true
-        default: 'restaking_core'
-        type: choice
-        options:
-          - account_traits_derive
-          - bytemuck
-          - clients/rust/common
-          - clients/rust/restaking_client
-          - clients/rust/vault_client
-          - core
-          - restaking_core
-          - restaking_program
-          - restaking_sdk
-          - vault_core
-          - vault_program
-          - vault_sdk
       level:
         description: Version increment level
         required: true
@@ -35,11 +17,6 @@ on:
         required: true
         default: true
         type: boolean
-      create_release:
-        description: Create a GitHub release
-        required: true
-        type: boolean
-        default: true
 
 jobs:
   verified_build:
@@ -99,8 +76,8 @@ jobs:
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
 
-  publish:
-    name: Publish Crates
+  publish_cli:
+    name: Publish CLI
     runs-on: ubuntu-latest
     needs: test_sbf
     permissions:
@@ -128,50 +105,47 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Extract crate name
-        id: extract_name
-        run: |
-          # Extract just the crate name from the path for use in tags and releases
-          CRATE_NAME=$(basename "${{ inputs.package_path }}")
-          echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
-
-      - name: Publish Crate
+      - name: Publish CLI Crate
         id: publish
-        working-directory: ${{ inputs.package_path }}
-        # env:
-          # CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        working-directory: cli
         run: |
-          # Get current version before update
           OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
           
           if [ "${{ inputs.dry_run }}" == "true" ]; then
-            # For dry-run mode, don't use the -x flag (dry-run is default)
             cargo release ${{ inputs.level }} --no-confirm --no-push
           else
-            # For actual execution, use the -x flag
             cargo release ${{ inputs.level }} --no-confirm -x
           fi
           
-          # Get new version after update
           NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
           
-          # Set outputs for the release step
           echo "old_version=${OLD_VERSION}" >> $GITHUB_OUTPUT
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
-          echo "new_git_tag=${{ steps.extract_name.outputs.crate_name }}-v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "git_tag=v${NEW_VERSION}-cli" >> $GITHUB_OUTPUT
 
-      - name: Generate a changelog
-        if: github.event.inputs.create_release == 'true'
-        id: changelog
-        uses: metcalfc/changelog-generator@v4.1.0
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
-          includePattern: ".*/${{ inputs.package_path }}/.*"
+      # We will add it later
+      # Optional: Build binaries for different platforms
+      # - name: Build CLI binaries
+      #   if: inputs.create_binaries == 'true'
+      #   run: |
+      #     # Build for different targets
+      #     cargo build --release --bin your-cli-name
+      #     # You could add cross-compilation here
 
-      - name: Create GitHub release
-        if: github.event.inputs.create_release == 'true' && github.event.inputs.dry_run != 'true'
+      - name: Create CLI Release
+        if: inputs.dry_run != 'true'
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ steps.publish.outputs.new_git_tag }}
-          name: "${{ steps.extract_name.outputs.crate_name }} v${{ steps.publish.outputs.new_version }}"
-          body: ${{ steps.changelog.outputs.changelog }}
+          tag: ${{ steps.publish.outputs.git_tag }}
+          name: "Jito Restaking CLI v${{ steps.publish.outputs.new_version }}"
+          body: |
+            ## CLI Release v${{ steps.publish.outputs.new_version }}
+            
+            ### Installation
+            ```bash
+            cargo install jito-restaking-cli --version ${{ steps.publish.outputs.new_version }}
+            ```
+            
+            ### Changes
+            [Generated changelog here]
+          makeLatest: true
