@@ -16,6 +16,10 @@ on:
           - patch
           - minor
           - major
+      tag_name:
+        description: 'Custom tag name for release (leave empty for auto-generated). Example: v1.2.3 or release-2024-01'
+        required: true
+        type: string
       dry_run:
         description: Dry run (no actual publishing)
         required: true
@@ -270,6 +274,7 @@ jobs:
           # Determine release info based on what was published
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           CRATE_COUNT=${{ needs.determine_crates.outputs.crate_count }}
+          TAG_NAME=${{ github.event.inputs.tag_name }}
           
           if [ "${{ needs.determine_crates.outputs.is_single_crate }}" == "true" ]; then
             # Single crate release
@@ -277,12 +282,10 @@ jobs:
             CRATE_NAME=$(basename "$CRATE_PATH")
             cd "$GITHUB_WORKSPACE/$CRATE_PATH"
             NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
-            
-            TAG_NAME="restaking-${CRATE_NAME}-v${NEW_VERSION}"
+
             RELEASE_TITLE="Jito Restaking ${CRATE_NAME} v${NEW_VERSION}"
           else
             # Multiple crates release
-            TAG_NAME="restaking-release-$TIMESTAMP"
             RELEASE_TITLE="Jito Restaking Release - $(date +%Y-%m-%d)"
           fi
           
