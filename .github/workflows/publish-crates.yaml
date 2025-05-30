@@ -6,6 +6,7 @@ on:
       package_path:
         description: 'Comma-separated list of crates to publish (leave empty for all). Example: core,restaking_core,cli'
         required: true
+        default: 'account_traits_derive,bytemuck,clients/rust/common,clients/rust/restaking_client,clients/rust/vault_client,core,restaking_sdk,restaking_core,restaking_program,vault_sdk,vault_core,vault_program'
         type: string
       level:
         description: Version increment level for selected crates
@@ -47,17 +48,16 @@ jobs:
           ALL_CRATES=(
             "account_traits_derive"
             "bytemuck"
-            "core"
-            "restaking_core"
-            "vault_core"
             "clients/rust/common"
-            "restaking_sdk"
-            "vault_sdk"
             "clients/rust/restaking_client"
             "clients/rust/vault_client"
+            "core"
+            "restaking_sdk"
+            "restaking_core"
             "restaking_program"
+            "vault_sdk"
+            "vault_core"
             "vault_program"
-            "cli"
           )
           
           # Check if input contains commas (multiple crates) or is "all"
