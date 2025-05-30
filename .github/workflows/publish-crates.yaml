@@ -1,0 +1,368 @@
+name: Publish Selected Restaking Crates
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_path:
+        description: 'Comma-separated list of crates to publish (leave empty for all). Example: core,restaking_core,cli'
+        required: true
+        type: string
+      level:
+        description: Version increment level for selected crates
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: Dry run (no actual publishing)
+        required: true
+        default: true
+        type: boolean
+      create_release:
+        description: Create GitHub releases for each crate
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  determine_crates:
+    name: Determine Crates to Publish
+    runs-on: ubuntu-latest
+    outputs:
+      crates_to_publish: ${{ steps.setup_crates.outputs.crates_to_publish }}
+      crate_count: ${{ steps.setup_crates.outputs.crate_count }}
+      needs_programs: ${{ steps.setup_crates.outputs.needs_programs }}
+    steps:
+      - name: Setup crates to publish
+        id: setup_crates
+        run: |
+          # All available crates in dependency order
+          ALL_CRATES=(
+            "account_traits_derive"
+            "bytemuck"
+            "core"
+            "restaking_core"
+            "vault_core"
+            "clients/rust/common"
+            "restaking_sdk"
+            "vault_sdk"
+            "clients/rust/restaking_client"
+            "clients/rust/vault_client"
+            "restaking_program"
+            "vault_program"
+            "cli"
+          )
+          
+          # Check if input contains commas (multiple crates) or is "all"
+          if [[ "${{ inputs.package_path }}" == "all" ]]; then
+            # Publish all crates
+            CRATES_TO_PUBLISH=("${ALL_CRATES[@]}")
+            echo "📦 Publishing ALL crates"
+            IS_SINGLE="false"
+          elif [[ "${{ inputs.package_path }}" == *","* ]]; then
+            # Multiple crates - parse comma-separated list
+            IFS=',' read -ra SELECTED_ARRAY <<< "${{ inputs.package_path }}"
+            CRATES_TO_PUBLISH=()
+            
+            # Validate and order selected crates according to dependency order
+            for crate in "${ALL_CRATES[@]}"; do
+              for selected in "${SELECTED_ARRAY[@]}"; do
+                # Trim whitespace
+                selected=$(echo "$selected" | xargs)
+                if [ "$crate" == "$selected" ]; then
+                  CRATES_TO_PUBLISH+=("$crate")
+                  break
+                fi
+              done
+            done
+            
+            echo "📦 Publishing MULTIPLE crates: ${{ inputs.package_path }}"
+            IS_SINGLE="false"
+          else
+            # Single crate
+            CRATES_TO_PUBLISH=("${{ inputs.package_path }}")
+            echo "📦 Publishing SINGLE crate: ${{ inputs.package_path }}"
+            IS_SINGLE="true"
+          fi
+          
+          # Convert to space-separated string for output
+          CRATES_STRING=$(IFS=' '; echo "${CRATES_TO_PUBLISH[*]}")
+          COUNT=${#CRATES_TO_PUBLISH[@]}
+          
+          echo "crates_to_publish=$CRATES_STRING" >> $GITHUB_OUTPUT
+          echo "crate_count=$COUNT" >> $GITHUB_OUTPUT
+          echo "is_single_crate=$IS_SINGLE" >> $GITHUB_OUTPUT
+          
+          echo "Will publish $COUNT crates: $CRATES_STRING"
+          echo "Is single crate: $IS_SINGLE"
+
+  verified_build:
+    name: verified_build
+    runs-on: big-runner-1
+    needs: determine_crates
+    if: needs.determine_crates.outputs.needs_programs == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.1.11
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install solana-verify from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: solana-verify
+      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.1.11
+      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.1.11
+      - name: Upload jito_restaking_program.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/deploy/jito_restaking_program.so
+      - name: Upload jito_vault_program.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_vault_program.so
+          path: target/deploy/jito_vault_program.so
+
+  test_sbf:
+    name: cargo test
+    runs-on: ubuntu-latest
+    needs: [determine_crates, verified_build]
+    if: always() && (needs.verified_build.result == 'success' || needs.verified_build.result == 'skipped')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aarcangeli/load-dotenv@v1.0.0
+        with:
+          path: config
+          filenames: program.env
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - name: Download restaking program
+        if: needs.verified_build.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/sbf-solana-solana/release/
+      - name: Download vault program
+        if: needs.verified_build.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: jito_vault_program.so
+          path: target/sbf-solana-solana/release/
+      - uses: taiki-e/install-action@nextest
+      - run: cargo nextest run --all-features
+        env:
+          SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
+
+  publish:
+    name: Publish Crates
+    runs-on: ubuntu-latest
+    needs: [determine_crates, verified_build, test_sbf]
+    permissions:
+      contents: write
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    outputs:
+      published_crates: ${{ steps.publish_crates.outputs.published_crates }}
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_PAT }}
+          fetch-depth: 0 # get the whole history for changelog
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "restaking-publish-${{ hashFiles('**/Cargo.toml') }}"
+
+      - name: Install Cargo Release
+        run: cargo install cargo-release
+
+      - name: Set Git Author
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Publish Selected Crates
+        id: publish_crates
+        run: |
+          # Convert space-separated string back to array
+          read -ra CRATES_TO_PUBLISH <<< "${{ needs.determine_crates.outputs.crates_to_publish }}"
+          
+          PUBLISHED_CRATES=""
+          
+          # Determine the version level to use
+          LEVEL="${{ inputs.level }}"
+          
+          for crate_path in "${CRATES_TO_PUBLISH[@]}"; do
+            echo "========================================="
+            echo "Publishing $crate_path..."
+            echo "========================================="
+            cd "$GITHUB_WORKSPACE/$crate_path"
+            
+            # Get versions
+            OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
+            CRATE_NAME=$(basename "$crate_path")
+            
+            echo "Current version: $OLD_VERSION"
+            
+            if [ "${{ inputs.dry_run }}" == "true" ]; then
+              echo "🧪 DRY RUN: Would publish $CRATE_NAME $LEVEL"
+              cargo release $LEVEL --no-confirm --no-push
+            else
+              echo "🚀 Publishing $CRATE_NAME $LEVEL"
+              cargo release $LEVEL --no-confirm -x
+              
+              # Wait a bit between publishes to avoid rate limits (only for multiple crates)
+              if [ "${{ needs.determine_crates.outputs.is_single_crate }}" == "false" ]; then
+                echo "⏳ Waiting 10 seconds before next publish..."
+                sleep 10
+              fi
+            fi
+            
+            NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
+            echo "New version: $NEW_VERSION"
+            
+            # Track published crates for summary
+            PUBLISHED_CRATES="${PUBLISHED_CRATES}- **${CRATE_NAME}**: ${OLD_VERSION} → ${NEW_VERSION}\n"
+            
+            echo "✅ Completed $CRATE_NAME"
+            cd "$GITHUB_WORKSPACE"
+          done
+          
+          echo "published_crates<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$PUBLISHED_CRATES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "========================================="
+          echo "🎉 Publishing completed!"
+          echo "========================================="
+
+  create_release:
+    name: Create Combined GitHub Release
+    runs-on: ubuntu-latest
+    needs: [determine_crates, publish]
+    if: github.event.inputs.create_release == 'true' && github.event.inputs.dry_run != 'true'
+    permissions:
+      contents: write
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_PAT }}
+          fetch-depth: 0
+
+      - name: Create combined release
+        run: |
+          # Convert space-separated string back to array
+          read -ra CRATES_TO_PUBLISH <<< "${{ needs.determine_crates.outputs.crates_to_publish }}"
+          
+          # Determine release info based on what was published
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          CRATE_COUNT=${{ needs.determine_crates.outputs.crate_count }}
+          
+          if [ "${{ needs.determine_crates.outputs.is_single_crate }}" == "true" ]; then
+            # Single crate release
+            CRATE_PATH="${CRATES_TO_PUBLISH[0]}"
+            CRATE_NAME=$(basename "$CRATE_PATH")
+            cd "$GITHUB_WORKSPACE/$CRATE_PATH"
+            NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
+            
+            TAG_NAME="restaking-${CRATE_NAME}-v${NEW_VERSION}"
+            RELEASE_TITLE="Jito Restaking ${CRATE_NAME} v${NEW_VERSION}"
+          else
+            # Multiple crates release
+            TAG_NAME="restaking-release-$TIMESTAMP"
+            RELEASE_TITLE="Jito Restaking Release - $(date +%Y-%m-%d)"
+          fi
+          
+          echo "Creating combined release: $RELEASE_TITLE"
+          
+          # Build release notes
+          RELEASE_NOTES="## $RELEASE_TITLE
+
+          ### 📦 Published Crates
+
+          ${{ needs.publish.outputs.published_crates }}
+
+          ### 📝 What's Changed
+
+          Recent changes across all published crates:"
+                    
+                    # Generate combined changelog
+                    COMBINED_CHANGELOG=""
+                    for crate_path in "${CRATES_TO_PUBLISH[@]}"; do
+                      CRATE_NAME=$(basename "$crate_path")
+                      echo "Generating changelog for $CRATE_NAME..."
+                      
+                      # Get recent commits for this crate
+                      CRATE_CHANGELOG=$(git log --pretty=format:'- %s' --no-merges $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD -- "$crate_path" | head -5)
+                      
+                      if [ -n "$CRATE_CHANGELOG" ]; then
+                        COMBINED_CHANGELOG="$COMBINED_CHANGELOG
+
+          #### $CRATE_NAME
+          $CRATE_CHANGELOG"
+                      fi
+                    done
+                    
+                    if [ -z "$COMBINED_CHANGELOG" ]; then
+                      COMBINED_CHANGELOG="
+          - Published new versions of selected crates"
+                    fi
+                    
+                    RELEASE_NOTES="$RELEASE_NOTES$COMBINED_CHANGELOG
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/commits/$TAG_NAME"
+          
+          # Create the combined GitHub release
+          gh release create "$TAG_NAME" \
+            --title "$RELEASE_TITLE" \
+            --notes "$RELEASE_NOTES" \
+            --latest=true
+            
+          echo "✅ Created combined release: $TAG_NAME"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    name: Publishing Summary
+    runs-on: ubuntu-latest
+    needs: [determine_crates, publish, create_release]
+    if: always()
+    steps:
+      - name: Create summary
+        run: |
+          echo "## 📦 Restaking Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Input**: \`${{ inputs.package_path }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mode**: ${{ needs.determine_crates.outputs.is_single_crate == 'true' && 'Single crate' || 'Multiple crates' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Count**: ${{ needs.determine_crates.outputs.crate_count }} crate(s)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry run**: ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version level**: ${{ inputs.level }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "⚠️ **This was a dry run - no actual publishing occurred**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **Publishing completed successfully!**" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "${{ inputs.create_release }}" == "true" ]; then
+              echo "🏷️ **Combined GitHub release created**" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Published Crates" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.publish.outputs.published_crates }}" >> $GITHUB_STEP_SUMMARY

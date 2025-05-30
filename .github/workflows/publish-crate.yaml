@@ -1,4 +1,4 @@
-name: Publish Restaking Crates
+name: Publish Restaking Crate
 
 on:
   workflow_dispatch:
