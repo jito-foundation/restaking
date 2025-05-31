@@ -125,8 +125,8 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     ));
 
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
-    let payer = read_keypair_file(&args.keypair_path)
-        .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
+    // let payer = read_keypair_file(&args.keypair_path)
+    //     .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
 
     let config_address =
         jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
@@ -140,7 +140,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     let vault_handler = VaultHandler::new(
         &args.rpc_url,
-        &payer,
         args.vault_program_id,
         config_address,
         args.priority_fees,
@@ -195,20 +194,42 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
         info!("Updating {} vaults", vaults_need_update.len());
 
-        for (vault, mut delegations) in grouped_delegations {
-            // Sort by VaultOperatorDelegation index for correct cranking order
-            delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
-            let operators: Vec<Pubkey> = delegations
-                .iter()
-                .map(|(_pubkey, delegation)| delegation.operator)
-                .collect();
+        let tasks: Vec<_> = grouped_delegations
+            .into_iter()
+            .map(|(vault, mut delegations)| {
+                // Sort by VaultOperatorDelegation index for correct cranking order
+                delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
+                let operators: Vec<Pubkey> = delegations
+                    .iter()
+                    .map(|(_pubkey, delegation)| delegation.operator)
+                    .collect();
 
-            match vault_handler
-                .do_vault_update(epoch, &vault, &operators)
-                .await
-            {
-                Err(e) => log::error!("Failed to update vault: {vault}, error: {e}"),
-                Ok(_) => info!("Successfully updated vault: {vault}"),
+                // Spawn each vault update as a separate task
+                tokio::spawn({
+                    let vault_handler = vault_handler.clone();
+                    let payer = read_keypair_file(&args.keypair_path)
+                        .map_err(|e| anyhow!("Failed to read keypair file: {}", e))
+                        .unwrap();
+                    async move {
+                        match vault_handler
+                            .do_vault_update(&payer, epoch, &vault, &operators)
+                            .await
+                        {
+                            Ok(_) => {
+                                info!("Successfully updated vault: {vault}");
+                            }
+                            Err(e) => {
+                                error!("Failed to update vault: {vault}, error: {e}");
+                            }
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for task in tasks {
+            if let Err(e) = task.await {
+                error!("Task failed to complete: {}", e);
             }
         }
 

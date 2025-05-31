@@ -30,25 +30,23 @@ use tokio::time::sleep;
 
 use crate::core::get_latest_blockhash_with_retry;
 
-pub struct VaultHandler<'a> {
+#[derive(Clone)]
+pub struct VaultHandler {
     rpc_url: String,
-    payer: &'a Keypair,
     vault_program_id: Pubkey,
     config_address: Pubkey,
     priority_fees: u64,
 }
 
-impl<'a> VaultHandler<'a> {
+impl VaultHandler {
     pub fn new(
         rpc_url: &str,
-        payer: &'a Keypair,
         vault_program_id: Pubkey,
         config_address: Pubkey,
         priority_fees: u64,
     ) -> Self {
         Self {
             rpc_url: rpc_url.to_string(),
-            payer,
             vault_program_id,
             config_address,
             priority_fees,
@@ -110,6 +108,7 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure
     async fn send_and_confirm_transaction_with_retry(
         &self,
+        payer: &Keypair,
         mut instructions: Vec<Instruction>,
     ) -> anyhow::Result<()> {
         let rpc_client = self.get_rpc_client();
@@ -125,8 +124,8 @@ impl<'a> VaultHandler<'a> {
 
             let tx = Transaction::new_signed_with_payer(
                 &instructions,
-                Some(&self.payer.pubkey()),
-                &[self.payer],
+                Some(&payer.pubkey()),
+                &[payer],
                 blockhash,
             );
 
@@ -258,6 +257,7 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of the update operation.
     pub async fn do_vault_update(
         &self,
+        payer: &Keypair,
         epoch: u64,
         vault: &Pubkey,
         operators: &[Pubkey],
@@ -270,21 +270,22 @@ impl<'a> VaultHandler<'a> {
         // Initialize
         if let Err(e) = self.get_update_state_tracker(vault, epoch).await {
             log::info!("Get tracker failed, initializing. Expecting AccountNotFound: {e}");
-            self.initialize_vault_update_state_tracker(vault, tracker_pubkey)
+            self.initialize_vault_update_state_tracker(payer, vault, tracker_pubkey)
                 .await?;
         }
 
         log::info!("Initialized tracker for vault: {vault}, tracker: {tracker_pubkey}");
 
         // Crank
-        self.crank(epoch, vault, operators, tracker_pubkey).await?;
+        self.crank(payer, epoch, vault, operators, tracker_pubkey)
+            .await?;
 
         log::info!("Cranked vault: {vault}");
 
         // Close
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
         if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
-            self.close_vault_update_state_tracker(vault, epoch, tracker_pubkey)
+            self.close_vault_update_state_tracker(payer, vault, epoch, tracker_pubkey)
                 .await?;
         } else {
             let context = format!(
@@ -305,6 +306,7 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of initialization.
     pub async fn initialize_vault_update_state_tracker(
         &self,
+        payer: &Keypair,
         vault: &Pubkey,
         tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
@@ -313,12 +315,12 @@ impl<'a> VaultHandler<'a> {
             .config(self.config_address)
             .vault(*vault)
             .vault_update_state_tracker(tracker_pubkey)
-            .payer(self.payer.pubkey())
+            .payer(payer.pubkey())
             .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy);
         let mut init_ix = init_ix_builder.instruction();
         init_ix.program_id = self.vault_program_id;
 
-        self.send_and_confirm_transaction_with_retry(vec![init_ix])
+        self.send_and_confirm_transaction_with_retry(payer, vec![init_ix])
             .await?;
         Ok(())
     }
@@ -331,6 +333,7 @@ impl<'a> VaultHandler<'a> {
     /// was successful or not.
     pub async fn crank(
         &self,
+        payer: &Keypair,
         epoch: u64,
         vault: &Pubkey,
         operators: &[Pubkey],
@@ -390,7 +393,7 @@ impl<'a> VaultHandler<'a> {
             let mut ix = ix_builder.instruction();
             ix.program_id = self.vault_program_id;
 
-            self.send_and_confirm_transaction_with_retry(vec![ix])
+            self.send_and_confirm_transaction_with_retry(payer, vec![ix])
                 .await?;
         }
 
@@ -404,6 +407,7 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of closing.
     pub async fn close_vault_update_state_tracker(
         &self,
+        payer: &Keypair,
         vault: &Pubkey,
         epoch: u64,
         tracker_pubkey: Pubkey,
@@ -412,13 +416,13 @@ impl<'a> VaultHandler<'a> {
         close_ix_builder
             .config(self.config_address)
             .vault(*vault)
-            .payer(self.payer.pubkey())
+            .payer(payer.pubkey())
             .vault_update_state_tracker(tracker_pubkey)
             .ncn_epoch(epoch);
         let mut close_ix = close_ix_builder.instruction();
         close_ix.program_id = self.vault_program_id;
 
-        self.send_and_confirm_transaction_with_retry(vec![close_ix])
+        self.send_and_confirm_transaction_with_retry(payer, vec![close_ix])
             .await?;
         Ok(())
     }
