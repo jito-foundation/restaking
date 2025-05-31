@@ -30,7 +30,6 @@ use tokio::time::sleep;
 
 use crate::core::get_latest_blockhash_with_retry;
 
-#[derive(Clone)]
 pub struct VaultHandler {
     rpc_url: String,
     vault_program_id: Pubkey,

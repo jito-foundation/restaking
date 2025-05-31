@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt, path::PathBuf, process::Command, time::Duration};
+use std::{collections::HashMap, fmt, path::PathBuf, process::Command, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
@@ -125,9 +125,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     ));
 
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
-    // let payer = read_keypair_file(&args.keypair_path)
-    //     .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
-
     let config_address =
         jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
 
@@ -138,12 +135,12 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let config = jito_vault_core::config::Config::try_from_slice_unchecked(&account.data)
         .context("Failed to deserialize Jito vault config")?;
 
-    let vault_handler = VaultHandler::new(
+    let vault_handler = Arc::new(VaultHandler::new(
         &args.rpc_url,
         args.vault_program_id,
         config_address,
         args.priority_fees,
-    );
+    ));
 
     // Track vault metrics in separate thread
     tokio::spawn({
