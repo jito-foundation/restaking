@@ -61,7 +61,7 @@ Jito (Re)Staking greatly reduces the friction to launch, or transition existing 
 
 ## Key Roles and Responsibilities
 
-While the previous sections outline the architecture and lifecycle of NCNs, this section focuses on the organizational roles behind the system. Each persona (whether they’re launching a network, managing capital, running infrastructure, or providing stake) has clearly defined administrative capabilities and responsibilities. This alignment is central to how Jito (Re)Staking ensures trust and coordination in a modular, multi-party environment.
+This section focuses on the organizational roles behind the system. Each persona (whether they’re launching a network, managing capital, running infrastructure, or providing stake) has clearly defined administrative capabilities and responsibilities. This alignment is central to how Jito (Re)Staking ensures trust and coordination in a modular, multi-party environment.
 
 ### NCN Admin
 
