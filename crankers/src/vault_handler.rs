@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::Context;
 use base64::{engine::general_purpose, Engine};
 use jito_bytemuck::AccountDeserialize;
+use jito_jsm_core::get_epoch;
 use jito_vault_client::{
     instructions::{
         CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
@@ -161,6 +162,28 @@ impl<'a> VaultHandler<'a> {
         ))
     }
 
+    /// Retrieves Jito Vault Program account
+    pub async fn get_vault_program_account<T: AccountDeserialize>(
+        &self,
+        pubkey: &Pubkey,
+    ) -> anyhow::Result<T> {
+        let rpc_client = self.get_rpc_client();
+
+        match rpc_client.get_account(&pubkey).await {
+            Ok(account) => match T::try_from_slice_unchecked(&account.data) {
+                Ok(vault_operator_delegation) => Ok(*vault_operator_delegation),
+                Err(e) => {
+                    let context = format!("Failed deserializing: {pubkey}");
+                    Err(anyhow::Error::new(e).context(context))
+                }
+            },
+            Err(e) => {
+                let context = format!("Error: Failed to get account: {pubkey}");
+                Err(anyhow::Error::new(e).context(context))
+            }
+        }
+    }
+
     /// Retrieves all existing vaults
     ///
     /// # Returns
@@ -258,10 +281,12 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of the update operation.
     pub async fn do_vault_update(
         &self,
-        epoch: u64,
+        slot: u64,
+        config: &jito_vault_core::config::Config,
         vault: &Pubkey,
         operators: &[Pubkey],
     ) -> anyhow::Result<()> {
+        let epoch = get_epoch(slot, config.epoch_length())?;
         let tracker_pubkey =
             VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch).0;
 
@@ -277,7 +302,8 @@ impl<'a> VaultHandler<'a> {
         log::info!("Initialized tracker for vault: {vault}, tracker: {tracker_pubkey}");
 
         // Crank
-        self.crank(epoch, vault, operators, tracker_pubkey).await?;
+        self.crank(slot, config, vault, operators, tracker_pubkey)
+            .await?;
 
         log::info!("Cranked vault: {vault}");
 
@@ -331,11 +357,13 @@ impl<'a> VaultHandler<'a> {
     /// was successful or not.
     pub async fn crank(
         &self,
-        epoch: u64,
+        slot: u64,
+        config: &jito_vault_core::config::Config,
         vault: &Pubkey,
         operators: &[Pubkey],
         tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
+        let epoch = get_epoch(slot, config.epoch_length())?;
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
 
         if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
@@ -373,25 +401,34 @@ impl<'a> VaultHandler<'a> {
 
         // Need to send each transaction in serial since strict sequence is required
         for operator in operators_iter {
-            let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
+            let vault_operator_delegation_pubkey = VaultOperatorDelegation::find_program_address(
                 &self.vault_program_id,
                 vault,
                 operator,
             )
             .0;
 
-            let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
-            ix_builder
-                .config(self.config_address)
-                .vault(*vault)
-                .operator(*operator)
-                .vault_operator_delegation(vault_operator_delegation)
-                .vault_update_state_tracker(tracker_pubkey);
-            let mut ix = ix_builder.instruction();
-            ix.program_id = self.vault_program_id;
-
-            self.send_and_confirm_transaction_with_retry(vec![ix])
+            let vault_operator_delegation: VaultOperatorDelegation = self
+                .get_vault_program_account(&vault_operator_delegation_pubkey)
                 .await?;
+
+            if vault_operator_delegation
+                .check_is_already_updated(slot, config.epoch_length())
+                .is_ok()
+            {
+                let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
+                ix_builder
+                    .config(self.config_address)
+                    .vault(*vault)
+                    .operator(*operator)
+                    .vault_operator_delegation(vault_operator_delegation_pubkey)
+                    .vault_update_state_tracker(tracker_pubkey);
+                let mut ix = ix_builder.instruction();
+                ix.program_id = self.vault_program_id;
+
+                self.send_and_confirm_transaction_with_retry(vec![ix])
+                    .await?;
+            }
         }
 
         Ok(())

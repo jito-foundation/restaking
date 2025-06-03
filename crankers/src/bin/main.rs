@@ -1,9 +1,14 @@
-use std::{collections::HashMap, fmt, path::PathBuf, process::Command, time::Duration};
+use std::{
+    collections::HashMap,
+    fmt,
+    path::PathBuf,
+    process::Command,
+    time::{Duration, Instant},
+};
 
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
 use dotenv::dotenv;
-use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
 use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
@@ -131,13 +136,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let config_address =
         jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
 
-    let account = rpc_client
-        .get_account(&config_address)
-        .await
-        .context("Failed to read Jito vault config address")?;
-    let config = jito_vault_core::config::Config::try_from_slice_unchecked(&account.data)
-        .context("Failed to deserialize Jito vault config")?;
-
     let vault_handler = VaultHandler::new(
         &args.rpc_url,
         &payer,
@@ -148,11 +146,13 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     // Track vault metrics in separate thread
     tokio::spawn({
-        let epoch_length = config.epoch_length();
+        let config: jito_vault_core::config::Config = vault_handler
+            .get_vault_program_account(&config_address)
+            .await?;
         async move {
             let metrics_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
             loop {
-                if let Err(e) = emit_vault_metrics(&metrics_client, epoch_length).await {
+                if let Err(e) = emit_vault_metrics(&metrics_client, config.epoch_length()).await {
                     error!("Failed to emit metrics: {}", e);
                 }
                 tokio::time::sleep(Duration::from_secs(args.metrics_interval)).await;
@@ -161,10 +161,16 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     });
 
     loop {
+        let config: jito_vault_core::config::Config = vault_handler
+            .get_vault_program_account(&config_address)
+            .await?;
+
         let slot = rpc_client.get_slot().await.context("get slot")?;
         let epoch = get_epoch(slot, config.epoch_length()).unwrap();
 
         info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
+
+        let start = Instant::now();
 
         let vaults = vault_handler.get_vaults().await?;
         let delegations = vault_handler.get_vault_operator_delegations().await?;
@@ -204,13 +210,16 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                 .collect();
 
             match vault_handler
-                .do_vault_update(epoch, &vault, &operators)
+                .do_vault_update(slot, &config, &vault, &operators)
                 .await
             {
                 Err(e) => log::error!("Failed to update vault: {vault}, error: {e}"),
                 Ok(_) => info!("Successfully updated vault: {vault}"),
             }
         }
+
+        let duration = start.elapsed();
+        println!("Time elapsed: {:.2?}", duration);
 
         info!("Sleeping for {} seconds", args.crank_interval);
         // ---------- SLEEP (crank_interval)----------
