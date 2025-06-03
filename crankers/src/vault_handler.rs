@@ -169,7 +169,7 @@ impl<'a> VaultHandler<'a> {
     ) -> anyhow::Result<T> {
         let rpc_client = self.get_rpc_client();
 
-        match rpc_client.get_account(&pubkey).await {
+        match rpc_client.get_account(pubkey).await {
             Ok(account) => match T::try_from_slice_unchecked(&account.data) {
                 Ok(vault_operator_delegation) => Ok(*vault_operator_delegation),
                 Err(e) => {

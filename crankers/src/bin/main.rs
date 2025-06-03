@@ -1,10 +1,4 @@
-use std::{
-    collections::HashMap,
-    fmt,
-    path::PathBuf,
-    process::Command,
-    time::{Duration, Instant},
-};
+use std::{collections::HashMap, fmt, path::PathBuf, process::Command, time::Duration};
 
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
@@ -170,8 +164,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
         info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
 
-        let start = Instant::now();
-
         let vaults = vault_handler.get_vaults().await?;
         let delegations = vault_handler.get_vault_operator_delegations().await?;
 
@@ -217,9 +209,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                 Ok(_) => info!("Successfully updated vault: {vault}"),
             }
         }
-
-        let duration = start.elapsed();
-        println!("Time elapsed: {:.2?}", duration);
 
         info!("Sleeping for {} seconds", args.crank_interval);
         // ---------- SLEEP (crank_interval)----------
