@@ -1,4 +1,11 @@
-use std::{collections::HashMap, fmt, path::PathBuf, process::Command, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    fmt,
+    path::PathBuf,
+    process::Command,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
@@ -190,6 +197,8 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
         info!("Updating {} vaults", vaults_need_update.len());
 
+        let start = Instant::now();
+
         let tasks: Vec<_> = grouped_delegations
             .into_iter()
             .map(|(vault, mut delegations)| {
@@ -228,6 +237,8 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                 error!("Task failed to complete: {}", e);
             }
         }
+
+        log::info!("Time elapsed: {:.2}s", start.elapsed().as_secs_f64());
 
         info!("Sleeping for {} seconds", args.crank_interval);
         // ---------- SLEEP (crank_interval)----------

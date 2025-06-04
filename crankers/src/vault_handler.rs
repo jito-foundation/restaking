@@ -12,10 +12,10 @@ use jito_vault_client::{
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use log::error;
+use log::{error, info};
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
@@ -30,6 +30,8 @@ use solana_sdk::{
 use tokio::time::sleep;
 
 use crate::core::get_latest_blockhash_with_retry;
+
+const MAX_RETRIES: u8 = 10;
 
 pub struct VaultHandler {
     rpc_url: String,
@@ -102,6 +104,7 @@ impl VaultHandler {
     /// Sends and confirms a transaction with retries, priority fees, and blockhash refresh
     ///
     /// # Arguments
+    /// * `payer` - Keypair of payer
     /// * `instructions` - Vector of instructions to include in the transaction
     ///
     /// # Returns
@@ -113,7 +116,6 @@ impl VaultHandler {
     ) -> anyhow::Result<()> {
         let rpc_client = self.get_rpc_client();
         let mut retries = 0;
-        const MAX_RETRIES: u8 = 10;
 
         instructions.insert(
             0,
@@ -349,7 +351,67 @@ impl VaultHandler {
         Ok(())
     }
 
+    /// Retrieves operators that need to be updated and builds their crank instructions.
+    ///
+    /// # Arguments
+    /// * `operators_iter` - Iterator of operator public keys to check
+    /// * `slot` - Current slot number
+    /// * `config` - Configuration containing epoch length
+    /// * `vault` - Vault public key
+    /// * `tracker_pubkey` - Vault update state tracker public key
+    ///
+    /// # Returns
+    /// * `Vec<Instruction>` - Vector of crank instructions for operators that need updates
+    async fn retrieve_non_updated_operators(
+        &self,
+        operators_iter: &[&Pubkey],
+        slot: u64,
+        config: &Config,
+        vault: &Pubkey,
+        tracker_pubkey: Pubkey,
+    ) -> anyhow::Result<Vec<Instruction>> {
+        let mut instructions = Vec::with_capacity(operators_iter.len());
+
+        for operator in operators_iter {
+            let vault_operator_delegation_pubkey = VaultOperatorDelegation::find_program_address(
+                &self.vault_program_id,
+                vault,
+                operator,
+            )
+            .0;
+
+            let vault_operator_delegation: VaultOperatorDelegation = self
+                .get_vault_program_account(&vault_operator_delegation_pubkey)
+                .await?;
+
+            // Check if operator is NOT already updated (inverted logic)
+            if vault_operator_delegation
+                .check_is_already_updated(slot, config.epoch_length())
+                .is_ok()
+            {
+                let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
+                ix_builder
+                    .config(self.config_address)
+                    .vault(*vault)
+                    .operator(**operator)
+                    .vault_operator_delegation(vault_operator_delegation_pubkey)
+                    .vault_update_state_tracker(tracker_pubkey);
+
+                let mut ix = ix_builder.instruction();
+                ix.program_id = self.vault_program_id;
+
+                instructions.push(ix);
+            }
+        }
+
+        Ok(instructions)
+    }
+
     /// Cranks the [`VaultUpdateStateTracker`] for a specific epoch and list of operators.
+    ///
+    /// - Try to crank maximum 10 times
+    /// - Batch multiple operator cranks per one transaction
+    /// - Cycle send transaction, check `is_already_updated`, then retry
     ///
     /// # Returns
     ///
@@ -358,12 +420,13 @@ impl VaultHandler {
     pub async fn crank(
         &self,
         slot: u64,
-        config: &jito_vault_core::config::Config,
+        config: &Config,
         payer: &Keypair,
         vault: &Pubkey,
         operators: &[Pubkey],
         tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
+        let rpc_client = self.get_rpc_client();
         let epoch = get_epoch(slot, config.epoch_length())?;
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
 
@@ -389,7 +452,6 @@ impl VaultHandler {
                 .take(end_index)
                 .skip(start_index)
                 .collect::<Vec<_>>()
-                .into_iter()
         } else {
             // Crank through operators from start index to operators.len() and then 0 to end_index
             operators
@@ -397,42 +459,70 @@ impl VaultHandler {
                 .skip(start_index)
                 .chain(operators.iter().take(end_index))
                 .collect::<Vec<_>>()
-                .into_iter()
         };
 
-        // Need to send each transaction in serial since strict sequence is required
-        for operator in operators_iter {
-            let vault_operator_delegation_pubkey = VaultOperatorDelegation::find_program_address(
-                &self.vault_program_id,
-                vault,
-                operator,
-            )
-            .0;
+        let mut retries = 0;
 
-            let vault_operator_delegation: VaultOperatorDelegation = self
-                .get_vault_program_account(&vault_operator_delegation_pubkey)
+        while retries < MAX_RETRIES {
+            // Need to send each transaction in serial since strict sequence is required
+            let mut instructions = self
+                .retrieve_non_updated_operators(
+                    &operators_iter,
+                    slot,
+                    config,
+                    vault,
+                    tracker_pubkey,
+                )
                 .await?;
 
-            if vault_operator_delegation
-                .check_is_already_updated(slot, config.epoch_length())
-                .is_ok()
-            {
-                let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
-                ix_builder
-                    .config(self.config_address)
-                    .vault(*vault)
-                    .operator(*operator)
-                    .vault_operator_delegation(vault_operator_delegation_pubkey)
-                    .vault_update_state_tracker(tracker_pubkey);
-                let mut ix = ix_builder.instruction();
-                ix.program_id = self.vault_program_id;
-
-                self.send_and_confirm_transaction_with_retry(payer, vec![ix])
-                    .await?;
+            if instructions.is_empty() {
+                return Ok(());
             }
+
+            instructions.insert(
+                0,
+                ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees),
+            );
+            let blockhash = get_latest_blockhash_with_retry(&rpc_client).await?;
+
+            let tx = Transaction::new_signed_with_payer(
+                &instructions,
+                Some(&payer.pubkey()),
+                &[payer],
+                blockhash,
+            );
+
+            match rpc_client
+                .send_and_confirm_transaction_with_spinner_and_commitment(
+                    &tx,
+                    CommitmentConfig::confirmed(),
+                )
+                .await
+            {
+                Ok(_) => return Ok(()),
+                Err(err) => {
+                    retries += 1;
+                    if retries < MAX_RETRIES {
+                        info!(
+                            "Transaction failed (attempt {}/{}), retrying in 1s: {:?}",
+                            retries, MAX_RETRIES, err
+                        );
+                        sleep(Duration::from_secs(1)).await;
+                    } else {
+                        error!(
+                            "Transaction failed after {} retries: {:?}",
+                            MAX_RETRIES, err
+                        );
+                        return Err(err.into());
+                    }
+                }
+            };
         }
 
-        Ok(())
+        Err(anyhow::anyhow!(
+            "Failed to crank after {} retries",
+            MAX_RETRIES
+        ))
     }
 
     /// Closes a vault update state tracker for a given epoch and vault.
