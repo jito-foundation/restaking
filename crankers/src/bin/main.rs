@@ -4,7 +4,9 @@ use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
 use dotenv::dotenv;
 use jito_jsm_core::get_epoch;
-use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
+use jito_vault_core::{
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+};
 use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
 use log::{error, info};
 use solana_metrics::set_host_id;
@@ -124,8 +126,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     ));
 
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
-    let config_address =
-        jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
+    let config_address = Config::find_program_address(&args.vault_program_id).0;
 
     let vault_handler = Arc::new(VaultHandler::new(
         &args.rpc_url,
@@ -136,7 +137,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     // Track vault metrics in separate thread
     tokio::spawn({
-        let config: jito_vault_core::config::Config = vault_handler
+        let config: Config = vault_handler
             .get_vault_program_account(&config_address)
             .await?;
         async move {
@@ -151,7 +152,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     });
 
     loop {
-        let config: jito_vault_core::config::Config = vault_handler
+        let config: Config = vault_handler
             .get_vault_program_account(&config_address)
             .await?;
 
