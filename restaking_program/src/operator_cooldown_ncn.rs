@@ -46,5 +46,11 @@ pub fn process_operator_cooldown_ncn(
         return Err(RestakingError::OperatorCooldownNcnFailed.into());
     }
 
+    msg!(
+        "COOLDOWN NCN_OPERATOR_STATE: Operator {} deactivating NCN {}",
+        ncn_operator_state.operator,
+        ncn_operator_state.ncn,
+    );
+
     Ok(())
 }

@@ -48,5 +48,11 @@ pub fn process_warmup_vault_ncn_ticket(
         return Err(VaultError::VaultNcnTicketFailedWarmup.into());
     }
 
+    msg!(
+        "WARMUP VAULT_NCN_TICKET: Vault {} activating NCN {}",
+        vault_ncn_ticket.vault,
+        vault_ncn_ticket.ncn,
+    );
+
     Ok(())
 }
