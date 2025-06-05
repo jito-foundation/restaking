@@ -1,5 +1,4 @@
 # Makefile for Jito Restaking Project
-
 # Commands
 CARGO := cargo
 CARGO_SORT := cargo sort
@@ -10,6 +9,10 @@ CARGO_NEXTEST := cargo nextest
 YARN := yarn
 SHANK_CLI := ./target/release/jito-shank-cli
 RESTAKING_CLI := ./target/release/jito-restaking-cli
+
+# Environment and paths
+ENV_PATH := ./config/program.env
+IDL_OUTPUT_PATH := ./idl
 
 # Default target
 .PHONY: all
@@ -24,12 +27,38 @@ lint:
 
 # Code generation
 .PHONY: generate-code
-generate-code: build-release
+generate-code: build-release generate-idl
 	$(RESTAKING_CLI) --markdown-help > ./docs/_tools/00_cli.md
-	$(SHANK_CLI)
 	$(YARN) install
 	$(YARN) generate-clients
 	$(YARN) update-dependencies
+
+# Generate IDL files
+.PHONY: generate-idl
+generate-idl:
+	$(SHANK_CLI) \
+		--program-env-path $(ENV_PATH) \
+		--output-idl-path $(IDL_OUTPUT_PATH) \
+		generate \
+		--program-id-key "RESTAKING_PROGRAM_ID" \
+		--idl-name jito_restaking \
+		--module-paths "restaking_sdk" \
+		--module-paths "restaking_core" \
+		--module-paths "restaking_program" \
+		--module-paths "bytemuck" \
+		--module-paths "core"
+	
+	$(SHANK_CLI) \
+		--program-env-path $(ENV_PATH) \
+		--output-idl-path $(IDL_OUTPUT_PATH) \
+		generate \
+		--program-id-key "VAULT_PROGRAM_ID" \
+		--idl-name jito_vault \
+		--module-paths "vault_sdk" \
+		--module-paths "vault_core" \
+		--module-paths "vault_program" \
+		--module-paths "bytemuck" \
+		--module-paths "core"
 
 # Build debug
 .PHONY: build
