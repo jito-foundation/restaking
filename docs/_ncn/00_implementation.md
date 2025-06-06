@@ -154,15 +154,15 @@ The instructions are broadly categorized:
 3.  **Operator Instruction**: This is the primary action taken by participants during a consensus cycle.
     - `cast_vote`: Allows an operator (using their admin key) to submit their vote for the current epoch.
 
-For more details, you can always check the source code or the API documentation [here](https://github.com/Unboxed-Software/ncn-program-template).
+For more details, you can always check the source code or the API documentation [here](https://github.com/jito-foundation/ncn-template).
 
 ## Build and run the simulation test
 
 This section will walk through building a simulation test of our example NCN program. The test represents a comprehensive scenario designed to mimic a complete NCN system. It involves multiple operators, vaults, and different types of tokens. The test covers the entire workflow, from the initial setup of participants and the NCN program itself, through the voting process, and finally to reaching and verifying consensus. It heavily utilizes Jito's restaking and vault infrastructure alongside the custom NCN voting logic.
 
-The NCN program used can be found [here](https://github.com/Unboxed-Software/ncn-program-template). By creating a simulation test of this NCN, you'll be better prepared to use it as a template or base that you can adapt to create your own NCN program. Just a reminder: we do not recommend most NCN developers build their NCN from scratch. Rather, we suggest using this prebuilt program as a starting point and customizing it according to your needs.
+The NCN program used can be found [here](https://github.com/jito-foundation/ncn-template). By creating a simulation test of this NCN, you'll be better prepared to use it as a template or base that you can adapt to create your own NCN program. Just a reminder: we do not recommend most NCN developers build their NCN from scratch. Rather, we suggest using this prebuilt program as a starting point and customizing it according to your needs.
 
-The simulation test we'll be creating below can also be found in the [example NCN repository](https://github.com/Unboxed-Software/ncn-program-template). However, you'll understand the system better if you write the test along with us, so feel free to clone the repository, delete the test file `./integration_tests/test/ncn_program/simulation_test.rs`, and follow along. This will give you hands-on experience with the entire NCN lifecycle: initializing vaults and operators using Jito's restaking and vault programs, configuring the NCN program, and executing the full voting process.
+The simulation test we'll be creating below can also be found in the [example NCN repository](https://github.com/jito-foundation/ncn-template). However, you'll understand the system better if you write the test along with us, so feel free to clone the repository, delete the test file `./integration_tests/test/ncn_program/simulation_test.rs`, and follow along. This will give you hands-on experience with the entire NCN lifecycle: initializing vaults and operators using Jito's restaking and vault programs, configuring the NCN program, and executing the full voting process.
 
 ### Prerequisites
 
@@ -517,7 +517,7 @@ Under the hood, this creates an `NcnConfig` account that stores these parameters
 
 The vault registry account is a large one, so it is not possible to initialize it in one call due to Solana network limitations. We will have to call the NCN program multiple times to get to the full size. The first call will be an init call to the instruction `admin_initialize_vault_registry`. After that, we will call a realloc instruction `admin_realloc_vault_registry` to increase the size of the account. This will be done in a loop until the account is the correct size.
 
-The realloc will take care of assigning the default values to the vault registry account once the desirable size is reached. In our example, we will do that by calling one function `do_full_initialize_vault_registry`. If you want to learn more about this, you can check the [source code](https://github.com/Unboxed-Software/ncn-program-template).
+The realloc will take care of assigning the default values to the vault registry account once the desirable size is reached. In our example, we will do that by calling one function `do_full_initialize_vault_registry`. If you want to learn more about this, you can check the [source code](https://github.com/jito-foundation/ncn-template).
 
 Copy and paste the following code at the bottom of your test function:
 
