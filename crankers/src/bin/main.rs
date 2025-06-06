@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt, path::PathBuf, process::Command, sync::Arc,
 
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
