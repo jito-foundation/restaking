@@ -12,13 +12,18 @@ where
     F: FnMut() -> Fut + Send,
     Fut: Future<Output = Result<T, E>> + Send,
 {
-    let mut attempts = 0;
+    let mut attempts = 0usize;
     loop {
         let future = f();
         match future.await {
             Ok(result) => return Ok(result),
             Err(e) => {
-                attempts += 1;
+                attempts = match attempts.checked_add(1) {
+                    Some(new_attempts) => new_attempts,
+                    None => {
+                        return Err(e);
+                    }
+                };
                 if attempts > retries {
                     return Err(e);
                 }

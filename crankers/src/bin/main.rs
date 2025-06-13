@@ -1,16 +1,14 @@
-use std::{collections::HashMap, fmt, path::PathBuf, process::Command, sync::Arc, time::Duration};
+use std::{fmt, path::PathBuf, process::Command, sync::Arc, time::Duration};
 
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use clap::{arg, Parser, ValueEnum};
 use dotenv::dotenv;
 use jito_bytemuck::AccountDeserialize;
-use jito_jsm_core::get_epoch;
-use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
-use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
+use jito_vault_cranker::{metrics::emit_vault_metrics, JitoVaultCranker};
 use log::{error, info};
 use solana_metrics::set_host_id;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
+use solana_sdk::pubkey::Pubkey;
 
 #[derive(Parser)]
 struct Args {
@@ -124,7 +122,10 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         args.region, args.cluster, hostname
     ));
 
-    let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
+    let rpc_client = Arc::new(RpcClient::new_with_timeout(
+        args.rpc_url.clone(),
+        Duration::from_secs(60),
+    ));
     let config_address =
         jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
 
@@ -135,20 +136,14 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let config = jito_vault_core::config::Config::try_from_slice_unchecked(&account.data)
         .context("Failed to deserialize Jito vault config")?;
 
-    let vault_handler = Arc::new(VaultHandler::new(
-        &args.rpc_url,
-        args.vault_program_id,
-        config_address,
-        args.priority_fees,
-    ));
-
     // Track vault metrics in separate thread
     tokio::spawn({
         let epoch_length = config.epoch_length();
         async move {
-            let metrics_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
+            let rpc_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
+            let metrics_client = Arc::new(rpc_client);
             loop {
-                if let Err(e) = emit_vault_metrics(&metrics_client, epoch_length).await {
+                if let Err(e) = emit_vault_metrics(metrics_client.clone(), epoch_length).await {
                     error!("Failed to emit metrics: {}", e);
                 }
                 tokio::time::sleep(Duration::from_secs(args.metrics_interval)).await;
@@ -156,77 +151,20 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         }
     });
 
+    let cranker = JitoVaultCranker::new(
+        rpc_client.clone(),
+        args.keypair_path.clone(),
+        args.vault_program_id,
+        args.priority_fees,
+    );
+
     loop {
-        let slot = rpc_client.get_slot().await.context("get slot")?;
-        let epoch = get_epoch(slot, config.epoch_length()).unwrap();
-
-        info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
-
-        let vaults = vault_handler.get_vaults().await?;
-        let delegations = vault_handler.get_vault_operator_delegations().await?;
-
-        let vaults_need_update: Vec<(Pubkey, Vault)> = vaults
-            .into_iter()
-            .filter(|(_pubkey, vault)| {
-                vault
-                    .is_update_needed(slot, config.epoch_length())
-                    .expect("Config epoch length is 0")
-            })
-            .collect();
-
-        // All delegations are passed along. Delegation filtering logic is handled in `VaultHandler::crank`
-        let mut grouped_delegations: HashMap<Pubkey, Vec<(Pubkey, VaultOperatorDelegation)>> =
-            HashMap::from_iter(vaults_need_update.iter().map(|(vault, _)| (*vault, vec![])));
-        for (pubkey, delegation) in delegations {
-            if vaults_need_update
-                .iter()
-                .any(|(vault_pubkey, _)| *vault_pubkey == delegation.vault)
-            {
-                grouped_delegations
-                    .entry(delegation.vault)
-                    .or_default()
-                    .push((pubkey, delegation));
+        match cranker.update_vaults_once().await {
+            Ok(()) => {
+                info!("Vault update cycle completed successfully!");
             }
-        }
-
-        info!("Updating {} vaults", vaults_need_update.len());
-
-        let tasks: Vec<_> = grouped_delegations
-            .into_iter()
-            .map(|(vault, mut delegations)| {
-                // Sort by VaultOperatorDelegation index for correct cranking order
-                delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
-                let operators: Vec<Pubkey> = delegations
-                    .iter()
-                    .map(|(_pubkey, delegation)| delegation.operator)
-                    .collect();
-
-                // Spawn each vault update as a separate task
-                tokio::spawn({
-                    let vault_handler = vault_handler.clone();
-                    let payer = read_keypair_file(&args.keypair_path)
-                        .map_err(|e| anyhow!("Failed to read keypair file: {}", e))
-                        .unwrap();
-                    async move {
-                        match vault_handler
-                            .do_vault_update(&payer, epoch, &vault, &operators)
-                            .await
-                        {
-                            Ok(_) => {
-                                info!("Successfully updated vault: {vault}");
-                            }
-                            Err(e) => {
-                                error!("Failed to update vault: {vault}, error: {e}");
-                            }
-                        }
-                    }
-                })
-            })
-            .collect();
-
-        for task in tasks {
-            if let Err(e) = task.await {
-                error!("Task failed to complete: {}", e);
+            Err(e) => {
+                error!("Vault update cycle failed: {e}");
             }
         }
 
