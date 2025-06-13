@@ -1,8 +1,8 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use anyhow::Context;
 use base64::{engine::general_purpose, Engine};
 use jito_bytemuck::AccountDeserialize;
+use jito_jsm_core::get_epoch;
 use jito_vault_client::{
     instructions::{
         CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
@@ -28,38 +28,39 @@ use solana_sdk::{
 };
 use tokio::time::sleep;
 
-use crate::core::get_latest_blockhash_with_retry;
+use crate::{core::get_latest_blockhash_with_retry, error::JitoVaultCrankerError};
 
 pub struct VaultHandler {
-    rpc_url: String,
+    /// `RpcClient`
+    rpc_client: Arc<RpcClient>,
+
+    /// Vault Program ID
     vault_program_id: Pubkey,
+
+    /// Config  Address
     config_address: Pubkey,
+
+    /// Priority Fees
     priority_fees: u64,
 }
 
 impl VaultHandler {
     pub fn new(
-        rpc_url: &str,
+        rpc_client: Arc<RpcClient>,
         vault_program_id: Pubkey,
         config_address: Pubkey,
         priority_fees: u64,
     ) -> Self {
         Self {
-            rpc_url: rpc_url.to_string(),
+            rpc_client,
             vault_program_id,
             config_address,
             priority_fees,
         }
     }
 
-    /// Creates a new `RpcClient` instance with the specified commitment level.
-    ///
-    /// # Returns
-    ///
-    /// An `RpcClient` instance configured to use the stored `rpc_url` and the
-    /// `confirmed` commitment level for interactions with the Solana blockchain.
-    fn get_rpc_client(&self) -> RpcClient {
-        RpcClient::new_with_commitment(self.rpc_url.clone(), CommitmentConfig::confirmed())
+    pub fn get_epoch(&self, slot: u64, epoch_length: u64) -> Result<u64, JitoVaultCrankerError> {
+        get_epoch(slot, epoch_length).map_err(|e| JitoVaultCrankerError::MathError(e.to_string()))
     }
 
     /// Constructs an `RpcProgramAccountsConfig` for querying accounts of a given type `T`.
@@ -67,13 +68,13 @@ impl VaultHandler {
     /// # Returns
     /// - `Ok(RpcProgramAccountsConfig)`: A valid configuration for filtering accounts in
     ///   Solana's RPC API.
-    /// - `Err(anyhow::Error)`: If the data size calculation fails (e.g., due to overflow).
+    /// - `Err(JitoVaultCrankerError)`: If the data size calculation fails (e.g., due to overflow).
     fn get_rpc_program_accounts_config<T: jito_bytemuck::Discriminator>(
         &self,
-    ) -> anyhow::Result<RpcProgramAccountsConfig> {
+    ) -> Result<RpcProgramAccountsConfig, JitoVaultCrankerError> {
         let data_size = std::mem::size_of::<T>()
             .checked_add(8)
-            .ok_or_else(|| anyhow::anyhow!("Failed to add"))?;
+            .ok_or_else(|| JitoVaultCrankerError::MathOverflow("Failed to add".to_string()))?;
         let encoded_discriminator =
             general_purpose::STANDARD.encode(vec![T::DISCRIMINATOR, 0, 0, 0, 0, 0, 0, 0]);
         let memcmp = RpcFilterType::Memcmp(Memcmp::new(
@@ -104,13 +105,13 @@ impl VaultHandler {
     /// * `instructions` - Vector of instructions to include in the transaction
     ///
     /// # Returns
-    /// Returns `anyhow::Result<()>` indicating success or failure
+    /// Returns `Result<(), JitoVaultCrankerError>` indicating success or failure
     async fn send_and_confirm_transaction_with_retry(
         &self,
         payer: &Keypair,
         mut instructions: Vec<Instruction>,
-    ) -> anyhow::Result<()> {
-        let rpc_client = self.get_rpc_client();
+    ) -> Result<(), JitoVaultCrankerError> {
+        let rpc_client = self.rpc_client.clone();
         let mut retries = 0;
         const MAX_RETRIES: u8 = 10;
 
@@ -118,9 +119,9 @@ impl VaultHandler {
             0,
             ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees),
         );
+
         while retries < MAX_RETRIES {
             let blockhash = get_latest_blockhash_with_retry(&rpc_client).await?;
-
             let tx = Transaction::new_signed_with_payer(
                 &instructions,
                 Some(&payer.pubkey()),
@@ -128,7 +129,7 @@ impl VaultHandler {
                 blockhash,
             );
 
-            let err = match rpc_client
+            match rpc_client
                 .send_and_confirm_transaction_with_spinner_and_commitment(
                     &tx,
                     CommitmentConfig::confirmed(),
@@ -138,38 +139,35 @@ impl VaultHandler {
                 Ok(_) => return Ok(()),
                 Err(err) => {
                     retries += 1;
-                    if retries < MAX_RETRIES {
-                        sleep(Duration::from_secs(1)).await;
+                    if retries >= MAX_RETRIES {
+                        error!(
+                            "Transaction failed after {} retries: {:?}",
+                            MAX_RETRIES, err
+                        );
+                        return Err(JitoVaultCrankerError::TransactionRetryExhausted {
+                            retries: MAX_RETRIES,
+                            last_error: err.to_string(),
+                        });
                     }
-                    err
+                    sleep(Duration::from_secs(1)).await;
                 }
             };
-
-            if retries >= MAX_RETRIES {
-                error!(
-                    "Transaction failed after {} retries: {:?}",
-                    MAX_RETRIES, err
-                );
-            }
         }
 
-        Err(anyhow::anyhow!(
-            "Transaction failed after {} retries",
-            MAX_RETRIES
-        ))
+        Ok(())
     }
 
     /// Retrieves all existing vaults
     ///
     /// # Returns
     ///
-    /// Returns an `anyhow::Result` containing a vector of `(Pubkey, Vault)` tuples
+    /// Returns a `Result<Vec<(Pubkey, Vault)>, JitoVaultCrankerError>` containing a vector of `(Pubkey, Vault)` tuples
     /// representing all the vault accounts associated with the program. Each tuple
     /// consists of:
     /// - `Pubkey`: The public key of the vault account.
     /// - `Vault`: The deserialized vault data from the account.
-    pub async fn get_vaults(&self) -> anyhow::Result<Vec<(Pubkey, Vault)>> {
-        let rpc_client = self.get_rpc_client();
+    pub async fn get_vaults(&self) -> Result<Vec<(Pubkey, Vault)>, JitoVaultCrankerError> {
+        let rpc_client = self.rpc_client.clone();
         let config = self.get_rpc_program_accounts_config::<Vault>()?;
 
         let accounts = rpc_client
@@ -190,14 +188,14 @@ impl VaultHandler {
     ///
     /// # Returns
     ///
-    /// An `anyhow::Result` containing a vector of `(Pubkey, VaultOperatorDelegation)` tuples. Each
+    /// An `Result<Vec<(Pubkey, VaultOperatorDelegation)>, JitoVaultCrankerError>` containing a vector of `(Pubkey, VaultOperatorDelegation)` tuples. Each
     /// tuple represents a vault operator delegation account and includes:
     /// - `Pubkey`: The public key of the vault operator delegation account.
     /// - `VaultOperatorDelegation`: The deserialized vault operator delegation data.
     pub async fn get_vault_operator_delegations(
         &self,
-    ) -> anyhow::Result<Vec<(Pubkey, VaultOperatorDelegation)>> {
-        let rpc_client = self.get_rpc_client();
+    ) -> Result<Vec<(Pubkey, VaultOperatorDelegation)>, JitoVaultCrankerError> {
+        let rpc_client = self.rpc_client.clone();
         let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>()?;
 
         let accounts = rpc_client
@@ -219,33 +217,28 @@ impl VaultHandler {
     ///
     /// # Returns
     ///
-    /// Returns an `anyhow::Result<VaultUpdateStateTracker>` containing the deserialized state tracker
+    /// Returns a `Result<VaultUpdateStateTracker, JitoVaultCrankerError>` containing the deserialized state tracker
     /// for the given vault and epoch. If successful, the state tracker is returned; otherwise,
     /// an error is returned with contextual information.
     pub async fn get_update_state_tracker(
         &self,
         vault: &Pubkey,
         ncn_epoch: u64,
-    ) -> anyhow::Result<VaultUpdateStateTracker> {
-        let rpc_client = self.get_rpc_client();
-
+    ) -> Result<VaultUpdateStateTracker, JitoVaultCrankerError> {
+        let rpc_client = self.rpc_client.clone();
         let pubkey =
             VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, ncn_epoch)
                 .0;
 
-        match rpc_client.get_account(&pubkey).await {
-            Ok(account) => match VaultUpdateStateTracker::try_from_slice_unchecked(&account.data) {
-                Ok(tracker) => Ok(*tracker),
-                Err(e) => {
-                    let context = format!("Failed deserializing VaultUpdateStateTracker: {pubkey}");
-                    Err(anyhow::Error::new(e).context(context))
-                }
-            },
-            Err(e) => {
-                let context =
-                    format!("Error: Failed to get VaultUpdateStateTracker account: {pubkey}");
-                Err(anyhow::Error::new(e).context(context))
-            }
+        let account = rpc_client.get_account(&pubkey).await?;
+
+        match VaultUpdateStateTracker::try_from_slice_unchecked(&account.data) {
+            Ok(tracker) => Ok(*tracker),
+            Err(e) => Err(JitoVaultCrankerError::Deserialization {
+                account_type: "VaultUpdateStateTracker".to_string(),
+                pubkey: pubkey.to_string(),
+                src: e.to_string(),
+            }),
         }
     }
 
@@ -253,14 +246,14 @@ impl VaultHandler {
     ///
     /// # Returns
     ///
-    /// Returns `anyhow::Result<()>` indicating success or failure of the update operation.
+    /// Returns `Result<(), JitoVaultCrankerError>` indicating success or failure of the update operation.
     pub async fn do_vault_update(
         &self,
         payer: &Keypair,
         epoch: u64,
         vault: &Pubkey,
         operators: &[Pubkey],
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), JitoVaultCrankerError> {
         let tracker_pubkey =
             VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch).0;
 
@@ -287,14 +280,13 @@ impl VaultHandler {
             self.close_vault_update_state_tracker(payer, vault, epoch, tracker_pubkey)
                 .await?;
         } else {
-            let context = format!(
-                "Cranking failed to update all operators for vault: {vault}, tracker: {tracker_pubkey}"
-            );
-            return Err(anyhow::anyhow!(context));
+            return Err(JitoVaultCrankerError::IncompleteCranking {
+                vault: vault.to_string(),
+                tracker: tracker_pubkey.to_string(),
+            });
         }
 
         log::info!("Closed tracker for vault: {vault}");
-
         Ok(())
     }
 
@@ -302,13 +294,13 @@ impl VaultHandler {
     ///
     /// # Returns
     ///
-    /// Returns `anyhow::Result<()>` indicating success or failure of initialization.
+    /// Returns `Result<(), JitoVaultCrankerError>` indicating success or failure of initialization.
     pub async fn initialize_vault_update_state_tracker(
         &self,
         payer: &Keypair,
         vault: &Pubkey,
         tracker_pubkey: Pubkey,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), JitoVaultCrankerError> {
         let mut init_ix_builder = InitializeVaultUpdateStateTrackerBuilder::new();
         init_ix_builder
             .config(self.config_address)
@@ -328,7 +320,7 @@ impl VaultHandler {
     ///
     /// # Returns
     ///
-    /// This method returns an `anyhow::Result<()>` that indicates whether the crank operation
+    /// This method returns a `Result<(), JitoVaultCrankerError>` that indicates whether the crank operation
     /// was successful or not.
     pub async fn crank(
         &self,
@@ -337,16 +329,16 @@ impl VaultHandler {
         vault: &Pubkey,
         operators: &[Pubkey],
         tracker_pubkey: Pubkey,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), JitoVaultCrankerError> {
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
 
         if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
             return Ok(());
         }
 
-        let end_index = (epoch as usize)
-            .checked_rem(operators.len())
-            .context("No operators to crank")?;
+        let end_index = (epoch as usize).checked_rem(operators.len()).ok_or(
+            JitoVaultCrankerError::MathError("Division by zero in epoch calculation".to_string()),
+        )?;
 
         // Skip updated operators if cranking has already started
         let start_index = if tracker.last_updated_index() == u64::MAX {
@@ -403,14 +395,14 @@ impl VaultHandler {
     ///
     /// # Returns
     ///
-    /// Returns `anyhow::Result<()>` indicating success or failure of closing.
+    /// Returns `Result<(), JitoVaultCrankerError>` indicating success or failure of closing.
     pub async fn close_vault_update_state_tracker(
         &self,
         payer: &Keypair,
         vault: &Pubkey,
         epoch: u64,
         tracker_pubkey: Pubkey,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), JitoVaultCrankerError> {
         let mut close_ix_builder = CloseVaultUpdateStateTrackerBuilder::new();
         close_ix_builder
             .config(self.config_address)

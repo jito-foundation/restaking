@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use jito_jsm_core::get_epoch;
 use jito_vault_core::config::Config;
@@ -11,7 +11,7 @@ use spl_token::state::{Account as TokenAccount, Mint};
 use crate::vault_handler::VaultHandler;
 
 pub async fn emit_vault_metrics(
-    rpc_client: &RpcClient,
+    rpc_client: Arc<RpcClient>,
     config_epoch_length: u64,
 ) -> anyhow::Result<()> {
     let slot = rpc_client.get_slot().await?;
@@ -21,7 +21,7 @@ pub async fn emit_vault_metrics(
     let config_address =
         Config::find_program_address(&jito_vault_client::programs::JITO_VAULT_ID).0;
     let vault_handler = VaultHandler::new(
-        rpc_client.url().as_str(),
+        rpc_client.clone(),
         jito_vault_client::programs::JITO_VAULT_ID,
         config_address,
         0,
