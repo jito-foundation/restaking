@@ -6,7 +6,7 @@ on:
       package_path:
         description: Which crate to publish
         required: true
-        default: 'restaking_core'
+        default: 'account_traits_derive'
         type: choice
         options:
           - account_traits_derive
@@ -100,7 +100,7 @@ jobs:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
 
   publish:
-    name: Publish Crates
+    name: Publish Crate
     runs-on: ubuntu-latest
     needs: test_sbf
     permissions:
@@ -113,7 +113,9 @@ jobs:
           fetch-depth: 0 # get the whole history for changelog
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -121,7 +123,9 @@ jobs:
           key: "restaking-publish-${{ inputs.package_path }}"
 
       - name: Install Cargo Release
-        run: cargo install cargo-release
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-release
 
       - name: Set Git Author
         run: |

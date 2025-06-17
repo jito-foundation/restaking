@@ -182,7 +182,9 @@ jobs:
           fetch-depth: 0 # get the whole history for changelog
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -190,7 +192,9 @@ jobs:
           key: "restaking-publish-${{ hashFiles('**/Cargo.toml') }}"
 
       - name: Install Cargo Release
-        run: cargo install cargo-release
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-release
 
       - name: Set Git Author
         run: |
