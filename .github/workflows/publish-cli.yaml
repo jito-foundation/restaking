@@ -91,6 +91,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "stable"
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -98,7 +100,9 @@ jobs:
           key: "restaking-publish-${{ inputs.package_path }}"
 
       - name: Install Cargo Release
-        run: cargo install cargo-release
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-release
 
       - name: Set Git Author
         run: |
