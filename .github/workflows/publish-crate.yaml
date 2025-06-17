@@ -138,8 +138,8 @@ jobs:
       - name: Publish Crate
         id: publish
         working-directory: ${{ inputs.package_path }}
-        # env:
-          # CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           # Get current version before update
           OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
