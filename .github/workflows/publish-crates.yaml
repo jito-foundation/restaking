@@ -18,7 +18,7 @@ on:
           - minor
           - major
       tag_name:
-        description: 'Custom tag name for release (leave empty for auto-generated). Example: v1.2.3 or release-2024-01'
+        description: 'Custom tag name for release. Example: v1.2.3 or release-2024-01'
         required: true
         type: string
       dry_run:
@@ -39,7 +39,7 @@ jobs:
     outputs:
       crates_to_publish: ${{ steps.setup_crates.outputs.crates_to_publish }}
       crate_count: ${{ steps.setup_crates.outputs.crate_count }}
-      needs_programs: ${{ steps.setup_crates.outputs.needs_programs }}
+      is_single_crate: ${{ steps.setup_crates.outputs.is_single_crate }}
     steps:
       - name: Setup crates to publish
         id: setup_crates
@@ -107,7 +107,6 @@ jobs:
     name: verified_build
     runs-on: big-runner-1
     needs: determine_crates
-    if: needs.determine_crates.outputs.needs_programs == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
