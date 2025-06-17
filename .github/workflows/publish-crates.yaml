@@ -338,7 +338,7 @@ jobs:
             
           echo "✅ Created combined release: $TAG_NAME"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_PAT }}
 
   summary:
     name: Publishing Summary
