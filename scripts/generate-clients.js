@@ -108,7 +108,7 @@ restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClient
     formatCode: true,
     crateFolder: rustRestakingClientDir,
     deleteFolderBeforeRendering: true,
-    toolchain: "+nightly-2024-07-25"
+    toolchain: "+1.84.1"
 }));
 restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingClientDir), {}));
 
