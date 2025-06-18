@@ -210,6 +210,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: cargo nextest run --all-features
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
