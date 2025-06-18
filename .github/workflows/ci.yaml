@@ -120,7 +120,7 @@ jobs:
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.11/install)"
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.14/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Building programs
