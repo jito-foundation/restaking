@@ -5,11 +5,11 @@ layout: post
 weight: 1
 ---
 
-**Jito (Re)Staking** is a multi-asset staking protocol for node consensus networks. It provides a universal framework for staking SPL tokens to decentralized systems on Solana, with flexibility baked in at every level.
+**Jito (Re)Staking** is a multi-asset staking protocol for node consensus networks (NCNs). It provides a universal framework for staking SPL tokens to decentralized systems on Solana, with flexibility baked in at every level.
 
 The system consists of two programs: the **Restaking Program**, which acts as an onchain registry for NCNs and Operators, and the **Vault Program**, which manages tokenized stake through Vault Receipt Tokens (VRTs). Both of these programs use flexible admin models. NCNs, Operators, and Vaults can define who they interact with and under what conditions.
 
-At the core of the protocol are 3 roles: Node Consensus Networks (NCNs), Vaults, and Operators. Developers register NCNs with custom rules. The operator performs arbitrary logic defined by the NCN, whether that’s processing data, running models, or verifying offchain inputs. The vaults hold staked SPL tokens and delegate them to Operators. The Restaking program and the Vault Program act as the coordination layer, managing delegation and execution across the system.
+At the core of the protocol are 3 roles: NCNs, Vaults, and Operators. Developers register NCNs with custom rules. The Operator(s) performs (perform) arbitrary logic defined by the NCN, whether that’s processing data, running models, or verifying offchain inputs. The vaults hold staked SPL tokens and delegate them to Operators. The Restaking program and the Vault Program act as the coordination layer, managing delegation and execution across the system.
 
 ![img.png](/assets/images/ncn.png)
 
@@ -61,7 +61,7 @@ Jito (Re)Staking greatly reduces the friction to launch, or transition existing 
 
 ## Key Roles and Responsibilities
 
-While the previous sections outline the architecture and lifecycle of NCNs, this section focuses on the organizational roles behind the system. Each persona (whether they’re launching a network, managing capital, running infrastructure, or providing stake) has clearly defined administrative capabilities and responsibilities. This alignment is central to how Jito (Re)Staking ensures trust and coordination in a modular, multi-party environment.
+This section focuses on the organizational roles behind the system. Each persona (whether they’re launching a network, managing capital, running infrastructure, or providing stake) has clearly defined administrative capabilities and responsibilities. This alignment is central to how Jito (Re)Staking ensures trust and coordination in a modular, multi-party environment.
 
 ### NCN Admin
 
