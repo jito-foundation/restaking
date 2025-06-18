@@ -207,7 +207,9 @@ jobs:
         with:
           name: jito_vault_program.so
           path: target/sbf-solana-solana/release/
-      - uses: taiki-e/install-action@nextest
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
       - run: cargo nextest run --all-features
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release

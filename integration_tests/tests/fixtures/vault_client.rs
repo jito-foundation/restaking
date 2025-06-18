@@ -986,6 +986,7 @@ impl VaultProgramClient {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn do_change_withdrawal_ticket_owner(
         &mut self,
         config: &Pubkey,
