@@ -1,0 +1,185 @@
+name: Publish Restaking Crate
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_path:
+        description: Which crate to publish
+        required: true
+        default: 'account_traits_derive'
+        type: choice
+        options:
+          - account_traits_derive
+          - bytemuck
+          - clients/rust/common
+          - clients/rust/restaking_client
+          - clients/rust/vault_client
+          - core
+          - restaking_core
+          - restaking_program
+          - restaking_sdk
+          - vault_core
+          - vault_program
+          - vault_sdk
+      level:
+        description: Version increment level
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: Dry run (no actual publishing)
+        required: true
+        default: true
+        type: boolean
+      create_release:
+        description: Create a GitHub release
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  verified_build:
+    name: verified_build
+    runs-on: big-runner-1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.2.14
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install solana-verify from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: solana-verify
+      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.2.14
+      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.2.14
+      - name: Upload jito_restaking_program.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/deploy/jito_restaking_program.so
+      - name: Upload jito_vault_program.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: jito_vault_program.so
+          path: target/deploy/jito_vault_program.so
+
+  test_sbf:
+    name: cargo test
+    runs-on: ubuntu-latest
+    needs:
+      - verified_build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aarcangeli/load-dotenv@v1.0.0
+        with:
+          path: config
+          filenames: program.env
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - name: Download restaking program
+        uses: actions/download-artifact@v4
+        with:
+          name: jito_restaking_program.so
+          path: target/sbf-solana-solana/release/
+      - name: Download vault program
+        uses: actions/download-artifact@v4
+        with:
+          name: jito_vault_program.so
+          path: target/sbf-solana-solana/release/
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo nextest run --all-features
+        env:
+          SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
+
+  publish:
+    name: Publish Crate
+    runs-on: ubuntu-latest
+    needs: test_sbf
+    permissions:
+      contents: write
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.JITO_TEAM_PAT }}
+          fetch-depth: 0 # get the whole history for changelog
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "restaking-publish-${{ inputs.package_path }}"
+
+      - name: Install Cargo Release
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-release
+
+      - name: Set Git Author
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Extract crate name
+        id: extract_name
+        run: |
+          # Extract just the crate name from the path for use in tags and releases
+          CRATE_NAME=$(basename "${{ inputs.package_path }}")
+          echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Publish Crate
+        id: publish
+        working-directory: ${{ inputs.package_path }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          # Get current version before update
+          OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
+          
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            # For dry-run mode, don't use the -x flag (dry-run is default)
+            cargo release ${{ inputs.level }} --no-confirm --no-push
+          else
+            # For actual execution, use the -x flag
+            cargo release ${{ inputs.level }} --no-confirm -x
+          fi
+          
+          # Get new version after update
+          NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
+          
+          # Set outputs for the release step
+          echo "old_version=${OLD_VERSION}" >> $GITHUB_OUTPUT
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "new_git_tag=${{ steps.extract_name.outputs.crate_name }}-v${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Generate a changelog
+        if: github.event.inputs.create_release == 'true'
+        id: changelog
+        uses: metcalfc/changelog-generator@v4.1.0
+        with:
+          myToken: ${{ secrets.JITO_TEAM_PAT }}
+          includePattern: ".*/${{ inputs.package_path }}/.*"
+
+      - name: Create GitHub release
+        if: github.event.inputs.create_release == 'true' && github.event.inputs.dry_run != 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.publish.outputs.new_git_tag }}
+          name: "${{ steps.extract_name.outputs.crate_name }} v${{ steps.publish.outputs.new_version }}"
+          body: ${{ steps.changelog.outputs.changelog }}
