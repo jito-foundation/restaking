@@ -589,8 +589,7 @@ impl VaultHandler {
                                 i + 1,
                                 MAX_RETRIES,
                                 err
-                            )
-                            .into());
+                            ));
                         }
                     }
                 }
