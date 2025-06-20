@@ -76,15 +76,16 @@ serde_json = { version = "1.0.140", features = ["preserve_order"] }
 serde_with = "3.9.0"
 shank = "0.4.2"
 shank_idl = "0.4.2"
-solana-account-decoder = "~2.1"
-solana-cli-config = "~2.1"
-solana-metrics = "~2.1"
-solana-program = "~2.1"
-solana-program-test = "~2.1"
-solana-sdk = "~2.1"
-solana-remote-wallet = "~2.1"
-solana-rpc-client = "~2.1"
-solana-rpc-client-api = "~2.1"
+solana-account-decoder = "~2.2"
+solana-cli-config = "~2.2"
+solana-decode-error = "~2.2"
+solana-metrics = "~2.2"
+solana-program = "~2.2"
+solana-program-test = "~2.2"
+solana-sdk = "~2.2"
+solana-remote-wallet = "~2.2"
+solana-rpc-client = "~2.2"
+solana-rpc-client-api = "~2.2"
 solana-security-txt = "1.1.1"
 spl-associated-token-account = { version = "6.0.0", features = ["no-entrypoint"] }
 spl-token = { version = "7.0.0", features = ["no-entrypoint"] }
@@ -94,3 +95,10 @@ test-case = "3.3.1"
 thiserror = "1.0.57"
 tokio = { version = "1.36.0", features = ["full"] }
 uriparse = "0.6.4"
+
+[workspace.lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+    'cfg(target_os, values("solana"))',
+    'cfg(feature, values("frozen-abi", "no-entrypoint"))',
+]
