@@ -10,7 +10,6 @@ use std::{
 use anyhow::{anyhow, Context};
 use clap::{arg, Parser, ValueEnum};
 use dotenvy::dotenv;
-use jito_bytemuck::AccountDeserialize;
 use jito_jsm_core::get_epoch;
 use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
