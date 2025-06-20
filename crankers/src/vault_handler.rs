@@ -162,6 +162,79 @@ impl VaultHandler {
         ))
     }
 
+    /// Splits a vector of instructions into multiple transactions to stay within Solana's
+    /// transaction size limit of 1232 bytes.
+    ///
+    /// This function dynamically batches instructions by testing the actual transaction size
+    /// rather than using fixed batch sizes. Each transaction will include a compute budget
+    /// instruction at the beginning.
+    async fn split_instructions_by_size(
+        &self,
+        instructions: &[Instruction],
+        payer: &Keypair,
+        max_size: usize,
+    ) -> anyhow::Result<Vec<Transaction>> {
+        let mut transactions = Vec::new();
+        let mut current_batch = Vec::new();
+
+        let compute_budget_ix =
+            ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees);
+
+        for instruction in instructions {
+            // Create a test transaction with current batch + new instruction
+            let mut test_batch = vec![compute_budget_ix.clone()];
+            test_batch.extend(current_batch.clone());
+            test_batch.push(instruction.clone());
+
+            let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
+            let test_tx = Transaction::new_signed_with_payer(
+                &test_batch,
+                Some(&payer.pubkey()),
+                &[payer],
+                blockhash,
+            );
+
+            let tx_size = test_tx.signatures.len() + test_tx.message_data().len();
+
+            if tx_size > max_size && !current_batch.is_empty() {
+                // Finalize current batch
+                let mut final_batch = vec![compute_budget_ix.clone()];
+                final_batch.extend(current_batch.clone());
+
+                let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
+                let tx = Transaction::new_signed_with_payer(
+                    &final_batch,
+                    Some(&payer.pubkey()),
+                    &[payer],
+                    blockhash,
+                );
+                transactions.push(tx);
+
+                // Start new batch with current instruction
+                current_batch = vec![instruction.clone()];
+            } else {
+                current_batch.push(instruction.clone());
+            }
+        }
+
+        // Handle remaining instructions
+        if !current_batch.is_empty() {
+            let mut final_batch = vec![compute_budget_ix];
+            final_batch.extend(current_batch);
+
+            let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
+            let tx = Transaction::new_signed_with_payer(
+                &final_batch,
+                Some(&payer.pubkey()),
+                &[payer],
+                blockhash,
+            );
+            transactions.push(tx);
+        }
+
+        Ok(transactions)
+    }
+
     /// Retrieves Jito Vault Program account
     pub async fn get_vault_program_account<T: AccountDeserialize>(
         &self,
@@ -461,68 +534,74 @@ impl VaultHandler {
                 .collect::<Vec<_>>()
         };
 
-        let mut retries = 0;
+        // Need to send each transaction in serial since strict sequence is required
+        let instructions = self
+            .retrieve_non_updated_operators(&operators_iter, slot, config, vault, tracker_pubkey)
+            .await?;
 
-        while retries < MAX_RETRIES {
-            // Need to send each transaction in serial since strict sequence is required
-            let mut instructions = self
-                .retrieve_non_updated_operators(
-                    &operators_iter,
-                    slot,
-                    config,
-                    vault,
-                    tracker_pubkey,
-                )
-                .await?;
-
-            if instructions.is_empty() {
-                return Ok(());
-            }
-
-            instructions.insert(
-                0,
-                ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees),
-            );
-            let blockhash = get_latest_blockhash_with_retry(&rpc_client).await?;
-
-            let tx = Transaction::new_signed_with_payer(
-                &instructions,
-                Some(&payer.pubkey()),
-                &[payer],
-                blockhash,
-            );
-
-            match rpc_client
-                .send_and_confirm_transaction_with_spinner_and_commitment(
-                    &tx,
-                    CommitmentConfig::confirmed(),
-                )
-                .await
-            {
-                Ok(_) => return Ok(()),
-                Err(err) => {
-                    retries += 1;
-                    if retries < MAX_RETRIES {
-                        info!(
-                            "Transaction failed (attempt {}/{}), retrying in 1s: {:?}",
-                            retries, MAX_RETRIES, err
-                        );
-                        sleep(Duration::from_secs(1)).await;
-                    } else {
-                        error!(
-                            "Transaction failed after {} retries: {:?}",
-                            MAX_RETRIES, err
-                        );
-                        return Err(err.into());
-                    }
-                }
-            };
+        if instructions.is_empty() {
+            return Ok(());
         }
 
-        Err(anyhow::anyhow!(
-            "Failed to crank after {} retries",
-            MAX_RETRIES
-        ))
+        let txs = self
+            .split_instructions_by_size(&instructions, payer, 1232)
+            .await?;
+
+        for (i, tx) in txs.iter().enumerate() {
+            let mut retries = 0;
+
+            // Retry loop for current transaction
+            loop {
+                match rpc_client
+                    .send_and_confirm_transaction_with_spinner_and_commitment(
+                        tx,
+                        CommitmentConfig::confirmed(),
+                    )
+                    .await
+                {
+                    Ok(_) => {
+                        info!(
+                            "✅ Transaction {}/{} completed successfully",
+                            i + 1,
+                            txs.len()
+                        );
+                        break; // Success - move to next transaction
+                    }
+                    Err(err) => {
+                        retries += 1;
+
+                        if retries <= MAX_RETRIES {
+                            info!(
+                            "⚠️  Transaction {}/{} failed (attempt {}/{}), retrying in 1s: {:?}",
+                            i + 1, txs.len(), retries, MAX_RETRIES, err
+                        );
+                            sleep(Duration::from_secs(1)).await;
+                        } else {
+                            error!(
+                                "❌ Transaction {}/{} failed permanently after {} retries: {:?}",
+                                i + 1,
+                                txs.len(),
+                                MAX_RETRIES,
+                                err
+                            );
+                            return Err(anyhow::anyhow!(
+                                "Transaction {} failed after {} retries: {}",
+                                i + 1,
+                                MAX_RETRIES,
+                                err
+                            )
+                            .into());
+                        }
+                    }
+                }
+            }
+        }
+
+        info!(
+            "🎉 All {} transactions completed successfully for vault cranking!",
+            txs.len()
+        );
+        Ok(())
     }
 
     /// Closes a vault update state tracker for a given epoch and vault.
