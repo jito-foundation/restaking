@@ -19,7 +19,7 @@ jobs:
       # Build the cargo docs
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: nightly-2024-07-25
+          toolchain: stable
       - name: Generate Cargo Docs
         run: cargo doc --no-deps
       - name: Copy Cargo Docs to Jekyll source
