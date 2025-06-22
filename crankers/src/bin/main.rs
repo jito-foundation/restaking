@@ -148,7 +148,10 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         async move {
             let metrics_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
             loop {
-                if let Err(e) = emit_vault_metrics(&metrics_client, epoch_length).await {
+                if let Err(e) =
+                    emit_vault_metrics(&metrics_client, epoch_length, &args.cluster.to_string())
+                        .await
+                {
                     error!("Failed to emit metrics: {}", e);
                 }
                 tokio::time::sleep(Duration::from_secs(args.metrics_interval)).await;
