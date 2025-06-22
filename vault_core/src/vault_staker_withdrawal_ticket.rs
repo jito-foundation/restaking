@@ -1,5 +1,3 @@
-//! The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-//! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::get_epoch;
@@ -9,8 +7,10 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 const RESERVED_SPACE_LEN: usize = 263;
 
-/// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-/// For every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
+/// The [`VaultStakerWithdrawalTicket`] account
+///
+/// - is used to represent a pending withdrawal from a vault by a staker.
+/// - for every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
@@ -106,8 +106,8 @@ impl VaultStakerWithdrawalTicket {
     ///
     /// # Returns
     /// * `Vec<Vec<u8>>` - containing the seed vectors
-    pub fn signing_seeds(&self) -> Vec<Vec<u8>> {
-        let mut vault_seeds = Self::seeds(&self.vault, &self.base);
+    pub fn signing_seeds(&self, vault: &Pubkey) -> Vec<Vec<u8>> {
+        let mut vault_seeds = Self::seeds(vault, &self.base);
         vault_seeds.push(vec![self.bump]);
         vault_seeds
     }
@@ -147,6 +147,7 @@ impl VaultStakerWithdrawalTicket {
     pub fn load(
         program_id: &Pubkey,
         vault_staker_withdrawal_ticket: &AccountInfo,
+        vault: &AccountInfo,
         expect_writable: bool,
     ) -> Result<(), ProgramError> {
         if vault_staker_withdrawal_ticket.owner.ne(program_id) {
@@ -168,7 +169,13 @@ impl VaultStakerWithdrawalTicket {
 
         let vault_staker_withdrawal_ticket_data = vault_staker_withdrawal_ticket.data.borrow();
         let ticket = Self::try_from_slice_unchecked(&vault_staker_withdrawal_ticket_data)?;
-        let seeds = ticket.signing_seeds();
+
+        if ticket.vault.ne(vault.key) {
+            msg!("Vault must match the vault in the withdrawal ticket");
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        let seeds = ticket.signing_seeds(vault.key);
         let seed_slices: Vec<&[u8]> = seeds.iter().map(|seed| seed.as_slice()).collect();
         let expected_pubkey = Pubkey::create_program_address(&seed_slices, program_id)?;
         if vault_staker_withdrawal_ticket.key.ne(&expected_pubkey) {

@@ -27,10 +27,15 @@ A CLI for managing restaking and vault operations
 * `--commitment <COMMITMENT>` — Commitment level
 * `--restaking-program-id <RESTAKING_PROGRAM_ID>` — Restaking program ID
 * `--vault-program-id <VAULT_PROGRAM_ID>` — Vault program ID
-* `--ledger <LEDGER>` — Ledger device path or identifier
-* `--keypair <KEYPAIR>` — Keypair
+* `--signer <SIGNER>` — Filepath or URL to a keypair
 * `--verbose` — Verbose mode
 * `--print-tx` — This will print out the raw TX instead of running it
+
+  Default value: `false`
+* `--print-json` — This will print out account information in JSON format
+
+  Default value: `false`
+* `--print-json-with-reserves` — This will print out account information in JSON format with reserved space
 
   Default value: `false`
 
@@ -279,8 +284,8 @@ Set NCN Admin
 
 ###### **Options:**
 
-* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
-* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of old admin
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of new admin
 
 
 
@@ -419,8 +424,8 @@ Operator Set Admin
 
 ###### **Options:**
 
-* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
-* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of old admin
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of new admin
 
 
 
@@ -945,8 +950,8 @@ Set Admin
 
 ###### **Options:**
 
-* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Path to the old admin keypair file
-* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Path to the new admin keypair file
+* `--old-admin-keypair <OLD_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of old admin
+* `--new-admin-keypair <NEW_ADMIN_KEYPAIR>` — Filepath or URL to a keypair of new admin
 
 
 

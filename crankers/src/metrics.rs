@@ -5,7 +5,7 @@ use jito_vault_core::config::Config;
 use log::error;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{program_pack::Pack, pubkey::Pubkey, signature::Keypair};
+use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
 use spl_associated_token_account::get_associated_token_address;
 use spl_token::state::{Account as TokenAccount, Mint};
 
@@ -20,12 +20,10 @@ pub async fn emit_vault_metrics(
     let epoch = slot / config_epoch_length;
     let slot_index = slot % config_epoch_length;
 
-    let dummy_keypair = Keypair::new(); // Dummy keypair since we're only reading
     let config_address =
         Config::find_program_address(&jito_vault_client::programs::JITO_VAULT_ID).0;
     let vault_handler = VaultHandler::new(
         rpc_client.url().as_str(),
-        &dummy_keypair,
         jito_vault_client::programs::JITO_VAULT_ID,
         config_address,
         0,

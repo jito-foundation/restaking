@@ -46,6 +46,7 @@ use spl_associated_token_account::{
 use spl_token::state::Account as SPLTokenAccount;
 use spl_token_2022::extension::ExtensionType;
 
+use super::fixture::TestBuilder;
 use crate::fixtures::{TestError, TestResult};
 
 pub struct VaultRoot {
@@ -943,6 +944,7 @@ impl VaultProgramClient {
         &mut self,
         vault_root: &VaultRoot,
         depositor: &Keypair,
+        mint_burn_admin: Option<&Keypair>,
         amount: u64,
     ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
@@ -974,6 +976,7 @@ impl VaultProgramClient {
             depositor,
             &depositor_vrt_token_account,
             &base,
+            mint_burn_admin,
             amount,
         )
         .await?;
@@ -983,6 +986,7 @@ impl VaultProgramClient {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn do_change_withdrawal_ticket_owner(
         &mut self,
         config: &Pubkey,
@@ -1244,9 +1248,16 @@ impl VaultProgramClient {
         staker: &Keypair,
         staker_vrt_token_account: &Pubkey,
         base: &Keypair,
+        mint_burn_admin: Option<&Keypair>,
         amount: u64,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
+        let mut signers = vec![staker, base];
+
+        if let Some(admin) = mint_burn_admin {
+            signers.push(admin);
+        };
+
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::enqueue_withdrawal(
                 &jito_vault_program::id(),
@@ -1257,10 +1268,11 @@ impl VaultProgramClient {
                 &staker.pubkey(),
                 staker_vrt_token_account,
                 &base.pubkey(),
+                mint_burn_admin.map(|s| s.pubkey()).as_ref(),
                 amount,
             )],
             Some(&staker.pubkey()),
-            &[staker, base],
+            &signers,
             blockhash,
         ))
         .await
@@ -1272,6 +1284,7 @@ impl VaultProgramClient {
         staker: &Keypair,
         vault_staker_withdrawal_ticket_base: &Pubkey,
         program_fee_wallet: &Pubkey,
+        mint_burn_admin: Option<&Keypair>,
     ) -> Result<(), TestError> {
         let vault = self.get_vault(&vault_root.vault_pubkey).await.unwrap();
         let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
@@ -1292,6 +1305,7 @@ impl VaultProgramClient {
             &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
             &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
             &get_associated_token_address(program_fee_wallet, &vault.vrt_mint),
+            mint_burn_admin,
         )
         .await?;
 
@@ -1310,8 +1324,15 @@ impl VaultProgramClient {
         vault_staker_withdrawal_ticket_token_account: &Pubkey,
         vault_fee_token_account: &Pubkey,
         program_fee_vrt_token_account: &Pubkey,
+        mint_burn_admin: Option<&Keypair>,
     ) -> Result<(), TestError> {
         let blockhash = self.banks_client.get_latest_blockhash().await?;
+        let mut signers = vec![&self.payer];
+
+        if let Some(admin) = mint_burn_admin {
+            signers.push(admin);
+        };
+
         self._process_transaction(&Transaction::new_signed_with_payer(
             &[jito_vault_sdk::sdk::burn_withdrawal_ticket(
                 &jito_vault_program::id(),
@@ -1325,9 +1346,10 @@ impl VaultProgramClient {
                 vault_staker_withdrawal_ticket_token_account,
                 vault_fee_token_account,
                 program_fee_vrt_token_account,
+                mint_burn_admin.map(|s| s.pubkey()).as_ref(),
             )],
             Some(&self.payer.pubkey()),
-            &[&self.payer],
+            &signers,
             blockhash,
         ))
         .await
@@ -1825,6 +1847,89 @@ impl VaultProgramClient {
             blockhash,
         ))
         .await
+    }
+
+    pub async fn do_transfer_to_withdrawal_ticket(
+        &mut self,
+        vault_staker_withdrawal_ticket: &Pubkey,
+        vault_root_attacker: &VaultRoot,
+        attacker: &Keypair,
+        amount: u64,
+        fixture: &mut TestBuilder,
+    ) -> Result<VaultStakerWithdrawalTicketRoot, TestError> {
+        let attacker_vault = self
+            .get_vault(&vault_root_attacker.vault_pubkey)
+            .await
+            .unwrap();
+
+        self.create_ata(&attacker_vault.vrt_mint, &vault_staker_withdrawal_ticket)
+            .await?;
+
+        fixture
+            .transfer_token(
+                &spl_token::id(),
+                &attacker,
+                &vault_staker_withdrawal_ticket,
+                &attacker_vault.vrt_mint,
+                amount,
+            )
+            .await
+            .unwrap();
+
+        Ok(VaultStakerWithdrawalTicketRoot {
+            base: Keypair::new().pubkey(),
+        })
+    }
+
+    pub async fn do_burn_withdrawal_ticket_with_different_vault(
+        &mut self,
+        vault_root: &VaultRoot,
+        vault_root_attacker: &VaultRoot,
+        staker: &Keypair,
+        vault_staker_withdrawal_ticket_base: &Pubkey,
+        program_fee_wallet: &Pubkey,
+    ) -> Result<(), TestError> {
+        let vault_attacker = self
+            .get_vault(&vault_root_attacker.vault_pubkey)
+            .await
+            .unwrap();
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            vault_staker_withdrawal_ticket_base,
+        )
+        .0;
+
+        self.create_ata(
+            &vault_attacker.supported_mint,
+            &vault_staker_withdrawal_ticket,
+        )
+        .await?;
+        self.create_ata(&vault_attacker.supported_mint, &staker.pubkey())
+            .await?;
+
+        self.burn_withdrawal_ticket(
+            &Config::find_program_address(&jito_vault_program::id()).0,
+            &vault_root_attacker.vault_pubkey,
+            &get_associated_token_address(
+                &vault_root_attacker.vault_pubkey,
+                &vault_attacker.supported_mint,
+            ),
+            &vault_attacker.vrt_mint,
+            &staker.pubkey(),
+            &get_associated_token_address(&staker.pubkey(), &vault_attacker.supported_mint),
+            &vault_staker_withdrawal_ticket,
+            &get_associated_token_address(
+                &vault_staker_withdrawal_ticket,
+                &vault_attacker.vrt_mint,
+            ),
+            &get_associated_token_address(&vault_attacker.fee_wallet, &vault_attacker.vrt_mint),
+            &get_associated_token_address(program_fee_wallet, &vault_attacker.vrt_mint),
+            None,
+        )
+        .await?;
+
+        Ok(())
     }
 }
 

@@ -4,7 +4,7 @@ mod tests {
         config::Config, delegation_state::DelegationState, vault::Vault,
         vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
     };
-    use jito_vault_sdk::error::VaultError;
+    use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_program::pubkey::Pubkey;
     use solana_sdk::{instruction::InstructionError, signature::Keypair, signer::Signer};
     use spl_associated_token_account::get_associated_token_address;
@@ -80,12 +80,18 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await;
         assert_vault_error(
             transaction_error,
@@ -158,7 +164,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -179,7 +185,13 @@ mod tests {
             .unwrap();
 
         let transaction_error = vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await;
         assert_vault_error(
             transaction_error,
@@ -252,7 +264,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -284,8 +296,27 @@ mod tests {
             .await
             .unwrap();
 
+        // Mint Burn
+        let mint_burn_admin = Keypair::new();
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .set_secondary_admin(
+                &Config::find_program_address(&jito_vault_program::id()).0,
+                &vault_root.vault_pubkey,
+                &vault_root.vault_admin,
+                &mint_burn_admin.pubkey(),
+                VaultAdminRole::MintBurnAdmin,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                Some(&mint_burn_admin),
+            )
             .await
             .unwrap();
 
@@ -377,7 +408,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -426,7 +457,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -538,7 +575,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -587,7 +624,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -693,7 +736,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -742,7 +785,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -848,7 +897,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -897,7 +946,13 @@ mod tests {
             .amount;
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1002,7 +1057,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, AMOUNT_TO_WITHDRAWAL)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, AMOUNT_TO_WITHDRAWAL)
             .await
             .unwrap();
 
@@ -1050,7 +1105,13 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1158,7 +1219,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, AMOUNT_TO_WITHDRAWAL)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, AMOUNT_TO_WITHDRAWAL)
             .await
             .unwrap();
 
@@ -1206,7 +1267,13 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1352,7 +1419,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -1418,6 +1485,7 @@ mod tests {
                 ),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 &invalid_program_fee_account,
+                None,
             )
             .await;
 
@@ -1471,7 +1539,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -1523,9 +1591,256 @@ mod tests {
                 &get_associated_token_address(&vault_staker_withdrawal_ticket, &vault.vrt_mint),
                 &get_associated_token_address(&vault.fee_wallet, &vault.vrt_mint),
                 &get_associated_token_address(&config.program_fee_wallet, &vault.vrt_mint),
+                None,
             )
             .await;
 
         assert_vault_error(result, VaultError::VaultIsPaused);
+    }
+
+    #[tokio::test]
+    async fn test_burn_withdrawal_ticket_different_vault() {
+        const MINT_AMOUNT: u64 = 100_000;
+
+        let deposit_fee_bps = 0;
+        let withdraw_fee_bps = 0;
+        let reward_fee_bps = 0;
+        let num_operators = 1;
+        let slasher_amounts = vec![];
+
+        let mut fixture = TestBuilder::new().await;
+
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        ////////// STEP 1: CREATE A LEGIT VAULT, MINT AND ENQUEUE A WITHDRAWAL //////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+
+        let ConfiguredVault {
+            mut vault_program_client,
+            restaking_program_client: _,
+            vault_config_admin,
+            vault_root,
+            restaking_config_admin: _,
+            operator_roots,
+        } = fixture
+            .setup_vault_with_ncn_and_operators(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+            )
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let depositor = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root, &depositor.pubkey(), MINT_AMOUNT)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(&vault_root, &depositor, MINT_AMOUNT, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let config = vault_program_client
+            .get_config(&Config::find_program_address(&jito_vault_program::id()).0)
+            .await
+            .unwrap();
+
+        // Delegate all funds to the operator
+        vault_program_client
+            .do_add_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_cooldown_delegation(&vault_root, &operator_roots[0].operator_pubkey, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        ////////// STEP 2: CREATE A VAULT WITH A WORTHLESS TOKEN MINT AND      //////////
+        //////////         TRANSFER THE VRT TO THE LEGIT TICKET's FAKE VRT ATA //////////
+        //////////         ALSO NEED TO ENQUEUE THE WITHDRAWAL                 //////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+
+        let (vault_root_attacker, operator_roots) = fixture
+            .setup_vault_with_ncn_and_operators_existing_config(
+                deposit_fee_bps,
+                withdraw_fee_bps,
+                reward_fee_bps,
+                num_operators,
+                &slasher_amounts,
+                vault_config_admin,
+            )
+            .await
+            .unwrap();
+
+        // Initial deposit + mint
+        let attacker = Keypair::new();
+        vault_program_client
+            .configure_depositor(&vault_root_attacker, &attacker.pubkey(), MINT_AMOUNT * 2)
+            .await
+            .unwrap();
+        vault_program_client
+            .do_mint_to(
+                &vault_root_attacker,
+                &attacker,
+                MINT_AMOUNT * 2,
+                MINT_AMOUNT * 2,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_add_delegation(
+                &vault_root_attacker,
+                &operator_roots[0].operator_pubkey,
+                MINT_AMOUNT,
+            )
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_enqueue_withdrawal(&vault_root_attacker, &attacker, None, MINT_AMOUNT)
+            .await
+            .unwrap();
+
+        vault_program_client
+            .do_cooldown_delegation(
+                &vault_root_attacker,
+                &operator_roots[0].operator_pubkey,
+                MINT_AMOUNT,
+            )
+            .await
+            .unwrap();
+
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root_attacker.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+        fixture
+            .warp_slot_incremental(config.epoch_length())
+            .await
+            .unwrap();
+        vault_program_client
+            .do_full_vault_update(
+                &vault_root_attacker.vault_pubkey,
+                &[operator_roots[0].operator_pubkey],
+            )
+            .await
+            .unwrap();
+
+        let vault_staker_withdrawal_ticket = VaultStakerWithdrawalTicket::find_program_address(
+            &jito_vault_program::id(),
+            &vault_root.vault_pubkey,
+            &base,
+        )
+        .0;
+
+        vault_program_client
+            .do_transfer_to_withdrawal_ticket(
+                &vault_staker_withdrawal_ticket,
+                &vault_root_attacker,
+                &attacker,
+                MINT_AMOUNT,
+                &mut fixture,
+            )
+            .await
+            .unwrap();
+
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        ////////// STEP 3: CALL BURN WITH ATTACKER VAULT AND ORIGINAL TICKET   //////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+
+        let result = vault_program_client
+            .do_burn_withdrawal_ticket_with_different_vault(
+                &vault_root,
+                &vault_root_attacker,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+            )
+            .await;
+
+        assert!(result.is_err());
+
+        let vault = vault_program_client
+            .get_vault(&vault_root.vault_pubkey)
+            .await
+            .unwrap();
+
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        ////////// VERIFY THE STAKER HAS ZERO OF THE ORIGINAL STAKING TOKEN    //////////
+        //////////                                                             //////////
+        //////////                                                             //////////
+        /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+
+        let depositor_token_account = fixture
+            .get_token_account(&get_associated_token_address(
+                &depositor.pubkey(),
+                &vault.supported_mint,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(depositor_token_account.amount, 0);
     }
 }

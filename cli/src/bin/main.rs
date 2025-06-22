@@ -19,12 +19,14 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {
         let config = Config::load(config_file.as_os_str().to_str().unwrap())?;
-        let signer = if let Some(ledger) = &args.ledger {
-            CliSigner::new_ledger(ledger)
-        } else if let Some(keypair_path) = &args.keypair {
-            CliSigner::new_keypair_from_path(keypair_path)
+        let signer = if let Some(keypair_path) = &args.signer {
+            if keypair_path.starts_with("usb://") {
+                CliSigner::new_ledger(keypair_path)
+            } else {
+                CliSigner::new_keypair_from_path(keypair_path)?
+            }
         } else {
-            CliSigner::new_keypair_from_path(&config.keypair_path)
+            CliSigner::new_keypair_from_path(&config.keypair_path)?
         };
 
         CliConfig {
@@ -37,12 +39,14 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             .as_ref()
             .ok_or_else(|| anyhow!("unable to get config file path"))?;
         if let Ok(config) = Config::load(config_file) {
-            let signer = if let Some(ledger) = &args.ledger {
-                CliSigner::new_ledger(ledger)
-            } else if let Some(keypair_path) = &args.keypair {
-                CliSigner::new_keypair_from_path(keypair_path)
+            let signer = if let Some(keypair_path) = &args.signer {
+                if keypair_path.starts_with("usb://") {
+                    CliSigner::new_ledger(keypair_path)
+                } else {
+                    CliSigner::new_keypair_from_path(keypair_path)?
+                }
             } else {
-                CliSigner::new_keypair_from_path(&config.keypair_path)
+                CliSigner::new_keypair_from_path(&config.keypair_path)?
             };
 
             let rpc = if let Some(rpc) = &args.rpc_url {
@@ -57,6 +61,10 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 signer: Some(signer),
             }
         } else {
+            let signer = match args.signer.as_ref() {
+                Some(keypair_path) => Some(CliSigner::new_keypair_from_path(keypair_path)?),
+                None => None,
+            };
             CliConfig {
                 rpc_url: args
                     .rpc_url
@@ -68,14 +76,7 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
                 } else {
                     CommitmentConfig::confirmed()
                 },
-                signer: args.ledger.as_ref().map_or_else(
-                    || {
-                        args.keypair
-                            .as_ref()
-                            .map(|keypair| CliSigner::new_keypair_from_path(keypair))
-                    },
-                    |ledger| Some(CliSigner::new_ledger(ledger)),
-                ),
+                signer,
             }
         }
     };
@@ -125,6 +126,8 @@ async fn main() -> Result<(), anyhow::Error> {
                 restaking_program_id,
                 vault_program_id,
                 args.print_tx,
+                args.print_json,
+                args.print_json_with_reserves,
             )
             .handle(action)
             .await?;
@@ -135,6 +138,8 @@ async fn main() -> Result<(), anyhow::Error> {
                 restaking_program_id,
                 vault_program_id,
                 args.print_tx,
+                args.print_json,
+                args.print_json_with_reserves,
             )
             .handle(action)
             .await?;

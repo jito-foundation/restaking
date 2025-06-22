@@ -59,7 +59,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base: _ } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 10_000)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, 10_000)
             .await
             .unwrap();
         let vault = vault_program_client

@@ -25,11 +25,8 @@ pub struct Cli {
     #[arg(long, global = true, help = "Vault program ID")]
     pub vault_program_id: Option<String>,
 
-    #[arg(long, global = true, help = "Ledger device path or identifier")]
-    pub ledger: Option<String>,
-
-    #[arg(long, global = true, help = "Keypair")]
-    pub keypair: Option<String>,
+    #[arg(long, global = true, help = "Filepath or URL to a keypair")]
+    pub signer: Option<String>,
 
     #[arg(long, global = true, help = "Verbose mode")]
     pub verbose: bool,
@@ -41,6 +38,22 @@ pub struct Cli {
         help = "This will print out the raw TX instead of running it"
     )]
     pub print_tx: bool,
+
+    #[arg(
+        long,
+        global = true,
+        default_value = "false",
+        help = "This will print out account information in JSON format"
+    )]
+    pub print_json: bool,
+
+    #[arg(
+        long,
+        global = true,
+        default_value = "false",
+        help = "This will print out account information in JSON format with reserved space"
+    )]
+    pub print_json_with_reserves: bool,
 
     #[arg(long, global = true, hide = true)]
     pub markdown_help: bool,
