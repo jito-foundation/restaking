@@ -18,8 +18,6 @@ The vault program manages the vault receipt tokens (VRTs) and associated deposit
 
 All accounts for the vault program are defined in the [jito-vault-core](https://github.com/jito-foundation/restaking/tree/master/vault_core/src) crate.
 
-More information about the theory of operation can be found in the [theory of operation](./theory_of_operation.md) section.
-
 ### 3.1. Config
 
 The configuration account is a global account that is used to configure the vault program. It is used to set the restaking program and other program-wide settings. It also keeps track of the number of vaults, fee caps, and other program-wide settings. The number of vaults is used so programs can programmatically iterate through all vaults in the program.
@@ -123,6 +121,5 @@ Assets are considered staked iff:
 - The vault has opted-in to the NCN
 - The NCN has opted-in to the vault
 - The Vault is delegated to that operator
-
 
 ![img.png](/assets/images/staked_venn_diagram.png)

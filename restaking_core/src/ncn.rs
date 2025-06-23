@@ -1,7 +1,7 @@
-//! The NCN (Node Consensus Network) account is a program-owned account that
-//! represents a network of nodes that participate in consensus. The NCN
-//! account is used to manage the operators, vaults, and slashers that are
-//! associated with the network.
+//! NCN (Node Consensus Network)
+//!
+//! - is a program-owned account that represents a network of nodes that participate in consensus.
+//! - is used to manage the operators, vaults, and slashers that are associated with the network.
 
 use std::fmt::Debug;
 
