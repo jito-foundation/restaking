@@ -1,0 +1,36 @@
+##------------------------------------------------------------------------##
+## This script is intended to be run only once during the project setup
+##------------------------------------------------------------------------##
+
+certora-scripts := "."
+
+export HEADER := '''
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; DO NOT EDIT. THIS FILE HAS BEEN AUTOMATICALLY GENERATED
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;
+'''
+
+core_inliner_cfg := certora-scripts  / "inlining_core.txt"
+crate_inliner_cfg := certora-scripts  / "inlining_crate.txt"
+inliner_cfg   := certora-scripts  / "inlining.txt"
+
+core_summaries_cfg := certora-scripts  / "summaries_core.txt"
+crate_summaries_cfg := certora-scripts  / "summaries_crate.txt"
+summaries_cfg := certora-scripts  / "summaries.txt"
+
+
+build: make-envs
+
+make-header:
+  printf %s "$HEADER" > {{ inliner_cfg }}
+  printf %s "$HEADER" > {{ summaries_cfg }}
+
+make-envs: make-header
+	cat {{ core_inliner_cfg }} {{ crate_inliner_cfg }} >> {{ inliner_cfg }}
+	cat {{ core_summaries_cfg }} {{ crate_summaries_cfg }} >> {{ summaries_cfg }}
+
+clean:
+        rm -f {{ inliner_cfg }}
+        rm -f {{ summaries_cfg }}
