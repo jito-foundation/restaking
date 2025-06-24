@@ -9,10 +9,11 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 const RESERVED_SPACE_LEN: usize = 263;
 
-/// The NcnVaultSlasherTicket is created by the NCN and it tracks the state of a node consensus network
-/// opting-in to a vault slasher. The NcnVaultSlasherTicket can be activated and deactivated over time.
-/// The NcnVaultSlasherTicket can slash a specific operator that's receiving delegation from a
-/// vault for a maximum amount per epoch.
+/// The [`NcnVaultSlasherTicket`] account
+///
+/// - is created by the NCN and it tracks the state of a node consensus network network opting-in to a vault slasher.
+/// - can be activated and deactivated over time.
+/// - can slash a specific operator that's receiving delegation from a vault for a maximum amount per epoch.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct NcnVaultSlasherTicket {
