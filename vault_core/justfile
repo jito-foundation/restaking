@@ -1,0 +1,5 @@
+project_root := canonicalize("..")
+crate_root := canonicalize(".")
+sbf_file := project_root / "target/sbf-solana-solana/release/jito_vault_core.so"
+
+import "../certora/just/main.just"
