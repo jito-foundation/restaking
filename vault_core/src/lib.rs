@@ -12,3 +12,5 @@ pub mod vault_staker_withdrawal_ticket;
 pub mod vault_update_state_tracker;
 
 pub const MAX_BPS: u16 = 10_000;
+#[cfg(feature = "certora")]
+pub mod certora;

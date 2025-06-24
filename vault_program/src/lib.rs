@@ -31,6 +31,9 @@ mod update_vault_balance;
 mod warmup_vault_ncn_slasher_ticket;
 mod warmup_vault_ncn_ticket;
 
+#[cfg(feature = "certora")]
+mod certora;
+
 use borsh::BorshDeserialize;
 use jito_vault_sdk::instruction::VaultInstruction;
 use set_program_fee::process_set_program_fee;
