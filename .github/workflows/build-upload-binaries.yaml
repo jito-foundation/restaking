@@ -10,11 +10,10 @@ on:
       package_path:
         description: 'Path to the package'
         required: true
-        default: 'jito-restaking-cli'
+        default: 'cli'
         type: choice
         options:
-          - jito-restaking-cli
-          - jito-shank-cli
+          - cli
       publish_release:
         description: 'Publish the release after uploading binaries'
         required: true
@@ -30,8 +29,8 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            name: x86_64-unknown-linux-musl
+            target: x86_64-unknown-linux-gnu
+            name: x86_64-unknown-linux-gnu
           - os: macos-latest
             target: x86_64-apple-darwin
             name: x86_64-apple-darwin
@@ -48,11 +47,17 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: 1.84.1
           targets: ${{ matrix.target }}
+          override: true
       
       - name: Install musl-tools (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install system dependencies (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
       
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -63,8 +68,8 @@ jobs:
         id: crate_info
         shell: bash
         run: |
-          CRATE_NAME=$(basename "${{ inputs.package_path }}")
-          VERSION=$(grep -m1 'version =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          CRATE_NAME=$(grep -m1 '^name =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          VERSION=$(grep -m1 '^version =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
           echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building $CRATE_NAME version $VERSION for ${{ matrix.target }}"
@@ -152,7 +157,7 @@ jobs:
       - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
-          name: x86_64-unknown-linux-musl
+          name: x86_64-unknown-linux-gnu
           path: release-binaries
       
       - name: Download macOS binary
@@ -187,11 +192,11 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.event.inputs.release_tag }}
-          name: "${{ steps.release_info.outputs.crate_name }} v${{ steps.release_info.outputs.version }}"
-          bodyFile: "RELEASE_NOTES.md"
           artifacts: "./release-binaries/*"
           artifactErrorsFailBuild: false
           allowUpdates: true
+          omitBody: true  # Don't update the release body/notes
+          omitName: true  # Don't update the release name
           draft: ${{ github.event.inputs.publish_release != 'true' }}
           
       - name: Publish Release
