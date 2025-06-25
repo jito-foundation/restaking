@@ -1532,13 +1532,10 @@ Before using the Template NCN Program CLI, ensure you have it installed and conf
     
     This should display the general help and list available subcommands.
     
-2. Install Jito (Re)Staking CLI (if not already): The NCN program operates alongside Jito’s restaking program. You may need the Jito (Re)Staking CLI (`jito-restaking-cli`) to manage restaking registry tasks (like registering NCNs, operators, and vaults). Install it in a separate directory:
+2. Install Jito (Re)Staking CLI (if not already): The NCN program operates alongside Jito’s restaking program. You may need the Jito (Re)Staking CLI (`jito-restaking-cli`) to manage restaking registry tasks (like registering NCNs, operators, and vaults). Install it using Cargo:
     
     ```bash
-    git clone https://github.com/jito-foundation/restaking.git
-    cd restaking
-    cargo build --release
-    cargo install --path ./cli --bin jito-restaking-cli
+    cargo install jito-restaking-cli
     ```
     
     Confirm it is installed:
@@ -1827,13 +1824,10 @@ Before using the Template Operator CLI, install the necessary binaries:
     ncn-operator-cli --help
     ```
     
-2. Install Jito (Re)Staking CLI (if not already): The NCN program operates alongside Jito’s restaking program. You may need the Jito (Re)Staking CLI (`jito-restaking-cli`) to manage restaking registry tasks (like registering NCNs, operators, and vaults). Install it in a separate directory:
+2. Install Jito (Re)Staking CLI (if not already): The NCN program operates alongside Jito’s restaking program. You may need the Jito (Re)Staking CLI (`jito-restaking-cli`) to manage restaking registry tasks (like registering NCNs, operators, and vaults). Install it using Cargo:
     
     ```bash
-    git clone https://github.com/jito-foundation/restaking.git
-    cd restaking
-    cargo build --release
-    cargo install --path ./cli --bin jito-restaking-cli
+    cargo install jito-restaking-cli
     ```
     
     Confirm it works:
