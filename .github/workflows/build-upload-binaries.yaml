@@ -50,10 +50,6 @@ jobs:
           toolchain: 1.84.1
           targets: ${{ matrix.target }}
           override: true
-      
-      - name: Install musl-tools (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Install system dependencies (Linux only)
         if: matrix.os == 'ubuntu-latest'
@@ -62,7 +58,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: "shank-build-${{ matrix.target }}-${{ inputs.package_path }}"
+          key: "build-${{ matrix.target }}-${{ inputs.package_path }}"
       
       - name: Extract crate name and version
         id: crate_info
@@ -177,7 +173,7 @@ jobs:
         run: |
           echo "" >> RELEASE_NOTES.md
           echo "## Binaries" >> RELEASE_NOTES.md
-          echo "- Linux (x86_64-unknown-linux-musl)" >> RELEASE_NOTES.md
+          echo "- Linux (x86_64-unknown-linux-gnu)" >> RELEASE_NOTES.md
           echo "- macOS (x86_64-apple-darwin)" >> RELEASE_NOTES.md
           echo "- Windows (x86_64-pc-windows-msvc)" >> RELEASE_NOTES.md
           
