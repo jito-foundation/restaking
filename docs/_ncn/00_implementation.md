@@ -50,7 +50,7 @@ Keepers are offchain agents that monitor the network and submit onchain instruct
 
 #### 4. NCN program
 
-The NCN Program is the core on-chain component of the system. It's the smart contract that NCN developers build and deploy. Its main responsibilities are:
+The NCN Program is the core onchain component of the system. It's the smart contract that NCN developers build and deploy. Its main responsibilities are:
 
 1. Storing the global configuration parameters for the NCN instance.
 2. Maintaining the registry of participating vaults and supported token types.

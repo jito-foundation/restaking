@@ -1,32 +1,32 @@
 ---
-title: Jito (Re)Staking Overview
+title: Jito (Re)staking Overview
 category: Jekyll
 layout: post
 weight: 1
 ---
 
-**Jito (Re)Staking** is a multi-asset staking protocol for node consensus networks (NCNs). It provides a universal framework for staking SPL tokens to decentralized systems on Solana, with flexibility baked in at every level.
+**Jito (Re)staking** is a universal staking protocol for decentralized networks called node consensus networks (NCNs) built on Solana. It provides a framework for deploying NCNs and staking SPL tokens to them, with flexibility baked in at every level. Altogether, Jito (Re)staking is a coordination protocol for developers to build external networks that use the Solana runtime to enforce custom proof of stake protocol. 
 
-The system consists of two programs: the **Restaking Program**, which acts as an onchain registry for NCNs and Operators, and the **Vault Program**, which manages tokenized stake through Vault Receipt Tokens (VRTs). Both of these programs use flexible admin models. NCNs, Operators, and Vaults can define who they interact with and under what conditions.
+The protocol coordinates stake and rewards between three main participants: NCNs, Vaults, and Operators. Developers register NCNs with custom rules. Operators perform arbitrary logic defined by the NCN, whether that’s processing data, orchestrating or coordination tasks, running models, or verifying offchain inputs. Vaults hold staked SPL tokens and delegate them to Operators. NCNs, Operators, and Vaults can define who they interact with and under what conditions.  
 
-At the core of the protocol are 3 roles: NCNs, Vaults, and Operators. Developers register NCNs with custom rules. The Operator(s) performs (perform) arbitrary logic defined by the NCN, whether that’s processing data, running models, or verifying offchain inputs. The vaults hold staked SPL tokens and delegate them to Operators. The Restaking program and the Vault Program act as the coordination layer, managing delegation and execution across the system.
+The system consists of two programs: the **Restaking Program** (`RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q`), which acts as an onchain registry for NCNs and Operators, and the **Vault Program** (`Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8`), which manages tokenized stake through Vault Receipt Tokens (VRTs) between participants. Both of these programs gives developers the flexibility to customize network operations and various administrative authorities, including appointing stake delegators, setting fees, making protocol upgrades, and updating supported tokens. Together, the Restaking program and the Vault Program  manage stake delegations across the system.
 
 ![img.png](/assets/images/ncn.png)
 
 ### Onchain Coordination, Offchain Execution
 
-Jito (Re)Staking is an onchain registry of services, stakers, and node operators built on Solana. Its core design separates execution and coordination: services run offchain, while consensus and enforcement happen onchain.
+Jito (Re)staking is an onchain registry of services, stakers, and node operators on Solana. Its design separates core network services and coordination:
 
 - All core activity (computation, validation, data collection) happens offchain.
-- All coordination (stake delegation, voting, rewards) is tracked, maintained, and enforced onchain.
+- All coordination (stake delegation, voting, rewards distributions) is tracked, maintained, and enforced onchain.
 
-This split enables scalability and flexibility for developers while retaining cryptoeconomic guarantees from Solana’s base layer. It makes it easier to bootstrap decentralized networks of economically aligned operators and stakers, without building infrastructure from scratch or relying on high emissions. Effectively, this model creates a more efficient and cost effective security model (For example, one set of staked tokens can secure multiple services) and unlocks more effective capital allocation toward core development.
+This split enables scalability and flexibility for developers while retaining cryptoeconomic guarantees from Solana’s base layer. It makes it easier to bootstrap distributed networks of economically aligned operators and stakers, without building infrastructure from scratch or relying on high emissions. Effectively, this model creates a more efficient and cost effective security model (e.g. one set of staked tokens can secure multiple services) and allows teams to allocate moreresources toward core development.
 
 ## Core Components
 
 ### Node Consensus Network (NCN)
 
-An NCN is a decentralized service or network that reaches onchain consensus on offchain data or workloads. This may include oracles, DePIN services, bridges, co-processors, or new chains. In most cases, NCNs will also include their own custom onchain programs to define consensus logic, handle submissions, or verify work. Jito (Re)Staking comprises two different on-chain programs. The restaking program (`RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q`) handles relations between Operators and NCNs, and the Vault Program (`Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8`) that facilitates staking and delegating assets to make the NCNs function.
+An NCN is a decentralized network that reaches consensus on offchain data or workloads and updates onchain state. These networks may include oracle networks, DePIN services, bridges, co-processors, or new chains. In most cases, NCNs will include their own custom onchain programs to handle proof submissions, verify work, and distribute rewards. Consensus can take place onchain or offchain.
 
 ### Vaults
 
@@ -40,7 +40,7 @@ Operators are infrastructure providers that run the offchain services for NCNs a
 
 ### The Opt-In Handshake
 
-Participation in Jito (Re)Staking is governed on-chain by mutual consent:
+Participation in Jito (Re)staking is governed on-chain by mutual consent:
 
 1. NCNs register onchain and approve operators and vaults to participate in their network
 2. Operators opt in to NCNs and must be accepted.
@@ -48,20 +48,27 @@ Participation in Jito (Re)Staking is governed on-chain by mutual consent:
 
 This handshake guarantees that vaults, operators, or NCNs are not forced into any connection. All actively staked links are explicitly approved, creating a modular and flexible system for stake delegation and service coordination.
 
-### Why Jito (Re)Staking Matters
+### Why Jito (Re)staking Matters
 
-We built the Jito (Re)Staking protocol because there are aspects of Jito Network that can benefit from incremental decentralization. And as the Solana ecosystem continues to mature, we expect other developers will eventually transition to prioritizing resiliency over product iteration speed and seek to build custom decentralized solutions that fit the needs of their protocol. The primary benefits of using the restaking protocol to bootstrap decentralized protocol include:
+We built the Jito (Re)staking protocol because there are aspects of Jito Network that can benefit from incremental decentralization. And as the Solana ecosystem continues to mature, we expect other developers will eventually transition to prioritizing resiliency over product iteration speed and seek to build custom decentralized solutions that fit the needs of their protocol. The primary benefits of using the restaking protocol to bootstrap decentralized protocol include:
 
-- **Wide Distribution**: Jito Network is deeply integrated with the Solana ecosystem, including JitoSOL (the largest stakepool) and some of the most established, high performant operators. NCNs can immediately tap into Jito’s network effects without having to kickstart their own operator set or attract native stake from scratch. This means NCNs don’t need to leverage native tokens to emit high inflationary rewards or lock staked tokens to bootstrap stakers or operators. Instead, by registering with the Jito (Re)Staking framework, NCNs can tap into existing stakers, token holders, operators, and vaults.
+- **Token Utility**: The restaking protocol is completely non-custodial and requires multiple parties to opt-in and coordinate network connections, operations, and rewards distributions, unlocking a path for NCNs to build decentralized networks and install token utility.
+
+- **Access to professional node operators**: NCNs require different hardware requirements and software competencies. Jito Network is deeply integrated with Solana’s validator ecosystem, which includes a wide range of sophisticated independent operators and institutional operators. This makes it very trivial for NCNs to connect with the industry’s best node operators to participate in their networks, regardless of the underlying network’s hardware and software requirements.
+
+- **Wide Distribution**: JitoSOL is the largest stakepool and is deeply integrated with the Solana DeFi ecosystem. NCNs can immediately tap into Jito’s network effects without having to attract native stake from scratch. This means, by registering with the Jito (Re)staking framework, bootstrapping and building staked networks is very cost-effective and extremely trivial. 
 
 - **Capital efficiency**: The same stake can secure multiple services. The same operators can operate multiple services.
+
 - **Aligned incentives**: Stakers, operators, and NCN developers all benefit from performance, transparency, and modular security.
 
-Jito (Re)Staking greatly reduces the friction to launch, or transition existing services into, decentralized protocols with proof of stake security rooted on Solana.
+- **Instant access to Internet Capital Markets**: NCNs have instant access to [Internet Capital Markets](https://multicoin.capital/2025/01/22/the-solana-thesis-internet-capital-markets/). Vaults have the incentive to integrate VRTs across DeFi, creating market structures for native tokens. 
+
+Jito (Re)staking greatly reduces the friction to launch, or transition existing services into, decentralized protocols with proof of stake security rooted on Solana.
 
 ## Key Roles and Responsibilities
 
-This section focuses on the organizational roles behind the system. Each persona (whether they’re launching a network, managing capital, running infrastructure, or providing stake) has clearly defined administrative capabilities and responsibilities. This alignment is central to how Jito (Re)Staking ensures trust and coordination in a modular, multi-party environment.
+This section focuses on the organizational roles behind the system. Each persona (whether they’re launching a network, managing capital, running infrastructure, or providing stake) has clearly defined administrative capabilities and responsibilities. This alignment is central to how Jito (Re)staking ensures trust and coordination in a modular, multi-party environment.
 
 ### NCN Admin
 
@@ -161,11 +168,11 @@ The operation phase is where the network’s value is produced. While all servic
 
 ## Critical Concepts
 
-Jito (Re)Staking introduces architectural patterns that enable scalable, secure coordination for independent decentralized services. These include:
+Jito (Re)staking introduces architectural patterns that enable scalable, secure coordination for independent decentralized services. These include:
 
 ### Stake-Weighted Voting and Slashing
 
-Consensus in Jito (Re)Staking is driven by submitting onchain votes on offchain execution. Voting power is backed by delegated **onchain** stake. Please note that the slashing functionality is still currently being developed.
+Consensus in Jito (Re)staking is driven by submitting onchain votes on offchain execution. Voting power is backed by delegated **onchain** stake. Please note that the slashing functionality is still currently being developed.
 
 During each epoch:
 
