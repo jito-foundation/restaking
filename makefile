@@ -8,7 +8,6 @@ CARGO_SBF := cargo-build-sbf
 CARGO_NEXTEST := cargo nextest
 YARN := yarn
 SHANK_CLI := ./target/release/jito-shank-cli
-RESTAKING_CLI := ./target/release/jito-restaking-cli
 
 # Environment and paths
 ENV_PATH := ./config/program.env
@@ -27,8 +26,8 @@ lint:
 
 # Code generation
 .PHONY: generate-code
-generate-code: build-release generate-idl
-	$(RESTAKING_CLI) --markdown-help > ./docs/_tools/00_cli.md
+generate-code: build-release
+	$(SHANK_CLI)
 	$(YARN) install
 	$(YARN) generate-clients
 	$(YARN) update-dependencies
