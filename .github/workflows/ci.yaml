@@ -28,7 +28,7 @@ jobs:
       - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2024-0344 --ignore RUSTSEC-2024-0421 --ignore RUSTSEC-2025-0022
 
   code_gen:
-    # cargo b && ./target/debug/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
+    # cargo b && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
     name: code generation
     runs-on: ubuntu-latest
     steps:
@@ -43,13 +43,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
       - name: cargo build
         run: cargo b -r
-      - name: Generate the CLI markdown
-        run: ./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md
-      - name: Verify no CLI files changes
-        uses: tj-actions/verify-changed-files@v20
-        with:
-          fail-if-changed: true
-          fail-message: 'Unexpected changes in the CLI files. Please run `./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md` to regenerate the files.'
       - name: Regenerate Shank IDL files
         run: ./target/release/jito-shank-cli
       - name: Verify no changed files

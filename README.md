@@ -10,9 +10,12 @@ Jito Restaking is a next-generation restaking platform for Solana and SVM enviro
 ## Table of Contents
 
 - [Features](#features)
+- [Documentation](#documentation)
+- [SDKs](#sdks)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Running Tests](#running-tests)
+- [Releasing](#releasing)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -21,6 +24,11 @@ Jito Restaking is a next-generation restaking platform for Solana and SVM enviro
 - Universal framework for staking, restaking, and liquid restaking
 - VRT construction and management
 - Flexible NCN and operator management
+
+## Documentation
+
+The comprehensive documentation for Stakenet has moved to [jito.network/docs/restaking/jito-restaking-overview](https://www.jito.network/docs/restaking/jito-restaking-overview/).
+The source files are maintained in the [Jito Omnidocs repository](https://github.com/jito-foundation/jito-omnidocs/tree/master/restaking).
 
 ## SDKs
 
