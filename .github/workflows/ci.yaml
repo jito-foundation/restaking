@@ -28,7 +28,7 @@ jobs:
       - run: cargo audit --ignore RUSTSEC-2022-0093 --ignore RUSTSEC-2024-0344 --ignore RUSTSEC-2024-0421 --ignore RUSTSEC-2025-0022
 
   code_gen:
-    # cargo b && ./target/debug/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
+    # cargo b && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
     name: code generation
     runs-on: ubuntu-latest
     steps:
@@ -38,18 +38,11 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
+          toolchain: 1.84.1
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
       - name: cargo build
         run: cargo b -r
-      - name: Generate the CLI markdown
-        run: ./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md
-      - name: Verify no CLI files changes
-        uses: tj-actions/verify-changed-files@v20
-        with:
-          fail-if-changed: true
-          fail-message: 'Unexpected changes in the CLI files. Please run `./target/release/jito-restaking-cli --markdown-help > ./docs/_tools/00_cli.md` to regenerate the files.'
       - name: Regenerate Shank IDL files
         run: ./target/release/jito-shank-cli
       - name: Verify no changed files
@@ -97,11 +90,12 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
+          toolchain: 1.84.1
       - name: Install cargo-sort from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-sort
+          version: "1.0.9"
       - run: cargo sort --workspace --check
       - run: cargo fmt --all --check
       - run: cargo clippy --all-features -- -D warnings -D clippy::all -D clippy::nursery -D clippy::integer_division -D clippy::arithmetic_side_effects -D clippy::style -D clippy::perf
@@ -119,7 +113,7 @@ jobs:
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.11/install)"
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.14/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Building programs
@@ -137,14 +131,14 @@ jobs:
           submodules: recursive
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
-      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.1.11
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.2.14
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install solana-verify from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
           crate: solana-verify
-      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.1.11
-      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.1.11
+      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.2.14
+      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.2.14
       - name: Upload jito_restaking_program.so
         uses: actions/upload-artifact@v4
         with:
@@ -164,7 +158,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: nightly-2024-07-25
+          toolchain: 1.84.1
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install system dependencies
@@ -206,7 +200,11 @@ jobs:
         with:
           name: jito_vault_program.so
           path: target/sbf-solana-solana/release/
-      - uses: taiki-e/install-action@nextest
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: cargo nextest run --all-features
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release

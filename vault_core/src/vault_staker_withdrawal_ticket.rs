@@ -1,5 +1,3 @@
-//! The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-//! For every withdraw ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 use bytemuck::{Pod, Zeroable};
 use jito_bytemuck::{types::PodU64, AccountDeserialize, Discriminator};
 use jito_jsm_core::get_epoch;
@@ -9,8 +7,10 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 const RESERVED_SPACE_LEN: usize = 263;
 
-/// The [`VaultStakerWithdrawalTicket`] account is used to represent a pending withdrawal from a vault by a staker.
-/// For every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
+/// The [`VaultStakerWithdrawalTicket`] account
+///
+/// - is used to represent a pending withdrawal from a vault by a staker.
+/// - for every withdrawal ticket, there's an associated token account owned by the withdrawal ticket with the staker's VRT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultStakerWithdrawalTicket {
