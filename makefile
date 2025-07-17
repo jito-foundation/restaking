@@ -26,7 +26,7 @@ lint:
 
 # Code generation
 .PHONY: generate-code
-generate-code: build-release
+generate-code: build-release generate-idl
 	$(SHANK_CLI)
 	$(YARN) install
 	$(YARN) generate-clients
