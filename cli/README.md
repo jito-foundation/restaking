@@ -125,7 +125,7 @@ This allows you to keep your private keys secure on your hardware device instead
 You can specify a Ledger device as the signer by using the `usb://ledger?key=0` in any command that accepts keypair arguments.
 
 ```bash
---signer usb://ledger?key=0
+--signer "usb://ledger?key=0"
 ```
 
 When you specify a Ledger path, the CLI will automatically connect to your Ledger device and prompt you to confirm the transaction on the device.
@@ -133,7 +133,7 @@ When you specify a Ledger path, the CLI will automatically connect to your Ledge
 ##### Set Admin
 
 ```bash
-jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair usb://ledger?key=0 <VAULT>
+jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR> --new-admin-keypair "usb://ledger?key=0" <VAULT>
 ```
 
 ##### Using Ledger with Other Commands
@@ -141,7 +141,7 @@ jito-restaking-cli vault vault set-admin --old-admin-keypair <OLD_ADMIN_KEYPAIR>
 You can use your Ledger device with any command that accepts a signer argument. The CLI will automatically handle the connection and signing process with your Ledger device.
 
 ```bash
-jito-restaking-cli -- vault vault set-secondary-admin <VAULT> <SECONDARY_ADMIN> --set-metadata-admin --signer 'usb://ledger?key=0'
+jito-restaking-cli -- vault vault set-secondary-admin <VAULT> <SECONDARY_ADMIN> --set-metadata-admin --signer "usb://ledger?key=0"
 ```
 
 ## Getting Started
