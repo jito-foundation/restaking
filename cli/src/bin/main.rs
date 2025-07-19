@@ -19,12 +19,15 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {
         let config = Config::load(config_file.as_os_str().to_str().unwrap())?;
-        let keypair_path = if let Some(keypair_path) = &args.signer {
-            keypair_path.as_str()
+        let signer = if let Some(keypair_path) = &args.signer {
+            if keypair_path.starts_with("usb://") {
+                CliSigner::new_ledger(keypair_path)
+            } else {
+                CliSigner::new_keypair_from_path(keypair_path)?
+            }
         } else {
-            config.keypair_path.as_str()
+            CliSigner::new_keypair_from_path(&config.keypair_path)?
         };
-        let signer = CliSigner::new_keypair_from_path(keypair_path)?;
 
         CliConfig {
             rpc_url: config.json_rpc_url,
@@ -36,12 +39,15 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             .as_ref()
             .ok_or_else(|| anyhow!("unable to get config file path"))?;
         if let Ok(config) = Config::load(config_file) {
-            let keypair_path = if let Some(keypair_path) = &args.signer {
-                keypair_path.as_str()
+            let signer = if let Some(keypair_path) = &args.signer {
+                if keypair_path.starts_with("usb://") {
+                    CliSigner::new_ledger(keypair_path)
+                } else {
+                    CliSigner::new_keypair_from_path(keypair_path)?
+                }
             } else {
-                config.keypair_path.as_str()
+                CliSigner::new_keypair_from_path(&config.keypair_path)?
             };
-            let signer = CliSigner::new_keypair_from_path(keypair_path)?;
 
             let rpc = if let Some(rpc) = &args.rpc_url {
                 rpc.to_string()
@@ -56,7 +62,14 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             }
         } else {
             let signer = match args.signer.as_ref() {
-                Some(keypair_path) => Some(CliSigner::new_keypair_from_path(keypair_path)?),
+                Some(keypair_path) => {
+                    let signer = if keypair_path.starts_with("usb://") {
+                        CliSigner::new_ledger(keypair_path)
+                    } else {
+                        CliSigner::new_keypair_from_path(keypair_path)?
+                    };
+                    Some(signer)
+                }
                 None => None,
             };
             CliConfig {

@@ -32,18 +32,10 @@ impl CliSigner {
     }
 
     /// Creates a signer from a path
-    ///
-    /// # Supported Formats
-    /// - File paths: Creates file-based keypair signer
-    /// - `usb://` URLs: Creates Ledger hardware wallet signer
     pub fn new_keypair_from_path(keypair_path: &str) -> anyhow::Result<Self> {
-        if keypair_path.starts_with("usb://") {
-            Ok(Self::new_ledger(keypair_path))
-        } else {
-            match read_keypair_file(keypair_path) {
-                Ok(keypair) => Ok(Self::new(Some(keypair), None)),
-                Err(e) => Err(anyhow!("{}", e)),
-            }
+        match read_keypair_file(keypair_path) {
+            Ok(keypair) => Ok(Self::new(Some(keypair), None)),
+            Err(e) => Err(anyhow!("{}", e)),
         }
     }
 
