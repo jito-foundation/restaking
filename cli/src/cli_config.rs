@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{path::Path, str::FromStr};
 
 use solana_cli_config::Config;
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -19,14 +19,14 @@ pub struct CliConfig {
 impl CliConfig {
     /// Creates a new [`CliConfig`] from CLI arguments
     pub fn new(args: &Cli) -> Result<Self, anyhow::Error> {
-        match &args.config_file {
-            Some(config_file) => Self::from_config_file(config_file, args),
-            None => Self::from_default_config_or_args(args),
-        }
+        args.config_file.as_ref().map_or_else(
+            || Self::from_default_config_or_args(args),
+            |config_file| Self::from_config_file(config_file, args),
+        )
     }
 
     /// Creates configuration from a specific config file
-    fn from_config_file(config_file: &PathBuf, args: &Cli) -> Result<Self, anyhow::Error> {
+    fn from_config_file(config_file: &Path, args: &Cli) -> Result<Self, anyhow::Error> {
         let config_path = config_file
             .as_os_str()
             .to_str()
@@ -48,10 +48,10 @@ impl CliConfig {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Unable to get config file path"))?;
 
-        match Config::load(default_config_file) {
-            Ok(config) => Self::from_loaded_config(config, args),
-            Err(_) => Self::from_args_only(args),
-        }
+        Config::load(default_config_file).map_or_else(
+            |_| Self::from_args_only(args),
+            |config| Self::from_loaded_config(config, args),
+        )
     }
 
     /// Creates configuration by merging loaded config file with CLI arguments
