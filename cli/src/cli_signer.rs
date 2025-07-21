@@ -31,6 +31,7 @@ impl CliSigner {
         Self::new(Some(keypair), None)
     }
 
+    /// Creates a signer from a path
     pub fn new_keypair_from_path(keypair_path: &str) -> anyhow::Result<Self> {
         match read_keypair_file(keypair_path) {
             Ok(keypair) => Ok(Self::new(Some(keypair), None)),
