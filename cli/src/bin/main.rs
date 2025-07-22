@@ -62,9 +62,17 @@ pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
             }
         } else {
             let signer = match args.signer.as_ref() {
-                Some(keypair_path) => Some(CliSigner::new_keypair_from_path(keypair_path)?),
+                Some(keypair_path) => {
+                    let signer = if keypair_path.starts_with("usb://") {
+                        CliSigner::new_ledger(keypair_path)
+                    } else {
+                        CliSigner::new_keypair_from_path(keypair_path)?
+                    };
+                    Some(signer)
+                }
                 None => None,
             };
+
             CliConfig {
                 rpc_url: args
                     .rpc_url
