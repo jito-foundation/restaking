@@ -84,6 +84,8 @@ jobs:
     name: Publish CLI
     runs-on: ubuntu-latest
     needs: test_sbf
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     permissions:
       contents: write
     steps:
@@ -102,6 +104,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "restaking-publish-${{ inputs.package_path }}"
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
 
       - name: Install Cargo Release
         uses: baptiste0928/cargo-install@v3
@@ -130,15 +135,6 @@ jobs:
           echo "old_version=${OLD_VERSION}" >> $GITHUB_OUTPUT
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "git_tag=v${NEW_VERSION}-cli" >> $GITHUB_OUTPUT
-
-      # We will add it later
-      # Optional: Build binaries for different platforms
-      # - name: Build CLI binaries
-      #   if: inputs.create_binaries == 'true'
-      #   run: |
-      #     # Build for different targets
-      #     cargo build --release --bin your-cli-name
-      #     # You could add cross-compilation here
 
       - name: Create CLI Release
         if: inputs.dry_run != 'true'
