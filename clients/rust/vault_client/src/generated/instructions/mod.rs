@@ -61,6 +61,7 @@ pub use self::r#initialize_vault_with_mint::*;
 pub use self::r#mint_to::*;
 pub use self::r#set_admin::*;
 pub use self::r#set_config_admin::*;
+pub use self::r#set_config_secondary_admin::*;
 pub use self::r#set_deposit_capacity::*;
 pub use self::r#set_fees::*;
 pub use self::r#set_is_paused::*;

@@ -1931,6 +1931,29 @@ impl VaultProgramClient {
 
         Ok(())
     }
+
+    pub async fn set_config_secondary_admin(
+        &mut self,
+        config: &Pubkey,
+        old_admin: &Keypair,
+        new_admin: &Pubkey,
+        role: ConfigAdminRole,
+    ) -> Result<(), TestError> {
+        let blockhash = self.banks_client.get_latest_blockhash().await?;
+        self._process_transaction(&Transaction::new_signed_with_payer(
+            &[jito_vault_sdk::sdk::set_config_secondary_admin(
+                &jito_vault_program::id(),
+                config,
+                &old_admin.pubkey(),
+                &new_admin,
+                role,
+            )],
+            Some(&old_admin.pubkey()),
+            &[old_admin],
+            blockhash,
+        ))
+        .await
+    }
 }
 
 #[inline(always)]
