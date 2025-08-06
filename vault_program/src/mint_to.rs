@@ -99,13 +99,13 @@ pub fn process_mint(
         return Err(VaultError::VrtOutCannotBeZero.into());
     }
 
-    msg!(
-        "MINT: Depositor {} added {} tokens, received {} VRT (fee: {} VRT)",
-        depositor.key,
-        amount_in,
-        vrt_to_depositor,
-        vrt_to_fee_wallet
-    );
+    // msg!(
+    //     "MINT: Depositor {} added {} tokens, received {} VRT (fee: {} VRT)",
+    //     depositor.key,
+    //     amount_in,
+    //     vrt_to_depositor,
+    //     vrt_to_fee_wallet
+    // );
 
     // transfer tokens from depositor to vault
     {

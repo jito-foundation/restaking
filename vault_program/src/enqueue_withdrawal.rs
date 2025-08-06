@@ -116,11 +116,11 @@ pub fn process_enqueue_withdrawal(
 
     vault.increment_vrt_enqueued_for_cooldown_amount(vrt_amount)?;
 
-    msg!(
-        "ENQUEUE WITHDRAWAL: {} VRT tokens from staker {} added to cooldown queue",
-        vrt_amount,
-        staker.key
-    );
+    // msg!(
+    //     "ENQUEUE WITHDRAWAL: {} VRT tokens from staker {} added to cooldown queue",
+    //     vrt_amount,
+    //     staker.key
+    // );
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket
