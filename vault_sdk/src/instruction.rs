@@ -329,6 +329,7 @@ pub enum VaultInstruction {
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]
+#[repr(u8)]
 pub enum ConfigAdminRole {
     FeeAdmin,
 }
