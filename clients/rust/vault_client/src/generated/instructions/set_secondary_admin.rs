@@ -3,10 +3,11 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
-
-use borsh::{BorshDeserialize, BorshSerialize};
+//!
 
 use crate::generated::types::VaultAdminRole;
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
 
 /// Accounts.
 pub struct SetSecondaryAdmin {

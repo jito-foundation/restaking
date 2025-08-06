@@ -61,6 +61,12 @@ pub struct VaultCliHandler {
 
     /// This will print out the raw TX instead of running it
     print_tx: bool,
+
+    /// This will print out the account information in JSON format
+    print_json: bool,
+
+    /// This will print out the account information in JSON format with reserved space
+    print_json_with_reserves: bool,
 }
 
 impl CliHandler for VaultCliHandler {
@@ -71,6 +77,14 @@ impl CliHandler for VaultCliHandler {
     fn print_tx(&self) -> bool {
         self.print_tx
     }
+
+    fn print_json(&self) -> bool {
+        self.print_json
+    }
+
+    fn print_json_with_reserves(&self) -> bool {
+        self.print_json_with_reserves
+    }
 }
 
 impl VaultCliHandler {
@@ -79,12 +93,16 @@ impl VaultCliHandler {
         restaking_program_id: Pubkey,
         vault_program_id: Pubkey,
         print_tx: bool,
+        print_json: bool,
+        print_json_with_reserves: bool,
     ) -> Self {
         Self {
             cli_config,
             restaking_program_id,
             vault_program_id,
             print_tx,
+            print_json,
+            print_json_with_reserves,
         }
     }
 
@@ -1309,28 +1327,20 @@ impl VaultCliHandler {
             .staker_vrt_token_account(staker_vrt_token_account)
             .base(signer.pubkey())
             .amount(amount);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
 
-        let blockhash = rpc_client.get_latest_blockhash().await?;
-        let tx = Transaction::new_signed_with_payer(
-            &[
-                vault_staker_withdrawal_ticket_ata_ix,
-                ix_builder.instruction(),
-            ],
-            Some(&signer.pubkey()),
-            &[signer],
-            blockhash,
-        );
         info!(
-            "Initializing vault operator delegation transaction: {:?}",
-            tx.get_signature()
+            "Enqueueing withdrawal: amount = {amount}, vault = {vault}, signer = {}",
+            signer.pubkey()
         );
-        let result = rpc_client.send_and_confirm_transaction(&tx).await;
 
-        if result.is_err() {
-            return Err(anyhow::anyhow!("Transaction failed: {:?}", result.err()));
-        }
-
-        info!("Transaction confirmed: {:?}", tx.get_signature());
+        self.process_transaction(
+            &[vault_staker_withdrawal_ticket_ata_ix, ix],
+            &signer.pubkey(),
+            &[signer],
+        )
+        .await?;
 
         Ok(())
     }
@@ -1498,14 +1508,13 @@ impl VaultCliHandler {
         )
         .0;
 
-        info!("Vault at address {}", pubkey);
-        info!("{}", vault.pretty_display());
+        self.print_out(None, Some(&pubkey), &vault)?;
 
         if let Ok(metadata) = self
             .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
             .await
         {
-            info!("{}", metadata.pretty_display());
+            self.print_out(None, None, &metadata)?;
         }
 
         Ok(())
@@ -1520,7 +1529,7 @@ impl VaultCliHandler {
             .await
             .unwrap();
         log::info!("{:?}", accounts);
-        for (vault_pubkey, vault) in accounts {
+        for (index, (vault_pubkey, vault)) in accounts.iter().enumerate() {
             let vault =
                 jito_vault_client::accounts::Vault::deserialize(&mut vault.data.as_slice())?;
 
@@ -1534,14 +1543,13 @@ impl VaultCliHandler {
             )
             .0;
 
-            info!("Vault at address {}", vault_pubkey);
-            info!("{}", vault.pretty_display());
+            self.print_out(Some(index), Some(vault_pubkey), &vault)?;
 
             if let Ok(metadata) = self
                 .get_account::<jito_vault_client::log::metadata::Metadata>(&metadata_pubkey)
                 .await
             {
-                info!("{}", metadata.pretty_display());
+                self.print_out(None, None, &metadata)?;
             }
         }
         Ok(())
@@ -1560,8 +1568,7 @@ impl VaultCliHandler {
         let account = rpc_client.get_account(&config_address).await?;
         let config =
             jito_vault_client::accounts::Config::deserialize(&mut account.data.as_slice())?;
-        info!("Vault config at address {}", config_address);
-        info!("{}", config.pretty_display());
+        self.print_out(None, Some(&config_address), &config)?;
         Ok(())
     }
 
@@ -1588,11 +1595,7 @@ impl VaultCliHandler {
         let state_tracker = jito_vault_client::accounts::VaultUpdateStateTracker::deserialize(
             &mut account.data.as_slice(),
         )?;
-        info!(
-            "Vault Update State Tracker at address {}",
-            vault_update_state_tracker
-        );
-        info!("{}", state_tracker.pretty_display());
+        self.print_out(None, Some(&vault_update_state_tracker), &state_tracker)?;
         Ok(())
     }
 
@@ -1623,11 +1626,7 @@ impl VaultCliHandler {
                     &mut account.data.as_slice(),
                 )?;
 
-                info!(
-                    "Vault Operator Delegation at address {}",
-                    vault_operator_delegation
-                );
-                info!("{}", delegation.pretty_display());
+                self.print_out(None, Some(&vault_operator_delegation), &delegation)?;
             }
             None => {
                 let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>(
@@ -1643,8 +1642,7 @@ impl VaultCliHandler {
                             &mut account.data.as_slice(),
                         )?;
 
-                    info!("Vault Operator Delegation {} at address {}", index, pubkey);
-                    info!("{}", vault_operator_delegation.pretty_display());
+                    self.print_out(Some(index), Some(pubkey), &vault_operator_delegation)?;
                 }
             }
         }
@@ -1678,33 +1676,29 @@ impl VaultCliHandler {
         let ticket = jito_vault_client::accounts::VaultStakerWithdrawalTicket::deserialize(
             &mut account.data.as_slice(),
         )?;
-        info!(
-            "Vault Staker Withdrawal Ticket at address {}",
-            vault_staker_withdrawal_ticket
-        );
-        info!("{}", ticket.pretty_display());
+        self.print_out(None, Some(&vault_staker_withdrawal_ticket), &ticket)?;
 
         Ok(())
     }
 
-    /// Sets the primary admin for Vault
+    /// Sets the primary admin for a Vault
     ///
-    /// This function transfers the primary administrative control of a Vault from an existing admin
-    /// to a new admin.
+    /// This function transfers administrative control of a Vault account from the current admin
+    /// to a new admin. It supports both file-based keypairs and hardware wallets (USB devices)
+    /// for both the old and new admin. The function builds and processes a transaction that
+    /// updates the admin public key in the Vault account.
     #[allow(clippy::future_not_send)]
     async fn set_admin(
         &self,
         vault: &Pubkey,
-        old_admin_keypair: &PathBuf,
-        new_admin_keypair: &PathBuf,
+        old_admin_keypair: &str,
+        new_admin_keypair: &str,
     ) -> Result<()> {
-        let old_admin = read_keypair_file(old_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read old admin keypair: {}", e))?;
-        let old_admin_signer = CliSigner::new(Some(old_admin), None);
+        let mut old_admin_owned = None;
+        let mut new_admin_owned = None;
 
-        let new_admin = read_keypair_file(new_admin_keypair)
-            .map_err(|e| anyhow!("Failed to read new admin keypair: {}", e))?;
-        let new_admin_signer = CliSigner::new(Some(new_admin), None);
+        let old_admin_signer = self.resolve_keypair(old_admin_keypair, &mut old_admin_owned)?;
+        let new_admin_signer = self.resolve_keypair(new_admin_keypair, &mut new_admin_owned)?;
 
         let mut ix_builder = SetAdminBuilder::new();
         ix_builder

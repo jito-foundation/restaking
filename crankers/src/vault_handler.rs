@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::Context;
 use base64::{engine::general_purpose, Engine};
 use jito_bytemuck::AccountDeserialize;
+use jito_jsm_core::get_epoch;
 use jito_vault_client::{
     instructions::{
         CloseVaultUpdateStateTrackerBuilder, CrankVaultUpdateStateTrackerBuilder,
@@ -11,10 +12,10 @@ use jito_vault_client::{
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use log::error;
+use log::{error, info};
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
@@ -30,25 +31,24 @@ use tokio::time::sleep;
 
 use crate::core::get_latest_blockhash_with_retry;
 
-pub struct VaultHandler<'a> {
+const MAX_RETRIES: u8 = 10;
+
+pub struct VaultHandler {
     rpc_url: String,
-    payer: &'a Keypair,
     vault_program_id: Pubkey,
     config_address: Pubkey,
     priority_fees: u64,
 }
 
-impl<'a> VaultHandler<'a> {
+impl VaultHandler {
     pub fn new(
         rpc_url: &str,
-        payer: &'a Keypair,
         vault_program_id: Pubkey,
         config_address: Pubkey,
         priority_fees: u64,
     ) -> Self {
         Self {
             rpc_url: rpc_url.to_string(),
-            payer,
             vault_program_id,
             config_address,
             priority_fees,
@@ -104,17 +104,18 @@ impl<'a> VaultHandler<'a> {
     /// Sends and confirms a transaction with retries, priority fees, and blockhash refresh
     ///
     /// # Arguments
+    /// * `payer` - Keypair of payer
     /// * `instructions` - Vector of instructions to include in the transaction
     ///
     /// # Returns
     /// Returns `anyhow::Result<()>` indicating success or failure
     async fn send_and_confirm_transaction_with_retry(
         &self,
+        payer: &Keypair,
         mut instructions: Vec<Instruction>,
     ) -> anyhow::Result<()> {
         let rpc_client = self.get_rpc_client();
         let mut retries = 0;
-        const MAX_RETRIES: u8 = 10;
 
         instructions.insert(
             0,
@@ -125,8 +126,8 @@ impl<'a> VaultHandler<'a> {
 
             let tx = Transaction::new_signed_with_payer(
                 &instructions,
-                Some(&self.payer.pubkey()),
-                &[self.payer],
+                Some(&payer.pubkey()),
+                &[payer],
                 blockhash,
             );
 
@@ -159,6 +160,101 @@ impl<'a> VaultHandler<'a> {
             "Transaction failed after {} retries",
             MAX_RETRIES
         ))
+    }
+
+    /// Splits a vector of instructions into multiple transactions to stay within Solana's
+    /// transaction size limit of 1232 bytes.
+    ///
+    /// This function dynamically batches instructions by testing the actual transaction size
+    /// rather than using fixed batch sizes. Each transaction will include a compute budget
+    /// instruction at the beginning.
+    async fn split_instructions_by_size(
+        &self,
+        instructions: &[Instruction],
+        payer: &Keypair,
+        max_size: usize,
+    ) -> anyhow::Result<Vec<Transaction>> {
+        let mut transactions = Vec::new();
+        let mut current_batch = Vec::new();
+
+        let compute_budget_ix =
+            ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees);
+
+        for instruction in instructions {
+            // Create a test transaction with current batch + new instruction
+            let mut test_batch = vec![compute_budget_ix.clone()];
+            test_batch.extend(current_batch.clone());
+            test_batch.push(instruction.clone());
+
+            let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
+            let test_tx = Transaction::new_signed_with_payer(
+                &test_batch,
+                Some(&payer.pubkey()),
+                &[payer],
+                blockhash,
+            );
+
+            let tx_size = test_tx.signatures.len() + test_tx.message_data().len();
+
+            if tx_size > max_size && !current_batch.is_empty() {
+                // Finalize current batch
+                let mut final_batch = vec![compute_budget_ix.clone()];
+                final_batch.extend(current_batch.clone());
+
+                let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
+                let tx = Transaction::new_signed_with_payer(
+                    &final_batch,
+                    Some(&payer.pubkey()),
+                    &[payer],
+                    blockhash,
+                );
+                transactions.push(tx);
+
+                // Start new batch with current instruction
+                current_batch = vec![instruction.clone()];
+            } else {
+                current_batch.push(instruction.clone());
+            }
+        }
+
+        // Handle remaining instructions
+        if !current_batch.is_empty() {
+            let mut final_batch = vec![compute_budget_ix];
+            final_batch.extend(current_batch);
+
+            let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
+            let tx = Transaction::new_signed_with_payer(
+                &final_batch,
+                Some(&payer.pubkey()),
+                &[payer],
+                blockhash,
+            );
+            transactions.push(tx);
+        }
+
+        Ok(transactions)
+    }
+
+    /// Retrieves Jito Vault Program account
+    pub async fn get_vault_program_account<T: AccountDeserialize>(
+        &self,
+        pubkey: &Pubkey,
+    ) -> anyhow::Result<T> {
+        let rpc_client = self.get_rpc_client();
+
+        match rpc_client.get_account(pubkey).await {
+            Ok(account) => match T::try_from_slice_unchecked(&account.data) {
+                Ok(vault_operator_delegation) => Ok(*vault_operator_delegation),
+                Err(e) => {
+                    let context = format!("Failed deserializing: {pubkey}");
+                    Err(anyhow::Error::new(e).context(context))
+                }
+            },
+            Err(e) => {
+                let context = format!("Error: Failed to get account: {pubkey}");
+                Err(anyhow::Error::new(e).context(context))
+            }
+        }
     }
 
     /// Retrieves all existing vaults
@@ -258,10 +354,13 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of the update operation.
     pub async fn do_vault_update(
         &self,
-        epoch: u64,
+        slot: u64,
+        config: &jito_vault_core::config::Config,
+        payer: &Keypair,
         vault: &Pubkey,
         operators: &[Pubkey],
     ) -> anyhow::Result<()> {
+        let epoch = get_epoch(slot, config.epoch_length())?;
         let tracker_pubkey =
             VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch).0;
 
@@ -270,21 +369,22 @@ impl<'a> VaultHandler<'a> {
         // Initialize
         if let Err(e) = self.get_update_state_tracker(vault, epoch).await {
             log::info!("Get tracker failed, initializing. Expecting AccountNotFound: {e}");
-            self.initialize_vault_update_state_tracker(vault, tracker_pubkey)
+            self.initialize_vault_update_state_tracker(payer, vault, tracker_pubkey)
                 .await?;
         }
 
         log::info!("Initialized tracker for vault: {vault}, tracker: {tracker_pubkey}");
 
         // Crank
-        self.crank(epoch, vault, operators, tracker_pubkey).await?;
+        self.crank(slot, config, payer, vault, operators, tracker_pubkey)
+            .await?;
 
         log::info!("Cranked vault: {vault}");
 
         // Close
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
         if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
-            self.close_vault_update_state_tracker(vault, epoch, tracker_pubkey)
+            self.close_vault_update_state_tracker(payer, vault, epoch, tracker_pubkey)
                 .await?;
         } else {
             let context = format!(
@@ -305,6 +405,7 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of initialization.
     pub async fn initialize_vault_update_state_tracker(
         &self,
+        payer: &Keypair,
         vault: &Pubkey,
         tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
@@ -313,17 +414,77 @@ impl<'a> VaultHandler<'a> {
             .config(self.config_address)
             .vault(*vault)
             .vault_update_state_tracker(tracker_pubkey)
-            .payer(self.payer.pubkey())
+            .payer(payer.pubkey())
             .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy);
         let mut init_ix = init_ix_builder.instruction();
         init_ix.program_id = self.vault_program_id;
 
-        self.send_and_confirm_transaction_with_retry(vec![init_ix])
+        self.send_and_confirm_transaction_with_retry(payer, vec![init_ix])
             .await?;
         Ok(())
     }
 
+    /// Retrieves operators that need to be updated and builds their crank instructions.
+    ///
+    /// # Arguments
+    /// * `operators_iter` - Iterator of operator public keys to check
+    /// * `slot` - Current slot number
+    /// * `config` - Configuration containing epoch length
+    /// * `vault` - Vault public key
+    /// * `tracker_pubkey` - Vault update state tracker public key
+    ///
+    /// # Returns
+    /// * `Vec<Instruction>` - Vector of crank instructions for operators that need updates
+    async fn retrieve_non_updated_operators(
+        &self,
+        operators_iter: &[&Pubkey],
+        slot: u64,
+        config: &Config,
+        vault: &Pubkey,
+        tracker_pubkey: Pubkey,
+    ) -> anyhow::Result<Vec<Instruction>> {
+        let mut instructions = Vec::with_capacity(operators_iter.len());
+
+        for operator in operators_iter {
+            let vault_operator_delegation_pubkey = VaultOperatorDelegation::find_program_address(
+                &self.vault_program_id,
+                vault,
+                operator,
+            )
+            .0;
+
+            let vault_operator_delegation: VaultOperatorDelegation = self
+                .get_vault_program_account(&vault_operator_delegation_pubkey)
+                .await?;
+
+            // Check if operator is NOT already updated (inverted logic)
+            if vault_operator_delegation
+                .check_is_already_updated(slot, config.epoch_length())
+                .is_ok()
+            {
+                let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
+                ix_builder
+                    .config(self.config_address)
+                    .vault(*vault)
+                    .operator(**operator)
+                    .vault_operator_delegation(vault_operator_delegation_pubkey)
+                    .vault_update_state_tracker(tracker_pubkey);
+
+                let mut ix = ix_builder.instruction();
+                ix.program_id = self.vault_program_id;
+
+                instructions.push(ix);
+            }
+        }
+
+        Ok(instructions)
+    }
+
     /// Cranks the [`VaultUpdateStateTracker`] for a specific epoch and list of operators.
+    ///
+    /// - Try to crank maximum 10 times
+    /// - Batch multiple operator cranks per one transaction
+    /// - Cycle send transaction, check `is_already_updated`, then retry
     ///
     /// # Returns
     ///
@@ -331,11 +492,15 @@ impl<'a> VaultHandler<'a> {
     /// was successful or not.
     pub async fn crank(
         &self,
-        epoch: u64,
+        slot: u64,
+        config: &Config,
+        payer: &Keypair,
         vault: &Pubkey,
         operators: &[Pubkey],
         tracker_pubkey: Pubkey,
     ) -> anyhow::Result<()> {
+        let rpc_client = self.get_rpc_client();
+        let epoch = get_epoch(slot, config.epoch_length())?;
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
 
         if operators.is_empty() || tracker.all_operators_updated(operators.len() as u64)? {
@@ -360,7 +525,6 @@ impl<'a> VaultHandler<'a> {
                 .take(end_index)
                 .skip(start_index)
                 .collect::<Vec<_>>()
-                .into_iter()
         } else {
             // Crank through operators from start index to operators.len() and then 0 to end_index
             operators
@@ -368,32 +532,74 @@ impl<'a> VaultHandler<'a> {
                 .skip(start_index)
                 .chain(operators.iter().take(end_index))
                 .collect::<Vec<_>>()
-                .into_iter()
         };
 
         // Need to send each transaction in serial since strict sequence is required
-        for operator in operators_iter {
-            let vault_operator_delegation = VaultOperatorDelegation::find_program_address(
-                &self.vault_program_id,
-                vault,
-                operator,
-            )
-            .0;
+        let instructions = self
+            .retrieve_non_updated_operators(&operators_iter, slot, config, vault, tracker_pubkey)
+            .await?;
 
-            let mut ix_builder = CrankVaultUpdateStateTrackerBuilder::new();
-            ix_builder
-                .config(self.config_address)
-                .vault(*vault)
-                .operator(*operator)
-                .vault_operator_delegation(vault_operator_delegation)
-                .vault_update_state_tracker(tracker_pubkey);
-            let mut ix = ix_builder.instruction();
-            ix.program_id = self.vault_program_id;
-
-            self.send_and_confirm_transaction_with_retry(vec![ix])
-                .await?;
+        if instructions.is_empty() {
+            return Ok(());
         }
 
+        let txs = self
+            .split_instructions_by_size(&instructions, payer, 1232)
+            .await?;
+
+        for (i, tx) in txs.iter().enumerate() {
+            let mut retries = 0;
+
+            // Retry loop for current transaction
+            loop {
+                match rpc_client
+                    .send_and_confirm_transaction_with_spinner_and_commitment(
+                        tx,
+                        CommitmentConfig::confirmed(),
+                    )
+                    .await
+                {
+                    Ok(_) => {
+                        info!(
+                            "✅ Transaction {}/{} completed successfully",
+                            i + 1,
+                            txs.len()
+                        );
+                        break; // Success - move to next transaction
+                    }
+                    Err(err) => {
+                        retries += 1;
+
+                        if retries <= MAX_RETRIES {
+                            info!(
+                            "⚠️  Transaction {}/{} failed (attempt {}/{}), retrying in 1s: {:?}",
+                            i + 1, txs.len(), retries, MAX_RETRIES, err
+                        );
+                            sleep(Duration::from_secs(1)).await;
+                        } else {
+                            error!(
+                                "❌ Transaction {}/{} failed permanently after {} retries: {:?}",
+                                i + 1,
+                                txs.len(),
+                                MAX_RETRIES,
+                                err
+                            );
+                            return Err(anyhow::anyhow!(
+                                "Transaction {} failed after {} retries: {}",
+                                i + 1,
+                                MAX_RETRIES,
+                                err
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        info!(
+            "🎉 All {} transactions completed successfully for vault cranking!",
+            txs.len()
+        );
         Ok(())
     }
 
@@ -404,6 +610,7 @@ impl<'a> VaultHandler<'a> {
     /// Returns `anyhow::Result<()>` indicating success or failure of closing.
     pub async fn close_vault_update_state_tracker(
         &self,
+        payer: &Keypair,
         vault: &Pubkey,
         epoch: u64,
         tracker_pubkey: Pubkey,
@@ -412,13 +619,13 @@ impl<'a> VaultHandler<'a> {
         close_ix_builder
             .config(self.config_address)
             .vault(*vault)
-            .payer(self.payer.pubkey())
+            .payer(payer.pubkey())
             .vault_update_state_tracker(tracker_pubkey)
             .ncn_epoch(epoch);
         let mut close_ix = close_ix_builder.instruction();
         close_ix.program_id = self.vault_program_id;
 
-        self.send_and_confirm_transaction_with_retry(vec![close_ix])
+        self.send_and_confirm_transaction_with_retry(payer, vec![close_ix])
             .await?;
         Ok(())
     }

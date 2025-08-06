@@ -226,13 +226,13 @@ pub enum VaultActions {
         /// The Vault pubkey
         vault: Pubkey,
 
-        /// Path to the old admin keypair file
+        /// Filepath or URL to a keypair of old admin
         #[arg(long)]
-        old_admin_keypair: PathBuf,
+        old_admin_keypair: String,
 
-        /// Path to the new admin keypair file
+        /// Filepath or URL to a keypair of new admin
         #[arg(long)]
-        new_admin_keypair: PathBuf,
+        new_admin_keypair: String,
     },
     /// Sets the deposit capacity in the vault
     SetCapacity {

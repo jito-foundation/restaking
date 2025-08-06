@@ -1,7 +1,7 @@
 # Jito Staking Manager (JSM)
 
 [![Build Status](https://github.com/jito-foundation/restaking/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/jito-foundation/restaking/actions)
-[![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![codecov](https://codecov.io/gh/jito-foundation/restaking/branch/master/graph/badge.svg?token=Q28COAGZ89)](https://codecov.io/gh/jito-foundation/restaking)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
@@ -10,9 +10,12 @@ Jito Restaking is a next-generation restaking platform for Solana and SVM enviro
 ## Table of Contents
 
 - [Features](#features)
+- [Documentation](#documentation)
+- [SDKs](#sdks)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Running Tests](#running-tests)
+- [Releasing](#releasing)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -21,6 +24,18 @@ Jito Restaking is a next-generation restaking platform for Solana and SVM enviro
 - Universal framework for staking, restaking, and liquid restaking
 - VRT construction and management
 - Flexible NCN and operator management
+
+## Documentation
+
+The comprehensive documentation for Stakenet has moved to [jito.network/docs/restaking/jito-restaking-overview](https://www.jito.network/docs/restaking/jito-restaking-overview/).
+The source files are maintained in the [Jito Omnidocs repository](https://github.com/jito-foundation/jito-omnidocs/tree/master/restaking).
+
+## SDKs
+
+We provide TypeScript SDKs for interacting with the Jito Restaking system:
+
+- 📦 [`@jito-foundation/restaking-sdk`](https://www.npmjs.com/package/@jito-foundation/restaking-sdk) – TypeScript SDK for interacting with the Jito Restaking program.
+- 📦 [`@jito-foundation/vault-sdk`](https://www.npmjs.com/package/@jito-foundation/vault-sdk) – TypeScript SDK for interacting with the Jito Vault program.
 
 ## Installation
 
@@ -97,4 +112,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the Business Source License 1.1 - see the [LICENSE](./LICENSE.md) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+

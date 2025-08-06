@@ -1,7 +1,7 @@
 [package]
 name = "jito-jsm-core"
 description = "JSM Core library"
-version = { workspace = true }
+version = "0.0.5"
 authors = { workspace = true }
 repository = { workspace = true }
 homepage = { workspace = true }
@@ -14,6 +14,7 @@ borsh = { workspace = true }
 bytemuck = { workspace = true }
 jito-bytemuck = { workspace = true }
 shank = { workspace = true }
+solana-decode-error = { workspace = true }
 solana-program = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }

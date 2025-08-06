@@ -9,7 +9,6 @@ CARGO_SBF := cargo-build-sbf
 CARGO_NEXTEST := cargo nextest
 YARN := yarn
 SHANK_CLI := ./target/release/jito-shank-cli
-RESTAKING_CLI := ./target/release/jito-restaking-cli
 
 # Default target
 .PHONY: all
@@ -25,7 +24,6 @@ lint:
 # Code generation
 .PHONY: generate-code
 generate-code: build-release
-	$(RESTAKING_CLI) --markdown-help > ./docs/_tools/00_cli.md
 	$(SHANK_CLI)
 	$(YARN) install
 	$(YARN) generate-clients

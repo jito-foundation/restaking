@@ -1,0 +1,203 @@
+name: Build and Upload Binaries to Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to upload binaries to (e.g. jito-restaking-cli-v0.1.0)'
+        required: true
+        type: string
+      package_path:
+        description: 'Path to the package'
+        required: true
+        default: 'cli'
+        type: choice
+        options:
+          - cli
+      publish_release:
+        description: 'Publish the release after uploading binaries'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: x86_64-pc-windows-msvc
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: refs/tags/${{ github.event.inputs.release_tag }}
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.84.1
+          targets: ${{ matrix.target }}
+          override: true
+
+      - name: Install system dependencies (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "build-${{ matrix.target }}-${{ inputs.package_path }}"
+      
+      - name: Extract crate name and version
+        id: crate_info
+        shell: bash
+        run: |
+          CRATE_NAME=$(grep -m1 '^name =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          VERSION=$(grep -m1 '^version =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building $CRATE_NAME version $VERSION for ${{ matrix.target }}"
+      
+      - name: Build
+        working-directory: ${{ inputs.package_path }}
+        run: cargo build --release --target ${{ matrix.target }}
+      
+      - name: Prepare binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          CRATE_NAME="${{ steps.crate_info.outputs.crate_name }}"
+          VERSION="${{ steps.crate_info.outputs.version }}"
+          BINARY_NAME="${CRATE_NAME}-v${VERSION}-${{ matrix.target }}"
+          
+          echo "Building binary with new version: $VERSION"
+          
+          # Copy binary to root with appropriate name
+          cp ./target/${{ matrix.target }}/release/${CRATE_NAME} ${BINARY_NAME}
+          
+          # Create checksum
+          shasum -a 256 ${BINARY_NAME} > ${BINARY_NAME}.sha256
+      
+      - name: Prepare binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $CRATE_NAME = "${{ steps.crate_info.outputs.crate_name }}"
+          $VERSION = "${{ steps.crate_info.outputs.version }}"
+          $BINARY_NAME = "${CRATE_NAME}-v${VERSION}-${{ matrix.target }}.exe"
+          
+          Write-Host "Building binary with new version: $VERSION"
+          
+          # Copy binary to root with appropriate name
+          Copy-Item "./target/${{ matrix.target }}/release/${CRATE_NAME}.exe" -Destination $BINARY_NAME
+          
+          # Create checksum
+          $hash = Get-FileHash -Path $BINARY_NAME -Algorithm SHA256
+          $hash.Hash | Out-File -FilePath "${BINARY_NAME}.sha256"
+      
+      - name: Upload binary artifacts (Unix)
+        if: matrix.os != 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}.sha256
+          retention-days: 7
+      
+      - name: Upload binary artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}.exe
+            ${{ steps.crate_info.outputs.crate_name }}-v${{ steps.crate_info.outputs.version }}-${{ matrix.target }}.exe.sha256
+          retention-days: 7
+
+  publish-release:
+    name: Publish Release
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_tag }}
+      
+      - name: Extract release information
+        id: release_info
+        shell: bash
+        run: |
+          CRATE_NAME=$(basename "${{ inputs.package_path }}")
+          VERSION=$(grep -m1 'version =' ${{ inputs.package_path }}/Cargo.toml | cut -d '"' -f2)
+          echo "crate_name=$CRATE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create release directory
+        run: mkdir -p release-binaries
+      
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-unknown-linux-gnu
+          path: release-binaries
+      
+      - name: Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-apple-darwin
+          path: release-binaries
+      
+      - name: Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-pc-windows-msvc
+          path: release-binaries
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "" >> RELEASE_NOTES.md
+          echo "## Binaries" >> RELEASE_NOTES.md
+          echo "- Linux (x86_64-unknown-linux-gnu)" >> RELEASE_NOTES.md
+          echo "- macOS (x86_64-apple-darwin)" >> RELEASE_NOTES.md
+          echo "- Windows (x86_64-pc-windows-msvc)" >> RELEASE_NOTES.md
+          
+          if [ -f "CHANGELOG.md" ]; then
+            echo "" >> RELEASE_NOTES.md
+            echo "## Changelog" >> RELEASE_NOTES.md
+            # Extract the relevant section from CHANGELOG.md if it exists
+            grep -A 50 "^## ${{ steps.release_info.outputs.version }}" CHANGELOG.md | grep -B 50 -m 2 "^## " | head -n -1 >> RELEASE_NOTES.md || true
+          fi
+      
+      - name: Update release with binaries
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.release_tag }}
+          artifacts: "./release-binaries/*"
+          artifactErrorsFailBuild: false
+          allowUpdates: true
+          omitBody: true  # Don't update the release body/notes
+          omitName: true  # Don't update the release name
+          draft: ${{ github.event.inputs.publish_release != 'true' }}
+          
+      - name: Publish Release
+        if: github.event.inputs.publish_release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ github.event.inputs.release_tag }}" --draft=false

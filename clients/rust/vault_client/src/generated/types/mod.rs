@@ -3,6 +3,7 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
+//!
 
 pub(crate) mod r#config_admin_role;
 pub(crate) mod r#create_metadata_account_args_v3;

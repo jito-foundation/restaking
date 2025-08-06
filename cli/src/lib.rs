@@ -6,6 +6,7 @@ use cli_config::CliConfig;
 use cli_signer::CliSigner;
 use jito_restaking_client_common::log::PrettyDisplay;
 use log::print_base58_tx;
+use serde::Serialize;
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
@@ -30,6 +31,10 @@ pub(crate) trait CliHandler {
 
     fn print_tx(&self) -> bool;
 
+    fn print_json(&self) -> bool;
+
+    fn print_json_with_reserves(&self) -> bool;
+
     fn signer(&self) -> anyhow::Result<&CliSigner> {
         self.cli_config()
             .signer
@@ -47,6 +52,35 @@ pub(crate) trait CliHandler {
             self.cli_config().rpc_url.clone(),
             self.cli_config().commitment,
         )
+    }
+
+    /// Resolves a signer from a keypair path, creating a new file signer if needed
+    ///
+    /// This function:
+    /// 1. Checks if the keypair path starts with "usb://"
+    /// 2. If it does, returns the existing CLI signer
+    /// 3. If not, creates a new CliSigner from the file path
+    fn resolve_keypair<'a>(
+        &'a self,
+        keypair_path: &str,
+        owned_signer: &'a mut Option<CliSigner>,
+    ) -> anyhow::Result<&'a CliSigner> {
+        if keypair_path.starts_with("usb://") {
+            let signer = self.signer()?;
+            match signer.remote_keypair {
+                Some(_) => Ok(signer),
+                None => {
+                    let signer = CliSigner::new_ledger(keypair_path);
+                    *owned_signer = Some(signer);
+                    Ok(owned_signer.as_ref().unwrap())
+                }
+            }
+        } else {
+            let signer = CliSigner::new_keypair_from_path(keypair_path)?;
+            *owned_signer = Some(signer);
+
+            Ok(owned_signer.as_ref().unwrap())
+        }
     }
 
     /// Creates an RPC program accounts configuration for fetching accounts of type `T` with an optional public key filter.
@@ -143,5 +177,89 @@ pub(crate) trait CliHandler {
         }
 
         Ok(())
+    }
+
+    /// Prints a value either as JSON or using its pretty display format.
+    ///
+    /// This function provides flexible output formatting for any type that implements both
+    /// [`Serialize`] and [`PrettyDisplay`]. It determines the output format based on the
+    /// configuration of the containing struct.
+    ///
+    /// # Format options:
+    /// - Default: Uses the [`PrettyDisplay`] trait to format output.
+    /// - `--print-json`: Prints account information in JSON format but automatically
+    ///   filters out the `reserved` fields.
+    /// - `--print-json-with-reserves`: Prints the full account information in JSON format with
+    ///   reserved space.
+    fn print_out<T>(
+        &self,
+        index: Option<usize>,
+        address: Option<&Pubkey>,
+        value: &T,
+    ) -> anyhow::Result<()>
+    where
+        T: ?Sized + Serialize + PrettyDisplay,
+    {
+        match (self.print_json(), self.print_json_with_reserves()) {
+            (true, true) => {
+                return Err(anyhow!("Conflicting flags: both --print-json and --print-json-with-reserves are enabled. Please enable only one of these flags."));
+            }
+            (true, false) => {
+                let mut json_value = serde_json::to_value(value)?;
+                self.remove_reserved_fields(&mut json_value);
+
+                let mut account_obj = serde_json::Map::new();
+                if let Some(index) = index {
+                    account_obj.insert(
+                        "index".to_string(),
+                        serde_json::Value::String(index.to_string()),
+                    );
+                }
+                if let Some(address) = address {
+                    account_obj.insert(
+                        "address".to_string(),
+                        serde_json::Value::String(address.to_string()),
+                    );
+                }
+                account_obj.insert("data".to_string(), json_value);
+
+                let json_string = serde_json::to_string_pretty(&account_obj)?;
+
+                println!("{json_string}");
+            }
+            (false, true) => {
+                let json_string = serde_json::to_string_pretty(&value)?;
+
+                println!("{json_string}");
+            }
+            (false, false) => {
+                let type_name = std::any::type_name::<T>();
+                let msg = address.map_or("".to_string(), |address| {
+                    format!("{type_name} at {address}")
+                });
+                info!("{msg}");
+                info!("{}", value.pretty_display());
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Recursively removes all "reserved" fields from a JSON value
+    fn remove_reserved_fields(&self, value: &mut serde_json::Value) {
+        if let serde_json::Value::Object(map) = value {
+            map.remove("reserved");
+            map.remove("reserved_space");
+
+            // Recursively process all remaining object values
+            for (_, v) in map.iter_mut() {
+                self.remove_reserved_fields(v);
+            }
+        } else if let serde_json::Value::Array(arr) = value {
+            // Recursively process array elements
+            for item in arr.iter_mut() {
+                self.remove_reserved_fields(item);
+            }
+        }
     }
 }
