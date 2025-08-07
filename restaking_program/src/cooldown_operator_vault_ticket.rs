@@ -47,5 +47,11 @@ pub fn process_cooldown_operator_vault_ticket(
         return Err(RestakingError::OperatorVaultTicketFailedCooldown.into());
     }
 
+    msg!(
+        "COOLDOWN OPERATOR_VAULT_TICKET: Operator {} deactivating Vault {}",
+        operator_vault_ticket.operator,
+        operator_vault_ticket.vault,
+    );
+
     Ok(())
 }

@@ -1,13 +1,17 @@
 [package]
 name = "jito-restaking-cli"
 description = "Jito Restaking CLI"
-version = "1.0.0"
+version = "1.0.1"
 authors = { workspace = true }
 repository = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
 edition = { workspace = true }
-readme = { workspace = true }
+readme = "./README.md"
+
+[[bin]]
+name = "jito-restaking-cli"
+path = "src/bin/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
@@ -41,7 +45,3 @@ spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 uriparse = { workspace = true }
-
-[[bin]]
-name = "jito-restaking-cli"
-path = "src/bin/main.rs"

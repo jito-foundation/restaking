@@ -2,7 +2,6 @@
 members = [
     "account_traits_derive",
     "bytemuck",
-    "cli",
     "clients/rust/common",
     "clients/rust/restaking_client",
     "clients/rust/vault_client",
@@ -15,19 +14,10 @@ members = [
     "shank-cli",
     "vault_core",
     "vault_program",
-    "vault_sdk"]
+    "vault_sdk",
+]
 
 resolver = "2"
-
-[profile.release]
-overflow-checks = true
-lto = "fat"
-codegen-units = 1
-
-[profile.release.build-override]
-opt-level = 3
-incremental = false
-codegen-units = 1
 
 [workspace.package]
 version = "0.0.5"
@@ -50,11 +40,11 @@ chrono = "0.4.38"
 clap = { version = "4.5.16", features = ["derive", "env"] }
 clap-markdown = { version = "0.1.4" }
 dotenvy = "0.15.7"
-envfile = "0.2.1"
 env_logger = "0.10.2"
+envfile = "0.2.1"
 futures = "0.3.31"
-jito-bytemuck = { path = "bytemuck", version = "=0.0.5" }
 jito-account-traits-derive = { path = "account_traits_derive", version = "=0.0.5" }
+jito-bytemuck = { path = "bytemuck", version = "=0.0.5" }
 jito-jsm-core = { path = "core", version = "=0.0.5" }
 jito-restaking-client = { path = "clients/rust/restaking_client", version = "=0.0.5" }
 jito-restaking-client-common = { path = "clients/rust/common", version = "=0.0.5" }
@@ -82,10 +72,10 @@ solana-decode-error = "~2.2"
 solana-metrics = "~2.2"
 solana-program = "~2.2"
 solana-program-test = "~2.2"
-solana-sdk = "~2.2"
 solana-remote-wallet = "~2.2"
 solana-rpc-client = "~2.2"
 solana-rpc-client-api = "~2.2"
+solana-sdk = "~2.2"
 solana-security-txt = "1.1.1"
 spl-associated-token-account = { version = "6.0.0", features = ["no-entrypoint"] }
 spl-token = { version = "7.0.0", features = ["no-entrypoint"] }
@@ -107,3 +97,13 @@ check-cfg = [
     'cfg(target_os, values("solana"))',
     'cfg(feature, values("frozen-abi", "no-entrypoint"))',
 ]
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1

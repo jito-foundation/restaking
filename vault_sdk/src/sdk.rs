@@ -7,7 +7,7 @@ use solana_program::{
 
 use crate::{
     inline_mpl_token_metadata::{self},
-    instruction::{VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
+    instruction::{ConfigAdminRole, VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
 };
 
 pub fn initialize_config(
@@ -817,5 +817,26 @@ pub fn set_config_admin(
         program_id: *program_id,
         accounts,
         data: VaultInstruction::SetConfigAdmin.try_to_vec().unwrap(),
+    }
+}
+
+pub fn set_config_secondary_admin(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    old_admin: &Pubkey,
+    new_admin: &Pubkey,
+    role: ConfigAdminRole,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*config, false),
+        AccountMeta::new_readonly(*old_admin, true),
+        AccountMeta::new_readonly(*new_admin, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::SetConfigSecondaryAdmin(role)
+            .try_to_vec()
+            .unwrap(),
     }
 }

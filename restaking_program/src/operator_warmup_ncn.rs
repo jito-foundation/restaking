@@ -42,5 +42,11 @@ pub fn process_operator_warmup_ncn(program_id: &Pubkey, accounts: &[AccountInfo]
         return Err(RestakingError::OperatorWarmupNcnFailed.into());
     }
 
+    msg!(
+        "WARMUP NCN_OPERATOR_STATE: Operator {} activating NCN {}",
+        ncn_operator_state.operator,
+        ncn_operator_state.ncn,
+    );
+
     Ok(())
 }

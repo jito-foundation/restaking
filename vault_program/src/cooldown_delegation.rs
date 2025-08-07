@@ -57,5 +57,12 @@ pub fn process_cooldown_delegation(
         .cooldown(amount)?;
     vault.delegation_state.cooldown(amount)?;
 
+    // msg!(
+    //     "COOLDOWN DELEGATION: Vault {} undelegating {} tokens from Operator {}",
+    //     vault_info.key,
+    //     amount,
+    //     operator.key
+    // );
+
     Ok(())
 }
