@@ -43,5 +43,11 @@ pub fn process_cooldown_ncn_vault_ticket(
         return Err(RestakingError::NcnVaultTicketFailedCooldown.into());
     }
 
+    msg!(
+        "COOLDOWN NCN_VAULT_TICKET: NCN {} deactivating Vault {}",
+        ncn_vault_ticket.ncn,
+        ncn_vault_ticket.vault,
+    );
+
     Ok(())
 }

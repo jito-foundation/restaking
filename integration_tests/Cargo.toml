@@ -9,6 +9,9 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[dependencies]
+log = "0.4.21"
+
 [dev-dependencies]
 borsh = { workspace = true }
 jito-bytemuck = { workspace = true }
@@ -30,6 +33,3 @@ spl-token-2022 = { workspace = true }
 test-case = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-
-[dependencies]
-log = "0.4.21"

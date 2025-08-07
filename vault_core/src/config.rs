@@ -177,6 +177,16 @@ impl Config {
         Ok(fee)
     }
 
+    /// Check admin validity and signature
+    #[inline(always)]
+    pub fn check_admin(&self, admin: &Pubkey) -> Result<(), VaultError> {
+        if self.admin.ne(admin) {
+            msg!("Config admin does not match the provided admin");
+            return Err(VaultError::ConfigAdminInvalid);
+        }
+        Ok(())
+    }
+
     pub fn seeds() -> Vec<Vec<u8>> {
         vec![b"config".to_vec()]
     }
@@ -309,5 +319,16 @@ mod tests {
             config.set_fee_bump_bps(MAX_BPS + 1),
             Err(VaultError::VaultFeeCapExceeded)
         );
+    }
+
+    #[test]
+    fn test_check_admin() {
+        let admin = Pubkey::new_unique();
+        let bad_admin = Pubkey::new_unique();
+
+        let config = Config::new(admin, Pubkey::new_unique(), Pubkey::new_unique(), 0, 0);
+
+        assert!(config.check_admin(&admin).is_ok());
+        assert!(config.check_admin(&bad_admin).is_err());
     }
 }
