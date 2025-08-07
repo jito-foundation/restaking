@@ -135,8 +135,8 @@ jobs:
             echo "release_name=Jito Restaking CLI" >> $GITHUB_OUTPUT
           elif [ "${{ inputs.crate }}" == "shank-cli" ]; then
             echo "directory=shank-cli" >> $GITHUB_OUTPUT
-            echo "package_name=jito-restaking-shank-cli" >> $GITHUB_OUTPUT
-            echo "release_name=Jito Restaking Shank CLI" >> $GITHUB_OUTPUT
+            echo "package_name=jito-shank-cli" >> $GITHUB_OUTPUT
+            echo "release_name=Jito Shank CLI" >> $GITHUB_OUTPUT
           fi
 
       - name: Publish Crate
