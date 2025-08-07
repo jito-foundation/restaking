@@ -9,6 +9,10 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = "./README.md"
 
+[[bin]]
+name = "jito-restaking-cli"
+path = "src/bin/main.rs"
+
 [dependencies]
 anyhow = { workspace = true }
 base64 = { workspace = true }
@@ -41,7 +45,3 @@ spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 uriparse = { workspace = true }
-
-[[bin]]
-name = "jito-restaking-cli"
-path = "src/bin/main.rs"
