@@ -3,6 +3,14 @@ name: Publish CLI
 on:
   workflow_dispatch:
     inputs:
+      crate:
+        description: Crate to publish
+        required: true
+        default: cli
+        type: choice
+        options:
+          - cli
+          - shank-idl
       level:
         description: Version increment level
         required: true
@@ -80,8 +88,8 @@ jobs:
         env:
           SBF_OUT_DIR: ${{ github.workspace }}/target/sbf-solana-solana/release
 
-  publish_cli:
-    name: Publish CLI
+  publish_crate:
+    name: Publish ${{ inputs.crate }} Crate
     runs-on: ubuntu-latest
     needs: test_sbf
     env:
@@ -103,7 +111,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: "restaking-publish-${{ inputs.package_path }}"
+          key: "restaking-publish-${{ inputs.crate }}"
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
@@ -118,9 +126,22 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Publish CLI Crate
+      - name: Set crate directory
+        id: crate_info
+        run: |
+          if [ "${{ inputs.crate }}" == "cli" ]; then
+            echo "directory=cli" >> $GITHUB_OUTPUT
+            echo "package_name=jito-restaking-cli" >> $GITHUB_OUTPUT
+            echo "release_name=Jito Restaking CLI" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.crate }}" == "shank-idl" ]; then
+            echo "directory=shank-idl" >> $GITHUB_OUTPUT
+            echo "package_name=jito-restaking-shank-idl" >> $GITHUB_OUTPUT
+            echo "release_name=Jito Restaking Shank IDL" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish Crate
         id: publish
-        working-directory: cli
+        working-directory: ${{ steps.crate_info.outputs.directory }}
         run: |
           OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
           
@@ -134,19 +155,19 @@ jobs:
           
           echo "old_version=${OLD_VERSION}" >> $GITHUB_OUTPUT
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
-          echo "git_tag=v${NEW_VERSION}-cli" >> $GITHUB_OUTPUT
+          echo "git_tag=v${NEW_VERSION}-${{ inputs.crate }}" >> $GITHUB_OUTPUT
 
-      - name: Create CLI Release
+      - name: Create Release
         if: inputs.dry_run != 'true'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.publish.outputs.git_tag }}
-          name: "Jito Restaking CLI v${{ steps.publish.outputs.new_version }}"
+          name: "${{ steps.crate_info.outputs.release_name }} v${{ steps.publish.outputs.new_version }}"
           body: |
-            ## CLI Release v${{ steps.publish.outputs.new_version }}
+            ## ${{ steps.crate_info.outputs.release_name }} Release v${{ steps.publish.outputs.new_version }}
             
             ### Installation
             ```bash
-            cargo install jito-restaking-cli --version ${{ steps.publish.outputs.new_version }}
+            cargo install ${{ steps.crate_info.outputs.package_name }} --version ${{ steps.publish.outputs.new_version }}
             ```
           makeLatest: true
