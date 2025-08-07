@@ -1,0 +1,39 @@
+name: Certora Prover (Restaking)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+ certora_run_restaking_program:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Apply Certora Patch
+        run: git apply certora/certora-mocks.patch
+      - name: Submit verification jobs to Certora Prover
+        uses: Certora/certora-run-action@v1
+        with:
+          configurations: |-
+            integrity.conf 
+            toggle-assert-false-rules.conf 
+            toggle.conf 
+            loader-assert-false-rules.conf 
+            loader.conf 
+          job-name: "restaking_program rules"
+          ecosystem: solana
+          working-directory: restaking_program/src/certora/confs
+          certora-key: ${{ secrets.CERTORAKEY }}
+          certora-sbf-options: "-vvv --tools-version=v1.43"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,1272 @@
+diff --git a/core/src/lib.rs b/core/src/lib.rs
+index 9582842..1724530 100644
+--- a/core/src/lib.rs
++++ b/core/src/lib.rs
+@@ -27,6 +27,7 @@ pub mod certora;
+ /// # Returns
+ /// * `ProgramResult` - The result of the operation
+ #[inline(always)]
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::lib::create_account))]
+ pub fn create_account<'a, 'info>(
+     payer: &'a AccountInfo<'info>,
+     new_account: &'a AccountInfo<'info>,
+@@ -93,6 +94,7 @@ pub fn create_account<'a, 'info>(
+ }
+ 
+ /// Closes the program account
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn close_program_account<'a>(
+     program_id: &Pubkey,
+     account_to_close: &AccountInfo<'a>,
+diff --git a/restaking_program/src/cooldown_ncn_vault_slasher_ticket.rs b/restaking_program/src/cooldown_ncn_vault_slasher_ticket.rs
+index aca45ce..90bfeb3 100644
+--- a/restaking_program/src/cooldown_ncn_vault_slasher_ticket.rs
++++ b/restaking_program/src/cooldown_ncn_vault_slasher_ticket.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::CooldownNcnVaultSlasherTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_cooldown_ncn_vault_slasher_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/cooldown_ncn_vault_ticket.rs b/restaking_program/src/cooldown_ncn_vault_ticket.rs
+index ba373bf..935807f 100644
+--- a/restaking_program/src/cooldown_ncn_vault_ticket.rs
++++ b/restaking_program/src/cooldown_ncn_vault_ticket.rs
+@@ -8,6 +8,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::CooldownNcnVaultTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_cooldown_ncn_vault_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/cooldown_operator_vault_ticket.rs b/restaking_program/src/cooldown_operator_vault_ticket.rs
+index 8e1cd57..739eaff 100644
+--- a/restaking_program/src/cooldown_operator_vault_ticket.rs
++++ b/restaking_program/src/cooldown_operator_vault_ticket.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::CooldownOperatorVaultTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_cooldown_operator_vault_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/initialize_config.rs b/restaking_program/src/initialize_config.rs
+index f2be423..0375c67 100644
+--- a/restaking_program/src/initialize_config.rs
++++ b/restaking_program/src/initialize_config.rs
+@@ -14,6 +14,7 @@ use solana_program::{
+ 
+ /// Initializes the global configuration for the restaking program
+ /// [`crate::RestakingInstruction::InitializeConfig`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_config(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, admin, vault_program, system_program] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/restaking_program/src/initialize_ncn.rs b/restaking_program/src/initialize_ncn.rs
+index 20bd8a0..77808e3 100644
+--- a/restaking_program/src/initialize_ncn.rs
++++ b/restaking_program/src/initialize_ncn.rs
+@@ -14,6 +14,7 @@ use solana_program::{
+ 
+ /// Initializes an NCN and associated accounts
+ /// [`crate::RestakingInstruction::InitializeNcn`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, ncn, admin, base, system_program] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/restaking_program/src/initialize_ncn_operator_state.rs b/restaking_program/src/initialize_ncn_operator_state.rs
+index 48ac0f0..2472a14 100644
+--- a/restaking_program/src/initialize_ncn_operator_state.rs
++++ b/restaking_program/src/initialize_ncn_operator_state.rs
+@@ -18,6 +18,7 @@ use solana_program::{
+ /// The operator must have opted-in to the NCN before the NCN opts-in to the operator.
+ ///
+ /// [`crate::RestakingInstruction::InitializeNcnOperatorState`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_ncn_operator_state(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/initialize_ncn_vault_slasher_ticket.rs b/restaking_program/src/initialize_ncn_vault_slasher_ticket.rs
+index 6dd4ef0..b2aed09 100644
+--- a/restaking_program/src/initialize_ncn_vault_slasher_ticket.rs
++++ b/restaking_program/src/initialize_ncn_vault_slasher_ticket.rs
+@@ -16,6 +16,7 @@ use solana_program::{
+     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_ncn_vault_slasher_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/initialize_ncn_vault_ticket.rs b/restaking_program/src/initialize_ncn_vault_ticket.rs
+index bb727f8..55b21a8 100644
+--- a/restaking_program/src/initialize_ncn_vault_ticket.rs
++++ b/restaking_program/src/initialize_ncn_vault_ticket.rs
+@@ -17,6 +17,7 @@ use solana_program::{
+ /// the vault program and adds the NCN to the vault's NCN list.
+ ///
+ /// [`crate::RestakingInstruction::InitializeNcnVaultTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_ncn_vault_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/initialize_operator.rs b/restaking_program/src/initialize_operator.rs
+index f10e3e6..42bb3d0 100644
+--- a/restaking_program/src/initialize_operator.rs
++++ b/restaking_program/src/initialize_operator.rs
+@@ -14,6 +14,7 @@ use solana_program::{
+ 
+ /// Initializes a node operator and associated accounts.
+ /// [`crate::RestakingInstruction::InitializeOperator`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_operator(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/initialize_operator_vault_ticket.rs b/restaking_program/src/initialize_operator_vault_ticket.rs
+index 9043c84..3b5d374 100644
+--- a/restaking_program/src/initialize_operator_vault_ticket.rs
++++ b/restaking_program/src/initialize_operator_vault_ticket.rs
+@@ -20,6 +20,7 @@ use solana_program::{
+ /// This method is permissioned to the node operator admin.
+ ///
+ /// [`crate::RestakingInstruction::InitializeOperatorVaultTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_operator_vault_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/ncn_cooldown_operator.rs b/restaking_program/src/ncn_cooldown_operator.rs
+index 2b12cfb..77ff281 100644
+--- a/restaking_program/src/ncn_cooldown_operator.rs
++++ b/restaking_program/src/ncn_cooldown_operator.rs
+@@ -12,6 +12,7 @@ use solana_program::{
+ /// The NCN admin can remove a node operator from the NCN.
+ /// This method is permissioned to the NCN admin.
+ /// [`crate::RestakingInstruction::NcnCooldownOperator`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_ncn_cooldown_operator(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/ncn_delegate_token_account.rs b/restaking_program/src/ncn_delegate_token_account.rs
+index 8d156f9..76ca7f9 100644
+--- a/restaking_program/src/ncn_delegate_token_account.rs
++++ b/restaking_program/src/ncn_delegate_token_account.rs
+@@ -17,6 +17,7 @@ use solana_program::{
+ ///
+ /// # Returns
+ /// * `ProgramResult` - Returns `Ok(())` if the delegation is successful, otherwise returns an appropriate [`ProgramError`].
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_ncn_delegate_token_account(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/ncn_set_admin.rs b/restaking_program/src/ncn_set_admin.rs
+index 4c5c549..026f2d0 100644
+--- a/restaking_program/src/ncn_set_admin.rs
++++ b/restaking_program/src/ncn_set_admin.rs
+@@ -7,6 +7,7 @@ use solana_program::{
+     pubkey::Pubkey,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_ncn_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [ncn, old_admin, new_admin] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/restaking_program/src/ncn_set_secondary_admin.rs b/restaking_program/src/ncn_set_secondary_admin.rs
+index f655960..95c7166 100644
+--- a/restaking_program/src/ncn_set_secondary_admin.rs
++++ b/restaking_program/src/ncn_set_secondary_admin.rs
+@@ -7,6 +7,7 @@ use solana_program::{
+     pubkey::Pubkey,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_ncn_set_secondary_admin(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/ncn_warmup_operator.rs b/restaking_program/src/ncn_warmup_operator.rs
+index c274a40..970bc41 100644
+--- a/restaking_program/src/ncn_warmup_operator.rs
++++ b/restaking_program/src/ncn_warmup_operator.rs
+@@ -10,6 +10,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::NcnWarmupOperator`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_ncn_warmup_operator(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, ncn, operator, ncn_operator_state, ncn_operator_admin] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/restaking_program/src/operator_cooldown_ncn.rs b/restaking_program/src/operator_cooldown_ncn.rs
+index a0d799b..83b8350 100644
+--- a/restaking_program/src/operator_cooldown_ncn.rs
++++ b/restaking_program/src/operator_cooldown_ncn.rs
+@@ -10,6 +10,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::OperatorCooldownNcn`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_operator_cooldown_ncn(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/operator_delegate_token_account.rs b/restaking_program/src/operator_delegate_token_account.rs
+index d3129ef..6cd9bb0 100644
+--- a/restaking_program/src/operator_delegate_token_account.rs
++++ b/restaking_program/src/operator_delegate_token_account.rs
+@@ -18,6 +18,7 @@ use solana_program::{
+ ///
+ /// # Returns
+ /// * `ProgramResult` - Returns `Ok(())` if the delegation is successful, otherwise returns an appropriate `ProgramError`.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_operator_delegate_token_account(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/operator_set_admin.rs b/restaking_program/src/operator_set_admin.rs
+index 34af5a4..bad8010 100644
+--- a/restaking_program/src/operator_set_admin.rs
++++ b/restaking_program/src/operator_set_admin.rs
+@@ -10,6 +10,7 @@ use solana_program::{
+ /// This method is permissioned to the node operator admin and both the old and new admins must sign.
+ ///
+ /// [`crate::RestakingInstruction::OperatorSetAdmin`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_node_operator_admin(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/operator_set_fee.rs b/restaking_program/src/operator_set_fee.rs
+index 22b9336..2d0b227 100644
+--- a/restaking_program/src/operator_set_fee.rs
++++ b/restaking_program/src/operator_set_fee.rs
+@@ -10,6 +10,7 @@ use solana_program::{
+ /// The node operator admin can set a new fee. This method is permissioned to the node operator admin.
+ ///
+ /// [`crate::RestakingInstruction::OperatorSetFee`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_operator_set_fee(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/operator_set_secondary_admin.rs b/restaking_program/src/operator_set_secondary_admin.rs
+index 79d26b0..ed14dd4 100644
+--- a/restaking_program/src/operator_set_secondary_admin.rs
++++ b/restaking_program/src/operator_set_secondary_admin.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ /// This method is permissioned to the node operator admin.
+ ///
+ /// [`crate::RestakingInstruction::OperatorSetSecondaryAdmin`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_operator_secondary_admin(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/operator_warmup_ncn.rs b/restaking_program/src/operator_warmup_ncn.rs
+index 084d48e..927da1c 100644
+--- a/restaking_program/src/operator_warmup_ncn.rs
++++ b/restaking_program/src/operator_warmup_ncn.rs
+@@ -10,6 +10,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::OperatorWarmupNcn`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_operator_warmup_ncn(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, ncn, operator, ncn_operator_state, operator_ncn_admin] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/restaking_program/src/set_config_admin.rs b/restaking_program/src/set_config_admin.rs
+index 2dd760a..c7b204b 100644
+--- a/restaking_program/src/set_config_admin.rs
++++ b/restaking_program/src/set_config_admin.rs
+@@ -8,6 +8,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the set config admin instruction: [`crate::RestakingInstruction::SetConfigAdmin`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_config_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, old_admin, new_admin] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/restaking_program/src/warmup_ncn_vault_slasher_ticket.rs b/restaking_program/src/warmup_ncn_vault_slasher_ticket.rs
+index 4deea18..844508a 100644
+--- a/restaking_program/src/warmup_ncn_vault_slasher_ticket.rs
++++ b/restaking_program/src/warmup_ncn_vault_slasher_ticket.rs
+@@ -12,6 +12,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::WarmupNcnVaultSlasherTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_warmup_ncn_vault_slasher_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/warmup_ncn_vault_ticket.rs b/restaking_program/src/warmup_ncn_vault_ticket.rs
+index 5a3d909..66f8a81 100644
+--- a/restaking_program/src/warmup_ncn_vault_ticket.rs
++++ b/restaking_program/src/warmup_ncn_vault_ticket.rs
+@@ -9,6 +9,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::WarmupNcnVaultTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_warmup_ncn_vault_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/restaking_program/src/warmup_operator_vault_ticket.rs b/restaking_program/src/warmup_operator_vault_ticket.rs
+index 529adcb..34f3732 100644
+--- a/restaking_program/src/warmup_operator_vault_ticket.rs
++++ b/restaking_program/src/warmup_operator_vault_ticket.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ };
+ 
+ /// [`crate::RestakingInstruction::WarmupOperatorVaultTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_warmup_operator_vault_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_core/src/vault.rs b/vault_core/src/vault.rs
+index a468a8b..18f4771 100644
+--- a/vault_core/src/vault.rs
++++ b/vault_core/src/vault.rs
+@@ -666,6 +666,7 @@ impl Vault {
+     }
+ 
+     #[inline(always)]
++    #[cfg_attr(feature = "certora", cvlr::early_panic)]
+     pub fn check_mint_burn_admin(
+         &self,
+         mint_burn_admin: Option<&AccountInfo>,
+@@ -853,6 +854,7 @@ impl Vault {
+     }
+ 
+     /// Checks that reward fee's actual rate is within the expected rate
++    #[cfg(not(feature = "certora"))]
+     pub fn check_reward_fee_effective_rate(
+         &self,
+         st_rewards: u64,
+@@ -943,7 +945,7 @@ impl Vault {
+     }
+ 
+     /// Calculate the amount of tokens collected as a fee for depositing tokens in the vault.
+-    fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
++    pub fn calculate_deposit_fee(&self, vrt_amount: u64) -> Result<u64, VaultError> {
+         let fee = (vrt_amount as u128)
+             .checked_mul(self.deposit_fee_bps() as u128)
+             .map(|x| x.div_ceil(MAX_BPS as u128))
+diff --git a/vault_program/src/add_delegation.rs b/vault_program/src/add_delegation.rs
+index 3ee8160..0122e3e 100644
+--- a/vault_program/src/add_delegation.rs
++++ b/vault_program/src/add_delegation.rs
+@@ -19,6 +19,7 @@ use solana_program::{
+ /// - The amount delegated to the operator must be accurately reported in the VaultOperatorDelegation account.
+ /// - The vault's delegation state must be updated accordingly to ensure it's accurately tracking state across the entire operator delegation set.
+ /// - The amount delegated must be greater than zero.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_add_delegation(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/burn_withdrawal_ticket.rs b/vault_program/src/burn_withdrawal_ticket.rs
+index 9eb2de2..61b56e1 100644
+--- a/vault_program/src/burn_withdrawal_ticket.rs
++++ b/vault_program/src/burn_withdrawal_ticket.rs
+@@ -23,6 +23,7 @@ use spl_token_2022::state::Account;
+ ///
+ /// One should call the [`crate::VaultInstruction::CrankVaultUpdateStateTracker`] instruction before running this instruction
+ /// to ensure that any rewards that were accrued are accounted for.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_burn_withdrawal_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+@@ -61,9 +62,7 @@ pub fn process_burn_withdrawal_ticket(
+         &vault.vrt_mint,
+     )?;
+ 
+-    let ticket_vrt_account =
+-        Account::unpack(&vault_staker_withdrawal_ticket_token_account.data.borrow())?;
+-    let ticket_vrt_amount = ticket_vrt_account.amount;
++    let ticket_vrt_amount = super::utils::spl_token_account_amount(vault_staker_withdrawal_ticket_token_account)?;
+ 
+     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.vrt_mint)?;
+     load_associated_token_account(
+@@ -126,6 +125,8 @@ pub fn process_burn_withdrawal_ticket(
+     drop(vault_staker_withdrawal_ticket_data);
+ 
+     // transfer fee to fee wallet
++    #[cfg(not(feature = "certora"))]
++    {
+     invoke_signed(
+         &transfer(
+             &spl_token::id(),
+@@ -221,6 +222,67 @@ pub fn process_burn_withdrawal_ticket(
+         ],
+         &[&seed_slices],
+     )?;
++    }
++    #[cfg(feature = "certora")]
++    {
++        // transfer fee to fee wallet
++        super::utils::transfer_fee_to_fee_wallet(
++            &spl_token::id(),
++            vault_staker_withdrawal_ticket_token_account,
++            vault_fee_token_account,
++            vault_staker_withdrawal_ticket_info,
++            &seed_slices,
++            vault_fee_amount
++        )?;
++    
++        // Transfer program fee to program fee wallet
++        super::utils::transfer_fee_to_fee_wallet(
++            &spl_token::id(),
++            vault_staker_withdrawal_ticket_token_account,
++            program_fee_token_account,
++            vault_staker_withdrawal_ticket_info,
++            &seed_slices,
++            program_fee_amount
++        )?;
++
++        // burn the VRT tokens
++        super::utils::burn_vrt(
++            &spl_token::id(),
++            vault_staker_withdrawal_ticket_token_account,
++            vrt_mint,
++            vault_staker_withdrawal_ticket_info,
++            &seed_slices,
++            burn_amount)?;
++
++        // close token account
++        super::utils::close_withdrawal_ticket_token_account(
++            &spl_token::id(),
++            vault_staker_withdrawal_ticket_token_account,
++            staker,
++            vault_staker_withdrawal_ticket_info,
++            &seed_slices)?;
++
++        close_program_account(program_id, vault_staker_withdrawal_ticket_info, staker)?;
++
++        // transfer the assets to the staker
++        let vault_signer_seeds = super::utils::vault_signing_seeds(vault);
++        let seed_slices: Vec<&[u8]> = vault_signer_seeds
++            .iter()
++            .map(|seed| seed.as_slice())
++            .collect();
++
++        drop(vault_data); // avoid double borrow
++
++        super::utils::transfer_from_vault_to_staker(
++            &spl_token::id(),
++            vault_token_account,
++            staker_token_account,
++            vault_info,
++            &seed_slices,
++            out_amount
++        )?;
++
++    }
+ 
+     Ok(())
+ }
+diff --git a/vault_program/src/change_withdrawal_ticket_owner.rs b/vault_program/src/change_withdrawal_ticket_owner.rs
+index 66e596c..f20f043 100644
+--- a/vault_program/src/change_withdrawal_ticket_owner.rs
++++ b/vault_program/src/change_withdrawal_ticket_owner.rs
+@@ -8,6 +8,7 @@ use solana_program::{
+     pubkey::Pubkey,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_change_withdrawal_ticket_owner(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/close_update_state_tracker.rs b/vault_program/src/close_update_state_tracker.rs
+index bb86722..4221c5b 100644
+--- a/vault_program/src/close_update_state_tracker.rs
++++ b/vault_program/src/close_update_state_tracker.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ 
+ /// Close the VaultUpdateStateTracker
+ /// Can close previous epochs to get rent back, but it shall not update the current epoch
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_close_vault_update_state_tracker(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/cooldown_delegation.rs b/vault_program/src/cooldown_delegation.rs
+index 679f2ed..c6cbce1 100644
+--- a/vault_program/src/cooldown_delegation.rs
++++ b/vault_program/src/cooldown_delegation.rs
+@@ -18,6 +18,7 @@ use solana_program::{
+ /// - The assets enqueued for cooldown shall be subtracted from the staked amount and added to the
+ ///   enqueued for cooldown amount
+ /// - The vault shall be updated to reflect the cooldown amount and the delegation state shall match the sum of all operator delegations
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_cooldown_delegation(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/cooldown_vault_ncn_slasher_ticket.rs b/vault_program/src/cooldown_vault_ncn_slasher_ticket.rs
+index cf0fc0b..00af0a8 100644
+--- a/vault_program/src/cooldown_vault_ncn_slasher_ticket.rs
++++ b/vault_program/src/cooldown_vault_ncn_slasher_ticket.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ };
+ 
+ /// Instruction: [`crate::VaultInstruction::CooldownVaultNcnSlasherTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_cooldown_vault_ncn_slasher_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/cooldown_vault_ncn_ticket.rs b/vault_program/src/cooldown_vault_ncn_ticket.rs
+index 71c8f5b..ea9cb02 100644
+--- a/vault_program/src/cooldown_vault_ncn_ticket.rs
++++ b/vault_program/src/cooldown_vault_ncn_ticket.rs
+@@ -15,6 +15,7 @@ use solana_program::{
+ ///   at any time, independent of whether the NCN still supports the vault or not.
+ ///
+ /// Instruction: [`crate::VaultInstruction::CooldownVaultNcnTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_cooldown_vault_ncn_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/crank_vault_update_state_tracker.rs b/vault_program/src/crank_vault_update_state_tracker.rs
+index 2b2203b..0c1757a 100644
+--- a/vault_program/src/crank_vault_update_state_tracker.rs
++++ b/vault_program/src/crank_vault_update_state_tracker.rs
+@@ -13,6 +13,8 @@ use solana_program::{
+     program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
+ };
+ 
++
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_crank_vault_update_state_tracker(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/create_token_metadata.rs b/vault_program/src/create_token_metadata.rs
+index 96ee6c0..cdea5d1 100644
+--- a/vault_program/src/create_token_metadata.rs
++++ b/vault_program/src/create_token_metadata.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+     program_error::ProgramError, pubkey::Pubkey,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_create_token_metadata(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/delegate_token_account.rs b/vault_program/src/delegate_token_account.rs
+index cbed8c1..099e6f8 100644
+--- a/vault_program/src/delegate_token_account.rs
++++ b/vault_program/src/delegate_token_account.rs
+@@ -18,6 +18,7 @@ use solana_program::{
+ ///
+ /// # Returns
+ /// * `ProgramResult` - Returns `Ok(())` if the delegation is successful, otherwise returns an appropriate `ProgramError`.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_delegate_token_account(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/enqueue_withdrawal.rs b/vault_program/src/enqueue_withdrawal.rs
+index 15dcb82..b385737 100644
+--- a/vault_program/src/enqueue_withdrawal.rs
++++ b/vault_program/src/enqueue_withdrawal.rs
+@@ -28,6 +28,7 @@ use spl_token::instruction::transfer;
+ /// - The VaultStakerWithdrawalTicket account shall be at the canonical PDA
+ /// - The vault shall accurately track the amount of VRT that has been enqueued for cooldown
+ /// - The staker's VRT tokens shall be transferred to the VaultStakerWithdrawalTicket associated token account
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_enqueue_withdrawal(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+@@ -118,21 +119,32 @@ pub fn process_enqueue_withdrawal(
+ 
+     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
+     // by the VaultStakerWithdrawalTicket
+-    invoke(
+-        &transfer(
+-            &spl_token::id(),
+-            staker_vrt_token_account.key,
+-            vault_staker_withdrawal_ticket_token_account.key,
+-            staker.key,
+-            &[],
+-            vrt_amount,
+-        )?,
+-        &[
+-            staker_vrt_token_account.clone(),
+-            vault_staker_withdrawal_ticket_token_account.clone(),
+-            staker.clone(),
+-        ],
++    #[cfg(not(feature = "certora"))]
++    {
++        invoke(
++            &transfer(
++                &spl_token::id(),
++                staker_vrt_token_account.key,
++                vault_staker_withdrawal_ticket_token_account.key,
++                staker.key,
++                &[],
++                vrt_amount,
++            )?,
++            &[
++                staker_vrt_token_account.clone(),
++                vault_staker_withdrawal_ticket_token_account.clone(),
++                staker.clone(),
++            ],
++        )?;
++    }
++    #[cfg(feature = "certora")]
++    super::utils::transfer_staker_to_ata_account(
++        &spl_token::id(),
++        staker_vrt_token_account,
++        vault_staker_withdrawal_ticket_token_account,
++        staker,
++        vrt_amount
+     )?;
+-
+     Ok(())
+ }
++
+diff --git a/vault_program/src/initialize_config.rs b/vault_program/src/initialize_config.rs
+index 33aca5d..2af1444 100644
+--- a/vault_program/src/initialize_config.rs
++++ b/vault_program/src/initialize_config.rs
+@@ -13,6 +13,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the initialize config instruction: [`crate::VaultInstruction::InitializeConfig`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_config(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/initialize_vault.rs b/vault_program/src/initialize_vault.rs
+index a6d2877..a033e35 100644
+--- a/vault_program/src/initialize_vault.rs
++++ b/vault_program/src/initialize_vault.rs
+@@ -30,6 +30,7 @@ use spl_token::{
+ };
+ 
+ /// Processes the create instruction: [`crate::VaultInstruction::InitializeVault`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_vault(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/initialize_vault_ncn_slasher_operator_ticket.rs b/vault_program/src/initialize_vault_ncn_slasher_operator_ticket.rs
+index e22c263..e19d94a 100644
+--- a/vault_program/src/initialize_vault_ncn_slasher_operator_ticket.rs
++++ b/vault_program/src/initialize_vault_ncn_slasher_operator_ticket.rs
+@@ -17,6 +17,7 @@ use solana_program::{
+ };
+ 
+ /// Instruction: [`crate::VaultInstruction::InitializeVaultNcnSlasherOperatorTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_vault_ncn_slasher_operator_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/initialize_vault_ncn_slasher_ticket.rs b/vault_program/src/initialize_vault_ncn_slasher_ticket.rs
+index 8f113f2..6f0b6ce 100644
+--- a/vault_program/src/initialize_vault_ncn_slasher_ticket.rs
++++ b/vault_program/src/initialize_vault_ncn_slasher_ticket.rs
+@@ -16,6 +16,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the register slasher instruction: [`crate::VaultInstruction::InitializeVaultNcnSlasherTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_vault_ncn_slasher_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/initialize_vault_ncn_ticket.rs b/vault_program/src/initialize_vault_ncn_ticket.rs
+index 259e3c0..32782bf 100644
+--- a/vault_program/src/initialize_vault_ncn_ticket.rs
++++ b/vault_program/src/initialize_vault_ncn_ticket.rs
+@@ -21,6 +21,7 @@ use solana_program::{
+ ///   if the NCN is actively supporting the vault
+ ///
+ /// Instruction: [`crate::VaultInstruction::InitializeVaultNcnTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_vault_ncn_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/initialize_vault_operator_delegation.rs b/vault_program/src/initialize_vault_operator_delegation.rs
+index 627604e..eb96df7 100644
+--- a/vault_program/src/initialize_vault_operator_delegation.rs
++++ b/vault_program/src/initialize_vault_operator_delegation.rs
+@@ -16,6 +16,7 @@ use solana_program::{
+ };
+ 
+ /// Instruction: [`crate::VaultInstruction::InitializeVaultOperatorDelegation`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_vault_operator_delegation(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/initialize_vault_update_state_tracker.rs b/vault_program/src/initialize_vault_update_state_tracker.rs
+index e61bce9..05afee2 100644
+--- a/vault_program/src/initialize_vault_update_state_tracker.rs
++++ b/vault_program/src/initialize_vault_update_state_tracker.rs
+@@ -17,6 +17,7 @@ use solana_program::{
+ /// Instruction: [`crate::VaultInstruction::InitializeVaultUpdateDelegationsTicket`]
+ /// Initializes a new [`VaultUpdateStateTracker`] account, which is used to track the delegations
+ /// that are to be updated at the epoch boundary.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_initialize_vault_update_state_tracker(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/lib.rs b/vault_program/src/lib.rs
+index cd1d056..0493773 100644
+--- a/vault_program/src/lib.rs
++++ b/vault_program/src/lib.rs
+@@ -285,3 +285,5 @@ pub fn process_instruction(
+         }
+     }
+ }
++
++mod utils;
+\ No newline at end of file
+diff --git a/vault_program/src/mint_to.rs b/vault_program/src/mint_to.rs
+index 9afe886..cba8ce4 100644
+--- a/vault_program/src/mint_to.rs
++++ b/vault_program/src/mint_to.rs
+@@ -34,6 +34,7 @@ use spl_token::instruction::{mint_to, transfer};
+ /// - The transaction shall fail if the amount out is less than the minimum amount out
+ /// - The user's assets shall be deposited into the vault supported mint ATA
+ /// - The vault shall mint the pro-rata amount to the user and the fee wallet
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_mint(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+@@ -100,6 +101,7 @@ pub fn process_mint(
+     }
+ 
+     // transfer tokens from depositor to vault
++    #[cfg(not(feature = "certora"))]
+     {
+         invoke(
+             &transfer(
+@@ -117,6 +119,16 @@ pub fn process_mint(
+             ],
+         )?;
+     }
++    #[cfg(feature = "certora")]
++    {
++        super::utils::transfer_from_depositor_to_vault(
++            &spl_token::id(),
++            depositor_token_account,
++            vault_token_account,
++            depositor,
++            amount_in
++        )?;
++    }
+ 
+     let signing_seeds = vault.signing_seeds();
+     let seed_slices: Vec<&[u8]> = signing_seeds.iter().map(|seed| seed.as_slice()).collect();
+@@ -124,6 +136,7 @@ pub fn process_mint(
+     drop(vault_data); // no double borrow
+ 
+     // mint to depositor and fee wallet
++    #[cfg(not(feature = "certora"))]
+     {
+         invoke_signed(
+             &mint_to(
+@@ -159,6 +172,26 @@ pub fn process_mint(
+             &[&seed_slices],
+         )?;
+     }
++    #[cfg(feature = "certora")]
++    {
++        // mint to depositor and fee wallet
++        super::utils::mint_to_depositor(
++            &spl_token::id(),
++            vrt_mint,
++            depositor_vrt_token_account,
++            vault_info,
++            vrt_to_depositor,
++            &seed_slices
++        )?;
++        super::utils::mint_to_fee_wallet(
++            &spl_token::id(),
++            vrt_mint,
++            vault_fee_token_account,
++            vault_info,
++            vrt_to_fee_wallet,
++            &seed_slices
++        )?;
++    }
+ 
+     Ok(())
+ }
+diff --git a/vault_program/src/set_admin.rs b/vault_program/src/set_admin.rs
+index 1c93560..eda341f 100644
+--- a/vault_program/src/set_admin.rs
++++ b/vault_program/src/set_admin.rs
+@@ -7,6 +7,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the set admin instruction: [`crate::VaultInstruction::SetAdmin`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, vault, old_admin, new_admin] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/vault_program/src/set_capacity.rs b/vault_program/src/set_capacity.rs
+index 23190aa..e984e62 100644
+--- a/vault_program/src/set_capacity.rs
++++ b/vault_program/src/set_capacity.rs
+@@ -6,6 +6,7 @@ use solana_program::{
+     pubkey::Pubkey,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_deposit_capacity(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/set_config_admin.rs b/vault_program/src/set_config_admin.rs
+index f28e518..940f16e 100644
+--- a/vault_program/src/set_config_admin.rs
++++ b/vault_program/src/set_config_admin.rs
+@@ -8,6 +8,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the set config admin instruction: [`crate::VaultInstruction::SetConfigAdmin`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_config_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+     let [config, old_admin, new_admin] = accounts else {
+         return Err(ProgramError::NotEnoughAccountKeys);
+diff --git a/vault_program/src/set_fees.rs b/vault_program/src/set_fees.rs
+index 96fc518..142a16b 100644
+--- a/vault_program/src/set_fees.rs
++++ b/vault_program/src/set_fees.rs
+@@ -15,6 +15,7 @@ use solana_program::{
+ /// - The Vault last_fee_change_slot shall be updated to the current slot only if any fees were updated.
+ /// - The transaction shall fail if no fees are provided to update.
+ /// - The transaction shall fail if any of the fees exceed 10_000 bps.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_fees(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/set_is_paused.rs b/vault_program/src/set_is_paused.rs
+index da07643..a686190 100644
+--- a/vault_program/src/set_is_paused.rs
++++ b/vault_program/src/set_is_paused.rs
+@@ -7,6 +7,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the set `is_paused` instruction: [`crate::VaultInstruction::SetIsPaused`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_is_paused(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/set_program_fee.rs b/vault_program/src/set_program_fee.rs
+index 4915271..8322371 100644
+--- a/vault_program/src/set_program_fee.rs
++++ b/vault_program/src/set_program_fee.rs
+@@ -13,6 +13,7 @@ use solana_program::{
+ /// - The fee can only be changed by the config admin. The config admin must sign the transaction.
+ /// - The transaction shall fail if the new fee exceeds MAX_FEE_BPS.
+ /// - The Config program_fee_bps shall be updated to the new fee.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_program_fee(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/set_program_fee_wallet.rs b/vault_program/src/set_program_fee_wallet.rs
+index ec10da7..5bbb5d5 100644
+--- a/vault_program/src/set_program_fee_wallet.rs
++++ b/vault_program/src/set_program_fee_wallet.rs
+@@ -12,6 +12,7 @@ use solana_program::{
+ /// Specification:
+ /// - The fee wallet can only be changed by the config fee admin. The config fee admin must sign the transaction.
+ /// - The Config program_fee_wallet shall be updated to the new fee wallet.
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_program_fee_wallet(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/set_secondary_admin.rs b/vault_program/src/set_secondary_admin.rs
+index 00e2c4b..fea34e4 100644
+--- a/vault_program/src/set_secondary_admin.rs
++++ b/vault_program/src/set_secondary_admin.rs
+@@ -8,6 +8,7 @@ use solana_program::{
+ };
+ 
+ /// Processes the set delegation admin instruction: [`crate::VaultInstruction::SetSecondaryAdmin`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_set_secondary_admin(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/update_token_metadata.rs b/vault_program/src/update_token_metadata.rs
+index 1f4b666..1a93c68 100644
+--- a/vault_program/src/update_token_metadata.rs
++++ b/vault_program/src/update_token_metadata.rs
+@@ -12,6 +12,7 @@ use solana_program::{
+     program_error::ProgramError, pubkey::Pubkey,
+ };
+ 
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_update_token_metadata(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/update_vault_balance.rs b/vault_program/src/update_vault_balance.rs
+index b5769fc..0bf6a0f 100644
+--- a/vault_program/src/update_vault_balance.rs
++++ b/vault_program/src/update_vault_balance.rs
+@@ -9,6 +9,10 @@ use solana_program::{
+ };
+ use spl_token::{instruction::mint_to, state::Account};
+ 
++#[cfg(feature = "certora")]
++use jito_vault_core::certora::mocks::vault::VaultMock as _;
++
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_update_vault_balance(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+@@ -41,7 +45,7 @@ pub fn process_update_vault_balance(
+     // - We take our fee in st
+     // - We add the reward ( total reward - fee in st )
+     // - We virtually call mint_to on the reward fee ob behalf of the vault
+-    let new_st_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
++    let new_st_balance = super::utils::spl_token_account_amount(vault_token_account)?;
+ 
+     // 1. Calculate reward fee in ST
+     let st_rewards = new_st_balance.saturating_sub(vault.tokens_deposited());
+@@ -74,24 +78,37 @@ pub fn process_update_vault_balance(
+ 
+         drop(vault_data);
+ 
+-        msg!("Minting {} VRT rewards to the fee wallet", vrt_reward_fee);
+-
+-        invoke_signed(
+-            &mint_to(
++        #[cfg(not(feature = "certora"))]
++        {
++            msg!("Minting {} VRT rewards to the fee wallet", vrt_reward_fee);
++            invoke_signed(
++                &mint_to(
++                    &spl_token::id(),
++                    vrt_mint.key,
++                    vault_fee_token_account.key,
++                    vault_info.key,
++                    &[],
++                    vrt_reward_fee,
++                )?,
++                &[
++                    vrt_mint.clone(),
++                    vault_fee_token_account.clone(),
++                    vault_info.clone(),
++                ],
++                &[&seed_slices],
++            )?;
++        }
++        #[cfg(feature = "certora")]
++        {
++            super::utils::mint_vrt_rewards_to_fee_wallet(
+                 &spl_token::id(),
+-                vrt_mint.key,
+-                vault_fee_token_account.key,
+-                vault_info.key,
+-                &[],
++                vrt_mint,
++                vault_fee_token_account,
++                vault_info,
+                 vrt_reward_fee,
+-            )?,
+-            &[
+-                vrt_mint.clone(),
+-                vault_fee_token_account.clone(),
+-                vault_info.clone(),
+-            ],
+-            &[&seed_slices],
+-        )?;
++                &seed_slices
++            )?;
++        }
+     }
+ 
+     Ok(())
+diff --git a/vault_program/src/utils.rs b/vault_program/src/utils.rs
+new file mode 100644
+index 0000000..024f921
+--- /dev/null
++++ b/vault_program/src/utils.rs
+@@ -0,0 +1,271 @@
++#![cfg_attr(not(feature = "certora"), allow(dead_code))]
++#[cfg(not(feature = "certora"))]
++use {
++    jito_vault_core::vault::Vault,
++    solana_program::{
++        account_info::AccountInfo,
++        entrypoint::ProgramResult,
++        program::{invoke, invoke_signed},
++        program_error::ProgramError,
++        pubkey::Pubkey,
++    },
++    spl_token::{
++        instruction::{burn, close_account, mint_to, transfer},
++        state::Account,
++    },
++};
++
++/// Extract `amount` in the spl token account
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::spl_token_account_amount))]
++pub fn spl_token_account_amount(token_account_info: &AccountInfo) -> Result<u64, ProgramError> {
++    use solana_program::program_pack::Pack as _;
++    let account = Account::unpack(&token_account_info.data.borrow())?;
++    Ok(account.amount)
++}
++
++/// Mint rewards
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::mint_vrt_rewards_to_fee_wallet))]
++pub fn mint_vrt_rewards_to_fee_wallet<'a>(
++    program_id: &Pubkey,
++    vrt_mint: &AccountInfo<'a>,
++    vault_fee_token_account: &AccountInfo<'a>,
++    vault_info: &AccountInfo<'a>,
++    amount: u64,
++    seed_slices: &Vec<&[u8]>,
++) -> ProgramResult {
++    invoke_signed(
++        &mint_to(
++            &program_id,
++            vrt_mint.key,
++            vault_fee_token_account.key,
++            vault_info.key,
++            &[],
++            amount,
++        )?,
++        &[
++            vrt_mint.clone(),
++            vault_fee_token_account.clone(),
++            vault_info.clone(),
++        ],
++        &[&seed_slices],
++    )
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::transfer_from_depositor_to_vault))]
++pub fn transfer_from_depositor_to_vault<'a>(
++    program_id: &Pubkey,
++    depositor_token_account: &AccountInfo<'a>,
++    vault_token_account: &AccountInfo<'a>,
++    depositor: &AccountInfo<'a>,
++    amount: u64,
++) -> ProgramResult {
++    invoke(
++        &transfer(
++            &program_id,
++            depositor_token_account.key,
++            vault_token_account.key,
++            depositor.key,
++            &[],
++            amount,
++        )?,
++        &[
++            depositor_token_account.clone(),
++            vault_token_account.clone(),
++            depositor.clone(),
++        ],
++    )
++}
++
++/// Mint VRT to depositor
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::mint_to_depositor))]
++pub fn mint_to_depositor<'a>(
++    program_id: &Pubkey,
++    vrt_mint: &AccountInfo<'a>,
++    depositor_vrt_token_account: &AccountInfo<'a>,
++    vault_info: &AccountInfo<'a>,
++    amount: u64,
++    seed_slices: &Vec<&[u8]>,
++) -> ProgramResult {
++    invoke_signed(
++        &mint_to(
++            &program_id,
++            vrt_mint.key,
++            depositor_vrt_token_account.key,
++            vault_info.key,
++            &[],
++            amount,
++        )?,
++        &[
++            vrt_mint.clone(),
++            depositor_vrt_token_account.clone(),
++            vault_info.clone(),
++        ],
++        &[&seed_slices],
++    )
++}
++
++/// Mint VRT for fee
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::mint_to_fee_wallet))]
++pub fn mint_to_fee_wallet<'a>(
++    program_id: &Pubkey,
++    vrt_mint: &AccountInfo<'a>,
++    vault_fee_token_account: &AccountInfo<'a>,
++    vault_info: &AccountInfo<'a>,
++    amount: u64,
++    seed_slices: &Vec<&[u8]>,
++) -> ProgramResult {
++    invoke_signed(
++        &mint_to(
++            &program_id,
++            vrt_mint.key,
++            vault_fee_token_account.key,
++            vault_info.key,
++            &[],
++            amount,
++        )?,
++        &[
++            vrt_mint.clone(),
++            vault_fee_token_account.clone(),
++            vault_info.clone(),
++        ],
++        &[&seed_slices],
++    )
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::transfer_staker_to_ata_account))]
++pub fn transfer_staker_to_ata_account<'a>(
++    program_id: &Pubkey,
++    staker_vrt_token_account: &AccountInfo<'a>,
++    vault_staker_withdrawal_ticket_token_account: &AccountInfo<'a>,
++    staker: &AccountInfo<'a>,
++    amount: u64,
++) -> ProgramResult {
++    invoke(
++        &transfer(
++            &program_id,
++            staker_vrt_token_account.key,
++            vault_staker_withdrawal_ticket_token_account.key,
++            staker.key,
++            &[],
++            amount,
++        )?,
++        &[
++            staker_vrt_token_account.clone(),
++            vault_staker_withdrawal_ticket_token_account.clone(),
++            staker.clone(),
++        ],
++    )
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::vault_signing_seeds))]
++pub fn vault_signing_seeds(vault: &Vault) -> Vec<Vec<u8>> {
++    vault.signing_seeds()
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::transfer_fee_to_fee_wallet))]
++pub fn transfer_fee_to_fee_wallet<'a>(
++    program_id: &Pubkey,
++    vault_staker_withdrawal_ticket_token_account: &AccountInfo<'a>,
++    fee_token_account: &AccountInfo<'a>,
++    vault_staker_withdrawal_ticket_info: &AccountInfo<'a>,
++    seed_slices: &Vec<&[u8]>,
++    amount: u64,
++) -> ProgramResult {
++    invoke_signed(
++        &transfer(
++            &program_id,
++            vault_staker_withdrawal_ticket_token_account.key,
++            fee_token_account.key,
++            vault_staker_withdrawal_ticket_info.key,
++            &[],
++            amount,
++        )?,
++        &[
++            vault_staker_withdrawal_ticket_token_account.clone(),
++            fee_token_account.clone(),
++            vault_staker_withdrawal_ticket_info.clone(),
++        ],
++        &[&seed_slices],
++    )
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::burn_vrt))]
++pub fn burn_vrt<'a>(
++    program_id: &Pubkey,
++    vault_staker_withdrawal_ticket_token_account: &AccountInfo<'a>,
++    vrt_mint: &AccountInfo<'a>,
++    vault_staker_withdrawal_ticket_info: &AccountInfo<'a>,
++    seed_slices: &Vec<&[u8]>,
++    amount: u64,
++) -> ProgramResult {
++    invoke_signed(
++        &burn(
++            &program_id,
++            vault_staker_withdrawal_ticket_token_account.key,
++            vrt_mint.key,
++            vault_staker_withdrawal_ticket_info.key,
++            &[],
++            amount,
++        )?,
++        &[
++            vault_staker_withdrawal_ticket_token_account.clone(),
++            vrt_mint.clone(),
++            vault_staker_withdrawal_ticket_info.clone(),
++        ],
++        &[&seed_slices],
++    )?;
++    Ok(())
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::close_withdrawal_ticket_token_account))]
++pub fn close_withdrawal_ticket_token_account<'a>(
++    program_id: &Pubkey,
++    vault_staker_withdrawal_ticket_token_account: &AccountInfo<'a>,
++    staker: &AccountInfo<'a>,
++    vault_staker_withdrawal_ticket_info: &AccountInfo<'a>,
++    seed_slices: &Vec<&[u8]>,
++) -> ProgramResult {
++    // close token account
++    invoke_signed(
++        &close_account(
++            &program_id,
++            vault_staker_withdrawal_ticket_token_account.key,
++            staker.key,
++            vault_staker_withdrawal_ticket_info.key,
++            &[],
++        )?,
++        &[
++            vault_staker_withdrawal_ticket_token_account.clone(),
++            staker.clone(),
++            vault_staker_withdrawal_ticket_info.clone(),
++        ],
++        &[&seed_slices],
++    )
++}
++
++#[cfg_attr(feature = "certora", cvlr::mock_fn(with=crate::certora::mocks::utils::transfer_from_vault_to_staker))]
++pub fn transfer_from_vault_to_staker<'a>(
++    program_id: &Pubkey,
++    vault_token_account: &AccountInfo<'a>,
++    staker_token_account: &AccountInfo<'a>,
++    vault_info: &AccountInfo<'a>,
++    seed_slices: &Vec<&[u8]>,
++    amount: u64,
++) -> ProgramResult {
++    invoke_signed(
++        &transfer(
++            &program_id,
++            vault_token_account.key,
++            staker_token_account.key,
++            vault_info.key,
++            &[],
++            amount,
++        )?,
++        &[
++            vault_token_account.clone(),
++            staker_token_account.clone(),
++            vault_info.clone(),
++        ],
++        &[&seed_slices],
++    )
++}
+diff --git a/vault_program/src/warmup_vault_ncn_slasher_ticket.rs b/vault_program/src/warmup_vault_ncn_slasher_ticket.rs
+index 61696fb..e769292 100644
+--- a/vault_program/src/warmup_vault_ncn_slasher_ticket.rs
++++ b/vault_program/src/warmup_vault_ncn_slasher_ticket.rs
+@@ -11,6 +11,7 @@ use solana_program::{
+ };
+ 
+ /// Instruction: [`crate::VaultInstruction::WarmupVaultNcnSlasherTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_warmup_vault_ncn_slasher_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],
+diff --git a/vault_program/src/warmup_vault_ncn_ticket.rs b/vault_program/src/warmup_vault_ncn_ticket.rs
+index 291cb69..18e10a2 100644
+--- a/vault_program/src/warmup_vault_ncn_ticket.rs
++++ b/vault_program/src/warmup_vault_ncn_ticket.rs
+@@ -9,6 +9,7 @@ use solana_program::{
+ };
+ 
+ /// Instruction: [`crate::VaultInstruction::WarmupVaultNcnTicket`]
++#[cfg_attr(feature = "certora", cvlr::early_panic)]
+ pub fn process_warmup_vault_ncn_ticket(
+     program_id: &Pubkey,
+     accounts: &[AccountInfo],

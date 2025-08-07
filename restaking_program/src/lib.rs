@@ -24,6 +24,9 @@ mod warmup_ncn_vault_slasher_ticket;
 mod warmup_ncn_vault_ticket;
 mod warmup_operator_vault_ticket;
 
+#[cfg(feature = "certora")]
+mod certora;
+
 use borsh::BorshDeserialize;
 use jito_restaking_sdk::instruction::RestakingInstruction;
 use operator_set_fee::process_operator_set_fee;

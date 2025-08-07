@@ -86,6 +86,11 @@ thiserror = "1.0.57"
 tokio = { version = "1.36.0", features = ["full"] }
 uriparse = "0.6.4"
 
+### CERTORA Dependencies
+cvlr = "0.4"
+cvlr-solana = { version = "0.5", git = "https://github.com/Certora/cvlr-solana.git", branch = "v0.5"} 
+
+
 [workspace.lints.rust.unexpected_cfgs]
 level = "warn"
 check-cfg = [
