@@ -10,7 +10,7 @@ on:
         type: choice
         options:
           - cli
-          - shank-idl
+          - shank-cli
       level:
         description: Version increment level
         required: true
@@ -133,10 +133,10 @@ jobs:
             echo "directory=cli" >> $GITHUB_OUTPUT
             echo "package_name=jito-restaking-cli" >> $GITHUB_OUTPUT
             echo "release_name=Jito Restaking CLI" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.crate }}" == "shank-idl" ]; then
-            echo "directory=shank-idl" >> $GITHUB_OUTPUT
-            echo "package_name=jito-restaking-shank-idl" >> $GITHUB_OUTPUT
-            echo "release_name=Jito Restaking Shank IDL" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.crate }}" == "shank-cli" ]; then
+            echo "directory=shank-cli" >> $GITHUB_OUTPUT
+            echo "package_name=jito-restaking-shank-cli" >> $GITHUB_OUTPUT
+            echo "release_name=Jito Restaking Shank CLI" >> $GITHUB_OUTPUT
           fi
 
       - name: Publish Crate
