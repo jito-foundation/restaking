@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{command, Subcommand};
 use solana_program::pubkey::Pubkey;
 
@@ -29,6 +31,16 @@ pub enum ConfigActions {
         /// The new admin's pubkey
         new_admin: Pubkey,
     },
+    /// Set the program fee
+    SetProgramFee {
+        /// The program fee
+        new_fee_bps: u16,
+    },
+    /// Set the program fee wallet
+    SetProgramFeeWallet {
+        /// The program fee wallet
+        program_fee_wallet: Pubkey,
+    },
 }
 
 /// Vault commands
@@ -48,6 +60,8 @@ pub enum VaultActions {
         decimals: u8,
         /// The amount of tokens to initialize the vault with ( in the smallest unit )
         initialize_token_amount: u64,
+        /// The file path of VRT mint address
+        vrt_mint_address_file_path: Option<PathBuf>,
     },
     /// Creates token metadata for the vault's LRT token
     CreateTokenMetadata {
@@ -151,6 +165,18 @@ pub enum VaultActions {
         /// Amount to withdraw
         amount: u64,
     },
+    /// Change withdrawal ticket owner
+    ChangeWithdrawalTicketOwner {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The old ticket owner keypair
+        #[arg(long)]
+        old_ticket_owner_keypair: String,
+
+        /// The new ticket owner pubkey
+        new_ticket_owner: Pubkey,
+    },
     /// Burns the withdrawal ticket, ending the withdrawal process
     BurnWithdrawalTicket {
         /// Vault account
@@ -160,8 +186,11 @@ pub enum VaultActions {
     GetVaultUpdateStateTracker {
         /// Vault account
         vault: String,
-        /// NCN epoch
-        ncn_epoch: u64,
+    },
+    /// Gets the operator delegations for a vault
+    GetOperatorDelegations {
+        /// Vault account
+        vault: String,
     },
     /// Gets the operator delegation for a vault
     GetOperatorDelegation {
@@ -183,11 +212,123 @@ pub enum VaultActions {
     },
     /// List all vaults
     List,
+    /// Set Admin
+    SetAdmin {
+        /// The Vault pubkey
+        vault: Pubkey,
+
+        /// Filepath or URL to a keypair of old admin
+        #[arg(long)]
+        old_admin_keypair: String,
+
+        /// Filepath or URL to a keypair of new admin
+        #[arg(long)]
+        new_admin_keypair: String,
+    },
     /// Sets the deposit capacity in the vault
     SetCapacity {
         /// The vault pubkey
         vault: String,
         /// The new capacity
+        amount: u64,
+    },
+    /// Sets the fees in the vault
+    SetFees {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The deposit fee BPS
+        #[arg(long)]
+        deposit_fee_bps: Option<u16>,
+
+        /// The withdrawal fee BPS
+        #[arg(long)]
+        withdrawal_fee_bps: Option<u16>,
+
+        /// The reward fee BPS
+        #[arg(long)]
+        reward_fee_bps: Option<u16>,
+    },
+    /// Sets the vault's pause state
+    SetIsPaused {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// Set pause
+        #[arg(long)]
+        set_pause: bool,
+    },
+    /// Set Secondary Admin
+    SetSecondaryAdmin {
+        /// The vault pubkey
+        vault: Pubkey,
+
+        /// The new admin pubkey
+        new_admin: Pubkey,
+
+        /// Set delegation_admin
+        #[arg(long)]
+        set_delegation_admin: bool,
+
+        /// Set operator_admin
+        #[arg(long)]
+        set_operator_admin: bool,
+
+        /// Set ncn_admin
+        #[arg(long)]
+        set_ncn_admin: bool,
+
+        /// Set slasher_admin
+        #[arg(long)]
+        set_slasher_admin: bool,
+
+        /// Set capacity_admin
+        #[arg(long)]
+        set_capacity_admin: bool,
+
+        /// Set fee_wallet
+        #[arg(long)]
+        set_fee_wallet: bool,
+
+        /// Set mint_burn_admin
+        #[arg(long)]
+        set_mint_burn_admin: bool,
+
+        /// Set delegate_asset_admin
+        #[arg(long)]
+        set_delegate_asset_admin: bool,
+
+        /// Set fee_admin
+        #[arg(long)]
+        set_fee_admin: bool,
+
+        /// Set metadata_admin
+        #[arg(long)]
+        set_metadata_admin: bool,
+    },
+    /// Update Vault Balance
+    UpdateVaultBalance {
+        /// The vault pubkey
+        vault: Pubkey,
+    },
+    /// Delegate a token account
+    DelegateTokenAccount {
+        /// The vault pubkey
+        vault: String,
+        /// The delegate account
+        delegate: String,
+        /// The token mint
+        token_mint: String,
+        /// The token account
+        token_account: String,
+    },
+    /// Transfer a token account
+    DelegatedTokenTransfer {
+        /// The token account
+        token_account: String,
+        /// The recipient pubkey
+        recipient_pubkey: String,
+        /// The amount to transfer
         amount: u64,
     },
 }

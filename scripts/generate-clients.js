@@ -108,7 +108,7 @@ restakingKinobi.accept(renderers.renderRustVisitor(path.join(rustRestakingClient
     formatCode: true,
     crateFolder: rustRestakingClientDir,
     deleteFolderBeforeRendering: true,
-    toolchain: "+nightly-2024-07-25"
+    toolchain: "+1.84.1"
 }));
 restakingKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsRestakingClientDir), {}));
 
@@ -194,7 +194,7 @@ vaultKinobi.update(kinobi.bottomUpTransformerVisitor([
             kinobi.assertIsNode(node, "structFieldTypeNode");
             return {
                 ...node,
-                type: kinobi.numberTypeNode("bool"),
+                type: kinobi.booleanTypeNode(),
             };
         },
     },
@@ -224,6 +224,6 @@ vaultKinobi.accept(renderers.renderRustVisitor(path.join(rustVaultClientDir, "sr
     formatCode: true,
     crateFolder: rustVaultClientDir,
     deleteFolderBeforeRendering: true,
-    toolchain: "+nightly-2024-07-25"
+    toolchain: "+1.84.1"
 }));
 vaultKinobi.accept(renderers.renderJavaScriptVisitor(path.join(jsVaultClientDir), {}));

@@ -1,13 +1,22 @@
-use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
+use std::{
+    collections::HashMap,
+    fmt,
+    path::PathBuf,
+    process::Command,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use anyhow::{anyhow, Context};
-use clap::{arg, Parser};
-use dotenv::dotenv;
-use jito_bytemuck::AccountDeserialize;
+use clap::{arg, Parser, ValueEnum};
+use dotenvy::dotenv;
 use jito_jsm_core::get_epoch;
-use jito_vault_core::{vault::Vault, vault_operator_delegation::VaultOperatorDelegation};
+use jito_vault_core::{
+    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
+};
 use jito_vault_cranker::{metrics::emit_vault_metrics, vault_handler::VaultHandler};
 use log::{error, info};
+use solana_metrics::set_host_id;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 
@@ -16,6 +25,14 @@ struct Args {
     /// RPC URL for the cluster
     #[arg(short, long, env, default_value = "https://api.devnet.solana.com")]
     rpc_url: String,
+
+    /// Cluster name (e.g., devnet, mainnet)
+    #[arg(short, long, env, value_enum, default_value_t = Cluster::Mainnet)]
+    cluster: Cluster,
+
+    /// Deployed region - component of metrics host_id
+    #[arg(long, env, default_value = "local")]
+    region: String,
 
     /// Path to keypair used to pay
     #[arg(short, long, env)]
@@ -75,6 +92,23 @@ impl fmt::Display for Args {
     }
 }
 
+#[derive(ValueEnum, Debug, Clone)]
+pub enum Cluster {
+    Mainnet,
+    Testnet,
+    Localnet,
+}
+
+impl fmt::Display for Cluster {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Mainnet => write!(f, "mainnet"),
+            Self::Testnet => write!(f, "testnet"),
+            Self::Localnet => write!(f, "localnet"),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
     dotenv().ok();
@@ -85,35 +119,41 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     info!("{}", args);
 
+    let hostname_cmd = Command::new("hostname")
+        .output()
+        .expect("Failed to execute hostname command");
+
+    let hostname = String::from_utf8_lossy(&hostname_cmd.stdout)
+        .trim()
+        .to_string();
+
+    set_host_id(format!(
+        "restaking-cranker_{}_{}_{}",
+        args.region, args.cluster, hostname
+    ));
+
     let rpc_client = RpcClient::new_with_timeout(args.rpc_url.clone(), Duration::from_secs(60));
-    let payer = read_keypair_file(&args.keypair_path)
-        .map_err(|e| anyhow!("Failed to read keypair file: {}", e))?;
+    let config_address = Config::find_program_address(&args.vault_program_id).0;
 
-    let config_address =
-        jito_vault_core::config::Config::find_program_address(&args.vault_program_id).0;
-
-    let account = rpc_client
-        .get_account(&config_address)
-        .await
-        .context("Failed to read Jito vault config address")?;
-    let config = jito_vault_core::config::Config::try_from_slice_unchecked(&account.data)
-        .context("Failed to deserialize Jito vault config")?;
-
-    let vault_handler = VaultHandler::new(
+    let vault_handler = Arc::new(VaultHandler::new(
         &args.rpc_url,
-        &payer,
         args.vault_program_id,
         config_address,
         args.priority_fees,
-    );
+    ));
 
     // Track vault metrics in separate thread
     tokio::spawn({
-        let epoch_length = config.epoch_length();
+        let config: Config = vault_handler
+            .get_vault_program_account(&config_address)
+            .await?;
         async move {
             let metrics_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
             loop {
-                if let Err(e) = emit_vault_metrics(&metrics_client, epoch_length).await {
+                if let Err(e) =
+                    emit_vault_metrics(&metrics_client, epoch_length, &args.cluster.to_string())
+                        .await
+                {
                     error!("Failed to emit metrics: {}", e);
                 }
                 tokio::time::sleep(Duration::from_secs(args.metrics_interval)).await;
@@ -122,6 +162,10 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     });
 
     loop {
+        let config: Config = vault_handler
+            .get_vault_program_account(&config_address)
+            .await?;
+
         let slot = rpc_client.get_slot().await.context("get slot")?;
         let epoch = get_epoch(slot, config.epoch_length()).unwrap();
 
@@ -156,22 +200,48 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
         info!("Updating {} vaults", vaults_need_update.len());
 
-        for (vault, mut delegations) in grouped_delegations {
-            // Sort by VaultOperatorDelegation index for correct cranking order
-            delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
-            let operators: Vec<Pubkey> = delegations
-                .iter()
-                .map(|(_pubkey, delegation)| delegation.operator)
-                .collect();
+        let start = Instant::now();
 
-            match vault_handler
-                .do_vault_update(epoch, &vault, &operators)
-                .await
-            {
-                Err(e) => log::error!("Failed to update vault: {vault}, error: {e}"),
-                Ok(_) => info!("Successfully updated vault: {vault}"),
+        let tasks: Vec<_> = grouped_delegations
+            .into_iter()
+            .map(|(vault, mut delegations)| {
+                // Sort by VaultOperatorDelegation index for correct cranking order
+                delegations.sort_by_key(|(_pubkey, delegation)| delegation.index());
+                let operators: Vec<Pubkey> = delegations
+                    .iter()
+                    .map(|(_pubkey, delegation)| delegation.operator)
+                    .collect();
+
+                // Spawn each vault update as a separate task
+                tokio::spawn({
+                    let vault_handler = vault_handler.clone();
+                    let payer = read_keypair_file(&args.keypair_path)
+                        .map_err(|e| anyhow!("Failed to read keypair file: {}", e))
+                        .unwrap();
+                    async move {
+                        match vault_handler
+                            .do_vault_update(slot, &config, &payer, &vault, &operators)
+                            .await
+                        {
+                            Ok(_) => {
+                                info!("Successfully updated vault: {vault}");
+                            }
+                            Err(e) => {
+                                error!("Failed to update vault: {vault}, error: {e}");
+                            }
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for task in tasks {
+            if let Err(e) = task.await {
+                error!("Task failed to complete: {}", e);
             }
         }
+
+        log::info!("Time elapsed: {:.2}s", start.elapsed().as_secs_f64());
 
         info!("Sleeping for {} seconds", args.crank_interval);
         // ---------- SLEEP (crank_interval)----------

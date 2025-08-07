@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use jito_jsm_core::get_epoch;
 use jito_vault_core::config::Config;
+use log::error;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{program_pack::Pack, pubkey::Pubkey, signature::Keypair};
+use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
 use spl_associated_token_account::get_associated_token_address;
 use spl_token::state::{Account as TokenAccount, Mint};
 
@@ -13,17 +14,16 @@ use crate::vault_handler::VaultHandler;
 pub async fn emit_vault_metrics(
     rpc_client: &RpcClient,
     config_epoch_length: u64,
+    cluster_name: &str,
 ) -> anyhow::Result<()> {
     let slot = rpc_client.get_slot().await?;
     let epoch = slot / config_epoch_length;
     let slot_index = slot % config_epoch_length;
 
-    let dummy_keypair = Keypair::new(); // Dummy keypair since we're only reading
     let config_address =
         Config::find_program_address(&jito_vault_client::programs::JITO_VAULT_ID).0;
     let vault_handler = VaultHandler::new(
         rpc_client.url().as_str(),
-        &dummy_keypair,
         jito_vault_client::programs::JITO_VAULT_ID,
         config_address,
         0,
@@ -92,12 +92,23 @@ pub async fn emit_vault_metrics(
             .get(&vault.vrt_mint)
             .ok_or_else(|| anyhow::anyhow!("Mint not found in map"))?;
 
-        let st_deposit_account: &TokenAccount = st_ata_map
+        let try_st_deposit_account = st_ata_map
             .get(&get_associated_token_address(
                 address,
                 &vault.supported_mint,
             ))
-            .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"))?;
+            .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"));
+
+        if try_st_deposit_account.is_err() {
+            error!(
+                "Failed to get ST deposit account for vault {}: {}",
+                address,
+                try_st_deposit_account.unwrap_err()
+            );
+            continue;
+        }
+
+        let st_deposit_account = try_st_deposit_account.unwrap();
 
         datapoint_info!(
             "restaking-vault-supply",
@@ -109,6 +120,7 @@ pub async fn emit_vault_metrics(
             ("vrt_supply_external", vrt_mint.supply as i64, i64),
             ("st_supply_internal", vault.tokens_deposited() as i64, i64),
             ("st_supply_external", st_deposit_account.amount as i64, i64),
+            "cluster" => cluster_name,
         );
     }
 
@@ -128,6 +140,7 @@ pub async fn emit_vault_metrics(
             num_vault_operator_delegations_updated,
             i64
         ),
+        "cluster" => cluster_name,
     );
 
     Ok(())

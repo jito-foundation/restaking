@@ -701,7 +701,7 @@ mod tests {
             .unwrap();
 
         vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, 75_000)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, 75_000)
             .await
             .unwrap();
 
@@ -935,7 +935,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -993,7 +993,13 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1077,7 +1083,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -1115,7 +1121,13 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 
@@ -1199,7 +1211,7 @@ mod tests {
             .unwrap();
 
         let VaultStakerWithdrawalTicketRoot { base } = vault_program_client
-            .do_enqueue_withdrawal(&vault_root, &depositor, MINT_AMOUNT)
+            .do_enqueue_withdrawal(&vault_root, &depositor, None, MINT_AMOUNT)
             .await
             .unwrap();
 
@@ -1237,7 +1249,13 @@ mod tests {
         assert_eq!(vault.vrt_ready_to_claim_amount(), MINT_AMOUNT);
 
         vault_program_client
-            .do_burn_withdrawal_ticket(&vault_root, &depositor, &base, &config.program_fee_wallet)
+            .do_burn_withdrawal_ticket(
+                &vault_root,
+                &depositor,
+                &base,
+                &config.program_fee_wallet,
+                None,
+            )
             .await
             .unwrap();
 

@@ -1,16 +1,17 @@
 [package]
 name = "jito-restaking-cli"
 description = "Jito Restaking CLI"
-version = { workspace = true }
+version = "1.0.1"
 authors = { workspace = true }
 repository = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
 edition = { workspace = true }
-readme = { workspace = true }
+readme = "./README.md"
 
 [dependencies]
 anyhow = { workspace = true }
+base64 = { workspace = true }
 borsh = { workspace = true }
 bytemuck = { workspace = true }
 chrono = { workspace = true }
@@ -19,15 +20,19 @@ clap-markdown = { workspace = true }
 env_logger = { workspace = true }
 jito-bytemuck = { workspace = true }
 jito-jsm-core = { workspace = true }
-jito-restaking-client = { workspace = true }
+jito-restaking-client = { workspace = true, features = ["serde"] }
+jito-restaking-client-common = { workspace = true }
 jito-restaking-core = { workspace = true }
-jito-vault-client = { workspace = true }
+jito-vault-client = { workspace = true, features = ["serde"] }
 jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 solana-account-decoder = { workspace = true }
 solana-cli-config = { workspace = true }
 solana-program = { workspace = true }
+solana-remote-wallet = { workspace = true }
 solana-rpc-client = { workspace = true }
 solana-rpc-client-api = { workspace = true }
 solana-sdk = { workspace = true }
@@ -35,9 +40,7 @@ spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-
-[dev-dependencies]
-assert_matches = { workspace = true }
+uriparse = { workspace = true }
 
 [[bin]]
 name = "jito-restaking-cli"

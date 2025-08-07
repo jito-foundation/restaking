@@ -6,6 +6,8 @@ use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError
 
 use crate::delegation_state::DelegationState;
 
+const RESERVED_SPACE_LEN: usize = 263;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct VaultUpdateStateTracker {
@@ -34,7 +36,7 @@ impl VaultUpdateStateTracker {
             last_updated_index: PodU64::from(u64::MAX),
             delegation_state: DelegationState::default(),
             withdrawal_allocation_method,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -166,7 +168,8 @@ mod tests {
     use solana_program::pubkey::Pubkey;
 
     use crate::{
-        delegation_state::DelegationState, vault_update_state_tracker::VaultUpdateStateTracker,
+        delegation_state::DelegationState,
+        vault_update_state_tracker::{VaultUpdateStateTracker, RESERVED_SPACE_LEN},
     };
 
     #[test]
@@ -177,7 +180,7 @@ mod tests {
             size_of::<PodU64>() + // last_updated_index
             size_of::<DelegationState>() + // delegation_state
             size_of::<u8>() + // withdrawal_allocation_method
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(vault_update_state_tracker_size, sum_of_fields);
     }
 

@@ -1,0 +1,26 @@
+{
+    "name": "@jito-foundation/restaking-sdk",
+    "version": "1.0.0",
+    "description": "TypeScript SDK for interacting with Jito's Restaking program on Solana",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "license": "Apache-2.0",
+    "files": [
+        "dist",
+        "src",
+        "README.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jito-foundation/restaking"
+    },
+    "scripts": {
+        "build": "tsup",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "@solana/kit": "^2.1.0",
+        "@types/node": "^22.9.2",
+        "tsup": "^8.4.0"
+    }
+}

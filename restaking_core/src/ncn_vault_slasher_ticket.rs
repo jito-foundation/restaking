@@ -7,10 +7,13 @@ use jito_jsm_core::slot_toggle::SlotToggle;
 use shank::ShankAccount;
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 
-/// The NcnVaultSlasherTicket is created by the NCN and it tracks the state of a node consensus network
-/// opting-in to a vault slasher. The NcnVaultSlasherTicket can be activated and deactivated over time.
-/// The NcnVaultSlasherTicket can slash a specific operator that's receiving delegation from a
-/// vault for a maximum amount per epoch.
+const RESERVED_SPACE_LEN: usize = 263;
+
+/// The [`NcnVaultSlasherTicket`] account
+///
+/// - is created by the NCN and it tracks the state of a node consensus network network opting-in to a vault slasher.
+/// - can be activated and deactivated over time.
+/// - can slash a specific operator that's receiving delegation from a vault for a maximum amount per epoch.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Pod, Zeroable, AccountDeserialize, ShankAccount)]
 #[repr(C)]
 pub struct NcnVaultSlasherTicket {
@@ -68,7 +71,7 @@ impl NcnVaultSlasherTicket {
             index: PodU64::from(index),
             state: SlotToggle::new(slot),
             bump,
-            reserved: [0; 263],
+            reserved: [0; RESERVED_SPACE_LEN],
         }
     }
 
@@ -184,7 +187,7 @@ mod tests {
             size_of::<PodU64>() + // index
             size_of::<SlotToggle>() + // state
             size_of::<u8>() + // bump
-            263; // reserved
+            RESERVED_SPACE_LEN; // reserved
         assert_eq!(ncn_vault_slasher_ticket_size, sum_of_fields);
     }
 

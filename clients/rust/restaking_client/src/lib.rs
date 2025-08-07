@@ -4,7 +4,9 @@
 #![allow(clippy::arithmetic_side_effects)]
 #![allow(clippy::style)]
 #![allow(clippy::perf)]
+#![allow(deprecated)]
 mod generated;
+pub mod log;
 
 use generated::*;
 

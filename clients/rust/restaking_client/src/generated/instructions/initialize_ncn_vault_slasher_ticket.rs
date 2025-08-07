@@ -3,8 +3,10 @@
 //! to add features, then rerun kinobi to update it.
 //!
 //! <https://github.com/kinobi-so/kinobi>
+//!
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
 
 /// Accounts.
 pub struct InitializeNcnVaultSlasherTicket {
@@ -108,7 +110,7 @@ impl Default for InitializeNcnVaultSlasherTicketInstructionData {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct InitializeNcnVaultSlasherTicketInstructionArgs {
-    pub args: u64,
+    pub max_slashable_per_epoch: u64,
 }
 
 /// Instruction builder for `InitializeNcnVaultSlasherTicket`.
@@ -135,7 +137,7 @@ pub struct InitializeNcnVaultSlasherTicketBuilder {
     admin: Option<solana_program::pubkey::Pubkey>,
     payer: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
-    args: Option<u64>,
+    max_slashable_per_epoch: Option<u64>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
@@ -196,8 +198,8 @@ impl InitializeNcnVaultSlasherTicketBuilder {
         self
     }
     #[inline(always)]
-    pub fn args(&mut self, args: u64) -> &mut Self {
-        self.args = Some(args);
+    pub fn max_slashable_per_epoch(&mut self, max_slashable_per_epoch: u64) -> &mut Self {
+        self.max_slashable_per_epoch = Some(max_slashable_per_epoch);
         self
     }
     /// Add an additional account to the instruction.
@@ -236,7 +238,10 @@ impl InitializeNcnVaultSlasherTicketBuilder {
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
         };
         let args = InitializeNcnVaultSlasherTicketInstructionArgs {
-            args: self.args.clone().expect("args is not set"),
+            max_slashable_per_epoch: self
+                .max_slashable_per_epoch
+                .clone()
+                .expect("max_slashable_per_epoch is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -452,7 +457,7 @@ impl<'a, 'b> InitializeNcnVaultSlasherTicketCpiBuilder<'a, 'b> {
             admin: None,
             payer: None,
             system_program: None,
-            args: None,
+            max_slashable_per_epoch: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -518,8 +523,8 @@ impl<'a, 'b> InitializeNcnVaultSlasherTicketCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn args(&mut self, args: u64) -> &mut Self {
-        self.instruction.args = Some(args);
+    pub fn max_slashable_per_epoch(&mut self, max_slashable_per_epoch: u64) -> &mut Self {
+        self.instruction.max_slashable_per_epoch = Some(max_slashable_per_epoch);
         self
     }
     /// Add an additional account to the instruction.
@@ -564,7 +569,11 @@ impl<'a, 'b> InitializeNcnVaultSlasherTicketCpiBuilder<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
         let args = InitializeNcnVaultSlasherTicketInstructionArgs {
-            args: self.instruction.args.clone().expect("args is not set"),
+            max_slashable_per_epoch: self
+                .instruction
+                .max_slashable_per_epoch
+                .clone()
+                .expect("max_slashable_per_epoch is not set"),
         };
         let instruction = InitializeNcnVaultSlasherTicketCpi {
             __program: self.instruction.__program,
@@ -616,7 +625,7 @@ struct InitializeNcnVaultSlasherTicketCpiBuilderInstruction<'a, 'b> {
     admin: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    args: Option<u64>,
+    max_slashable_per_epoch: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

@@ -580,9 +580,10 @@ pub fn enqueue_withdrawal(
     staker: &Pubkey,
     staker_vrt_token_account: &Pubkey,
     base: &Pubkey,
+    mint_burn_admin: Option<&Pubkey>,
     amount: u64,
 ) -> Instruction {
-    let accounts = vec![
+    let mut accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new(*vault_staker_withdrawal_ticket, false),
@@ -593,10 +594,37 @@ pub fn enqueue_withdrawal(
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
+    if let Some(signer) = mint_burn_admin {
+        accounts.push(AccountMeta::new_readonly(*signer, true));
+    }
     Instruction {
         program_id: *program_id,
         accounts,
         data: VaultInstruction::EnqueueWithdrawal { amount }
+            .try_to_vec()
+            .unwrap(),
+    }
+}
+
+pub fn change_withdrawal_ticket_owner(
+    program_id: &Pubkey,
+    config: &Pubkey,
+    vault: &Pubkey,
+    vault_staker_withdrawal_ticket: &Pubkey,
+    old_owner: &Pubkey,
+    new_owner: &Pubkey,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new_readonly(*config, false),
+        AccountMeta::new(*vault, false),
+        AccountMeta::new(*vault_staker_withdrawal_ticket, false),
+        AccountMeta::new_readonly(*old_owner, true),
+        AccountMeta::new_readonly(*new_owner, false),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: VaultInstruction::ChangeWithdrawalTicketOwner
             .try_to_vec()
             .unwrap(),
     }
@@ -615,8 +643,9 @@ pub fn burn_withdrawal_ticket(
     vault_staker_withdrawal_ticket_token_account: &Pubkey,
     vault_fee_token_account: &Pubkey,
     program_fee_vrt_token_account: &Pubkey,
+    mint_burn_admin: Option<&Pubkey>,
 ) -> Instruction {
-    let accounts = vec![
+    let mut accounts = vec![
         AccountMeta::new_readonly(*config, false),
         AccountMeta::new(*vault, false),
         AccountMeta::new(*vault_token_account, false),
@@ -630,6 +659,9 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
+    if let Some(signer) = mint_burn_admin {
+        accounts.push(AccountMeta::new_readonly(*signer, true));
+    }
     Instruction {
         program_id: *program_id,
         accounts,
