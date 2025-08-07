@@ -147,6 +147,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         let config: Config = vault_handler
             .get_vault_program_account(&config_address)
             .await?;
+        let epoch_length = config.epoch_length();
         async move {
             let metrics_client = RpcClient::new_with_timeout(args.rpc_url, Duration::from_secs(60));
             loop {
