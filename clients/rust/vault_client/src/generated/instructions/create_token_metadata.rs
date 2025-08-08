@@ -86,7 +86,7 @@ pub struct CreateTokenMetadataInstructionData {
 
 impl CreateTokenMetadataInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 29 }
+        Self { discriminator: 30 }
     }
 }
 

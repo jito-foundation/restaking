@@ -18,28 +18,31 @@ import {
   type Decoder,
   type Encoder,
   type IAccountMeta,
+  type IAccountSignerMeta,
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
   type ReadonlyAccount,
+  type ReadonlySignerAccount,
+  type TransactionSigner,
   type WritableAccount,
 } from '@solana/web3.js';
 import { JITO_VAULT_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
-export const UPDATE_VAULT_BALANCE_DISCRIMINATOR = 26;
+export const REVOKE_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR = 21;
 
-export function getUpdateVaultBalanceDiscriminatorBytes() {
-  return getU8Encoder().encode(UPDATE_VAULT_BALANCE_DISCRIMINATOR);
+export function getRevokeDelegateTokenAccountDiscriminatorBytes() {
+  return getU8Encoder().encode(REVOKE_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR);
 }
 
-export type UpdateVaultBalanceInstruction<
+export type RevokeDelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountConfig extends string | IAccountMeta<string> = string,
   TAccountVault extends string | IAccountMeta<string> = string,
-  TAccountVaultTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountVrtMint extends string | IAccountMeta<string> = string,
-  TAccountVaultFeeTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountDelegateAssetAdmin extends string | IAccountMeta<string> = string,
+  TAccountTokenMint extends string | IAccountMeta<string> = string,
+  TAccountTokenAccount extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
     | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
@@ -52,17 +55,18 @@ export type UpdateVaultBalanceInstruction<
         ? ReadonlyAccount<TAccountConfig>
         : TAccountConfig,
       TAccountVault extends string
-        ? WritableAccount<TAccountVault>
+        ? ReadonlyAccount<TAccountVault>
         : TAccountVault,
-      TAccountVaultTokenAccount extends string
-        ? ReadonlyAccount<TAccountVaultTokenAccount>
-        : TAccountVaultTokenAccount,
-      TAccountVrtMint extends string
-        ? WritableAccount<TAccountVrtMint>
-        : TAccountVrtMint,
-      TAccountVaultFeeTokenAccount extends string
-        ? WritableAccount<TAccountVaultFeeTokenAccount>
-        : TAccountVaultFeeTokenAccount,
+      TAccountDelegateAssetAdmin extends string
+        ? ReadonlySignerAccount<TAccountDelegateAssetAdmin> &
+            IAccountSignerMeta<TAccountDelegateAssetAdmin>
+        : TAccountDelegateAssetAdmin,
+      TAccountTokenMint extends string
+        ? ReadonlyAccount<TAccountTokenMint>
+        : TAccountTokenMint,
+      TAccountTokenAccount extends string
+        ? WritableAccount<TAccountTokenAccount>
+        : TAccountTokenAccount,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
@@ -70,72 +74,77 @@ export type UpdateVaultBalanceInstruction<
     ]
   >;
 
-export type UpdateVaultBalanceInstructionData = { discriminator: number };
+export type RevokeDelegateTokenAccountInstructionData = {
+  discriminator: number;
+};
 
-export type UpdateVaultBalanceInstructionDataArgs = {};
+export type RevokeDelegateTokenAccountInstructionDataArgs = {};
 
-export function getUpdateVaultBalanceInstructionDataEncoder(): Encoder<UpdateVaultBalanceInstructionDataArgs> {
+export function getRevokeDelegateTokenAccountInstructionDataEncoder(): Encoder<RevokeDelegateTokenAccountInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([['discriminator', getU8Encoder()]]),
-    (value) => ({ ...value, discriminator: UPDATE_VAULT_BALANCE_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: REVOKE_DELEGATE_TOKEN_ACCOUNT_DISCRIMINATOR,
+    })
   );
 }
 
-export function getUpdateVaultBalanceInstructionDataDecoder(): Decoder<UpdateVaultBalanceInstructionData> {
+export function getRevokeDelegateTokenAccountInstructionDataDecoder(): Decoder<RevokeDelegateTokenAccountInstructionData> {
   return getStructDecoder([['discriminator', getU8Decoder()]]);
 }
 
-export function getUpdateVaultBalanceInstructionDataCodec(): Codec<
-  UpdateVaultBalanceInstructionDataArgs,
-  UpdateVaultBalanceInstructionData
+export function getRevokeDelegateTokenAccountInstructionDataCodec(): Codec<
+  RevokeDelegateTokenAccountInstructionDataArgs,
+  RevokeDelegateTokenAccountInstructionData
 > {
   return combineCodec(
-    getUpdateVaultBalanceInstructionDataEncoder(),
-    getUpdateVaultBalanceInstructionDataDecoder()
+    getRevokeDelegateTokenAccountInstructionDataEncoder(),
+    getRevokeDelegateTokenAccountInstructionDataDecoder()
   );
 }
 
-export type UpdateVaultBalanceInput<
+export type RevokeDelegateTokenAccountInput<
   TAccountConfig extends string = string,
   TAccountVault extends string = string,
-  TAccountVaultTokenAccount extends string = string,
-  TAccountVrtMint extends string = string,
-  TAccountVaultFeeTokenAccount extends string = string,
+  TAccountDelegateAssetAdmin extends string = string,
+  TAccountTokenMint extends string = string,
+  TAccountTokenAccount extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   config: Address<TAccountConfig>;
   vault: Address<TAccountVault>;
-  vaultTokenAccount: Address<TAccountVaultTokenAccount>;
-  vrtMint: Address<TAccountVrtMint>;
-  vaultFeeTokenAccount: Address<TAccountVaultFeeTokenAccount>;
+  delegateAssetAdmin: TransactionSigner<TAccountDelegateAssetAdmin>;
+  tokenMint: Address<TAccountTokenMint>;
+  tokenAccount: Address<TAccountTokenAccount>;
   tokenProgram?: Address<TAccountTokenProgram>;
 };
 
-export function getUpdateVaultBalanceInstruction<
+export function getRevokeDelegateTokenAccountInstruction<
   TAccountConfig extends string,
   TAccountVault extends string,
-  TAccountVaultTokenAccount extends string,
-  TAccountVrtMint extends string,
-  TAccountVaultFeeTokenAccount extends string,
+  TAccountDelegateAssetAdmin extends string,
+  TAccountTokenMint extends string,
+  TAccountTokenAccount extends string,
   TAccountTokenProgram extends string,
   TProgramAddress extends Address = typeof JITO_VAULT_PROGRAM_ADDRESS,
 >(
-  input: UpdateVaultBalanceInput<
+  input: RevokeDelegateTokenAccountInput<
     TAccountConfig,
     TAccountVault,
-    TAccountVaultTokenAccount,
-    TAccountVrtMint,
-    TAccountVaultFeeTokenAccount,
+    TAccountDelegateAssetAdmin,
+    TAccountTokenMint,
+    TAccountTokenAccount,
     TAccountTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
-): UpdateVaultBalanceInstruction<
+): RevokeDelegateTokenAccountInstruction<
   TProgramAddress,
   TAccountConfig,
   TAccountVault,
-  TAccountVaultTokenAccount,
-  TAccountVrtMint,
-  TAccountVaultFeeTokenAccount,
+  TAccountDelegateAssetAdmin,
+  TAccountTokenMint,
+  TAccountTokenAccount,
   TAccountTokenProgram
 > {
   // Program address.
@@ -144,16 +153,13 @@ export function getUpdateVaultBalanceInstruction<
   // Original accounts.
   const originalAccounts = {
     config: { value: input.config ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: true },
-    vaultTokenAccount: {
-      value: input.vaultTokenAccount ?? null,
+    vault: { value: input.vault ?? null, isWritable: false },
+    delegateAssetAdmin: {
+      value: input.delegateAssetAdmin ?? null,
       isWritable: false,
     },
-    vrtMint: { value: input.vrtMint ?? null, isWritable: true },
-    vaultFeeTokenAccount: {
-      value: input.vaultFeeTokenAccount ?? null,
-      isWritable: true,
-    },
+    tokenMint: { value: input.tokenMint ?? null, isWritable: false },
+    tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -172,27 +178,27 @@ export function getUpdateVaultBalanceInstruction<
     accounts: [
       getAccountMeta(accounts.config),
       getAccountMeta(accounts.vault),
-      getAccountMeta(accounts.vaultTokenAccount),
-      getAccountMeta(accounts.vrtMint),
-      getAccountMeta(accounts.vaultFeeTokenAccount),
+      getAccountMeta(accounts.delegateAssetAdmin),
+      getAccountMeta(accounts.tokenMint),
+      getAccountMeta(accounts.tokenAccount),
       getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getUpdateVaultBalanceInstructionDataEncoder().encode({}),
-  } as UpdateVaultBalanceInstruction<
+    data: getRevokeDelegateTokenAccountInstructionDataEncoder().encode({}),
+  } as RevokeDelegateTokenAccountInstruction<
     TProgramAddress,
     TAccountConfig,
     TAccountVault,
-    TAccountVaultTokenAccount,
-    TAccountVrtMint,
-    TAccountVaultFeeTokenAccount,
+    TAccountDelegateAssetAdmin,
+    TAccountTokenMint,
+    TAccountTokenAccount,
     TAccountTokenProgram
   >;
 
   return instruction;
 }
 
-export type ParsedUpdateVaultBalanceInstruction<
+export type ParsedRevokeDelegateTokenAccountInstruction<
   TProgram extends string = typeof JITO_VAULT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -200,22 +206,22 @@ export type ParsedUpdateVaultBalanceInstruction<
   accounts: {
     config: TAccountMetas[0];
     vault: TAccountMetas[1];
-    vaultTokenAccount: TAccountMetas[2];
-    vrtMint: TAccountMetas[3];
-    vaultFeeTokenAccount: TAccountMetas[4];
+    delegateAssetAdmin: TAccountMetas[2];
+    tokenMint: TAccountMetas[3];
+    tokenAccount: TAccountMetas[4];
     tokenProgram: TAccountMetas[5];
   };
-  data: UpdateVaultBalanceInstructionData;
+  data: RevokeDelegateTokenAccountInstructionData;
 };
 
-export function parseUpdateVaultBalanceInstruction<
+export function parseRevokeDelegateTokenAccountInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedUpdateVaultBalanceInstruction<TProgram, TAccountMetas> {
+): ParsedRevokeDelegateTokenAccountInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
@@ -231,12 +237,12 @@ export function parseUpdateVaultBalanceInstruction<
     accounts: {
       config: getNextAccount(),
       vault: getNextAccount(),
-      vaultTokenAccount: getNextAccount(),
-      vrtMint: getNextAccount(),
-      vaultFeeTokenAccount: getNextAccount(),
+      delegateAssetAdmin: getNextAccount(),
+      tokenMint: getNextAccount(),
+      tokenAccount: getNextAccount(),
       tokenProgram: getNextAccount(),
     },
-    data: getUpdateVaultBalanceInstructionDataDecoder().decode(
+    data: getRevokeDelegateTokenAccountInstructionDataDecoder().decode(
       instruction.data
     ),
   };
