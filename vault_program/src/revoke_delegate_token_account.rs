@@ -8,7 +8,7 @@ use solana_program::{
 
 /// Processes the revoke delegate token account instruction: [`crate::VaultInstruction::RevokeDelegateTokenAccount`]
 ///
-/// This instruction handles the revoke delegation of a delegate set by the [`crate::VaultInstruction::DelegateTokenAccount`] instruction.
+/// This instruction revokes delegation previously set by the [`crate::VaultInstruction::DelegateTokenAccount`] instruction.
 ///
 /// # Arguments
 /// * `program_id` - The public key of the program to ensure the correct program is being executed.
