@@ -47,7 +47,7 @@ pub fn process_revoke_delegate_token_account(
     let vault_data = vault_info.data.borrow();
     let vault = Vault::try_from_slice_unchecked(&vault_data)?;
     if vault.supported_mint.eq(token_mint.key) {
-        msg!("Cannot delegate away the supported mint for a vault!");
+        msg!("Cannot revoke delegation for the supported mint of a vault!");
         return Err(ProgramError::InvalidAccountData);
     }
 
