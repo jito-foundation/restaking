@@ -155,7 +155,12 @@ mod tests {
                     &vault_admin,
                     &random_mint.pubkey(),
                     &vault_token_account.pubkey(),
-                    &bob,
+                .revoke_delegate_token_account(
+                    &config_pubkey,
+                    &vault_pubkey,
+                    &vault_admin,
+                    &random_mint.pubkey(),
+                    &vault_token_account.pubkey(),
                     &token_program_id,
                 )
                 .await
