@@ -65,5 +65,12 @@ pub fn process_add_delegation(
         .delegation_state
         .delegate(amount)?;
 
+    // msg!(
+    //     "ADD DELEGATION: Vault {} delegating {} tokens to Operator {}",
+    //     vault_info.key,
+    //     amount,
+    //     operator.key
+    // );
+
     Ok(())
 }

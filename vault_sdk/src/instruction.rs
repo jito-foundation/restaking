@@ -328,6 +328,19 @@ pub enum VaultInstruction {
     #[account(4, writable, name = "token_account")]
     #[account(5, name = "token_program")]
     RevokeDelegateTokenAccount,
+  
+    /// Changes the secondary admin for the config
+    #[account(0, name = "config")]
+    #[account(1, signer, name = "admin")]
+    #[account(2, name = "new_admin")]
+    SetConfigSecondaryAdmin (ConfigAdminRole),
+
+}
+
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
+#[repr(u8)]
+pub enum ConfigAdminRole {
+    FeeAdmin,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize)]

@@ -31,6 +31,15 @@ pub enum ConfigActions {
         /// The new admin's pubkey
         new_admin: Pubkey,
     },
+    /// Set the config admin
+    SetSecondaryAdmin {
+        /// The new admin's pubkey
+        new_admin: Pubkey,
+
+        /// Set fee_admin
+        #[arg(long)]
+        set_fee_admin: bool,
+    },
     /// Set the program fee
     SetProgramFee {
         /// The program fee

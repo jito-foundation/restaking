@@ -36,6 +36,7 @@ import {
   type ParsedRevokeDelegateTokenAccountInstruction,
   type ParsedSetAdminInstruction,
   type ParsedSetConfigAdminInstruction,
+  type ParsedSetConfigSecondaryAdminInstruction,
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
   type ParsedSetIsPausedInstruction,
@@ -95,7 +96,7 @@ export enum JitoVaultInstruction {
   CreateTokenMetadata,
   UpdateTokenMetadata,
   SetConfigAdmin,
-  RevokeDelegateTokenAccount,
+  SetConfigSecondaryAdmin,
 }
 
 export function identifyJitoVaultInstruction(
@@ -199,7 +200,7 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.SetConfigAdmin;
   }
   if (containsBytes(data, getU8Encoder().encode(32), 0)) {
-    return JitoVaultInstruction.RevokeDelegateTokenAccount;
+    return JitoVaultInstruction.SetConfigSecondaryAdmin;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoVault instruction.'
@@ -306,5 +307,5 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.SetConfigAdmin;
     } & ParsedSetConfigAdminInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.RevokeDelegateTokenAccount;
-    } & ParsedRevokeDelegateTokenAccountInstruction<TProgram>);
+      instructionType: JitoVaultInstruction.SetConfigSecondaryAdmin;
+    } & ParsedSetConfigSecondaryAdminInstruction<TProgram>);
