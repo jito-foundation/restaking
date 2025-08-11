@@ -24,3 +24,35 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
+
+###
+### CERTORA SETTINGS AND LIBRARIES
+###
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+certora = ["dep:cvlr", "dep:cvlr-solana"]
+
+[dependencies.cvlr]
+workspace = true
+optional = true
+
+[dependencies.cvlr-solana]
+workspace = true
+optional = true
+
+[package.metadata.certora]
+sources = [
+            "../Cargo.toml",
+            "Cargo.toml",
+            "src/**/*.rs",
+            "../vault_core/src/*.rs",
+            "../restaking_core/src/*.rs",
+            "../restaking_program/**/*.rs",
+            "../core/**/*.rs",
+	    ]
+
+solana_inlining = ["../certora/envs/inlining.txt"]
+solana_summaries = ["../certora/envs/summaries.txt"]
