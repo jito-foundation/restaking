@@ -102,8 +102,8 @@ pub enum JitoRestakingError {
     DivisionByZero = 0xBBA,
 }
 
-impl solana_program::program_error::PrintProgramError for JitoRestakingError {
+/*impl solana_program::program_error::PrintProgramError for JitoRestakingError {
     fn print<E>(&self) {
         solana_program::msg!(&self.to_string());
     }
-}
+}*/

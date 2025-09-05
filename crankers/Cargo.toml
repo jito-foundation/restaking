@@ -30,11 +30,13 @@ jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 log = { workspace = true }
 solana-account-decoder = { workspace = true }
+solana-commitment-config = { workspace = true }
+solana-compute-budget-interface = { workspace = true } 
 solana-metrics = { workspace = true }
 solana-rpc-client = { workspace = true }
 solana-rpc-client-api = { workspace = true }
 solana-sdk = { workspace = true }
-spl-associated-token-account = { workspace = true }
-spl-token = { workspace = true }
+spl-associated-token-account-interface = { workspace = true }
+spl-token-interface = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

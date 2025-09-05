@@ -14,7 +14,8 @@ use jito_restaking_cli::{
 use jito_restaking_client::programs::JITO_RESTAKING_ID;
 use jito_vault_client::programs::JITO_VAULT_ID;
 use solana_cli_config::Config;
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use solana_commitment_config::CommitmentConfig;
+use solana_sdk::pubkey::Pubkey;
 
 pub fn get_cli_config(args: &Cli) -> Result<CliConfig, anyhow::Error> {
     let cli_config = if let Some(config_file) = &args.config_file {

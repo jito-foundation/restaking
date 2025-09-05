@@ -7,7 +7,7 @@ use solana_program::{
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::{instruction::mint_to, state::Account};
+use spl_token_interface::{instruction::mint_to, state::Account};
 
 pub fn process_update_vault_balance(
     program_id: &Pubkey,
@@ -78,7 +78,7 @@ pub fn process_update_vault_balance(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                &spl_token_interface::id(),
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

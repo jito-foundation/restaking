@@ -16,7 +16,7 @@ use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg, program::invoke,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
-use spl_token::instruction::transfer;
+use spl_token_interface::instruction::transfer;
 
 /// Enqueues a withdraw into the VaultStakerWithdrawalTicket account, transferring the amount from the
 /// staker's VRT token account to the VaultStakerWithdrawalTicket VRT token account.
@@ -126,7 +126,7 @@ pub fn process_enqueue_withdrawal(
     // by the VaultStakerWithdrawalTicket
     invoke(
         &transfer(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             staker_vrt_token_account.key,
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
