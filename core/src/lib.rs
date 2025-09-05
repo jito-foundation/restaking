@@ -6,9 +6,12 @@ use solana_program::{
     program_error::ProgramError,
     pubkey::Pubkey,
     rent::Rent,
-    system_instruction,
 };
-
+use solana_system_interface::instruction::{
+    allocate as allocate_ix, assign as assign_ix, create_account as create_account_ix,
+    transfer as transfer_ix,
+};
+use solana_system_interface::program as system_program;
 pub mod error;
 pub mod loader;
 pub mod slot_toggle;
@@ -38,7 +41,7 @@ pub fn create_account<'a, 'info>(
     if current_lamports == 0 {
         // If there are no lamports in the new account, we create it with the create_account instruction
         invoke_signed(
-            &system_instruction::create_account(
+            &create_account_ix(
                 payer.key,
                 new_account.key,
                 rent.minimum_balance(space as usize),
@@ -63,13 +66,13 @@ pub fn create_account<'a, 'info>(
             .saturating_sub(current_lamports);
         if required_lamports > 0 {
             invoke(
-                &system_instruction::transfer(payer.key, new_account.key, required_lamports),
+                &transfer_ix(payer.key, new_account.key, required_lamports),
                 &[payer.clone(), new_account.clone(), system_program.clone()],
             )?;
         }
         // Allocate space.
         invoke_signed(
-            &system_instruction::allocate(new_account.key, space),
+            &allocate_ix(new_account.key, space),
             &[new_account.clone(), system_program.clone()],
             &[seeds
                 .iter()
@@ -79,7 +82,7 @@ pub fn create_account<'a, 'info>(
         )?;
         // Assign to the specified program
         invoke_signed(
-            &system_instruction::assign(new_account.key, program_owner),
+            &assign_ix(new_account.key, program_owner),
             &[new_account.clone(), system_program.clone()],
             &[seeds
                 .iter()
@@ -107,8 +110,8 @@ pub fn close_program_account<'a>(
         .ok_or(ProgramError::ArithmeticOverflow)?;
     **account_to_close.lamports.borrow_mut() = 0;
 
-    account_to_close.assign(&solana_program::system_program::id());
-    account_to_close.realloc(0, false)?;
+    account_to_close.assign(&system_program::id());
+    account_to_close.resize(0)?;
 
     Ok(())
 }
@@ -123,10 +126,10 @@ pub fn realloc<'a, 'info>(
 
     let lamports_diff = new_minimum_balance.saturating_sub(account.lamports());
     invoke(
-        &system_instruction::transfer(payer.key, account.key, lamports_diff),
+        &transfer_ix(payer.key, account.key, lamports_diff),
         &[payer.clone(), account.clone()],
     )?;
-    account.realloc(new_size, false)?;
+    account.resize(new_size)?;
     Ok(())
 }
 

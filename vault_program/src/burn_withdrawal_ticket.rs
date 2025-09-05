@@ -16,8 +16,8 @@ use solana_program::{
     program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::instruction::{burn, close_account, transfer};
-use spl_token_2022::state::Account;
+use spl_token_2022_interface::state::Account;
+use spl_token_interface::instruction::{burn, close_account, transfer};
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
@@ -137,7 +137,7 @@ pub fn process_burn_withdrawal_ticket(
     // transfer fee to fee wallet
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             vault_staker_withdrawal_ticket_token_account.key,
             vault_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -154,7 +154,7 @@ pub fn process_burn_withdrawal_ticket(
     // Transfer program fee to program fee wallet
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             vault_staker_withdrawal_ticket_token_account.key,
             program_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -172,7 +172,7 @@ pub fn process_burn_withdrawal_ticket(
     // burn the VRT tokens
     invoke_signed(
         &burn(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             vault_staker_withdrawal_ticket_token_account.key,
             vrt_mint.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -190,7 +190,7 @@ pub fn process_burn_withdrawal_ticket(
     // close token account
     invoke_signed(
         &close_account(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -216,7 +216,7 @@ pub fn process_burn_withdrawal_ticket(
 
     invoke_signed(
         &transfer(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             vault_token_account.key,
             staker_token_account.key,
             vault_info.key,

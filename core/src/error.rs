@@ -1,3 +1,4 @@
+#[allow(deprecated)]
 use solana_decode_error::DecodeError;
 use solana_program::program_error::ProgramError;
 use thiserror::Error;
@@ -8,6 +9,7 @@ pub enum CoreError {
     BadEpochLength,
 }
 
+#[allow(deprecated)]
 impl<T> DecodeError<T> for CoreError {
     fn type_of() -> &'static str {
         "jito::core"

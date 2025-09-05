@@ -50,9 +50,7 @@ impl NcnCooldownOperator {
             self.admin, true,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = NcnCooldownOperatorInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&NcnCooldownOperatorInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -268,9 +266,7 @@ impl<'a, 'b> NcnCooldownOperatorCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = NcnCooldownOperatorInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&NcnCooldownOperatorInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,

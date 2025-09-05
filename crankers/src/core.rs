@@ -1,10 +1,9 @@
 use std::{future::Future, sync::Arc};
 
+use solana_commitment_config::CommitmentConfig;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::client_error::Error as ClientError;
-use solana_sdk::{
-    account::Account, commitment_config::CommitmentConfig, hash::Hash, pubkey::Pubkey,
-};
+use solana_sdk::{account::Account, hash::Hash, pubkey::Pubkey};
 use tokio::task;
 
 pub async fn retry<F, Fut, T, E>(mut f: F, retries: usize) -> Result<T, E>

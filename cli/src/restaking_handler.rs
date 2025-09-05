@@ -24,8 +24,8 @@ use jito_restaking_core::{
 use log::info;
 use solana_program::pubkey::Pubkey;
 use solana_sdk::signature::{read_keypair_file, Keypair, Signer};
-use spl_associated_token_account::{
-    get_associated_token_address, instruction::create_associated_token_account_idempotent,
+use spl_associated_token_account_interface::{
+    address::get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 
 use crate::{
@@ -593,7 +593,7 @@ impl RestakingCliHandler {
                 &signer.pubkey(),
                 &operator,
                 &token_mint,
-                &spl_token::id(),
+                &spl_token_interface::id(),
             );
             ixs.push(ix);
         }
@@ -645,7 +645,7 @@ impl RestakingCliHandler {
                 &signer.pubkey(),
                 &ncn,
                 &token_mint,
-                &spl_token::id(),
+                &spl_token_interface::id(),
             );
             ixs.push(ix);
         }

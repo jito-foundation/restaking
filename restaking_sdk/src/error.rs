@@ -1,4 +1,6 @@
-use solana_program::{decode_error::DecodeError, program_error::ProgramError};
+#[allow(deprecated)]
+use solana_decode_error::DecodeError;
+use solana_program::program_error::ProgramError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -66,6 +68,7 @@ pub enum RestakingError {
     DivisionByZero,
 }
 
+#[allow(deprecated)]
 impl<T> DecodeError<T> for RestakingError {
     fn type_of() -> &'static str {
         "jito::restaking"
