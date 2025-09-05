@@ -28,8 +28,8 @@ solana-program-test = { workspace = true }
 solana-sdk = { workspace = true }
 solana-security-txt = { workspace = true }
 spl-associated-token-account-interface = { workspace = true }
-spl-token-interface = { workspace = true }
 spl-token-2022-interface = { workspace = true }
+spl-token-interface = { workspace = true }
 test-case = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

@@ -1,3 +1,4 @@
+#[allow(deprecated)]
 use solana_decode_error::DecodeError;
 use solana_program::program_error::ProgramError;
 use thiserror::Error;
@@ -132,6 +133,7 @@ pub enum VaultError {
     DivisionByZero,
 }
 
+#[allow(deprecated)]
 impl<T> DecodeError<T> for VaultError {
     fn type_of() -> &'static str {
         "jito::vault"
