@@ -14,8 +14,11 @@ borsh = { workspace = true }
 bytemuck = { workspace = true }
 jito-bytemuck = { workspace = true }
 shank = { workspace = true }
+solana-address = { workspace = true }
 solana-decode-error = { workspace = true }
 solana-program = { workspace = true }
+solana-pubkey = { workspace = true }
+solana-system-interface = { workspace = true }
 spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 spl-token-2022 = { workspace = true }

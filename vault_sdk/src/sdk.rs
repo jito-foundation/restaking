@@ -1,14 +1,18 @@
-use borsh::BorshSerialize;
-use solana_program::{
-    instruction::{AccountMeta, Instruction},
-    pubkey::Pubkey,
-    system_program,
-};
-
 use crate::{
     inline_mpl_token_metadata::{self},
     instruction::{ConfigAdminRole, VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
 };
+
+use solana_address::Address;
+use solana_program::{
+    instruction::{AccountMeta, Instruction},
+    pubkey::Pubkey,
+};
+use solana_system_interface::program as system_program;
+
+pub const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID: Address =
+    Address::new_from_array(spl_associated_token_account::id().to_bytes());
+pub const SPL_TOKEN_PROGRAM_ID: Address = Address::new_from_array(spl_token::id().to_bytes());
 
 pub fn initialize_config(
     program_id: &Pubkey,
@@ -28,9 +32,7 @@ pub fn initialize_config(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeConfig { program_fee_bps }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::InitializeConfig { program_fee_bps }).unwrap(),
     }
 }
 
@@ -65,20 +67,19 @@ pub fn initialize_vault(
         AccountMeta::new(*admin, true),
         AccountMeta::new_readonly(*base, true),
         AccountMeta::new_readonly(system_program::id(), false),
-        AccountMeta::new_readonly(spl_token::id(), false),
-        AccountMeta::new_readonly(spl_associated_token_account::id(), false),
+        AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false),
+        AccountMeta::new_readonly(SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, false),
     ];
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVault {
+        data: borsh::to_vec(&VaultInstruction::InitializeVault {
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
             decimals,
             initialize_token_amount,
-        }
-        .try_to_vec()
+        })
         .unwrap(),
     }
 }
@@ -107,9 +108,7 @@ pub fn initialize_vault_ncn_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultNcnTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::InitializeVaultNcnTicket).unwrap(),
     }
 }
 
@@ -131,9 +130,7 @@ pub fn cooldown_vault_ncn_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownVaultNcnTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::CooldownVaultNcnTicket).unwrap(),
     }
 }
 
@@ -161,9 +158,7 @@ pub fn initialize_vault_operator_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultOperatorDelegation
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::InitializeVaultOperatorDelegation).unwrap(),
     }
 }
 
@@ -191,7 +186,7 @@ pub fn mint_to(
         AccountMeta::new(*vault_token_account, false),
         AccountMeta::new(*depositor_vrt_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false),
     ];
     if let Some(signer) = mint_signer {
         accounts.push(AccountMeta::new_readonly(*signer, true));
@@ -199,11 +194,10 @@ pub fn mint_to(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::MintTo {
+        data: borsh::to_vec(&VaultInstruction::MintTo {
             amount_in,
             min_amount_out,
-        }
-        .try_to_vec()
+        })
         .unwrap(),
     }
 }
@@ -223,9 +217,7 @@ pub fn set_deposit_capacity(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetDepositCapacity { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetDepositCapacity { amount }).unwrap(),
     }
 }
 
@@ -246,12 +238,11 @@ pub fn set_fees(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetFees {
+        data: borsh::to_vec(&VaultInstruction::SetFees {
             deposit_fee_bps,
             withdrawal_fee_bps,
             reward_fee_bps,
-        }
-        .try_to_vec()
+        })
         .unwrap(),
     }
 }
@@ -269,9 +260,7 @@ pub fn set_program_fee(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetProgramFee { new_fee_bps }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetProgramFee { new_fee_bps }).unwrap(),
     }
 }
 
@@ -298,7 +287,7 @@ pub fn delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::DelegateTokenAccount.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::DelegateTokenAccount).unwrap(),
     }
 }
 
@@ -323,9 +312,7 @@ pub fn revoke_delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::RevokeDelegateTokenAccount
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::RevokeDelegateTokenAccount).unwrap(),
     }
 }
 
@@ -345,7 +332,7 @@ pub fn set_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetAdmin.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetAdmin).unwrap(),
     }
 }
 
@@ -366,9 +353,7 @@ pub fn set_secondary_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetSecondaryAdmin(role)
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetSecondaryAdmin(role)).unwrap(),
     }
 }
 
@@ -391,9 +376,7 @@ pub fn add_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::AddDelegation { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::AddDelegation { amount }).unwrap(),
     }
 }
 
@@ -417,9 +400,7 @@ pub fn cooldown_delegation(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CooldownDelegation { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::CooldownDelegation { amount }).unwrap(),
     }
 }
 
@@ -441,9 +422,7 @@ pub fn crank_vault_update_state_tracker(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CrankVaultUpdateStateTracker
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::CrankVaultUpdateStateTracker).unwrap(),
     }
 }
 
@@ -473,9 +452,7 @@ pub fn initialize_vault_ncn_slasher_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultNcnSlasherTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::InitializeVaultNcnSlasherTicket).unwrap(),
     }
 }
 
@@ -504,9 +481,7 @@ pub fn create_token_metadata(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CreateTokenMetadata { name, symbol, uri }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::CreateTokenMetadata { name, symbol, uri }).unwrap(),
     }
 }
 
@@ -532,9 +507,7 @@ pub fn update_token_metadata(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::UpdateTokenMetadata { name, symbol, uri }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::UpdateTokenMetadata { name, symbol, uri }).unwrap(),
     }
 }
 
@@ -564,9 +537,7 @@ pub fn initialize_vault_ncn_slasher_operator_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultNcnSlasherOperatorTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::InitializeVaultNcnSlasherOperatorTicket).unwrap(),
     }
 }
 
@@ -591,7 +562,7 @@ pub fn enqueue_withdrawal(
         AccountMeta::new(*staker, true),
         AccountMeta::new(*staker_vrt_token_account, false),
         AccountMeta::new_readonly(*base, true),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     if let Some(signer) = mint_burn_admin {
@@ -600,9 +571,7 @@ pub fn enqueue_withdrawal(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::EnqueueWithdrawal { amount }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::EnqueueWithdrawal { amount }).unwrap(),
     }
 }
 
@@ -624,9 +593,7 @@ pub fn change_withdrawal_ticket_owner(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::ChangeWithdrawalTicketOwner
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::ChangeWithdrawalTicketOwner).unwrap(),
     }
 }
 
@@ -656,7 +623,7 @@ pub fn burn_withdrawal_ticket(
         AccountMeta::new(*vault_staker_withdrawal_ticket_token_account, false),
         AccountMeta::new(*vault_fee_token_account, false),
         AccountMeta::new(*program_fee_vrt_token_account, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false),
         AccountMeta::new_readonly(system_program::id(), false),
     ];
     if let Some(signer) = mint_burn_admin {
@@ -665,7 +632,7 @@ pub fn burn_withdrawal_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::BurnWithdrawalTicket.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::BurnWithdrawalTicket).unwrap(),
     }
 }
 
@@ -689,7 +656,7 @@ pub fn update_vault_balance(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::UpdateVaultBalance.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::UpdateVaultBalance).unwrap(),
     }
 }
 pub fn initialize_vault_update_state_tracker(
@@ -710,10 +677,9 @@ pub fn initialize_vault_update_state_tracker(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::InitializeVaultUpdateStateTracker {
+        data: borsh::to_vec(&VaultInstruction::InitializeVaultUpdateStateTracker {
             withdrawal_allocation_method,
-        }
-        .try_to_vec()
+        })
         .unwrap(),
     }
 }
@@ -735,9 +701,7 @@ pub fn close_vault_update_state_tracker(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch }).unwrap(),
     }
 }
 
@@ -759,7 +723,7 @@ pub fn warmup_vault_ncn_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::WarmupVaultNcnTicket.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::WarmupVaultNcnTicket).unwrap(),
     }
 }
 
@@ -784,9 +748,7 @@ pub fn warmup_vault_ncn_slasher_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::WarmupVaultNcnSlasherTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::WarmupVaultNcnSlasherTicket).unwrap(),
     }
 }
 
@@ -804,7 +766,7 @@ pub fn set_program_fee_wallet(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetProgramFeeWallet.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetProgramFeeWallet).unwrap(),
     }
 }
 
@@ -823,9 +785,7 @@ pub fn set_is_paused(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetIsPaused { is_paused }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetIsPaused { is_paused }).unwrap(),
     }
 }
 
@@ -843,7 +803,7 @@ pub fn set_config_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetConfigAdmin.try_to_vec().unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetConfigAdmin).unwrap(),
     }
 }
 
@@ -862,8 +822,6 @@ pub fn set_config_secondary_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: VaultInstruction::SetConfigSecondaryAdmin(role)
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&VaultInstruction::SetConfigSecondaryAdmin(role)).unwrap(),
     }
 }

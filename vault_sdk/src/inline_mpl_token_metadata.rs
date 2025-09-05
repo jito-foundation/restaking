@@ -5,10 +5,9 @@ solana_program::declare_id!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 pub mod instruction {
     use borsh::{BorshDeserialize, BorshSerialize};
-    use solana_program::{
-        instruction::{AccountMeta, Instruction},
-        pubkey::Pubkey,
-    };
+    use solana_address::Address;
+    use solana_program::instruction::{AccountMeta, Instruction};
+    use solana_system_interface::program as system_program;
 
     use super::state::DataV2;
 
@@ -24,12 +23,12 @@ pub mod instruction {
 
     #[allow(clippy::too_many_arguments)]
     pub fn create_metadata_accounts_v3(
-        program_id: Pubkey,
-        metadata_account: Pubkey,
-        mint: Pubkey,
-        mint_authority: Pubkey,
-        payer: Pubkey,
-        update_authority: Pubkey,
+        program_id: Address,
+        metadata_account: Address,
+        mint: Address,
+        mint_authority: Address,
+        payer: Address,
+        update_authority: Address,
         name: String,
         symbol: String,
         uri: String,
@@ -59,7 +58,7 @@ pub mod instruction {
                 AccountMeta::new_readonly(mint_authority, true),
                 AccountMeta::new(payer, true),
                 AccountMeta::new_readonly(update_authority, true),
-                AccountMeta::new_readonly(solana_program::system_program::ID, false),
+                AccountMeta::new_readonly(system_program::ID, false),
             ],
             data,
         }
@@ -68,15 +67,15 @@ pub mod instruction {
     #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
     pub struct UpdateMetadataAccountArgsV2 {
         pub data: Option<DataV2>,
-        pub update_authority: Option<Pubkey>,
+        pub update_authority: Option<Address>,
         pub primary_sale_happened: Option<bool>,
         pub is_mutable: Option<bool>,
     }
     pub fn update_metadata_accounts_v2(
-        program_id: Pubkey,
-        metadata_account: Pubkey,
-        update_authority: Pubkey,
-        new_update_authority: Option<Pubkey>,
+        program_id: Address,
+        metadata_account: Address,
+        update_authority: Address,
+        new_update_authority: Option<Address>,
         metadata: Option<DataV2>,
         primary_sale_happened: Option<bool>,
         is_mutable: Option<bool>,
@@ -104,13 +103,13 @@ pub mod instruction {
 
 /// PDA creation helpers
 pub mod pda {
-    use solana_program::pubkey::Pubkey;
+    use solana_address::Address;
 
     use super::ID;
     const PREFIX: &str = "metadata";
     /// Helper to find a metadata account address
-    pub fn find_metadata_account(mint: &Pubkey) -> (Pubkey, u8) {
-        Pubkey::find_program_address(&[PREFIX.as_bytes(), ID.as_ref(), mint.as_ref()], &ID)
+    pub fn find_metadata_account(mint: &Address) -> (Address, u8) {
+        Address::find_program_address(&[PREFIX.as_bytes(), ID.as_ref(), mint.as_ref()], &ID)
     }
 }
 

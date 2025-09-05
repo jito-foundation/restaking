@@ -1,5 +1,5 @@
 use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
-
+use solana_system_interface::program as system_program;
 // Empty PDA to send tokens to "burn"
 pub struct BurnVault {}
 
@@ -39,7 +39,7 @@ impl BurnVault {
         account: &AccountInfo,
         expect_writable: bool,
     ) -> Result<(), ProgramError> {
-        if account.owner.ne(&solana_program::system_program::ID) {
+        if account.owner.ne(&system_program::ID) {
             msg!("Burn Vault account has an invalid owner");
             return Err(ProgramError::InvalidAccountOwner);
         }

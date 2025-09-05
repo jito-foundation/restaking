@@ -2,6 +2,7 @@
 members = [
     "account_traits_derive",
     "bytemuck",
+    "cli",
     "clients/rust/common",
     "clients/rust/restaking_client",
     "clients/rust/vault_client",
@@ -33,7 +34,7 @@ anchor-lang = { version = "0.31.0", features = ["idl-build"] }
 anyhow = "1.0.86"
 assert_matches = "1.5.0"
 base64 = "0.22.1"
-borsh = { version = "0.10.3" }
+borsh = { version = "1.5.7" }
 bytemuck = { version = "1.16.3", features = ["derive", "min_const_generics"] }
 cfg-if = "1.0.0"
 chrono = "0.4.38"
@@ -64,25 +65,28 @@ quote = "1.0.36"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = { version = "1.0.140", features = ["preserve_order"] }
 serde_with = "3.9.0"
-shank = "0.4.2"
-shank_idl = "0.4.2"
-solana-account-decoder = "~2.2"
-solana-cli-config = "~2.2"
-solana-decode-error = "~2.2"
-solana-metrics = "~2.2"
-solana-program = "~2.2"
-solana-program-test = "~2.2"
-solana-remote-wallet = "~2.2"
-solana-rpc-client = "~2.2"
-solana-rpc-client-api = "~2.2"
-solana-sdk = "~2.2"
+shank = "0.4.5"
+shank_idl = "0.4.5"
+solana-address = "1.0.0"
+solana-account-decoder = "3.0.0"
+solana-cli-config = "3.0.0"
+solana-decode-error = "2.3.0"
+solana-metrics = "3.0.0"
+solana-pubkey = "3.0.0"
+solana-program = { version  = "3.0.0", default-features = false }
+solana-program-test = "3.0.0"
+solana-remote-wallet = "3.0.0"
+solana-rpc-client = "3.0.0"
+solana-rpc-client-api = "3.0.0"
+solana-sdk = "3.0.0"
 solana-security-txt = "1.1.1"
+solana-system-interface = "2.0.0"
 spl-associated-token-account = { version = "6.0.0", features = ["no-entrypoint"] }
 spl-token = { version = "7.0.0", features = ["no-entrypoint"] }
 spl-token-2022 = { version = "7.0.0", features = ["no-entrypoint"] }
 syn = "2.0.72"
 test-case = "3.3.1"
-thiserror = "1.0.57"
+thiserror = "2.0.16"
 tokio = { version = "1.36.0", features = ["full"] }
 uriparse = "0.6.4"
 
