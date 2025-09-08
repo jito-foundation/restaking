@@ -49,7 +49,7 @@ cargo-build-sbf
 
 ### Quickstart
 
-To create a vault, mint vrt, and delegate to an operator, follow this [guide](cli/getting_started.md).
+To create a vault, mint vrt, and delegate to an operator, follow this [guide](https://github.com/jito-foundation/restaking/tree/master/cli#getting-started).
 
 ### Building the software
 
