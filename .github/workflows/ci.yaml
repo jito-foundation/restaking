@@ -25,12 +25,13 @@ jobs:
         with:
           crate: cargo-audit
           version: "0.21.1"
-      - run: cargo audit \
-              --ignore RUSTSEC-2022-0093 \
-              --ignore RUSTSEC-2024-0344 \
-              --ignore RUSTSEC-2024-0421 \
-              --ignore RUSTSEC-2025-0022 \
-              --ignore RUSTSEC-2025-0055 # ignore til upgrade solana version
+      - run: |
+          cargo audit \
+            --ignore RUSTSEC-2022-0093 \
+            --ignore RUSTSEC-2024-0344 \
+            --ignore RUSTSEC-2024-0421 \
+            --ignore RUSTSEC-2025-0022 \
+            --ignore RUSTSEC-2025-0055 # waiting for solana upgrade
 
   code_gen:
     # cargo b && ./target/debug/jito-shank-cli && yarn generate-clients && cargo b
