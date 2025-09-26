@@ -19,7 +19,7 @@ COPY . .
 RUN cargo build --release --bin jito-vault-crank
 
 ##### Final image
-FROM debian:bullseye-slim
+FROM debian:bullseye-slim as cranker
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
