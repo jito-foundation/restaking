@@ -22,3 +22,9 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
+
+[patch.crates-io]
+solana-address = { version = "1.0.0", default-features = false, features = [] }
+solana-program = { version = "3.0.0", default-features = false, features = [] }
+solana-account-info = { version = "3.0.0", default-features = false, features = [] }
+solana-pubkey = { version = "3.0.0", default-features = false, features = [] }
