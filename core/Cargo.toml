@@ -18,8 +18,6 @@ solana-decode-error = { workspace = true }
 solana-program = { workspace = true }
 solana-system-interface = { workspace = true }
 spl-associated-token-account-interface = { workspace = true }
-spl-token-2022-interface = { workspace = true }
-spl-token-interface = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

@@ -74,7 +74,7 @@ solana-compute-budget-interface = "3.0.0"
 solana-decode-error = "2.3.0"
 solana-derivation-path = "3.0.0"
 solana-metrics = "3.0.0"
-solana-program = { version = "3.0.0", default-features = false }
+solana-program = { version = "3.0.0", default-features = false, features=[] }
 solana-program-error = "3.0.0"
 solana-program-test = "3.0.0"
 solana-pubkey = { version = "3.0.0", default-features = false }

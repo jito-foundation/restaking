@@ -2888,8 +2888,6 @@ dependencies = [
  "solana-program 3.0.0",
  "solana-system-interface 2.0.0",
  "spl-associated-token-account-interface",
- "spl-token-2022-interface",
- "spl-token-interface",
  "thiserror 2.0.17",
 ]
 
