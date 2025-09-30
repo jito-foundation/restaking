@@ -68,17 +68,16 @@ serde_with = "3.9.0"
 shank = "0.4.5"
 shank_idl = "0.4.5"
 solana-account-decoder = "3.0.0"
-solana-address = "1.0.0"
 solana-cli-config = "3.0.0"
 solana-commitment-config = "3.0.0"
 solana-compute-budget-interface = "3.0.0"
 solana-decode-error = "2.3.0"
 solana-derivation-path = "3.0.0"
 solana-metrics = "3.0.0"
-solana-program = {version = "3.0.0", default-features = false }
+solana-program = { version = "3.0.0", default-features = false }
 solana-program-error = "3.0.0"
 solana-program-test = "3.0.0"
-solana-pubkey = {version = "3.0.0", default-features = false }
+solana-pubkey = { version = "3.0.0", default-features = false }
 solana-remote-wallet = "3.0.0"
 solana-rpc-client = "3.0.0"
 solana-rpc-client-api = "3.0.0"

@@ -2872,7 +2872,7 @@ dependencies = [
  "borsh 1.5.7",
  "bytemuck",
  "jito-account-traits-derive",
- "solana-program 3.0.0",
+ "solana-program-error 3.0.0",
 ]
 
 [[package]]
