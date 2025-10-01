@@ -24,6 +24,7 @@ FROM debian:bullseye-slim as cranker
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl1.1 \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/app/target/release/jito-vault-crank /usr/local/bin/jito-vault-crank
