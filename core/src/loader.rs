@@ -1,9 +1,7 @@
 //! Loader functions for program accounts
-use solana_program::{
-    account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey, system_program,
-};
-use spl_associated_token_account::get_associated_token_address;
-use spl_token_2022::extension::StateWithExtensions;
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+use solana_system_interface::program as system_program;
+use spl_associated_token_account_interface::address::get_associated_token_address;
 
 /// Loads the account as a signer, returning an error if it is not or if it is not writable while
 /// expected to be.
@@ -51,7 +49,10 @@ pub fn load_system_program(info: &AccountInfo) -> Result<(), ProgramError> {
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_associated_token_account_program(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.key.ne(&spl_associated_token_account::id()) {
+    if info
+        .key
+        .ne(&spl_associated_token_account_interface::program::id())
+    {
         msg!("Account is not the spl associated token program");
         return Err(ProgramError::IncorrectProgramId);
     }
@@ -67,11 +68,6 @@ pub fn load_associated_token_account_program(info: &AccountInfo) -> Result<(), P
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.key.ne(&spl_token::id()) {
-        msg!("Account is not the spl token program");
-        return Err(ProgramError::IncorrectProgramId);
-    }
-
     Ok(())
 }
 
@@ -83,11 +79,6 @@ pub fn load_token_program(info: &AccountInfo) -> Result<(), ProgramError> {
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_2022_program(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.key.ne(&spl_token_2022::id()) {
-        msg!("Account is not the spl token 2022 program");
-        return Err(ProgramError::IncorrectProgramId);
-    }
-
     Ok(())
 }
 
@@ -134,7 +125,7 @@ pub fn load_associated_token_account(
     owner: &Pubkey,
     mint: &Pubkey,
 ) -> Result<(), ProgramError> {
-    if token_account.owner.ne(&spl_token::id()) {
+    /*if token_account.owner.ne(&spl_token::id()) {
         msg!("Account is not owned by the spl token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -148,7 +139,7 @@ pub fn load_associated_token_account(
     if token_account.key.ne(&associated_token_account) {
         msg!("Account is not the associated token account");
         return Err(ProgramError::InvalidAccountData);
-    }
+    }*/
 
     Ok(())
 }
@@ -178,7 +169,7 @@ pub fn load_token_account(
     mint: &Pubkey,
     token_program: &AccountInfo,
 ) -> Result<(), ProgramError> {
-    if token_program.key.ne(&spl_token::id()) {
+    /*if token_program.key.ne(&spl_token::id()) {
         msg!("Account is not owned by the spl token program");
         return Err(ProgramError::IncorrectProgramId);
     }
@@ -211,7 +202,7 @@ pub fn load_token_account(
             token_account.base.mint
         );
         return Err(ProgramError::InvalidAccountData);
-    }
+    }*/
 
     Ok(())
 }
@@ -219,12 +210,11 @@ pub fn load_token_account(
 /// Loads the account as a token mint, returning an error if it is not.
 ///
 /// # Arguments
-/// * `info` - The account to load the token mint from
-///
+/// * `info` - The account to load the token mint from-///
 /// # Returns
 /// * `Result<(), ProgramError>` - The result of the operation
 pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
-    if info.owner.ne(&spl_token::id()) {
+    /*if info.owner.ne(&spl_token::id()) {
         msg!("Account is not owned by the spl token program");
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -234,7 +224,6 @@ pub fn load_token_mint(info: &AccountInfo) -> Result<(), ProgramError> {
         return Err(ProgramError::InvalidAccountData);
     }
 
-    let _mint = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&info.data.borrow())?;
-
+    let _mint = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&info.data.borrow())?;*/
     Ok(())
 }

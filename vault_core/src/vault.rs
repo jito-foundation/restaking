@@ -459,7 +459,7 @@ impl Vault {
         self.is_paused.into()
     }
 
-    pub fn set_is_paused(&mut self, is_paused: bool) {
+    pub const fn set_is_paused(&mut self, is_paused: bool) {
         self.is_paused = PodBool::from_bool(is_paused);
     }
 

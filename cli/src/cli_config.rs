@@ -1,4 +1,4 @@
-use solana_sdk::commitment_config::CommitmentConfig;
+use solana_commitment_config::CommitmentConfig;
 
 use crate::cli_signer::CliSigner;
 

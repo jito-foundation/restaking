@@ -1,11 +1,9 @@
-use borsh::BorshSerialize;
+use crate::instruction::{NcnAdminRole, OperatorAdminRole, RestakingInstruction};
 use solana_program::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
-    system_program,
 };
-
-use crate::instruction::{NcnAdminRole, OperatorAdminRole, RestakingInstruction};
+use solana_system_interface::program as system_program;
 
 pub fn initialize_config(
     program_id: &Pubkey,
@@ -22,7 +20,7 @@ pub fn initialize_config(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeConfig.try_to_vec().unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::InitializeConfig).unwrap(),
     }
 }
 
@@ -43,7 +41,7 @@ pub fn initialize_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeNcn.try_to_vec().unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::InitializeNcn).unwrap(),
     }
 }
 
@@ -68,9 +66,7 @@ pub fn initialize_ncn_vault_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeNcnVaultTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::InitializeNcnVaultTicket).unwrap(),
     }
 }
 
@@ -92,9 +88,7 @@ pub fn cooldown_ncn_vault_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::CooldownNcnVaultTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::CooldownNcnVaultTicket).unwrap(),
     }
 }
 
@@ -120,9 +114,7 @@ pub fn initialize_ncn_operator_state(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeNcnOperatorState
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::InitializeNcnOperatorState).unwrap(),
     }
 }
 
@@ -144,9 +136,7 @@ pub fn cooldown_ncn_operator_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnCooldownOperator
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::NcnCooldownOperator).unwrap(),
     }
 }
 
@@ -177,10 +167,9 @@ pub fn initialize_ncn_vault_slasher_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeNcnVaultSlasherTicket {
+        data: borsh::to_vec(&RestakingInstruction::InitializeNcnVaultSlasherTicket {
             max_slashable_per_epoch,
-        }
-        .try_to_vec()
+        })
         .unwrap(),
     }
 }
@@ -205,9 +194,7 @@ pub fn cooldown_ncn_vault_slasher_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::CooldownNcnVaultSlasherTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::CooldownNcnVaultSlasherTicket).unwrap(),
     }
 }
 
@@ -225,7 +212,7 @@ pub fn ncn_set_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnSetAdmin.try_to_vec().unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::NcnSetAdmin).unwrap(),
     }
 }
 
@@ -244,9 +231,7 @@ pub fn ncn_set_secondary_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnSetSecondaryAdmin(role)
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::NcnSetSecondaryAdmin(role)).unwrap(),
     }
 }
 
@@ -268,8 +253,7 @@ pub fn initialize_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeOperator { operator_fee_bps }
-            .try_to_vec()
+        data: borsh::to_vec(&RestakingInstruction::InitializeOperator { operator_fee_bps })
             .unwrap(),
     }
 }
@@ -288,7 +272,7 @@ pub fn operator_set_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorSetAdmin.try_to_vec().unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::OperatorSetAdmin).unwrap(),
     }
 }
 
@@ -307,9 +291,10 @@ pub fn operator_set_secondary_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorSetSecondaryAdmin(operator_admin_role)
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::OperatorSetSecondaryAdmin(
+            operator_admin_role,
+        ))
+        .unwrap(),
     }
 }
 
@@ -328,9 +313,7 @@ pub fn operator_set_fee(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorSetFee { new_fee_bps }
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::OperatorSetFee { new_fee_bps }).unwrap(),
     }
 }
 
@@ -355,9 +338,7 @@ pub fn initialize_operator_vault_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::InitializeOperatorVaultTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::InitializeOperatorVaultTicket).unwrap(),
     }
 }
 
@@ -379,9 +360,7 @@ pub fn cooldown_operator_vault_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::CooldownOperatorVaultTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::CooldownOperatorVaultTicket).unwrap(),
     }
 }
 
@@ -405,9 +384,7 @@ pub fn ncn_delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnDelegateTokenAccount
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::NcnDelegateTokenAccount).unwrap(),
     }
 }
 
@@ -431,9 +408,7 @@ pub fn operator_delegate_token_account(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorDelegateTokenAccount
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::OperatorDelegateTokenAccount).unwrap(),
     }
 }
 
@@ -455,9 +430,7 @@ pub fn operator_warmup_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorWarmupNcn
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::OperatorWarmupNcn).unwrap(),
     }
 }
 
@@ -479,9 +452,7 @@ pub fn operator_cooldown_ncn(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::OperatorCooldownNcn
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::OperatorCooldownNcn).unwrap(),
     }
 }
 
@@ -503,9 +474,7 @@ pub fn ncn_warmup_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnWarmupOperator
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::NcnWarmupOperator).unwrap(),
     }
 }
 
@@ -527,9 +496,7 @@ pub fn ncn_cooldown_operator(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::NcnCooldownOperator
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::NcnCooldownOperator).unwrap(),
     }
 }
 
@@ -551,9 +518,7 @@ pub fn warmup_ncn_vault_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::WarmupNcnVaultTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::WarmupNcnVaultTicket).unwrap(),
     }
 }
 
@@ -575,9 +540,7 @@ pub fn warmup_operator_vault_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::WarmupOperatorVaultTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::WarmupOperatorVaultTicket).unwrap(),
     }
 }
 
@@ -604,9 +567,7 @@ pub fn warmup_ncn_vault_slasher_ticket(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::WarmupNcnVaultSlasherTicket
-            .try_to_vec()
-            .unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::WarmupNcnVaultSlasherTicket).unwrap(),
     }
 }
 
@@ -624,6 +585,6 @@ pub fn set_config_admin(
     Instruction {
         program_id: *program_id,
         accounts,
-        data: RestakingInstruction::SetConfigAdmin.try_to_vec().unwrap(),
+        data: borsh::to_vec(&RestakingInstruction::SetConfigAdmin).unwrap(),
     }
 }

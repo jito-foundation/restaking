@@ -16,10 +16,15 @@ jito-bytemuck = { workspace = true }
 shank = { workspace = true }
 solana-decode-error = { workspace = true }
 solana-program = { workspace = true }
-spl-associated-token-account = { workspace = true }
-spl-token = { workspace = true }
-spl-token-2022 = { workspace = true }
+solana-system-interface = { workspace = true }
+spl-associated-token-account-interface = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
+
+[patch.crates-io]
+solana-address = { version = "1.0.0", default-features = false, features = [] }
+solana-program = { version = "3.0.0", default-features = false, features = [] }
+solana-account-info = { version = "3.0.0", default-features = false, features = [] }
+solana-pubkey = { version = "3.0.0", default-features = false, features = [] }

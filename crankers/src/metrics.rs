@@ -6,8 +6,8 @@ use log::error;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
-use spl_associated_token_account::get_associated_token_address;
-use spl_token::state::{Account as TokenAccount, Mint};
+use spl_associated_token_account_interface::address::get_associated_token_address;
+use spl_token_interface::state::{Account as TokenAccount, Mint};
 
 use crate::vault_handler::VaultHandler;
 
