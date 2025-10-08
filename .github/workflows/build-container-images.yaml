@@ -15,7 +15,7 @@ env:
 
 jobs:
   build-container:
-    runs-on: ubuntu-latest
+    runs-on: big-runner-1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
