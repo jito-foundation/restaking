@@ -1,0 +1,2 @@
+;; Summaries for customer or part of Certora specs
+

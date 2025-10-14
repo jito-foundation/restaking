@@ -23,3 +23,15 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
+
+###
+### CERTORA SETTINGS AND DEPENDENCIES
+###
+
+[features]
+certora = ["dep:cvlr"]
+
+[dependencies.cvlr]
+workspace = true
+optional = true
+
