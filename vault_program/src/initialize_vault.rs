@@ -20,11 +20,11 @@ use solana_program::{
     program_pack::Pack,
     pubkey::Pubkey,
     rent::Rent,
-    system_instruction,
     sysvar::Sysvar,
 };
-use spl_associated_token_account::instruction::create_associated_token_account;
-use spl_token::{
+use solana_system_interface::program as system_program;
+use spl_associated_token_account_interface::instruction::create_associated_token_account;
+use spl_token_interface::{
     instruction::{mint_to, transfer},
     state::Mint,
 };
@@ -107,7 +107,7 @@ pub fn process_initialize_vault(
     {
         msg!("Initializing mint @ address {}", vrt_mint.key);
         invoke(
-            &system_instruction::create_account(
+            &solana_system_interface::instruction::create_account(
                 admin.key,
                 vrt_mint.key,
                 rent.minimum_balance(Mint::get_packed_len()),
@@ -118,8 +118,8 @@ pub fn process_initialize_vault(
         )?;
 
         invoke(
-            &spl_token::instruction::initialize_mint2(
-                &spl_token::id(),
+            &spl_token_interface::instruction::initialize_mint2(
+                &spl_token_interface::id(),
                 vrt_mint.key,
                 vault.key,
                 None,
@@ -203,10 +203,10 @@ pub fn process_initialize_vault(
         {
             invoke(
                 &create_associated_token_account(
-                    admin.key,        // funding account
-                    burn_vault.key,   // wallet address (ATA owner)
-                    vrt_mint.key,     // mint address
-                    &spl_token::id(), // token program
+                    admin.key,                  // funding account
+                    burn_vault.key,             // wallet address (ATA owner)
+                    vrt_mint.key,               // mint address
+                    &spl_token_interface::id(), // token program
                 ),
                 &[
                     admin.clone(),

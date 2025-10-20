@@ -12,7 +12,9 @@ readme = { workspace = true }
 [dependencies]
 borsh = { workspace = true }
 shank = { workspace = true }
+solana-decode-error = { workspace = true }
 solana-program = { workspace = true }
+solana-system-interface = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

@@ -37,10 +37,10 @@ use solana_sdk::{
     signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
-use spl_associated_token_account::{
-    get_associated_token_address, instruction::create_associated_token_account_idempotent,
+use spl_associated_token_account_interface::{
+    address::get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token::instruction::transfer;
+use spl_token_interface::instruction::transfer;
 
 use crate::{
     cli_config::CliConfig,
@@ -463,7 +463,7 @@ impl VaultCliHandler {
             .vault_st_token_account(vault_st_token_account)
             .burn_vault(burn_vault)
             .burn_vault_vrt_token_account(burn_vault_vrt_token_account)
-            .associated_token_program(spl_associated_token_account::id())
+            .associated_token_program(spl_associated_token_account_interface::program::id())
             .deposit_fee_bps(deposit_fee_bps)
             .withdrawal_fee_bps(withdrawal_fee_bps)
             .reward_fee_bps(reward_fee_bps)
@@ -472,11 +472,19 @@ impl VaultCliHandler {
         let mut ix = ix_builder.instruction();
         ix.program_id = self.vault_program_id;
 
-        let admin_st_token_account_ix =
-            create_associated_token_account_idempotent(&admin, &admin, &token_mint, &spl_token::ID);
+        let admin_st_token_account_ix = create_associated_token_account_idempotent(
+            &admin,
+            &admin,
+            &token_mint,
+            &spl_token_interface::ID,
+        );
 
-        let vault_st_token_account_ix =
-            create_associated_token_account_idempotent(&admin, &vault, &token_mint, &spl_token::ID);
+        let vault_st_token_account_ix = create_associated_token_account_idempotent(
+            &admin,
+            &vault,
+            &token_mint,
+            &spl_token_interface::ID,
+        );
 
         info!("Initializing Vault at address: {}", vault);
 
@@ -840,25 +848,25 @@ impl VaultCliHandler {
             &depositor,
             &depositor,
             &vault_account.supported_mint,
-            &spl_token::ID,
+            &spl_token_interface::ID,
         );
         let depositor_vrt_ata_ix = create_associated_token_account_idempotent(
             &depositor,
             &depositor,
             &vault_account.vrt_mint,
-            &spl_token::ID,
+            &spl_token_interface::ID,
         );
         let vault_ata_ix = create_associated_token_account_idempotent(
             &depositor,
             &vault,
             &vault_account.supported_mint,
-            &spl_token::ID,
+            &spl_token_interface::ID,
         );
         let vault_fee_ata_ix = create_associated_token_account_idempotent(
             &depositor,
             &vault_account.fee_wallet,
             &vault_account.vrt_mint,
-            &spl_token::ID,
+            &spl_token_interface::ID,
         );
 
         let mut ix_builder = MintToBuilder::new();
@@ -1213,7 +1221,7 @@ impl VaultCliHandler {
             .token_mint(token_mint)
             .token_account(token_account)
             .delegate(delegate)
-            .token_program(spl_token::ID);
+            .token_program(spl_token_interface::ID);
 
         let blockhash = rpc_client.get_latest_blockhash().await?;
         let tx = Transaction::new_signed_with_payer(
@@ -1253,7 +1261,7 @@ impl VaultCliHandler {
         let recipient_pubkey = Pubkey::from_str(&recipient_pubkey)?;
 
         let transfer_ix = transfer(
-            &spl_token::id(),
+            &spl_token_interface::id(),
             &token_account,
             &recipient_pubkey,
             &keypair.pubkey(),
@@ -1312,7 +1320,7 @@ impl VaultCliHandler {
             &signer.pubkey(),
             &vault_staker_withdrawal_ticket,
             &vault_account.vrt_mint,
-            &spl_token::ID,
+            &spl_token_interface::ID,
         );
 
         let mut ix_builder = EnqueueWithdrawalBuilder::new();
@@ -1443,7 +1451,7 @@ impl VaultCliHandler {
             &signer.pubkey(),
             &config_account.program_fee_wallet,
             &vault_account.vrt_mint,
-            &spl_token::ID,
+            &spl_token_interface::ID,
         );
 
         let program_fee_token_account = get_associated_token_address(

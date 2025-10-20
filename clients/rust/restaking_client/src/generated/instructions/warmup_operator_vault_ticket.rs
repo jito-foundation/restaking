@@ -50,9 +50,7 @@ impl WarmupOperatorVaultTicket {
             self.admin, true,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = WarmupOperatorVaultTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&WarmupOperatorVaultTicketInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -268,9 +266,7 @@ impl<'a, 'b> WarmupOperatorVaultTicketCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = WarmupOperatorVaultTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&WarmupOperatorVaultTicketInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,

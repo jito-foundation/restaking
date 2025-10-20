@@ -22,9 +22,7 @@ impl InitializeVaultWithMint {
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(0 + remaining_accounts.len());
         accounts.extend_from_slice(remaining_accounts);
-        let data = InitializeVaultWithMintInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&InitializeVaultWithMintInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -141,9 +139,7 @@ impl<'a, 'b> InitializeVaultWithMintCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = InitializeVaultWithMintInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&InitializeVaultWithMintInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
