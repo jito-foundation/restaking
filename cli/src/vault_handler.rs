@@ -35,7 +35,6 @@ use solana_program::pubkey::Pubkey;
 use solana_rpc_client::rpc_client::SerializableTransaction;
 use solana_sdk::{
     signature::{read_keypair_file, Keypair, Signer},
-    system_program,
     transaction::Transaction,
 };
 use spl_associated_token_account::{
