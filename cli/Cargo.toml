@@ -24,10 +24,10 @@ clap-markdown = { workspace = true }
 env_logger = { workspace = true }
 jito-bytemuck = { workspace = true }
 jito-jsm-core = { workspace = true }
-jito-restaking-client = { workspace = true, features = ["serde"] }
-jito-restaking-client-common = { workspace = true }
+jito-restaking-client = { git = "https://github.com/jito-foundation/restaking.git", rev = "bbc5abe64d5bbbeab1d6f33f5a63a97cc3b9638a", features = ["serde"] }
+jito-restaking-client-common = { git = "https://github.com/jito-foundation/restaking.git", rev = "bbc5abe64d5bbbeab1d6f33f5a63a97cc3b9638a" }
 jito-restaking-core = { workspace = true }
-jito-vault-client = { workspace = true, features = ["serde"] }
+jito-vault-client = { git = "https://github.com/jito-foundation/restaking.git", rev = "bbc5abe64d5bbbeab1d6f33f5a63a97cc3b9638a", features = ["serde"] }
 jito-vault-core = { workspace = true }
 jito-vault-sdk = { workspace = true }
 log = { workspace = true }

@@ -2,6 +2,7 @@
 members = [
     "account_traits_derive",
     "bytemuck",
+    "cli",
     "clients/rust/common",
     "clients/rust/restaking_client",
     "clients/rust/vault_client",

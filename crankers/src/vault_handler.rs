@@ -388,8 +388,8 @@ impl VaultHandler {
                 .await?;
         } else {
             let context = format!(
-                "Cranking failed to update all operators for vault: {vault}, tracker: {tracker_pubkey}"
-            );
+                 "Cranking failed to update all operators for vault: {vault}, tracker: {tracker_pubkey}"
+             );
             return Err(anyhow::anyhow!(context));
         }
 
