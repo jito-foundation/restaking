@@ -16,12 +16,12 @@ use jito_vault_client::{
         CreateTokenMetadataBuilder, DelegateTokenAccountBuilder, EnqueueWithdrawalBuilder,
         InitializeConfigBuilder, InitializeVaultBuilder, InitializeVaultNcnTicketBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetConfigSecondaryAdminBuilder,
-        SetDepositCapacityBuilder, SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder,
-        SetProgramFeeWalletBuilder, SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder,
-        UpdateVaultBalanceBuilder, WarmupVaultNcnTicketBuilder,
+        MintToBuilder, SetAdminBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        SetFeesBuilder, SetIsPausedBuilder, SetProgramFeeBuilder, SetProgramFeeWalletBuilder,
+        SetSecondaryAdminBuilder, UpdateTokenMetadataBuilder, UpdateVaultBalanceBuilder,
+        WarmupVaultNcnTicketBuilder,
     },
-    types::{ConfigAdminRole, VaultAdminRole, WithdrawalAllocationMethod},
+    types::{VaultAdminRole, WithdrawalAllocationMethod},
 };
 use jito_vault_core::{
     burn_vault::BurnVault, config::Config, vault::Vault, vault_ncn_ticket::VaultNcnTicket,
@@ -128,12 +128,13 @@ impl VaultCliHandler {
             VaultCommands::Config {
                 action:
                     ConfigActions::SetSecondaryAdmin {
-                        new_admin,
-                        set_fee_admin,
+                        new_admin: _,
+                        set_fee_admin: _,
                     },
             } => {
-                self.set_config_secondary_admin(&new_admin, set_fee_admin)
-                    .await
+                unimplemented!()
+                // self.set_config_secondary_admin(&new_admin, set_fee_admin)
+                //     .await
             }
             VaultCommands::Config {
                 action: ConfigActions::SetProgramFee { new_fee_bps },
@@ -1797,51 +1798,51 @@ impl VaultCliHandler {
         Ok(())
     }
 
-    /// Sets the secondary admin roles for Config
-    ///
-    /// This function allows assigning a new administrator to various administrative roles
-    /// for Config. Multiple roles can be assigned in a single call by enabling the
-    /// corresponding boolean flags.
-    #[allow(clippy::future_not_send)]
-    async fn set_config_secondary_admin(
-        &self,
-        new_admin: &Pubkey,
-        set_fee_admin: bool,
-    ) -> Result<()> {
-        let signer = self.signer()?;
+    // Sets the secondary admin roles for Config
+    //
+    // This function allows assigning a new administrator to various administrative roles
+    // for Config. Multiple roles can be assigned in a single call by enabling the
+    // corresponding boolean flags.
+    // #[allow(clippy::future_not_send)]
+    // async fn set_config_secondary_admin(
+    //     &self,
+    //     new_admin: &Pubkey,
+    //     set_fee_admin: bool,
+    // ) -> Result<()> {
+    //     let signer = self.signer()?;
 
-        let config_address = Config::find_program_address(&self.vault_program_id).0;
+    //     let config_address = Config::find_program_address(&self.vault_program_id).0;
 
-        let mut roles: Vec<ConfigAdminRole> = vec![];
-        if set_fee_admin {
-            roles.push(ConfigAdminRole::FeeAdmin);
-        }
+    //     let mut roles: Vec<ConfigAdminRole> = vec![];
+    //     if set_fee_admin {
+    //         roles.push(ConfigAdminRole::FeeAdmin);
+    //     }
 
-        for role in roles.iter() {
-            let mut ix_builder = SetConfigSecondaryAdminBuilder::new();
-            ix_builder
-                .config(config_address)
-                .admin(signer.pubkey())
-                .new_admin(*new_admin)
-                .config_admin_role(*role);
-            let mut ix = ix_builder.instruction();
-            ix.program_id = self.vault_program_id;
+    //     for role in roles.iter() {
+    //         let mut ix_builder = SetConfigSecondaryAdminBuilder::new();
+    //         ix_builder
+    //             .config(config_address)
+    //             .admin(signer.pubkey())
+    //             .new_admin(*new_admin)
+    //             .config_admin_role(*role);
+    //         let mut ix = ix_builder.instruction();
+    //         ix.program_id = self.vault_program_id;
 
-            info!("Setting {:?} Admin to {} for Config", role, new_admin);
+    //         info!("Setting {:?} Admin to {} for Config", role, new_admin);
 
-            self.process_transaction(&[ix], &signer.pubkey(), &[signer])
-                .await?;
-        }
+    //         self.process_transaction(&[ix], &signer.pubkey(), &[signer])
+    //             .await?;
+    //     }
 
-        if !self.print_tx {
-            let account = self
-                .get_account::<jito_vault_client::accounts::Config>(&config_address)
-                .await?;
-            info!("{}", account.pretty_display());
-        }
+    //     if !self.print_tx {
+    //         let account = self
+    //             .get_account::<jito_vault_client::accounts::Config>(&config_address)
+    //             .await?;
+    //         info!("{}", account.pretty_display());
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     /// Set the fees for Vault
     ///

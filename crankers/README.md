@@ -23,10 +23,10 @@ To run the cranker with a specific vault and restaking program:
 ```bash
 cargo run -p jito-vault-cranker -- \
   --keypair-path <KEYPAIR_PATH> \
-  --rpc-url <RPC_URL>
+  --rpc-url <RPC_URL> \
   --vault-program-id "Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8" \
-  --restaking-program-id "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q"
-  --crank-interval 300
+  --restaking-program-id "RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q" \
+  --crank-interval 300 \
   --priority-fees 10000
 ```
 

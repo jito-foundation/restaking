@@ -176,7 +176,6 @@ impl VaultHandler {
     ) -> anyhow::Result<Vec<Transaction>> {
         let mut transactions = Vec::new();
         let mut current_batch = Vec::new();
-
         let compute_budget_ix =
             ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees);
 
@@ -194,13 +193,21 @@ impl VaultHandler {
                 blockhash,
             );
 
-            let tx_size = test_tx.signatures.len() + test_tx.message_data().len();
+            let tx_size = bincode::serialize(&test_tx)?.len();
 
-            if tx_size > max_size && !current_batch.is_empty() {
-                // Finalize current batch
+            if tx_size > max_size {
+                // If current_batch is empty, this single instruction is too large
+                if current_batch.is_empty() {
+                    anyhow::bail!(
+                        "Single instruction exceeds max transaction size: {} > {}",
+                        tx_size,
+                        max_size
+                    );
+                }
+
+                // Finalize current batch without the new instruction
                 let mut final_batch = vec![compute_budget_ix.clone()];
                 final_batch.extend(current_batch.clone());
-
                 let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
                 let tx = Transaction::new_signed_with_payer(
                     &final_batch,
@@ -221,7 +228,6 @@ impl VaultHandler {
         if !current_batch.is_empty() {
             let mut final_batch = vec![compute_budget_ix];
             final_batch.extend(current_batch);
-
             let blockhash = get_latest_blockhash_with_retry(&self.get_rpc_client()).await?;
             let tx = Transaction::new_signed_with_payer(
                 &final_batch,
@@ -388,8 +394,8 @@ impl VaultHandler {
                 .await?;
         } else {
             let context = format!(
-                "Cranking failed to update all operators for vault: {vault}, tracker: {tracker_pubkey}"
-            );
+                 "Cranking failed to update all operators for vault: {vault}, tracker: {tracker_pubkey}"
+             );
             return Err(anyhow::anyhow!(context));
         }
 
