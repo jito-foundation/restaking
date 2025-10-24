@@ -2831,6 +2831,7 @@ version = "0.0.5"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
+ "bincode",
  "clap 4.5.28",
  "dotenvy",
  "env_logger 0.10.2",
