@@ -638,10 +638,9 @@ impl VaultCliHandler {
 
         let mut ix_builder = InitializeVaultUpdateStateTrackerBuilder::new();
         ix_builder
-            .vault(Pubkey::from_str("5re5crdk1u318j4h956of9gA9SCrm61vb7zw6Cr5MND3").unwrap())
+            .config(Config::find_program_address(&self.vault_program_id).0)
+            .vault(vault)
             .vault_update_state_tracker(vault_update_state_tracker)
-            .system_program(system_program::id())
-            .config(Pubkey::from_str("UwuSgAq4zByffCGCrWH87DsjfsewYjuqHfJEpzw1Jq3").unwrap())
             .payer(signer.pubkey())
             .withdrawal_allocation_method(WithdrawalAllocationMethod::Greedy); // Only withdrawal allocation method supported for now
 
