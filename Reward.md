@@ -33,4 +33,4 @@ I am sending 1 JTO ( 1_000_000_000 ) as a reward to the vault.
 cargo run vault vault reward-vault ABsoYTwRPBJEf55G7N8hVw7tQnDKBA6GkZCKBVrjTTcf 1000000000
 ```
 
-Result: `https://explorer.solana.com/tx/4GJ4r3fFwmt47hXh5NRxq1mA3PimofeLVwApvJbFXhBmEC358xa6aBkCVMPQYSyCMeLGo6Dg9KLXVGruVsvxiQQR`
+[Result](https://explorer.solana.com/tx/4GJ4r3fFwmt47hXh5NRxq1mA3PimofeLVwApvJbFXhBmEC358xa6aBkCVMPQYSyCMeLGo6Dg9KLXVGruVsvxiQQR)
