@@ -157,4 +157,17 @@ pub enum VaultActions {
         /// The new capacity
         amount: u64,
     },
+    /// Reward vault
+    RewardVault {
+        /// The vault to reward
+        vault: Pubkey,
+        /// Amount of the ST Tokens to reward to the vault
+        amount: u64,
+        /// Jito DAO Reward Fee ( Should be kept at 4% )
+        #[arg(long, default_value_t = 400)]
+        jito_dao_reward_fee_bps: u16,
+        /// The reward token account - will default the the payer's ATA
+        #[arg(long)]
+        reward_token_account: Option<Pubkey>,
+    }
 }

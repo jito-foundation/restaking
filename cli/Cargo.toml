@@ -9,6 +9,10 @@ license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
 
+[[bin]]
+name = "jito-restaking-cli"
+path = "src/bin/main.rs"
+
 [dependencies]
 anyhow = { workspace = true }
 borsh = { workspace = true }
@@ -38,7 +42,3 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
-
-[[bin]]
-name = "jito-restaking-cli"
-path = "src/bin/main.rs"

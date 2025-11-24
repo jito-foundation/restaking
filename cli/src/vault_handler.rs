@@ -10,14 +10,12 @@ use jito_vault_client::{
         CooldownDelegationBuilder, CrankVaultUpdateStateTrackerBuilder, CreateTokenMetadataBuilder,
         EnqueueWithdrawalBuilder, InitializeConfigBuilder, InitializeVaultBuilder,
         InitializeVaultOperatorDelegationBuilder, InitializeVaultUpdateStateTrackerBuilder,
-        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder,
+        MintToBuilder, SetConfigAdminBuilder, SetDepositCapacityBuilder, UpdateVaultBalanceBuilder,
     },
     types::WithdrawalAllocationMethod,
 };
 use jito_vault_core::{
-    config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
-    vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket,
-    vault_update_state_tracker::VaultUpdateStateTracker,
+    MAX_BPS, config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation, vault_staker_withdrawal_ticket::VaultStakerWithdrawalTicket, vault_update_state_tracker::VaultUpdateStateTracker
 };
 use jito_vault_sdk::inline_mpl_token_metadata;
 use log::{debug, info};
@@ -35,6 +33,7 @@ use solana_sdk::{
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
+use spl_token::instruction::transfer;
 
 use crate::{
     vault::{ConfigActions, VaultActions, VaultCommands},
@@ -179,6 +178,17 @@ impl VaultCliHandler {
             VaultCommands::Vault {
                 action: VaultActions::SetCapacity { vault, amount },
             } => self.set_capacity(vault, amount).await,
+            VaultCommands::Vault {
+                action: VaultActions::RewardVault {
+                    vault,
+                    reward_token_account,
+                    amount,
+                    jito_dao_reward_fee_bps
+                }
+            } => {
+                self.reward_vault(&vault, reward_token_account, amount, jito_dao_reward_fee_bps)
+                    .await
+            }
         }
     }
 
@@ -1131,6 +1141,91 @@ impl VaultCliHandler {
         );
         rpc_client.send_and_confirm_transaction(&tx).await?;
         info!("Transaction confirmed: {:?}", tx.get_signature());
+        Ok(())
+    }
+
+    /// Rewards a vault
+    ///
+    /// This will do three different functions
+    /// 1. Transfer the rewards to the vault
+    /// 2. Transfer the 4% fee to the DAO
+    /// 3. Update the vault balance
+    ///
+    /// NOTE if we ever change to take the program rewards in the update vault balance, this cli should be deprecated ( or updated to remove the manual transfer to the DAO )
+    #[allow(clippy::future_not_send)]
+    async fn reward_vault(&self, vault: &Pubkey, reward_token_account: Option<Pubkey>, amount: u64, jito_dao_reward_fee_bps: u16) -> Result<()> {
+        let signer = self
+            .cli_config
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("Keypair not provided"))?;
+        let rpc_client = self.get_rpc_client();
+
+        let config_address = Config::find_program_address(&self.vault_program_id).0;
+
+        let config_account_raw = self.get_rpc_client().get_account(&config_address).await?;
+        let config_account = Config::try_from_slice_unchecked(&config_account_raw.data)?;
+
+        let program_fee_wallet = config_account.program_fee_wallet;
+
+        let vault_account_raw = self.get_rpc_client().get_account(vault).await?;
+        let vault_account = Vault::try_from_slice_unchecked(&vault_account_raw.data)?;
+
+        let supported_mint = vault_account.supported_mint;
+        let vrt_mint = vault_account.vrt_mint;
+
+        let vault_token_account =
+            get_associated_token_address(vault, &supported_mint);
+
+        let vault_fee_token_account =
+            get_associated_token_address(&vault_account.fee_wallet, &vrt_mint);
+
+        let program_fee_token_account = get_associated_token_address(&program_fee_wallet, &supported_mint);
+
+        let reward_token_account = match reward_token_account {
+            Some(reward_token_account) => reward_token_account,
+            None => {
+                let reward_token_account = get_associated_token_address(&signer.pubkey(), &supported_mint);
+                reward_token_account
+            }
+        };
+
+        let program_fees = amount.checked_mul(jito_dao_reward_fee_bps as u64).expect("Overflow").checked_div(MAX_BPS as u64).unwrap();
+        let rewards = amount.checked_sub(program_fees).expect("Underflow");
+
+        let create_program_ata_ix = create_associated_token_account_idempotent(&signer.pubkey(), &program_fee_wallet, &supported_mint, &spl_token::id());
+        let create_vault_ata_ix = create_associated_token_account_idempotent(&signer.pubkey(), vault, &supported_mint, &spl_token::id());
+
+        let program_transfer_ix = transfer(&spl_token::id(), &reward_token_account, &program_fee_token_account, &signer.pubkey(), &[&signer.pubkey()], program_fees).expect("Could not create transfer ix");
+        let vault_transfer_ix = transfer(&spl_token::id(), &reward_token_account, &vault_token_account, &signer.pubkey(), &[&signer.pubkey()], rewards).expect("Could not create transfer ix");
+
+        let mut ix_builder = UpdateVaultBalanceBuilder::new();
+        ix_builder
+            .config(config_address)
+            .vault(*vault)
+            .vault_token_account(vault_token_account)
+            .vrt_mint(vrt_mint)
+            .vault_fee_token_account(vault_fee_token_account);
+        let mut ix = ix_builder.instruction();
+        ix.program_id = self.vault_program_id;
+
+        info!("Reward Vault ({}/{}): Vault ({}): {} - DAO ({}): {}", rewards.saturating_add(program_fees), amount, vault, rewards, program_fee_wallet, program_fees);
+        let blockhash = rpc_client.get_latest_blockhash().await?;
+        let tx = Transaction::new_signed_with_payer(
+            &[
+                create_program_ata_ix,
+                create_vault_ata_ix,
+                program_transfer_ix,
+                vault_transfer_ix,
+                ix
+            ],
+            Some(&signer.pubkey()),
+            &[signer],
+            blockhash,
+        );
+        rpc_client.send_and_confirm_transaction(&tx).await?;
+        info!("Transaction confirmed: {:?}", tx.get_signature());
+
         Ok(())
     }
 }
