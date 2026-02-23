@@ -6,7 +6,7 @@ on:
       package_path:
         description: Which crate to publish
         required: true
-        default: "account_traits_derive"
+        default: "clients/rust/common"
         type: choice
         options:
           - clients/rust/common
