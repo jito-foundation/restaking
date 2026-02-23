@@ -2493,6 +2493,17 @@ checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
 [[package]]
 name = "jito-account-traits-derive"
 version = "0.0.5"
+source = "git+https://github.com/jito-foundation/jito-account-traits-derive.git?tag=v0.0.5#3d9e124f033965a29c56fe31c9d1ae618211efe7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
+name = "jito-account-traits-derive"
+version = "0.0.5"
+source = "git+https://github.com/jito-foundation/jito-account-traits-derive.git#3d9e124f033965a29c56fe31c9d1ae618211efe7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2502,10 +2513,11 @@ dependencies = [
 [[package]]
 name = "jito-bytemuck"
 version = "0.0.5"
+source = "git+https://github.com/jito-foundation/jito-bytemuck.git?tag=v0.0.5#c89e33ad06cb7936962c77ed91ccd7def4907fd3"
 dependencies = [
  "borsh 0.10.4",
  "bytemuck",
- "jito-account-traits-derive",
+ "jito-account-traits-derive 0.0.5 (git+https://github.com/jito-foundation/jito-account-traits-derive.git)",
  "solana-program",
 ]
 
@@ -2680,7 +2692,7 @@ dependencies = [
  "dotenvy",
  "env_logger 0.10.2",
  "futures",
- "jito-account-traits-derive",
+ "jito-account-traits-derive 0.0.5 (git+https://github.com/jito-foundation/jito-account-traits-derive.git?tag=v0.0.5)",
  "jito-bytemuck",
  "jito-jsm-core",
  "jito-restaking-client",
