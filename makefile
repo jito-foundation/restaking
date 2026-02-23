@@ -43,9 +43,8 @@ generate-idl:
 		--module-paths "restaking_sdk" \
 		--module-paths "restaking_core" \
 		--module-paths "restaking_program" \
-		--module-paths "bytemuck" \
 		--module-paths "core"
-	
+
 	$(SHANK_CLI) \
 		--program-env-path $(ENV_PATH) \
 		--output-idl-path $(IDL_OUTPUT_PATH) \
@@ -55,7 +54,6 @@ generate-idl:
 		--module-paths "vault_sdk" \
 		--module-paths "vault_core" \
 		--module-paths "vault_program" \
-		--module-paths "bytemuck" \
 		--module-paths "core"
 
 # Build debug

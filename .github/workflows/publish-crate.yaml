@@ -6,11 +6,9 @@ on:
       package_path:
         description: Which crate to publish
         required: true
-        default: 'account_traits_derive'
+        default: "account_traits_derive"
         type: choice
         options:
-          - account_traits_derive
-          - bytemuck
           - clients/rust/common
           - clients/rust/restaking_client
           - clients/rust/vault_client
@@ -151,7 +149,7 @@ jobs:
         run: |
           # Get current version before update
           OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
-          
+
           if [ "${{ inputs.dry_run }}" == "true" ]; then
             # For dry-run mode, don't use the -x flag (dry-run is default)
             cargo release ${{ inputs.level }} --no-confirm --no-push
@@ -159,10 +157,10 @@ jobs:
             # For actual execution, use the -x flag
             cargo release ${{ inputs.level }} --no-confirm -x
           fi
-          
+
           # Get new version after update
           NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
-          
+
           # Set outputs for the release step
           echo "old_version=${OLD_VERSION}" >> $GITHUB_OUTPUT
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT

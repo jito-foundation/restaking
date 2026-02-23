@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       package_path:
-        description: 'Comma-separated list of crates to publish. Example: core,restaking_core,cli'
+        description: "Comma-separated list of crates to publish. Example: core,restaking_core,cli"
         required: true
-        default: 'account_traits_derive,bytemuck,clients/rust/common,clients/rust/restaking_client,clients/rust/vault_client,core,restaking_sdk,restaking_core,restaking_program,vault_sdk,vault_core,vault_program'
+        default: "clients/rust/common,clients/rust/restaking_client,clients/rust/vault_client,core,restaking_sdk,restaking_core,restaking_program,vault_sdk,vault_core,vault_program"
         type: string
       level:
         description: Version increment level for selected crates
@@ -18,7 +18,7 @@ on:
           - minor
           - major
       tag_name:
-        description: 'Custom tag name for release. Example: v1.2.3 or release-2024-01'
+        description: "Custom tag name for release. Example: v1.2.3 or release-2024-01"
         required: true
         type: string
       dry_run:
@@ -46,8 +46,6 @@ jobs:
         run: |
           # All available crates in dependency order
           ALL_CRATES=(
-            "account_traits_derive"
-            "bytemuck"
             "clients/rust/common"
             "clients/rust/restaking_client"
             "clients/rust/vault_client"
@@ -59,7 +57,7 @@ jobs:
             "vault_core"
             "vault_program"
           )
-          
+
           # Check if input contains commas (multiple crates) or is "all"
           if [[ "${{ inputs.package_path }}" == "all" ]]; then
             # Publish all crates
@@ -70,7 +68,7 @@ jobs:
             # Multiple crates - parse comma-separated list
             IFS=',' read -ra SELECTED_ARRAY <<< "${{ inputs.package_path }}"
             CRATES_TO_PUBLISH=()
-            
+
             # Validate and order selected crates according to dependency order
             for crate in "${ALL_CRATES[@]}"; do
               for selected in "${SELECTED_ARRAY[@]}"; do
@@ -82,7 +80,7 @@ jobs:
                 fi
               done
             done
-            
+
             echo "📦 Publishing MULTIPLE crates: ${{ inputs.package_path }}"
             IS_SINGLE="false"
           else
@@ -91,15 +89,15 @@ jobs:
             echo "📦 Publishing SINGLE crate: ${{ inputs.package_path }}"
             IS_SINGLE="true"
           fi
-          
+
           # Convert to space-separated string for output
           CRATES_STRING=$(IFS=' '; echo "${CRATES_TO_PUBLISH[*]}")
           COUNT=${#CRATES_TO_PUBLISH[@]}
-          
+
           echo "crates_to_publish=$CRATES_STRING" >> $GITHUB_OUTPUT
           echo "crate_count=$COUNT" >> $GITHUB_OUTPUT
           echo "is_single_crate=$IS_SINGLE" >> $GITHUB_OUTPUT
-          
+
           echo "Will publish $COUNT crates: $CRATES_STRING"
           echo "Is single crate: $IS_SINGLE"
 
@@ -208,52 +206,52 @@ jobs:
         run: |
           # Convert space-separated string back to array
           read -ra CRATES_TO_PUBLISH <<< "${{ needs.determine_crates.outputs.crates_to_publish }}"
-          
+
           PUBLISHED_CRATES=""
-          
+
           # Determine the version level to use
           LEVEL="${{ inputs.level }}"
-          
+
           for crate_path in "${CRATES_TO_PUBLISH[@]}"; do
             echo "========================================="
             echo "Publishing $crate_path..."
             echo "========================================="
             cd "$GITHUB_WORKSPACE/$crate_path"
-            
+
             # Get versions
             OLD_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
             CRATE_NAME=$(basename "$crate_path")
-            
+
             echo "Current version: $OLD_VERSION"
-            
+
             if [ "${{ inputs.dry_run }}" == "true" ]; then
               echo "🧪 DRY RUN: Would publish $CRATE_NAME $LEVEL"
               cargo release $LEVEL --no-confirm --no-push
             else
               echo "🚀 Publishing $CRATE_NAME $LEVEL"
               cargo release $LEVEL --no-confirm -x
-              
+
               # Wait a bit between publishes to avoid rate limits (only for multiple crates)
               if [ "${{ needs.determine_crates.outputs.is_single_crate }}" == "false" ]; then
                 echo "⏳ Waiting 10 seconds before next publish..."
                 sleep 10
               fi
             fi
-            
+
             NEW_VERSION=$(grep -m1 'version =' Cargo.toml | cut -d '"' -f2)
             echo "New version: $NEW_VERSION"
-            
+
             # Track published crates for summary
             PUBLISHED_CRATES="${PUBLISHED_CRATES}- **${CRATE_NAME}**: ${OLD_VERSION} → ${NEW_VERSION}\n"
-            
+
             echo "✅ Completed $CRATE_NAME"
             cd "$GITHUB_WORKSPACE"
           done
-          
+
           echo "published_crates<<EOF" >> $GITHUB_OUTPUT
           echo -e "$PUBLISHED_CRATES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
+
           echo "========================================="
           echo "🎉 Publishing completed!"
           echo "========================================="
@@ -276,12 +274,12 @@ jobs:
         run: |
           # Convert space-separated string back to array
           read -ra CRATES_TO_PUBLISH <<< "${{ needs.determine_crates.outputs.crates_to_publish }}"
-          
+
           # Determine release info based on what was published
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           CRATE_COUNT=${{ needs.determine_crates.outputs.crate_count }}
           TAG_NAME=${{ github.event.inputs.tag_name }}
-          
+
           if [ "${{ needs.determine_crates.outputs.is_single_crate }}" == "true" ]; then
             # Single crate release
             CRATE_PATH="${CRATES_TO_PUBLISH[0]}"
@@ -294,9 +292,9 @@ jobs:
             # Multiple crates release
             RELEASE_TITLE="Jito Restaking Release - $(date +%Y-%m-%d)"
           fi
-          
+
           echo "Creating combined release: $RELEASE_TITLE"
-          
+
           # Build release notes
           RELEASE_NOTES="## $RELEASE_TITLE
 
@@ -307,16 +305,16 @@ jobs:
           ### 📝 What's Changed
 
           Recent changes across all published crates:"
-                    
+
                     # Generate combined changelog
                     COMBINED_CHANGELOG=""
                     for crate_path in "${CRATES_TO_PUBLISH[@]}"; do
                       CRATE_NAME=$(basename "$crate_path")
                       echo "Generating changelog for $CRATE_NAME..."
-                      
+
                       # Get recent commits for this crate
                       CRATE_CHANGELOG=$(git log --pretty=format:'- %s' --no-merges $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD -- "$crate_path" | head -5)
-                      
+
                       if [ -n "$CRATE_CHANGELOG" ]; then
                         COMBINED_CHANGELOG="$COMBINED_CHANGELOG
 
@@ -324,22 +322,22 @@ jobs:
           $CRATE_CHANGELOG"
                       fi
                     done
-                    
+
                     if [ -z "$COMBINED_CHANGELOG" ]; then
                       COMBINED_CHANGELOG="
           - Published new versions of selected crates"
                     fi
-                    
+
                     RELEASE_NOTES="$RELEASE_NOTES$COMBINED_CHANGELOG
 
           **Full Changelog**: https://github.com/${{ github.repository }}/commits/$TAG_NAME"
-          
+
           # Create the combined GitHub release
           gh release create "$TAG_NAME" \
             --title "$RELEASE_TITLE" \
             --notes "$RELEASE_NOTES" \
             --latest=true
-            
+
           echo "✅ Created combined release: $TAG_NAME"
         env:
           GH_TOKEN: ${{ secrets.JITO_TEAM_PAT }}
@@ -360,17 +358,17 @@ jobs:
           echo "- **Dry run**: ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Version level**: ${{ inputs.level }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ inputs.dry_run }}" == "true" ]; then
             echo "⚠️ **This was a dry run - no actual publishing occurred**" >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ **Publishing completed successfully!**" >> $GITHUB_STEP_SUMMARY
-            
+
             if [ "${{ inputs.create_release }}" == "true" ]; then
               echo "🏷️ **Combined GitHub release created**" >> $GITHUB_STEP_SUMMARY
             fi
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 Published Crates" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
