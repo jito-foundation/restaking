@@ -57,7 +57,7 @@ pub struct SetConfigAdminInstructionData {
 
 impl SetConfigAdminInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: 32 }
+        Self { discriminator: 31 }
     }
 }
 
