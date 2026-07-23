@@ -1,6 +1,5 @@
 [advisories]
 ignore = [
-
     "RUSTSEC-2022-0093",
     "RUSTSEC-2024-0344",
     "RUSTSEC-2024-0421",
@@ -8,13 +7,13 @@ ignore = [
     "RUSTSEC-2025-0055",
     "RUSTSEC-2026-0007",
     "RUSTSEC-2026-0009",
-    "RUSTSEC-2024-0344",
-    "RUSTSEC-2022-0093",
-    "RUSTSEC-2026-0104",
+    "RUSTSEC-2026-0049",
     "RUSTSEC-2026-0098",
     "RUSTSEC-2026-0099",
     "RUSTSEC-2026-0104",
-    "RUSTSEC-2026-0098",
-    "RUSTSEC-2026-0099",
-    "RUSTSEC-2026-0049"
+    # quinn-proto DoS advisories: fixed in 0.11.14/0.11.15, but that dependency
+    # closure requires Rust >= 1.85 (security-framework 3.x) and the workspace
+    # toolchain is pinned to 1.84.1. Revisit when the toolchain is bumped.
+    "RUSTSEC-2026-0037",
+    "RUSTSEC-2026-0185",
 ]
