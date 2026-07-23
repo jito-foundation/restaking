@@ -117,10 +117,10 @@ impl VaultHandler {
         let rpc_client = self.get_rpc_client();
         let mut retries = 0;
 
-        instructions.insert(
-            0,
-            ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees),
-        );
+        // instructions.insert(
+        //     0,
+        //     ComputeBudgetInstruction::set_compute_unit_price(self.priority_fees),
+        // );
         while retries < MAX_RETRIES {
             let blockhash = get_latest_blockhash_with_retry(&rpc_client).await?;
 
@@ -194,7 +194,11 @@ impl VaultHandler {
                 blockhash,
             );
 
-            let tx_size = test_tx.signatures.len() + test_tx.message_data().len();
+            // Actual serialized wire size: short-vec signature count prefix (1 byte for
+            // <128 sigs) + 64 bytes per signature + the serialized message. Using
+            // `signatures.len()` (the count) here previously under-counted by ~64 bytes,
+            // letting batches exceed Solana's 1232-byte packet limit.
+            let tx_size = 1 + test_tx.signatures.len() * 64 + test_tx.message_data().len();
 
             if tx_size > max_size && !current_batch.is_empty() {
                 // Finalize current batch
