@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use jito_jsm_core::get_epoch;
 use jito_vault_core::config::Config;
-use log::error;
+use log::warn;
 use solana_metrics::datapoint_info;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
@@ -100,10 +100,9 @@ pub async fn emit_vault_metrics(
             .ok_or_else(|| anyhow::anyhow!("ST deposit account not found in map"));
 
         if try_st_deposit_account.is_err() {
-            error!(
-                "Failed to get ST deposit account for vault {}: {}",
-                address,
-                try_st_deposit_account.unwrap_err()
+            warn!(
+                "Skipping vault metrics, ST deposit account not found vault={}",
+                address
             );
             continue;
         }

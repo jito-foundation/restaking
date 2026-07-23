@@ -71,17 +71,10 @@ impl fmt::Display for Args {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Jito Vault Cranker Configuration:\n\
-            -------------------------------\n\
-            RPC URL: {}\n\
-            Keypair Path: {:?}\n\
-            Vault Program ID: {}\n\
-            Restaking Program ID: {}\n\
-            Crank Interval: {} seconds\n\
-            Metrics Interval: {} seconds\n\
-            Priority Fees: {} microlamports\n\
-            -------------------------------",
+            "rpc_url={} cluster={} region={} keypair_path={:?} vault_program_id={} restaking_program_id={} crank_interval={} metrics_interval={} priority_fees={}",
             self.rpc_url,
+            self.cluster,
+            self.region,
             self.keypair_path,
             self.vault_program_id,
             self.restaking_program_id,
@@ -113,11 +106,17 @@ impl fmt::Display for Cluster {
 async fn main() -> anyhow::Result<(), anyhow::Error> {
     dotenv().ok();
 
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    // RFC3339 UTC timestamps with millisecond precision so log aggregators
+    // can parse and order entries
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format_timestamp_millis()
+        .init();
 
     let args = Args::parse();
 
-    info!("{}", args);
+    // Single line so every entry shipped to a log aggregator carries a level
+    // and timestamp
+    info!("Starting Jito Vault Cranker {}", args);
 
     let hostname_cmd = Command::new("hostname")
         .output()
@@ -155,7 +154,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                     emit_vault_metrics(&metrics_client, epoch_length, &args.cluster.to_string())
                         .await
                 {
-                    error!("Failed to emit metrics: {}", e);
+                    error!("Failed to emit vault metrics: {:#}", e);
                 }
                 tokio::time::sleep(Duration::from_secs(args.metrics_interval)).await;
             }
@@ -170,7 +169,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         let slot = rpc_client.get_slot().await.context("get slot")?;
         let epoch = get_epoch(slot, config.epoch_length()).unwrap();
 
-        info!("Checking for vaults to update. Slot: {slot}, Current Epoch: {epoch}");
+        info!("Checking for vaults to update slot={slot} epoch={epoch}");
 
         let vaults = vault_handler.get_vaults().await?;
         let delegations = vault_handler.get_vault_operator_delegations().await?;
@@ -199,7 +198,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             }
         }
 
-        info!("Updating {} vaults", vaults_need_update.len());
+        info!("Updating vaults num_vaults={}", vaults_need_update.len());
 
         let start = Instant::now();
 
@@ -225,10 +224,10 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                             .await
                         {
                             Ok(_) => {
-                                info!("Successfully updated vault: {vault}");
+                                info!("Successfully updated vault vault={vault}");
                             }
                             Err(e) => {
-                                error!("Failed to update vault: {vault}, error: {e}");
+                                error!("Failed to update vault vault={vault}: {e:#}");
                             }
                         }
                     }
@@ -242,9 +241,12 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             }
         }
 
-        log::info!("Time elapsed: {:.2}s", start.elapsed().as_secs_f64());
+        info!(
+            "Finished crank loop elapsed_seconds={:.2}",
+            start.elapsed().as_secs_f64()
+        );
 
-        info!("Sleeping for {} seconds", args.crank_interval);
+        info!("Sleeping until next crank seconds={}", args.crank_interval);
         // ---------- SLEEP (crank_interval)----------
         tokio::time::sleep(Duration::from_secs(args.crank_interval)).await;
     }
