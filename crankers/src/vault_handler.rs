@@ -15,7 +15,7 @@ use jito_vault_core::{
     config::Config, vault::Vault, vault_operator_delegation::VaultOperatorDelegation,
     vault_update_state_tracker::VaultUpdateStateTracker,
 };
-use log::{error, info};
+use log::{error, info, warn};
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
@@ -150,7 +150,7 @@ impl VaultHandler {
 
             if retries >= MAX_RETRIES {
                 error!(
-                    "Transaction failed after {} retries: {:?}",
+                    "Transaction failed permanently retries={}: {:?}",
                     MAX_RETRIES, err
                 );
             }
@@ -364,22 +364,22 @@ impl VaultHandler {
         let tracker_pubkey =
             VaultUpdateStateTracker::find_program_address(&self.vault_program_id, vault, epoch).0;
 
-        log::info!("Updating vault: {vault}");
+        info!("Updating vault vault={vault}");
 
         // Initialize
         if let Err(e) = self.get_update_state_tracker(vault, epoch).await {
-            log::info!("Get tracker failed, initializing. Expecting AccountNotFound: {e}");
+            info!("Tracker not found, initializing vault={vault} tracker={tracker_pubkey}: {e:#}");
             self.initialize_vault_update_state_tracker(payer, vault, tracker_pubkey)
                 .await?;
         }
 
-        log::info!("Initialized tracker for vault: {vault}, tracker: {tracker_pubkey}");
+        info!("Tracker ready vault={vault} tracker={tracker_pubkey}");
 
         // Crank
         self.crank(slot, config, payer, vault, operators, tracker_pubkey)
             .await?;
 
-        log::info!("Cranked vault: {vault}");
+        info!("Cranked vault vault={vault}");
 
         // Close
         let tracker = self.get_update_state_tracker(vault, epoch).await?;
@@ -388,12 +388,12 @@ impl VaultHandler {
                 .await?;
         } else {
             let context = format!(
-                "Cranking failed to update all operators for vault: {vault}, tracker: {tracker_pubkey}"
+                "Cranking failed to update all operators vault={vault} tracker={tracker_pubkey}"
             );
             return Err(anyhow::anyhow!(context));
         }
 
-        log::info!("Closed tracker for vault: {vault}");
+        info!("Closed tracker vault={vault}");
 
         Ok(())
     }
@@ -560,25 +560,25 @@ impl VaultHandler {
                     .await
                 {
                     Ok(_) => {
-                        info!(
-                            "✅ Transaction {}/{} completed successfully",
-                            i + 1,
-                            txs.len()
-                        );
+                        info!("Transaction confirmed tx={}/{}", i + 1, txs.len());
                         break; // Success - move to next transaction
                     }
                     Err(err) => {
                         retries += 1;
 
                         if retries <= MAX_RETRIES {
-                            info!(
-                            "⚠️  Transaction {}/{} failed (attempt {}/{}), retrying in 1s: {:?}",
-                            i + 1, txs.len(), retries, MAX_RETRIES, err
-                        );
+                            warn!(
+                                "Transaction failed, retrying in 1s tx={}/{} attempt={}/{}: {:?}",
+                                i + 1,
+                                txs.len(),
+                                retries,
+                                MAX_RETRIES,
+                                err
+                            );
                             sleep(Duration::from_secs(1)).await;
                         } else {
                             error!(
-                                "❌ Transaction {}/{} failed permanently after {} retries: {:?}",
+                                "Transaction failed permanently tx={}/{} retries={}: {:?}",
                                 i + 1,
                                 txs.len(),
                                 MAX_RETRIES,
@@ -597,7 +597,8 @@ impl VaultHandler {
         }
 
         info!(
-            "🎉 All {} transactions completed successfully for vault cranking!",
+            "All crank transactions confirmed vault={} num_txs={}",
+            vault,
             txs.len()
         );
         Ok(())
