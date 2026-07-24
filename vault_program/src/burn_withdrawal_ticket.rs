@@ -13,11 +13,14 @@ use jito_vault_core::{
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
-    sysvar::Sysvar,
+    program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
-use spl_token::instruction::{burn, close_account, transfer};
-use spl_token_2022::state::Account;
+use spl_token::instruction::transfer;
+use spl_token_2022::{
+    extension::StateWithExtensions,
+    instruction::{burn, close_account},
+    state::Account,
+};
 
 /// Burns the withdrawal ticket, transferring the assets to the staker and closing the withdrawal ticket.
 ///
@@ -61,9 +64,9 @@ pub fn process_burn_withdrawal_ticket(
         &vault.vrt_mint,
     )?;
 
-    let ticket_vrt_account =
-        Account::unpack(&vault_staker_withdrawal_ticket_token_account.data.borrow())?;
-    let ticket_vrt_amount = ticket_vrt_account.amount;
+    let ticket_vrt_data = vault_staker_withdrawal_ticket_token_account.data.borrow();
+    let ticket_vrt_account = StateWithExtensions::<Account>::unpack(&ticket_vrt_data)?;
+    let ticket_vrt_amount = ticket_vrt_account.base.amount;
 
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, &vault.vrt_mint)?;
     load_associated_token_account(
@@ -71,7 +74,6 @@ pub fn process_burn_withdrawal_ticket(
         &config.program_fee_wallet,
         &vault.vrt_mint,
     )?;
-    // Only the original spl token program is allowed
     load_token_program(token_program)?;
 
     load_system_program(system_program)?;
@@ -135,44 +137,52 @@ pub fn process_burn_withdrawal_ticket(
     // );
 
     // transfer fee to fee wallet
-    invoke_signed(
-        &transfer(
+    {
+        let mut ix = transfer(
             &spl_token::id(),
             vault_staker_withdrawal_ticket_token_account.key,
             vault_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
             &[],
             vault_fee_amount,
-        )?,
-        &[
-            vault_staker_withdrawal_ticket_token_account.clone(),
-            vault_fee_token_account.clone(),
-            vault_staker_withdrawal_ticket_info.clone(),
-        ],
-        &[&seed_slices],
-    )?;
+        )?;
+        ix.program_id = *token_program.key;
+        invoke_signed(
+            &ix,
+            &[
+                vault_staker_withdrawal_ticket_token_account.clone(),
+                vault_fee_token_account.clone(),
+                vault_staker_withdrawal_ticket_info.clone(),
+            ],
+            &[&seed_slices],
+        )?;
+    }
     // Transfer program fee to program fee wallet
-    invoke_signed(
-        &transfer(
+    {
+        let mut ix = transfer(
             &spl_token::id(),
             vault_staker_withdrawal_ticket_token_account.key,
             program_fee_token_account.key,
             vault_staker_withdrawal_ticket_info.key,
             &[],
             program_fee_amount,
-        )?,
-        &[
-            vault_staker_withdrawal_ticket_token_account.clone(),
-            program_fee_token_account.clone(),
-            vault_staker_withdrawal_ticket_info.clone(),
-        ],
-        &[&seed_slices],
-    )?;
+        )?;
+        ix.program_id = *token_program.key;
+        invoke_signed(
+            &ix,
+            &[
+                vault_staker_withdrawal_ticket_token_account.clone(),
+                program_fee_token_account.clone(),
+                vault_staker_withdrawal_ticket_info.clone(),
+            ],
+            &[&seed_slices],
+        )?;
+    }
 
     // burn the VRT tokens
     invoke_signed(
         &burn(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             vrt_mint.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -190,7 +200,7 @@ pub fn process_burn_withdrawal_ticket(
     // close token account
     invoke_signed(
         &close_account(
-            &spl_token::id(),
+            token_program.key,
             vault_staker_withdrawal_ticket_token_account.key,
             staker.key,
             vault_staker_withdrawal_ticket_info.key,
@@ -214,15 +224,17 @@ pub fn process_burn_withdrawal_ticket(
 
     drop(vault_data); // avoid double borrow
 
+    let mut ix = transfer(
+        &spl_token::id(),
+        vault_token_account.key,
+        staker_token_account.key,
+        vault_info.key,
+        &[],
+        out_amount,
+    )?;
+    ix.program_id = *token_program.key;
     invoke_signed(
-        &transfer(
-            &spl_token::id(),
-            vault_token_account.key,
-            staker_token_account.key,
-            vault_info.key,
-            &[],
-            out_amount,
-        )?,
+        &ix,
         &[
             vault_token_account.clone(),
             staker_token_account.clone(),

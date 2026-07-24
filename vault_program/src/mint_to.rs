@@ -17,7 +17,8 @@ use solana_program::{
     pubkey::Pubkey,
     sysvar::Sysvar,
 };
-use spl_token::instruction::{mint_to, transfer};
+use spl_token::instruction::transfer;
+use spl_token_2022::instruction::mint_to;
 
 /// Processes the mint instruction: [`crate::VaultInstruction::MintTo`]
 ///
@@ -66,7 +67,6 @@ pub fn process_mint(
     load_associated_token_account(depositor_vrt_token_account, depositor.key, vrt_mint.key)?;
     load_associated_token_account(vault_fee_token_account, &vault.fee_wallet, vrt_mint.key)?;
 
-    // Only the original spl token program is allowed
     load_token_program(token_program)?;
 
     vault.check_mint_burn_admin(optional_accounts.first())?;
@@ -109,15 +109,17 @@ pub fn process_mint(
 
     // transfer tokens from depositor to vault
     {
+        let mut ix = transfer(
+            &spl_token::id(),
+            depositor_token_account.key,
+            vault_token_account.key,
+            depositor.key,
+            &[],
+            amount_in,
+        )?;
+        ix.program_id = *token_program.key;
         invoke(
-            &transfer(
-                &spl_token::id(),
-                depositor_token_account.key,
-                vault_token_account.key,
-                depositor.key,
-                &[],
-                amount_in,
-            )?,
+            &ix,
             &[
                 depositor_token_account.clone(),
                 vault_token_account.clone(),
@@ -135,7 +137,7 @@ pub fn process_mint(
     {
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 depositor_vrt_token_account.key,
                 vault_info.key,
@@ -152,7 +154,7 @@ pub fn process_mint(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

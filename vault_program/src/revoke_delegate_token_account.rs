@@ -36,7 +36,6 @@ pub fn process_revoke_delegate_token_account(
         token_mint.key,
         token_program_info,
     )?;
-    // Only the original spl token program is allowed
     load_token_program(token_program_info)?;
 
     // The owner of token mint and token account must match

@@ -4,10 +4,9 @@ use jito_vault_core::{config::Config, vault::Vault};
 use jito_vault_sdk::error::VaultError;
 use solana_program::{
     account_info::AccountInfo, clock::Clock, entrypoint::ProgramResult, msg,
-    program::invoke_signed, program_error::ProgramError, program_pack::Pack, pubkey::Pubkey,
-    sysvar::Sysvar,
+    program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, sysvar::Sysvar,
 };
-use spl_token::{instruction::mint_to, state::Account};
+use spl_token_2022::{extension::StateWithExtensions, instruction::mint_to, state::Account};
 
 pub fn process_update_vault_balance(
     program_id: &Pubkey,
@@ -41,7 +40,10 @@ pub fn process_update_vault_balance(
     // - We take our fee in st
     // - We add the reward ( total reward - fee in st )
     // - We virtually call mint_to on the reward fee ob behalf of the vault
-    let new_st_balance = Account::unpack(&vault_token_account.data.borrow())?.amount;
+    let new_st_balance =
+        StateWithExtensions::<Account>::unpack(&vault_token_account.data.borrow())?
+            .base
+            .amount;
 
     // 1. Calculate reward fee in ST
     let st_rewards = new_st_balance.saturating_sub(vault.tokens_deposited());
@@ -78,7 +80,7 @@ pub fn process_update_vault_balance(
 
         invoke_signed(
             &mint_to(
-                &spl_token::id(),
+                token_program.key,
                 vrt_mint.key,
                 vault_fee_token_account.key,
                 vault_info.key,

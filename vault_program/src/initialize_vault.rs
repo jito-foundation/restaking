@@ -24,10 +24,8 @@ use solana_program::{
     sysvar::Sysvar,
 };
 use spl_associated_token_account::instruction::create_associated_token_account;
-use spl_token::{
-    instruction::{mint_to, transfer},
-    state::Mint,
-};
+use spl_token::{instruction::transfer, state::Mint};
+use spl_token_2022::instruction::mint_to;
 
 /// Processes the create instruction: [`crate::VaultInstruction::InitializeVault`]
 pub fn process_initialize_vault(
@@ -118,8 +116,8 @@ pub fn process_initialize_vault(
         )?;
 
         invoke(
-            &spl_token::instruction::initialize_mint2(
-                &spl_token::id(),
+            &spl_token_2022::instruction::initialize_mint2(
+                token_program.key,
                 vrt_mint.key,
                 vault.key,
                 None,
@@ -182,15 +180,17 @@ pub fn process_initialize_vault(
 
         // Deposit min ST
         {
+            let mut ix = transfer(
+                &spl_token::id(),
+                admin_st_token_account.key,
+                vault_st_token_account.key,
+                admin.key,
+                &[],
+                initialize_token_amount,
+            )?;
+            ix.program_id = *token_program.key;
             invoke(
-                &transfer(
-                    token_program.key,
-                    admin_st_token_account.key,
-                    vault_st_token_account.key,
-                    admin.key,
-                    &[],
-                    initialize_token_amount,
-                )?,
+                &ix,
                 &[
                     admin_st_token_account.clone(),
                     vault_st_token_account.clone(),
@@ -203,10 +203,10 @@ pub fn process_initialize_vault(
         {
             invoke(
                 &create_associated_token_account(
-                    admin.key,        // funding account
-                    burn_vault.key,   // wallet address (ATA owner)
-                    vrt_mint.key,     // mint address
-                    &spl_token::id(), // token program
+                    admin.key,         // funding account
+                    burn_vault.key,    // wallet address (ATA owner)
+                    vrt_mint.key,      // mint address
+                    token_program.key, // token program
                 ),
                 &[
                     admin.clone(),

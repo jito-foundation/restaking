@@ -124,15 +124,17 @@ pub fn process_enqueue_withdrawal(
 
     // Withdraw funds from the staker's VRT account, transferring them to an ATA owned
     // by the VaultStakerWithdrawalTicket
+    let mut ix = transfer(
+        &spl_token::id(),
+        staker_vrt_token_account.key,
+        vault_staker_withdrawal_ticket_token_account.key,
+        staker.key,
+        &[],
+        vrt_amount,
+    )?;
+    ix.program_id = *token_program.key;
     invoke(
-        &transfer(
-            &spl_token::id(),
-            staker_vrt_token_account.key,
-            vault_staker_withdrawal_ticket_token_account.key,
-            staker.key,
-            &[],
-            vrt_amount,
-        )?,
+        &ix,
         &[
             staker_vrt_token_account.clone(),
             vault_staker_withdrawal_ticket_token_account.clone(),
