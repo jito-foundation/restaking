@@ -45,6 +45,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_decode_error_type() {
         assert_eq!(
             <CoreError as DecodeError<CoreError>>::type_of(),
