@@ -3,7 +3,7 @@ mod tests {
     use jito_restaking_sdk::error::RestakingError;
     use solana_program::{program_option::COption, pubkey::Pubkey};
     use solana_sdk::{signature::Keypair, signer::Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account_interface::address::get_associated_token_address;
     use test_case::test_case;
 
     use crate::fixtures::{
@@ -32,7 +32,7 @@ mod tests {
             .unwrap();
 
         let operator_token_account = Keypair::new();
-        if token_program_id.eq(&spl_token::id()) {
+        if token_program_id.eq(&spl_token_interface::id()) {
             fixture
                 .mint_spl_to(
                     &random_mint.pubkey(),
@@ -67,8 +67,8 @@ mod tests {
         (fixture, ncn_root, random_mint, operator_token_account)
     }
 
-    #[test_case(spl_token::id(); "token")]
-    // #[test_case(spl_token_2022::id(); "token-2022")]
+    #[test_case(spl_token_interface::id(); "token")]
+    // #[test_case(spl_token_2022_interface::id(); "token-2022")]
     #[tokio::test]
     async fn test_ncn_delegate_token_account_ok(token_program_id: Pubkey) {
         let (mut fixture, ncn_root, random_mint, operator_token_account) =
@@ -76,7 +76,7 @@ mod tests {
         let mut restaking_program_client = fixture.restaking_program_client();
 
         let bob = Pubkey::new_unique();
-        if token_program_id.eq(&spl_token::id()) {
+        if token_program_id.eq(&spl_token_interface::id()) {
             // Delegate
             restaking_program_client
                 .ncn_delegate_token_account(
@@ -117,8 +117,8 @@ mod tests {
         }
     }
 
-    #[test_case(spl_token::id(); "token")]
-    // #[test_case(spl_token_2022::id(); "token-2022")]
+    #[test_case(spl_token_interface::id(); "token")]
+    // #[test_case(spl_token_2022_interface::id(); "token-2022")]
     #[tokio::test]
     async fn test_ncn_delegate_token_account_wrong_delegate_admin_fails(token_program_id: Pubkey) {
         let (fixture, ncn_root, random_mint, operator_token_account) =
@@ -127,7 +127,7 @@ mod tests {
 
         let wrong_delegate_admin = Keypair::new();
         let bob = Pubkey::new_unique();
-        if token_program_id.eq(&spl_token::id()) {
+        if token_program_id.eq(&spl_token_interface::id()) {
             // Delegate
             let test_error = restaking_program_client
                 .ncn_delegate_token_account(

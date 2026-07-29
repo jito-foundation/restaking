@@ -57,9 +57,7 @@ impl RevokeDelegateTokenAccount {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = RevokeDelegateTokenAccountInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&RevokeDelegateTokenAccountInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -295,9 +293,7 @@ impl<'a, 'b> RevokeDelegateTokenAccountCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = RevokeDelegateTokenAccountInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&RevokeDelegateTokenAccountInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,

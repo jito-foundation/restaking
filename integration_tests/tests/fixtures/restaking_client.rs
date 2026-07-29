@@ -17,18 +17,16 @@ use jito_restaking_sdk::{
         warmup_operator_vault_ticket,
     },
 };
-use solana_program::{
-    instruction::InstructionError, native_token::sol_to_lamports, pubkey::Pubkey,
-    system_instruction::transfer,
-};
+use solana_commitment_config::CommitmentLevel;
+use solana_program::{instruction::InstructionError, pubkey::Pubkey};
 use solana_program_test::BanksClient;
 use solana_sdk::{
-    commitment_config::CommitmentLevel,
     signature::{Keypair, Signer},
     transaction::{Transaction, TransactionError},
 };
+use solana_system_interface::instruction::transfer;
 
-use crate::fixtures::{TestError, TestResult};
+use crate::fixtures::{sol_to_lamports, TestError, TestResult};
 
 #[derive(Debug)]
 pub struct NcnRoot {

@@ -51,9 +51,7 @@ impl ChangeWithdrawalTicketOwner {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = ChangeWithdrawalTicketOwnerInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&ChangeWithdrawalTicketOwnerInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,
@@ -269,9 +267,7 @@ impl<'a, 'b> ChangeWithdrawalTicketOwnerCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = ChangeWithdrawalTicketOwnerInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&ChangeWithdrawalTicketOwnerInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_VAULT_ID,

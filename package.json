@@ -24,7 +24,8 @@
   "scripts": {
     "generate-sdks": "yarn workspace @jito-foundation/vault-sdk build && yarn workspace @jito-foundation/restaking-sdk build",
     "generate-clients": "node scripts/generate-clients.js",
-    "update-dependencies": "node scripts/update-dependencies.js"
+    "update-dependencies": "node scripts/update-dependencies.js",
+    "update-rust-borsh": "node scripts/update-rust-borsh.js"
   },
   "volta": {
     "node": "22.14.0",

@@ -1,25 +1,25 @@
 use std::fmt::{Debug, Formatter};
 
 use jito_vault_sdk::inline_mpl_token_metadata;
-use solana_program::{
-    clock::Clock, native_token::sol_to_lamports, pubkey::Pubkey, system_instruction::transfer,
-};
+use solana_commitment_config::CommitmentLevel;
+use solana_program::{clock::Clock, pubkey::Pubkey};
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
-    commitment_config::CommitmentLevel,
     signature::{Keypair, Signer},
     transaction::Transaction,
 };
-use spl_associated_token_account::{
-    get_associated_token_address, instruction::create_associated_token_account_idempotent,
+use solana_system_interface::instruction::transfer;
+use spl_associated_token_account_interface::{
+    address::get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
-use spl_token_2022::{
+use spl_token_2022_interface::{
     extension::{ExtensionType, StateWithExtensionsOwned},
     instruction::transfer_checked,
 };
 
 use crate::fixtures::{
     restaking_client::{OperatorRoot, RestakingProgramClient},
+    sol_to_lamports,
     vault_client::{VaultProgramClient, VaultRoot},
     TestResult,
 };
@@ -105,8 +105,10 @@ impl TestBuilder {
             .await?
             .ok_or(BanksClientError::ClientError("failed to get mint account"))?;
         let mint_account =
-            StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(mint_account_raw.data)
-                .unwrap();
+            StateWithExtensionsOwned::<spl_token_2022_interface::state::Mint>::unpack(
+                mint_account_raw.data,
+            )
+            .unwrap();
 
         let source_token_account = get_associated_token_address(&source.pubkey(), mint);
         let destination_token_account = get_associated_token_address(destination, mint);
@@ -145,14 +147,13 @@ impl TestBuilder {
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
         let rent = self.context.banks_client.get_rent().await?;
-        let space =
-            ExtensionType::try_calculate_account_len::<spl_token_2022::state::Account>(extensions)
-                .map_err(|_e| {
-                    BanksClientError::ClientError("failed to try calculate account length")
-                })?;
+        let space = ExtensionType::try_calculate_account_len::<
+            spl_token_2022_interface::state::Account,
+        >(extensions)
+        .map_err(|_e| BanksClientError::ClientError("failed to try calculate account length"))?;
         let account_rent = rent.minimum_balance(space);
 
-        let mut instructions = vec![solana_program::system_instruction::create_account(
+        let mut instructions = vec![solana_system_interface::instruction::create_account(
             &self.context.payer.pubkey(),
             &account.pubkey(),
             account_rent,
@@ -163,7 +164,7 @@ impl TestBuilder {
         for extension in extensions {
             match extension {
                 ExtensionType::ImmutableOwner => instructions.push(
-                    spl_token_2022::instruction::initialize_immutable_owner(
+                    spl_token_2022_interface::instruction::initialize_immutable_owner(
                         token_program_id,
                         &account.pubkey(),
                     )
@@ -178,7 +179,7 @@ impl TestBuilder {
         }
 
         instructions.push(
-            spl_token_2022::instruction::initialize_account(
+            spl_token_2022_interface::instruction::initialize_account(
                 token_program_id,
                 &account.pubkey(),
                 pool_mint,
@@ -193,7 +194,7 @@ impl TestBuilder {
                 ExtensionType::MemoTransfer => {
                     signers.push(&self.context.payer);
                     instructions.push(
-                spl_token_2022::extension::memo_transfer::instruction::enable_required_transfer_memos(
+                spl_token_2022_interface::extension::memo_transfer::instruction::enable_required_transfer_memos(
                     token_program_id,
                     &account.pubkey(),
                     &self.context.payer.pubkey(),
@@ -204,7 +205,7 @@ impl TestBuilder {
                 ExtensionType::CpiGuard => {
                     signers.push(&self.context.payer);
                     instructions.push(
-                        spl_token_2022::extension::cpi_guard::instruction::enable_cpi_guard(
+                        spl_token_2022_interface::extension::cpi_guard::instruction::enable_cpi_guard(
                             token_program_id,
                             &account.pubkey(),
                             &self.context.payer.pubkey(),
@@ -238,7 +239,7 @@ impl TestBuilder {
     pub async fn get_token_account(
         &mut self,
         token_account: &Pubkey,
-    ) -> Result<spl_token_2022::state::Account, BanksClientError> {
+    ) -> Result<spl_token_2022_interface::state::Account, BanksClientError> {
         let account = self
             .context
             .banks_client
@@ -247,8 +248,10 @@ impl TestBuilder {
             .ok_or(BanksClientError::ClientError("failed to get token account"))?;
 
         let account_info =
-            StateWithExtensionsOwned::<spl_token_2022::state::Account>::unpack(account.data)
-                .map_err(|_e| BanksClientError::ClientError("failed to unpack"))?;
+            StateWithExtensionsOwned::<spl_token_2022_interface::state::Account>::unpack(
+                account.data,
+            )
+            .map_err(|_e| BanksClientError::ClientError("failed to unpack"))?;
 
         Ok(account_info.base)
     }
@@ -256,7 +259,7 @@ impl TestBuilder {
     pub async fn get_token_mint(
         &mut self,
         token_mint: &Pubkey,
-    ) -> Result<spl_token_2022::state::Mint, BanksClientError> {
+    ) -> Result<spl_token_2022_interface::state::Mint, BanksClientError> {
         let account = self
             .context
             .banks_client
@@ -265,7 +268,7 @@ impl TestBuilder {
             .ok_or(BanksClientError::ClientError("failed to get token account"))?;
 
         let account_info =
-            StateWithExtensionsOwned::<spl_token_2022::state::Mint>::unpack(account.data)
+            StateWithExtensionsOwned::<spl_token_2022_interface::state::Mint>::unpack(account.data)
                 .map_err(|_e| BanksClientError::ClientError("failed to unpack"))?;
 
         Ok(account_info.base)
@@ -281,7 +284,7 @@ impl TestBuilder {
     ) -> Result<(), BanksClientError> {
         let blockhash = self.context.banks_client.get_latest_blockhash().await?;
 
-        let mint_to_ix = if token_program.eq(&spl_token::id()) {
+        let mint_to_ix = if token_program.eq(&spl_token_interface::id()) {
             vec![
                 create_associated_token_account_idempotent(
                     &self.context.payer.pubkey(),
@@ -289,7 +292,7 @@ impl TestBuilder {
                     mint,
                     token_program,
                 ),
-                spl_token::instruction::mint_to(
+                spl_token_interface::instruction::mint_to(
                     token_program,
                     mint,
                     &get_associated_token_address(to, mint),
@@ -300,7 +303,7 @@ impl TestBuilder {
                 .map_err(|_e| BanksClientError::ClientError("failed to mint to"))?,
             ]
         } else {
-            vec![spl_token_2022::instruction::mint_to(
+            vec![spl_token_2022_interface::instruction::mint_to(
                 token_program,
                 mint,
                 to,
@@ -338,7 +341,7 @@ impl TestBuilder {
                         &self.context.payer.pubkey(),
                         owner,
                         mint,
-                        &spl_token::id(),
+                        &spl_token_interface::id(),
                     )],
                     Some(&self.context.payer.pubkey()),
                     &[&self.context.payer],

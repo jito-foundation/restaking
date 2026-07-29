@@ -7,7 +7,7 @@ mod tests {
     use jito_vault_sdk::{error::VaultError, instruction::VaultAdminRole};
     use solana_program::pubkey::Pubkey;
     use solana_sdk::{instruction::InstructionError, signature::Keypair, signer::Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account_interface::address::get_associated_token_address;
 
     use crate::fixtures::{
         assert_ix_error,
@@ -1072,7 +1072,7 @@ mod tests {
         // Transfer extra VRT to the ticket
         fixture
             .transfer_token(
-                &spl_token::id(),
+                &spl_token_interface::id(),
                 &depositor,
                 &vault_staker_withdrawal_ticket_address,
                 &vault.vrt_mint,
@@ -1234,7 +1234,7 @@ mod tests {
         // Transfer extra VRT to the ticket
         fixture
             .transfer_token(
-                &spl_token::id(),
+                &spl_token_interface::id(),
                 &depositor,
                 &vault_staker_withdrawal_ticket_address,
                 &vault.vrt_mint,

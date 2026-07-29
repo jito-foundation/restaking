@@ -59,7 +59,7 @@ pub fn process_revoke_delegate_token_account(
     drop(vault_data);
 
     // This is compatible with the spl-token and spl-token-2022 programs
-    let ix = spl_token_2022::instruction::revoke(
+    let ix = spl_token_2022_interface::instruction::revoke(
         token_program_info.key,
         token_account.key,
         vault_info.key,

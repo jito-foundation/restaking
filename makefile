@@ -30,6 +30,11 @@ generate-code: build-release generate-idl
 	$(YARN) install
 	$(YARN) generate-clients
 	$(YARN) update-dependencies
+	$(YARN) update-rust-borsh
+	# Stable rustfmt, matching the `cargo fmt --all --check` gate in CI. The
+	# nightly-only options in rustfmt.toml are commented out, so $(CARGO_FMT)
+	# would produce identical output while requiring a toolchain CI lacks.
+	$(CARGO) fmt --all
 
 # Generate IDL files
 .PHONY: generate-idl

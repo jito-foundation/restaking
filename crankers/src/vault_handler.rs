@@ -17,13 +17,14 @@ use jito_vault_core::{
 };
 use log::{error, info, warn};
 use solana_account_decoder::{UiAccountEncoding, UiDataSliceConfig};
+use solana_commitment_config::CommitmentConfig;
+use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use solana_rpc_client_api::{
     config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    commitment_config::CommitmentConfig, compute_budget::ComputeBudgetInstruction,
     instruction::Instruction, pubkey::Pubkey, signature::Keypair, signer::Signer,
     transaction::Transaction,
 };
@@ -270,6 +271,9 @@ impl VaultHandler {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Vault>()?;
 
+        // TODO: migrate to `get_program_ui_accounts_with_config`, which returns encoded
+        // `UiAccount`s and so needs the base64 decode doing here instead.
+        #[allow(deprecated)]
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.vault_program_id, config)
             .await?;
@@ -298,6 +302,9 @@ impl VaultHandler {
         let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>()?;
 
+        // TODO: migrate to `get_program_ui_accounts_with_config`, which returns encoded
+        // `UiAccount`s and so needs the base64 decode doing here instead.
+        #[allow(deprecated)]
         let accounts = rpc_client
             .get_program_accounts_with_config(&self.vault_program_id, config)
             .await?;

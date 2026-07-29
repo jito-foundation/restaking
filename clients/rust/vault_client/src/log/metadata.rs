@@ -1,6 +1,6 @@
-use anchor_lang::prelude::Pubkey;
 use borsh::BorshDeserialize;
 use jito_restaking_client_common::log::{account_header, field, section_header, PrettyDisplay};
+use solana_program::pubkey::Pubkey;
 
 #[derive(Clone, BorshDeserialize, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -57,8 +57,8 @@ impl PrettyDisplay for Metadata {
 
 #[cfg(test)]
 mod tests {
-    use anchor_lang::prelude::Pubkey;
     use jito_restaking_client_common::log::PrettyDisplay;
+    use solana_program::pubkey::Pubkey;
 
     use crate::log::metadata::Metadata;
 

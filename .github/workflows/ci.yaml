@@ -50,7 +50,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: 1.84.1
+          toolchain: 1.89.0
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
 
@@ -80,7 +80,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: 1.84.1
+          toolchain: 1.89.0
       - name: Install cargo-sort from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
@@ -102,12 +102,19 @@ jobs:
           path: config
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: 1.89.0
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.14/install)"
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v3.1.14/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+      # Built per-program rather than bare `cargo-build-sbf`: at the workspace
+      # root that sweeps in every member, including host-only crates (crankers,
+      # cli, integration_tests) whose dependencies have no SBF target support.
       - name: Building programs
-        run: cargo-build-sbf
+        run: |
+          cargo-build-sbf --manifest-path restaking_program/Cargo.toml
+          cargo-build-sbf --manifest-path vault_program/Cargo.toml
         env:
           RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
           VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
@@ -121,7 +128,7 @@ jobs:
           submodules: recursive
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
-      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:2.2.14
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:3.1.14
       # solana-verify 0.5.x has edition2024 deps, so building it needs a newer
       # cargo than the workspace rust-toolchain.toml. Host-only override; the
       # verified build itself runs inside the docker image.
@@ -132,8 +139,8 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: solana-verify
-      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:2.2.14
-      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:2.2.14
+      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:3.1.14
+      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:3.1.14
       - name: Upload jito_restaking_program.so
         uses: actions/upload-artifact@v4
         with:
@@ -153,7 +160,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: 1.84.1
+          toolchain: 1.89.0
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install system dependencies

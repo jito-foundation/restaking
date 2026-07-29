@@ -459,7 +459,7 @@ impl Vault {
         self.is_paused.into()
     }
 
-    pub fn set_is_paused(&mut self, is_paused: bool) {
+    pub const fn set_is_paused(&mut self, is_paused: bool) {
         self.is_paused = PodBool::from_bool(is_paused);
     }
 
@@ -1310,8 +1310,6 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::RefCell, rc::Rc};
-
     use jito_bytemuck::types::{PodBool, PodU16, PodU64};
     use jito_vault_sdk::error::VaultError;
     use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
@@ -1555,19 +1553,17 @@ mod tests {
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
-        let lamports = Rc::new(RefCell::new(&mut binding_lamports));
         let mut data: Vec<u8> = vec![0];
-        let data = Rc::new(RefCell::new(data.as_mut_slice()));
-        let not_signer = AccountInfo {
-            key: &vault.mint_burn_admin,
-            is_signer: false,
-            is_writable: false,
-            lamports,
-            data,
-            owner: &Pubkey::new_unique(),
-            executable: false,
-            rent_epoch: 0,
-        };
+        let owner = Pubkey::new_unique();
+        let not_signer = AccountInfo::new(
+            &vault.mint_burn_admin,
+            false,
+            false,
+            &mut binding_lamports,
+            &mut data,
+            &owner,
+            false,
+        );
         let err = vault.check_mint_burn_admin(Some(&not_signer)).unwrap_err();
         assert_eq!(err, VaultError::VaultMintBurnAdminInvalid);
     }
@@ -1591,19 +1587,18 @@ mod tests {
         vault.mint_burn_admin = Pubkey::new_unique();
 
         let mut binding_lamports = 0;
-        let lamports = Rc::new(RefCell::new(&mut binding_lamports));
         let mut data: Vec<u8> = vec![0];
-        let data = Rc::new(RefCell::new(data.as_mut_slice()));
-        let wrong_address_and_signer = AccountInfo {
-            key: &Pubkey::new_unique(),
-            is_signer: true,
-            is_writable: false,
-            lamports,
-            data,
-            owner: &Pubkey::new_unique(),
-            executable: false,
-            rent_epoch: 0,
-        };
+        let key = Pubkey::new_unique();
+        let owner = Pubkey::new_unique();
+        let wrong_address_and_signer = AccountInfo::new(
+            &key,
+            true,
+            false,
+            &mut binding_lamports,
+            &mut data,
+            &owner,
+            false,
+        );
         let err = vault
             .check_mint_burn_admin(Some(&wrong_address_and_signer))
             .unwrap_err();
@@ -2821,7 +2816,6 @@ mod tests {
             &mut data,
             &owner,
             false,
-            0,
         );
 
         assert_eq!(
@@ -2838,7 +2832,6 @@ mod tests {
             &mut data,
             &owner,
             false,
-            0,
         );
 
         assert_eq!(

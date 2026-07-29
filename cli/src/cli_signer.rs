@@ -1,11 +1,11 @@
 use anyhow::anyhow;
+use solana_derivation_path::DerivationPath;
 use solana_remote_wallet::{
     ledger::get_ledger_from_info,
     remote_keypair::RemoteKeypair,
     remote_wallet::{initialize_wallet_manager, RemoteWalletType},
 };
 use solana_sdk::{
-    derivation_path::DerivationPath,
     pubkey::Pubkey,
     signature::{read_keypair_file, Keypair, Signature, Signer, SignerError},
 };

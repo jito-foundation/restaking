@@ -60,7 +60,7 @@ pub fn process_operator_delegate_token_account(
 
     drop(operator_data);
 
-    let ix = spl_token_2022::instruction::approve(
+    let ix = spl_token_2022_interface::instruction::approve(
         token_program_info.key,
         token_account.key,
         delegate.key,
