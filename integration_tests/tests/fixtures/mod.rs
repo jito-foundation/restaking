@@ -9,6 +9,13 @@ pub mod vault_client;
 
 pub type TestResult<T> = Result<T, TestError>;
 
+/// Converts SOL to lamports.
+///
+/// `solana_native_token` dropped this helper in 3.0, so it lives here for the tests.
+pub fn sol_to_lamports(sol: f64) -> u64 {
+    (sol * solana_program::native_token::LAMPORTS_PER_SOL as f64) as u64
+}
+
 #[derive(Error, Debug)]
 pub enum TestError {
     #[error(transparent)]

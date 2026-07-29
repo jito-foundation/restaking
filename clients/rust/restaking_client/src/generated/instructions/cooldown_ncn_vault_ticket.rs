@@ -49,9 +49,7 @@ impl CooldownNcnVaultTicket {
             self.admin, true,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = CooldownNcnVaultTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&CooldownNcnVaultTicketInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -265,9 +263,7 @@ impl<'a, 'b> CooldownNcnVaultTicketCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = CooldownNcnVaultTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&CooldownNcnVaultTicketInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,

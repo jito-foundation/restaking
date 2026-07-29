@@ -204,8 +204,8 @@ pub enum JitoVaultError {
     DivisionByZero = 0xBBA,
 }
 
-impl solana_program::program_error::PrintProgramError for JitoVaultError {
+/*impl solana_program::program_error::PrintProgramError for JitoVaultError {
     fn print<E>(&self) {
         solana_program::msg!(&self.to_string());
     }
-}
+}*/

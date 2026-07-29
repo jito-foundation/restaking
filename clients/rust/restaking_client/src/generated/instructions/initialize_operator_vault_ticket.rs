@@ -61,9 +61,7 @@ impl InitializeOperatorVaultTicket {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = InitializeOperatorVaultTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&InitializeOperatorVaultTicketInstructionData::new()).unwrap();
 
         solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,
@@ -316,9 +314,7 @@ impl<'a, 'b> InitializeOperatorVaultTicketCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = InitializeOperatorVaultTicketInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let data = borsh::to_vec(&InitializeOperatorVaultTicketInstructionData::new()).unwrap();
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::JITO_RESTAKING_ID,

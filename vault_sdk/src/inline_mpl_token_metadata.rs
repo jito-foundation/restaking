@@ -4,13 +4,13 @@
 solana_program::declare_id!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 pub mod instruction {
+    use super::state::DataV2;
     use borsh::{BorshDeserialize, BorshSerialize};
     use solana_program::{
         instruction::{AccountMeta, Instruction},
         pubkey::Pubkey,
     };
-
-    use super::state::DataV2;
+    use solana_system_interface::program as system_program;
 
     #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
     struct CreateMetadataAccountArgsV3 {
@@ -59,7 +59,7 @@ pub mod instruction {
                 AccountMeta::new_readonly(mint_authority, true),
                 AccountMeta::new(payer, true),
                 AccountMeta::new_readonly(update_authority, true),
-                AccountMeta::new_readonly(solana_program::system_program::ID, false),
+                AccountMeta::new_readonly(system_program::ID, false),
             ],
             data,
         }

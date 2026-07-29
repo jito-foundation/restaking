@@ -24,8 +24,8 @@ impl PrettyDisplay for OperatorVaultTicket {
 
 #[cfg(test)]
 mod tests {
-    use anchor_lang::prelude::Pubkey;
     use jito_restaking_client_common::log::PrettyDisplay;
+    use solana_program::pubkey::Pubkey;
 
     use crate::{accounts::OperatorVaultTicket, types::SlotToggle};
 

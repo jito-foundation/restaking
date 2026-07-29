@@ -6,7 +6,7 @@ mod tests {
     };
     use jito_vault_sdk::error::VaultError;
     use solana_sdk::signature::{Keypair, Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account_interface::address::get_associated_token_address;
 
     use crate::fixtures::{
         fixture::{ConfiguredVault, TestBuilder},

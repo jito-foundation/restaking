@@ -4,7 +4,7 @@ mod tests {
     use jito_vault_sdk::error::VaultError;
     use solana_program::{program_option::COption, pubkey::Pubkey};
     use solana_sdk::signature::{Keypair, Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account_interface::address::get_associated_token_address;
     use test_case::test_case;
 
     use crate::fixtures::{
@@ -37,7 +37,7 @@ mod tests {
             .unwrap();
 
         let vault_token_account = Keypair::new();
-        if token_program_id.eq(&spl_token::id()) {
+        if token_program_id.eq(&spl_token_interface::id()) {
             fixture
                 .mint_spl_to(
                     &random_mint.pubkey(),
@@ -78,8 +78,8 @@ mod tests {
         )
     }
 
-    #[test_case(spl_token::id(); "token")]
-    // #[test_case(spl_token_2022::id(); "token-2022")]
+    #[test_case(spl_token_interface::id(); "token")]
+    // #[test_case(spl_token_2022_interface::id(); "token-2022")]
     #[tokio::test]
     async fn test_delegate_token_account_ok(token_program_id: Pubkey) {
         let (mut fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
@@ -88,7 +88,7 @@ mod tests {
         let config_pubkey = Config::find_program_address(&jito_vault_program::id()).0;
 
         let bob = Pubkey::new_unique();
-        if token_program_id.eq(&spl_token::id()) {
+        if token_program_id.eq(&spl_token_interface::id()) {
             // Delegate
             vault_program_client
                 .delegate_token_account(
@@ -170,8 +170,8 @@ mod tests {
         }
     }
 
-    #[test_case(spl_token::id(); "token")]
-    // #[test_case(spl_token_2022::id(); "token-2022")]
+    #[test_case(spl_token_interface::id(); "token")]
+    // #[test_case(spl_token_2022_interface::id(); "token-2022")]
     #[tokio::test]
     async fn test_delegate_vault_wrong_delegate_asset_admin_fails(token_program_id: Pubkey) {
         let (mut fixture, vault_pubkey, vault_admin, random_mint, vault_token_account) =
@@ -181,7 +181,7 @@ mod tests {
 
         let wrong_delegate_asset_admin = Keypair::new();
         let bob = Pubkey::new_unique();
-        if token_program_id.eq(&spl_token::id()) {
+        if token_program_id.eq(&spl_token_interface::id()) {
             // Delegate
             vault_program_client
                 .delegate_token_account(

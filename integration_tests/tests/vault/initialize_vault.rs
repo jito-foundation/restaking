@@ -4,7 +4,7 @@ mod tests {
     use jito_vault_sdk::error::VaultError;
     use solana_program::pubkey::Pubkey;
     use solana_sdk::signature::{Keypair, Signer};
-    use spl_associated_token_account::get_associated_token_address;
+    use spl_associated_token_account_interface::address::get_associated_token_address;
 
     use crate::fixtures::{
         fixture::TestBuilder,
@@ -90,7 +90,7 @@ mod tests {
             .await
             .unwrap();
         vault_program_client
-            .create_token_mint(&st_mint, &spl_token::id())
+            .create_token_mint(&st_mint, &spl_token_interface::id())
             .await
             .unwrap();
 

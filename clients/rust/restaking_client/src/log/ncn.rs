@@ -34,8 +34,8 @@ impl PrettyDisplay for Ncn {
 
 #[cfg(test)]
 mod tests {
-    use anchor_lang::prelude::Pubkey;
     use jito_restaking_client_common::log::PrettyDisplay;
+    use solana_program::pubkey::Pubkey;
 
     use crate::accounts::Ncn;
 
