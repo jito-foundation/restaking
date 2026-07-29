@@ -30,6 +30,8 @@ generate-code: build-release generate-idl
 	$(YARN) install
 	$(YARN) generate-clients
 	$(YARN) update-dependencies
+	$(YARN) update-rust-borsh
+	$(CARGO_FMT) --all
 
 # Generate IDL files
 .PHONY: generate-idl
