@@ -223,15 +223,6 @@ pub enum VaultInstruction {
     #[account(6, name = "token_program")]
     DelegateTokenAccount,
 
-    /// Revoke Delegate of the token account
-    #[account(0, name = "config")]
-    #[account(1, name = "vault")]
-    #[account(2, signer, name = "delegate_asset_admin")]
-    #[account(3, name = "token_mint")]
-    #[account(4, writable, name = "token_account")]
-    #[account(5, name = "token_program")]
-    RevokeDelegateTokenAccount,
-
     /// Changes the signer for vault admin
     #[account(0, name = "config")]
     #[account(1, writable, name = "vault")]
@@ -372,6 +363,34 @@ impl TryFrom<u8> for WithdrawalAllocationMethod {
         match value {
             0 => Ok(Self::Greedy),
             _ => Err(ProgramError::InvalidArgument),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{VaultInstruction, WithdrawalAllocationMethod};
+
+    #[test]
+    fn vault_update_instruction_discriminators_match_deployed_abi() {
+        let cases = [
+            (VaultInstruction::UpdateVaultBalance, 25),
+            (
+                VaultInstruction::InitializeVaultUpdateStateTracker {
+                    withdrawal_allocation_method: WithdrawalAllocationMethod::Greedy,
+                },
+                26,
+            ),
+            (VaultInstruction::CrankVaultUpdateStateTracker, 27),
+            (
+                VaultInstruction::CloseVaultUpdateStateTracker { ncn_epoch: 0 },
+                28,
+            ),
+        ];
+
+        for (instruction, expected_discriminator) in cases {
+            let serialized = borsh::to_vec(&instruction).unwrap();
+            assert_eq!(serialized.first(), Some(&expected_discriminator));
         }
     }
 }
