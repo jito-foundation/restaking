@@ -26,7 +26,6 @@ export * from './initializeVaultOperatorDelegation';
 export * from './initializeVaultUpdateStateTracker';
 export * from './initializeVaultWithMint';
 export * from './mintTo';
-export * from './revokeDelegateTokenAccount';
 export * from './setAdmin';
 export * from './setConfigAdmin';
 export * from './setConfigSecondaryAdmin';
