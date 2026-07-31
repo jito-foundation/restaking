@@ -6,7 +6,6 @@
  * @see https://github.com/kinobi-so/kinobi
  */
 
-export * from './configAdminRole';
 export * from './createMetadataAccountArgsV3';
 export * from './dataV2';
 export * from './delegationState';

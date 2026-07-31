@@ -17,7 +17,7 @@ use jito_vault_core::{
 use jito_vault_sdk::{
     error::VaultError,
     inline_mpl_token_metadata,
-    instruction::{ConfigAdminRole, VaultAdminRole, WithdrawalAllocationMethod},
+    instruction::{VaultAdminRole, WithdrawalAllocationMethod},
     sdk::{
         add_delegation, cooldown_delegation, cooldown_vault_ncn_ticket, initialize_config,
         initialize_vault, set_deposit_capacity, warmup_vault_ncn_slasher_ticket,
@@ -831,33 +831,6 @@ impl VaultProgramClient {
                 token_mint,
                 token_account,
                 delegate,
-                token_program_id,
-            )],
-            Some(&self.payer.pubkey()),
-            &[&self.payer, delegate_asset_admin],
-            blockhash,
-        ))
-        .await
-    }
-
-    pub async fn revoke_delegate_token_account(
-        &mut self,
-        config: &Pubkey,
-        vault: &Pubkey,
-        delegate_asset_admin: &Keypair,
-        token_mint: &Pubkey,
-        token_account: &Pubkey,
-        token_program_id: &Pubkey,
-    ) -> Result<(), TestError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
-        self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::revoke_delegate_token_account(
-                &jito_vault_program::id(),
-                config,
-                vault,
-                &delegate_asset_admin.pubkey(),
-                token_mint,
-                token_account,
                 token_program_id,
             )],
             Some(&self.payer.pubkey()),
@@ -1952,29 +1925,6 @@ impl VaultProgramClient {
         .await?;
 
         Ok(())
-    }
-
-    pub async fn set_config_secondary_admin(
-        &mut self,
-        config: &Pubkey,
-        old_admin: &Keypair,
-        new_admin: &Pubkey,
-        role: ConfigAdminRole,
-    ) -> Result<(), TestError> {
-        let blockhash = self.banks_client.get_latest_blockhash().await?;
-        self._process_transaction(&Transaction::new_signed_with_payer(
-            &[jito_vault_sdk::sdk::set_config_secondary_admin(
-                &jito_vault_program::id(),
-                config,
-                &old_admin.pubkey(),
-                &new_admin,
-                role,
-            )],
-            Some(&old_admin.pubkey()),
-            &[old_admin],
-            blockhash,
-        ))
-        .await
     }
 }
 

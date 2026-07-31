@@ -1,6 +1,6 @@
 use crate::{
     inline_mpl_token_metadata::{self},
-    instruction::{ConfigAdminRole, VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
+    instruction::{VaultAdminRole, VaultInstruction, WithdrawalAllocationMethod},
 };
 use solana_program::{
     instruction::{AccountMeta, Instruction},
@@ -282,31 +282,6 @@ pub fn delegate_token_account(
         program_id: *program_id,
         accounts,
         data: borsh::to_vec(&VaultInstruction::DelegateTokenAccount).unwrap(),
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn revoke_delegate_token_account(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    vault: &Pubkey,
-    delegate_asset_admin: &Pubkey,
-    token_mint: &Pubkey,
-    token_account: &Pubkey,
-    token_program_id: &Pubkey,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new_readonly(*config, false),
-        AccountMeta::new_readonly(*vault, false),
-        AccountMeta::new_readonly(*delegate_asset_admin, true),
-        AccountMeta::new_readonly(*token_mint, false),
-        AccountMeta::new(*token_account, false),
-        AccountMeta::new_readonly(*token_program_id, false),
-    ];
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: borsh::to_vec(&VaultInstruction::RevokeDelegateTokenAccount).unwrap(),
     }
 }
 
@@ -798,24 +773,5 @@ pub fn set_config_admin(
         program_id: *program_id,
         accounts,
         data: borsh::to_vec(&VaultInstruction::SetConfigAdmin).unwrap(),
-    }
-}
-
-pub fn set_config_secondary_admin(
-    program_id: &Pubkey,
-    config: &Pubkey,
-    old_admin: &Pubkey,
-    new_admin: &Pubkey,
-    role: ConfigAdminRole,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new(*config, false),
-        AccountMeta::new_readonly(*old_admin, true),
-        AccountMeta::new_readonly(*new_admin, false),
-    ];
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: borsh::to_vec(&VaultInstruction::SetConfigSecondaryAdmin(role)).unwrap(),
     }
 }

@@ -33,10 +33,8 @@ import {
   type ParsedInitializeVaultUpdateStateTrackerInstruction,
   type ParsedInitializeVaultWithMintInstruction,
   type ParsedMintToInstruction,
-  type ParsedRevokeDelegateTokenAccountInstruction,
   type ParsedSetAdminInstruction,
   type ParsedSetConfigAdminInstruction,
-  type ParsedSetConfigSecondaryAdminInstruction,
   type ParsedSetDepositCapacityInstruction,
   type ParsedSetFeesInstruction,
   type ParsedSetIsPausedInstruction,
@@ -85,7 +83,6 @@ export enum JitoVaultInstruction {
   SetProgramFeeWallet,
   SetIsPaused,
   DelegateTokenAccount,
-  RevokeDelegateTokenAccount,
   SetAdmin,
   SetSecondaryAdmin,
   AddDelegation,
@@ -97,7 +94,6 @@ export enum JitoVaultInstruction {
   CreateTokenMetadata,
   UpdateTokenMetadata,
   SetConfigAdmin,
-  SetConfigSecondaryAdmin,
 }
 
 export function identifyJitoVaultInstruction(
@@ -168,43 +164,37 @@ export function identifyJitoVaultInstruction(
     return JitoVaultInstruction.DelegateTokenAccount;
   }
   if (containsBytes(data, getU8Encoder().encode(21), 0)) {
-    return JitoVaultInstruction.RevokeDelegateTokenAccount;
-  }
-  if (containsBytes(data, getU8Encoder().encode(22), 0)) {
     return JitoVaultInstruction.SetAdmin;
   }
-  if (containsBytes(data, getU8Encoder().encode(23), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(22), 0)) {
     return JitoVaultInstruction.SetSecondaryAdmin;
   }
-  if (containsBytes(data, getU8Encoder().encode(24), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(23), 0)) {
     return JitoVaultInstruction.AddDelegation;
   }
-  if (containsBytes(data, getU8Encoder().encode(25), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(24), 0)) {
     return JitoVaultInstruction.CooldownDelegation;
   }
-  if (containsBytes(data, getU8Encoder().encode(26), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(25), 0)) {
     return JitoVaultInstruction.UpdateVaultBalance;
   }
-  if (containsBytes(data, getU8Encoder().encode(27), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(26), 0)) {
     return JitoVaultInstruction.InitializeVaultUpdateStateTracker;
   }
-  if (containsBytes(data, getU8Encoder().encode(28), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(27), 0)) {
     return JitoVaultInstruction.CrankVaultUpdateStateTracker;
   }
-  if (containsBytes(data, getU8Encoder().encode(29), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(28), 0)) {
     return JitoVaultInstruction.CloseVaultUpdateStateTracker;
   }
-  if (containsBytes(data, getU8Encoder().encode(30), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(29), 0)) {
     return JitoVaultInstruction.CreateTokenMetadata;
   }
-  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(30), 0)) {
     return JitoVaultInstruction.UpdateTokenMetadata;
   }
-  if (containsBytes(data, getU8Encoder().encode(32), 0)) {
+  if (containsBytes(data, getU8Encoder().encode(31), 0)) {
     return JitoVaultInstruction.SetConfigAdmin;
-  }
-  if (containsBytes(data, getU8Encoder().encode(33), 0)) {
-    return JitoVaultInstruction.SetConfigSecondaryAdmin;
   }
   throw new Error(
     'The provided instruction could not be identified as a jitoVault instruction.'
@@ -278,9 +268,6 @@ export type ParsedJitoVaultInstruction<
       instructionType: JitoVaultInstruction.DelegateTokenAccount;
     } & ParsedDelegateTokenAccountInstruction<TProgram>)
   | ({
-      instructionType: JitoVaultInstruction.RevokeDelegateTokenAccount;
-    } & ParsedRevokeDelegateTokenAccountInstruction<TProgram>)
-  | ({
       instructionType: JitoVaultInstruction.SetAdmin;
     } & ParsedSetAdminInstruction<TProgram>)
   | ({
@@ -312,7 +299,4 @@ export type ParsedJitoVaultInstruction<
     } & ParsedUpdateTokenMetadataInstruction<TProgram>)
   | ({
       instructionType: JitoVaultInstruction.SetConfigAdmin;
-    } & ParsedSetConfigAdminInstruction<TProgram>)
-  | ({
-      instructionType: JitoVaultInstruction.SetConfigSecondaryAdmin;
-    } & ParsedSetConfigSecondaryAdminInstruction<TProgram>);
+    } & ParsedSetConfigAdminInstruction<TProgram>);
