@@ -34,6 +34,12 @@ use crate::core::get_latest_blockhash_with_retry;
 
 const MAX_RETRIES: u8 = 10;
 
+/// Returns the exact wire size used by the RPC when submitting a legacy transaction.
+fn serialized_transaction_size(transaction: &Transaction) -> anyhow::Result<usize> {
+    let size = bincode::serialized_size(transaction)?;
+    Ok(size.try_into()?)
+}
+
 pub struct VaultHandler {
     rpc_url: String,
     vault_program_id: Pubkey,
@@ -195,7 +201,7 @@ impl VaultHandler {
                 blockhash,
             );
 
-            let tx_size = test_tx.signatures.len() + test_tx.message_data().len();
+            let tx_size = serialized_transaction_size(&test_tx)?;
 
             if tx_size > max_size && !current_batch.is_empty() {
                 // Finalize current batch
