@@ -106,7 +106,7 @@ impl VaultCliHandler {
         }
     }
 
-    #[allow(clippy::future_not_send)]
+    #[allow(clippy::cognitive_complexity, clippy::future_not_send)]
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
         match action {
             VaultCommands::Config {

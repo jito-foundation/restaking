@@ -92,7 +92,7 @@ impl RestakingCliHandler {
         }
     }
 
-    #[allow(clippy::future_not_send)]
+    #[allow(clippy::cognitive_complexity, clippy::future_not_send)]
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
         match action {
             RestakingCommands::Config {
