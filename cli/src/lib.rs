@@ -14,7 +14,8 @@ use solana_rpc_client_api::{
     filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{
-    instruction::Instruction, pubkey::Pubkey, signers::Signers, transaction::Transaction,
+    account::Account, instruction::Instruction, pubkey::Pubkey, signers::Signers,
+    transaction::Transaction,
 };
 
 pub mod cli_args;
@@ -134,6 +135,32 @@ pub(crate) trait CliHandler {
 
         Ok(config)
     }
+
+    /// Fetches the program accounts matching `config`.
+    ///
+    /// The RPC client returns base64-encoded [`solana_account_decoder::UiAccount`]s, which this
+    /// method decodes back into [`Account`]s so callers can deserialize the account data.
+    async fn get_program_accounts(
+        &self,
+        program_id: &Pubkey,
+        config: RpcProgramAccountsConfig,
+    ) -> anyhow::Result<Vec<(Pubkey, Account)>> {
+        let rpc_client = self.get_rpc_client();
+
+        rpc_client
+            .get_program_ui_accounts_with_config(program_id, config)
+            .await?
+            .into_iter()
+            .map(|(pubkey, ui_account)| {
+                let account = ui_account
+                    .decode()
+                    .ok_or_else(|| anyhow!("Failed to decode account {pubkey}"))?;
+
+                Ok((pubkey, account))
+            })
+            .collect()
+    }
+
     /// Fetches and deserializes an account
     ///
     /// This method retrieves account data using the configured RPC client,

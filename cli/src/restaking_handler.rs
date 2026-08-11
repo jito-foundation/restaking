@@ -92,7 +92,7 @@ impl RestakingCliHandler {
         }
     }
 
-    #[allow(clippy::future_not_send)]
+    #[allow(clippy::cognitive_complexity, clippy::future_not_send)]
     pub async fn handle(&self, action: RestakingCommands) -> Result<()> {
         match action {
             RestakingCommands::Config {
@@ -1285,11 +1285,10 @@ impl RestakingCliHandler {
 
     #[allow(clippy::future_not_send)]
     pub async fn list_ncn(&self) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Ncn>(None)?;
 
-        let accounts = rpc_client
-            .get_program_accounts_with_config(&self.restaking_program_id, config)
+        let accounts = self
+            .get_program_accounts(&self.restaking_program_id, config)
             .await?;
         for (index, (ncn_pubkey, ncn)) in accounts.iter().enumerate() {
             let ncn = jito_restaking_client::accounts::Ncn::deserialize(&mut ncn.data.as_slice())?;
@@ -1306,8 +1305,6 @@ impl RestakingCliHandler {
         ncn: Option<&Pubkey>,
         operator: Option<&Pubkey>,
     ) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
-
         let (pubkey, offset) = match (ncn, operator) {
             (Some(ncn_pubkey), None) => (ncn_pubkey, 8),
             (None, Some(operator_pubkey)) => (operator_pubkey, 8 + 32),
@@ -1317,8 +1314,8 @@ impl RestakingCliHandler {
         let config =
             self.get_rpc_program_accounts_config::<NcnOperatorState>(Some((pubkey, offset)))?;
 
-        let accounts = rpc_client
-            .get_program_accounts_with_config(&self.restaking_program_id, config)
+        let accounts = self
+            .get_program_accounts(&self.restaking_program_id, config)
             .await?;
         for (index, (ncn_operator_state_pubkey, ncn_operator_state)) in accounts.iter().enumerate()
         {
@@ -1338,11 +1335,10 @@ impl RestakingCliHandler {
     /// Lists NCN operator state accounts filtered by NCN public key.
     #[allow(clippy::future_not_send)]
     pub async fn list_ncn_vault_ticket(&self, ncn: Pubkey) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<NcnVaultTicket>(Some((&ncn, 8)))?;
 
-        let accounts = rpc_client
-            .get_program_accounts_with_config(&self.restaking_program_id, config)
+        let accounts = self
+            .get_program_accounts(&self.restaking_program_id, config)
             .await?;
         for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
             let ticket = jito_restaking_client::accounts::NcnVaultTicket::deserialize(
@@ -1366,10 +1362,9 @@ impl RestakingCliHandler {
 
     #[allow(clippy::future_not_send)]
     pub async fn list_operator(&self) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Operator>(None)?;
-        let accounts = rpc_client
-            .get_program_accounts_with_config(&self.restaking_program_id, config)
+        let accounts = self
+            .get_program_accounts(&self.restaking_program_id, config)
             .await?;
         for (index, (operator_pubkey, operator)) in accounts.iter().enumerate() {
             let operator = jito_restaking_client::accounts::Operator::deserialize(
@@ -1382,11 +1377,10 @@ impl RestakingCliHandler {
 
     #[allow(clippy::future_not_send)]
     pub async fn list_operator_vault_ticket(&self, operator: &Pubkey) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
         let config =
             self.get_rpc_program_accounts_config::<OperatorVaultTicket>(Some((operator, 8)))?;
-        let accounts = rpc_client
-            .get_program_accounts_with_config(&self.restaking_program_id, config)
+        let accounts = self
+            .get_program_accounts(&self.restaking_program_id, config)
             .await?;
         for (index, (ticket_pubkey, ticket)) in accounts.iter().enumerate() {
             let ticket = jito_restaking_client::accounts::OperatorVaultTicket::deserialize(

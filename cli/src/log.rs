@@ -29,7 +29,7 @@ fn format_log_message(buf: &mut Formatter, record: &Record) -> std::io::Result<(
     )
 }
 
-fn colored_level(style: &mut Style, level: log::Level) -> StyledValue<&'static str> {
+fn colored_level(style: &mut Style, level: log::Level) -> StyledValue<'_, &'static str> {
     match level {
         log::Level::Trace => style.set_color(Color::Magenta).value("TRACE"),
         log::Level::Debug => style.set_color(Color::Blue).value("DEBUG"),

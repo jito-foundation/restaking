@@ -106,7 +106,7 @@ impl VaultCliHandler {
         }
     }
 
-    #[allow(clippy::future_not_send)]
+    #[allow(clippy::cognitive_complexity, clippy::future_not_send)]
     pub async fn handle(&self, action: VaultCommands) -> Result<()> {
         match action {
             VaultCommands::Config {
@@ -1520,12 +1520,10 @@ impl VaultCliHandler {
 
     #[allow(clippy::future_not_send)]
     pub async fn list_vaults(&self) -> Result<()> {
-        let rpc_client = self.get_rpc_client();
         let config = self.get_rpc_program_accounts_config::<Vault>(None)?;
-        let accounts = rpc_client
-            .get_program_accounts_with_config(&self.vault_program_id, config)
-            .await
-            .unwrap();
+        let accounts = self
+            .get_program_accounts(&self.vault_program_id, config)
+            .await?;
         log::info!("{:?}", accounts);
         for (index, (vault_pubkey, vault)) in accounts.iter().enumerate() {
             let vault =
@@ -1630,8 +1628,8 @@ impl VaultCliHandler {
                 let config = self.get_rpc_program_accounts_config::<VaultOperatorDelegation>(
                     Some((&vault, 8)),
                 )?;
-                let accounts = rpc_client
-                    .get_program_accounts_with_config(&self.vault_program_id, config)
+                let accounts = self
+                    .get_program_accounts(&self.vault_program_id, config)
                     .await?;
 
                 for (index, (pubkey, account)) in accounts.iter().enumerate() {
