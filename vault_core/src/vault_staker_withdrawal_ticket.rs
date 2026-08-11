@@ -123,7 +123,7 @@ impl VaultStakerWithdrawalTicket {
     /// # Returns
     /// * [`Pubkey`] - The program address
     /// * `u8` - The bump seed
-    /// * `Vec<Vec<u8>` - The seeds used to generate the PDA
+    /// * `Vec<Vec<u8>>` - The seeds used to generate the PDA
     pub fn find_program_address(
         program_id: &Pubkey,
         vault: &Pubkey,
@@ -140,6 +140,7 @@ impl VaultStakerWithdrawalTicket {
     /// # Arguments
     /// * `program_id` - The program ID
     /// * `vault_staker_withdrawal_ticket` - The [`VaultStakerWithdrawalTicket`] account
+    /// * `vault` - The vault account
     /// * `expect_writable` - Whether the account should be writable
     ///
     /// # Returns
@@ -193,8 +194,7 @@ mod tests {
 
     #[test]
     fn test_vault_staker_withdrawal_ticket_no_padding() {
-        let vault_staker_withdrawal_ticket_size =
-            std::mem::size_of::<VaultStakerWithdrawalTicket>();
+        let vault_staker_withdrawal_ticket_size = std::mem::size_of::<VaultStakerWithdrawalTicket>();
         let sum_of_fields = size_of::<Pubkey>() + // vault
             size_of::<Pubkey>() + // staker
             size_of::<Pubkey>() + // base
