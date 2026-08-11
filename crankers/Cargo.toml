@@ -8,6 +8,7 @@ homepage = { workspace = true }
 license = { workspace = true }
 edition = { workspace = true }
 readme = { workspace = true }
+build = "build.rs"
 
 [[bin]]
 name = "jito-vault-crank"

@@ -50,7 +50,7 @@ pub async fn emit_vault_metrics(
     let num_vault_operator_delegations_updated = delegations
         .iter()
         .filter(|(_pubkey, delegation)| {
-            get_epoch(delegation.last_update_slot(), config_epoch_length).unwrap() == epoch
+            get_epoch(delegation.last_update_slot(), config_epoch_length).expect("failed to compute delegation epoch") == epoch
         })
         .count() as i64;
 
@@ -107,7 +107,7 @@ pub async fn emit_vault_metrics(
             continue;
         }
 
-        let st_deposit_account = try_st_deposit_account.unwrap();
+        let st_deposit_account = try_st_deposit_account.expect("stake deposit account must exist");
 
         datapoint_info!(
             "restaking-vault-supply",
