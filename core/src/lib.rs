@@ -15,6 +15,8 @@ use solana_system_interface::program as system_program;
 pub mod error;
 pub mod loader;
 pub mod slot_toggle;
+#[cfg(feature = "certora")]
+pub mod certora;
 
 /// Creates a new account or initializes an existing account
 /// # Arguments

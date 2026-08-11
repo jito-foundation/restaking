@@ -1,0 +1,38 @@
+name: Certora Prover (Vault)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  certora_run_vault_program:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Apply Certora Patch
+        run: git apply certora/certora-mocks.patch
+      - name: Submit verification jobs to Certora Prover
+        uses: Certora/certora-run-action@v1
+        with:
+          configurations: |-
+            integrity.conf --commit_sha1 e8a773a5e7243238df1e2576cca7cfe56a99bb1b
+            access_control_checks.conf --commit_sha1 e8a773a5e7243238df1e2576cca7cfe56a99bb1b
+            toggle_checks.conf --commit_sha1 e8a773a5e7243238df1e2576cca7cfe56a99bb1b
+            fee.conf 
+          job-name: "vault_program rules"
+          ecosystem: solana
+          working-directory: vault_program/src/certora/confs
+          certora-key: ${{ secrets.CERTORAKEY }}
+          certora-sbf-options: "-vvv --tools-version=v1.43"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

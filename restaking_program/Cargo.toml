@@ -26,6 +26,15 @@ testnet = []
 devnet = []
 localhost = []
 
+# CERTORA feature
+certora = [
+    "no-entrypoint", 
+    "dep:cvlr", 
+    "dep:cvlr-solana",
+    "jito-jsm-core/certora", 
+    "jito-vault-core/certora"
+    ]
+
 [dependencies]
 borsh = { workspace = true }
 cfg-if = { workspace = true }
@@ -44,3 +53,30 @@ thiserror = { workspace = true }
 
 [lints]
 workspace = true
+
+
+###
+### CERTORA SETTINGS AND LIBRARIES
+###
+
+[dependencies.cvlr]
+workspace = true
+optional = true
+
+[dependencies.cvlr-solana]
+workspace = true
+optional = true
+
+[package.metadata.certora]
+sources = [
+            "../Cargo.toml",
+            "Cargo.toml",
+            "src/**/*.rs",
+            "../vault_core/src/*.rs",
+            "../restaking_core/src/*.rs",
+            "../restaking_program/**/*.rs",
+            "../core/**/*.rs",
+	    ]
+
+solana_inlining = ["../certora/envs/inlining.txt"]
+solana_summaries = ["../certora/envs/summaries.txt"]
