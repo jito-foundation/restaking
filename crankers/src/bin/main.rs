@@ -8,7 +8,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
-use clap::{arg, Parser, ValueEnum};
+use clap::{Parser, ValueEnum};
 use dotenvy::dotenv;
 use jito_jsm_core::get_epoch;
 use jito_vault_core::{

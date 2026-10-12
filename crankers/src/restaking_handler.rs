@@ -65,7 +65,7 @@ impl RestakingHandler {
             })
             .collect();
 
-        operators.sort_by(|a, b| a.1.index().cmp(&b.1.index()));
+        operators.sort_by_key(|a| a.1.index());
 
         Ok(operators)
     }

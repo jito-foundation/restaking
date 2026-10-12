@@ -261,9 +261,10 @@ pub(crate) trait CliHandler {
             }
             (false, false) => {
                 let type_name = std::any::type_name::<T>();
-                let msg = address.map_or("".to_string(), |address| {
-                    format!("{type_name} at {address}")
-                });
+                let msg = address.map_or_else(
+                    || "".to_string(),
+                    |address| format!("{type_name} at {address}"),
+                );
                 info!("{msg}");
                 info!("{}", value.pretty_display());
             }

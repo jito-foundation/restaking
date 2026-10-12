@@ -22,12 +22,12 @@ jobs:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.85.0
+          toolchain: 1.97.1
       - name: Install cargo-audit from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-audit
-          version: "0.22.1"
+          version: "0.22.2"
       - run: |
           cargo audit \
             --ignore RUSTSEC-2022-0093 \
@@ -50,7 +50,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: 1.89.0
+          toolchain: 1.97.1
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
 
@@ -80,7 +80,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: 1.89.0
+          toolchain: 1.97.1
       - name: Install cargo-sort from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
@@ -103,9 +103,9 @@ jobs:
           filenames: program.env
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.89.0
+          toolchain: 1.97.1
       - name: install solana toolsuite
-        run: sh -c "$(curl -sSfL https://release.anza.xyz/v3.1.14/install)"
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v4.3.0/install)"
       - name: add to path
         run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       # Built per-program rather than bare `cargo-build-sbf`: at the workspace
@@ -113,34 +113,35 @@ jobs:
       # cli, integration_tests) whose dependencies have no SBF target support.
       - name: Building programs
         run: |
-          cargo-build-sbf --manifest-path restaking_program/Cargo.toml
-          cargo-build-sbf --manifest-path vault_program/Cargo.toml
+          cargo build-sbf --manifest-path restaking_program/Cargo.toml --arch v3 --tools-version v1.57
+          cargo build-sbf --manifest-path vault_program/Cargo.toml --arch v3 --tools-version v1.57
         env:
           RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
           VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
 
   verified_build:
     name: verified_build
-    runs-on: big-runner-1
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
-      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:3.1.14
+      - run: docker pull --platform linux/amd64 solanafoundation/solana-verifiable-build:4.3.0
       # solana-verify 0.5.x has edition2024 deps, so building it needs a newer
       # cargo than the workspace rust-toolchain.toml. Host-only override; the
       # verified build itself runs inside the docker image.
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.95.0
+          toolchain: 1.97.1
       - name: Install solana-verify from crates.io
         uses: baptiste0928/cargo-install@v3
         with:
           crate: solana-verify
-      - run: solana-verify build --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:3.1.14
-      - run: solana-verify build --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:3.1.14
+      # sbpfv3 needs platform-tools >= v1.57; the 4.3.0 image ships cargo-build-sbf 4.3.0 which defaults to it
+      - run: solana-verify build --arch v3 --library-name jito_restaking_program --base-image solanafoundation/solana-verifiable-build:4.3.0
+      - run: solana-verify build --arch v3 --library-name jito_vault_program --base-image solanafoundation/solana-verifiable-build:4.3.0
       - name: Upload jito_restaking_program.so
         uses: actions/upload-artifact@v4
         with:
@@ -160,7 +161,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-          toolchain: 1.89.0
+          toolchain: 1.97.1
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install system dependencies
@@ -171,6 +172,7 @@ jobs:
           RESTAKING_PROGRAM_ID: RestkWeAVL8fRGgzhfeoqFhsqKRchg6aa1XrcH96z4Q
           VAULT_PROGRAM_ID: Vau1t6sLNxnzB7ZDsef8TLbPLfyZMYXH8WTNqUdm9g8
       - name: Upload coverage to Codecov
+        if: github.repository == 'jito-foundation/restaking'
         uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

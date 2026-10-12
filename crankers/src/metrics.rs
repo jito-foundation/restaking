@@ -58,7 +58,7 @@ pub async fn emit_vault_metrics(
     let vrt_mint_accounts = rpc_client.get_multiple_accounts(&vrt_mint_pubkeys).await?;
     let vrt_mint_map: HashMap<Pubkey, Mint> = vrt_mint_pubkeys
         .into_iter()
-        .zip(vrt_mint_accounts.into_iter())
+        .zip(vrt_mint_accounts)
         .filter_map(|(pubkey, account)| account.map(|acc| (pubkey, acc)))
         .map(|(pubkey, account)| {
             let mint = Mint::unpack(&account.data).expect("Failed to unpack Mint");
@@ -76,7 +76,7 @@ pub async fn emit_vault_metrics(
     let st_ata_accounts = rpc_client.get_multiple_accounts(&st_ata_pubkeys).await?;
     let st_ata_map: HashMap<Pubkey, TokenAccount> = st_ata_pubkeys
         .into_iter()
-        .zip(st_ata_accounts.into_iter())
+        .zip(st_ata_accounts)
         .filter_map(|(pubkey, account)| {
             account.map(|acc| {
                 (

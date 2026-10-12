@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{command, Subcommand};
+use clap::Subcommand;
 use solana_program::pubkey::Pubkey;
 
 #[derive(Subcommand)]

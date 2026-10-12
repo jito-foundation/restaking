@@ -1,4 +1,4 @@
-use clap::{command, Subcommand};
+use clap::Subcommand;
 use solana_program::pubkey::Pubkey;
 
 /// The CLI handler for the restaking program

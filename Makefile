@@ -4,7 +4,9 @@ CARGO := cargo
 CARGO_SORT := cargo sort
 CARGO_CLIPPY := cargo clippy
 CARGO_FMT := cargo +nightly fmt
-CARGO_SBF := cargo-build-sbf
+# sbpfv3 needs platform-tools >= v1.57; the cargo-build-sbf 3.1.x default (v1.52) has no sbpfv3 sysroot
+CARGO_SBF := cargo build-sbf --arch v3 --tools-version v1.57
+SBF_PROGRAMS := restaking_program vault_program
 CARGO_NEXTEST := cargo nextest
 YARN := yarn
 SHANK_CLI := ./target/release/jito-shank-cli
@@ -74,7 +76,8 @@ build-release:
 # Build Solana BPF/SBF programs
 .PHONY: build-sbf
 build-sbf:
-	$(CARGO_SBF)
+	# Build per program: a workspace-wide build pulls host-only deps (cli, tests) into the SBF target
+	for p in $(SBF_PROGRAMS); do $(CARGO_SBF) --manifest-path $$p/Cargo.toml || exit 1; done
 
 # Run tests
 .PHONY: test
